@@ -1,0 +1,323 @@
+// ===============================================================
+// Bombus V6.0 - 基礎樣式
+// ===============================================================
+
+@import 'variables';
+@import 'mixins';
+
+// ---------------------------------------------------------------
+// Reset & Base
+// ---------------------------------------------------------------
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: $font-family-base;
+  font-size: $font-size-base;
+  line-height: $line-height-normal;
+  color: $color-text-primary;
+  background-color: $color-cloud-gray;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// ---------------------------------------------------------------
+// Typography
+// ---------------------------------------------------------------
+h1, h2, h3, h4, h5, h6 {
+  color: $color-text-dark;
+  font-weight: $font-weight-semibold;
+  line-height: $line-height-tight;
+}
+
+h1 { font-size: $font-size-4xl; }
+h2 { font-size: $font-size-3xl; }
+h3 { font-size: $font-size-2xl; }
+h4 { font-size: $font-size-xl; }
+h5 { font-size: $font-size-lg; }
+h6 { font-size: $font-size-base; }
+
+p {
+  margin-bottom: $spacing-md;
+}
+
+a {
+  color: $color-brand-main;
+  text-decoration: none;
+  transition: color $transition-normal;
+
+  &:hover {
+    color: $color-brand-dark;
+  }
+}
+
+// ---------------------------------------------------------------
+// List Reset
+// ---------------------------------------------------------------
+ul, ol {
+  list-style: none;
+}
+
+// ---------------------------------------------------------------
+// Button Reset
+// ---------------------------------------------------------------
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+
+  &:focus {
+    outline: none;
+  }
+}
+
+// ---------------------------------------------------------------
+// Input Reset
+// ---------------------------------------------------------------
+input, textarea, select {
+  font-family: inherit;
+  font-size: inherit;
+
+  &:focus {
+    outline: none;
+  }
+}
+
+// ---------------------------------------------------------------
+// Image
+// ---------------------------------------------------------------
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+// ---------------------------------------------------------------
+// Utilities
+// ---------------------------------------------------------------
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.text-primary { color: $color-text-primary; }
+.text-secondary { color: $color-text-secondary; }
+.text-muted { color: $color-muted-gray; }
+
+.text-success { color: $color-success; }
+.text-warning { color: $color-warning; }
+.text-error { color: $color-error; }
+.text-info { color: $color-info; }
+
+.fw-normal { font-weight: $font-weight-normal; }
+.fw-medium { font-weight: $font-weight-medium; }
+.fw-semibold { font-weight: $font-weight-semibold; }
+.fw-bold { font-weight: $font-weight-bold; }
+
+.fs-xs { font-size: $font-size-xs; }
+.fs-sm { font-size: $font-size-sm; }
+.fs-base { font-size: $font-size-base; }
+.fs-lg { font-size: $font-size-lg; }
+.fs-xl { font-size: $font-size-xl; }
+
+// ---------------------------------------------------------------
+// Spacing Utilities
+// ---------------------------------------------------------------
+.m-0 { margin: 0; }
+.mt-1 { margin-top: $spacing-xs; }
+.mt-2 { margin-top: $spacing-sm; }
+.mt-3 { margin-top: $spacing-md; }
+.mt-4 { margin-top: $spacing-lg; }
+.mb-1 { margin-bottom: $spacing-xs; }
+.mb-2 { margin-bottom: $spacing-sm; }
+.mb-3 { margin-bottom: $spacing-md; }
+.mb-4 { margin-bottom: $spacing-lg; }
+
+.p-0 { padding: 0; }
+.p-2 { padding: $spacing-sm; }
+.p-3 { padding: $spacing-md; }
+.p-4 { padding: $spacing-lg; }
+
+// ---------------------------------------------------------------
+// Display Utilities
+// ---------------------------------------------------------------
+.d-none { display: none; }
+.d-block { display: block; }
+.d-flex { display: flex; }
+.d-grid { display: grid; }
+
+.flex-column { flex-direction: column; }
+.align-center { align-items: center; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.gap-1 { gap: $spacing-xs; }
+.gap-2 { gap: $spacing-sm; }
+.gap-3 { gap: $spacing-md; }
+.gap-4 { gap: $spacing-lg; }
+
+// ---------------------------------------------------------------
+// Card Base
+// ---------------------------------------------------------------
+.card {
+  @include card;
+  padding: $spacing-lg;
+}
+
+.card-header {
+  @include flex-between;
+  margin-bottom: $spacing-md;
+  padding-bottom: $spacing-md;
+  border-bottom: 1px solid $color-soft-gray;
+}
+
+.card-title {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+  margin: 0;
+}
+
+.card-body {
+  // Default body styles
+}
+
+// ---------------------------------------------------------------
+// Button Styles
+// ---------------------------------------------------------------
+.btn {
+  @include button-base;
+}
+
+.btn-primary {
+  @include button-primary;
+}
+
+.btn-secondary {
+  @include button-secondary;
+}
+
+.btn-icon {
+  @include button-icon;
+}
+
+.btn-sm {
+  padding: $spacing-xs $spacing-sm;
+  font-size: $font-size-xs;
+}
+
+.btn-lg {
+  padding: $spacing-md $spacing-lg;
+  font-size: $font-size-base;
+}
+
+// ---------------------------------------------------------------
+// Form Controls
+// ---------------------------------------------------------------
+.form-control {
+  @include input-base;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: $spacing-xs;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+}
+
+.form-group {
+  margin-bottom: $spacing-md;
+}
+
+// ---------------------------------------------------------------
+// Badge
+// ---------------------------------------------------------------
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  border-radius: $radius-full;
+  background: $color-soft-gray;
+  color: $color-text-secondary;
+}
+
+.badge-success {
+  background: $color-success-light;
+  color: $color-success;
+}
+
+.badge-warning {
+  background: $color-warning-light;
+  color: darken($color-warning, 15%);
+}
+
+.badge-error {
+  background: $color-error-light;
+  color: $color-error;
+}
+
+.badge-info {
+  background: $color-info-light;
+  color: $color-info;
+}
+
+// ---------------------------------------------------------------
+// Module Color Classes
+// ---------------------------------------------------------------
+.module-l1 {
+  --module-color: #{$color-l1-sage};
+  color: $color-l1-sage;
+}
+
+.module-l2 {
+  --module-color: #{$color-l2-terracotta};
+  color: $color-l2-terracotta;
+}
+
+.module-l3 {
+  --module-color: #{$color-l3-petrol};
+  color: $color-l3-petrol;
+}
+
+.module-l4 {
+  --module-color: #{$color-l4-mauve};
+  color: $color-l4-mauve;
+}
+
+.module-l5 {
+  --module-color: #{$color-l5-brick};
+  color: $color-l5-brick;
+}
+
+.module-l6 {
+  --module-color: #{$color-l6-rose};
+  color: $color-l6-rose;
+}
+
+// ---------------------------------------------------------------
+// Scrollbar
+// ---------------------------------------------------------------
+body {
+  @include custom-scrollbar;
+}
+
+// ---------------------------------------------------------------
+// Selection
+// ---------------------------------------------------------------
+::selection {
+  background: rgba($color-brand-main, 0.2);
+  color: $color-text-dark;
+}
+
