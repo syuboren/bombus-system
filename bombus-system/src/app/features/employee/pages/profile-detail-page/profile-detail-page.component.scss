@@ -1,0 +1,358 @@
+@import '../../../../../assets/styles/variables';
+@import '../../../../../assets/styles/mixins';
+
+// ---------------------------------------------------------------
+// Candidate Header
+// ---------------------------------------------------------------
+.candidate-header {
+  @include card;
+  @include flex-between;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-lg;
+
+  @include media-max-lg {
+    flex-direction: column;
+    gap: $spacing-md;
+  }
+}
+
+.candidate-basic {
+  @include flex-start;
+  gap: $spacing-md;
+}
+
+.candidate-avatar {
+  @include flex-center;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: $color-l1-sage;
+  color: white;
+  font-size: $font-size-2xl;
+  font-weight: $font-weight-bold;
+  flex-shrink: 0;
+}
+
+.candidate-info {
+  h2 {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-bold;
+    color: $color-text-dark;
+    margin: 0 0 $spacing-xs;
+  }
+}
+
+.contact-info {
+  @include flex-start;
+  flex-wrap: wrap;
+  gap: $spacing-md;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+
+  span {
+    @include flex-start;
+    gap: 4px;
+  }
+
+  i {
+    font-size: 14px;
+  }
+}
+
+.header-actions {
+  @include flex-start;
+  gap: $spacing-sm;
+
+  @include media-max-lg {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  @include media-max-md {
+    flex-wrap: wrap;
+  }
+}
+
+// ---------------------------------------------------------------
+// Split Container
+// ---------------------------------------------------------------
+.split-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $spacing-lg;
+  min-height: calc(100vh - 300px);
+
+  @include media-max-lg {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ---------------------------------------------------------------
+// Panel
+// ---------------------------------------------------------------
+.panel {
+  @include card;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+}
+
+.panel__header {
+  @include flex-between;
+  padding: $spacing-md $spacing-lg;
+  background: $color-cloud-gray;
+  border-bottom: 1px solid $color-soft-gray;
+}
+
+.panel__title {
+  @include flex-start;
+  gap: $spacing-sm;
+  font-weight: $font-weight-bold;
+  color: $color-text-dark;
+
+  i {
+    color: $color-l1-sage;
+    font-size: 18px;
+  }
+}
+
+.file-name {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.panel__content {
+  flex: 1;
+  padding: $spacing-lg;
+  overflow-y: auto;
+  @include custom-scrollbar;
+}
+
+// ---------------------------------------------------------------
+// Resume Preview
+// ---------------------------------------------------------------
+.resume-preview {
+  background: #525659;
+  display: flex;
+  justify-content: center;
+  padding: $spacing-lg;
+}
+
+.resume-page {
+  background: white;
+  width: 100%;
+  max-width: 600px;
+  min-height: 600px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+  padding: $spacing-xl;
+  font-size: $font-size-sm;
+  line-height: 1.6;
+}
+
+.resume-name {
+  font-size: $font-size-xl;
+  border-bottom: 2px solid $color-text-dark;
+  padding-bottom: $spacing-sm;
+  margin-bottom: $spacing-md;
+}
+
+.resume-intro {
+  margin-bottom: $spacing-md;
+}
+
+.resume-section-title {
+  font-size: $font-size-base;
+  color: #444;
+  margin-top: $spacing-lg;
+  margin-bottom: $spacing-sm;
+}
+
+.resume-exp,
+.resume-edu {
+  margin-bottom: $spacing-md;
+
+  ul {
+    margin: $spacing-xs 0 0 $spacing-lg;
+    padding: 0;
+    list-style: disc;
+  }
+}
+
+// ---------------------------------------------------------------
+// Status Badge
+// ---------------------------------------------------------------
+.status-badge {
+  padding: 4px 12px;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+}
+
+.status--success {
+  background: rgba($color-success, 0.15);
+  color: $color-success;
+}
+
+// ---------------------------------------------------------------
+// Match Score Card
+// ---------------------------------------------------------------
+.match-score-card {
+  text-align: center;
+  padding: $spacing-lg;
+  background: linear-gradient(135deg, rgba($color-l1-sage, 0.1) 0%, rgba($color-l1-sage, 0.05) 100%);
+  border-radius: $radius-lg;
+  border: 1px solid rgba($color-l1-sage, 0.2);
+  margin-bottom: $spacing-lg;
+}
+
+.score-circle {
+  @include flex-center;
+  width: 80px;
+  height: 80px;
+  margin: 0 auto $spacing-sm;
+  background: white;
+  border: 4px solid $color-l1-sage;
+  border-radius: 50%;
+  font-size: $font-size-3xl;
+  font-weight: $font-weight-bold;
+  color: $color-l1-sage;
+}
+
+.score-label {
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+  margin-bottom: $spacing-xs;
+}
+
+.score-desc {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+// ---------------------------------------------------------------
+// Analysis Section
+// ---------------------------------------------------------------
+.analysis-section {
+  margin-bottom: $spacing-lg;
+}
+
+.section-label {
+  @include flex-start;
+  gap: $spacing-sm;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-sm;
+
+  i {
+    font-size: 16px;
+  }
+}
+
+// Skill Tags
+.skill-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-xs;
+}
+
+.skill-tag {
+  @include flex-center;
+  gap: 4px;
+  padding: 5px 12px;
+  border-radius: $radius-md;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  border: 1px solid;
+
+  i {
+    font-size: 12px;
+  }
+}
+
+.skill--high {
+  background: rgba($color-success, 0.15);
+  color: $color-success;
+  border-color: rgba($color-success, 0.3);
+}
+
+.skill--medium {
+  background: rgba($color-warning, 0.15);
+  color: darken($color-warning, 15%);
+  border-color: rgba($color-warning, 0.3);
+}
+
+.skill--low {
+  background: rgba($color-text-secondary, 0.1);
+  color: $color-text-secondary;
+  border-color: rgba($color-text-secondary, 0.2);
+}
+
+// Info Card
+.info-card {
+  background: $color-cloud-gray;
+  padding: $spacing-md;
+  border-radius: $radius-md;
+  border-left: 3px solid $color-l1-sage;
+  margin-bottom: $spacing-sm;
+}
+
+.info-card__header {
+  @include flex-between;
+  margin-bottom: $spacing-xs;
+}
+
+.company-name {
+  font-weight: $font-weight-bold;
+  color: $color-text-dark;
+}
+
+.duration {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.position {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.highlights {
+  margin-top: $spacing-xs;
+  font-size: $font-size-sm;
+
+  span {
+    display: block;
+  }
+}
+
+.verified-icon {
+  color: $color-l1-sage;
+  font-size: 18px;
+}
+
+// ---------------------------------------------------------------
+// Loading State
+// ---------------------------------------------------------------
+.loading-state {
+  @include flex-center;
+  flex-direction: column;
+  min-height: 400px;
+  color: $color-text-secondary;
+
+  .loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid $color-soft-gray;
+    border-top-color: $color-l1-sage;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: $spacing-md;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+}
+

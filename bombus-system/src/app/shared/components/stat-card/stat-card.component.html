@@ -1,0 +1,16 @@
+<div class="stat-card stat-card--{{ moduleType() }}">
+  <div class="stat-card__icon">
+    <i [class]="icon()"></i>
+  </div>
+  <div class="stat-card__content">
+    <div class="stat-card__label">{{ label() }}</div>
+    <div class="stat-card__value">{{ value() }}</div>
+    @if (changeText()) {
+      <div class="stat-card__change stat-card__change--{{ changeType() }}">
+        <i [class]="getChangeIcon()"></i>
+        <span>{{ changeText() }}</span>
+      </div>
+    }
+  </div>
+</div>
+

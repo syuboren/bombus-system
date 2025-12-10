@@ -1,0 +1,28 @@
+@import '../../../../../assets/styles/variables';
+@import '../../../../../assets/styles/mixins';
+
+.placeholder-card {
+  @include card;
+  @include flex-center;
+  flex-direction: column;
+  padding: $spacing-2xl;
+  text-align: center;
+  min-height: 400px;
+}
+
+.placeholder-icon {
+  font-size: 64px;
+  color: $color-muted-gray;
+  margin-bottom: $spacing-md;
+}
+
+h2 {
+  color: $color-text-dark;
+  margin-bottom: $spacing-sm;
+}
+
+p {
+  color: $color-text-secondary;
+  margin: 0;
+}
+

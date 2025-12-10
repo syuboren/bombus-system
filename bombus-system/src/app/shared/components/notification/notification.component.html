@@ -1,0 +1,12 @@
+<div class="notification-container">
+  @for (notification of notifications(); track notification.id) {
+    <div
+      class="notification notification--{{ notification.type }}"
+      (click)="dismiss(notification.id)"
+      role="alert">
+      <i class="notification__icon {{ getIcon(notification.type) }}"></i>
+      <span class="notification__message">{{ notification.message }}</span>
+    </div>
+  }
+</div>
+

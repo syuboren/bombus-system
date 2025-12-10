@@ -1,0 +1,255 @@
+<app-header
+  pageTitle="專案列表"
+  [breadcrumbs]="['專案管理', '專案列表']" />
+
+<div class="project-list-page">
+  <!-- Dashboard Stats -->
+  @if (stats(); as s) {
+    <div class="dashboard-stats">
+      <div class="stat-card">
+        <div class="stat-icon-bg">
+          <i class="ri-folder-chart-line"></i>
+        </div>
+        <div class="stat-title">進行中專案</div>
+        <div class="stat-value">
+          {{ s.activeProjects }}
+          <span class="stat-sub">/ {{ s.totalProjects }}</span>
+        </div>
+        <div class="stat-trend trend-up">
+          <i class="ri-arrow-up-line"></i> 本月新增 2
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon-bg">
+          <i class="ri-money-dollar-circle-line"></i>
+        </div>
+        <div class="stat-title">總預算消耗</div>
+        <div class="stat-value">{{ s.budgetConsumption }}%</div>
+        <div class="stat-trend">總計 {{ formatCurrency(s.totalBudget) }}</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon-bg">
+          <i class="ri-line-chart-line"></i>
+        </div>
+        <div class="stat-title">平均毛利率</div>
+        <div class="stat-value">{{ s.avgProfitRate }}%</div>
+        <div class="stat-trend trend-up">
+          <i class="ri-arrow-up-line"></i> 優於目標 3.5%
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon-bg stat-icon-bg--risk">
+          <i class="ri-alert-line"></i>
+        </div>
+        <div class="stat-title">風險專案</div>
+        <div class="stat-value stat-value--danger">{{ s.riskProjects }}</div>
+        <div class="stat-trend trend-down">
+          <i class="ri-alert-line"></i> 進度落後 > 10%
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Filter Bar -->
+  <div class="filter-bar">
+    <div class="filter-item filter-item--search">
+      <i class="ri-search-line"></i>
+      <input
+        type="text"
+        placeholder="搜尋專案名稱、代號或 PM..."
+        [ngModel]="searchText()"
+        (ngModelChange)="onSearch($event)"
+      >
+    </div>
+    <div class="filter-divider"></div>
+    <div class="filter-item">
+      <select [ngModel]="selectedDepartment()" (ngModelChange)="onDepartmentChange($event)">
+        <option value="all">所有部門</option>
+        <option value="RD">研發部</option>
+        <option value="Marketing">行銷部</option>
+        <option value="Sales">業務部</option>
+      </select>
+    </div>
+    <div class="filter-item">
+      <select [ngModel]="selectedStatus()" (ngModelChange)="onStatusChange($event)">
+        <option value="all">所有狀態</option>
+        <option value="active">進行中</option>
+        <option value="planning">規劃中</option>
+        <option value="risk">風險</option>
+      </select>
+    </div>
+    <button class="filter-btn">
+      <i class="ri-filter-3-line"></i> 篩選
+    </button>
+    <button class="btn-primary" (click)="openCreateModal()">
+      <i class="ri-add-line"></i> 新增專案
+    </button>
+  </div>
+
+  <!-- Project Grid -->
+  <div class="project-grid">
+    @for (project of filteredProjects(); track project.id) {
+      <div class="project-card" (click)="navigateToDetail(project.id)">
+        <div class="card-header">
+          <div class="card-header__left">
+            <div class="project-meta">
+              <span class="project-id">{{ project.code }}</span>
+              <span class="project-pm">
+                <i class="ri-user-line"></i> {{ project.pm }}
+              </span>
+            </div>
+            <div class="project-title">{{ project.name }}</div>
+          </div>
+          <span class="status-badge" [ngClass]="getStatusClass(project.status)">
+            {{ getStatusLabel(project.status) }}
+          </span>
+        </div>
+
+        <div class="progress-section">
+          <div class="progress-info">
+            <span>進度</span>
+            <span>{{ project.progress }}%</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" [ngStyle]="getProgressBarStyle(project)"></div>
+          </div>
+        </div>
+
+        <div class="metric-grid">
+          <div class="metric-item">
+            <span class="metric-label">預算消耗</span>
+            <span class="metric-value" [class.metric-value--danger]="project.spent / project.budget > 0.9">
+              {{ formatCurrency(project.spent) }} / {{ formatCurrency(project.budget) }}
+            </span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">預估毛利</span>
+            <span class="metric-value" [class.metric-value--success]="project.estimatedProfit && project.estimatedProfit > 20">
+              @if (project.estimatedProfit !== null) {
+                {{ project.estimatedProfit }}%
+              } @else {
+                --
+              }
+            </span>
+          </div>
+        </div>
+
+        <div class="card-footer">
+          <div class="team-avatars">
+            @for (member of project.team; track member.id) {
+              <div class="avatar-circle" [style.background]="member.color">
+                {{ member.initials }}
+              </div>
+            }
+          </div>
+          <button class="btn-icon" (click)="$event.stopPropagation()">
+            <i class="ri-more-fill"></i>
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- Create Project Modal -->
+@if (showCreateModal()) {
+  <div class="modal-backdrop" (click)="closeCreateModal()"></div>
+  <div class="modal">
+    <div class="modal__header">
+      <h3 class="modal__title">新增專案</h3>
+      <button class="btn-icon" (click)="closeCreateModal()" type="button">
+        <i class="ri-close-line"></i>
+      </button>
+    </div>
+    <div class="modal__body">
+      <div class="form-group">
+        <label class="form-label">專案名稱</label>
+        <input
+          type="text"
+          class="form-input"
+          placeholder="例如：AI 客服系統開發"
+          [ngModel]="newProject().name"
+          (ngModelChange)="updateNewProject('name', $event)"
+        >
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">專案代號</label>
+          <input
+            type="text"
+            class="form-input"
+            placeholder="PROJ-YYYY-XXX"
+            [ngModel]="newProject().code"
+            (ngModelChange)="updateNewProject('code', $event)"
+          >
+        </div>
+        <div class="form-group">
+          <label class="form-label">專案經理 (PM)</label>
+          <select
+            class="form-select"
+            [ngModel]="newProject().pmId"
+            (ngModelChange)="updateNewProject('pmId', $event)"
+          >
+            <option value="">請選擇</option>
+            @for (member of teamMembers(); track member.id) {
+              <option [value]="member.id">{{ member.name }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">預計開始日期</label>
+          <input
+            type="date"
+            class="form-input"
+            [ngModel]="newProject().startDate"
+            (ngModelChange)="updateNewProject('startDate', $event)"
+          >
+        </div>
+        <div class="form-group">
+          <label class="form-label">預計結束日期</label>
+          <input
+            type="date"
+            class="form-input"
+            [ngModel]="newProject().endDate"
+            (ngModelChange)="updateNewProject('endDate', $event)"
+          >
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">專案目標 (Objective)</label>
+        <textarea
+          class="form-textarea"
+          placeholder="請描述專案的主要目標與預期成果..."
+          [ngModel]="newProject().objective"
+          (ngModelChange)="updateNewProject('objective', $event)"
+        ></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">預算上限 (Budget)</label>
+        <div class="input-with-prefix">
+          <span class="input-prefix">$</span>
+          <input
+            type="number"
+            class="form-input form-input--with-prefix"
+            placeholder="0.00"
+            [ngModel]="newProject().budget"
+            (ngModelChange)="updateNewProject('budget', $event)"
+          >
+        </div>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn-secondary" (click)="closeCreateModal()" type="button">取消</button>
+      <button class="btn-primary" (click)="createProject()" type="button">建立專案</button>
+    </div>
+  </div>
+}

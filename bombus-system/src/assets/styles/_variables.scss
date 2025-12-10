@@ -1,0 +1,207 @@
+// ===============================================================
+// Bombus V6.0 - 莫蘭迪色系 SCSS 變數
+// 基於 IDP 介面設計規劃文件
+// ===============================================================
+
+// ---------------------------------------------------------------
+// 1. 基礎色調 (Morandi Neutral)
+// ---------------------------------------------------------------
+$color-cloud-gray: #F5F5F7;          // 雲霧灰 - 背景色
+$color-pure-white: #FCFCFD;          // 極致灰白 - 卡片背景
+$color-soft-gray: #E8E8EA;           // 柔霧灰 - 邊框
+$color-muted-gray: #C4C4C6;          // 淺灰 - 次要文字
+$color-text-secondary: #6B7280;      // 中性灰 - 次要文字
+$color-text-primary: #464E56;        // 深灰 - 主要文字
+$color-text-dark: #1F2937;           // 暗灰 - 標題
+
+// ---------------------------------------------------------------
+// 2. 品牌色 (Brand Colors)
+// ---------------------------------------------------------------
+$color-brand-main: #64748B;          // 板岩藍 - 主品牌色
+$color-brand-light: #94A3B8;         // 塵藍 - 次要品牌色
+$color-brand-dark: #475569;          // 深板岩藍 - 強調
+
+// ---------------------------------------------------------------
+// 3. 模組色 (Module Colors)
+// ---------------------------------------------------------------
+// L1 員工管理 - 鼠尾草綠
+$color-l1-sage: #8DA399;
+$color-l1-sage-light: #A8BAB0;
+$color-l1-sage-dark: #6B8577;
+
+// L2 職能管理 - 陶土橙
+$color-l2-terracotta: #D6A28C;
+$color-l2-terracotta-light: #E4BBA8;
+$color-l2-terracotta-dark: #B8876E;
+
+// L3 教育訓練 - 復古藍綠
+$color-l3-petrol: #7F9CA0;
+$color-l3-petrol-light: #9AB4B8;
+$color-l3-petrol-dark: #5F7C80;
+
+// L4 專案管理 - 錦葵紫
+$color-l4-mauve: #9A8C98;
+$color-l4-mauve-light: #B4A8B2;
+$color-l4-mauve-dark: #7A6C78;
+
+// L5 績效管理 - 磚紅
+$color-l5-brick: #B87D7B;
+$color-l5-brick-light: #D09896;
+$color-l5-brick-dark: #9A5F5D;
+
+// L6 文化管理 - 乾燥玫瑰
+$color-l6-rose: #C4A4A1;
+$color-l6-rose-light: #D8BDB9;
+$color-l6-rose-dark: #A6867E;
+
+// ---------------------------------------------------------------
+// 4. 功能色 (Functional Colors)
+// ---------------------------------------------------------------
+$color-success: #7FB095;             // 成功 - 莫蘭迪綠
+$color-success-light: #E8F5EE;
+$color-warning: #E3C088;             // 警告 - 莫蘭迪黃
+$color-warning-light: #FFF8E7;
+$color-error: #C77F7F;               // 錯誤 - 莫蘭迪紅
+$color-error-light: #FDEAEA;
+$color-info: #8DA8BE;                // 資訊 - 莫蘭迪藍
+$color-info-light: #EDF4F9;
+
+// ---------------------------------------------------------------
+// 5. 圖表色盤 (Chart Palette)
+// ---------------------------------------------------------------
+$chart-colors: (
+  $color-l1-sage,
+  $color-l3-petrol,
+  $color-l4-mauve,
+  $color-l2-terracotta,
+  $color-l5-brick,
+  $color-l6-rose,
+  $color-brand-main,
+  $color-brand-light
+);
+
+// ---------------------------------------------------------------
+// 6. 排版 (Typography)
+// ---------------------------------------------------------------
+$font-family-base: 'Microsoft JhengHei', 'PingFang TC', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
+$font-family-mono: 'SF Mono', 'Consolas', 'Liberation Mono', monospace;
+
+$font-size-xs: 0.75rem;              // 12px
+$font-size-sm: 0.875rem;             // 14px
+$font-size-base: 1rem;               // 16px
+$font-size-lg: 1.125rem;             // 18px
+$font-size-xl: 1.25rem;              // 20px
+$font-size-2xl: 1.5rem;              // 24px
+$font-size-3xl: 1.875rem;            // 30px
+$font-size-4xl: 2.25rem;             // 36px
+
+$font-weight-normal: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+
+$line-height-tight: 1.25;
+$line-height-normal: 1.5;
+$line-height-relaxed: 1.75;
+
+// ---------------------------------------------------------------
+// 7. 間距 (Spacing)
+// ---------------------------------------------------------------
+$spacing-xs: 0.25rem;                // 4px
+$spacing-sm: 0.5rem;                 // 8px
+$spacing-md: 1rem;                   // 16px
+$spacing-lg: 1.5rem;                 // 24px
+$spacing-xl: 2rem;                   // 32px
+$spacing-2xl: 3rem;                  // 48px
+
+// ---------------------------------------------------------------
+// 8. 圓角 (Border Radius)
+// ---------------------------------------------------------------
+$radius-sm: 6px;
+$radius-md: 8px;
+$radius-lg: 12px;
+$radius-xl: 16px;
+$radius-full: 9999px;
+
+// ---------------------------------------------------------------
+// 9. 陰影 (Shadows - Soft UI)
+// ---------------------------------------------------------------
+$shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+$shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+$shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
+$shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.1);
+$shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.05);
+
+// ---------------------------------------------------------------
+// 10. 過渡動畫 (Transitions)
+// ---------------------------------------------------------------
+$transition-fast: 150ms ease;
+$transition-normal: 300ms ease;
+$transition-slow: 500ms ease;
+
+// ---------------------------------------------------------------
+// 11. 斷點 (Breakpoints)
+// ---------------------------------------------------------------
+$breakpoint-sm: 576px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 992px;
+$breakpoint-xl: 1200px;
+$breakpoint-2xl: 1400px;
+
+// ---------------------------------------------------------------
+// 12. 側邊欄尺寸
+// ---------------------------------------------------------------
+$sidebar-width: 280px;
+$sidebar-width-minimized: 80px;
+$header-height: 70px;
+
+// ---------------------------------------------------------------
+// CSS Custom Properties (供 JS 使用)
+// ---------------------------------------------------------------
+:root {
+  // 基礎色
+  --color-cloud-gray: #{$color-cloud-gray};
+  --color-pure-white: #{$color-pure-white};
+  --color-soft-gray: #{$color-soft-gray};
+  --color-text-primary: #{$color-text-primary};
+  --color-text-secondary: #{$color-text-secondary};
+  --color-text-dark: #{$color-text-dark};
+
+  // 品牌色
+  --color-brand-main: #{$color-brand-main};
+  --color-brand-light: #{$color-brand-light};
+  --color-brand-dark: #{$color-brand-dark};
+
+  // 模組色
+  --color-l1-sage: #{$color-l1-sage};
+  --color-l2-terracotta: #{$color-l2-terracotta};
+  --color-l3-petrol: #{$color-l3-petrol};
+  --color-l4-mauve: #{$color-l4-mauve};
+  --color-l5-brick: #{$color-l5-brick};
+  --color-l6-rose: #{$color-l6-rose};
+
+  // 功能色
+  --color-success: #{$color-success};
+  --color-warning: #{$color-warning};
+  --color-error: #{$color-error};
+  --color-info: #{$color-info};
+
+  // 佈局
+  --sidebar-width: #{$sidebar-width};
+  --sidebar-width-minimized: #{$sidebar-width-minimized};
+  --header-height: #{$header-height};
+
+  // 圓角
+  --radius-sm: #{$radius-sm};
+  --radius-md: #{$radius-md};
+  --radius-lg: #{$radius-lg};
+
+  // 陰影
+  --shadow-soft: #{$shadow-soft};
+  --shadow-md: #{$shadow-md};
+  --shadow-lg: #{$shadow-lg};
+
+  // 過渡
+  --transition-normal: #{$transition-normal};
+}
+

@@ -1,0 +1,457 @@
+@import '../../../../../assets/styles/variables';
+@import '../../../../../assets/styles/mixins';
+
+// ---------------------------------------------------------------
+// Interview Layout
+// ---------------------------------------------------------------
+.interview-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: $spacing-lg;
+  min-height: calc(100vh - #{$header-height} - #{$spacing-lg} * 3);
+
+  @include media-max-lg {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ---------------------------------------------------------------
+// Candidate Sidebar
+// ---------------------------------------------------------------
+.candidate-sidebar {
+  @include card;
+  display: flex;
+  flex-direction: column;
+  height: fit-content;
+  max-height: calc(100vh - #{$header-height} - #{$spacing-lg} * 3);
+  position: sticky;
+  top: calc(#{$header-height} + #{$spacing-lg});
+
+  @include media-max-lg {
+    position: static;
+    max-height: 400px;
+  }
+}
+
+.sidebar-header {
+  @include flex-between;
+  padding: $spacing-md $spacing-lg;
+  border-bottom: 1px solid $color-soft-gray;
+
+  h3 {
+    font-size: $font-size-base;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+    margin: 0;
+  }
+}
+
+.candidate-count {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.search-box {
+  position: relative;
+  padding: $spacing-md $spacing-lg;
+  border-bottom: 1px solid $color-soft-gray;
+
+  i {
+    position: absolute;
+    left: calc(#{$spacing-lg} + #{$spacing-sm});
+    top: 50%;
+    transform: translateY(-50%);
+    color: $color-muted-gray;
+  }
+}
+
+.search-input {
+  @include input-base;
+  padding-left: 36px;
+}
+
+.candidate-list {
+  flex: 1;
+  overflow-y: auto;
+  @include custom-scrollbar;
+}
+
+.candidate-card {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  width: 100%;
+  padding: $spacing-md $spacing-lg;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background $transition-normal;
+
+  &:hover {
+    background: $color-cloud-gray;
+  }
+
+  &.active {
+    background: rgba($color-l1-sage, 0.1);
+    border-left: 3px solid $color-l1-sage;
+  }
+
+  &.pending {
+    opacity: 0.6;
+  }
+}
+
+.candidate-avatar {
+  @include flex-center;
+  width: 44px;
+  height: 44px;
+  background: $color-l1-sage;
+  color: white;
+  border-radius: $radius-md;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  flex-shrink: 0;
+}
+
+.candidate-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.candidate-name {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-dark;
+  @include text-truncate;
+}
+
+.candidate-position {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  @include text-truncate;
+}
+
+.candidate-date {
+  font-size: $font-size-xs;
+  color: $color-muted-gray;
+}
+
+.candidate-status {
+  flex-shrink: 0;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: $font-size-xs;
+  border-radius: $radius-full;
+
+  &--completed {
+    background: $color-success-light;
+    color: $color-success;
+  }
+
+  &--pending {
+    background: $color-warning-light;
+    color: darken($color-warning, 15%);
+  }
+}
+
+// ---------------------------------------------------------------
+// Interview Content
+// ---------------------------------------------------------------
+.interview-content {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.content-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: $spacing-md;
+
+  @include media-max-xl {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ---------------------------------------------------------------
+// Player Section
+// ---------------------------------------------------------------
+.player-section {
+  .card-header {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .card-title {
+    @include flex-start;
+    gap: $spacing-sm;
+
+    i {
+      color: $color-l1-sage;
+    }
+  }
+
+  .player-info {
+    @include flex-start;
+    gap: $spacing-sm;
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+
+    .divider {
+      color: $color-muted-gray;
+    }
+  }
+}
+
+.audio-player {
+  padding: $spacing-md 0;
+}
+
+.audio-element {
+  width: 100%;
+  height: 40px;
+}
+
+// ---------------------------------------------------------------
+// Transcript Section
+// ---------------------------------------------------------------
+.transcript-section {
+  .card-title {
+    @include flex-start;
+    gap: $spacing-sm;
+
+    i {
+      color: $color-l1-sage;
+    }
+  }
+}
+
+.transcript-list {
+  max-height: 300px;
+  overflow-y: auto;
+  @include custom-scrollbar;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.transcript-item {
+  padding: $spacing-sm $spacing-md;
+  border-radius: $radius-md;
+  background: $color-cloud-gray;
+
+  &.interviewer {
+    background: rgba($color-brand-main, 0.05);
+    border-left: 3px solid $color-brand-main;
+  }
+}
+
+.transcript-time {
+  font-size: $font-size-xs;
+  color: $color-muted-gray;
+  margin-bottom: $spacing-xs;
+}
+
+.transcript-text {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  line-height: $line-height-relaxed;
+
+  :global(.keyword-positive) {
+    background: rgba($color-success, 0.2);
+    color: darken($color-success, 10%);
+    padding: 1px 4px;
+    border-radius: 3px;
+  }
+
+  :global(.keyword-negative) {
+    background: rgba($color-error, 0.2);
+    color: $color-error;
+    padding: 1px 4px;
+    border-radius: 3px;
+  }
+}
+
+// ---------------------------------------------------------------
+// Emotion Section
+// ---------------------------------------------------------------
+.emotion-section {
+  .card-title {
+    @include flex-start;
+    gap: $spacing-sm;
+
+    i {
+      color: $color-l1-sage;
+    }
+  }
+}
+
+.chart-container {
+  width: 100%;
+  height: 250px;
+}
+
+// ---------------------------------------------------------------
+// Scores Section
+// ---------------------------------------------------------------
+.scores-section {
+  .card-title {
+    @include flex-start;
+    gap: $spacing-sm;
+
+    i {
+      color: $color-l1-sage;
+    }
+  }
+}
+
+.score-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: $spacing-md;
+
+  @include media-max-md {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.score-card {
+  @include flex-center;
+  flex-direction: column;
+  padding: $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+  text-align: center;
+
+  &--primary {
+    background: rgba($color-l1-sage, 0.1);
+    border: 2px solid $color-l1-sage;
+  }
+}
+
+.score-label {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-xs;
+}
+
+.score-value {
+  font-size: $font-size-2xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-dark;
+
+  &--large {
+    font-size: $font-size-3xl;
+    color: $color-l1-sage;
+  }
+}
+
+.score-weight {
+  font-size: $font-size-xs;
+  color: $color-muted-gray;
+  margin-top: $spacing-xs;
+}
+
+// ---------------------------------------------------------------
+// Radar Section
+// ---------------------------------------------------------------
+.radar-section {
+  .card-title {
+    @include flex-start;
+    gap: $spacing-sm;
+
+    i {
+      color: $color-l1-sage;
+    }
+  }
+}
+
+// ---------------------------------------------------------------
+// Action Section
+// ---------------------------------------------------------------
+.action-section {
+  padding: $spacing-md $spacing-lg;
+}
+
+.action-bar {
+  @include flex-between;
+  gap: $spacing-md;
+
+  @include media-max-md {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+.recommendation-badge {
+  @include flex-start;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+
+  i {
+    font-size: 20px;
+  }
+
+  &--excellent {
+    background: $color-success-light;
+    color: $color-success;
+  }
+
+  &--good {
+    background: rgba($color-l1-sage, 0.1);
+    color: $color-l1-sage;
+  }
+
+  &--neutral {
+    background: $color-warning-light;
+    color: darken($color-warning, 15%);
+  }
+
+  &--poor {
+    background: $color-error-light;
+    color: $color-error;
+  }
+}
+
+.action-buttons {
+  @include flex-start;
+  gap: $spacing-sm;
+}
+
+// ---------------------------------------------------------------
+// Empty State
+// ---------------------------------------------------------------
+.empty-state {
+  @include card;
+  @include flex-center;
+  flex-direction: column;
+  padding: $spacing-2xl;
+  text-align: center;
+  min-height: 400px;
+
+  i {
+    font-size: 80px;
+    color: $color-muted-gray;
+    margin-bottom: $spacing-md;
+  }
+
+  h3 {
+    font-size: $font-size-xl;
+    color: $color-text-dark;
+    margin-bottom: $spacing-sm;
+  }
+
+  p {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    margin: 0;
+  }
+}
+

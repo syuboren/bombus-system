@@ -1,0 +1,92 @@
+@import '../../../../assets/styles/variables';
+@import '../../../../assets/styles/mixins';
+
+.notification-container {
+  position: fixed;
+  top: calc(#{$header-height} + #{$spacing-md});
+  right: $spacing-lg;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+
+  @include media-max-md {
+    right: $spacing-md;
+    left: $spacing-md;
+  }
+}
+
+.notification {
+  @include card;
+  @include flex-start;
+  gap: $spacing-md;
+  min-width: 300px;
+  max-width: 400px;
+  padding: $spacing-md;
+  cursor: pointer;
+  animation: slideInRight 300ms ease forwards;
+
+  @include media-max-md {
+    min-width: auto;
+    max-width: none;
+  }
+
+  &--success {
+    border-left: 4px solid $color-success;
+
+    .notification__icon {
+      color: $color-success;
+    }
+  }
+
+  &--warning {
+    border-left: 4px solid $color-warning;
+
+    .notification__icon {
+      color: $color-warning;
+    }
+  }
+
+  &--error {
+    border-left: 4px solid $color-error;
+
+    .notification__icon {
+      color: $color-error;
+    }
+  }
+
+  &--info {
+    border-left: 4px solid $color-info;
+
+    .notification__icon {
+      color: $color-info;
+    }
+  }
+
+  &:hover {
+    transform: translateX(-4px);
+  }
+}
+
+.notification__icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.notification__message {
+  flex: 1;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+

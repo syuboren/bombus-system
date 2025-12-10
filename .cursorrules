@@ -1,0 +1,286 @@
+# ===============================================================
+# Cursor Rules for Angular 17/18 Standalone Application
+# ===============================================================
+# Purpose:
+#   These rules define strict coding standards for generating Angular 17/18
+#   applications using Standalone Components, Signals, SASS, HTML templates,
+#   modern control flow, and high-performance architecture.
+
+# ===============================================================
+# GLOBAL CODING PRINCIPLES
+# ===============================================================
+
+Use **Angular 17/18**, **TypeScript**, **SASS**, and **RxJS** with the latest recommended patterns.
+
+MANDATORY:
+- All components MUST be `standalone: true`.
+- All templates MUST be placed in a separate `.html` file.
+- All styles MUST be placed in a separate `.scss` file.
+- All components MUST use `ChangeDetectionStrategy.OnPush`.
+- All dependency injection MUST use `inject()`. 
+- All new code MUST use Angular’s built-in control flow: `@if`, `@for`, `@switch`.
+- DO NOT use legacy directives (`*ngIf`, `*ngFor`, `*ngSwitchCase`).
+
+PROHIBITED:
+- NgModules (`@NgModule`) except when editing legacy code.
+- Using `any`. Always use explicit interfaces.
+- Writing inline HTML or inline CSS.
+- Using constructor injection.
+
+# ===============================================================
+# FILE NAMING & STRUCTURE
+# ===============================================================
+
+Use kebab-case for ALL filenames:
+- Components: `xxx.component.ts`, `xxx.component.html`, `xxx.component.scss`
+- Services: `xxx.service.ts`
+- Routes: `xxx.routes.ts`
+- Pipes: `xxx.pipe.ts`
+- Directives: `xxx.directive.ts`
+- Interfaces/Models: `xxx.model.ts`, `xxx.interface.ts`
+
+File content order (STRICT):
+1. Imports
+2. @Component metadata
+3. Class definition
+4. inject() declarations
+5. input() / output() / model()
+6. Signals
+7. Computed signals
+8. Effects / lifecycle hooks
+9. Methods
+
+# ===============================================================
+# FOLDER STRUCTURE RULES
+# ===============================================================
+
+Always generate files in the following structure:
+
+src/
+  app/
+    core/            # Singleton services, guards, interceptors
+    shared/          # Reusable UI components, directive, pipes
+    features/        # Feature modules (each feature = folder)
+      <feature-name>/
+        components/
+        pages/
+        services/
+        models/
+        <feature>.routes.ts
+    app.routes.ts
+    app.component.ts
+
+Shared components MUST go under `shared/components/`.
+Feature-specific components MUST go under `features/<feature>/components/`.
+
+# ===============================================================
+# COMPONENT RULES
+# ===============================================================
+
+All components MUST follow this structure:
+
+@Component({
+  standalone: true,
+  selector: 'app-example',
+  templateUrl: './example.component.html',
+  styleUrl: './example.component.scss',
+  imports: [],
+  changeDetection: ChangeDetectionStrategy.OnPush
+})
+
+Inside the class:
+- inject() MUST replace constructor injection.
+- input() MUST replace @Input.
+- output() MUST replace @Output.
+- model() MUST be used for two-way binding (Angular 17.2+).
+- Signals MUST be used for component-level state:
+  const count = signal(0);
+
+- Computed signals:
+  const doubled = computed(() => this.count() * 2);
+
+- Effects MUST be used for side-effects:
+  effect(() => console.log(this.count()));
+
+# ===============================================================
+# STATE MANAGEMENT (SIGNALS)
+# ===============================================================
+
+Use signals for UI state.
+
+Rules:
+- DO NOT use RxJS BehaviorSubject for UI state.
+- Use `toSignal()` when converting Observable → Signal.
+- Keep signals immutable when updating:
+  this.list.update(items => [...items, newItem]);
+
+- NEVER mutate arrays/objects inside the signal.
+
+# ===============================================================
+# ROUTING RULES (STANDALONE)
+# ===============================================================
+
+All routing MUST follow these principles:
+
+- Use `provideRouter()` in bootstrap.
+- Each feature MUST have its own `<feature>.routes.ts`.
+- Components MUST be lazy-loaded using `loadComponent`.
+- Child routes MUST use `loadChildren`.
+
+Example:
+export const userRoutes: Routes = [
+  {
+    path: '',
+    loadComponent: () => import('./pages/user-page.component').then(m => m.UserPageComponent)
+  }
+];
+
+Root routing example:
+bootstrapApplication(AppComponent, {
+  providers: [provideRouter(appRoutes)]
+});
+
+# ===============================================================
+# SERVICE RULES
+# ===============================================================
+
+Services MUST:
+- Use `inject()` for DI.
+- Use `providedIn: 'root'`.
+- Use RxJS for all async operations.
+- NEVER use signals for data layer state—signals are UI-only.
+- ALWAYS return Observable from API methods.
+
+Example:
+@Injectable({ providedIn: 'root' })
+export class UserService {
+  private http = inject(HttpClient);
+
+  getUsers(): Observable<User[]> {
+    return this.http.get<User[]>('/api/users');
+  }
+}
+
+# ===============================================================
+# TEMPLATE RULES (.html)
+# ===============================================================
+
+MANDATORY:
+- Use @if, @for, @switch exclusively.
+- Use `track` in @for loops.
+- NEVER use this.xxx in templates.
+- For LCP images, use `ngSrc` from NgOptimizedImage.
+
+Example:
+@for (item of items(); track item.id) {
+  <p>{{ item.name }}</p>
+}
+
+# ===============================================================
+# SASS (.scss) RULES
+# ===============================================================
+
+CSS architecture MUST follow BEM naming:
+
+.block { }
+.block__element { }
+.block--modifier { }
+
+SCSS Requirements:
+- Use variables, mixins, and nesting.
+- DO NOT use inline style attributes in templates.
+- Avoid deep selectors (`::ng-deep`) unless absolutely necessary.
+
+# ===============================================================
+# RXJS RULES
+# ===============================================================
+
+- Clean subscriptions using `takeUntilDestroyed` when needed.
+- Use `catchError` for all HTTP calls.
+- Prefer pure RxJS in service layers.
+
+# ===============================================================
+# ERROR HANDLING / LOADING
+# ===============================================================
+
+Cursor MUST generate UI states with signals:
+
+state:
+  - loading: signal(false)
+  - error: signal<string | null>(null)
+  - data: signal<T | null>(null)
+
+Typical pattern:
+this.loading.set(true);
+this.service.getData()
+  .pipe(catchError(err => { this.error.set('Error'); return EMPTY; }))
+  .subscribe(data => {
+    this.data.set(data);
+    this.loading.set(false);
+  });
+
+# ===============================================================
+# TESTING RULES (.spec.ts)
+# ===============================================================
+
+- Use `provideHttpClientTesting()` instead of `HttpClientTestingModule`.
+- Follow the Arrange-Act-Assert pattern.
+- Mock all dependent services using `jasmine.createSpyObj` or `jest.fn()`.
+- Use `ComponentFixture.componentRef.setInput()` for signal inputs.
+- Use fakeAsync + tick() instead of async/await when testing timers.
+- Prefer flush() over tick() when testing Observables.
+
+Example:
+it('should update count signal', () => {
+  // Arrange
+  component.count.set(10);
+  fixture.detectChanges();
+  
+  // Act
+  component.increment();
+  
+  // Assert
+  expect(component.count()).toBe(11);
+});
+
+
+# ===============================================================
+# DEFERRABLE VIEWS (@defer)
+# ===============================================================
+
+- Use `@defer` for heavy components that are not immediately visible.
+- Always provide a `@placeholder` and `@loading` block.
+
+Example:
+@defer (on viewport) {
+  <app-heavy-chart />
+} @placeholder {
+  <div>Loading chart...</div>
+}
+
+# ===============================================================
+# ACCESSIBILITY (A11Y)
+# ===============================================================
+
+- Always use semantic HTML tags (`<button>`, `<nav>`, `<main>`, `<article>`).
+- Do NOT use `div` or `span` for interactive elements unless `role` and `tabindex` are defined.
+- Images MUST have `alt` text or `aria-hidden="true"`.
+- Form inputs MUST have associated labels (`for` / `id`).
+- Interactive elements must have keyboard support (Enter + Space).
+- All lists must use <ul> / <li> unless representing tabular data.
+- Do not remove outline unless replacing with an accessible focus style.
+
+
+# ===============================================================
+# CODE STYLE
+# ===============================================================
+
+- Use single quotes.
+- Use 2-space indentation.
+- Do NOT generate unused variables.
+- Prefer const over let.
+
+# ===============================================================
+# END OF RULES
+# ===============================================================
+

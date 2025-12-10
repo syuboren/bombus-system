@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>候選人履歷解析 - Bombus V6.0</title>
+    <!-- Remix Icon -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- System CSS -->
+    <link rel="stylesheet" href="../assets/css/system.css">
+    <style>
+        /* 統一按鈕樣式 (參考 recruitment.html) */
+        .btn-primary {
+            padding: 12px 24px;
+            background: var(--color-l1-sage);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary:hover {
+            background: #7a9b8f;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(141, 163, 153, 0.3);
+        }
+
+        .btn-secondary {
+            padding: 12px 24px;
+            background: white;
+            color: var(--color-text-primary);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--color-l1-sage);
+            color: var(--color-l1-sage);
+            transform: translateY(-2px);
+        }
+
+        /* Action Button 樣式修正 */
+        .action-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--color-text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 20px;
+        }
+
+        .action-btn:hover {
+            background: rgba(141, 163, 153, 0.1);
+            color: var(--color-l1-sage);
+        }
+
+        .split-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            height: calc(100vh - 180px);
+        }
+
+        .panel {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid var(--color-border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--color-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8fafc;
+        }
+
+        .panel-title {
+            font-weight: 700;
+            color: var(--color-text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        /* Resume Preview (Left) */
+        .resume-preview {
+            background: #525659;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .resume-page {
+            background: white;
+            width: 100%;
+            max-width: 600px;
+            min-height: 800px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+            padding: 40px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* AI Analysis (Right) */
+        .analysis-section {
+            margin-bottom: 25px;
+        }
+
+        .section-label {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--color-text-secondary);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tag-cloud {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .skill-tag {
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .skill-high {
+            background: rgba(127, 176, 149, 0.15);
+            color: var(--color-success);
+            border: 1px solid rgba(127, 176, 149, 0.3);
+        }
+
+        .skill-medium {
+            background: rgba(227, 192, 136, 0.15);
+            color: #a88643;
+            border: 1px solid rgba(227, 192, 136, 0.3);
+        }
+
+        .info-card {
+            background: var(--color-bg-base);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 3px solid var(--color-l1-sage);
+        }
+
+        .info-title {
+            font-weight: 700;
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .info-subtitle {
+            font-size: 12px;
+            color: var(--color-text-secondary);
+        }
+
+        .match-score {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, rgba(141, 163, 153, 0.1) 0%, rgba(141, 163, 153, 0.05) 100%);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(141, 163, 153, 0.2);
+        }
+
+        .score-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--color-l1-sage);
+            margin: 0 auto 10px;
+            border: 4px solid var(--color-l1-sage);
+        }
+
+        .candidate-header {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--color-border);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .candidate-basic {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .candidate-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--color-l1-sage);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <div class="system-wrapper">
+        <!-- Sidebar -->
+        <aside class="system-aside" id="kt_aside">
+            <div class="aside-brand">
+                <div class="brand-logo">
+                    <img src="../assets/images/logo-bombus.svg" alt="Bombus Logo" class="logo">
+                    <span class="brand-text">Bombus</span>
+                </div>
+                <button class="aside-toggle-btn" id="aside_toggle">
+                    <i class="ri-arrow-left-s-line"></i>
+                </button>
+            </div>
+
+            <nav class="aside-menu">
+                <div class="menu-wrapper">
+                    <div class="menu-item">
+                        <a href="../index.html" class="menu-link">
+                            <span class="menu-icon"><i class="ri-dashboard-line"></i></span>
+                            <span class="menu-text">企業管理儀表板</span>
+                            <span class="menu-badge">L0.0</span>
+                        </a>
+                    </div>
+
+                    <div class="menu-section">
+                        <div class="menu-section-title"><span class="section-text">員工管理模組</span></div>
+                    </div>
+
+                    <div class="menu-item menu-accordion show">
+                        <div class="menu-link" data-toggle="collapse">
+                            <span class="menu-icon module-l1"><i class="ri-team-line"></i></span>
+                            <span class="menu-text">員工管理</span>
+                            <span class="menu-arrow"><i class="ri-arrow-down-s-line"></i></span>
+                        </div>
+                        <div class="menu-sub">
+                            <div class="menu-item">
+                                <a href="./jobs.html" class="menu-link active">
+                                    <span class="menu-bullet"></span>
+                                    <span class="menu-text">招募職缺管理</span>
+                                </a>
+                            </div>
+                            <div class="menu-item">
+                                <a href="./recruitment.html" class="menu-link">
+                                    <span class="menu-bullet"></span>
+                                    <span class="menu-text">AI智能面試</span>
+                                </a>
+                            </div>
+                            <div class="menu-item">
+                                <a href="./profile.html" class="menu-link">
+                                    <span class="menu-bullet"></span>
+                                    <span class="menu-text">員工檔案管理</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </aside>
+
+        <div class="page-wrapper">
+            <header class="system-header">
+                <div class="header-container">
+                    <div class="page-title">
+                        <h1 class="title-text">候選人檔案解析</h1>
+                        <div class="breadcrumb">
+                            <span class="breadcrumb-item">招募職缺管理</span>
+                            <i class="ri-arrow-right-s-line"></i>
+                            <span class="breadcrumb-item">資深前端工程師</span>
+                            <i class="ri-arrow-right-s-line"></i>
+                            <span class="breadcrumb-item active">林小美</span>
+                        </div>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn-secondary" onclick="location.href='job-candidates.html'" style="margin-right: 10px;">
+                            <i class="ri-arrow-left-line"></i> 返回列表
+                        </button>
+                        <div class="action-dropdown">
+                            <button class="action-btn" id="notification_btn">
+                                <i class="ri-notification-3-line"></i>
+                                <span class="badge">5</span>
+                            </button>
+                        </div>
+                        <div class="action-dropdown">
+                            <button class="action-btn user-menu-btn" id="user_menu_btn">
+                                <img src="../assets/images/avatar.jpg" alt="User" class="user-avatar-small" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2216%22 fill=%22%2364748B%22/%3E%3Ctext x=%2216%22 y=%2221%22 text-anchor=%22middle%22 fill=%22white%22 font-size=%2214%22 font-weight=%22bold%22%3EA%3C/text%3E%3C/svg%3E'">
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <main class="main-content">
+                <div class="content-container">
+                    <!-- Candidate Header -->
+                    <div class="candidate-header">
+                        <div class="candidate-basic">
+                            <div class="candidate-avatar">林</div>
+                            <div>
+                                <h2 style="margin-bottom: 5px; font-size: 18px;">林小美 (Amy Lin)</h2>
+                                <div style="color: var(--color-text-secondary); font-size: 13px;">
+                                    <i class="ri-mail-line"></i> amy.lin@example.com | 
+                                    <i class="ri-phone-line"></i> 0912-345-678 |
+                                    <i class="ri-map-pin-line"></i> 台北市
+                                </div>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn-secondary"><i class="ri-download-line"></i> 下載履歷</button>
+                            <button class="btn-primary" onclick="location.href='recruitment.html?candidate=c001'">
+                                <i class="ri-mic-line"></i> 進入面試評核
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="split-container">
+                        <!-- Left: Resume Preview -->
+                        <div class="panel">
+                            <div class="panel-header">
+                                <div class="panel-title"><i class="ri-file-pdf-line"></i> 原始履歷預覽</div>
+                                <div style="font-size: 12px; color: var(--color-text-secondary);">resume_amy_lin.pdf</div>
+                            </div>
+                            <div class="panel-content resume-preview">
+                                <div class="resume-page">
+                                    <h2 style="border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px;">Amy Lin</h2>
+                                    <p><strong>Senior Frontend Developer</strong> with 5+ years of experience in building responsive web applications.</p>
+                                    
+                                    <h3 style="margin-top: 20px; color: #444;">Experience</h3>
+                                    <div style="margin-bottom: 15px;">
+                                        <strong>Tech Solutions Inc.</strong> | 2020 - Present<br>
+                                        <em>Senior Frontend Developer</em>
+                                        <ul>
+                                            <li>Led a team of 4 developers to rebuild the main product dashboard using Vue.js.</li>
+                                            <li>Improved site performance by 40% through code optimization.</li>
+                                        </ul>
+                                    </div>
+                                    
+                                    <div style="margin-bottom: 15px;">
+                                        <strong>Creative Web Agency</strong> | 2018 - 2020<br>
+                                        <em>Web Developer</em>
+                                        <ul>
+                                            <li>Developed 20+ client websites using React and jQuery.</li>
+                                            <li>Collaborated with UX designers to implement pixel-perfect designs.</li>
+                                        </ul>
+                                    </div>
+
+                                    <h3 style="margin-top: 20px; color: #444;">Education</h3>
+                                    <div>
+                                        <strong>National Taiwan University</strong> | 2014 - 2018<br>
+                                        <em>B.S. in Computer Science</em>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right: AI Analysis -->
+                        <div class="panel">
+                            <div class="panel-header">
+                                <div class="panel-title"><i class="ri-magic-line"></i> AI 履歷解析報告</div>
+                                <span class="status-badge status-published">解析完成</span>
+                            </div>
+                            <div class="panel-content">
+                                <div class="match-score">
+                                    <div class="score-circle">92</div>
+                                    <div style="font-weight: 600; margin-bottom: 5px;">JD 初始匹配度</div>
+                                    <div style="font-size: 12px; color: var(--color-text-secondary);">基於關鍵字與經歷年資比對</div>
+                                </div>
+
+                                <div class="analysis-section">
+                                    <div class="section-label"><i class="ri-code-box-line"></i> 技能標籤提取</div>
+                                    <div class="tag-cloud">
+                                        <span class="skill-tag skill-high"><i class="ri-check-line"></i> Vue.js</span>
+                                        <span class="skill-tag skill-high"><i class="ri-check-line"></i> React</span>
+                                        <span class="skill-tag skill-high"><i class="ri-check-line"></i> JavaScript</span>
+                                        <span class="skill-tag skill-medium">TypeScript</span>
+                                        <span class="skill-tag skill-medium">Webpack</span>
+                                        <span class="skill-tag skill-medium">Node.js</span>
+                                    </div>
+                                </div>
+
+                                <div class="analysis-section">
+                                    <div class="section-label"><i class="ri-briefcase-line"></i> 經歷摘要</div>
+                                    <div class="info-card">
+                                        <div class="info-title">
+                                            Tech Solutions Inc.
+                                            <span style="font-size: 12px; color: #666;">3 年 5 個月</span>
+                                        </div>
+                                        <div class="info-subtitle">Senior Frontend Developer</div>
+                                        <div style="margin-top: 5px; font-size: 13px;">• 領導 4 人團隊<br>• 效能優化 40%</div>
+                                    </div>
+                                    <div class="info-card">
+                                        <div class="info-title">
+                                            Creative Web Agency
+                                            <span style="font-size: 12px; color: #666;">2 年</span>
+                                        </div>
+                                        <div class="info-subtitle">Web Developer</div>
+                                    </div>
+                                </div>
+
+                                <div class="analysis-section">
+                                    <div class="section-label"><i class="ri-graduation-cap-line"></i> 學歷驗證</div>
+                                    <div class="info-card">
+                                        <div class="info-title">
+                                            國立臺灣大學
+                                            <i class="ri-verified-badge-fill" style="color: var(--color-l1-sage);"></i>
+                                        </div>
+                                        <div class="info-subtitle">資訊工程學系 學士</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <footer class="system-footer">
+                <div class="footer-content">
+                    <div class="footer-left">
+                        <span>© 2025 Bombus 企業管理系統</span>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+    <script src="../assets/js/system.js"></script>
+</body>
+</html>
+

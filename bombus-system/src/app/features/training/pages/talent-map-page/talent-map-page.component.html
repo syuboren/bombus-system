@@ -1,0 +1,41 @@
+<app-header
+  pageTitle="多層次人才地圖生成引擎"
+  [breadcrumbs]="['教育訓練', '人才地圖']" />
+
+<main class="main-content">
+  <div class="content-container">
+    <!-- Tab Navigation -->
+    <nav class="talent-map-tabs" role="tablist">
+      @for (tab of tabs; track tab.key) {
+        <button
+          class="tab-btn"
+          [class.active]="activeTab() === tab.key"
+          (click)="setActiveTab(tab.key)"
+          [attr.aria-selected]="activeTab() === tab.key"
+          role="tab"
+          type="button">
+          <i [class]="tab.icon"></i>
+          <span>{{ tab.label }}</span>
+        </button>
+      }
+    </nav>
+
+    <!-- Tab Content -->
+    <div class="tab-content-wrapper">
+      @switch (activeTab()) {
+        @case ('heatmap') {
+          <app-heatmap-tab />
+        }
+        @case ('nine-box') {
+          <app-nine-box-tab />
+        }
+        @case ('learning-path') {
+          <app-learning-path-tab />
+        }
+        @case ('key-talent') {
+          <app-key-talent-tab />
+        }
+      }
+    </div>
+  </div>
+</main>

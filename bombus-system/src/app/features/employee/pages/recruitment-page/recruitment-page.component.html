@@ -1,0 +1,201 @@
+<app-header
+  pageTitle="AI智能面試"
+  [breadcrumbs]="['員工管理']" />
+
+<main class="main-content">
+  <div class="content-container">
+    <div class="interview-layout">
+      <!-- Candidate List Sidebar -->
+      <aside class="candidate-sidebar">
+        <div class="sidebar-header">
+          <h3>候選人列表</h3>
+          <span class="candidate-count">{{ filteredCandidates().length }} 人</span>
+        </div>
+
+        <div class="search-box">
+          <i class="ri-search-line"></i>
+          <input
+            type="text"
+            class="search-input"
+            placeholder="搜尋候選人..."
+            [value]="searchQuery()"
+            (input)="searchQuery.set($any($event.target).value)">
+        </div>
+
+        <div class="candidate-list">
+          @for (candidate of filteredCandidates(); track candidate.id) {
+            <button
+              class="candidate-card"
+              [class.active]="selectedCandidate()?.id === candidate.id"
+              [class.pending]="candidate.status === 'pending'"
+              (click)="selectCandidate(candidate)"
+              type="button">
+              <div class="candidate-avatar">
+                {{ candidate.name.charAt(0) }}
+              </div>
+              <div class="candidate-info">
+                <div class="candidate-name">{{ candidate.name }}</div>
+                <div class="candidate-position">{{ candidate.position }}</div>
+                <div class="candidate-date">{{ candidate.interviewDate }}</div>
+              </div>
+              <div class="candidate-status">
+                @if (candidate.status === 'completed') {
+                  <span class="status-badge status-badge--completed">已完成</span>
+                } @else {
+                  <span class="status-badge status-badge--pending">待面試</span>
+                }
+              </div>
+            </button>
+          }
+        </div>
+      </aside>
+
+      <!-- Main Content Area -->
+      <div class="interview-content">
+        @if (selectedCandidate(); as candidate) {
+          <!-- Interview Player -->
+          <section class="card player-section">
+            <div class="card-header">
+              <h4 class="card-title">
+                <i class="ri-mic-line"></i>
+                面試錄音
+              </h4>
+              <div class="player-info">
+                <span>{{ candidate.name }}</span>
+                <span class="divider">|</span>
+                <span>{{ candidate.position }}</span>
+                <span class="divider">|</span>
+                <span>{{ candidate.duration }}</span>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="audio-player">
+                <audio controls class="audio-element">
+                  <source src="" type="audio/mpeg">
+                  您的瀏覽器不支援音訊播放
+                </audio>
+              </div>
+            </div>
+          </section>
+
+          <!-- Transcript & Emotion Row -->
+          <div class="content-row">
+            <!-- Transcript Panel -->
+            <section class="card transcript-section">
+              <div class="card-header">
+                <h4 class="card-title">
+                  <i class="ri-file-text-line"></i>
+                  即時逐字稿
+                </h4>
+              </div>
+              <div class="card-body">
+                <div class="transcript-list">
+                  @for (segment of candidate.transcript; track segment.time) {
+                    <div class="transcript-item" [class.interviewer]="segment.speaker === 'interviewer'">
+                      <div class="transcript-time">{{ segment.time }}</div>
+                      <div
+                        class="transcript-text"
+                        [innerHTML]="highlightKeywords(segment.text)">
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+            </section>
+
+            <!-- Emotion Chart -->
+            <section class="card emotion-section">
+              <div class="card-header">
+                <h4 class="card-title">
+                  <i class="ri-emotion-line"></i>
+                  情緒時間軸
+                </h4>
+              </div>
+              <div class="card-body">
+                <div #emotionChart class="chart-container"></div>
+              </div>
+            </section>
+          </div>
+
+          <!-- AI Scores & Radar Row -->
+          <div class="content-row">
+            <!-- AI Scores -->
+            <section class="card scores-section">
+              <div class="card-header">
+                <h4 class="card-title">
+                  <i class="ri-robot-line"></i>
+                  AI 綜合評分
+                </h4>
+              </div>
+              <div class="card-body">
+                <div class="score-grid">
+                  <div class="score-card">
+                    <div class="score-label">關鍵字匹配</div>
+                    <div class="score-value">{{ candidate.aiScores.keywordMatch }}</div>
+                    <div class="score-weight">權重 40%</div>
+                  </div>
+                  <div class="score-card">
+                    <div class="score-label">語意分析</div>
+                    <div class="score-value">{{ candidate.aiScores.semanticAnalysis }}</div>
+                    <div class="score-weight">權重 30%</div>
+                  </div>
+                  <div class="score-card">
+                    <div class="score-label">JD 適配度</div>
+                    <div class="score-value">{{ candidate.aiScores.jdMatch }}</div>
+                    <div class="score-weight">權重 30%</div>
+                  </div>
+                  <div class="score-card score-card--primary">
+                    <div class="score-label">綜合評分</div>
+                    <div class="score-value score-value--large">{{ candidate.aiScores.overall }}</div>
+                    <div class="score-weight">總分 100</div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- Radar Chart -->
+            <section class="card radar-section">
+              <div class="card-header">
+                <h4 class="card-title">
+                  <i class="ri-radar-line"></i>
+                  能力雷達圖
+                </h4>
+              </div>
+              <div class="card-body">
+                <div #radarChart class="chart-container"></div>
+              </div>
+            </section>
+          </div>
+
+          <!-- Action Bar -->
+          <section class="card action-section">
+            <div class="action-bar">
+              <div class="recommendation">
+                @if (hireRecommendation(); as rec) {
+                  <div class="recommendation-badge recommendation-badge--{{ rec.level }}">
+                    <i [class]="rec.icon"></i>
+                    <span>{{ rec.text }}</span>
+                  </div>
+                }
+              </div>
+              <div class="action-buttons">
+                <button class="btn btn-secondary" (click)="exportReport()" type="button">
+                  <i class="ri-download-line"></i>
+                  匯出報告
+                </button>
+              </div>
+            </div>
+          </section>
+        } @else {
+          <!-- Empty State -->
+          <div class="empty-state">
+            <i class="ri-user-search-line"></i>
+            <h3>請選擇候選人</h3>
+            <p>從左側列表選擇一位候選人以查看面試分析結果</p>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</main>
+

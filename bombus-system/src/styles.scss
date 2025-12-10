@@ -1,0 +1,177 @@
+// ===============================================================
+// Bombus V6.0 - 全域樣式入口
+// ===============================================================
+
+// 基礎樣式
+@import 'assets/styles/variables';
+@import 'assets/styles/mixins';
+@import 'assets/styles/base';
+
+// ---------------------------------------------------------------
+// 系統佈局
+// ---------------------------------------------------------------
+.system-wrapper {
+  display: flex;
+  min-height: 100vh;
+  background: $color-cloud-gray;
+}
+
+.page-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-left: var(--sidebar-width);
+  min-height: 100vh;
+  transition: margin-left $transition-normal;
+
+  @include media-max-lg {
+    margin-left: 0;
+  }
+}
+
+// Sidebar minimized state
+.sidebar-minimized .page-wrapper {
+  margin-left: var(--sidebar-width-minimized);
+
+  @include media-max-lg {
+    margin-left: 0;
+  }
+}
+
+.main-content {
+  flex: 1;
+  padding: $spacing-lg;
+  padding-top: calc(var(--header-height) + #{$spacing-lg});
+
+  @include media-max-md {
+    padding: $spacing-md;
+    padding-top: calc(var(--header-height) + #{$spacing-md});
+  }
+}
+
+.content-container {
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+// ---------------------------------------------------------------
+// 通知系統
+// ---------------------------------------------------------------
+.notification-container {
+  position: fixed;
+  top: calc(var(--header-height) + #{$spacing-md});
+  right: $spacing-lg;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.notification {
+  @include card;
+  @include flex-start;
+  gap: $spacing-md;
+  min-width: 300px;
+  max-width: 400px;
+  padding: $spacing-md;
+  animation: slideInRight 300ms ease forwards;
+  cursor: pointer;
+
+  &.notification-success {
+    border-left: 4px solid $color-success;
+
+    .notification-icon {
+      color: $color-success;
+    }
+  }
+
+  &.notification-warning {
+    border-left: 4px solid $color-warning;
+
+    .notification-icon {
+      color: $color-warning;
+    }
+  }
+
+  &.notification-error {
+    border-left: 4px solid $color-error;
+
+    .notification-icon {
+      color: $color-error;
+    }
+  }
+
+  &.notification-info {
+    border-left: 4px solid $color-info;
+
+    .notification-icon {
+      color: $color-info;
+    }
+  }
+}
+
+.notification-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.notification-content {
+  flex: 1;
+}
+
+.notification-message {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+// ---------------------------------------------------------------
+// 載入狀態
+// ---------------------------------------------------------------
+.loading-overlay {
+  @include flex-center;
+  position: fixed;
+  inset: 0;
+  background: rgba($color-cloud-gray, 0.8);
+  z-index: 10000;
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid $color-soft-gray;
+  border-top-color: $color-brand-main;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// ---------------------------------------------------------------
+// 響應式工具類
+// ---------------------------------------------------------------
+@include media-max-md {
+  .hide-mobile {
+    display: none !important;
+  }
+}
+
+@include media-md {
+  .hide-desktop {
+    display: none !important;
+  }
+}

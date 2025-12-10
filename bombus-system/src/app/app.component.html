@@ -1,0 +1,12 @@
+<div class="system-wrapper" [class.sidebar-minimized]="isMinimized()">
+  <!-- Sidebar -->
+  <app-sidebar />
+  
+  <!-- Page Content -->
+  <div class="page-wrapper">
+    <router-outlet />
+  </div>
+  
+  <!-- Global Notifications -->
+  <app-notification />
+</div>

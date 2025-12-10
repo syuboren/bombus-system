@@ -1,0 +1,134 @@
+<div class="map-card">
+  <header class="map-card__header">
+    <h2 class="map-card__title">
+      <i class="ri-route-fill"></i>
+      學習發展路徑圖 (Learning Journey Map)
+    </h2>
+    <p class="map-card__desc">
+      為員工提供清晰的職涯發展路徑與個人化學習地圖。AI智能推薦學習順序與時間。
+    </p>
+  </header>
+
+  <!-- View Level Filter -->
+  <div class="filters">
+    <div class="filter-group">
+      <label for="learningPathLevel">視圖層級:</label>
+      <select
+        id="learningPathLevel"
+        [value]="viewLevel()"
+        (change)="switchViewLevel($any($event.target).value)">
+        @for (opt of viewLevelOptions; track opt.value) {
+          <option [value]="opt.value">{{ opt.label }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  <!-- Progress Overview -->
+  <div class="progress-overview">
+    @for (item of progressData(); track item.title) {
+      <div class="progress-card" [style.border-top-color]="item.color">
+        <span class="progress-card__label">{{ item.title }}</span>
+        <span class="progress-card__value">{{ item.value }}%</span>
+        <div class="progress-card__bar">
+          <div
+            class="progress-card__fill"
+            [style.width.%]="item.value"
+            [style.background]="item.color">
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Employee Selector (Individual Level) -->
+  @if (viewLevel() === 'individual') {
+    <div class="employee-selector">
+      <div class="filter-group">
+        <label for="employeeSelect">選擇員工:</label>
+        <select
+          id="employeeSelect"
+          [value]="selectedEmployee()"
+          (change)="selectEmployee($any($event.target).value)">
+          @for (opt of employeeOptions; track opt.value) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <!-- Path Summary -->
+    @if (selectedEmployee() && pathSteps().length > 0) {
+      <div class="path-summary">
+        <h3 class="path-summary__title">🎯 個人學習路徑</h3>
+        <p class="path-summary__desc">根據職能評估結果，AI 推薦以下學習路徑</p>
+        <div class="path-steps">
+          @for (step of pathSteps(); track step.name; let i = $index) {
+            @if (i > 0) {
+              <i class="ri-arrow-right-line path-arrow"></i>
+            }
+            <span class="path-step path-step--{{ step.status }}">
+              {{ step.name }}
+            </span>
+          }
+        </div>
+      </div>
+    }
+  }
+
+  <!-- Timeline Chart -->
+  <section class="chart-section">
+    <div class="chart-card">
+      <div #timelineChart class="chart-container"></div>
+      <button class="export-btn" (click)="exportChart('timeline')" type="button">
+        <i class="ri-download-2-line"></i>
+        匯出時間軸 PNG
+      </button>
+    </div>
+  </section>
+
+  <!-- Skill Tree Chart -->
+  <section class="chart-section">
+    <div class="chart-card">
+      <div #skillTreeChart class="chart-container"></div>
+      <button class="export-btn" (click)="exportChart('skillTree')" type="button">
+        <i class="ri-download-2-line"></i>
+        匯出技能樹 PNG
+      </button>
+    </div>
+  </section>
+
+  <!-- Course Recommendations -->
+  <section class="courses-section">
+    <h3 class="section-title">💡 AI 推薦課程</h3>
+    <div class="course-grid">
+      @for (course of courses(); track course.id) {
+        <article class="course-card">
+          <header class="course-card__header">
+            <span class="course-badge" [class]="getCourseLevelClass(course.level)">
+              @switch (course.level) {
+                @case ('basic') { 基礎 }
+                @case ('advanced') { 進階 }
+                @case ('expert') { 專家 }
+              }
+            </span>
+          </header>
+          <h4 class="course-card__title">{{ course.title }}</h4>
+          <div class="course-card__meta">
+            <span><i class="ri-time-line"></i> {{ course.duration }}</span>
+            <span><i class="ri-user-line"></i> {{ course.participants }} 人</span>
+          </div>
+          <p class="course-card__desc">{{ course.description }}</p>
+          <footer class="course-card__footer">
+            <div class="course-progress">
+              <div class="mini-progress-bar">
+                <div class="mini-progress-fill" [style.width.%]="course.progress"></div>
+              </div>
+              <span>{{ course.progress }}%</span>
+            </div>
+          </footer>
+        </article>
+      }
+    </div>
+  </section>
+</div>

@@ -1,0 +1,104 @@
+<!-- Sidebar Backdrop (Mobile) -->
+@if (isMobileOpen()) {
+  <div class="sidebar-backdrop" (click)="closeMobileSidebar()"></div>
+}
+
+<!-- Sidebar -->
+<aside
+  class="sidebar"
+  [class.minimized]="isMinimized()"
+  [class.mobile-open]="isMobileOpen()">
+  
+  <!-- Brand -->
+  <div class="sidebar__brand">
+    <div class="brand-logo">
+      <img src="assets/images/logo-bombus.svg" alt="Bombus Logo" class="logo">
+      <span class="brand-text">Bombus</span>
+    </div>
+    <button
+      class="sidebar__toggle"
+      (click)="toggleSidebar()"
+      type="button"
+      aria-label="Toggle sidebar">
+      <i class="ri-arrow-left-s-line"></i>
+    </button>
+  </div>
+
+  <!-- Menu -->
+  <nav class="sidebar__menu">
+    <div class="menu-wrapper">
+      @for (section of menuSections; track section.title) {
+        <!-- Section Title -->
+        @if (section.title) {
+          <div class="menu-section">
+            <span class="menu-section__title">{{ section.title }}</span>
+          </div>
+        }
+
+        <!-- Menu Items -->
+        @for (item of section.items; track item.label) {
+          @if (item.children && item.children.length > 0) {
+            <!-- Accordion Menu -->
+            <div class="menu-item menu-item--accordion" [class.expanded]="isMenuExpanded(item.label)">
+              <button
+                class="menu-item__link"
+                (click)="toggleMenu(item.label)"
+                type="button">
+                <span class="menu-item__icon" [class]="item.moduleClass">
+                  <i [class]="item.icon"></i>
+                </span>
+                <span class="menu-item__text">{{ item.label }}</span>
+                <span class="menu-item__arrow">
+                  <i class="ri-arrow-down-s-line"></i>
+                </span>
+              </button>
+              <div class="menu-item__submenu">
+                @for (child of item.children; track child.label) {
+                  <a
+                    class="submenu-item"
+                    [routerLink]="child.route"
+                    routerLinkActive="active"
+                    (click)="closeMobileSidebar()">
+                    <span class="submenu-item__bullet"></span>
+                    <span class="submenu-item__text">{{ child.label }}</span>
+                  </a>
+                }
+              </div>
+            </div>
+          } @else {
+            <!-- Single Menu Item -->
+            <div class="menu-item">
+              <a
+                class="menu-item__link"
+                [routerLink]="item.route"
+                routerLinkActive="active"
+                (click)="closeMobileSidebar()">
+                <span class="menu-item__icon" [class]="item.moduleClass">
+                  <i [class]="item.icon"></i>
+                </span>
+                <span class="menu-item__text">{{ item.label }}</span>
+                @if (item.badge) {
+                  <span class="menu-item__badge">{{ item.badge }}</span>
+                }
+              </a>
+            </div>
+          }
+        }
+      }
+    </div>
+  </nav>
+
+  <!-- Footer -->
+  <div class="sidebar__footer">
+    <div class="user-info">
+      <div class="user-info__avatar">
+        <span>A</span>
+      </div>
+      <div class="user-info__details">
+        <div class="user-info__name">Admin</div>
+        <div class="user-info__role">系統管理員</div>
+      </div>
+    </div>
+  </div>
+</aside>
+

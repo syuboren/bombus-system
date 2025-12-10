@@ -1,0 +1,68 @@
+<header class="header">
+  <div class="header__container">
+    <!-- Mobile Toggle -->
+    <button
+      class="header__mobile-toggle"
+      (click)="toggleMobileSidebar()"
+      type="button"
+      aria-label="Toggle sidebar">
+      <i class="ri-menu-line"></i>
+    </button>
+
+    <!-- Page Title & Breadcrumb -->
+    <div class="header__title-section">
+      <h1 class="header__title">{{ pageTitle() }}</h1>
+      <nav class="header__breadcrumb" aria-label="Breadcrumb">
+        @for (crumb of breadcrumbs(); track crumb; let last = $last) {
+          <span class="breadcrumb-item" [class.active]="last">{{ crumb }}</span>
+          @if (!last) {
+            <i class="ri-arrow-right-s-line breadcrumb-separator"></i>
+          }
+        }
+        <i class="ri-arrow-right-s-line breadcrumb-separator"></i>
+        <span class="breadcrumb-item active">{{ pageTitle() }}</span>
+      </nav>
+    </div>
+
+    <!-- Header Actions -->
+    <div class="header__actions">
+      <!-- Search -->
+      <button
+        class="header__action-btn"
+        (click)="onSearch()"
+        type="button"
+        aria-label="Search">
+        <i class="ri-search-line"></i>
+      </button>
+
+      <!-- Notifications -->
+      <button
+        class="header__action-btn header__action-btn--notification"
+        (click)="onNotification()"
+        type="button"
+        aria-label="Notifications">
+        <i class="ri-notification-3-line"></i>
+        <span class="notification-badge">5</span>
+      </button>
+
+      <!-- Quick Actions -->
+      <button
+        class="header__action-btn"
+        (click)="onQuickAction()"
+        type="button"
+        aria-label="Quick actions">
+        <i class="ri-add-circle-line"></i>
+      </button>
+
+      <!-- User Menu -->
+      <button
+        class="header__action-btn header__action-btn--user"
+        (click)="onUserMenu()"
+        type="button"
+        aria-label="User menu">
+        <span class="user-avatar">A</span>
+      </button>
+    </div>
+  </div>
+</header>
+

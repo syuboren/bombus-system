@@ -1,0 +1,105 @@
+<app-header
+  pageTitle="AI 損益預測與績效分析"
+  [breadcrumbs]="['專案管理', 'AI 損益預測']" />
+
+<div class="profit-prediction-page">
+  <!-- Top: AI Prediction Chart -->
+  <div class="chart-panel">
+    <div class="panel-header">
+      <div class="panel-title">
+        <i class="ri-line-chart-line"></i>
+        公司整體專案損益趨勢 (AI 預測)
+      </div>
+      <div class="prediction-badge">
+        <i class="ri-magic-line"></i> AI Confidence: 92%
+      </div>
+    </div>
+    <div #mainPredictionChart class="main-chart"></div>
+  </div>
+
+  <!-- Grid: Leaderboard & Alerts -->
+  <div class="page-grid">
+    <!-- Left: Leaderboard -->
+    <div class="chart-panel">
+      <div class="panel-header">
+        <div class="panel-title">專案獲利排行榜 (Profit Leaderboard)</div>
+        <select class="form-select form-select--small" [ngModel]="selectedPeriod()" (ngModelChange)="onPeriodChange($event)">
+          <option value="quarter">本季</option>
+          <option value="year">本年度</option>
+        </select>
+      </div>
+      <table class="leaderboard-table">
+        <thead>
+          <tr>
+            <th width="50">排名</th>
+            <th>專案名稱</th>
+            <th>負責人</th>
+            <th>營收</th>
+            <th>毛利率</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (ranking of rankings(); track ranking.rank) {
+            <tr (click)="navigateToProject(ranking.projectId)">
+              <td>
+                <div class="rank-num" [ngClass]="getRankClass(ranking.rank)">{{ ranking.rank }}</div>
+              </td>
+              <td>{{ ranking.projectName }}</td>
+              <td>{{ ranking.pm }}</td>
+              <td>{{ formatCurrency(ranking.revenue) }}</td>
+              <td [class.profit-positive]="ranking.profitRate > 0" [class.profit-negative]="ranking.profitRate < 0">
+                {{ ranking.profitRate > 0 ? '+' : '' }}{{ ranking.profitRate }}%
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Right: Variance Alerts -->
+    <div class="chart-panel">
+      <div class="panel-header">
+        <div class="panel-title panel-title--danger">
+          <i class="ri-alarm-warning-line"></i> 效能偏差警示
+        </div>
+      </div>
+      <div class="alert-list">
+        @for (alert of alerts(); track alert.id) {
+          <div class="alert-card" [class.alert-card--warning]="alert.severity === 'medium'">
+            <div class="alert-header">
+              <span class="alert-project">{{ alert.projectName }}</span>
+              <span class="alert-val" [class.alert-val--warning]="alert.severity === 'medium'">{{ alert.variance }}</span>
+            </div>
+            <div class="alert-desc">{{ alert.description }}</div>
+            <button class="btn-secondary btn-secondary--sm">查看詳情</button>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom: OKR Contribution -->
+  <div class="chart-panel">
+    <div class="panel-header">
+      <div class="panel-title">專案 OKR 貢獻度分析</div>
+    </div>
+    <div class="okr-matrix">
+      @for (okr of okrAnalysis(); track okr.objective) {
+        <div class="okr-card">
+          <div class="okr-title">{{ okr.objective }}</div>
+          @for (contrib of okr.contributions; track contrib.projectName) {
+            <div class="contribution-item">
+              <div class="contribution-label">
+                <span>{{ contrib.projectName }}</span>
+                <span>{{ contrib.percentage }}%</span>
+              </div>
+              <div class="contribution-bar">
+                <div class="contribution-fill" [style.width.%]="contrib.percentage"></div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+</div>

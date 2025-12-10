@@ -1,0 +1,173 @@
+<app-header
+  pageTitle="候選人檔案解析"
+  [breadcrumbs]="['招募職缺管理', '資深前端工程師', candidate()?.name || '']" />
+
+<main class="main-content">
+  <div class="content-container">
+    @if (candidate(); as c) {
+      <!-- Candidate Header -->
+      <div class="candidate-header">
+        <div class="candidate-basic">
+          <div class="candidate-avatar" [style.background-color]="c.avatarColor">
+            {{ getInitial(c.name) }}
+          </div>
+          <div class="candidate-info">
+            <h2>{{ c.name }} ({{ c.nameEn }})</h2>
+            <div class="contact-info">
+              <span><i class="ri-mail-line"></i> {{ c.email }}</span>
+              @if (c.phone) {
+                <span><i class="ri-phone-line"></i> {{ c.phone }}</span>
+              }
+              @if (c.location) {
+                <span><i class="ri-map-pin-line"></i> {{ c.location }}</span>
+              }
+            </div>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-secondary" (click)="goBack()" type="button">
+            <i class="ri-arrow-left-line"></i>
+            返回列表
+          </button>
+          <button class="btn btn-secondary" (click)="downloadResume()" type="button">
+            <i class="ri-download-line"></i>
+            下載履歷
+          </button>
+          <button class="btn btn-primary" (click)="goToInterview()" type="button">
+            <i class="ri-mic-line"></i>
+            進入面試評核
+          </button>
+        </div>
+      </div>
+
+      <!-- Split Container -->
+      <div class="split-container">
+        <!-- Left: Resume Preview -->
+        <div class="panel">
+          <div class="panel__header">
+            <div class="panel__title">
+              <i class="ri-file-pdf-line"></i>
+              原始履歷預覽
+            </div>
+            <span class="file-name">{{ c.resumeUrl }}</span>
+          </div>
+          <div class="panel__content resume-preview">
+            <div class="resume-page">
+              <h2 class="resume-name">{{ c.nameEn }}</h2>
+              <p class="resume-intro">
+                <strong>Senior Frontend Developer</strong> with {{ c.experienceYears }}+ years of experience in building responsive web applications.
+              </p>
+
+              <h3 class="resume-section-title">Experience</h3>
+              @for (exp of c.aiAnalysis.experiences; track exp.company) {
+                <div class="resume-exp">
+                  <strong>{{ exp.company }}</strong>
+                  <br>
+                  <em>{{ exp.position }}</em>
+                  @if (exp.highlights.length > 0) {
+                    <ul>
+                      @for (h of exp.highlights; track h) {
+                        <li>{{ h }}</li>
+                      }
+                    </ul>
+                  }
+                </div>
+              }
+
+              <h3 class="resume-section-title">Education</h3>
+              <div class="resume-edu">
+                <strong>{{ c.aiAnalysis.education.school }}</strong>
+                <br>
+                <em>{{ c.aiAnalysis.education.degree }} in {{ c.aiAnalysis.education.major }}</em>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: AI Analysis -->
+        <div class="panel">
+          <div class="panel__header">
+            <div class="panel__title">
+              <i class="ri-magic-line"></i>
+              AI 履歷解析報告
+            </div>
+            <span class="status-badge status--success">解析完成</span>
+          </div>
+          <div class="panel__content">
+            <!-- Match Score -->
+            <div class="match-score-card">
+              <div class="score-circle">{{ c.aiAnalysis.matchScore }}</div>
+              <div class="score-label">JD 初始匹配度</div>
+              <div class="score-desc">基於關鍵字與經歷年資比對</div>
+            </div>
+
+            <!-- Skills Section -->
+            <div class="analysis-section">
+              <div class="section-label">
+                <i class="ri-code-box-line"></i>
+                技能標籤提取
+              </div>
+              <div class="skill-tags">
+                @for (skill of c.aiAnalysis.skills; track skill.name) {
+                  <span class="skill-tag {{ getSkillClass(skill.level) }}">
+                    @if (skill.matched) {
+                      <i class="ri-check-line"></i>
+                    }
+                    {{ skill.name }}
+                  </span>
+                }
+              </div>
+            </div>
+
+            <!-- Experience Section -->
+            <div class="analysis-section">
+              <div class="section-label">
+                <i class="ri-briefcase-line"></i>
+                經歷摘要
+              </div>
+              @for (exp of c.aiAnalysis.experiences; track exp.company) {
+                <div class="info-card">
+                  <div class="info-card__header">
+                    <span class="company-name">{{ exp.company }}</span>
+                    <span class="duration">{{ exp.duration }}</span>
+                  </div>
+                  <div class="position">{{ exp.position }}</div>
+                  @if (exp.highlights.length > 0) {
+                    <div class="highlights">
+                      @for (h of exp.highlights; track h) {
+                        <span>• {{ h }}</span>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+
+            <!-- Education Section -->
+            <div class="analysis-section">
+              <div class="section-label">
+                <i class="ri-graduation-cap-line"></i>
+                學歷驗證
+              </div>
+              <div class="info-card">
+                <div class="info-card__header">
+                  <span class="company-name">{{ c.aiAnalysis.education.school }}</span>
+                  @if (c.aiAnalysis.education.verified) {
+                    <i class="ri-verified-badge-fill verified-icon"></i>
+                  }
+                </div>
+                <div class="position">{{ c.aiAnalysis.education.major }} {{ c.aiAnalysis.education.degree }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    } @else {
+      <div class="loading-state">
+        <div class="loading-spinner"></div>
+        <p>載入中...</p>
+      </div>
+    }
+  </div>
+</main>
+

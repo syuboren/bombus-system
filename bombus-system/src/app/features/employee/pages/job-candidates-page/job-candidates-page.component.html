@@ -1,0 +1,147 @@
+<app-header
+  [pageTitle]="'職缺候選人列表'"
+  [breadcrumbs]="['招募職缺管理', jobTitle()]" />
+
+<main class="main-content">
+  <div class="content-container">
+    <!-- Back Button -->
+    <div class="page-actions">
+      <button class="btn btn-secondary" (click)="goBack()" type="button">
+        <i class="ri-arrow-left-line"></i>
+        返回職缺列表
+      </button>
+    </div>
+
+    <!-- Stats Cards -->
+    @if (stats(); as s) {
+      <div class="stats-grid">
+        <app-stat-card
+          icon="ri-group-line"
+          label="總應徵人數"
+          [value]="s.total"
+          moduleType="l1" />
+        <app-stat-card
+          icon="ri-time-line"
+          label="待審核"
+          [value]="s.pending"
+          moduleType="l1" />
+        <app-stat-card
+          icon="ri-check-double-line"
+          label="AI 推薦"
+          [value]="s.aiRecommended"
+          moduleType="l1" />
+        <app-stat-card
+          icon="ri-calendar-event-line"
+          label="已安排面試"
+          [value]="s.scheduled"
+          moduleType="l1" />
+      </div>
+    }
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <div class="filter-item">
+        <label class="filter-label">關鍵字搜尋</label>
+        <input
+          type="text"
+          class="filter-input"
+          placeholder="姓名 / 學校 / 技能"
+          [value]="searchQuery()"
+          (input)="searchQuery.set($any($event.target).value)">
+      </div>
+      <div class="filter-item">
+        <label class="filter-label">AI 匹配度</label>
+        <select
+          class="filter-select"
+          [value]="scoreFilter()"
+          (change)="scoreFilter.set($any($event.target).value)">
+          <option value="">所有分數</option>
+          <option value="90">90分以上</option>
+          <option value="80">80分以上</option>
+          <option value="70">70分以上</option>
+        </select>
+      </div>
+      <div class="filter-item">
+        <label class="filter-label">應徵狀態</label>
+        <select
+          class="filter-select"
+          [value]="statusFilter()"
+          (change)="statusFilter.set($any($event.target).value)">
+          <option value="">所有狀態</option>
+          <option value="new">新進履歷</option>
+          <option value="interview">面試中</option>
+          <option value="rejected">已婉拒</option>
+        </select>
+      </div>
+      <div class="filter-item filter-item--action">
+        <button class="btn-filter" type="button">
+          <i class="ri-filter-line"></i>
+          篩選
+        </button>
+      </div>
+    </div>
+
+    <!-- Candidate Grid -->
+    <div class="candidate-grid">
+      @for (candidate of filteredCandidates(); track candidate.id) {
+        <article class="candidate-card">
+          <div class="card__header">
+            <div class="candidate-info">
+              <div
+                class="candidate-avatar"
+                [style.background-color]="candidate.avatarColor">
+                {{ getInitial(candidate.name) }}
+              </div>
+              <div class="candidate-details">
+                <h3 class="candidate-name">{{ candidate.name }} ({{ candidate.nameEn }})</h3>
+                <p class="candidate-email">{{ candidate.email }}</p>
+                <p class="candidate-date">應徵日期：{{ candidate.applyDate }}</p>
+              </div>
+            </div>
+            <div
+              class="match-badge {{ getScoreClass(candidate.scoreLevel) }}"
+              title="AI 匹配度">
+              {{ candidate.matchScore }}
+            </div>
+          </div>
+
+          <div class="card__body">
+            <div class="info-row">
+              <i class="ri-graduation-cap-line"></i>
+              <span>{{ candidate.education }}</span>
+            </div>
+            <div class="info-row">
+              <i class="ri-briefcase-line"></i>
+              <span>{{ candidate.experienceYears }}年工作經驗 • {{ candidate.experience }}</span>
+            </div>
+            <div class="skill-tags">
+              @for (skill of candidate.skills; track skill) {
+                <span class="skill-tag">{{ skill }}</span>
+              }
+            </div>
+          </div>
+
+          <div class="card__footer">
+            <span class="status-badge {{ getStatusClass(candidate.status) }}">
+              {{ getStatusLabel(candidate.status) }}
+            </span>
+            <button
+              class="btn-action"
+              (click)="viewProfile(candidate)"
+              type="button">
+              解析履歷
+              <i class="ri-arrow-right-line"></i>
+            </button>
+          </div>
+        </article>
+      } @empty {
+        <div class="empty-state">
+          <i class="ri-user-search-line"></i>
+          <h3>目前沒有候選人</h3>
+          <p>尚無符合條件的候選人資料</p>
+        </div>
+      }
+    </div>
+  </div>
+</main>
+

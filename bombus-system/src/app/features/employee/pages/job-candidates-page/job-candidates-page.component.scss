@@ -1,0 +1,315 @@
+@import '../../../../../assets/styles/variables';
+@import '../../../../../assets/styles/mixins';
+
+// ---------------------------------------------------------------
+// Page Actions
+// ---------------------------------------------------------------
+.page-actions {
+  margin-bottom: $spacing-lg;
+}
+
+// ---------------------------------------------------------------
+// Stats Grid
+// ---------------------------------------------------------------
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: $spacing-md;
+  margin-bottom: $spacing-lg;
+
+  @include media-max-xl {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include media-max-md {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ---------------------------------------------------------------
+// Filter Bar
+// ---------------------------------------------------------------
+.filter-bar {
+  @include card;
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-md;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-lg;
+}
+
+.filter-item {
+  flex: 1;
+  min-width: 200px;
+
+  &--action {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: flex-end;
+  }
+}
+
+.filter-label {
+  display: block;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  margin-bottom: $spacing-xs;
+}
+
+.filter-input,
+.filter-select {
+  @include input-base;
+}
+
+.btn-filter {
+  @include flex-center;
+  gap: $spacing-xs;
+  width: 100%;
+  padding: $spacing-sm $spacing-md;
+  background: $color-cloud-gray;
+  border: 1px solid transparent;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: all $transition-normal;
+
+  &:hover {
+    background: darken($color-cloud-gray, 3%);
+    color: $color-text-dark;
+  }
+}
+
+// ---------------------------------------------------------------
+// Candidate Grid
+// ---------------------------------------------------------------
+.candidate-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: $spacing-lg;
+}
+
+// ---------------------------------------------------------------
+// Candidate Card
+// ---------------------------------------------------------------
+.candidate-card {
+  @include card;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: all $transition-normal;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: $shadow-lg;
+    border-color: $color-l1-sage;
+  }
+}
+
+.card__header {
+  @include flex-between;
+  padding: $spacing-lg;
+  border-bottom: 1px solid $color-soft-gray;
+}
+
+.candidate-info {
+  display: flex;
+  gap: $spacing-sm;
+}
+
+.candidate-avatar {
+  @include flex-center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: $color-l1-sage;
+  color: white;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  flex-shrink: 0;
+}
+
+.candidate-details {
+  min-width: 0;
+}
+
+.candidate-name {
+  font-size: $font-size-base;
+  font-weight: $font-weight-bold;
+  color: $color-text-dark;
+  margin: 0 0 4px;
+  @include text-truncate;
+}
+
+.candidate-email {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  margin: 0 0 2px;
+}
+
+.candidate-date {
+  font-size: $font-size-xs;
+  color: $color-muted-gray;
+  margin: 0;
+}
+
+// Match Badge
+.match-badge {
+  @include flex-center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+  border: 3px solid;
+  flex-shrink: 0;
+}
+
+.score--high {
+  border-color: $color-success;
+  color: $color-success;
+  background: rgba($color-success, 0.1);
+}
+
+.score--medium {
+  border-color: darken($color-warning, 10%);
+  color: darken($color-warning, 15%);
+  background: rgba($color-warning, 0.1);
+}
+
+.score--low {
+  border-color: $color-error;
+  color: $color-error;
+  background: rgba($color-error, 0.1);
+}
+
+// Card Body
+.card__body {
+  padding: $spacing-lg;
+  flex: 1;
+}
+
+.info-row {
+  @include flex-start;
+  gap: $spacing-sm;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-sm;
+
+  i {
+    color: $color-l1-sage;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  span {
+    @include text-truncate;
+  }
+}
+
+.skill-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-xs;
+  margin-top: $spacing-md;
+}
+
+.skill-tag {
+  padding: 4px 10px;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+  font-size: $font-size-xs;
+  color: $color-text-primary;
+}
+
+// Card Footer
+.card__footer {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  padding: $spacing-md $spacing-lg;
+  background: $color-cloud-gray;
+  border-top: 1px solid $color-soft-gray;
+}
+
+.status-badge {
+  display: inline-block;
+  align-self: flex-start;
+  padding: 4px 12px;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+}
+
+.status--new {
+  background: rgba($color-success, 0.15);
+  color: $color-success;
+}
+
+.status--interview {
+  background: rgba($color-warning, 0.15);
+  color: darken($color-warning, 15%);
+}
+
+.status--rejected {
+  background: rgba($color-text-secondary, 0.15);
+  color: $color-text-secondary;
+}
+
+.status--hired {
+  background: rgba($color-l1-sage, 0.15);
+  color: $color-l1-sage;
+}
+
+.btn-action {
+  @include flex-center;
+  gap: $spacing-xs;
+  width: 100%;
+  padding: $spacing-sm;
+  background: white;
+  border: 1px solid $color-l1-sage;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-l1-sage;
+  cursor: pointer;
+  transition: all $transition-normal;
+
+  &:hover {
+    background: $color-l1-sage;
+    color: white;
+  }
+}
+
+// ---------------------------------------------------------------
+// Empty State
+// ---------------------------------------------------------------
+.empty-state {
+  grid-column: 1 / -1;
+  @include card;
+  @include flex-center;
+  flex-direction: column;
+  padding: $spacing-2xl;
+  text-align: center;
+
+  i {
+    font-size: 64px;
+    color: $color-muted-gray;
+    margin-bottom: $spacing-md;
+  }
+
+  h3 {
+    font-size: $font-size-lg;
+    color: $color-text-dark;
+    margin: 0 0 $spacing-xs;
+  }
+
+  p {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    margin: 0;
+  }
+}
+

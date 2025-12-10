@@ -1,0 +1,125 @@
+<!-- Header -->
+<app-header
+  pageTitle="企業管理儀表板"
+  [breadcrumbs]="['首頁']" />
+
+<!-- Main Content -->
+<main class="main-content">
+  <div class="content-container">
+    <!-- Welcome Banner -->
+    <section class="welcome-banner">
+      <div class="welcome-banner__content">
+        <h2>歡迎回來，Admin！</h2>
+        <p>今天是 {{ currentDate() }}，系統運作正常</p>
+      </div>
+      <div class="welcome-banner__illustration">
+        <i class="ri-rocket-line"></i>
+      </div>
+    </section>
+
+    <!-- Stats Grid -->
+    <section class="stats-grid">
+      @for (stat of stats; track stat.label) {
+        <app-stat-card
+          [icon]="stat.icon"
+          [label]="stat.label"
+          [value]="stat.value"
+          [changeText]="stat.changeText"
+          [changeType]="stat.changeType"
+          [moduleType]="stat.moduleType" />
+      }
+    </section>
+
+    <!-- Quick Access Section -->
+    <section class="section">
+      <div class="section__header">
+        <h3 class="section__title">快速存取</h3>
+        <a routerLink="/training/talent-map" class="section__link">
+          查看全部 <i class="ri-arrow-right-line"></i>
+        </a>
+      </div>
+      <div class="quick-access-grid">
+        @for (item of quickAccessItems; track item.title) {
+          <a [routerLink]="item.route" class="quick-card">
+            <div class="quick-card__icon" [class]="item.moduleClass">
+              <i [class]="item.icon"></i>
+            </div>
+            <div class="quick-card__title">{{ item.title }}</div>
+            <div class="quick-card__desc">{{ item.description }}</div>
+          </a>
+        }
+      </div>
+    </section>
+
+    <!-- Content Row -->
+    <div class="content-row">
+      <!-- Activities -->
+      <section class="content-col-8">
+        <div class="card">
+          <div class="card-header">
+            <h4 class="card-title">系統活動紀錄</h4>
+            <button class="btn-icon" type="button" aria-label="More options">
+              <i class="ri-more-2-line"></i>
+            </button>
+          </div>
+          <div class="card-body">
+            <div class="activity-timeline">
+              @for (activity of activities; track activity.title) {
+                <div class="timeline-item">
+                  <div class="timeline-item__marker" [class]="activity.moduleClass"></div>
+                  <div class="timeline-item__content">
+                    <div class="timeline-item__title">{{ activity.title }}</div>
+                    <div class="timeline-item__desc">{{ activity.description }}</div>
+                    <div class="timeline-item__time">{{ activity.time }}</div>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Todos -->
+      <section class="content-col-4">
+        <div class="card">
+          <div class="card-header">
+            <h4 class="card-title">待辦事項</h4>
+          </div>
+          <div class="card-body">
+            <div class="todo-list">
+              @for (todo of todos(); track todo.id) {
+                <label class="todo-item">
+                  <input
+                    type="checkbox"
+                    class="todo-item__checkbox"
+                    [checked]="todo.completed"
+                    (change)="toggleTodo(todo.id)">
+                  <span
+                    class="todo-item__text"
+                    [class.completed]="todo.completed">
+                    {{ todo.text }}
+                  </span>
+                </label>
+              }
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="system-footer">
+      <div class="system-footer__content">
+        <div class="system-footer__left">
+          <span>© 2025 Bombus 企業管理系統</span>
+        </div>
+        <div class="system-footer__right">
+          <a href="#">關於</a>
+          <a href="#">支援</a>
+          <a href="#">文件</a>
+        </div>
+      </div>
+    </footer>
+  </div>
+</main>
+

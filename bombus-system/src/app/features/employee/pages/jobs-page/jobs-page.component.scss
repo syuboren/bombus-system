@@ -1,0 +1,322 @@
+@import '../../../../../assets/styles/variables';
+@import '../../../../../assets/styles/mixins';
+
+// ---------------------------------------------------------------
+// Stats Grid
+// ---------------------------------------------------------------
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: $spacing-md;
+  margin-bottom: $spacing-lg;
+
+  @include media-max-xl {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include media-max-md {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ---------------------------------------------------------------
+// Filter Bar
+// ---------------------------------------------------------------
+.filter-bar {
+  @include card;
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-md;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-lg;
+}
+
+.filter-item {
+  flex: 1;
+  min-width: 200px;
+
+  &--action {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: flex-end;
+  }
+}
+
+.filter-label {
+  display: block;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  margin-bottom: $spacing-xs;
+}
+
+.filter-input,
+.filter-select {
+  @include input-base;
+}
+
+// ---------------------------------------------------------------
+// Table Card
+// ---------------------------------------------------------------
+.table-card {
+  @include card;
+  overflow: hidden;
+  padding: 0;
+}
+
+.job-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th, td {
+    padding: $spacing-md $spacing-lg;
+    text-align: left;
+    border-bottom: 1px solid $color-soft-gray;
+  }
+
+  th {
+    background: $color-cloud-gray;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-text-secondary;
+    text-transform: uppercase;
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  tbody tr {
+    transition: background $transition-normal;
+
+    &:hover {
+      background: $color-cloud-gray;
+    }
+  }
+}
+
+.job-title {
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+}
+
+.job-id {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  margin-top: 2px;
+}
+
+.candidate-count {
+  @include flex-start;
+  gap: $spacing-xs;
+}
+
+.count-badge {
+  padding: 2px 8px;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  background: $color-l1-sage;
+  color: white;
+
+  &--new {
+    background: #E76E6E;
+  }
+}
+
+.count-total {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.text-muted {
+  color: $color-muted-gray;
+}
+
+// Status Badge
+.status-badge {
+  @include flex-center;
+  display: inline-flex;
+  gap: $spacing-xs;
+  padding: 4px 12px;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+
+  i {
+    font-size: 14px;
+  }
+}
+
+.status--published {
+  background: rgba($color-success, 0.15);
+  color: $color-success;
+}
+
+.status--draft {
+  background: rgba($color-text-secondary, 0.15);
+  color: $color-text-secondary;
+}
+
+.status--review {
+  background: rgba($color-warning, 0.15);
+  color: darken($color-warning, 15%);
+}
+
+// Action Group
+.action-group {
+  @include flex-start;
+  gap: $spacing-xs;
+}
+
+.icon-btn {
+  @include flex-center;
+  width: 32px;
+  height: 32px;
+  border-radius: $radius-md;
+  border: 1px solid $color-soft-gray;
+  background: white;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: all $transition-normal;
+
+  &:hover {
+    border-color: $color-l1-sage;
+    color: $color-l1-sage;
+  }
+
+  &--danger:hover {
+    border-color: $color-error;
+    color: $color-error;
+  }
+
+  i {
+    font-size: 16px;
+  }
+}
+
+.empty-row {
+  text-align: center;
+  padding: $spacing-2xl !important;
+  color: $color-text-secondary;
+
+  i {
+    font-size: 48px;
+    color: $color-muted-gray;
+    margin-bottom: $spacing-md;
+    display: block;
+  }
+
+  p {
+    margin: 0;
+  }
+}
+
+// ---------------------------------------------------------------
+// Modal
+// ---------------------------------------------------------------
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  animation: fadeIn 200ms ease;
+}
+
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  background: white;
+  border-radius: $radius-lg;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  z-index: 1001;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 200ms ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -45%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+.modal__header {
+  @include flex-between;
+  padding: $spacing-lg;
+  border-bottom: 1px solid $color-soft-gray;
+}
+
+.modal__title {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-dark;
+  margin: 0;
+}
+
+.modal__close {
+  @include button-icon;
+
+  i {
+    font-size: 24px;
+  }
+}
+
+.modal__body {
+  padding: $spacing-lg;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal__footer {
+  @include flex-start;
+  justify-content: flex-end;
+  gap: $spacing-sm;
+  padding: $spacing-lg;
+  border-top: 1px solid $color-soft-gray;
+}
+
+// Form
+.form-group {
+  margin-bottom: $spacing-lg;
+}
+
+.form-label {
+  display: block;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-xs;
+
+  .required {
+    color: $color-error;
+  }
+}
+
+.form-input,
+.form-select {
+  @include input-base;
+}
+
+.form-textarea {
+  @include input-base;
+  min-height: 100px;
+  resize: vertical;
+}
+

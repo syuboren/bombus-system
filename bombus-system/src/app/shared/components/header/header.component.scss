@@ -1,0 +1,147 @@
+@import '../../../../assets/styles/variables';
+@import '../../../../assets/styles/mixins';
+
+.header {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: $sidebar-width;
+  height: $header-height;
+  background: $color-pure-white;
+  box-shadow: $shadow-sm;
+  z-index: 100;
+  transition: left $transition-normal;
+
+  @include media-max-lg {
+    left: 0;
+  }
+}
+
+// Sidebar minimized
+:host-context(.sidebar-minimized) .header {
+  left: $sidebar-width-minimized;
+
+  @include media-max-lg {
+    left: 0;
+  }
+}
+
+.header__container {
+  @include flex-between;
+  height: 100%;
+  padding: 0 $spacing-lg;
+  gap: $spacing-md;
+
+  @include media-max-md {
+    padding: 0 $spacing-md;
+  }
+}
+
+// Mobile Toggle
+.header__mobile-toggle {
+  @include button-icon;
+  display: none;
+
+  @include media-max-lg {
+    display: flex;
+  }
+
+  i {
+    font-size: 24px;
+  }
+}
+
+// Title Section
+.header__title-section {
+  flex: 1;
+  min-width: 0;
+}
+
+.header__title {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+  margin: 0 0 $spacing-xs;
+  @include text-truncate;
+
+  @include media-max-md {
+    font-size: $font-size-lg;
+  }
+}
+
+.header__breadcrumb {
+  @include flex-start;
+  gap: $spacing-xs;
+  flex-wrap: wrap;
+}
+
+.breadcrumb-item {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+
+  &.active {
+    color: $color-brand-main;
+  }
+}
+
+.breadcrumb-separator {
+  font-size: 14px;
+  color: $color-muted-gray;
+}
+
+// Actions
+.header__actions {
+  @include flex-start;
+  gap: $spacing-sm;
+}
+
+.header__action-btn {
+  @include button-icon;
+  position: relative;
+
+  i {
+    font-size: 22px;
+  }
+
+  &--notification {
+    .notification-badge {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 4px;
+      background: $color-error;
+      color: white;
+      font-size: 10px;
+      font-weight: $font-weight-bold;
+      border-radius: $radius-full;
+      @include flex-center;
+    }
+  }
+
+  &--user {
+    width: auto;
+    height: auto;
+    padding: 4px;
+
+    .user-avatar {
+      @include flex-center;
+      width: 36px;
+      height: 36px;
+      background: $color-brand-main;
+      color: white;
+      font-size: $font-size-sm;
+      font-weight: $font-weight-bold;
+      border-radius: $radius-md;
+    }
+  }
+}
+
+// Hide some actions on mobile
+@include media-max-md {
+  .header__action-btn:not(.header__action-btn--notification):not(.header__action-btn--user) {
+    display: none;
+  }
+}
+

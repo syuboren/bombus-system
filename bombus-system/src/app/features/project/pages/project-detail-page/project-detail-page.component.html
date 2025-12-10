@@ -1,0 +1,375 @@
+<app-header
+  pageTitle="專案詳情"
+  [breadcrumbs]="breadcrumbs()" />
+
+@if (loading()) {
+  <div class="loading-container">
+    <i class="ri-loader-4-line loading-spinner"></i>
+    <span>載入中...</span>
+  </div>
+} @else {
+  @if (project(); as p) {
+    <div class="project-detail-page">
+      <!-- Back Button -->
+      <div class="page-toolbar">
+        <button class="btn-back" (click)="goBack()" type="button">
+          <i class="ri-arrow-left-line"></i> 返回列表
+        </button>
+      </div>
+
+      <!-- Project Header Card -->
+      <div class="project-header-card">
+        <div class="ph-top">
+          <div class="ph-title">
+            <h1>
+              {{ p.name }}
+              <span class="badge" [ngClass]="getStatusClass(p.status)">{{ getStatusLabel(p.status) }}</span>
+            </h1>
+            <div class="ph-badges">
+              <span class="badge">{{ p.code }}</span>
+              <span class="badge"><i class="ri-calendar-line"></i> {{ p.startDate }} ~ {{ p.endDate }}</span>
+              <span class="badge"><i class="ri-user-line"></i> {{ p.pm }}</span>
+            </div>
+          </div>
+          <div class="ph-stats">
+            <div class="stat-item">
+              <div class="stat-label">總預算</div>
+              <div class="stat-val">{{ formatCurrency(p.budget) }}</div>
+            </div>
+            <div class="stat-item stat-item--bordered">
+              <div class="stat-label">直接成本</div>
+              <div class="stat-val stat-val--secondary">{{ formatCurrency(p.directCost) }}</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">間接成本</div>
+              <div class="stat-val stat-val--secondary">{{ formatCurrency(p.indirectCost) }}</div>
+            </div>
+            <div class="stat-item stat-item--bordered">
+              <div class="stat-label">已消耗總計</div>
+              <div class="stat-val">{{ formatCurrency(p.totalSpent) }}</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">預估毛利</div>
+              <div class="stat-val stat-val--success">{{ p.estimatedProfit }}%</div>
+            </div>
+          </div>
+        </div>
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill" [style.width.%]="p.progress"></div>
+        </div>
+        <div class="progress-info">
+          <span>總進度: {{ p.progress }}%</span>
+          <span>剩餘天數: {{ p.remainingDays }} 天</span>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="project-tabs">
+        <div class="tab-item" [class.active]="activeTab() === 'overview'" (click)="switchTab('overview')">專案概覽</div>
+        <div class="tab-item" [class.active]="activeTab() === 'tasks'" (click)="switchTab('tasks')">任務管理 (WBS)</div>
+        <div class="tab-item" [class.active]="activeTab() === 'financial'" (click)="switchTab('financial')">績效與毛利</div>
+      </div>
+
+      <!-- Tab Content -->
+      <div class="tab-content-wrapper">
+        <!-- Overview Tab -->
+        @if (activeTab() === 'overview') {
+          <div class="overview-grid">
+            <div class="overview-left">
+              <!-- Scope Card -->
+              <div class="inner-card">
+                <h3>專案目標與範疇 (Scope)</h3>
+                <p class="scope-text">{{ p.objective }}</p>
+                <h4>驗收條件</h4>
+                <ul class="acceptance-list">
+                  @for (criterion of p.acceptanceCriteria; track $index) {
+                    <li><i class="ri-checkbox-circle-line"></i> {{ criterion }}</li>
+                  }
+                </ul>
+              </div>
+
+              <!-- OKR Contribution -->
+              <div class="inner-card">
+                <h3>OKR 貢獻度報表</h3>
+                <table class="wbs-table">
+                  <thead>
+                    <tr>
+                      <th>目標 (Objective)</th>
+                      <th>關鍵結果 (Key Result)</th>
+                      <th>專案貢獻權重</th>
+                      <th>當前達成率</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (okr of p.okrContributions; track okr.id) {
+                      <tr>
+                        <td>{{ okr.objective }}</td>
+                        <td>{{ okr.keyResult }}</td>
+                        <td><span class="badge" [ngClass]="getWeightClass(okr.weight)">{{ getWeightLabel(okr.weight) }}</span></td>
+                        <td>
+                          <div class="progress-cell">
+                            <div class="mini-progress-bar">
+                              <div class="mini-progress-fill" [style.width.%]="okr.progress"></div>
+                            </div>
+                            <span>{{ okr.progress }}%</span>
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Team Contribution -->
+              <div class="inner-card">
+                <h3>團隊成員貢獻度明細 (Individual Contribution)</h3>
+                <table class="wbs-table">
+                  <thead>
+                    <tr>
+                      <th>成員</th>
+                      <th>專案角色</th>
+                      <th>負責關鍵結果</th>
+                      <th>任務完成率</th>
+                      <th>綜合貢獻評分</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (tc of p.teamContributions; track tc.id) {
+                      <tr>
+                        <td>
+                          <div class="assignee-cell">
+                            <div class="assignee-avatar" [style.background]="tc.member.color">{{ tc.member.initials }}</div>
+                            {{ tc.member.name }}
+                          </div>
+                        </td>
+                        <td>{{ tc.role }}</td>
+                        <td>{{ tc.keyResult }}</td>
+                        <td [class.text-danger]="tc.taskCompletion < 100">{{ tc.taskCompletion }}%</td>
+                        <td>
+                          <div class="score-cell">
+                            <span class="score-value">{{ tc.score }}</span>
+                            <div class="mini-progress-bar">
+                              <div class="mini-progress-fill" [style.width.%]="tc.score * 10"></div>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Right: Variance Alerts -->
+            <div class="inner-card">
+              <div class="alert-header">
+                <h3>效能偏差自動提醒 (Variance Alert)</h3>
+                <span class="badge badge--risk"><i class="ri-alarm-warning-line"></i> 異常偵測</span>
+              </div>
+              @for (alert of p.varianceAlerts; track alert.id) {
+                <div class="alert-card" [class.alert-card--warning]="alert.type === 'warning'">
+                  <div class="alert-icon">
+                    @if (alert.type === 'error') {
+                      <i class="ri-error-warning-fill"></i>
+                    } @else {
+                      <i class="ri-alert-fill"></i>
+                    }
+                  </div>
+                  <div class="alert-content">
+                    <div class="alert-title">{{ alert.title }}</div>
+                    <div class="alert-desc">{{ alert.description }}</div>
+                  </div>
+                </div>
+              }
+              <div #miniProfitChart class="mini-chart"></div>
+            </div>
+          </div>
+        }
+
+        <!-- Tasks Tab -->
+        @if (activeTab() === 'tasks') {
+          <div class="tasks-tab">
+            <div class="tasks-toolbar">
+              <button class="btn-secondary"><i class="ri-filter-3-line"></i> 篩選</button>
+              <button class="btn-primary"><i class="ri-add-line"></i> 新增任務</button>
+            </div>
+
+            <table class="wbs-table">
+              <thead>
+                <tr>
+                  <th style="width: 40%;">任務名稱</th>
+                  <th>負責人</th>
+                  <th>狀態</th>
+                  <th>截止日</th>
+                  <th>OKR</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (task of p.tasks; track task.id) {
+                  <tr class="wbs-row" (click)="openTaskDetail(task)">
+                    <td [class.indent-1]="task.indent === 0" [class.indent-2]="task.indent === 1">
+                      @if (task.isParent) {
+                        <i class="ri-arrow-down-s-fill toggle-icon"></i>
+                      }
+                      {{ task.name }}
+                    </td>
+                    <td>
+                      <div class="assignee-cell">
+                        <div class="assignee-avatar" [style.background]="task.assignee.color">{{ task.assignee.initials }}</div>
+                        {{ task.assignee.name }}
+                      </div>
+                    </td>
+                    <td><span class="badge" [ngClass]="getTaskStatusClass(task.status)">{{ getTaskStatusLabel(task.status) }}</span></td>
+                    <td>{{ task.dueDate }}</td>
+                    <td><span class="okr-badge">{{ task.okrTag }}</span></td>
+                    <td><i class="ri-more-fill" style="color: #999;"></i></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+
+        <!-- Financial Tab -->
+        @if (activeTab() === 'financial') {
+          <div class="financial-tab">
+            <!-- AI Prediction Section -->
+            <div class="inner-card">
+              <div class="prediction-header">
+                <h3>AI 未來損益預測 (Project P&L Forecast)</h3>
+                <span class="ai-badge"><i class="ri-magic-line"></i> AI Confidence: 92%</span>
+              </div>
+              <div class="financial-grid">
+                <div>
+                  <h4 class="chart-title">時光隧道圖 (Time Tunnel) - 歷史 vs 預測</h4>
+                  <div #timeTunnelChart class="chart-container"></div>
+                </div>
+                <div>
+                  <h4 class="chart-title">毛利瀑布圖 (Profit Waterfall) - 預算至毛利流向</h4>
+                  <div #waterfallChart class="chart-container"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="financial-grid">
+              <div class="inner-card">
+                <h3>成本結構分析</h3>
+                <div #costPieChart class="chart-container"></div>
+              </div>
+              <div class="inner-card">
+                <h3>專案毛利趨勢</h3>
+                <div #profitTrendChart class="chart-container"></div>
+              </div>
+            </div>
+
+            <!-- Cost Breakdown Table -->
+            <div class="inner-card">
+              <h3>成本明細表 (Cost Breakdown)</h3>
+              <table class="wbs-table">
+                <thead>
+                  <tr>
+                    <th>項目</th>
+                    <th>類別</th>
+                    <th>預算</th>
+                    <th>實際支出</th>
+                    <th>差異</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (cost of p.costBreakdown; track cost.id) {
+                    <tr [class.cost-row--subtotal]="cost.name.includes('小計')" [class.cost-row--total]="cost.name.includes('合計')">
+                      <td>{{ cost.name }}</td>
+                      <td><span class="badge" [class.badge--indirect]="cost.category === 'indirect'">{{ cost.category === 'direct' ? '直接成本' : '間接成本' }}</span></td>
+                      <td>{{ formatCurrency(cost.budget) }}</td>
+                      <td>{{ formatCurrency(cost.actual) }}</td>
+                      <td [class.text-danger]="cost.variance < 0" [class.text-success]="cost.variance > 0">
+                        {{ cost.variance === 0 ? '0' : formatCurrency(cost.variance) }}
+                      </td>
+                    </tr>
+                  }
+                  <!-- Summary Rows -->
+                  <tr class="cost-row--subtotal">
+                    <td colspan="2">直接成本小計</td>
+                    <td>$1,800,000</td>
+                    <td>$1,900,000</td>
+                    <td class="text-danger">-$100,000</td>
+                  </tr>
+                  <tr class="cost-row--subtotal">
+                    <td colspan="2">間接成本小計</td>
+                    <td>$600,000</td>
+                    <td>$600,000</td>
+                    <td>0</td>
+                  </tr>
+                  <tr class="cost-row--total">
+                    <td colspan="2">總成本合計</td>
+                    <td>$2,400,000</td>
+                    <td>$2,500,000</td>
+                    <td class="text-danger">-$100,000</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+}
+
+<!-- Task Detail Modal -->
+@if (showTaskModal() && selectedTask(); as task) {
+  <div class="modal-backdrop" (click)="closeTaskDetail()"></div>
+  <div class="modal">
+    <div class="modal__header">
+      <h3 class="modal__title">任務詳情</h3>
+      <button class="btn-icon" (click)="closeTaskDetail()" type="button">
+        <i class="ri-close-line"></i>
+      </button>
+    </div>
+    <div class="modal__body">
+      <div class="form-group">
+        <label class="form-label">任務名稱</label>
+        <input type="text" class="form-input" [value]="task.name" readonly>
+      </div>
+      <div class="form-group">
+        <label class="form-label">任務描述</label>
+        <textarea class="form-textarea" readonly>{{ task.description }}</textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">隱形成本計算 (工時 x 時薪)</label>
+        <div class="cost-inputs">
+          <div class="cost-input-item">
+            <label>指派人員</label>
+            <select class="form-select" [ngModel]="taskAssigneeRate()" (ngModelChange)="taskAssigneeRate.set($event); updateTaskCost()">
+              <option [value]="800">Jessica Lin ($800/hr)</option>
+              <option [value]="500">Junior Dev ($500/hr)</option>
+            </select>
+          </div>
+          <div class="cost-input-item">
+            <label>預估工時</label>
+            <input type="number" class="form-input" [ngModel]="taskHours()" (ngModelChange)="taskHours.set($event); updateTaskCost()">
+          </div>
+        </div>
+        <div class="cost-calc-box">
+          <div class="cost-row">
+            <span>人力成本</span>
+            <span>{{ formatCurrency(task.laborCost) }}</span>
+          </div>
+          <div class="cost-row">
+            <span>設備分攤 (5%)</span>
+            <span>{{ formatCurrency(task.overheadCost) }}</span>
+          </div>
+          <div class="cost-row cost-total">
+            <span>總成本預估</span>
+            <span>{{ formatCurrency(task.totalCost) }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn-secondary" (click)="closeTaskDetail()" type="button">取消</button>
+      <button class="btn-primary" type="button">儲存變更</button>
+    </div>
+  </div>
+}

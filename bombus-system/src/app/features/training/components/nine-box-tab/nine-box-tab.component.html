@@ -1,0 +1,115 @@
+<div class="map-card">
+  <header class="map-card__header">
+    <h2 class="map-card__title">
+      <i class="ri-grid-fill"></i>
+      人才九宮格 (Talent 9-Box Grid)
+    </h2>
+    <p class="map-card__desc">
+      年度人才盤點、晉升決策、接班人規劃的利器。支援拖曳員工頭像進行情境模擬。
+    </p>
+  </header>
+
+  <!-- Filters -->
+  <div class="filters">
+    <div class="filter-group">
+      <label for="nineBoxDept">部門篩選:</label>
+      <select
+        id="nineBoxDept"
+        [value]="filter().department"
+        (change)="updateFilter('department', $any($event.target).value)">
+        @for (opt of departmentOptions; track opt.value) {
+          <option [value]="opt.value">{{ opt.label }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label for="nineBoxLevel">職級篩選:</label>
+      <select
+        id="nineBoxLevel"
+        [value]="filter().level"
+        (change)="updateFilter('level', $any($event.target).value)">
+        @for (opt of levelOptions; track opt.value) {
+          <option [value]="opt.value">{{ opt.label }}</option>
+        }
+      </select>
+    </div>
+
+    <button
+      class="simulation-btn"
+      [class.active]="simulationMode()"
+      (click)="toggleSimulationMode()"
+      type="button">
+      <i class="ri-drag-drop-line"></i>
+      情境模擬模式
+    </button>
+  </div>
+
+  <!-- Nine Box Grid -->
+  <div class="nine-box-wrapper">
+    <!-- Y Axis Label -->
+    <div class="axis-label axis-label--y">
+      發展潛力 (Potential) →
+    </div>
+
+    <!-- X Axis Label -->
+    <div class="axis-label axis-label--x">
+      績效表現 (Performance) →
+    </div>
+
+    <div class="nine-box-grid">
+      @for (catKey of gridOrder; track catKey) {
+        @let info = getCategoryInfo(catKey);
+        @let emps = employeesByCategory()[catKey];
+        <div
+          class="box-cell"
+          [style.background]="info.bgGradient"
+          [style.border-color]="info.color">
+          <div class="box-cell__header">
+            <span class="box-cell__title">{{ info.title }}</span>
+            <span class="box-cell__subtitle">{{ info.subtitle }}</span>
+          </div>
+          <div class="box-cell__count" [style.color]="info.color">
+            {{ emps.length }} 人
+          </div>
+          <div class="employee-list">
+            @for (emp of emps; track emp.id) {
+              <div class="employee-card" [class.draggable]="simulationMode()">
+                <div class="employee-avatar">{{ emp.name.charAt(0) }}</div>
+                <div class="employee-info">
+                  <span class="employee-name">{{ emp.name }}</span>
+                  <span class="employee-dept">{{ emp.department }}</span>
+                </div>
+                <div class="employee-scores">
+                  <span class="score-badge score-badge--performance">P{{ emp.performance }}</span>
+                  <span class="score-badge score-badge--potential">潛{{ emp.potential }}</span>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <section class="charts-section">
+    <h3 class="section-title">人才分佈統計</h3>
+    <div class="chart-combo">
+      <div class="chart-card">
+        <div #distributionChart class="chart-container"></div>
+        <button class="export-btn" (click)="exportChart('distribution')" type="button">
+          <i class="ri-download-2-line"></i>
+          匯出圓餅圖 PNG
+        </button>
+      </div>
+      <div class="chart-card">
+        <div #scatterChart class="chart-container"></div>
+        <button class="export-btn" (click)="exportChart('scatter')" type="button">
+          <i class="ri-download-2-line"></i>
+          匯出散佈圖 PNG
+        </button>
+      </div>
+    </div>
+  </section>
+</div>

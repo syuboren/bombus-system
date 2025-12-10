@@ -1,0 +1,161 @@
+<div class="map-card">
+  <header class="map-card__header">
+    <h2 class="map-card__title">
+      <i class="ri-star-fill"></i>
+      關鍵人才儀表板 (Key Talent Dashboard)
+    </h2>
+    <p class="map-card__desc">
+      高階主管決策、人才保留策略、薪酬調整參考。即時監控關鍵人才風險與預警。
+    </p>
+  </header>
+
+  <!-- Filters -->
+  <div class="filters">
+    <div class="filter-group">
+      <label for="talentDept">選擇部門:</label>
+      <select
+        id="talentDept"
+        [value]="selectedDepartment()"
+        (change)="updateDepartment($any($event.target).value)">
+        @for (opt of departmentOptions; track opt.value) {
+          <option [value]="opt.value">{{ opt.label }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  <!-- Metrics Dashboard -->
+  <div class="dashboard-grid">
+    @for (metric of metrics(); track metric.title) {
+      <article class="metric-card">
+        <h3 class="metric-card__title">{{ metric.title }}</h3>
+        <p class="metric-card__value" [style.color]="metric.color">{{ metric.value }}</p>
+        <p class="metric-card__desc">{{ metric.description }}</p>
+        @if (metric.actionLabel) {
+          <button class="small-btn" (click)="startRetentionPlan()" type="button">
+            {{ metric.actionLabel }}
+          </button>
+        }
+      </article>
+    }
+  </div>
+
+  <!-- High Risk Alert Panel -->
+  <section class="alert-panel">
+    <header class="alert-panel__header">
+      <div class="alert-icon">
+        <i class="ri-alert-fill"></i>
+      </div>
+      <h3 class="alert-panel__title">高風險人才預警（離職傾向 > 60%）</h3>
+    </header>
+    <div class="alert-list">
+      @for (alert of riskAlerts(); track alert.id) {
+        <article class="alert-item" [class]="alert.riskLevel">
+          <div class="alert-item__avatar">{{ alert.name.charAt(0) }}</div>
+          <div class="alert-item__info">
+            <span class="alert-item__name">{{ alert.name }}</span>
+            <span class="alert-item__detail">{{ alert.department }} · {{ alert.position }}</span>
+            <span class="alert-item__factors">{{ alert.factors.join(' · ') }}</span>
+          </div>
+          <div class="alert-item__score" [class]="alert.riskLevel">{{ alert.riskScore }}%</div>
+          <button class="alert-item__action" (click)="openRetentionModal(alert)" type="button">
+            啟動留才計畫
+          </button>
+        </article>
+      }
+    </div>
+  </section>
+
+  <!-- Succession Planning -->
+  <section class="succession-section">
+    <h2 class="section-title">關鍵職位接班人規劃</h2>
+    <div class="succession-grid">
+      @for (plan of successionPlans(); track plan.position) {
+        <article class="succession-card">
+          <header class="succession-card__header">
+            <span class="succession-card__position">{{ plan.position }}</span>
+            <span class="coverage-badge" [class]="getCoverageClass(plan.coverage)">
+              {{ plan.coverageText }}
+            </span>
+          </header>
+          <div class="succession-list">
+            @if (plan.successors.length > 0) {
+              @for (successor of plan.successors; track successor.rank) {
+                <div class="successor-item">
+                  <span class="successor-rank">{{ successor.rank }}</span>
+                  <span class="successor-name">{{ successor.name }}</span>
+                  <div class="readiness-bar">
+                    <div class="readiness-fill" [style.width.%]="successor.readiness"></div>
+                  </div>
+                  <span class="readiness-score">{{ successor.readiness }}%</span>
+                </div>
+              }
+            } @else {
+              <div class="no-successor">
+                <i class="ri-user-add-line"></i>
+                <span>尚無接班人選</span>
+              </div>
+            }
+          </div>
+        </article>
+      }
+    </div>
+  </section>
+
+  <!-- Charts -->
+  <div class="chart-combo">
+    <div class="chart-card">
+      <div #coverageChart class="chart-container"></div>
+      <button class="export-btn" (click)="exportChart('coverage')" type="button">
+        <i class="ri-download-2-line"></i>
+        匯出覆蓋率圖表 PNG
+      </button>
+    </div>
+    <div class="chart-card">
+      <div #costChart class="chart-container"></div>
+      <button class="export-btn" (click)="exportChart('cost')" type="button">
+        <i class="ri-download-2-line"></i>
+        匯出成本分析 PNG
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Retention Plan Modal -->
+@if (showRetentionModal()) {
+  <div class="modal-overlay" (click)="closeRetentionModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      @if (selectedAlert(); as alert) {
+        <h3 class="modal-title">啟動留才計畫 - {{ alert.name }}</h3>
+        
+        <div class="modal-section">
+          <strong class="modal-label">風險因素：</strong>
+          <ul class="factor-list">
+            @for (factor of alert.factors; track factor) {
+              <li>• {{ factor }}</li>
+            }
+          </ul>
+        </div>
+
+        <div class="modal-section">
+          <strong class="modal-label modal-label--primary">建議行動方案：</strong>
+          <ul class="suggestion-list">
+            @for (suggestion of retentionSuggestions; track suggestion) {
+              <li>• {{ suggestion }}</li>
+            }
+          </ul>
+        </div>
+
+        <div class="modal-section">
+          <strong>預估挽留成功率：</strong>
+          <span class="success-rate">{{ getEstimatedSuccessRate(alert) }}%</span>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn-secondary" (click)="closeRetentionModal()" type="button">取消</button>
+          <button class="btn-primary" (click)="confirmRetention()" type="button">確認啟動</button>
+        </div>
+      }
+    </div>
+  </div>
+}

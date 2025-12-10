@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>職缺管理 - Bombus V6.0</title>
+    <!-- Remix Icon -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- System CSS -->
+    <link rel="stylesheet" href="../assets/css/system.css">
+    <style>
+        .filter-bar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--color-border);
+            flex-wrap: wrap;
+        }
+
+        .filter-item {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .job-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--color-border);
+        }
+
+        .job-table th, .job-table td {
+            padding: 15px 20px;
+            text-align: left;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .job-table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+            font-size: 13px;
+        }
+
+        .job-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .job-table tr:hover {
+            background: #f8fafc;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-published {
+            background: rgba(127, 176, 149, 0.15);
+            color: var(--color-success);
+        }
+
+        .status-draft {
+            background: rgba(148, 163, 184, 0.15);
+            color: var(--color-text-secondary);
+        }
+
+        .status-review {
+            background: rgba(227, 192, 136, 0.15);
+            color: #a88643;
+        }
+
+        .candidate-count {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .count-badge {
+            background: var(--color-l1-sage);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+        .action-btn-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .icon-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid var(--color-border);
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--color-text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .icon-btn:hover {
+            border-color: var(--color-l1-sage);
+            color: var(--color-l1-sage);
+        }
+        
+        .stats-cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--color-border);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: rgba(141, 163, 153, 0.1);
+            color: var(--color-l1-sage);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        
+        .stat-info h4 {
+            font-size: 13px;
+            color: var(--color-text-secondary);
+            margin-bottom: 5px;
+        }
+        
+        .stat-info .value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--color-text-primary);
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--color-text-primary);
+        }
+
+        .close-btn {
+            font-size: 24px;
+            color: var(--color-text-secondary);
+            cursor: pointer;
+            background: none;
+            border: none;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--color-text-primary);
+            margin-bottom: 8px;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .form-textarea {
+            height: 100px;
+            resize: vertical;
+        }
+
+        .modal-footer {
+            margin-top: 30px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .btn-secondary {
+            padding: 8px 16px;
+            background: white;
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            color: var(--color-text-primary);
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            padding: 8px 16px;
+            background: var(--color-l1-sage);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        /* 篩選按鈕樣式 */
+        .filter-btn {
+            width: 100%;
+            padding: 8px;
+            background-color: #f1f5f9;
+            color: #475569;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover {
+            background-color: #e2e8f0;
+            color: #1e293b;
+        }
+    </style>
+</head>
+<body>
+    <div class="system-wrapper">
+        <!-- Sidebar (Same as recruitment.html) -->
+        <aside class="system-aside" id="kt_aside">
+            <!-- Brand -->
+            <div class="aside-brand">
+                <div class="brand-logo">
+                    <img src="../assets/images/logo-bombus.svg" alt="Bombus Logo" class="logo">
+                    <span class="brand-text">Bombus</span>
+                </div>
+                <button class="aside-toggle-btn" id="aside_toggle">
+                    <i class="ri-arrow-left-s-line"></i>
+                </button>
+            </div>
+
+            <!-- Menu -->
+            <nav class="aside-menu">
+                <div class="menu-wrapper">
+                    <!-- Dashboard -->
+                    <div class="menu-item">
+                        <a href="../index.html" class="menu-link">
+                            <span class="menu-icon">
+                                <i class="ri-dashboard-line"></i>
+                            </span>
+                            <span class="menu-text">企業管理儀表板</span>
+                            <span class="menu-badge">L0.0</span>
+                        </a>
+                    </div>
+
+                    <!-- L1 員工管理 -->
+                    <div class="menu-section">
+                        <div class="menu-section-title">
+                            <span class="section-text">員工管理模組</span>
+                        </div>
+                    </div>
+
+                    <div class="menu-item menu-accordion show">
+                        <div class="menu-link" data-toggle="collapse">
+                            <span class="menu-icon module-l1">
+                                <i class="ri-team-line"></i>
+                            </span>
+                            <span class="menu-text">員工管理</span>
+                            <span class="menu-arrow">
+                                <i class="ri-arrow-down-s-line"></i>
+                            </span>
+                        </div>
+                        <div class="menu-sub">
+                            <div class="menu-item">
+                                <a href="./jobs.html" class="menu-link active">
+                                    <span class="menu-bullet"></span>
+                                    <span class="menu-text">招募職缺管理</span>
+                                </a>
+                            </div>
+                            <div class="menu-item">
+                                <a href="./recruitment.html" class="menu-link">
+                                    <span class="menu-bullet"></span>
+                                    <span class="menu-text">AI智能面試</span>
+                                </a>
+                            </div>
+                            <div class="menu-item">
+                                <a href="./profile.html" class="menu-link">
+                                    <span class="menu-bullet"></span>
+                                    <span class="menu-text">員工檔案管理</span>
+                                </a>
+                            </div>
+                            <div class="menu-item">
+                                <a href="./talent-pool.html" class="menu-link">
+                                    <span class="menu-bullet"></span>
+                                    <span class="menu-text">人才庫管理</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- L2 職能管理 -->
+                    <div class="menu-item menu-accordion">
+                        <div class="menu-link" data-toggle="collapse">
+                            <span class="menu-icon module-l2">
+                                <i class="ri-medal-line"></i>
+                            </span>
+                            <span class="menu-text">職能管理</span>
+                            <span class="menu-arrow">
+                                <i class="ri-arrow-down-s-line"></i>
+                            </span>
+                        </div>
+                        <div class="menu-sub">
+                            <div class="menu-item">
+                                <a href="../competency/framework.html" class="menu-link">
+                                    <span class="menu-bullet"></span>
+                                    <span class="menu-text">職能框架開發</span>
+                                </a>
+                            </div>
+                            <div class="menu-item">
+                                <a href="../competency/assessment.html" class="menu-link">
+                                    <span class="menu-bullet"></span>
+                                    <span class="menu-text">職能評估系統</span>
+                                </a>
+                            </div>
+                            <div class="menu-item">
+                                <a href="../competency/gap-analysis.html" class="menu-link">
+                                    <span class="menu-bullet"></span>
+                                    <span class="menu-text">職能落差分析</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- L3 教育訓練 -->
+                    <div class="menu-item menu-accordion">
+                        <div class="menu-link" data-toggle="collapse">
+                            <span class="menu-icon module-l3">
+                                <i class="ri-book-open-line"></i>
+                            </span>
+                            <span class="menu-text">教育訓練</span>
+                            <span class="menu-arrow">
+                                <i class="ri-arrow-down-s-line"></i>
+                            </span>
+                        </div>
+                        <div class="menu-sub">
+                            <div class="menu-item">
+                                <a href="../training/talent-map.html" class="menu-link">
+                                    <span class="menu-bullet"></span>
+                                    <span class="menu-text">人才地圖總覽</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- L4 專案管理 -->
+                    <div class="menu-item menu-accordion">
+                        <div class="menu-link" data-toggle="collapse">
+                            <span class="menu-icon module-l4">
+                                <i class="ri-folder-chart-line"></i>
+                            </span>
+                            <span class="menu-text">專案管理</span>
+                            <span class="menu-arrow">
+                                <i class="ri-arrow-down-s-line"></i>
+                            </span>
+                        </div>
+                        <div class="menu-sub">
+                            <div class="menu-item">
+                                <a href="../project/list.html" class="menu-link">
+                                    <span class="menu-bullet"></span>
+                                    <span class="menu-text">專案列表</span>
+                                </a>
+                            </div>
+                            <div class="menu-item">
+                                <a href="../project/profit-prediction.html" class="menu-link">
+                                    <span class="menu-bullet"></span>
+                                    <span class="menu-text">AI損益預測</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- L5 績效管理 -->
+                    <div class="menu-item menu-accordion">
+                        <div class="menu-link" data-toggle="collapse">
+                            <span class="menu-icon module-l5">
+                                <i class="ri-line-chart-line"></i>
+                            </span>
+                            <span class="menu-text">績效管理</span>
+                            <span class="menu-arrow">
+                                <i class="ri-arrow-down-s-line"></i>
+                            </span>
+                        </div>
+                        <div class="menu-sub">
+                            <div class="menu-item">
+                                <a href="../performance/review.html" class="menu-link">
+                                    <span class="menu-bullet"></span>
+                                    <span class="menu-text">績效考核</span>
+                                </a>
+                            </div>
+                            <div class="menu-item">
+                                <a href="../performance/360-feedback.html" class="menu-link">
+                                    <span class="menu-bullet"></span>
+                                    <span class="menu-text">360度回饋</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- L6 文化管理 -->
+                    <div class="menu-item menu-accordion">
+                        <div class="menu-link" data-toggle="collapse">
+                            <span class="menu-icon module-l6">
+                                <i class="ri-heart-line"></i>
+                            </span>
+                            <span class="menu-text">文化管理</span>
+                            <span class="menu-arrow">
+                                <i class="ri-arrow-down-s-line"></i>
+                            </span>
+                        </div>
+                        <div class="menu-sub">
+                            <div class="menu-item">
+                                <a href="../culture/handbook.html" class="menu-link">
+                                    <span class="menu-bullet"></span>
+                                    <span class="menu-text">企業文化手冊</span>
+                                </a>
+                            </div>
+                            <div class="menu-item">
+                                <a href="../culture/eap.html" class="menu-link">
+                                    <span class="menu-bullet"></span>
+                                    <span class="menu-text">EAP員工協助</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- System Settings -->
+                    <div class="menu-section">
+                        <div class="menu-section-title">
+                            <span class="section-text">系統設定</span>
+                        </div>
+                    </div>
+
+                    <div class="menu-item">
+                        <a href="../settings/permissions.html" class="menu-link">
+                            <span class="menu-icon">
+                                <i class="ri-shield-user-line"></i>
+                            </span>
+                            <span class="menu-text">權限管理</span>
+                        </a>
+                    </div>
+
+                    <div class="menu-item">
+                        <a href="../settings/backup.html" class="menu-link">
+                            <span class="menu-icon">
+                                <i class="ri-database-2-line"></i>
+                            </span>
+                            <span class="menu-text">備份管理</span>
+                        </a>
+                    </div>
+                </div>
+            </nav>
+            
+            <!-- Footer -->
+            <div class="aside-footer">
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <img src="../assets/images/avatar.jpg" alt="User" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2240%22 height=%2240%22%3E%3Ccircle cx=%2220%22 cy=%2220%22 r=%2220%22 fill=%22%2364748B%22/%3E%3Ctext x=%2220%22 y=%2225%22 text-anchor=%22middle%22 fill=%22white%22 font-size=%2216%22 font-weight=%22bold%22%3EA%3C/text%3E%3C/svg%3E'">
+                    </div>
+                    <div class="user-details">
+                        <div class="user-name">Admin</div>
+                        <div class="user-role">系統管理員</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <div class="page-wrapper">
+            <header class="system-header">
+                <div class="header-container">
+                    <button class="mobile-toggle" id="mobile_toggle"><i class="ri-menu-line"></i></button>
+                    <div class="page-title">
+                        <h1 class="title-text">職缺管理</h1>
+                        <div class="breadcrumb">
+                            <span class="breadcrumb-item">員工管理</span>
+                            <i class="ri-arrow-right-s-line"></i>
+                            <span class="breadcrumb-item active">招募職缺管理</span>
+                        </div>
+                    </div>
+                    <div class="header-actions">
+                        <button class="action-btn" id="search_btn">
+                            <i class="ri-search-line"></i>
+                        </button>
+                        <div class="action-dropdown">
+                            <button class="action-btn" id="notification_btn">
+                                <i class="ri-notification-3-line"></i>
+                                <span class="badge">5</span>
+                            </button>
+                        </div>
+                        <div class="action-dropdown">
+                            <button class="action-btn user-menu-btn" id="user_menu_btn">
+                                <img src="../assets/images/avatar.jpg" alt="User" class="user-avatar-small" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2216%22 fill=%22%2364748B%22/%3E%3Ctext x=%2216%22 y=%2221%22 text-anchor=%22middle%22 fill=%22white%22 font-size=%2214%22 font-weight=%22bold%22%3EA%3C/text%3E%3C/svg%3E'">
+                            </button>
+                        </div>
+                        <button class="btn-primary" onclick="openJobModal()" style="margin-left: 10px;">
+                            <i class="ri-add-line"></i> 發布職缺
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <main class="main-content">
+                <div class="content-container">
+                    <!-- Stats -->
+                    <div class="stats-cards">
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class="ri-briefcase-line"></i></div>
+                            <div class="stat-info">
+                                <h4>進行中職缺</h4>
+                                <div class="value">12</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class="ri-user-search-line"></i></div>
+                            <div class="stat-info">
+                                <h4>本週新進履歷</h4>
+                                <div class="value">45</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class="ri-file-list-3-line"></i></div>
+                            <div class="stat-info">
+                                <h4>待審核履歷</h4>
+                                <div class="value">28</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class="ri-calendar-check-line"></i></div>
+                            <div class="stat-info">
+                                <h4>已安排面試</h4>
+                                <div class="value">8</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Filters -->
+                    <div class="filter-bar">
+                        <div class="filter-item">
+                            <label class="form-label" style="margin-bottom: 5px; display: block;">關鍵字搜尋</label>
+                            <input type="text" class="form-input" placeholder="職稱 / 部門" style="width: 100%; padding: 8px; border: 1px solid var(--color-border); border-radius: 6px;">
+                        </div>
+                        <div class="filter-item">
+                            <label class="form-label" style="margin-bottom: 5px; display: block;">部門篩選</label>
+                            <select class="form-select" style="width: 100%; padding: 8px; border: 1px solid var(--color-border); border-radius: 6px;">
+                                <option value="">所有部門</option>
+                                <option value="it">資訊部</option>
+                                <option value="hr">人資部</option>
+                                <option value="sales">業務部</option>
+                            </select>
+                        </div>
+                        <div class="filter-item">
+                            <label class="form-label" style="margin-bottom: 5px; display: block;">狀態</label>
+                            <select class="form-select" style="width: 100%; padding: 8px; border: 1px solid var(--color-border); border-radius: 6px;">
+                                <option value="">所有狀態</option>
+                                <option value="published">刊登中</option>
+                                <option value="draft">草稿</option>
+                                <option value="review">審核中</option>
+                            </select>
+                        </div>
+                        <div class="filter-item" style="display: flex; align-items: flex-end;">
+                            <button class="filter-btn">
+                                <i class="ri-filter-line"></i> 篩選
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Job List -->
+                    <table class="job-table">
+                        <thead>
+                            <tr>
+                                <th>職缺名稱</th>
+                                <th>部門</th>
+                                <th>發布日期</th>
+                                <th>應徵狀況 (新進/總數)</th>
+                                <th>狀態</th>
+                                <th>招募負責人</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <div style="font-weight: 600;">資深前端工程師 (Senior Frontend Engineer)</div>
+                                    <div style="font-size: 12px; color: var(--color-text-secondary);">ID: JOB-2025001</div>
+                                </td>
+                                <td>資訊部</td>
+                                <td>2025-11-20</td>
+                                <td>
+                                    <div class="candidate-count">
+                                        <span class="count-badge" style="background: #E76E6E;">New 3</span>
+                                        <span style="color: var(--color-text-secondary); font-size: 12px;">/ 15 人</span>
+                                    </div>
+                                </td>
+                                <td><span class="status-badge status-published"><i class="ri-checkbox-circle-line"></i> 刊登中</span></td>
+                                <td>Alex Chen</td>
+                                <td>
+                                    <div class="action-btn-group">
+                                        <button class="icon-btn" title="查看候選人" onclick="location.href='job-candidates.html?job=frontend'"><i class="ri-user-search-line"></i></button>
+                                        <button class="icon-btn" title="編輯職缺"><i class="ri-edit-line"></i></button>
+                                        <button class="icon-btn" title="更多"><i class="ri-more-2-fill"></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div style="font-weight: 600;">產品經理 (Product Manager)</div>
+                                    <div style="font-size: 12px; color: var(--color-text-secondary);">ID: JOB-2025002</div>
+                                </td>
+                                <td>產品部</td>
+                                <td>2025-11-18</td>
+                                <td>
+                                    <div class="candidate-count">
+                                        <span class="count-badge">New 1</span>
+                                        <span style="color: var(--color-text-secondary); font-size: 12px;">/ 8 人</span>
+                                    </div>
+                                </td>
+                                <td><span class="status-badge status-published"><i class="ri-checkbox-circle-line"></i> 刊登中</span></td>
+                                <td>Sarah Lin</td>
+                                <td>
+                                    <div class="action-btn-group">
+                                        <button class="icon-btn" title="查看候選人" onclick="location.href='job-candidates.html?job=pm'"><i class="ri-user-search-line"></i></button>
+                                        <button class="icon-btn" title="編輯職缺"><i class="ri-edit-line"></i></button>
+                                        <button class="icon-btn" title="更多"><i class="ri-more-2-fill"></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div style="font-weight: 600;">UI/UX 設計師</div>
+                                    <div style="font-size: 12px; color: var(--color-text-secondary);">ID: JOB-2025003</div>
+                                </td>
+                                <td>設計部</td>
+                                <td>--</td>
+                                <td>-</td>
+                                <td><span class="status-badge status-review"><i class="ri-time-line"></i> 審核中</span></td>
+                                <td>Mike Wang</td>
+                                <td>
+                                    <div class="action-btn-group">
+                                        <button class="icon-btn" title="審核"><i class="ri-check-double-line"></i></button>
+                                        <button class="icon-btn" title="編輯職缺"><i class="ri-edit-line"></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div style="font-weight: 600;">行銷企劃專員</div>
+                                    <div style="font-size: 12px; color: var(--color-text-secondary);">ID: JOB-2025004</div>
+                                </td>
+                                <td>行銷部</td>
+                                <td>--</td>
+                                <td>-</td>
+                                <td><span class="status-badge status-draft"><i class="ri-file-edit-line"></i> 草稿</span></td>
+                                <td>Jessica Wu</td>
+                                <td>
+                                    <div class="action-btn-group">
+                                        <button class="icon-btn" title="編輯職缺"><i class="ri-edit-line"></i></button>
+                                        <button class="icon-btn" title="刪除"><i class="ri-delete-bin-line"></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </main>
+
+            <footer class="system-footer">
+                <div class="footer-content">
+                    <div class="footer-left">
+                        <span>© 2025 Bombus 企業管理系統</span>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Job Modal -->
+    <div id="jobModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">發布新職缺</h3>
+                <button class="close-btn" onclick="closeJobModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">職缺名稱</label>
+                    <input type="text" class="form-input" placeholder="例如：資深前端工程師">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">所屬部門</label>
+                    <select class="form-select">
+                        <option value="">請選擇部門</option>
+                        <option value="it">資訊部</option>
+                        <option value="hr">人資部</option>
+                        <option value="sales">業務部</option>
+                        <option value="product">產品部</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">招募負責人</label>
+                    <input type="text" class="form-input" value="Admin (您)">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">職務說明 (JD)</label>
+                    <textarea class="form-textarea" placeholder="請輸入職務內容與需求..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeJobModal()">取消</button>
+                <button class="btn-primary" onclick="saveJob()">確認發布</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/js/system.js"></script>
+    <script>
+        function openJobModal() {
+            $('#jobModal').fadeIn(200).css('display', 'flex');
+        }
+
+        function closeJobModal() {
+            $('#jobModal').fadeOut(200);
+        }
+
+        function saveJob() {
+            // 模擬儲存
+            const btn = $('.modal-footer .btn-primary');
+            const originalText = btn.text();
+            btn.text('發布中...').prop('disabled', true);
+            
+            setTimeout(() => {
+                btn.text(originalText).prop('disabled', false);
+                closeJobModal();
+                alert('職缺已成功發布！');
+            }, 800);
+        }
+    </script>
+</body>
+</html>
+

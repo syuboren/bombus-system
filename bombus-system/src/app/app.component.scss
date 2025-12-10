@@ -1,0 +1,8 @@
+// App 元件樣式由全域 styles.scss 處理
+// 此處僅保留特定於 App 元件的樣式
+
+:host {
+  display: block;
+  min-height: 100vh;
+}
+

@@ -1,0 +1,106 @@
+@import '../../../../assets/styles/variables';
+@import '../../../../assets/styles/mixins';
+
+.stat-card {
+  @include card;
+  @include card-hover;
+  @include flex-start;
+  gap: $spacing-md;
+  padding: $spacing-lg;
+
+  &--l1 {
+    .stat-card__icon {
+      background: rgba($color-l1-sage, 0.1);
+      color: $color-l1-sage;
+    }
+  }
+
+  &--l2 {
+    .stat-card__icon {
+      background: rgba($color-l2-terracotta, 0.1);
+      color: $color-l2-terracotta;
+    }
+  }
+
+  &--l3 {
+    .stat-card__icon {
+      background: rgba($color-l3-petrol, 0.1);
+      color: $color-l3-petrol;
+    }
+  }
+
+  &--l4 {
+    .stat-card__icon {
+      background: rgba($color-l4-mauve, 0.1);
+      color: $color-l4-mauve;
+    }
+  }
+
+  &--l5 {
+    .stat-card__icon {
+      background: rgba($color-l5-brick, 0.1);
+      color: $color-l5-brick;
+    }
+  }
+
+  &--l6 {
+    .stat-card__icon {
+      background: rgba($color-l6-rose, 0.1);
+      color: $color-l6-rose;
+    }
+  }
+}
+
+.stat-card__icon {
+  @include flex-center;
+  width: 56px;
+  height: 56px;
+  border-radius: $radius-lg;
+  flex-shrink: 0;
+
+  i {
+    font-size: 28px;
+  }
+}
+
+.stat-card__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.stat-card__label {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-xs;
+}
+
+.stat-card__value {
+  font-size: $font-size-2xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-dark;
+  margin-bottom: $spacing-xs;
+  @include text-truncate;
+}
+
+.stat-card__change {
+  @include flex-start;
+  gap: $spacing-xs;
+  font-size: $font-size-xs;
+
+  i {
+    font-size: 14px;
+  }
+
+  &--positive {
+    color: $color-success;
+  }
+
+  &--negative {
+    color: $color-error;
+  }
+
+  &--neutral {
+    color: $color-text-secondary;
+  }
+}
+

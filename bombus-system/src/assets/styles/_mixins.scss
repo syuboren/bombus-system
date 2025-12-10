@@ -1,0 +1,287 @@
+// ===============================================================
+// Bombus V6.0 - SCSS Mixins
+// ===============================================================
+
+@import 'variables';
+
+// ---------------------------------------------------------------
+// 響應式斷點
+// ---------------------------------------------------------------
+@mixin media-sm {
+  @media (min-width: $breakpoint-sm) {
+    @content;
+  }
+}
+
+@mixin media-md {
+  @media (min-width: $breakpoint-md) {
+    @content;
+  }
+}
+
+@mixin media-lg {
+  @media (min-width: $breakpoint-lg) {
+    @content;
+  }
+}
+
+@mixin media-xl {
+  @media (min-width: $breakpoint-xl) {
+    @content;
+  }
+}
+
+@mixin media-max-sm {
+  @media (max-width: #{$breakpoint-sm - 1px}) {
+    @content;
+  }
+}
+
+@mixin media-max-md {
+  @media (max-width: #{$breakpoint-md - 1px}) {
+    @content;
+  }
+}
+
+@mixin media-max-lg {
+  @media (max-width: #{$breakpoint-lg - 1px}) {
+    @content;
+  }
+}
+
+@mixin media-max-xl {
+  @media (max-width: #{$breakpoint-xl - 1px}) {
+    @content;
+  }
+}
+
+// ---------------------------------------------------------------
+// Flexbox 工具
+// ---------------------------------------------------------------
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@mixin flex-start {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+@mixin flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+// ---------------------------------------------------------------
+// 卡片樣式 (Soft UI)
+// ---------------------------------------------------------------
+@mixin card {
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-soft;
+  transition: box-shadow $transition-normal, transform $transition-normal;
+}
+
+@mixin card-hover {
+  &:hover {
+    box-shadow: $shadow-lg;
+    transform: translateY(-2px);
+  }
+}
+
+// ---------------------------------------------------------------
+// 按鈕樣式
+// ---------------------------------------------------------------
+@mixin button-base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  border: none;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: all $transition-normal;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+@mixin button-primary {
+  @include button-base;
+  background: $color-brand-main;
+  color: white;
+
+  &:hover:not(:disabled) {
+    background: $color-brand-dark;
+  }
+}
+
+@mixin button-secondary {
+  @include button-base;
+  background: $color-soft-gray;
+  color: $color-text-primary;
+
+  &:hover:not(:disabled) {
+    background: darken($color-soft-gray, 5%);
+  }
+}
+
+@mixin button-icon {
+  @include flex-center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: $radius-md;
+  background: transparent;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: all $transition-normal;
+
+  &:hover {
+    background: $color-soft-gray;
+    color: $color-text-primary;
+  }
+}
+
+// ---------------------------------------------------------------
+// 輸入框樣式
+// ---------------------------------------------------------------
+@mixin input-base {
+  width: 100%;
+  padding: $spacing-sm $spacing-md;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  background: $color-pure-white;
+  transition: border-color $transition-normal, box-shadow $transition-normal;
+
+  &::placeholder {
+    color: $color-muted-gray;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: $color-brand-main;
+    box-shadow: 0 0 0 3px rgba($color-brand-main, 0.1);
+  }
+}
+
+// ---------------------------------------------------------------
+// 文字截斷
+// ---------------------------------------------------------------
+@mixin text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@mixin text-clamp($lines: 2) {
+  display: -webkit-box;
+  -webkit-line-clamp: $lines;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+// ---------------------------------------------------------------
+// 滾動條樣式
+// ---------------------------------------------------------------
+@mixin custom-scrollbar {
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: $color-muted-gray;
+    border-radius: $radius-full;
+
+    &:hover {
+      background: $color-text-secondary;
+    }
+  }
+}
+
+// ---------------------------------------------------------------
+// 模組色背景
+// ---------------------------------------------------------------
+@mixin module-bg($color) {
+  background: rgba($color, 0.1);
+  color: $color;
+}
+
+@mixin module-l1 {
+  @include module-bg($color-l1-sage);
+}
+
+@mixin module-l2 {
+  @include module-bg($color-l2-terracotta);
+}
+
+@mixin module-l3 {
+  @include module-bg($color-l3-petrol);
+}
+
+@mixin module-l4 {
+  @include module-bg($color-l4-mauve);
+}
+
+@mixin module-l5 {
+  @include module-bg($color-l5-brick);
+}
+
+@mixin module-l6 {
+  @include module-bg($color-l6-rose);
+}
+
+// ---------------------------------------------------------------
+// 動畫
+// ---------------------------------------------------------------
+@mixin fade-in($duration: 300ms) {
+  animation: fadeIn $duration ease forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@mixin slide-in-left($duration: 300ms) {
+  animation: slideInLeft $duration ease forwards;
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+

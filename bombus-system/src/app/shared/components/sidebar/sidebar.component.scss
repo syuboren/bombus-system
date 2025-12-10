@@ -1,0 +1,442 @@
+@import '../../../../assets/styles/variables';
+@import '../../../../assets/styles/mixins';
+
+// ---------------------------------------------------------------
+// Sidebar Backdrop (Mobile)
+// ---------------------------------------------------------------
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 998;
+  opacity: 0;
+  animation: fadeIn 300ms ease forwards;
+
+  @include media-lg {
+    display: none;
+  }
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
+
+// ---------------------------------------------------------------
+// Sidebar
+// ---------------------------------------------------------------
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: $sidebar-width;
+  height: 100vh;
+  background: $color-pure-white;
+  box-shadow: $shadow-md;
+  display: flex;
+  flex-direction: column;
+  z-index: 999;
+  transition: width $transition-normal, transform $transition-normal;
+
+  @include media-max-lg {
+    transform: translateX(-100%);
+
+    &.mobile-open {
+      transform: translateX(0);
+    }
+  }
+
+  // Minimized State
+  &.minimized {
+    width: $sidebar-width-minimized;
+    overflow: visible;
+
+    .brand-text,
+    .menu-section__title,
+    .menu-item__text,
+    .menu-item__badge,
+    .menu-item__arrow,
+    .user-info__details {
+      display: none !important;
+    }
+
+    .sidebar__brand {
+      padding: $spacing-md $spacing-sm;
+      justify-content: center;
+    }
+
+    .brand-logo {
+      justify-content: center;
+    }
+
+    .sidebar__toggle {
+      display: none;
+
+      @include media-lg {
+        display: flex;
+        position: absolute;
+        right: -12px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 24px;
+        height: 24px;
+        background: $color-pure-white;
+        border-radius: 50%;
+        box-shadow: $shadow-md;
+        z-index: 1001;
+
+        i {
+          transform: rotate(180deg);
+        }
+      }
+    }
+
+    .sidebar__menu {
+      overflow: visible;
+    }
+
+    .menu-wrapper {
+      overflow: visible;
+    }
+
+    .menu-section {
+      padding: $spacing-sm;
+    }
+
+    .menu-item {
+      position: relative;
+      padding: 0 $spacing-xs;
+    }
+
+    .menu-item__link {
+      justify-content: center;
+      padding: $spacing-sm;
+    }
+
+    .menu-item__icon {
+      margin-right: 0;
+    }
+
+    // Flyout menu for minimized state
+    .menu-item--accordion {
+      .menu-item__submenu {
+        display: none;
+        position: absolute;
+        left: 100%;
+        top: 0;
+        width: 220px;
+        background: white;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        border-radius: $radius-md;
+        padding: $spacing-sm 0;
+        max-height: none !important;
+        opacity: 1 !important;
+        overflow: visible !important;
+        z-index: 1000;
+        border: 1px solid $color-soft-gray;
+        margin-left: $spacing-xs;
+
+        // Triangle/Arrow pointing to the menu item
+        &::before {
+          content: '';
+          position: absolute;
+          top: 12px;
+          left: -6px;
+          width: 12px;
+          height: 12px;
+          background: white;
+          transform: rotate(45deg);
+          border-left: 1px solid $color-soft-gray;
+          border-bottom: 1px solid $color-soft-gray;
+        }
+
+        .submenu-item {
+          padding: $spacing-sm $spacing-md;
+          margin: 2px $spacing-sm;
+          padding-left: $spacing-md !important;
+        }
+      }
+
+      &:hover {
+        > .menu-item__link {
+          background: $color-cloud-gray;
+        }
+
+        .menu-item__submenu {
+          display: block;
+        }
+      }
+    }
+
+    .user-info {
+      justify-content: center;
+      padding: $spacing-md $spacing-sm;
+    }
+
+    .user-info__avatar {
+      margin-right: 0;
+    }
+  }
+}
+
+// ---------------------------------------------------------------
+// Brand
+// ---------------------------------------------------------------
+.sidebar__brand {
+  @include flex-between;
+  padding: $spacing-lg $spacing-md;
+  border-bottom: 1px solid $color-soft-gray;
+}
+
+.brand-logo {
+  @include flex-start;
+  gap: $spacing-sm;
+
+  .logo {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+  }
+
+  .brand-text {
+    font-size: $font-size-xl;
+    font-weight: $font-weight-bold;
+    color: $color-brand-main;
+    transition: opacity $transition-normal, width $transition-normal;
+    white-space: nowrap;
+  }
+}
+
+.sidebar__toggle {
+  @include button-icon;
+  flex-shrink: 0;
+
+  i {
+    font-size: 20px;
+    transition: transform $transition-normal;
+  }
+}
+
+// ---------------------------------------------------------------
+// Menu
+// ---------------------------------------------------------------
+.sidebar__menu {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: $spacing-md 0;
+  @include custom-scrollbar;
+}
+
+.menu-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+// Menu Section
+.menu-section {
+  padding: $spacing-md $spacing-md $spacing-xs;
+}
+
+.menu-section__title {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: $color-muted-gray;
+  transition: opacity $transition-normal;
+  white-space: nowrap;
+}
+
+// Menu Item
+.menu-item {
+  padding: 0 $spacing-sm;
+}
+
+.menu-item__link {
+  @include flex-start;
+  width: 100%;
+  padding: $spacing-sm $spacing-md;
+  border-radius: $radius-md;
+  color: $color-text-secondary;
+  text-decoration: none;
+  transition: all $transition-normal;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: $font-size-sm;
+  text-align: left;
+
+  &:hover {
+    background: $color-cloud-gray;
+    color: $color-text-primary;
+  }
+
+  &.active {
+    background: rgba($color-brand-main, 0.1);
+    color: $color-brand-main;
+
+    .menu-item__icon {
+      color: $color-brand-main;
+    }
+  }
+}
+
+.menu-item__icon {
+  @include flex-center;
+  width: 24px;
+  height: 24px;
+  margin-right: $spacing-sm;
+  flex-shrink: 0;
+  transition: margin $transition-normal;
+
+  i {
+    font-size: 20px;
+  }
+
+  // Module Colors
+  &.module-l1 { color: $color-l1-sage; }
+  &.module-l2 { color: $color-l2-terracotta; }
+  &.module-l3 { color: $color-l3-petrol; }
+  &.module-l4 { color: $color-l4-mauve; }
+  &.module-l5 { color: $color-l5-brick; }
+  &.module-l6 { color: $color-l6-rose; }
+}
+
+.menu-item__text {
+  flex: 1;
+  @include text-truncate;
+  transition: opacity $transition-normal, width $transition-normal;
+}
+
+.menu-item__badge {
+  font-size: $font-size-xs;
+  padding: 2px 6px;
+  background: $color-soft-gray;
+  border-radius: $radius-sm;
+  color: $color-text-secondary;
+  transition: opacity $transition-normal;
+}
+
+.menu-item__arrow {
+  @include flex-center;
+  width: 20px;
+  height: 20px;
+  transition: transform $transition-normal, opacity $transition-normal;
+
+  i {
+    font-size: 16px;
+  }
+}
+
+// Accordion Menu
+.menu-item--accordion {
+  &.expanded {
+    .menu-item__arrow {
+      transform: rotate(180deg);
+    }
+
+    .menu-item__submenu {
+      max-height: 500px;
+      opacity: 1;
+    }
+  }
+}
+
+.menu-item__submenu {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height $transition-normal, opacity $transition-normal;
+}
+
+// Submenu Item
+.submenu-item {
+  @include flex-start;
+  padding: $spacing-sm $spacing-md $spacing-sm calc(#{$spacing-md} + 32px);
+  color: $color-text-secondary;
+  text-decoration: none;
+  font-size: $font-size-sm;
+  transition: all $transition-normal;
+  border-radius: $radius-md;
+  margin: 2px $spacing-sm;
+
+  &:hover {
+    background: $color-cloud-gray;
+    color: $color-text-primary;
+  }
+
+  &.active {
+    color: $color-brand-main;
+
+    .submenu-item__bullet {
+      background: $color-brand-main;
+    }
+  }
+}
+
+.submenu-item__bullet {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: $color-muted-gray;
+  margin-right: $spacing-sm;
+  flex-shrink: 0;
+  transition: background $transition-normal;
+}
+
+.submenu-item__text {
+  @include text-truncate;
+}
+
+// ---------------------------------------------------------------
+// Footer
+// ---------------------------------------------------------------
+.sidebar__footer {
+  border-top: 1px solid $color-soft-gray;
+  padding: $spacing-md;
+}
+
+.user-info {
+  @include flex-start;
+  gap: $spacing-sm;
+  padding: $spacing-sm;
+  border-radius: $radius-md;
+  transition: background $transition-normal;
+
+  &:hover {
+    background: $color-cloud-gray;
+  }
+}
+
+.user-info__avatar {
+  @include flex-center;
+  width: 40px;
+  height: 40px;
+  background: $color-brand-main;
+  border-radius: $radius-md;
+  color: white;
+  font-weight: $font-weight-bold;
+  flex-shrink: 0;
+}
+
+.user-info__details {
+  overflow: hidden;
+  transition: opacity $transition-normal, width $transition-normal;
+  white-space: nowrap;
+}
+
+.user-info__name {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  @include text-truncate;
+}
+
+.user-info__role {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  @include text-truncate;
+}
