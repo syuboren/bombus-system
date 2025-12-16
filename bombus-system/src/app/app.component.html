@@ -1,12 +1,17 @@
-<div class="system-wrapper" [class.sidebar-minimized]="isMinimized()">
-  <!-- Sidebar -->
-  <app-sidebar />
-  
-  <!-- Page Content -->
-  <div class="page-wrapper">
-    <router-outlet />
+@if (showSidebar()) {
+  <div class="system-wrapper" [class.sidebar-minimized]="isMinimized()">
+    <!-- Sidebar -->
+    <app-sidebar />
+    
+    <!-- Page Content -->
+    <div class="page-wrapper">
+      <router-outlet />
+    </div>
+    
+    <!-- Global Notifications -->
+    <app-notification />
   </div>
-  
-  <!-- Global Notifications -->
-  <app-notification />
-</div>
+} @else {
+  <!-- Auth Pages (No Sidebar) -->
+  <router-outlet />
+}

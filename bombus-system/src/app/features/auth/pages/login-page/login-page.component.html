@@ -1,0 +1,230 @@
+<div class="login-page">
+  <!-- 背景裝飾 -->
+  <div class="login-bg">
+    <div class="bg-shape bg-shape--1"></div>
+    <div class="bg-shape bg-shape--2"></div>
+    <div class="bg-shape bg-shape--3"></div>
+    <div class="bg-pattern"></div>
+  </div>
+
+  <!-- 登入卡片 -->
+  <div class="login-card">
+    <!-- Logo 區域 -->
+    <div class="login-header">
+      <div class="logo">
+        <div class="logo__icon">
+          <i class="ri-bee-fill"></i>
+        </div>
+        <div class="logo__text">
+          <span class="logo__name">Bombus</span>
+          <span class="logo__tagline">企業管理系統</span>
+        </div>
+      </div>
+      <h1 class="login-title">歡迎回來</h1>
+      <p class="login-subtitle">請登入您的帳號以繼續</p>
+    </div>
+
+    <!-- 登入表單 -->
+    <form class="login-form" (keydown)="onKeyDown($event)">
+      <!-- 錯誤訊息 -->
+      @if (errorMessage()) {
+        <div class="alert alert--error">
+          <i class="ri-error-warning-line"></i>
+          <span>{{ errorMessage() }}</span>
+        </div>
+      }
+
+      <!-- 帳號輸入 -->
+      <div class="form-group">
+        <label for="username" class="form-label">
+          <i class="ri-user-line"></i>
+          帳號
+        </label>
+        <div class="input-wrapper">
+          <input
+            type="text"
+            id="username"
+            class="form-input"
+            placeholder="請輸入帳號"
+            [value]="username()"
+            (input)="username.set($any($event.target).value)"
+            autocomplete="username"
+            [disabled]="isLoading()" />
+        </div>
+      </div>
+
+      <!-- 密碼輸入 -->
+      <div class="form-group">
+        <label for="password" class="form-label">
+          <i class="ri-lock-line"></i>
+          密碼
+        </label>
+        <div class="input-wrapper input-wrapper--password">
+          <input
+            [type]="showPassword() ? 'text' : 'password'"
+            id="password"
+            class="form-input"
+            placeholder="請輸入密碼"
+            [value]="password()"
+            (input)="password.set($any($event.target).value)"
+            autocomplete="current-password"
+            [disabled]="isLoading()" />
+          <button
+            type="button"
+            class="password-toggle"
+            (click)="togglePasswordVisibility()"
+            [attr.aria-label]="showPassword() ? '隱藏密碼' : '顯示密碼'">
+            <i [class]="showPassword() ? 'ri-eye-off-line' : 'ri-eye-line'"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- 記住我 & 忘記密碼 -->
+      <div class="form-options">
+        <label class="checkbox-wrapper">
+          <input
+            type="checkbox"
+            class="checkbox-input"
+            [checked]="rememberMe()"
+            (change)="rememberMe.set($any($event.target).checked)"
+            [disabled]="isLoading()" />
+          <span class="checkbox-custom"></span>
+          <span class="checkbox-label">記住登入資訊</span>
+        </label>
+        <button
+          type="button"
+          class="forgot-link"
+          (click)="openForgotModal()"
+          [disabled]="isLoading()">
+          忘記密碼？
+        </button>
+      </div>
+
+      <!-- 登入按鈕 -->
+      <button
+        type="button"
+        class="btn-login"
+        (click)="onLogin()"
+        [disabled]="isLoading()">
+        @if (isLoading()) {
+          <span class="btn-spinner"></span>
+          <span>登入中...</span>
+        } @else {
+          <i class="ri-login-box-line"></i>
+          <span>登入</span>
+        }
+      </button>
+    </form>
+
+    <!-- Demo 帳號提示 -->
+    <div class="demo-hint">
+      <div class="demo-hint__title">
+        <i class="ri-lightbulb-line"></i>
+        測試帳號
+      </div>
+      <div class="demo-hint__content">
+        <p><strong>管理員：</strong>admin / admin123</p>
+        <p><strong>一般使用者：</strong>user / user123</p>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="login-footer">
+      <p>© {{ currentYear }} Bombus 企業管理系統</p>
+    </div>
+  </div>
+
+  <!-- 忘記密碼 Modal -->
+  @if (showForgotModal()) {
+    <div class="modal-overlay" (click)="closeForgotModal()">
+      <div class="modal-container" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2 class="modal-title">
+            <i class="ri-key-2-line"></i>
+            忘記密碼
+          </h2>
+          <button
+            type="button"
+            class="modal-close"
+            (click)="closeForgotModal()"
+            aria-label="關閉">
+            <i class="ri-close-line"></i>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          @if (!forgotEmailSent()) {
+            <p class="modal-description">
+              請輸入您註冊時使用的電子郵件地址，我們將發送密碼重設連結給您。
+            </p>
+
+            <!-- 錯誤訊息 -->
+            @if (forgotErrorMessage()) {
+              <div class="alert alert--error alert--sm">
+                <i class="ri-error-warning-line"></i>
+                <span>{{ forgotErrorMessage() }}</span>
+              </div>
+            }
+
+            <div class="form-group">
+              <label for="forgot-email" class="form-label">
+                <i class="ri-mail-line"></i>
+                電子郵件
+              </label>
+              <input
+                type="email"
+                id="forgot-email"
+                class="form-input"
+                placeholder="請輸入電子郵件"
+                [value]="forgotEmail()"
+                (input)="forgotEmail.set($any($event.target).value)"
+                [disabled]="isLoading()" />
+            </div>
+          } @else {
+            <!-- 發送成功 -->
+            <div class="success-state">
+              <div class="success-icon">
+                <i class="ri-mail-check-line"></i>
+              </div>
+              <h3 class="success-title">郵件已發送！</h3>
+              <p class="success-message">{{ forgotSuccessMessage() }}</p>
+              <p class="success-hint">請檢查您的收件匣（包含垃圾郵件資料夾）</p>
+            </div>
+          }
+        </div>
+
+        <div class="modal-footer">
+          @if (!forgotEmailSent()) {
+            <button
+              type="button"
+              class="btn btn--secondary"
+              (click)="closeForgotModal()"
+              [disabled]="isLoading()">
+              取消
+            </button>
+            <button
+              type="button"
+              class="btn btn--primary"
+              (click)="onForgotPassword()"
+              [disabled]="isLoading()">
+              @if (isLoading()) {
+                <span class="btn-spinner btn-spinner--sm"></span>
+                <span>發送中...</span>
+              } @else {
+                <span>發送重設連結</span>
+              }
+            </button>
+          } @else {
+            <button
+              type="button"
+              class="btn btn--primary"
+              (click)="closeForgotModal()">
+              返回登入
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+  }
+</div>
+
