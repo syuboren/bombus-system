@@ -1,1 +1,0 @@
-import"./chunk-JKOY2XUY.js";var o=[{path:"",redirectTo:"talent-map",pathMatch:"full"},{path:"talent-map",loadComponent:()=>import("./chunk-3IXBV7KG.js").then(t=>t.TalentMapPageComponent)}];export{o as TRAINING_ROUTES};
