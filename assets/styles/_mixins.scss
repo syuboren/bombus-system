@@ -81,6 +81,12 @@
   flex-direction: column;
 }
 
+@mixin flex-end {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
 // ---------------------------------------------------------------
 // 卡片樣式 (Soft UI)
 // ---------------------------------------------------------------
