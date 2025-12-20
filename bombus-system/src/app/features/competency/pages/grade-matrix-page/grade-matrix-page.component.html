@@ -1,0 +1,738 @@
+<app-header [pageTitle]="pageTitle" [breadcrumbs]="breadcrumbs"></app-header>
+
+<div class="grade-matrix-page">
+  <!-- Tabs -->
+  <section class="tabs-section">
+    <div class="tabs-header">
+      <button
+        class="tab-btn"
+        [class.active]="activeTab() === 'matrix'"
+        (click)="setActiveTab('matrix')"
+        type="button">
+        <i class="ri-grid-line"></i>
+        職等職級矩陣
+      </button>
+      <button
+        class="tab-btn"
+        [class.active]="activeTab() === 'career'"
+        (click)="setActiveTab('career')"
+        type="button">
+        <i class="ri-route-line"></i>
+        職涯發展路徑
+      </button>
+      <button
+        class="tab-btn"
+        [class.active]="activeTab() === 'ai-assistant'"
+        (click)="setActiveTab('ai-assistant')"
+        type="button">
+        <i class="ri-robot-line"></i>
+        AI 職涯規劃
+      </button>
+    </div>
+  </section>
+
+  @if (loading()) {
+    <div class="loading-container">
+      <i class="ri-loader-4-line spinner"></i>
+      <span>載入資料中...</span>
+    </div>
+  } @else {
+    <!-- Matrix Tab -->
+    @if (activeTab() === 'matrix') {
+      <section class="matrix-section">
+        <!-- Filter -->
+        <div class="filter-bar">
+          <div class="filter-group">
+            <label class="filter-label">職系類別</label>
+            <select class="filter-select" [ngModel]="selectedType()" (ngModelChange)="onTypeChange($event)">
+              <option value="">全部類別</option>
+              @for (opt of typeOptions; track opt.value) {
+                <option [value]="opt.value">{{ opt.label }}</option>
+              }
+            </select>
+          </div>
+          <div class="filter-info">
+            共 <strong>{{ filteredGrades().length }}</strong> 個職等
+          </div>
+        </div>
+
+        <!-- Matrix Grid -->
+        <div class="matrix-container">
+          <!-- Professional Track -->
+          @if (!selectedType() || selectedType() === 'professional') {
+            <div class="track-section">
+              <div class="track-header">
+                <div class="track-icon professional">
+                  <i class="ri-code-box-line"></i>
+                </div>
+                <div class="track-info">
+                  <h3 class="track-title">專業職系</h3>
+                  <p class="track-desc">技術專業人員的職涯發展路徑</p>
+                </div>
+              </div>
+              <div class="grades-timeline">
+                @for (grade of getGradesByType('professional'); track grade.id) {
+                  <div class="grade-card" (click)="openGradeDetail(grade)">
+                    <div class="grade-level">{{ grade.code }}</div>
+                    <div class="grade-name">{{ grade.name }}</div>
+                    <div class="grade-salary">
+                      NT$ {{ formatSalary(grade.minSalary) }} - {{ formatSalary(grade.maxSalary) }}
+                    </div>
+                    <div class="grade-arrow">
+                      <i class="ri-arrow-right-line"></i>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Management Track -->
+          @if (!selectedType() || selectedType() === 'management') {
+            <div class="track-section">
+              <div class="track-header">
+                <div class="track-icon management">
+                  <i class="ri-team-line"></i>
+                </div>
+                <div class="track-info">
+                  <h3 class="track-title">管理職系</h3>
+                  <p class="track-desc">團隊管理與領導的職涯發展路徑</p>
+                </div>
+              </div>
+              <div class="grades-timeline">
+                @for (grade of getGradesByType('management'); track grade.id) {
+                  <div class="grade-card" (click)="openGradeDetail(grade)">
+                    <div class="grade-level">{{ grade.code }}</div>
+                    <div class="grade-name">{{ grade.name }}</div>
+                    <div class="grade-salary">
+                      NT$ {{ formatSalary(grade.minSalary) }} - {{ formatSalary(grade.maxSalary) }}
+                    </div>
+                    <div class="grade-arrow">
+                      <i class="ri-arrow-right-line"></i>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Specialist Track -->
+          @if (!selectedType() || selectedType() === 'specialist') {
+            <div class="track-section">
+              <div class="track-header">
+                <div class="track-icon specialist">
+                  <i class="ri-award-line"></i>
+                </div>
+                <div class="track-info">
+                  <h3 class="track-title">專家職系</h3>
+                  <p class="track-desc">領域專家與技術權威的發展路徑</p>
+                </div>
+              </div>
+              <div class="grades-timeline">
+                @for (grade of getGradesByType('specialist'); track grade.id) {
+                  <div class="grade-card" (click)="openGradeDetail(grade)">
+                    <div class="grade-level">{{ grade.code }}</div>
+                    <div class="grade-name">{{ grade.name }}</div>
+                    <div class="grade-salary">
+                      NT$ {{ formatSalary(grade.minSalary) }} - {{ formatSalary(grade.maxSalary) }}
+                    </div>
+                    <div class="grade-arrow">
+                      <i class="ri-arrow-right-line"></i>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- Career Paths Tab -->
+    @if (activeTab() === 'career') {
+      <section class="career-section">
+        <div class="section-header">
+          <h2 class="section-title">三大職涯發展路徑</h2>
+          <p class="section-subtitle">根據個人特質與組織需求，選擇最適合的發展方向</p>
+        </div>
+
+        <div class="career-paths-grid">
+          @for (path of careerPaths(); track path.id) {
+            <div class="career-path-card" [class]="getCareerPathTypeClass(path.type)" (click)="openCareerPathDetail(path)">
+              <div class="path-header">
+                <div class="path-icon">
+                  <i [class]="getCareerPathTypeIcon(path.type)"></i>
+                </div>
+                <span class="path-type-badge">{{ getCareerPathTypeLabel(path.type) }}</span>
+              </div>
+              <h3 class="path-name">{{ path.name }}</h3>
+              <p class="path-desc">{{ path.description }}</p>
+              <div class="path-journey">
+                <div class="journey-point">
+                  <span class="journey-label">起點</span>
+                  <span class="journey-value">{{ path.currentPosition }}</span>
+                </div>
+                <div class="journey-arrow">
+                  <i class="ri-arrow-right-double-line"></i>
+                </div>
+                <div class="journey-point">
+                  <span class="journey-label">目標</span>
+                  <span class="journey-value">{{ path.targetPosition }}</span>
+                </div>
+              </div>
+              <div class="path-footer">
+                <span class="path-time">
+                  <i class="ri-time-line"></i> 預估 {{ path.estimatedTime }}
+                </span>
+                <span class="path-steps">
+                  <i class="ri-flag-line"></i> {{ path.steps.length }} 個階段
+                </span>
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- AI Assistant Tab -->
+    @if (activeTab() === 'ai-assistant') {
+      <section class="ai-section">
+        <!-- Employee Selection -->
+        <div class="ai-employee-select">
+          <div class="select-header">
+            <div class="select-icon">
+              <i class="ri-robot-2-line"></i>
+            </div>
+            <div class="select-info">
+              <h2>AI 職涯規劃助手</h2>
+              <p>選擇員工進行個人化職涯規劃分析</p>
+            </div>
+          </div>
+          <div class="select-form">
+            <label class="form-label">選擇員工</label>
+            <select class="form-select" [ngModel]="selectedEmployeeId()" (ngModelChange)="onEmployeeChange($event)">
+              <option value="">請選擇員工</option>
+              @for (emp of employees(); track emp.id) {
+                <option [value]="emp.id">{{ emp.name }} - {{ emp.department }} / {{ emp.position }}</option>
+              }
+            </select>
+            <button
+              class="btn-primary btn-analyze"
+              [disabled]="!selectedEmployeeId() || aiAnalyzing()"
+              (click)="runAIAnalysis()"
+              type="button">
+              @if (aiAnalyzing()) {
+                <i class="ri-loader-4-line spinner"></i> 分析中...
+              } @else {
+                <i class="ri-sparkling-line"></i> 開始 AI 分析
+              }
+            </button>
+          </div>
+        </div>
+
+        @if (aiAnalysisResult(); as result) {
+          <!-- AI Section Tabs -->
+          <div class="ai-tabs">
+            <button
+              class="ai-tab-btn"
+              [class.active]="aiActiveSection() === 'overview'"
+              (click)="setAISection('overview')"
+              type="button">
+              <i class="ri-user-star-line"></i>
+              現況定位
+            </button>
+            <button
+              class="ai-tab-btn"
+              [class.active]="aiActiveSection() === 'paths'"
+              (click)="setAISection('paths')"
+              type="button">
+              <i class="ri-route-line"></i>
+              發展建議
+            </button>
+            <button
+              class="ai-tab-btn"
+              [class.active]="aiActiveSection() === 'training'"
+              (click)="setAISection('training')"
+              type="button">
+              <i class="ri-book-open-line"></i>
+              訓練計畫
+            </button>
+            <button
+              class="ai-tab-btn"
+              [class.active]="aiActiveSection() === 'progress'"
+              (click)="setAISection('progress')"
+              type="button">
+              <i class="ri-line-chart-line"></i>
+              進度追蹤
+            </button>
+            <button
+              class="ai-tab-btn"
+              [class.active]="aiActiveSection() === 'simulation'"
+              (click)="setAISection('simulation')"
+              type="button">
+              <i class="ri-compass-3-line"></i>
+              情境模擬
+            </button>
+          </div>
+
+          <!-- Overview Section -->
+          @if (aiActiveSection() === 'overview') {
+            <div class="ai-content-section">
+              <div class="employee-profile-card">
+                <div class="profile-header">
+                  <div class="profile-avatar">
+                    {{ result.employee.name.charAt(0) }}
+                  </div>
+                  <div class="profile-info">
+                    <h3>{{ result.employee.name }}</h3>
+                    <p>{{ result.employee.department }} / {{ result.employee.position }}</p>
+                  </div>
+                  <div class="profile-grade">
+                    <span class="grade-badge">{{ result.currentStatus.grade }}</span>
+                    <span class="grade-name">{{ result.currentStatus.gradeName }}</span>
+                  </div>
+                </div>
+                <div class="profile-stats">
+                  <div class="stat-item">
+                    <span class="stat-value">{{ result.currentStatus.yearsInGrade }}</span>
+                    <span class="stat-label">年資（現職等）</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-value">{{ result.currentStatus.overallScore }}</span>
+                    <span class="stat-label">整體評分</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-value">{{ result.progressTracking.promotionReadiness }}%</span>
+                    <span class="stat-label">晉升準備度</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="competency-analysis">
+                <div class="analysis-chart">
+                  <h4 class="section-subtitle">職能雷達圖</h4>
+                  <div #radarChart class="radar-chart"></div>
+                </div>
+                <div class="analysis-detail">
+                  <h4 class="section-subtitle">職能評估明細</h4>
+                  <div class="competency-score-list">
+                    @for (comp of result.currentStatus.competencyScores; track comp.name) {
+                      <div class="score-item">
+                        <div class="score-info">
+                          <span class="score-name">{{ comp.name }}</span>
+                          <span class="score-values" [class]="getScoreClass(comp.score, comp.required)">
+                            {{ comp.score }} / {{ comp.required }}
+                          </span>
+                        </div>
+                        <div class="score-bar">
+                          <div class="score-fill" [style.width.%]="(comp.score / 5) * 100"></div>
+                          <div class="score-required" [style.left.%]="(comp.required / 5) * 100"></div>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- Paths Section -->
+          @if (aiActiveSection() === 'paths') {
+            <div class="ai-content-section">
+              <h3 class="section-title">三大職涯發展路徑建議</h3>
+              <div class="paths-grid">
+                <!-- Vertical Path -->
+                <div class="path-recommendation-card path-vertical">
+                  <div class="path-card-header">
+                    <div class="path-icon">
+                      <i class="ri-arrow-up-line"></i>
+                    </div>
+                    <span class="path-type-label">垂直晉升</span>
+                    <span class="feasibility-badge" [class]="getFeasibilityClass(result.pathRecommendations.vertical.feasibility)">
+                      可行性 {{ result.pathRecommendations.vertical.feasibility }}%
+                    </span>
+                  </div>
+                  <div class="path-card-body">
+                    <div class="target-info">
+                      <span class="target-label">目標職位</span>
+                      <span class="target-value">{{ result.pathRecommendations.vertical.targetGrade }} {{ result.pathRecommendations.vertical.targetPosition }}</span>
+                      <span class="time-estimate"><i class="ri-time-line"></i> {{ result.pathRecommendations.vertical.estimatedTime }}</span>
+                    </div>
+                    <div class="gap-competencies">
+                      <span class="gap-title">需培養職能</span>
+                      @for (comp of result.pathRecommendations.vertical.requiredCompetencies; track comp.name) {
+                        <div class="gap-comp-item">
+                          <span class="comp-name">{{ comp.name }}</span>
+                          <span class="comp-gap">Lv.{{ comp.currentLevel }} → Lv.{{ comp.requiredLevel }}</span>
+                        </div>
+                      }
+                    </div>
+                    <div class="path-recommendation">
+                      <i class="ri-lightbulb-line"></i>
+                      <p>{{ result.pathRecommendations.vertical.recommendation }}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Horizontal Path -->
+                <div class="path-recommendation-card path-horizontal">
+                  <div class="path-card-header">
+                    <div class="path-icon">
+                      <i class="ri-arrow-left-right-line"></i>
+                    </div>
+                    <span class="path-type-label">橫向發展</span>
+                    <span class="feasibility-badge" [class]="getFeasibilityClass(result.pathRecommendations.horizontal.feasibility)">
+                      可行性 {{ result.pathRecommendations.horizontal.feasibility }}%
+                    </span>
+                  </div>
+                  <div class="path-card-body">
+                    <div class="target-info">
+                      <span class="target-label">目標職位</span>
+                      <span class="target-value">{{ result.pathRecommendations.horizontal.targetGrade }} {{ result.pathRecommendations.horizontal.targetPosition }}</span>
+                      <span class="time-estimate"><i class="ri-time-line"></i> {{ result.pathRecommendations.horizontal.estimatedTime }}</span>
+                    </div>
+                    <div class="gap-competencies">
+                      <span class="gap-title">需培養職能</span>
+                      @for (comp of result.pathRecommendations.horizontal.requiredCompetencies; track comp.name) {
+                        <div class="gap-comp-item">
+                          <span class="comp-name">{{ comp.name }}</span>
+                          <span class="comp-gap">Lv.{{ comp.currentLevel }} → Lv.{{ comp.requiredLevel }}</span>
+                        </div>
+                      }
+                    </div>
+                    <div class="path-recommendation">
+                      <i class="ri-lightbulb-line"></i>
+                      <p>{{ result.pathRecommendations.horizontal.recommendation }}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Cross-Department Path -->
+                <div class="path-recommendation-card path-cross">
+                  <div class="path-card-header">
+                    <div class="path-icon">
+                      <i class="ri-swap-box-line"></i>
+                    </div>
+                    <span class="path-type-label">跨部門發展</span>
+                    <span class="feasibility-badge" [class]="getFeasibilityClass(result.pathRecommendations.crossDepartment.feasibility)">
+                      可行性 {{ result.pathRecommendations.crossDepartment.feasibility }}%
+                    </span>
+                  </div>
+                  <div class="path-card-body">
+                    <div class="target-info">
+                      <span class="target-label">目標職位</span>
+                      <span class="target-value">{{ result.pathRecommendations.crossDepartment.targetGrade }} {{ result.pathRecommendations.crossDepartment.targetPosition }}</span>
+                      <span class="time-estimate"><i class="ri-time-line"></i> {{ result.pathRecommendations.crossDepartment.estimatedTime }}</span>
+                    </div>
+                    <div class="gap-competencies">
+                      <span class="gap-title">需培養職能</span>
+                      @for (comp of result.pathRecommendations.crossDepartment.requiredCompetencies; track comp.name) {
+                        <div class="gap-comp-item">
+                          <span class="comp-name">{{ comp.name }}</span>
+                          <span class="comp-gap">Lv.{{ comp.currentLevel }} → Lv.{{ comp.requiredLevel }}</span>
+                        </div>
+                      }
+                    </div>
+                    <div class="path-recommendation">
+                      <i class="ri-lightbulb-line"></i>
+                      <p>{{ result.pathRecommendations.crossDepartment.recommendation }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- Training Section -->
+          @if (aiActiveSection() === 'training') {
+            <div class="ai-content-section">
+              <div class="training-header">
+                <div class="training-header-info">
+                  <h3 class="section-title">個人化學習地圖</h3>
+                  <p class="section-desc">根據職能落差分析，AI 推薦以下培訓課程</p>
+                </div>
+                <div class="training-summary">
+                  <span class="summary-badge">
+                    <i class="ri-time-line"></i>
+                    預計完成時間：{{ result.trainingPlan.estimatedCompletion }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="training-course-list">
+                @for (course of result.trainingPlan.courses; track course.name) {
+                  <div class="course-card" [class]="getPriorityClass(course.priority)">
+                    <div class="course-priority">
+                      @if (course.priority === 'high') {
+                        <i class="ri-fire-fill"></i>
+                      } @else if (course.priority === 'medium') {
+                        <i class="ri-star-fill"></i>
+                      } @else {
+                        <i class="ri-bookmark-fill"></i>
+                      }
+                    </div>
+                    <div class="course-info">
+                      <h4 class="course-name">{{ course.name }}</h4>
+                      <div class="course-meta">
+                        <span class="course-type">{{ course.type }}</span>
+                        <span class="course-duration"><i class="ri-time-line"></i> {{ course.duration }}</span>
+                      </div>
+                    </div>
+                    <div class="course-actions">
+                      <button class="btn-outline" type="button">
+                        <i class="ri-calendar-check-line"></i> 報名課程
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+
+              <div class="training-note">
+                <i class="ri-information-line"></i>
+                <p>完成培訓後，系統將自動更新職能評估結果並重新計算晉升可行性</p>
+              </div>
+            </div>
+          }
+
+          <!-- Progress Section -->
+          @if (aiActiveSection() === 'progress') {
+            <div class="ai-content-section">
+              <div class="progress-header">
+                <h3 class="section-title">職涯發展進度追蹤</h3>
+                <div class="next-review">
+                  <i class="ri-calendar-event-line"></i>
+                  下次評估：{{ result.progressTracking.nextReviewDate }}
+                </div>
+              </div>
+
+              <div class="progress-overview">
+                <div class="readiness-gauge">
+                  <div class="gauge-circle">
+                    <svg viewBox="0 0 100 100">
+                      <circle cx="50" cy="50" r="45" fill="none" stroke="#e0e0e0" stroke-width="8"/>
+                      <circle
+                        cx="50" cy="50" r="45" fill="none"
+                        stroke="#C18368"
+                        stroke-width="8"
+                        stroke-dasharray="283"
+                        [style.stroke-dashoffset]="283 - (283 * result.progressTracking.promotionReadiness / 100)"
+                        transform="rotate(-90 50 50)"/>
+                    </svg>
+                    <div class="gauge-value">
+                      <span class="value">{{ result.progressTracking.promotionReadiness }}</span>
+                      <span class="unit">%</span>
+                    </div>
+                  </div>
+                  <div class="gauge-label">晉升準備度</div>
+                </div>
+
+                <div class="milestones-timeline">
+                  <h4 class="timeline-title">發展里程碑</h4>
+                  @for (milestone of result.progressTracking.milestones; track milestone.title) {
+                    <div class="milestone-item" [class]="getMilestoneStatusClass(milestone.status)">
+                      <div class="milestone-marker">
+                        <i [class]="getMilestoneIcon(milestone.status)"></i>
+                      </div>
+                      <div class="milestone-content">
+                        <span class="milestone-title">{{ milestone.title }}</span>
+                        <span class="milestone-date">{{ milestone.date }}</span>
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- Simulation Section -->
+          @if (aiActiveSection() === 'simulation') {
+            <div class="ai-content-section">
+              <h3 class="section-title">職涯情境模擬</h3>
+              <p class="section-desc">模擬不同職涯選擇的發展路徑與預期成果</p>
+
+              <div class="simulation-cards">
+                @for (sim of result.simulation; track sim.path) {
+                  <div class="simulation-card">
+                    <div class="sim-header">
+                      <h4 class="sim-path-name">{{ sim.path }}</h4>
+                      <span class="risk-badge" [class]="getRiskClass(sim.riskLevel)">
+                        @if (sim.riskLevel === 'low') {
+                          <i class="ri-shield-check-line"></i> 低風險
+                        } @else if (sim.riskLevel === 'medium') {
+                          <i class="ri-shield-line"></i> 中風險
+                        } @else {
+                          <i class="ri-alert-line"></i> 高風險
+                        }
+                      </span>
+                    </div>
+
+                    <div class="sim-timeline">
+                      @for (step of sim.steps; track step.year) {
+                        <div class="sim-step">
+                          <div class="step-year">{{ step.year === 0 ? '現在' : '+' + step.year + '年' }}</div>
+                          <div class="step-dot"></div>
+                          <div class="step-info">
+                            <span class="step-position">{{ step.grade }} {{ step.position }}</span>
+                            <span class="step-salary">{{ step.salary }}</span>
+                          </div>
+                        </div>
+                      }
+                    </div>
+
+                    <div class="sim-summary">
+                      <div class="summary-item">
+                        <span class="summary-label">總預估時間</span>
+                        <span class="summary-value">{{ sim.totalTime }}</span>
+                      </div>
+                      <div class="summary-item">
+                        <span class="summary-label">預期薪資</span>
+                        <span class="summary-value highlight">{{ sim.finalSalary }}</span>
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Action Buttons -->
+          <div class="ai-actions">
+            <button class="btn-secondary" type="button">
+              <i class="ri-download-line"></i> 匯出完整報告
+            </button>
+            <button class="btn-primary" type="button">
+              <i class="ri-calendar-schedule-line"></i> 制定發展計畫
+            </button>
+          </div>
+        }
+      </section>
+    }
+  }
+</div>
+
+<!-- Grade Detail Modal -->
+@if (showGradeDetailModal() && selectedGrade(); as grade) {
+  <div class="modal-backdrop" (click)="closeGradeDetailModal()"></div>
+  <div class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-header-info">
+          <span class="grade-code-badge">{{ grade.code }}</span>
+          <span class="grade-type-badge" [class]="getTypeClass(grade.type)">
+            {{ getTypeLabel(grade.type) }}
+          </span>
+        </div>
+        <button class="btn-close" (click)="closeGradeDetailModal()" type="button">
+          <i class="ri-close-line"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <h2 class="modal-title">{{ grade.name }}</h2>
+
+        <div class="modal-section">
+          <h4 class="modal-section-title">薪資範圍</h4>
+          <div class="salary-range">
+            <span class="salary-min">NT$ {{ formatSalary(grade.minSalary) }}</span>
+            <div class="salary-bar">
+              <div class="salary-fill"></div>
+            </div>
+            <span class="salary-max">NT$ {{ formatSalary(grade.maxSalary) }}</span>
+          </div>
+        </div>
+
+        <div class="modal-section">
+          <h4 class="modal-section-title">晉升條件</h4>
+          <ul class="requirements-list">
+            @for (req of grade.requirements; track req) {
+              <li class="requirement-item">
+                <i class="ri-checkbox-circle-line"></i>
+                <span>{{ req }}</span>
+              </li>
+            }
+          </ul>
+        </div>
+
+        <div class="modal-section">
+          <h4 class="modal-section-title">所需職能</h4>
+          <div class="competencies-tags">
+            @for (compId of grade.competencies; track compId) {
+              <span class="competency-tag">{{ compId }}</span>
+            }
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeGradeDetailModal()" type="button">關閉</button>
+        <button class="btn-primary" type="button">
+          <i class="ri-edit-line"></i> 編輯職等
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Career Path Detail Modal -->
+@if (showCareerPathModal() && selectedCareerPath(); as path) {
+  <div class="modal-backdrop" (click)="closeCareerPathModal()"></div>
+  <div class="modal modal--large">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-header-info">
+          <span class="path-type-badge" [class]="getCareerPathTypeClass(path.type)">
+            <i [class]="getCareerPathTypeIcon(path.type)"></i>
+            {{ getCareerPathTypeLabel(path.type) }}
+          </span>
+        </div>
+        <button class="btn-close" (click)="closeCareerPathModal()" type="button">
+          <i class="ri-close-line"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <h2 class="modal-title">{{ path.name }}</h2>
+        <p class="modal-desc">{{ path.description }}</p>
+
+        <div class="path-overview">
+          <div class="overview-item">
+            <span class="overview-label">起始職位</span>
+            <span class="overview-value">{{ path.currentPosition }}</span>
+          </div>
+          <div class="overview-item">
+            <span class="overview-label">目標職位</span>
+            <span class="overview-value">{{ path.targetPosition }}</span>
+          </div>
+          <div class="overview-item">
+            <span class="overview-label">預估時間</span>
+            <span class="overview-value">{{ path.estimatedTime }}</span>
+          </div>
+        </div>
+
+        <div class="modal-section">
+          <h4 class="modal-section-title">發展階段</h4>
+          <div class="steps-timeline">
+            @for (step of path.steps; track step.order) {
+              <div class="timeline-step" [class]="getStepStatusClass(step.status)">
+                <div class="step-marker">
+                  <i [class]="getStepStatusIcon(step.status)"></i>
+                </div>
+                <div class="step-content">
+                  <div class="step-header">
+                    <span class="step-title">{{ step.title }}</span>
+                    <span class="step-duration">{{ step.duration }}</span>
+                  </div>
+                  <p class="step-desc">{{ step.description }}</p>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeCareerPathModal()" type="button">關閉</button>
+        <button class="btn-primary" type="button">
+          <i class="ri-user-follow-line"></i> 選擇此路徑
+        </button>
+      </div>
+    </div>
+  </div>
+}
+

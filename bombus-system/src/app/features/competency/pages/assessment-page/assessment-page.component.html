@@ -1,0 +1,228 @@
+<app-header [pageTitle]="pageTitle" [breadcrumbs]="breadcrumbs"></app-header>
+
+<div class="assessment-page">
+  <!-- Stats Cards -->
+  <section class="stats-section">
+    <div class="stats-grid">
+      <div class="stat-card stat-card--total">
+        <div class="stat-card__icon">
+          <i class="ri-group-line"></i>
+        </div>
+        <div class="stat-card__content">
+          <div class="stat-card__value">{{ stats().totalEmployees }}</div>
+          <div class="stat-card__label">評估總人數</div>
+        </div>
+      </div>
+
+      <div class="stat-card stat-card--completed">
+        <div class="stat-card__icon">
+          <i class="ri-checkbox-circle-line"></i>
+        </div>
+        <div class="stat-card__content">
+          <div class="stat-card__value">{{ stats().completed }}</div>
+          <div class="stat-card__label">已完成</div>
+        </div>
+      </div>
+
+      <div class="stat-card stat-card--progress">
+        <div class="stat-card__icon">
+          <i class="ri-loader-4-line"></i>
+        </div>
+        <div class="stat-card__content">
+          <div class="stat-card__value">{{ stats().inProgress }}</div>
+          <div class="stat-card__label">進行中</div>
+        </div>
+      </div>
+
+      <div class="stat-card stat-card--rate">
+        <div class="stat-card__icon">
+          <i class="ri-pie-chart-line"></i>
+        </div>
+        <div class="stat-card__content">
+          <div class="stat-card__value">{{ stats().completionRate }}%</div>
+          <div class="stat-card__label">完成率</div>
+        </div>
+        <div class="stat-card__progress">
+          <div class="mini-progress-bar">
+            <div class="mini-progress-fill" [style.width.%]="stats().completionRate"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tabs -->
+  <section class="tabs-section">
+    <div class="tabs-header">
+      <button
+        class="tab-btn"
+        [class.active]="activeTab() === 'schedules'"
+        (click)="setActiveTab('schedules')"
+        type="button">
+        <i class="ri-calendar-schedule-line"></i>
+        評估週期
+      </button>
+      <button
+        class="tab-btn"
+        [class.active]="activeTab() === 'assessments'"
+        (click)="setActiveTab('assessments')"
+        type="button">
+        <i class="ri-file-list-3-line"></i>
+        評估列表
+      </button>
+    </div>
+
+    <!-- Schedules Tab -->
+    @if (activeTab() === 'schedules') {
+      <div class="tab-content">
+        <div class="schedules-list">
+          @for (schedule of schedules(); track schedule.id) {
+            <div class="schedule-card">
+              <div class="schedule-card__header">
+                <h3 class="schedule-card__title">{{ schedule.name }}</h3>
+                <span class="schedule-card__status" [class]="getScheduleStatusClass(schedule.status)">
+                  {{ getScheduleStatusLabel(schedule.status) }}
+                </span>
+              </div>
+              <div class="schedule-card__body">
+                <div class="schedule-info">
+                  <div class="info-item">
+                    <i class="ri-calendar-line"></i>
+                    <span>{{ formatDate(schedule.startDate) }} - {{ formatDate(schedule.endDate) }}</span>
+                  </div>
+                  <div class="info-item">
+                    <i class="ri-building-line"></i>
+                    <span>{{ schedule.targetDepartments.join(', ') }}</span>
+                  </div>
+                </div>
+                <div class="schedule-progress">
+                  <div class="progress-header">
+                    <span>完成進度</span>
+                    <span class="progress-value">{{ schedule.completionRate }}%</span>
+                  </div>
+                  <div class="progress-bar">
+                    <div class="progress-fill" [style.width.%]="schedule.completionRate"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="schedule-card__actions">
+                <button class="btn-outline" type="button">
+                  <i class="ri-eye-line"></i> 查看詳情
+                </button>
+                @if (schedule.status === 'in_progress') {
+                  <button class="btn-primary" type="button">
+                    <i class="ri-send-plane-line"></i> 發送提醒
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Assessments Tab -->
+    @if (activeTab() === 'assessments') {
+      <div class="tab-content">
+        <!-- Filters -->
+        <div class="filters-bar">
+          <div class="filter-group">
+            <label class="filter-label">部門</label>
+            <select class="filter-select" [ngModel]="selectedDepartment()" (ngModelChange)="onDepartmentChange($event)">
+              @for (opt of departmentOptions; track opt.value) {
+                <option [value]="opt.value">{{ opt.label }}</option>
+              }
+            </select>
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">狀態</label>
+            <select class="filter-select" [ngModel]="selectedStatus()" (ngModelChange)="onStatusChange($event)">
+              @for (opt of statusOptions; track opt.value) {
+                <option [value]="opt.value">{{ opt.label }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        @if (loading()) {
+          <div class="loading-container">
+            <i class="ri-loader-4-line spinner"></i>
+            <span>載入中...</span>
+          </div>
+        } @else {
+          <!-- Assessment Table -->
+          <div class="table-wrapper">
+            <table class="assessment-table">
+              <thead>
+                <tr>
+                  <th>員工</th>
+                  <th>部門 / 職位</th>
+                  <th>評估期間</th>
+                  <th>自評日期</th>
+                  <th>主管審核日期</th>
+                  <th>狀態</th>
+                  <th>分數</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (assessment of getFilteredAssessments(); track assessment.id) {
+                  <tr>
+                    <td>
+                      <div class="employee-cell">
+                        <div class="employee-avatar">
+                          {{ getAvatarInitial(assessment.employeeName) }}
+                        </div>
+                        <span class="employee-name">{{ assessment.employeeName }}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="dept-position">
+                        <span class="dept">{{ assessment.department }}</span>
+                        <span class="position">{{ assessment.position }}</span>
+                      </div>
+                    </td>
+                    <td>{{ assessment.assessmentPeriod }}</td>
+                    <td>{{ formatDate(assessment.selfAssessmentDate) }}</td>
+                    <td>{{ formatDate(assessment.managerReviewDate) }}</td>
+                    <td>
+                      <span class="status-badge" [class]="getStatusClass(assessment.status)">
+                        {{ getStatusLabel(assessment.status) }}
+                      </span>
+                    </td>
+                    <td>
+                      @if (assessment.overallScore > 0) {
+                        <span class="score-badge">{{ assessment.overallScore.toFixed(1) }}</span>
+                      } @else {
+                        <span class="score-pending">-</span>
+                      }
+                    </td>
+                    <td>
+                      @if (assessment.status === 'not_started') {
+                        <button class="btn-action btn-action--start" (click)="startAssessment(assessment)" type="button">
+                          <i class="ri-play-circle-line"></i> 開始評估
+                        </button>
+                      } @else {
+                        <button class="btn-action" (click)="viewAssessment(assessment)" type="button">
+                          <i class="ri-eye-line"></i> 查看
+                        </button>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          @if (getFilteredAssessments().length === 0) {
+            <div class="empty-state">
+              <i class="ri-file-search-line"></i>
+              <p>沒有符合條件的評估記錄</p>
+            </div>
+          }
+        }
+      </div>
+    }
+  </section>
+</div>
+

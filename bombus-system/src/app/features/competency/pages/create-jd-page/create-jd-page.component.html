@@ -1,0 +1,938 @@
+<app-header [pageTitle]="pageTitle" [breadcrumbs]="breadcrumbs">
+  <div header-actions class="header-actions">
+    <button class="btn-secondary" type="button" (click)="router.navigate(['/competency/job-description'])">
+      <i class="ri-close-line"></i>
+      取消
+    </button>
+  </div>
+</app-header>
+
+<div class="create-jd-page">
+  <!-- Step Indicator -->
+  <div class="step-indicator">
+    <div class="step-item" [class.active]="currentStep() === 'mode'" [class.completed]="currentStep() !== 'mode'">
+      <div class="step-number">1</div>
+      <div class="step-label">選擇模式</div>
+    </div>
+    <div class="step-item" [class.active]="currentStep() === 'basic'" [class.completed]="['competency', 'content', 'review'].includes(currentStep())">
+      <div class="step-number">2</div>
+      <div class="step-label">基本資訊</div>
+    </div>
+    <div class="step-item" [class.active]="currentStep() === 'competency'" [class.completed]="['content', 'review'].includes(currentStep())">
+      <div class="step-number">3</div>
+      <div class="step-label">職能需求</div>
+    </div>
+    <div class="step-item" [class.active]="currentStep() === 'content'" [class.completed]="currentStep() === 'review'">
+      <div class="step-number">4</div>
+      <div class="step-label">內容設定</div>
+    </div>
+    <div class="step-item" [class.active]="currentStep() === 'review'">
+      <div class="step-number">5</div>
+      <div class="step-label">檢視確認</div>
+    </div>
+  </div>
+
+  <!-- Step 1: Mode Selection -->
+  @if (currentStep() === 'mode') {
+    <div class="step-content">
+      <div class="mode-selection">
+        <h2 class="section-title">選擇建立方式</h2>
+        <div class="mode-cards">
+          <div class="mode-card" (click)="selectMode('manual')">
+            <div class="mode-icon">
+              <i class="ri-file-edit-line"></i>
+            </div>
+            <h3 class="mode-title">自行新增</h3>
+            <p class="mode-desc">手動填寫職務說明書各項內容</p>
+          </div>
+          <div class="mode-card" (click)="selectMode('template')">
+            <div class="mode-icon">
+              <i class="ri-file-copy-line"></i>
+            </div>
+            <h3 class="mode-title">匯入模版</h3>
+            <p class="mode-desc">從現有模板快速建立</p>
+          </div>
+          <div class="mode-card" (click)="selectMode('ai')">
+            <div class="mode-icon">
+              <i class="ri-robot-line"></i>
+            </div>
+            <h3 class="mode-title">AI 職務撰寫助手</h3>
+            <p class="mode-desc">使用 AI 自動生成職務說明書</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Step 2: Basic Info -->
+  @if (currentStep() === 'basic') {
+    <div class="step-content">
+      <div class="form-section">
+        <h2 class="section-title">基本資訊</h2>
+        
+        @if (currentMode() === 'ai') {
+          <div class="ai-input-section">
+            <label class="form-label">職位描述或需求</label>
+            <textarea
+              class="form-textarea"
+              rows="6"
+              placeholder="例如：我們需要一位產品經理，負責 B2B SaaS 產品的規劃與發展..."
+              [(ngModel)]="aiInputText"></textarea>
+            <button
+              class="btn-primary btn-generate"
+              [disabled]="!aiInputText() || isGenerating()"
+              (click)="generateWithAI()"
+              type="button">
+              @if (isGenerating()) {
+                <i class="ri-loader-4-line spinner"></i> 生成中...
+              } @else {
+                <i class="ri-sparkling-line"></i> 開始生成
+              }
+            </button>
+          </div>
+        }
+
+        @if (currentMode() === 'template') {
+          <div class="template-selection">
+            <label class="form-label">選擇模板</label>
+            <select class="form-select" [(ngModel)]="selectedTemplate" (change)="importTemplate(selectedTemplate())">
+              <option value="">請選擇模板</option>
+              <option value="template-1">財務長模板</option>
+              <option value="template-2">人資主管模板</option>
+              <option value="template-3">專案經理模板</option>
+            </select>
+          </div>
+        }
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">職位代碼 <span class="required">*</span></label>
+            <input
+              type="text"
+              class="form-input"
+              placeholder="例如：HR-4-094"
+              [(ngModel)]="positionCode">
+          </div>
+          <div class="form-group">
+            <label class="form-label">職位名稱 <span class="required">*</span></label>
+            <input
+              type="text"
+              class="form-input"
+              placeholder="例如：財務長"
+              [(ngModel)]="positionName">
+          </div>
+          <div class="form-group">
+            <label class="form-label">部門 <span class="required">*</span></label>
+            <select class="form-select" [(ngModel)]="department">
+              <option value="">請選擇部門</option>
+              @for (opt of departmentOptions; track opt.value) {
+                <option [value]="opt.value">{{ opt.label }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">職等 <span class="required">*</span></label>
+            <input
+              type="text"
+              class="form-input"
+              placeholder="例如：C-Level"
+              [(ngModel)]="gradeLevel">
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn-secondary" (click)="prevStep()" type="button">上一步</button>
+          <button
+            class="btn-primary"
+            [disabled]="!basicInfo().positionCode || !basicInfo().positionName || !basicInfo().department"
+            (click)="nextStep()"
+            type="button">
+            下一步
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Step 3: Competency Selection -->
+  @if (currentStep() === 'competency') {
+    <div class="step-content">
+      <div class="form-section">
+        <h2 class="section-title">職能需求設定</h2>
+        <p class="section-subtitle">從職能基準庫選擇適用職能，設定需求等級與權重</p>
+
+        <!-- 核心職能 -->
+        <div class="competency-category">
+          <h3 class="category-title">
+            <i class="ri-heart-pulse-line"></i>
+            核心職能 (L1-L6 等級)
+          </h3>
+          <div class="competency-list">
+            @for (comp of coreCompetencies(); track comp.id) {
+              <div class="competency-item">
+                <div class="comp-header">
+                  <label class="comp-checkbox">
+                    <input
+                      type="checkbox"
+                      [checked]="isCoreSelected(comp.id)"
+                      (change)="toggleCoreCompetency(comp, isCoreSelected(comp.id) ? null : 'L1')">
+                    <span class="comp-name">{{ comp.name }}</span>
+                  </label>
+                </div>
+                @if (isCoreSelected(comp.id)) {
+                  <div class="comp-settings">
+                    <div class="setting-group">
+                      <label class="setting-label">要求等級：</label>
+                      <select
+                        class="setting-select"
+                        [value]="getCoreLevel(comp.id) || 'L1'"
+                        (change)="toggleCoreCompetency(comp, $any($event.target).value)">
+                        @for (levelOpt of levelOptions; track levelOpt.value) {
+                          <option [value]="levelOpt.value">{{ levelOpt.label }}</option>
+                        }
+                      </select>
+                    </div>
+                    <div class="setting-group">
+                      <label class="setting-label">權重：</label>
+                      <input
+                        type="number"
+                        class="setting-input"
+                        min="0"
+                        max="100"
+                        [value]="getWeight('core-' + comp.id)"
+                        (change)="updateWeight('core-' + comp.id, +$any($event.target).value)">
+                      <span class="setting-unit">%</span>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- 管理職能 -->
+        <div class="competency-category">
+          <h3 class="category-title">
+            <i class="ri-team-line"></i>
+            管理職能 (L1-L6 等級)
+          </h3>
+          <div class="competency-list">
+            @for (comp of managementCompetencies(); track comp.id) {
+              <div class="competency-item">
+                <div class="comp-header">
+                  <label class="comp-checkbox">
+                    <input
+                      type="checkbox"
+                      [checked]="isManagementSelected(comp.id)"
+                      (change)="toggleManagementCompetency(comp, isManagementSelected(comp.id) ? null : 'L1')">
+                    <span class="comp-name">{{ comp.name }}</span>
+                  </label>
+                </div>
+                @if (isManagementSelected(comp.id)) {
+                  <div class="comp-settings">
+                    <div class="setting-group">
+                      <label class="setting-label">要求等級：</label>
+                      <select
+                        class="setting-select"
+                        [value]="getManagementLevel(comp.id) || 'L1'"
+                        (change)="toggleManagementCompetency(comp, $any($event.target).value)">
+                        @for (levelOpt of levelOptions; track levelOpt.value) {
+                          <option [value]="levelOpt.value">{{ levelOpt.label }}</option>
+                        }
+                      </select>
+                    </div>
+                    <div class="setting-group">
+                      <label class="setting-label">權重：</label>
+                      <input
+                        type="number"
+                        class="setting-input"
+                        min="0"
+                        max="100"
+                        [value]="getWeight('management-' + comp.id)"
+                        (change)="updateWeight('management-' + comp.id, +$any($event.target).value)">
+                      <span class="setting-unit">%</span>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- KSA 職能 -->
+        <div class="competency-category">
+          <h3 class="category-title">
+            <i class="ri-book-3-line"></i>
+            KSA 職能 (無等級，僅勾選)
+          </h3>
+          
+          <div class="ksa-filter-bar">
+            <label class="filter-label">篩選類型：</label>
+            <select class="filter-select" (change)="onKsaTypeFilterChange($any($event.target).value)">
+              <option value="">全部類型</option>
+              @for (opt of typeOptions; track opt.value) {
+                <option [value]="opt.value">{{ opt.label }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="competency-list ksa-list">
+            @for (comp of filteredKSACompetencies(); track comp.id) {
+              <div class="competency-item ksa-item">
+                <div class="comp-header">
+                  <label class="comp-checkbox">
+                    <input
+                      type="checkbox"
+                      [checked]="isKSASelected(comp.id)"
+                      (change)="toggleKSACompetency(comp)">
+                    <span class="comp-name">{{ comp.name }}</span>
+                    <span class="comp-code">{{ comp.code }}</span>
+                    <span class="comp-type-badge" [class]="getKSATypeClass(comp.ksaType)">
+                      {{ getKSATypeLabel(comp.ksaType) }}
+                    </span>
+                  </label>
+                </div>
+                @if (isKSASelected(comp.id)) {
+                  <div class="comp-settings">
+                    <div class="setting-group">
+                      <label class="setting-label">權重：</label>
+                      <input
+                        type="number"
+                        class="setting-input"
+                        min="0"
+                        max="100"
+                        [value]="getWeight('ksa-' + comp.id)"
+                        (change)="updateWeight('ksa-' + comp.id, +$any($event.target).value)">
+                      <span class="setting-unit">%</span>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="weight-summary">
+          <span class="weight-label">總權重：</span>
+          <span class="weight-value" [class.warning]="totalWeight() !== 100">
+            {{ totalWeight() }}%
+          </span>
+          @if (totalWeight() !== 100) {
+            <span class="weight-hint">（建議調整為 100%）</span>
+          }
+        </div>
+
+        <div class="form-actions">
+          <button class="btn-secondary" (click)="prevStep()" type="button">上一步</button>
+          <button
+            class="btn-primary"
+            [disabled]="selectedCompetencies().size === 0"
+            (click)="goToContentStep()"
+            type="button">
+            下一步：內容設定
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Step 4: Content Setting (12 區塊) -->
+  @if (currentStep() === 'content') {
+    <div class="step-content">
+      <div class="form-section content-section">
+        <h2 class="section-title">內容設定</h2>
+        <p class="section-subtitle">填寫職務說明書的12個區塊內容</p>
+
+        <!-- 區塊 1: 基本資訊（只讀） -->
+        <div class="content-block">
+          <div class="block-header">
+            <span class="block-number">1</span>
+            <h3 class="block-title">基本資訊</h3>
+          </div>
+          <div class="info-display">
+            <div class="info-row">
+              <span class="info-label">職位代碼：</span>
+              <span class="info-value">{{ basicInfo().positionCode }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">職位名稱：</span>
+              <span class="info-value">{{ basicInfo().positionName }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">部門：</span>
+              <span class="info-value">{{ basicInfo().department }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">職等：</span>
+              <span class="info-value">{{ basicInfo().gradeLevel }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 區塊 2: 主要職責 -->
+        <div class="content-block">
+          <div class="block-header">
+            <span class="block-number">2</span>
+            <h3 class="block-title">主要職責</h3>
+          </div>
+          <div class="list-editor">
+            @for (item of jdContent().responsibilities; track $index; let i = $index) {
+              <div class="list-item">
+                <input
+                  type="text"
+                  class="list-input"
+                  [value]="item"
+                  (input)="updateContentItem('responsibilities', i, $any($event.target).value)"
+                  placeholder="輸入主要職責項目">
+                <button
+                  class="btn-icon-small btn-delete"
+                  (click)="removeContentItem('responsibilities', i)"
+                  type="button"
+                  [disabled]="jdContent().responsibilities.length <= 1">
+                  <i class="ri-delete-bin-line"></i>
+                </button>
+              </div>
+            }
+            <button class="btn-add-item" (click)="addContentItem('responsibilities')" type="button">
+              <i class="ri-add-line"></i> 新增項目
+            </button>
+          </div>
+        </div>
+
+        <!-- 區塊 3: 職務目的 -->
+        <div class="content-block">
+          <div class="block-header">
+            <span class="block-number">3</span>
+            <h3 class="block-title">職務目的</h3>
+          </div>
+          <div class="list-editor">
+            @for (item of jdContent().jobPurpose; track $index; let i = $index) {
+              <div class="list-item">
+                <textarea
+                  class="list-textarea"
+                  [value]="item"
+                  (input)="updateContentItem('jobPurpose', i, $any($event.target).value)"
+                  placeholder="輸入職務目的描述"></textarea>
+                <button
+                  class="btn-icon-small btn-delete"
+                  (click)="removeContentItem('jobPurpose', i)"
+                  type="button"
+                  [disabled]="jdContent().jobPurpose.length <= 1">
+                  <i class="ri-delete-bin-line"></i>
+                </button>
+              </div>
+            }
+            <button class="btn-add-item" (click)="addContentItem('jobPurpose')" type="button">
+              <i class="ri-add-line"></i> 新增項目
+            </button>
+          </div>
+        </div>
+
+        <!-- 區塊 4: 職務要求 -->
+        <div class="content-block">
+          <div class="block-header">
+            <span class="block-number">4</span>
+            <h3 class="block-title">職務要求</h3>
+          </div>
+          <div class="list-editor">
+            @for (item of jdContent().qualifications; track $index; let i = $index) {
+              <div class="list-item">
+                <input
+                  type="text"
+                  class="list-input"
+                  [value]="item"
+                  (input)="updateContentItem('qualifications', i, $any($event.target).value)"
+                  placeholder="輸入職務要求項目">
+                <button
+                  class="btn-icon-small btn-delete"
+                  (click)="removeContentItem('qualifications', i)"
+                  type="button"
+                  [disabled]="jdContent().qualifications.length <= 1">
+                  <i class="ri-delete-bin-line"></i>
+                </button>
+              </div>
+            }
+            <button class="btn-add-item" (click)="addContentItem('qualifications')" type="button">
+              <i class="ri-add-line"></i> 新增項目
+            </button>
+          </div>
+        </div>
+
+        <!-- 區塊 5: 最終有價值產品 VFP -->
+        <div class="content-block">
+          <div class="block-header">
+            <span class="block-number">5</span>
+            <h3 class="block-title">最終有價值產品 VFP</h3>
+          </div>
+          <div class="list-editor">
+            @for (item of jdContent().vfp; track $index; let i = $index) {
+              <div class="list-item">
+                <textarea
+                  class="list-textarea"
+                  [value]="item"
+                  (input)="updateContentItem('vfp', i, $any($event.target).value)"
+                  placeholder="輸入最終有價值產品描述"></textarea>
+                <button
+                  class="btn-icon-small btn-delete"
+                  (click)="removeContentItem('vfp', i)"
+                  type="button"
+                  [disabled]="jdContent().vfp.length <= 1">
+                  <i class="ri-delete-bin-line"></i>
+                </button>
+              </div>
+            }
+            <button class="btn-add-item" (click)="addContentItem('vfp')" type="button">
+              <i class="ri-add-line"></i> 新增項目
+            </button>
+          </div>
+        </div>
+
+        <!-- 區塊 6: 職能需求（只讀） -->
+        <div class="content-block">
+          <div class="block-header">
+            <span class="block-number">6</span>
+            <h3 class="block-title">職能需求</h3>
+            <span class="total-weight-badge" [class.warning]="totalWeight() !== 100">
+              總權重：{{ totalWeight() }}%
+            </span>
+          </div>
+          <div class="competency-summary">
+            <div class="summary-category">
+              <h4><i class="ri-heart-pulse-line"></i> 核心職能</h4>
+              <div class="summary-items">
+                @for (entry of Array.from(selectedCompetencies().entries()); track entry[0]) {
+                  @if (entry[1].type === 'core') {
+                    <span class="summary-tag core">{{ entry[1].competencyName }} {{ entry[1].level }} ({{ entry[1].weight }}%)</span>
+                  }
+                }
+              </div>
+            </div>
+            <div class="summary-category">
+              <h4><i class="ri-team-line"></i> 管理職能</h4>
+              <div class="summary-items">
+                @for (entry of Array.from(selectedCompetencies().entries()); track entry[0]) {
+                  @if (entry[1].type === 'management') {
+                    <span class="summary-tag management">{{ entry[1].competencyName }} {{ entry[1].level }} ({{ entry[1].weight }}%)</span>
+                  }
+                }
+              </div>
+            </div>
+            <div class="summary-category">
+              <h4><i class="ri-book-3-line"></i> KSA 職能</h4>
+              <div class="summary-items">
+                @for (entry of Array.from(selectedCompetencies().entries()); track entry[0]) {
+                  @if (entry[1].type === 'ksa') {
+                    <span class="summary-tag ksa">{{ entry[1].competencyName }} ({{ entry[1].weight }}%)</span>
+                  }
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 區塊 7: 工作描述 -->
+        <div class="content-block">
+          <div class="block-header">
+            <span class="block-number">7</span>
+            <h3 class="block-title">工作描述</h3>
+          </div>
+          <div class="list-editor">
+            @for (item of jdContent().workDescription; track $index; let i = $index) {
+              <div class="list-item">
+                <textarea
+                  class="list-textarea"
+                  [value]="item"
+                  (input)="updateContentItem('workDescription', i, $any($event.target).value)"
+                  placeholder="輸入工作描述"></textarea>
+                <button
+                  class="btn-icon-small btn-delete"
+                  (click)="removeContentItem('workDescription', i)"
+                  type="button"
+                  [disabled]="jdContent().workDescription.length <= 1">
+                  <i class="ri-delete-bin-line"></i>
+                </button>
+              </div>
+            }
+            <button class="btn-add-item" (click)="addContentItem('workDescription')" type="button">
+              <i class="ri-add-line"></i> 新增項目
+            </button>
+          </div>
+        </div>
+
+        <!-- 區塊 8: 檢查清單 -->
+        <div class="content-block">
+          <div class="block-header">
+            <span class="block-number">8</span>
+            <h3 class="block-title">檢查清單</h3>
+          </div>
+          <div class="checklist-editor">
+            <div class="checklist-header">
+              <span class="checklist-col-item">檢查項目</span>
+              <span class="checklist-col-points">分數</span>
+              <span class="checklist-col-action">操作</span>
+            </div>
+            @for (item of jdContent().checklist; track $index; let i = $index) {
+              <div class="checklist-item">
+                <input
+                  type="text"
+                  class="checklist-input"
+                  [value]="item.item"
+                  (input)="updateChecklistItem(i, 'item', $any($event.target).value)"
+                  placeholder="輸入檢查項目">
+                <input
+                  type="number"
+                  class="checklist-points"
+                  min="0"
+                  [value]="item.points"
+                  (input)="updateChecklistItem(i, 'points', +$any($event.target).value)">
+                <button
+                  class="btn-icon-small btn-delete"
+                  (click)="removeChecklistItem(i)"
+                  type="button"
+                  [disabled]="jdContent().checklist.length <= 1">
+                  <i class="ri-delete-bin-line"></i>
+                </button>
+              </div>
+            }
+            <button class="btn-add-item" (click)="addChecklistItem()" type="button">
+              <i class="ri-add-line"></i> 新增檢查項目
+            </button>
+          </div>
+        </div>
+
+        <!-- 區塊 9: 職務責任 -->
+        <div class="content-block">
+          <div class="block-header">
+            <span class="block-number">9</span>
+            <h3 class="block-title">職務責任</h3>
+          </div>
+          <div class="list-editor">
+            @for (item of jdContent().jobDuties; track $index; let i = $index) {
+              <div class="list-item">
+                <input
+                  type="text"
+                  class="list-input"
+                  [value]="item"
+                  (input)="updateContentItem('jobDuties', i, $any($event.target).value)"
+                  placeholder="輸入職務責任項目">
+                <button
+                  class="btn-icon-small btn-delete"
+                  (click)="removeContentItem('jobDuties', i)"
+                  type="button"
+                  [disabled]="jdContent().jobDuties.length <= 1">
+                  <i class="ri-delete-bin-line"></i>
+                </button>
+              </div>
+            }
+            <button class="btn-add-item" (click)="addContentItem('jobDuties')" type="button">
+              <i class="ri-add-line"></i> 新增項目
+            </button>
+          </div>
+        </div>
+
+        <!-- 區塊 10: 每日工作 -->
+        <div class="content-block">
+          <div class="block-header">
+            <span class="block-number">10</span>
+            <h3 class="block-title">每日工作</h3>
+          </div>
+          <div class="list-editor">
+            @for (item of jdContent().dailyTasks; track $index; let i = $index) {
+              <div class="list-item">
+                <input
+                  type="text"
+                  class="list-input"
+                  [value]="item"
+                  (input)="updateContentItem('dailyTasks', i, $any($event.target).value)"
+                  placeholder="輸入每日工作項目">
+                <button
+                  class="btn-icon-small btn-delete"
+                  (click)="removeContentItem('dailyTasks', i)"
+                  type="button"
+                  [disabled]="jdContent().dailyTasks.length <= 1">
+                  <i class="ri-delete-bin-line"></i>
+                </button>
+              </div>
+            }
+            <button class="btn-add-item" (click)="addContentItem('dailyTasks')" type="button">
+              <i class="ri-add-line"></i> 新增項目
+            </button>
+          </div>
+        </div>
+
+        <!-- 區塊 11: 每週工作 -->
+        <div class="content-block">
+          <div class="block-header">
+            <span class="block-number">11</span>
+            <h3 class="block-title">每週工作</h3>
+          </div>
+          <div class="list-editor">
+            @for (item of jdContent().weeklyTasks; track $index; let i = $index) {
+              <div class="list-item">
+                <input
+                  type="text"
+                  class="list-input"
+                  [value]="item"
+                  (input)="updateContentItem('weeklyTasks', i, $any($event.target).value)"
+                  placeholder="輸入每週工作項目">
+                <button
+                  class="btn-icon-small btn-delete"
+                  (click)="removeContentItem('weeklyTasks', i)"
+                  type="button"
+                  [disabled]="jdContent().weeklyTasks.length <= 1">
+                  <i class="ri-delete-bin-line"></i>
+                </button>
+              </div>
+            }
+            <button class="btn-add-item" (click)="addContentItem('weeklyTasks')" type="button">
+              <i class="ri-add-line"></i> 新增項目
+            </button>
+          </div>
+        </div>
+
+        <!-- 區塊 12: 每月工作 -->
+        <div class="content-block">
+          <div class="block-header">
+            <span class="block-number">12</span>
+            <h3 class="block-title">每月工作</h3>
+          </div>
+          <div class="list-editor">
+            @for (item of jdContent().monthlyTasks; track $index; let i = $index) {
+              <div class="list-item">
+                <input
+                  type="text"
+                  class="list-input"
+                  [value]="item"
+                  (input)="updateContentItem('monthlyTasks', i, $any($event.target).value)"
+                  placeholder="輸入每月工作項目">
+                <button
+                  class="btn-icon-small btn-delete"
+                  (click)="removeContentItem('monthlyTasks', i)"
+                  type="button"
+                  [disabled]="jdContent().monthlyTasks.length <= 1">
+                  <i class="ri-delete-bin-line"></i>
+                </button>
+              </div>
+            }
+            <button class="btn-add-item" (click)="addContentItem('monthlyTasks')" type="button">
+              <i class="ri-add-line"></i> 新增項目
+            </button>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn-secondary" (click)="prevStep()" type="button">上一步</button>
+          <button class="btn-primary" (click)="generateFromContent()" type="button">
+            <i class="ri-magic-line"></i> 生成職務說明書
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Generating Animation -->
+  @if (isGenerating()) {
+    <div class="generating-overlay">
+      <div class="generating-content">
+        <div class="generating-icon">
+          <i class="ri-loader-4-line spinner"></i>
+        </div>
+        <h3 class="generating-title">正在生成職務說明書...</h3>
+        <p class="generating-desc">AI 正在分析職能需求並生成結構化內容</p>
+        <div class="generating-progress">
+          <div class="progress-bar" [style.width.%]="75"></div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Step 5: Review and Edit -->
+  @if (currentStep() === 'review' && generatedJD() && isEditing()) {
+    <div class="step-content">
+      <div class="jd-review-section">
+        <div class="review-header">
+          <h2 class="section-title">結構化職務說明書</h2>
+          <button class="btn-secondary" (click)="currentStep.set('content')" type="button">
+            <i class="ri-edit-line"></i> 返回編輯
+          </button>
+        </div>
+
+        @if (generatedJD(); as jd) {
+          <div class="jd-content">
+            <!-- 1. 基本資訊 -->
+            <div class="jd-section">
+              <h3 class="jd-section-title"><span class="section-num">1</span> 基本資訊</h3>
+              <div class="jd-info-grid">
+                <div class="jd-info-item">
+                  <span class="info-label">職位代碼：</span>
+                  <span class="info-value">{{ jd.positionCode }}</span>
+                </div>
+                <div class="jd-info-item">
+                  <span class="info-label">職位名稱：</span>
+                  <span class="info-value">{{ jd.positionName }}</span>
+                </div>
+                <div class="jd-info-item">
+                  <span class="info-label">部門：</span>
+                  <span class="info-value">{{ jd.department }}</span>
+                </div>
+                <div class="jd-info-item">
+                  <span class="info-label">職等：</span>
+                  <span class="info-value">{{ jd.gradeLevel }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. 主要職責 -->
+            @if (jd.responsibilities && jd.responsibilities.length > 0) {
+              <div class="jd-section">
+                <h3 class="jd-section-title"><span class="section-num">2</span> 主要職責</h3>
+                <ul class="jd-list">
+                  @for (item of jd.responsibilities; track item) {
+                    <li>{{ item }}</li>
+                  }
+                </ul>
+              </div>
+            }
+
+            <!-- 3. 職務目的 -->
+            @if (jd.jobPurpose && jd.jobPurpose.length > 0) {
+              <div class="jd-section">
+                <h3 class="jd-section-title"><span class="section-num">3</span> 職務目的</h3>
+                <ul class="jd-list">
+                  @for (item of jd.jobPurpose; track item) {
+                    <li>{{ item }}</li>
+                  }
+                </ul>
+              </div>
+            }
+
+            <!-- 4. 職務要求 -->
+            @if (jd.qualifications && jd.qualifications.length > 0) {
+              <div class="jd-section">
+                <h3 class="jd-section-title"><span class="section-num">4</span> 職務要求</h3>
+                <ul class="jd-list">
+                  @for (item of jd.qualifications; track item) {
+                    <li>{{ item }}</li>
+                  }
+                </ul>
+              </div>
+            }
+
+            <!-- 5. 最終有價值產品 VFP -->
+            @if (jd.vfp && jd.vfp.length > 0) {
+              <div class="jd-section">
+                <h3 class="jd-section-title"><span class="section-num">5</span> 最終有價值產品 VFP</h3>
+                <ul class="jd-list">
+                  @for (item of jd.vfp; track item) {
+                    <li>{{ item }}</li>
+                  }
+                </ul>
+              </div>
+            }
+
+            <!-- 6. 職能需求 -->
+            @if (jd.requiredCompetencies && jd.requiredCompetencies.length > 0) {
+              <div class="jd-section">
+                <h3 class="jd-section-title"><span class="section-num">6</span> 職能需求</h3>
+                <div class="jd-competencies">
+                  @for (comp of jd.requiredCompetencies; track comp.competencyId) {
+                    <div class="jd-comp-item">
+                      <span class="comp-name">{{ comp.competencyName }}</span>
+                      @if (comp.requiredLevel) {
+                        <span class="comp-level">L{{ comp.requiredLevel }}</span>
+                      }
+                      <span class="comp-weight">{{ comp.weight }}%</span>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- 7. 工作描述 -->
+            @if (jd.workDescription && jd.workDescription.length > 0) {
+              <div class="jd-section">
+                <h3 class="jd-section-title"><span class="section-num">7</span> 工作描述</h3>
+                <ul class="jd-list">
+                  @for (item of jd.workDescription; track item) {
+                    <li>{{ item }}</li>
+                  }
+                </ul>
+              </div>
+            }
+
+            <!-- 8. 檢查清單 -->
+            @if (jd.checklist && jd.checklist.length > 0) {
+              <div class="jd-section">
+                <h3 class="jd-section-title"><span class="section-num">8</span> 檢查清單</h3>
+                <div class="jd-checklist">
+                  @for (item of jd.checklist; track item.item) {
+                    <div class="checklist-review-item">
+                      <span class="checklist-text">{{ item.item }}</span>
+                      <span class="checklist-score">{{ item.points }} 分</span>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- 9. 職務責任 -->
+            @if (jd.jobDuties && jd.jobDuties.length > 0) {
+              <div class="jd-section">
+                <h3 class="jd-section-title"><span class="section-num">9</span> 職務責任</h3>
+                <ul class="jd-list">
+                  @for (item of jd.jobDuties; track item) {
+                    <li>{{ item }}</li>
+                  }
+                </ul>
+              </div>
+            }
+
+            <!-- 10. 每日工作 -->
+            @if (jd.dailyTasks && jd.dailyTasks.length > 0) {
+              <div class="jd-section">
+                <h3 class="jd-section-title"><span class="section-num">10</span> 每日工作</h3>
+                <ul class="jd-list">
+                  @for (item of jd.dailyTasks; track item) {
+                    <li>{{ item }}</li>
+                  }
+                </ul>
+              </div>
+            }
+
+            <!-- 11. 每週工作 -->
+            @if (jd.weeklyTasks && jd.weeklyTasks.length > 0) {
+              <div class="jd-section">
+                <h3 class="jd-section-title"><span class="section-num">11</span> 每週工作</h3>
+                <ul class="jd-list">
+                  @for (item of jd.weeklyTasks; track item) {
+                    <li>{{ item }}</li>
+                  }
+                </ul>
+              </div>
+            }
+
+            <!-- 12. 每月工作 -->
+            @if (jd.monthlyTasks && jd.monthlyTasks.length > 0) {
+              <div class="jd-section">
+                <h3 class="jd-section-title"><span class="section-num">12</span> 每月工作</h3>
+                <ul class="jd-list">
+                  @for (item of jd.monthlyTasks; track item) {
+                    <li>{{ item }}</li>
+                  }
+                </ul>
+              </div>
+            }
+          </div>
+        }
+
+        <div class="form-actions">
+          <button class="btn-secondary" (click)="currentStep.set('content')" type="button">返回編輯</button>
+          <button class="btn-primary" (click)="saveJD()" type="button">
+            <i class="ri-save-line"></i> 儲存職務說明書
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>
+

@@ -69,7 +69,7 @@
           (change)="statusFilter.set($any($event.target).value)">
           <option value="">所有狀態</option>
           <option value="new">新進履歷</option>
-          <option value="interview">面試中</option>
+          <option value="interview">已安排面試</option>
           <option value="rejected">已婉拒</option>
         </select>
       </div>
@@ -79,6 +79,18 @@
           篩選
         </button>
       </div>
+    </div>
+
+    <!-- AI Scoring Action Bar -->
+    <div class="ai-action-bar">
+      <div class="ai-action-bar__info">
+        <i class="ri-robot-line"></i>
+        <span>AI 評分可依據 JD 職能要求自動評估候選人匹配度</span>
+      </div>
+      <button class="btn btn-ai" type="button" (click)="batchAIScoring()">
+        <i class="ri-magic-line"></i>
+        批量 AI 評分
+      </button>
     </div>
 
     <!-- Candidate Grid -->
@@ -98,10 +110,28 @@
                 <p class="candidate-date">應徵日期：{{ candidate.applyDate }}</p>
               </div>
             </div>
-            <div
-              class="match-badge {{ getScoreClass(candidate.scoreLevel) }}"
-              title="AI 匹配度">
-              {{ candidate.matchScore }}
+            <div class="score-section">
+              <!-- AI 評分狀態 -->
+              <span class="scoring-status {{ getScoringStatusClass(candidate.aiScoringStatus) }}">
+                @if (candidate.aiScoringStatus === 'pending') {
+                  <i class="ri-time-line"></i>
+                } @else {
+                  <i class="ri-checkbox-circle-fill"></i>
+                }
+                {{ getScoringStatusLabel(candidate.aiScoringStatus) }}
+              </span>
+              <!-- AI 匹配分數 -->
+              @if (candidate.aiScoringStatus === 'scored') {
+                <div
+                  class="match-badge {{ getScoreClass(candidate.scoreLevel) }} animate-score"
+                  title="AI 職能匹配度">
+                  {{ candidate.displayScore }}
+                </div>
+              } @else {
+                <div class="match-badge match-badge--pending" title="待評分">
+                  --
+                </div>
+              }
             </div>
           </div>
 
@@ -122,16 +152,39 @@
           </div>
 
           <div class="card__footer">
-            <span class="status-badge {{ getStatusClass(candidate.status) }}">
-              {{ getStatusLabel(candidate.status) }}
-            </span>
-            <button
-              class="btn-action"
-              (click)="viewProfile(candidate)"
-              type="button">
-              解析履歷
-              <i class="ri-arrow-right-line"></i>
-            </button>
+            <div class="footer-left">
+              <span class="status-badge {{ getStatusClass(candidate.status) }}">
+                {{ getStatusLabel(candidate.status) }}
+              </span>
+            </div>
+            <div class="footer-actions">
+              <!-- O/X 決策按鈕 -->
+              @if (candidate.status === 'new') {
+                <div class="decision-buttons">
+                  <button
+                    class="decision-btn decision-btn--reject"
+                    title="婉拒"
+                    (click)="rejectCandidate(candidate, $event)"
+                    type="button">
+                    <i class="ri-close-line"></i>
+                  </button>
+                  <button
+                    class="decision-btn decision-btn--accept"
+                    title="邀請面試"
+                    (click)="inviteCandidate(candidate, $event)"
+                    type="button">
+                    <i class="ri-check-line"></i>
+                  </button>
+                </div>
+              }
+              <button
+                class="btn-action"
+                (click)="viewProfile(candidate)"
+                type="button">
+                查看詳情
+                <i class="ri-arrow-right-line"></i>
+              </button>
+            </div>
           </div>
         </article>
       } @empty {
@@ -144,4 +197,172 @@
     </div>
   </div>
 </main>
+
+<!-- AI 評分全畫面動畫 -->
+@if (isAIScoring()) {
+  <div class="ai-scoring-overlay">
+    <div class="ai-scoring-content">
+      <div class="ai-scoring-icon">
+        <i class="ri-robot-2-line"></i>
+        <div class="pulse-ring"></div>
+        <div class="pulse-ring delay-1"></div>
+        <div class="pulse-ring delay-2"></div>
+      </div>
+      <h2 class="ai-scoring-title">AI 智能評分進行中</h2>
+      <p class="ai-scoring-message">{{ aiScoringMessage() }}</p>
+      <div class="ai-scoring-progress">
+        <div class="progress-bar">
+          <div class="progress-fill" [style.width.%]="aiScoringProgress()"></div>
+        </div>
+        <span class="progress-text">{{ aiScoringProgress() | number:'1.0-0' }}%</span>
+      </div>
+      <div class="ai-scoring-steps">
+        <div class="step" [class.active]="aiScoringProgress() >= 20">
+          <i class="ri-file-search-line"></i>
+          <span>分析需求</span>
+        </div>
+        <div class="step" [class.active]="aiScoringProgress() >= 40">
+          <i class="ri-file-user-line"></i>
+          <span>解析履歷</span>
+        </div>
+        <div class="step" [class.active]="aiScoringProgress() >= 60">
+          <i class="ri-bar-chart-line"></i>
+          <span>匹配計算</span>
+        </div>
+        <div class="step" [class.active]="aiScoringProgress() >= 80">
+          <i class="ri-file-chart-line"></i>
+          <span>生成報告</span>
+        </div>
+        <div class="step" [class.active]="aiScoringProgress() >= 100">
+          <i class="ri-check-double-line"></i>
+          <span>完成</span>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- 面試邀約 Modal -->
+@if (showInterviewModal()) {
+  <div class="modal-backdrop" (click)="closeInterviewModal()"></div>
+  <div class="modal interview-modal">
+    <div class="modal-header">
+      <h3 class="modal-title">
+        <i class="ri-calendar-event-line"></i>
+        安排面試邀約
+      </h3>
+      <button class="btn-close" (click)="closeInterviewModal()" type="button">
+        <i class="ri-close-line"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      @if (selectedCandidateForInterview(); as candidate) {
+        <div class="candidate-preview">
+          <div class="candidate-avatar" [style.background-color]="candidate.avatarColor">
+            {{ getInitial(candidate.name) }}
+          </div>
+          <div class="candidate-info">
+            <h4>{{ candidate.name }}</h4>
+            <p>{{ candidate.email }}</p>
+          </div>
+        </div>
+      }
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">面試日期 <span class="required">*</span></label>
+          <input 
+            type="date" 
+            class="form-input"
+            [min]="getTodayDate()"
+            [value]="interviewDate()"
+            (input)="interviewDate.set($any($event.target).value)">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">面試時間 <span class="required">*</span></label>
+          <input 
+            type="time" 
+            class="form-input"
+            [value]="interviewTime()"
+            (input)="interviewTime.set($any($event.target).value)">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">面試官 <span class="required">*</span></label>
+        <select 
+          class="form-select"
+          [value]="selectedInterviewer()"
+          (change)="selectedInterviewer.set($any($event.target).value)">
+          <option value="">請選擇面試官</option>
+          @for (interviewer of interviewerOptions; track interviewer.id) {
+            <option [value]="interviewer.id">
+              {{ interviewer.name }} - {{ interviewer.title }} ({{ interviewer.department }})
+            </option>
+          }
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">面試方式</label>
+        <div class="radio-group">
+          <label class="radio-item">
+            <input 
+              type="radio" 
+              name="interviewType" 
+              value="onsite"
+              [checked]="interviewType() === 'onsite'"
+              (change)="interviewType.set('onsite')">
+            <span class="radio-label">
+              <i class="ri-building-line"></i>
+              現場面試
+            </span>
+          </label>
+          <label class="radio-item">
+            <input 
+              type="radio" 
+              name="interviewType" 
+              value="online"
+              [checked]="interviewType() === 'online'"
+              (change)="interviewType.set('online')">
+            <span class="radio-label">
+              <i class="ri-video-chat-line"></i>
+              線上面試
+            </span>
+          </label>
+          <label class="radio-item">
+            <input 
+              type="radio" 
+              name="interviewType" 
+              value="phone"
+              [checked]="interviewType() === 'phone'"
+              (change)="interviewType.set('phone')">
+            <span class="radio-label">
+              <i class="ri-phone-line"></i>
+              電話面試
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">備註說明</label>
+        <textarea 
+          class="form-textarea"
+          rows="3"
+          placeholder="輸入面試相關備註..."
+          [value]="interviewNotes()"
+          (input)="interviewNotes.set($any($event.target).value)"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeInterviewModal()" type="button">取消</button>
+      <button class="btn btn-primary" (click)="confirmInterview()" type="button">
+        <i class="ri-send-plane-line"></i>
+        發送邀請
+      </button>
+    </div>
+  </div>
+}
 

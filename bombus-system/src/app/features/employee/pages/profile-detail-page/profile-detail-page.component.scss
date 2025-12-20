@@ -356,3 +356,291 @@
   }
 }
 
+// ---------------------------------------------------------------
+// Competency Matching Section (NEW)
+// ---------------------------------------------------------------
+.competency-section {
+  background: linear-gradient(135deg, rgba($color-l1-sage, 0.05), rgba(#fff, 0.8));
+  padding: $spacing-lg;
+  border-radius: $radius-lg;
+  border: 1px solid rgba($color-l1-sage, 0.2);
+  margin-bottom: $spacing-lg;
+}
+
+.section-label--highlight {
+  font-size: $font-size-base;
+  font-weight: $font-weight-bold;
+  color: $color-l1-sage;
+  margin-bottom: $spacing-lg !important;
+
+  .badge-ai {
+    margin-left: $spacing-sm;
+    padding: 2px 8px;
+    background: linear-gradient(135deg, $color-l1-sage, darken($color-l1-sage, 10%));
+    color: white;
+    font-size: 10px;
+    font-weight: $font-weight-semibold;
+    border-radius: $radius-full;
+    vertical-align: middle;
+  }
+}
+
+.competency-matches {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.competency-match-item {
+  background: white;
+  padding: $spacing-md;
+  border-radius: $radius-md;
+  border: 1px solid $color-soft-gray;
+  transition: all $transition-normal;
+
+  &:hover {
+    border-color: $color-l1-sage;
+    box-shadow: 0 4px 12px rgba($color-l1-sage, 0.1);
+  }
+}
+
+.match-header {
+  @include flex-between;
+  margin-bottom: $spacing-sm;
+}
+
+.match-info {
+  @include flex-start;
+  gap: $spacing-sm;
+}
+
+.competency-type {
+  @include flex-center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: $font-weight-bold;
+}
+
+.type--knowledge {
+  background: rgba(#5C6BC0, 0.15);
+  color: #5C6BC0;
+}
+
+.type--skill {
+  background: rgba($color-l1-sage, 0.15);
+  color: $color-l1-sage;
+}
+
+.type--attitude {
+  background: rgba(#FF7043, 0.15);
+  color: #FF7043;
+}
+
+.competency-name {
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+}
+
+.match-score {
+  padding: 4px 12px;
+  border-radius: $radius-full;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+}
+
+.score--excellent {
+  background: rgba($color-success, 0.15);
+  color: $color-success;
+}
+
+.score--good {
+  background: rgba($color-l1-sage, 0.15);
+  color: $color-l1-sage;
+}
+
+.score--fair {
+  background: rgba($color-warning, 0.15);
+  color: darken($color-warning, 15%);
+}
+
+.score--poor {
+  background: rgba($color-error, 0.15);
+  color: $color-error;
+}
+
+.match-levels {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+  margin-bottom: $spacing-sm;
+}
+
+.level-info {
+  @include flex-start;
+  gap: $spacing-sm;
+}
+
+.level-label {
+  width: 60px;
+  font-size: 11px;
+  color: $color-text-secondary;
+}
+
+.level-dots {
+  @include flex-start;
+  gap: 4px;
+}
+
+.level-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: $color-soft-gray;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.level-dot--required {
+  background: #5C6BC0;
+}
+
+.level-dot--assessed {
+  background: $color-l1-sage;
+}
+
+.level-value {
+  font-size: 11px;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-left: $spacing-xs;
+}
+
+.match-evidence {
+  @include flex-start;
+  gap: $spacing-xs;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  background: $color-cloud-gray;
+  padding: $spacing-sm;
+  border-radius: $radius-sm;
+  margin-bottom: $spacing-xs;
+
+  i {
+    color: $color-warning;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+}
+
+.match-weight {
+  font-size: 10px;
+  color: $color-muted-gray;
+  text-align: right;
+}
+
+// ---------------------------------------------------------------
+// AI Suggestions Section
+// ---------------------------------------------------------------
+.ai-suggestions-section {
+  margin-top: $spacing-lg;
+  padding-top: $spacing-lg;
+  border-top: 2px solid $color-soft-gray;
+}
+
+.section-label--ai {
+  color: $color-l1-sage;
+  
+  i {
+    color: $color-l1-sage;
+  }
+}
+
+.ai-suggestions-grid {
+  display: grid;
+  gap: $spacing-md;
+  margin-bottom: $spacing-lg;
+}
+
+.suggestion-card {
+  padding: $spacing-md;
+  border-radius: $radius-md;
+  border-left: 4px solid;
+
+  &--strength {
+    background: rgba($color-success, 0.05);
+    border-left-color: $color-success;
+
+    .suggestion-header {
+      color: $color-success;
+    }
+  }
+
+  &--weakness {
+    background: rgba($color-warning, 0.05);
+    border-left-color: $color-warning;
+
+    .suggestion-header {
+      color: darken($color-warning, 15%);
+    }
+  }
+
+  &--recommendation {
+    background: rgba($color-info, 0.05);
+    border-left-color: $color-info;
+
+    .suggestion-header {
+      color: $color-info;
+    }
+  }
+}
+
+.suggestion-header {
+  @include flex-start;
+  gap: $spacing-xs;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+  margin-bottom: $spacing-sm;
+
+  i {
+    font-size: 18px;
+  }
+}
+
+.suggestion-list {
+  margin: 0;
+  padding-left: $spacing-lg;
+
+  li {
+    font-size: $font-size-sm;
+    color: $color-text-primary;
+    margin-bottom: $spacing-xs;
+    line-height: 1.6;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+}
+
+.ai-scoring-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-md;
+  padding: $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+}
+
+.scoring-info-item {
+  @include flex-start;
+  gap: $spacing-xs;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+
+  i {
+    color: $color-l1-sage;
+    font-size: 14px;
+  }
+}
+

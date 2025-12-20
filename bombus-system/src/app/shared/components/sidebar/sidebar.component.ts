@@ -1,6 +1,9 @@
 import { Component, ChangeDetectionStrategy, inject, signal, computed } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { SidebarService } from '../../../core/services/sidebar.service';
+import { AuthService } from '../../../features/auth/services/auth.service';
+import { NotificationService } from '../../../core/services/notification.service';
 
 interface MenuItem {
   label: string;
@@ -19,13 +22,18 @@ interface MenuSection {
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterLink, RouterLinkActive],
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SidebarComponent {
   private sidebarService = inject(SidebarService);
+  private authService = inject(AuthService);
+  private notificationService = inject(NotificationService);
+
+  // Get current user from auth service
+  readonly currentUser = this.authService.currentUser;
 
   readonly isMinimized = this.sidebarService.isMinimized;
   readonly isMobileOpen = this.sidebarService.isMobileOpen;
@@ -62,7 +70,9 @@ export class SidebarComponent {
           icon: 'ri-medal-line',
           moduleClass: 'module-l2',
           children: [
-            { label: '職能框架開發', icon: '', route: '/competency/framework' },
+            { label: '職等職級管理', icon: '', route: '/competency/grade-matrix' },
+            { label: '職務說明書', icon: '', route: '/competency/job-description' },
+            { label: '職能基準庫', icon: '', route: '/competency/framework' },
             { label: '職能評估系統', icon: '', route: '/competency/assessment' },
             { label: '職能落差分析', icon: '', route: '/competency/gap-analysis' }
           ]
@@ -118,6 +128,26 @@ export class SidebarComponent {
           route: '/settings/backup'
         }
       ]
+    },
+    {
+      title: '組織管理',
+      items: [
+        {
+          label: '集團組織圖',
+          icon: 'ri-building-4-line',
+          route: '/organization/group-structure'
+        },
+        {
+          label: '部門結構管理',
+          icon: 'ri-organization-chart',
+          route: '/organization/department-structure'
+        },
+        {
+          label: '員工管理',
+          icon: 'ri-user-settings-line',
+          route: '/organization/employee-management'
+        }
+      ]
     }
   ];
 
@@ -143,6 +173,19 @@ export class SidebarComponent {
 
   isMenuExpanded(label: string): boolean {
     return this.expandedMenus().has(label);
+  }
+
+  getUserInitial(): string {
+    const user = this.currentUser();
+    if (user?.name) {
+      return user.name.charAt(0).toUpperCase();
+    }
+    return 'U';
+  }
+
+  onLogout(): void {
+    this.authService.logout();
+    this.notificationService.success('已成功登出');
   }
 }
 

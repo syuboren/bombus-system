@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, signal, OnInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, OnInit, computed } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
@@ -6,6 +6,8 @@ import { StatCardComponent } from '../../../../shared/components/stat-card/stat-
 import { NotificationService } from '../../../../core/services/notification.service';
 import { JobService } from '../../services/job.service';
 import { Job, JobStats } from '../../models/job.model';
+import { CompetencyService } from '../../../competency/services/competency.service';
+import { JobDescription } from '../../../competency/models/competency.model';
 
 @Component({
   selector: 'app-jobs-page',
@@ -18,6 +20,7 @@ import { Job, JobStats } from '../../models/job.model';
 export class JobsPageComponent implements OnInit {
   private router = inject(Router);
   private jobService = inject(JobService);
+  private competencyService = inject(CompetencyService);
   private notificationService = inject(NotificationService);
 
   // Signals
@@ -25,6 +28,11 @@ export class JobsPageComponent implements OnInit {
   stats = signal<JobStats | null>(null);
   loading = signal<boolean>(false);
   showModal = signal<boolean>(false);
+  showImportModal = signal<boolean>(false);
+  selectedJobForImport = signal<Job | null>(null);
+
+  // JD 列表
+  jobDescriptions = signal<JobDescription[]>([]);
 
   // Filter signals
   searchQuery = signal<string>('');
@@ -36,11 +44,20 @@ export class JobsPageComponent implements OnInit {
     title: '',
     department: '',
     recruiter: 'Admin (您)',
-    description: ''
+    description: '',
+    jdId: ''  // 新增: 關聯的 JD ID
+  });
+
+  // Computed: 根據選擇的 JD 自動填入資訊
+  selectedJD = computed(() => {
+    const jdId = this.newJob().jdId;
+    if (!jdId) return null;
+    return this.jobDescriptions().find(jd => jd.id === jdId) || null;
   });
 
   ngOnInit(): void {
     this.loadData();
+    this.loadJobDescriptions();
   }
 
   loadData(): void {
@@ -59,6 +76,12 @@ export class JobsPageComponent implements OnInit {
         this.notificationService.error('載入職缺列表失敗');
         this.loading.set(false);
       }
+    });
+  }
+
+  loadJobDescriptions(): void {
+    this.competencyService.getJobDescriptions().subscribe({
+      next: (jds) => this.jobDescriptions.set(jds)
     });
   }
 
@@ -145,11 +168,41 @@ export class JobsPageComponent implements OnInit {
     return this.jobService.getStatusIcon(status as 'published' | 'draft' | 'review');
   }
 
-  updateJobField(field: 'title' | 'department' | 'description', value: string): void {
+  updateJobField(field: 'title' | 'department' | 'description' | 'jdId', value: string): void {
     this.newJob.update(current => ({
       ...current,
       [field]: value
     }));
+
+    // 如果選擇了 JD，自動填入職稱和部門
+    if (field === 'jdId' && value) {
+      const jd = this.jobDescriptions().find(j => j.id === value);
+      if (jd) {
+        this.newJob.update(current => ({
+          ...current,
+          title: jd.positionName,
+          department: jd.department,
+          description: jd.summary
+        }));
+      }
+    }
+  }
+
+  // 匯入履歷相關
+  openImportModal(job: Job): void {
+    this.selectedJobForImport.set(job);
+    this.showImportModal.set(true);
+  }
+
+  closeImportModal(): void {
+    this.showImportModal.set(false);
+    this.selectedJobForImport.set(null);
+  }
+
+  importResumes(): void {
+    this.notificationService.success('履歷匯入成功！已觸發 AI 評分');
+    this.closeImportModal();
+    this.loadData();
   }
 
   private resetForm(): void {
@@ -157,7 +210,8 @@ export class JobsPageComponent implements OnInit {
       title: '',
       department: '',
       recruiter: 'Admin (您)',
-      description: ''
+      description: '',
+      jdId: ''
     });
   }
 }

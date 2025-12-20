@@ -440,3 +440,45 @@
   color: $color-text-secondary;
   @include text-truncate;
 }
+
+// Logout Button
+.logout-btn {
+  @include flex-center;
+  gap: $spacing-sm;
+  width: 100%;
+  padding: $spacing-sm $spacing-md;
+  margin-top: $spacing-sm;
+  background: transparent;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+  cursor: pointer;
+  transition: all $transition-normal;
+
+  i {
+    font-size: 18px;
+  }
+
+  &:hover {
+    background: rgba($color-error, 0.08);
+    border-color: rgba($color-error, 0.3);
+    color: $color-error;
+  }
+
+  &__text {
+    transition: opacity $transition-normal;
+  }
+}
+
+// Minimized state for logout button
+.sidebar.minimized {
+  .logout-btn {
+    padding: $spacing-sm;
+    justify-content: center;
+
+    &__text {
+      display: none;
+    }
+  }
+}

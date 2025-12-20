@@ -1,0 +1,925 @@
+@import '../../../../../assets/styles/variables';
+@import '../../../../../assets/styles/mixins';
+
+$module-color: $color-l2-terracotta;
+$module-color-light: $color-l2-terracotta-light;
+$module-color-dark: $color-l2-terracotta-dark;
+
+.create-jd-page {
+  padding: calc(var(--header-height, 70px) + 20px) $spacing-lg $spacing-lg;
+  background: $color-cloud-gray;
+  min-height: 100vh;
+  max-width: 1200px;
+  margin: 0 auto;
+
+  @include media-max-md {
+    padding: calc(var(--header-height, 70px) + 16px) $spacing-md $spacing-md;
+  }
+}
+
+// Step Indicator
+.step-indicator {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-xl;
+  padding: $spacing-lg;
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-soft;
+
+  @include media-max-md {
+    flex-wrap: wrap;
+    gap: $spacing-sm;
+  }
+}
+
+.step-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-xs;
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 60%;
+    width: 80%;
+    height: 2px;
+    background: $color-soft-gray;
+    z-index: 0;
+
+    @include media-max-md {
+      display: none;
+    }
+  }
+
+  &:last-child::after {
+    display: none;
+  }
+
+  &.completed::after {
+    background: $module-color;
+  }
+
+  &.active .step-number {
+    background: $module-color;
+    color: white;
+    border-color: $module-color;
+  }
+
+  &.completed .step-number {
+    background: $module-color;
+    color: white;
+    border-color: $module-color;
+  }
+}
+
+.step-number {
+  @include flex-center;
+  width: 40px;
+  height: 40px;
+  border-radius: $radius-full;
+  border: 2px solid $color-soft-gray;
+  background: $color-pure-white;
+  color: $color-text-secondary;
+  font-weight: $font-weight-bold;
+  font-size: $font-size-base;
+  position: relative;
+  z-index: 1;
+}
+
+.step-label {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  text-align: center;
+
+  .step-item.active & {
+    color: $module-color;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+// Step Content
+.step-content {
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  padding: $spacing-xl;
+  box-shadow: $shadow-soft;
+}
+
+.section-title {
+  font-size: $font-size-2xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-dark;
+  margin: 0 0 $spacing-md;
+}
+
+.section-subtitle {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-lg;
+}
+
+// Mode Selection
+.mode-selection {
+  text-align: center;
+}
+
+.mode-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $spacing-lg;
+  margin-top: $spacing-xl;
+
+  @include media-max-md {
+    grid-template-columns: 1fr;
+  }
+}
+
+.mode-card {
+  padding: $spacing-xl;
+  border: 2px solid $color-soft-gray;
+  border-radius: $radius-lg;
+  cursor: pointer;
+  transition: all $transition-normal;
+  background: $color-pure-white;
+
+  &:hover {
+    border-color: $module-color;
+    transform: translateY(-4px);
+    box-shadow: $shadow-md;
+  }
+}
+
+.mode-icon {
+  @include flex-center;
+  width: 80px;
+  height: 80px;
+  margin: 0 auto $spacing-md;
+  border-radius: $radius-full;
+  background: rgba($module-color, 0.1);
+  color: $module-color;
+  font-size: 36px;
+}
+
+.mode-title {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+  margin: 0 0 $spacing-sm;
+}
+
+.mode-desc {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin: 0;
+}
+
+// Form Styles
+.form-section {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: $spacing-lg;
+  margin-top: $spacing-lg;
+
+  @include media-max-sm {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.form-label {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-dark;
+
+  .required {
+    color: $color-error;
+  }
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+  @include input-base;
+  width: 100%;
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+// AI Input Section
+.ai-input-section {
+  margin-bottom: $spacing-xl;
+  padding: $spacing-lg;
+  background: rgba($color-info, 0.05);
+  border-radius: $radius-md;
+  border: 1px solid rgba($color-info, 0.2);
+}
+
+.btn-generate {
+  margin-top: $spacing-md;
+  width: 100%;
+}
+
+// Competency Selection
+.competency-category {
+  margin-bottom: $spacing-xl;
+  padding: $spacing-lg;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+}
+
+.category-title {
+  @include flex-start;
+  gap: $spacing-sm;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+  margin: 0 0 $spacing-md;
+
+  i {
+    color: $module-color;
+    font-size: 24px;
+  }
+}
+
+.competency-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.competency-item {
+  background: $color-pure-white;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  transition: all $transition-fast;
+
+  &:hover {
+    border-color: $module-color;
+    box-shadow: $shadow-soft;
+  }
+}
+
+.comp-header {
+  @include flex-between;
+  align-items: center;
+}
+
+.comp-checkbox {
+  @include flex-start;
+  gap: $spacing-sm;
+  align-items: center;
+  cursor: pointer;
+  flex: 1;
+}
+
+.comp-name {
+  font-weight: $font-weight-medium;
+  color: $color-text-dark;
+}
+
+.comp-code {
+  font-size: $font-size-xs;
+  font-family: $font-family-mono;
+  color: $color-text-secondary;
+  background: $color-cloud-gray;
+  padding: 2px 6px;
+  border-radius: $radius-sm;
+}
+
+.comp-type-badge {
+  padding: 2px 8px;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+
+  &.type-knowledge {
+    background: rgba($color-info, 0.15);
+    color: $color-info;
+  }
+  &.type-skill {
+    background: rgba($color-l1-sage, 0.15);
+    color: $color-l1-sage;
+  }
+  &.type-attitude {
+    background: rgba($module-color, 0.15);
+    color: $module-color;
+  }
+}
+
+.comp-settings {
+  display: flex;
+  gap: $spacing-lg;
+  margin-top: $spacing-md;
+  padding-top: $spacing-md;
+  border-top: 1px dashed $color-soft-gray;
+
+  @include media-max-sm {
+    flex-direction: column;
+    gap: $spacing-sm;
+  }
+}
+
+.setting-group {
+  @include flex-start;
+  gap: $spacing-sm;
+  align-items: center;
+}
+
+.setting-label {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  white-space: nowrap;
+}
+
+.setting-select,
+.setting-input {
+  @include input-base;
+  min-width: 120px;
+}
+
+.setting-input {
+  width: 80px;
+}
+
+.setting-unit {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.ksa-filter-bar {
+  @include flex-start;
+  gap: $spacing-md;
+  margin-bottom: $spacing-md;
+  padding: $spacing-sm;
+  background: $color-pure-white;
+  border-radius: $radius-sm;
+}
+
+.filter-label {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  white-space: nowrap;
+}
+
+.filter-select {
+  @include input-base;
+  min-width: 150px;
+}
+
+.ksa-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+// Weight Summary
+.weight-summary {
+  @include flex-start;
+  gap: $spacing-sm;
+  align-items: center;
+  padding: $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+  margin-top: $spacing-lg;
+}
+
+.weight-label {
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+}
+
+.weight-value {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $module-color;
+
+  &.warning {
+    color: $color-error;
+  }
+}
+
+.weight-hint {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+// Form Actions
+.form-actions {
+  @include flex-end;
+  gap: $spacing-md;
+  margin-top: $spacing-xl;
+  padding-top: $spacing-lg;
+  border-top: 1px solid $color-soft-gray;
+}
+
+.btn-primary {
+  @include button-primary;
+  background: $module-color;
+
+  &:hover {
+    background: $module-color-dark;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.btn-secondary {
+  @include button-secondary;
+}
+
+// Generating Overlay
+.generating-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 2000;
+  @include flex-center;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.generating-content {
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  padding: $spacing-2xl;
+  text-align: center;
+  max-width: 500px;
+  box-shadow: $shadow-xl;
+}
+
+.generating-icon {
+  @include flex-center;
+  margin-bottom: $spacing-lg;
+
+  .spinner {
+    font-size: 64px;
+    color: $module-color;
+    animation: spin 1s linear infinite;
+  }
+}
+
+.generating-title {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-dark;
+  margin: 0 0 $spacing-sm;
+}
+
+.generating-desc {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin: 0 0 $spacing-lg;
+}
+
+.generating-progress {
+  width: 100%;
+  height: 8px;
+  background: $color-cloud-gray;
+  border-radius: $radius-full;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, $module-color, $module-color-light);
+  border-radius: $radius-full;
+  animation: progress 2s ease-in-out infinite;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes progress {
+  0% {
+    width: 0%;
+  }
+  50% {
+    width: 75%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+// JD Review Section
+.jd-review-section {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.review-header {
+  @include flex-between;
+  align-items: center;
+  margin-bottom: $spacing-xl;
+}
+
+.jd-content {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xl;
+}
+
+.jd-section {
+  padding: $spacing-lg;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+}
+
+.jd-section-title {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+  margin: 0 0 $spacing-md;
+  padding-bottom: $spacing-sm;
+  border-bottom: 2px solid $module-color;
+}
+
+.jd-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: $spacing-md;
+
+  @include media-max-sm {
+    grid-template-columns: 1fr;
+  }
+}
+
+.jd-info-item {
+  @include flex-start;
+  gap: $spacing-sm;
+}
+
+.info-label {
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+}
+
+.info-value {
+  color: $color-text-dark;
+}
+
+.jd-competencies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+}
+
+.jd-comp-item {
+  @include flex-start;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  background: $color-pure-white;
+  border-radius: $radius-sm;
+  border: 1px solid $color-soft-gray;
+}
+
+.jd-text {
+  color: $color-text-primary;
+  line-height: $line-height-relaxed;
+  margin: 0;
+}
+
+.jd-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+
+  li {
+    padding: $spacing-xs 0;
+    color: $color-text-primary;
+    line-height: $line-height-relaxed;
+
+    &::before {
+      content: '•';
+      color: $module-color;
+      font-weight: $font-weight-bold;
+      margin-right: $spacing-sm;
+    }
+  }
+}
+
+.header-actions {
+  @include flex-start;
+  gap: $spacing-sm;
+}
+
+// ===============================================================
+// Content Section (Step 4 - 12 區塊)
+// ===============================================================
+.content-section {
+  max-width: 900px;
+}
+
+.content-block {
+  margin-bottom: $spacing-lg;
+  padding: $spacing-lg;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+  border: 1px solid $color-soft-gray;
+}
+
+.block-header {
+  @include flex-start;
+  gap: $spacing-md;
+  align-items: center;
+  margin-bottom: $spacing-md;
+  padding-bottom: $spacing-sm;
+  border-bottom: 2px solid $module-color;
+}
+
+.block-number {
+  @include flex-center;
+  width: 32px;
+  height: 32px;
+  background: $module-color;
+  color: white;
+  border-radius: $radius-full;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+  flex-shrink: 0;
+}
+
+.block-title {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+  margin: 0;
+  flex: 1;
+}
+
+.total-weight-badge {
+  padding: $spacing-xs $spacing-md;
+  background: rgba($module-color, 0.15);
+  color: $module-color;
+  border-radius: $radius-full;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+
+  &.warning {
+    background: rgba($color-error, 0.15);
+    color: $color-error;
+  }
+}
+
+// Info Display (基本資訊)
+.info-display {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: $spacing-md;
+
+  @include media-max-sm {
+    grid-template-columns: 1fr;
+  }
+}
+
+.info-row {
+  @include flex-start;
+  gap: $spacing-sm;
+  padding: $spacing-xs 0;
+}
+
+// List Editor
+.list-editor {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.list-item {
+  @include flex-start;
+  gap: $spacing-sm;
+  align-items: flex-start;
+}
+
+.list-input {
+  @include input-base;
+  flex: 1;
+}
+
+.list-textarea {
+  @include input-base;
+  flex: 1;
+  resize: vertical;
+  min-height: 80px;
+}
+
+.btn-icon-small {
+  @include flex-center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  border-radius: $radius-sm;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all $transition-fast;
+
+  &.btn-delete {
+    color: $color-error;
+
+    &:hover:not(:disabled) {
+      background: rgba($color-error, 0.1);
+    }
+  }
+
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+}
+
+.btn-add-item {
+  @include flex-center;
+  gap: $spacing-xs;
+  padding: $spacing-sm $spacing-md;
+  background: transparent;
+  border: 1px dashed $module-color;
+  border-radius: $radius-md;
+  color: $module-color;
+  font-size: $font-size-sm;
+  cursor: pointer;
+  transition: all $transition-fast;
+  margin-top: $spacing-sm;
+
+  &:hover {
+    background: rgba($module-color, 0.1);
+    border-style: solid;
+  }
+}
+
+// Competency Summary (步驟4的職能基準庫顯示)
+.competency-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $spacing-md;
+
+  @include media-max-lg {
+    grid-template-columns: 1fr;
+  }
+}
+
+.summary-category {
+  padding: $spacing-md;
+  background: $color-pure-white;
+  border-radius: $radius-md;
+
+  h4 {
+    @include flex-start;
+    gap: $spacing-xs;
+    font-size: $font-size-base;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+    margin: 0 0 $spacing-sm;
+    padding-bottom: $spacing-xs;
+    border-bottom: 1px solid $color-soft-gray;
+
+    i {
+      color: $module-color;
+    }
+  }
+}
+
+.summary-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-xs;
+}
+
+.summary-tag {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+
+  &.core {
+    background: rgba($color-info, 0.15);
+    color: $color-info;
+  }
+
+  &.management {
+    background: rgba($color-l1-sage, 0.15);
+    color: $color-l1-sage;
+  }
+
+  &.ksa {
+    background: rgba($module-color, 0.15);
+    color: $module-color;
+  }
+}
+
+// Checklist Editor
+.checklist-editor {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.checklist-header {
+  display: grid;
+  grid-template-columns: 1fr 100px 50px;
+  gap: $spacing-sm;
+  padding: $spacing-xs $spacing-sm;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-secondary;
+  background: $color-pure-white;
+  border-radius: $radius-sm;
+}
+
+.checklist-item {
+  display: grid;
+  grid-template-columns: 1fr 100px 50px;
+  gap: $spacing-sm;
+  align-items: center;
+}
+
+.checklist-input {
+  @include input-base;
+  width: 100%;
+}
+
+.checklist-points {
+  @include input-base;
+  width: 100%;
+  text-align: center;
+}
+
+// JD Review - Section Number
+.section-num {
+  @include flex-center;
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  background: $module-color;
+  color: white;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+  margin-right: $spacing-sm;
+}
+
+// JD Checklist Review
+.jd-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.checklist-review-item {
+  @include flex-between;
+  gap: $spacing-md;
+  padding: $spacing-sm $spacing-md;
+  background: $color-pure-white;
+  border-radius: $radius-sm;
+  border: 1px solid $color-soft-gray;
+}
+
+.checklist-text {
+  flex: 1;
+  color: $color-text-primary;
+}
+
+.checklist-score {
+  font-weight: $font-weight-semibold;
+  color: $module-color;
+  white-space: nowrap;
+}
+

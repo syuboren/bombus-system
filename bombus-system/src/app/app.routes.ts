@@ -32,6 +32,16 @@ export const routes: Routes = [
       .then(m => m.PROJECT_ROUTES)
   },
   {
+    path: 'competency',
+    loadChildren: () => import('./features/competency/competency.routes')
+      .then(m => m.COMPETENCY_ROUTES)
+  },
+  {
+    path: 'organization',
+    loadChildren: () => import('./features/organization/organization.routes')
+      .then(m => m.organizationRoutes)
+  },
+  {
     path: '**',
     redirectTo: 'login'
   }

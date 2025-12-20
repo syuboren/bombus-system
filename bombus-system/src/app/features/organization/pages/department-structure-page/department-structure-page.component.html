@@ -1,0 +1,714 @@
+<app-header [pageTitle]="pageTitle" [breadcrumbs]="breadcrumbs">
+  <div class="header-actions">
+    <button class="btn-secondary" type="button">
+      <i class="ri-download-line"></i> 匯出結構圖
+    </button>
+    <button class="btn-primary" type="button" (click)="openCreateDepartmentForm()">
+      <i class="ri-add-line"></i> 新增部門
+    </button>
+  </div>
+</app-header>
+
+<div class="department-structure-page">
+  <!-- Filter & Controls Section -->
+  <section class="controls-section">
+    <div class="filter-group">
+      <label class="filter-label">選擇公司</label>
+      <select
+        class="filter-select"
+        [ngModel]="selectedCompanyId()"
+        (ngModelChange)="onCompanyChange($event)">
+        @for (company of companies(); track company.id) {
+          <option [value]="company.id">{{ company.name }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="view-toggle">
+      <button
+        class="toggle-btn"
+        [class.active]="viewMode() === 'canvas'"
+        (click)="setViewMode('canvas')"
+        type="button">
+        <i class="ri-artboard-line"></i> 畫布模式
+      </button>
+      <button
+        class="toggle-btn"
+        [class.active]="viewMode() === 'list'"
+        (click)="setViewMode('list')"
+        type="button">
+        <i class="ri-list-check-2"></i> 列表模式
+      </button>
+    </div>
+
+    @if (viewMode() === 'canvas') {
+      <div class="canvas-tools">
+        <!-- Edit Mode Toggle -->
+        <button
+          class="tool-btn"
+          [class.active]="isEditMode()"
+          (click)="toggleEditMode()"
+          type="button"
+          title="編輯模式">
+          <i class="ri-edit-2-line"></i>
+          <span>{{ isEditMode() ? '完成編輯' : '編輯佈局' }}</span>
+        </button>
+
+        <div class="tool-divider"></div>
+
+        <!-- Collaboration Toggle -->
+        <button
+          class="tool-btn tool-btn--icon"
+          [class.active]="showCollaborations()"
+          (click)="toggleCollaborations()"
+          type="button"
+          title="顯示協作關係">
+          <i class="ri-links-line"></i>
+        </button>
+
+        <!-- Grid Snap -->
+        <button
+          class="tool-btn tool-btn--icon"
+          [class.active]="gridSnapEnabled()"
+          (click)="toggleGridSnap()"
+          type="button"
+          title="網格吸附">
+          <i class="ri-grid-line"></i>
+        </button>
+
+        <div class="tool-divider"></div>
+
+        <!-- Zoom Controls -->
+        <button class="tool-btn tool-btn--icon" (click)="zoomOut()" type="button" title="縮小">
+          <i class="ri-zoom-out-line"></i>
+        </button>
+        <span class="zoom-level">{{ (canvasScale() * 100).toFixed(0) }}%</span>
+        <button class="tool-btn tool-btn--icon" (click)="zoomIn()" type="button" title="放大">
+          <i class="ri-zoom-in-line"></i>
+        </button>
+        <button class="tool-btn tool-btn--icon" (click)="resetZoom()" type="button" title="重置">
+          <i class="ri-refresh-line"></i>
+        </button>
+      </div>
+    }
+  </section>
+
+  <!-- Edit Toolbar (when in edit mode) -->
+  @if (viewMode() === 'canvas' && isEditMode()) {
+    <section class="edit-toolbar">
+      <div class="toolbar-group">
+        <span class="toolbar-label">選取：</span>
+        <button class="toolbar-btn" (click)="selectAllNodes()" type="button">
+          <i class="ri-checkbox-multiple-line"></i> 全選
+        </button>
+        <button class="toolbar-btn" (click)="clearSelection()" type="button" [disabled]="selectedNodes().size === 0">
+          <i class="ri-close-circle-line"></i> 取消選取
+        </button>
+        <span class="selection-count" *ngIf="selectedNodes().size > 0">
+          已選取 {{ selectedNodes().size }} 項
+        </span>
+      </div>
+
+      <div class="toolbar-divider"></div>
+
+      <div class="toolbar-group">
+        <span class="toolbar-label">對齊：</span>
+        <button class="toolbar-btn" (click)="alignNodes('left')" type="button" [disabled]="selectedNodes().size < 2" title="靠左對齊">
+          <i class="ri-align-left"></i>
+        </button>
+        <button class="toolbar-btn" (click)="alignNodes('center-h')" type="button" [disabled]="selectedNodes().size < 2" title="水平置中">
+          <i class="ri-align-center"></i>
+        </button>
+        <button class="toolbar-btn" (click)="alignNodes('right')" type="button" [disabled]="selectedNodes().size < 2" title="靠右對齊">
+          <i class="ri-align-right"></i>
+        </button>
+        <div class="btn-separator"></div>
+        <button class="toolbar-btn" (click)="alignNodes('top')" type="button" [disabled]="selectedNodes().size < 2" title="靠上對齊">
+          <i class="ri-align-top"></i>
+        </button>
+        <button class="toolbar-btn" (click)="alignNodes('center-v')" type="button" [disabled]="selectedNodes().size < 2" title="垂直置中">
+          <i class="ri-align-vertically"></i>
+        </button>
+        <button class="toolbar-btn" (click)="alignNodes('bottom')" type="button" [disabled]="selectedNodes().size < 2" title="靠下對齊">
+          <i class="ri-align-bottom"></i>
+        </button>
+      </div>
+
+      <div class="toolbar-divider"></div>
+
+      <div class="toolbar-group">
+        <span class="toolbar-label">分布：</span>
+        <button class="toolbar-btn" (click)="alignNodes('distribute-h')" type="button" [disabled]="selectedNodes().size < 3" title="水平等距">
+          <i class="ri-space-ship-line" style="transform: rotate(90deg);"></i>
+        </button>
+        <button class="toolbar-btn" (click)="alignNodes('distribute-v')" type="button" [disabled]="selectedNodes().size < 3" title="垂直等距">
+          <i class="ri-space-ship-line"></i>
+        </button>
+      </div>
+
+      <div class="toolbar-divider"></div>
+
+      <div class="toolbar-group">
+        <button class="toolbar-btn" (click)="undo()" type="button" [disabled]="!canUndo()" title="還原上一步 (Ctrl+Z)">
+          <i class="ri-arrow-go-back-line"></i> 還原
+        </button>
+        <button class="toolbar-btn toolbar-btn--primary" (click)="autoArrange()" type="button" title="自動整理">
+          <i class="ri-layout-grid-line"></i> 自動整理
+        </button>
+      </div>
+    </section>
+  }
+
+  <!-- Summary Stats -->
+  <section class="summary-section">
+    <div class="summary-cards">
+      <div class="summary-card">
+        <i class="ri-organization-chart"></i>
+        <div class="summary-content">
+          <span class="summary-value">{{ filteredDepartments().length }}</span>
+          <span class="summary-label">部門總數</span>
+        </div>
+      </div>
+      <div class="summary-card">
+        <i class="ri-building-line"></i>
+        <div class="summary-content">
+          <span class="summary-value">{{ departmentTree().length }}</span>
+          <span class="summary-label">一級部門</span>
+        </div>
+      </div>
+      <div class="summary-card">
+        <i class="ri-folder-2-line"></i>
+        <div class="summary-content">
+          <span class="summary-value">{{ level2DepartmentCount() }}</span>
+          <span class="summary-label">二級部門</span>
+        </div>
+      </div>
+      <div class="summary-card">
+        <i class="ri-folder-line"></i>
+        <div class="summary-content">
+          <span class="summary-value">{{ level3DepartmentCount() }}</span>
+          <span class="summary-label">三級部門</span>
+        </div>
+      </div>
+      <div class="summary-card">
+        <i class="ri-team-line"></i>
+        <div class="summary-content">
+          <span class="summary-value">{{ totalEmployeeCount() }}</span>
+          <span class="summary-label">員工總數</span>
+        </div>
+      </div>
+      <div class="summary-card">
+        <i class="ri-links-line"></i>
+        <div class="summary-content">
+          <span class="summary-value">{{ collaborationLines().length }}</span>
+          <span class="summary-label">協作關係</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Content -->
+  @if (loading()) {
+    <div class="loading-container">
+      <i class="ri-loader-4-line spinner"></i>
+      <span>載入部門結構中...</span>
+    </div>
+  } @else {
+    <!-- Canvas View -->
+    @if (viewMode() === 'canvas') {
+      <section class="canvas-section" [class.edit-mode]="isEditMode()">
+        <div
+          #canvasContainer
+          class="canvas-container"
+          (mousedown)="onCanvasMouseDown($event)"
+          (mousemove)="onCanvasMouseMove($event)"
+          (mouseup)="onCanvasMouseUp()"
+          (mouseleave)="onCanvasMouseUp()"
+          (wheel)="onCanvasWheel($event)"
+          [class.panning]="isPanning()"
+          [class.editing]="isEditMode()">
+          <div
+            class="canvas-content"
+            [style.transform]="'translate(' + canvasPanX() + 'px, ' + canvasPanY() + 'px) scale(' + canvasScale() + ')'">
+
+            <!-- Grid overlay (visible in edit mode) -->
+            @if (isEditMode() && gridSnapEnabled()) {
+              <div class="grid-overlay"></div>
+            }
+
+            <!-- SVG for connection lines - large size to accommodate dragging -->
+            <svg class="connections-svg" width="3000" height="2000" style="overflow: visible;">
+              <!-- Hierarchy lines -->
+              @for (dept of getAllDepartmentsFlat(); track dept.id) {
+                @if (dept.parentDepartmentId) {
+                  <path
+                    class="hierarchy-line"
+                    [attr.d]="getConnectionPath(dept.parentDepartmentId, dept.id)"
+                    fill="none"
+                    stroke="#C4B5A8"
+                    stroke-width="2"/>
+                }
+              }
+
+              <!-- Collaboration lines -->
+              @if (showCollaborations()) {
+                @for (line of collaborationLines(); track line.collaboration.id) {
+                  <line
+                    class="collaboration-line"
+                    [attr.x1]="getNodePosition(line.source.id).x"
+                    [attr.y1]="getNodePosition(line.source.id).y + 35"
+                    [attr.x2]="getNodePosition(line.target.id).x"
+                    [attr.y2]="getNodePosition(line.target.id).y + 35"
+                    [attr.stroke]="getCollaborationColor(line.collaboration.relationType)"
+                    stroke-width="2"
+                    stroke-dasharray="6,4"
+                    marker-end="url(#arrowhead)"/>
+                }
+
+                <!-- Arrow marker definition -->
+                <defs>
+                  <marker
+                    id="arrowhead"
+                    markerWidth="10"
+                    markerHeight="7"
+                    refX="9"
+                    refY="3.5"
+                    orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="#94A3B8"/>
+                  </marker>
+                </defs>
+              }
+            </svg>
+
+            <!-- Department Nodes -->
+            @for (dept of getAllDepartmentsFlat(); track dept.id) {
+              <div
+                class="dept-node"
+                [class.dept-node--level-0]="dept.level === 1"
+                [class.dept-node--level-1]="dept.level === 2"
+                [class.dept-node--level-2]="dept.level === 3"
+                [class.selected]="isNodeSelected(dept.id)"
+                [class.draggable]="isEditMode()"
+                [style.left.px]="getNodePosition(dept.id).x - 100"
+                [style.top.px]="getNodePosition(dept.id).y"
+                [style.border-color]="getDepartmentColor(dept)"
+                (mousedown)="onNodeMouseDown($event, dept.id)"
+                (click)="onNodeClick($event, dept)">
+                @if (isEditMode()) {
+                  <div class="node-drag-handle">
+                    <i class="ri-draggable"></i>
+                  </div>
+                }
+                <div class="dept-node__icon" [style.background]="getDepartmentColor(dept)">
+                  <i [class]="dept.icon || 'ri-folder-line'"></i>
+                </div>
+                <div class="dept-node__content">
+                  <div class="dept-node__name">{{ dept.name }}</div>
+                  <div class="dept-node__meta">
+                    @if (dept.managerName) {
+                      <span><i class="ri-user-line"></i> {{ dept.managerName }}</span>
+                    }
+                    <span><i class="ri-team-line"></i> {{ dept.employeeCount }} 人</span>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Canvas Legend -->
+        <div class="canvas-legend">
+          <div class="legend-group">
+            <span class="legend-title">部門層級</span>
+            <div class="legend-item">
+              <span class="legend-rect legend-rect--level-0"></span>
+              <span>一級部門</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-rect legend-rect--level-1"></span>
+              <span>二級部門</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-rect legend-rect--level-2"></span>
+              <span>三級部門</span>
+            </div>
+          </div>
+          @if (showCollaborations()) {
+            <div class="legend-group">
+              <span class="legend-title">協作類型</span>
+              <div class="legend-item">
+                <span class="legend-line" style="background: #CD853F;"></span>
+                <span>平行協作</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-line" style="background: #6B8E23;"></span>
+                <span>下游流程</span>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Edit mode hint -->
+        @if (isEditMode()) {
+          <div class="edit-hint">
+            <i class="ri-information-line"></i>
+            <span>拖曳節點調整位置 · Ctrl/Cmd + 點擊多選 · 使用工具列對齊</span>
+          </div>
+        }
+      </section>
+    }
+
+    <!-- List View -->
+    @if (viewMode() === 'list') {
+      <section class="list-section">
+        <div class="list-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th class="col-name">部門名稱</th>
+                <th class="col-code">代碼</th>
+                <th class="col-manager">主管</th>
+                <th class="col-employees">員工數</th>
+                <th class="col-level">層級</th>
+                <th class="col-collabs">協作關係</th>
+                <th class="col-actions">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of flatDepartmentList(); track item.department.id) {
+                <tr class="data-row" [class]="'level-' + item.level">
+                  <td class="col-name">
+                    <div class="dept-cell" [style.padding-left.px]="item.level * 24">
+                      @if (item.level > 0) {
+                        <span class="tree-indicator">└</span>
+                      }
+                      <div class="dept-info">
+                        <div
+                          class="dept-icon"
+                          [style.background]="getDepartmentColor(item.department)">
+                          <i [class]="item.department.icon || 'ri-folder-line'"></i>
+                        </div>
+                        <span class="dept-name">{{ item.department.name }}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="col-code">{{ item.department.code }}</td>
+                  <td class="col-manager">{{ item.department.managerName || '-' }}</td>
+                  <td class="col-employees">{{ item.department.employeeCount }} 人</td>
+                  <td class="col-level">
+                    <span class="level-badge" [class]="'level-' + item.department.level">
+                      Level {{ item.department.level }}
+                    </span>
+                  </td>
+                  <td class="col-collabs">
+                    <span class="collab-count">
+                      {{ getDepartmentCollaborations(item.department.id).length }} 項
+                    </span>
+                  </td>
+                  <td class="col-actions">
+                    <button class="action-btn" (click)="selectDepartment(item.department)" type="button" title="檢視詳情">
+                      <i class="ri-eye-line"></i>
+                    </button>
+                    <button class="action-btn" type="button" title="編輯">
+                      <i class="ri-edit-line"></i>
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+  }
+</div>
+
+<!-- Department Detail Modal -->
+@if (showDepartmentModal() && selectedDepartment(); as dept) {
+  <div class="modal-overlay" (click)="closeDepartmentModal()">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          @if (canGoBackDepartment()) {
+            <button class="modal-back-btn" (click)="goBackDepartment()" type="button" title="返回上一層">
+              <i class="ri-arrow-left-line"></i>
+            </button>
+          }
+          <div class="modal-icon" [style.background]="getDepartmentColor(dept)">
+            <i [class]="dept.icon || 'ri-folder-line'"></i>
+          </div>
+          <div>
+            <h2 class="modal-title">{{ dept.name }}</h2>
+            <p class="modal-subtitle">{{ getCompanyName(dept.companyId) }}</p>
+          </div>
+        </div>
+        <button class="modal-close" (click)="closeDepartmentModal()" type="button">
+          <i class="ri-close-line"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="dept-detail">
+          <!-- Basic Info -->
+          <div class="detail-section">
+            <h3 class="section-title">基本資訊</h3>
+            <div class="detail-grid">
+              <div class="detail-item">
+                <span class="detail-label">部門代碼</span>
+                <span class="detail-value">{{ dept.code }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">部門層級</span>
+                <span class="detail-value">
+                  <span class="level-badge" [class]="'level-' + dept.level">Level {{ dept.level }}</span>
+                </span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">部門主管</span>
+                <span class="detail-value">{{ dept.managerName || '未指派' }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">員工人數</span>
+                <span class="detail-value">{{ dept.employeeCount }} 人</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Responsibilities -->
+          @if (dept.responsibilities && dept.responsibilities.length > 0) {
+            <div class="detail-section">
+              <h3 class="section-title">部門職責</h3>
+              <ul class="responsibility-list">
+                @for (resp of dept.responsibilities; track resp) {
+                  <li class="responsibility-item">
+                    <i class="ri-checkbox-circle-line"></i>
+                    <span>{{ resp }}</span>
+                  </li>
+                }
+              </ul>
+            </div>
+          }
+
+          <!-- Child Departments -->
+          @if (getChildDepartments(dept.id).length > 0) {
+            <div class="detail-section">
+              <h3 class="section-title">下轄部門</h3>
+              <div class="child-dept-list">
+                @for (child of getChildDepartments(dept.id); track child.id) {
+                  <div class="child-dept-item" (click)="selectDepartment(child)">
+                    <div class="child-dept-icon" [style.background]="getDepartmentColor(child)">
+                      <i [class]="child.icon || 'ri-folder-line'"></i>
+                    </div>
+                    <span class="child-dept-name">{{ child.name }}</span>
+                    <span class="child-dept-count">{{ child.employeeCount }} 人</span>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Collaborations -->
+          @if (getDepartmentCollaborations(dept.id).length > 0) {
+            <div class="detail-section">
+              <h3 class="section-title">協作關係</h3>
+              <div class="collab-list">
+                @for (collab of getDepartmentCollaborations(dept.id); track collab.id) {
+                  <div class="collab-item">
+                    <div class="collab-header">
+                      <span
+                        class="collab-type"
+                        [style.background]="getCollaborationColor(collab.relationType)">
+                        {{ getCollaborationLabel(collab.relationType) }}
+                      </span>
+                      <span class="collab-target">
+                        @if (collab.sourceDepartmentId === dept.id) {
+                          → {{ getDepartmentById(collab.targetDepartmentId)?.name }}
+                        } @else {
+                          ← {{ getDepartmentById(collab.sourceDepartmentId)?.name }}
+                        }
+                      </span>
+                    </div>
+                    <p class="collab-desc">{{ collab.workflowDescription }}</p>
+                    <div class="collab-meta">
+                      <span><i class="ri-message-2-line"></i> {{ collab.communicationChannel }}</span>
+                      <span><i class="ri-time-line"></i> {{ getFrequencyLabel(collab.frequency) }}</span>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-danger" type="button" (click)="confirmDeleteDepartment(dept)">
+          <i class="ri-delete-bin-line"></i> 刪除部門
+        </button>
+        <button class="btn-secondary" (click)="closeDepartmentModal()" type="button">關閉</button>
+        <button class="btn-primary" type="button" (click)="openEditDepartmentForm(dept)">
+          <i class="ri-edit-line"></i> 編輯部門
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Create/Edit Department Modal -->
+@if (showDepartmentForm()) {
+  <div class="modal-overlay" (click)="closeDepartmentForm()">
+    <div class="modal-container modal-form" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">
+          <i [class]="isEditingDepartment() ? 'ri-edit-line' : 'ri-add-line'"></i>
+          {{ isEditingDepartment() ? '編輯部門資訊' : '新增部門' }}
+        </h2>
+        <button class="modal-close" (click)="closeDepartmentForm()" type="button">
+          <i class="ri-close-line"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <form class="dept-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label required">部門名稱</label>
+              <input type="text" class="form-input"
+                [ngModel]="departmentForm().name"
+                (ngModelChange)="updateDeptFormField('name', $event)"
+                placeholder="請輸入部門名稱" />
+            </div>
+            <div class="form-group">
+              <label class="form-label required">部門代碼</label>
+              <input type="text" class="form-input"
+                [ngModel]="departmentForm().code"
+                (ngModelChange)="updateDeptFormField('code', $event)"
+                placeholder="例如：HR、IT、FIN" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">所屬公司</label>
+              <select class="form-select"
+                [ngModel]="departmentForm().companyId"
+                (ngModelChange)="updateDeptFormField('companyId', $event)"
+                [disabled]="isEditingDepartment()">
+                @for (c of companies(); track c.id) {
+                  <option [value]="c.id">{{ c.name }}</option>
+                }
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">上級部門</label>
+              <select class="form-select"
+                [ngModel]="departmentForm().parentDepartmentId"
+                (ngModelChange)="updateDeptFormField('parentDepartmentId', $event)">
+                <option value="">無（一級部門）</option>
+                @for (d of filteredDepartments(); track d.id) {
+                  @if (d.id !== departmentForm().id) {
+                    <option [value]="d.id">{{ d.name }}</option>
+                  }
+                }
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">部門主管</label>
+              <input type="text" class="form-input"
+                [ngModel]="departmentForm().managerName"
+                (ngModelChange)="updateDeptFormField('managerName', $event)"
+                placeholder="請輸入主管姓名" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">員工人數</label>
+              <input type="number" class="form-input"
+                [ngModel]="departmentForm().employeeCount"
+                (ngModelChange)="updateDeptFormField('employeeCount', $event)"
+                min="0" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">部門顏色</label>
+              <input type="color" class="form-color"
+                [ngModel]="departmentForm().color"
+                (ngModelChange)="updateDeptFormField('color', $event)" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">部門圖標</label>
+              <select class="form-select"
+                [ngModel]="departmentForm().icon"
+                (ngModelChange)="updateDeptFormField('icon', $event)">
+                <option value="ri-folder-line">資料夾</option>
+                <option value="ri-team-line">團隊</option>
+                <option value="ri-code-box-line">程式碼</option>
+                <option value="ri-money-dollar-circle-line">財務</option>
+                <option value="ri-customer-service-line">客服</option>
+                <option value="ri-global-line">全球</option>
+                <option value="ri-lightbulb-line">創意</option>
+                <option value="ri-rocket-line">火箭</option>
+              </select>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeDepartmentForm()" type="button">取消</button>
+        <button class="btn-primary" type="button" (click)="saveDepartment()">
+          <i class="ri-save-line"></i> {{ isEditingDepartment() ? '儲存變更' : '建立部門' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Delete Confirmation Modal -->
+@if (showDeleteConfirm() && departmentToDelete(); as dept) {
+  <div class="modal-overlay" (click)="cancelDelete()">
+    <div class="modal-container modal-confirm" (click)="$event.stopPropagation()">
+      <div class="modal-header modal-header--danger">
+        <h2 class="modal-title">
+          <i class="ri-error-warning-line"></i>
+          確認刪除
+        </h2>
+      </div>
+
+      <div class="modal-body">
+        <div class="confirm-content">
+          <p class="confirm-message">
+            您確定要刪除部門 <strong>{{ dept.name }}</strong> 嗎？
+          </p>
+          @if (dept.employeeCount > 0) {
+            <p class="confirm-warning warning-error">
+              <i class="ri-alert-line"></i>
+              該部門有 {{ dept.employeeCount }} 名員工，無法刪除。
+            </p>
+          } @else if (getChildDepartments(dept.id).length > 0) {
+            <p class="confirm-warning warning-error">
+              <i class="ri-alert-line"></i>
+              該部門有 {{ getChildDepartments(dept.id).length }} 個下屬部門，請先刪除下屬部門。
+            </p>
+          } @else {
+            <p class="confirm-warning">
+              <i class="ri-alert-line"></i>
+              此操作無法復原，請謹慎操作。
+            </p>
+          }
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="cancelDelete()" type="button">取消</button>
+        <button class="btn-danger" type="button" (click)="executeDeleteDepartment()"
+          [disabled]="dept.employeeCount > 0 || getChildDepartments(dept.id).length > 0">
+          <i class="ri-delete-bin-line"></i> 確認刪除
+        </button>
+      </div>
+    </div>
+  </div>
+}

@@ -41,6 +41,21 @@ export interface AIAnalysis {
   skills: SkillTag[];
   experiences: ExperienceItem[];
   education: EducationItem;
+  // 新增: 職能匹配分析
+  competencyMatches?: CompetencyMatch[];
+  overallCompetencyScore?: number;
+}
+
+// 職能匹配結果
+export interface CompetencyMatch {
+  competencyId: string;
+  competencyName: string;
+  type: 'knowledge' | 'skill' | 'attitude';
+  requiredLevel: number;    // JD 要求等級 1-5
+  assessedLevel: number;    // AI 評估等級 1-5
+  score: number;            // 匹配分數 0-100
+  weight: number;           // 權重
+  evidence: string;         // 佐證說明
 }
 
 export interface SkillTag {

@@ -1,0 +1,613 @@
+@import '../../../../../assets/styles/variables';
+@import '../../../../../assets/styles/mixins';
+
+// L2 Module Color
+$module-color: $color-l2-terracotta;
+$module-color-light: $color-l2-terracotta-light;
+$module-color-dark: $color-l2-terracotta-dark;
+
+.gap-analysis-page {
+  padding: calc(var(--header-height, 70px) + 20px) $spacing-lg $spacing-lg;
+  background: $color-cloud-gray;
+  min-height: 100vh;
+
+  @include media-max-md {
+    padding: calc(var(--header-height, 70px) + 16px) $spacing-md $spacing-md;
+  }
+}
+
+// ---------------------------------------------------------------
+// Section Common Styles
+// ---------------------------------------------------------------
+.section-header {
+  margin-bottom: $spacing-md;
+}
+
+.section-title {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-text-dark;
+  margin: 0;
+}
+
+// ---------------------------------------------------------------
+// Department Summary Section
+// ---------------------------------------------------------------
+.summary-section {
+  margin-bottom: $spacing-lg;
+}
+
+.department-cards {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: $spacing-md;
+
+  @include media-max-xl {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  @include media-max-md {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include media-max-sm {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dept-card {
+  background: $color-pure-white;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  box-shadow: $shadow-soft;
+
+  &__header {
+    @include flex-between;
+    margin-bottom: $spacing-sm;
+  }
+
+  &__name {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+  }
+
+  &__badge {
+    font-size: $font-size-xs;
+    padding: 2px 6px;
+    border-radius: $radius-sm;
+    background: rgba($color-warning, 0.15);
+    color: darken($color-warning, 25%);
+
+    &.critical {
+      background: rgba($color-error, 0.15);
+      color: $color-error;
+    }
+  }
+
+  &__progress {
+    margin-top: $spacing-sm;
+  }
+
+  &__score {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    margin-top: $spacing-xs;
+    display: block;
+  }
+}
+
+.progress-bar {
+  height: 6px;
+  background: $color-soft-gray;
+  border-radius: $radius-full;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: $module-color;
+  border-radius: $radius-full;
+  transition: width $transition-normal;
+}
+
+// ---------------------------------------------------------------
+// Employee Selection
+// ---------------------------------------------------------------
+.employee-section {
+  margin-bottom: $spacing-lg;
+}
+
+.employee-selector {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  background: $color-pure-white;
+  padding: $spacing-md;
+  border-radius: $radius-md;
+  box-shadow: $shadow-soft;
+}
+
+.selector-label {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  white-space: nowrap;
+}
+
+.selector-input {
+  @include input-base;
+  flex: 1;
+  max-width: 400px;
+}
+
+// ---------------------------------------------------------------
+// Loading
+// ---------------------------------------------------------------
+.loading-container {
+  @include flex-center;
+  gap: $spacing-sm;
+  padding: $spacing-2xl;
+  color: $color-text-secondary;
+
+  .spinner {
+    animation: spin 1s linear infinite;
+    font-size: 24px;
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+// ---------------------------------------------------------------
+// Employee Info Section
+// ---------------------------------------------------------------
+.employee-info-section {
+  margin-bottom: $spacing-lg;
+}
+
+.employee-info-card {
+  @include flex-start;
+  gap: $spacing-lg;
+  background: $color-pure-white;
+  padding: $spacing-lg;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-soft;
+  border-left: 4px solid $module-color;
+
+  @include media-max-md {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.employee-avatar {
+  @include flex-center;
+  width: 64px;
+  height: 64px;
+  background: $module-color;
+  border-radius: $radius-md;
+  color: white;
+  font-size: $font-size-2xl;
+  font-weight: $font-weight-bold;
+  flex-shrink: 0;
+}
+
+.employee-details {
+  flex: 1;
+}
+
+.employee-name {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-dark;
+  margin: 0 0 $spacing-xs;
+}
+
+.employee-position {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin: 0;
+}
+
+.employee-score {
+  text-align: right;
+
+  @include media-max-md {
+    text-align: left;
+    margin-top: $spacing-md;
+  }
+
+  .score-label {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    margin-bottom: $spacing-xs;
+  }
+
+  .score-value {
+    font-size: $font-size-3xl;
+    font-weight: $font-weight-bold;
+    color: $color-success;
+
+    &.high {
+      color: $color-error;
+    }
+  }
+}
+
+// ---------------------------------------------------------------
+// Analysis Content
+// ---------------------------------------------------------------
+.analysis-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $spacing-lg;
+  margin-bottom: $spacing-lg;
+
+  @include media-max-lg {
+    grid-template-columns: 1fr;
+  }
+}
+
+// Chart Section
+.chart-section {
+  display: flex;
+}
+
+.chart-card {
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-soft;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-header {
+  margin-bottom: $spacing-md;
+}
+
+.chart-title {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-text-dark;
+  margin: 0 0 $spacing-xs;
+}
+
+.chart-subtitle {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin: 0;
+}
+
+.chart-container {
+  flex: 1;
+  min-height: 350px;
+}
+
+.radar-chart {
+  width: 100%;
+  height: 100%;
+  min-height: 350px;
+}
+
+.chart-legend {
+  @include flex-center;
+  gap: $spacing-lg;
+  padding-top: $spacing-md;
+  border-top: 1px solid $color-soft-gray;
+}
+
+.legend-item {
+  @include flex-center;
+  gap: $spacing-xs;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.legend-color {
+  width: 16px;
+  height: 4px;
+  border-radius: 2px;
+
+  &--required {
+    background: $color-brand-light;
+  }
+
+  &--actual {
+    background: $module-color;
+  }
+}
+
+// ---------------------------------------------------------------
+// Gaps Section
+// ---------------------------------------------------------------
+.gaps-section {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.gaps-card {
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-soft;
+
+  &--warning {
+    border-top: 3px solid $color-warning;
+  }
+
+  &--success {
+    border-top: 3px solid $color-success;
+  }
+
+  &__header {
+    @include flex-start;
+    gap: $spacing-sm;
+    margin-bottom: $spacing-md;
+
+    i {
+      font-size: 20px;
+    }
+  }
+
+  &__title {
+    font-size: $font-size-base;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+    margin: 0;
+  }
+}
+
+.gaps-card--warning .gaps-card__header i {
+  color: $color-warning;
+}
+
+.gaps-card--success .gaps-card__header i {
+  color: $color-success;
+}
+
+// Gap Item
+.gaps-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.gap-item {
+  padding: $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+
+  &__header {
+    @include flex-between;
+    margin-bottom: $spacing-sm;
+  }
+
+  &__name {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+  }
+
+  &__severity {
+    font-size: $font-size-xs;
+    padding: 2px 8px;
+    border-radius: $radius-full;
+    font-weight: $font-weight-medium;
+
+    &.severity-critical {
+      background: rgba($color-error, 0.15);
+      color: $color-error;
+    }
+
+    &.severity-moderate {
+      background: rgba($color-warning, 0.15);
+      color: darken($color-warning, 25%);
+    }
+
+    &.severity-minor {
+      background: rgba($color-info, 0.15);
+      color: $color-info;
+    }
+
+    &.severity-none {
+      background: rgba($color-success, 0.15);
+      color: $color-success;
+    }
+  }
+
+  &__scores {
+    display: flex;
+    gap: $spacing-lg;
+    margin-bottom: $spacing-sm;
+  }
+
+  &__progress {
+    margin-bottom: $spacing-sm;
+  }
+
+  &__courses {
+    @include flex-start;
+    flex-wrap: wrap;
+    gap: $spacing-xs;
+    padding-top: $spacing-sm;
+    border-top: 1px dashed $color-soft-gray;
+  }
+}
+
+.score-row {
+  @include flex-start;
+  gap: $spacing-xs;
+  font-size: $font-size-sm;
+
+  .score-label {
+    color: $color-text-secondary;
+  }
+
+  .score-value {
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+
+    i {
+      font-size: 12px;
+    }
+  }
+
+  &--gap {
+    .score-value {
+      @include flex-center;
+      gap: 2px;
+    }
+  }
+}
+
+.courses-label {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.course-tag {
+  @include flex-center;
+  gap: $spacing-xs;
+  padding: 4px 8px;
+  background: rgba($color-l3-petrol, 0.1);
+  border: 1px solid rgba($color-l3-petrol, 0.3);
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  color: $color-l3-petrol;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    background: rgba($color-l3-petrol, 0.2);
+  }
+}
+
+// Achieved Items
+.achieved-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.achieved-item {
+  @include flex-between;
+  padding: $spacing-sm $spacing-md;
+  background: rgba($color-success, 0.05);
+  border-radius: $radius-md;
+  border-left: 3px solid $color-success;
+
+  &__info {
+    @include flex-start;
+    gap: $spacing-md;
+  }
+
+  &__name {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: $color-text-dark;
+  }
+
+  &__score {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+  }
+}
+
+.exceed-badge {
+  margin-left: $spacing-xs;
+  padding: 2px 6px;
+  background: rgba($color-success, 0.15);
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  color: $color-success;
+  font-weight: $font-weight-medium;
+}
+
+.achieved-icon {
+  color: $color-success;
+  font-size: 18px;
+}
+
+// ---------------------------------------------------------------
+// Recommendations Section
+// ---------------------------------------------------------------
+.recommendations-section {
+  margin-bottom: $spacing-lg;
+}
+
+.recommendations-card {
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-soft;
+  border-left: 4px solid $module-color;
+}
+
+.recommendations-header {
+  @include flex-start;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-md;
+
+  i {
+    font-size: 24px;
+    color: $module-color;
+  }
+}
+
+.recommendations-title {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-text-dark;
+  margin: 0;
+}
+
+.recommendations-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 $spacing-lg;
+}
+
+.recommendation-item {
+  @include flex-start;
+  gap: $spacing-sm;
+  padding: $spacing-sm 0;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  border-bottom: 1px solid $color-soft-gray;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  i {
+    color: $module-color;
+    flex-shrink: 0;
+  }
+}
+
+.recommendations-actions {
+  @include flex-end;
+  gap: $spacing-sm;
+  padding-top: $spacing-md;
+  border-top: 1px solid $color-soft-gray;
+}
+
+.btn-secondary {
+  @include button-secondary;
+}
+
+.btn-primary {
+  @include button-primary;
+  background: $module-color;
+
+  &:hover {
+    background: $module-color-dark;
+  }
+}
+

@@ -1,0 +1,461 @@
+<app-header [pageTitle]="pageTitle" [breadcrumbs]="breadcrumbs">
+  <div class="header-actions">
+    <button class="btn-secondary" type="button">
+      <i class="ri-download-line"></i> 匯出員工資料
+    </button>
+    <button class="btn-primary" type="button">
+      <i class="ri-add-line"></i> 新增員工
+    </button>
+  </div>
+</app-header>
+
+<div class="employee-management-page">
+  <!-- Statistics Section -->
+  <section class="stats-section">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--primary">
+          <i class="ri-team-line"></i>
+        </div>
+        <div class="stat-card__content">
+          <div class="stat-card__value">{{ employees().length }}</div>
+          <div class="stat-card__label">員工總數</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--success">
+          <i class="ri-user-follow-line"></i>
+        </div>
+        <div class="stat-card__content">
+          <div class="stat-card__value">{{ filteredEmployees().length }}</div>
+          <div class="stat-card__label">符合條件</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--accent">
+          <i class="ri-user-shared-line"></i>
+        </div>
+        <div class="stat-card__content">
+          <div class="stat-card__value">{{ crossCompanyCount() }}</div>
+          <div class="stat-card__label">跨公司任職</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Filter Section -->
+  <section class="filter-section">
+    <div class="filter-row">
+      <div class="filter-group">
+        <label class="filter-label">公司</label>
+        <select
+          class="filter-select"
+          [ngModel]="selectedCompanyId()"
+          (ngModelChange)="onCompanyChange($event)">
+          <option value="">全部公司</option>
+          @for (company of companies(); track company.id) {
+            <option [value]="company.id">{{ company.name }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">部門</label>
+        <select
+          class="filter-select"
+          [ngModel]="selectedDepartmentId()"
+          (ngModelChange)="onDepartmentChange($event)"
+          [disabled]="!selectedCompanyId()">
+          <option value="">全部部門</option>
+          @for (dept of filteredDepartments(); track dept.id) {
+            <option [value]="dept.id">{{ dept.name }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">狀態</label>
+        <select
+          class="filter-select"
+          [ngModel]="statusFilter()"
+          (ngModelChange)="onStatusChange($event)">
+          <option value="all">全部狀態</option>
+          <option value="active">在職</option>
+          <option value="probation">試用期</option>
+          <option value="on_leave">留職停薪</option>
+          <option value="resigned">已離職</option>
+        </select>
+      </div>
+
+      <div class="filter-group search-group">
+        <label class="filter-label">搜尋</label>
+        <div class="search-input-wrapper">
+          <i class="ri-search-line"></i>
+          <input
+            type="text"
+            class="search-input"
+            placeholder="姓名、工號、Email..."
+            [ngModel]="searchKeyword()"
+            (ngModelChange)="onSearch($event)">
+        </div>
+      </div>
+
+      <div class="view-toggle">
+        <button
+          class="toggle-btn"
+          [class.active]="viewMode() === 'card'"
+          (click)="setViewMode('card')"
+          type="button">
+          <i class="ri-layout-grid-line"></i>
+        </button>
+        <button
+          class="toggle-btn"
+          [class.active]="viewMode() === 'list'"
+          (click)="setViewMode('list')"
+          type="button">
+          <i class="ri-list-check"></i>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Content -->
+  @if (loading()) {
+    <div class="loading-container">
+      <i class="ri-loader-4-line spinner"></i>
+      <span>載入員工資料中...</span>
+    </div>
+  } @else {
+    @if (filteredEmployees().length === 0) {
+      <div class="empty-state">
+        <i class="ri-user-search-line"></i>
+        <h3>沒有找到符合條件的員工</h3>
+        <p>請嘗試調整篩選條件</p>
+      </div>
+    } @else {
+      <!-- Card View -->
+      @if (viewMode() === 'card') {
+        <section class="card-section">
+          <div class="employee-grid">
+            @for (employee of paginatedEmployees(); track employee.id) {
+              <div class="employee-card" (click)="selectEmployee(employee)">
+                <div class="employee-card__header">
+                  <div class="employee-avatar" [class]="'avatar--' + employee.gender">
+                    {{ getEmployeeInitial(employee.name) }}
+                  </div>
+                  <div class="employee-card__badges">
+                    @if (isCrossCompanyEmployee(employee)) {
+                      <span class="badge badge--cross">
+                        <i class="ri-links-line"></i> 跨公司
+                      </span>
+                    }
+                    @if (getPositionCount(employee) > 1) {
+                      <span class="badge badge--multi">
+                        {{ getPositionCount(employee) }} 職位
+                      </span>
+                    }
+                  </div>
+                </div>
+
+                <div class="employee-card__body">
+                  <h3 class="employee-name">{{ employee.name }}</h3>
+                  @if (employee.englishName) {
+                    <p class="employee-english-name">{{ employee.englishName }}</p>
+                  }
+                  <p class="employee-no">{{ employee.employeeNo }}</p>
+
+                  @if (getPrimaryPosition(employee); as primary) {
+                    <div class="primary-position">
+                      <span class="position-title">{{ primary.positionTitle }}</span>
+                      <span class="position-dept">{{ primary.departmentName }}</span>
+                    </div>
+                  }
+                </div>
+
+                <div class="employee-card__footer">
+                  <span class="status-badge" [class]="getStatusClass(employee.status)">
+                    {{ getStatusLabel(employee.status) }}
+                  </span>
+                  <span class="tenure">{{ getTenure(employee.hireDate) }}</span>
+                </div>
+              </div>
+            }
+          </div>
+        </section>
+      }
+
+      <!-- List View -->
+      @if (viewMode() === 'list') {
+        <section class="list-section">
+          <div class="list-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th class="col-employee">員工</th>
+                  <th class="col-no">工號</th>
+                  <th class="col-position">主要職位</th>
+                  <th class="col-department">部門</th>
+                  <th class="col-company">公司</th>
+                  <th class="col-tenure">年資</th>
+                  <th class="col-status">狀態</th>
+                  <th class="col-actions">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (employee of paginatedEmployees(); track employee.id) {
+                  <tr class="data-row" (click)="selectEmployee(employee)">
+                    <td class="col-employee">
+                      <div class="employee-cell">
+                        <div class="employee-avatar employee-avatar--sm" [class]="'avatar--' + employee.gender">
+                          {{ getEmployeeInitial(employee.name) }}
+                        </div>
+                        <div class="employee-info">
+                          <span class="employee-name">{{ employee.name }}</span>
+                          <span class="employee-email">{{ employee.email }}</span>
+                        </div>
+                        @if (isCrossCompanyEmployee(employee)) {
+                          <span class="badge badge--cross badge--sm">
+                            <i class="ri-links-line"></i>
+                          </span>
+                        }
+                      </div>
+                    </td>
+                    <td class="col-no">{{ employee.employeeNo }}</td>
+                    <td class="col-position">
+                      @if (getPrimaryPosition(employee); as primary) {
+                        {{ primary.positionTitle }}
+                      }
+                    </td>
+                    <td class="col-department">
+                      @if (getPrimaryPosition(employee); as primary) {
+                        {{ primary.departmentName }}
+                      }
+                    </td>
+                    <td class="col-company">
+                      @if (getPrimaryPosition(employee); as primary) {
+                        {{ primary.companyName }}
+                      }
+                    </td>
+                    <td class="col-tenure">{{ getTenure(employee.hireDate) }}</td>
+                    <td class="col-status">
+                      <span class="status-badge" [class]="getStatusClass(employee.status)">
+                        {{ getStatusLabel(employee.status) }}
+                      </span>
+                    </td>
+                    <td class="col-actions">
+                      <button class="action-btn" (click)="selectEmployee(employee); $event.stopPropagation()" type="button">
+                        <i class="ri-eye-line"></i>
+                      </button>
+                      <button class="action-btn" type="button" (click)="$event.stopPropagation()">
+                        <i class="ri-edit-line"></i>
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+      }
+
+      <!-- Pagination -->
+      @if (totalPages() > 1) {
+        <section class="pagination-section">
+          <div class="pagination">
+            <button
+              class="pagination-btn"
+              [disabled]="currentPage() === 1"
+              (click)="goToPage(currentPage() - 1)"
+              type="button">
+              <i class="ri-arrow-left-s-line"></i>
+            </button>
+
+            @for (page of getPageNumbers(); track $index) {
+              @if (page === -1) {
+                <span class="pagination-ellipsis">...</span>
+              } @else {
+                <button
+                  class="pagination-btn"
+                  [class.active]="page === currentPage()"
+                  (click)="goToPage(page)"
+                  type="button">
+                  {{ page }}
+                </button>
+              }
+            }
+
+            <button
+              class="pagination-btn"
+              [disabled]="currentPage() === totalPages()"
+              (click)="goToPage(currentPage() + 1)"
+              type="button">
+              <i class="ri-arrow-right-s-line"></i>
+            </button>
+          </div>
+          <div class="pagination-info">
+            顯示 {{ (currentPage() - 1) * pageSize() + 1 }} - {{ currentPage() * pageSize() > filteredEmployees().length ? filteredEmployees().length : currentPage() * pageSize() }} 筆，共 {{ filteredEmployees().length }} 筆
+          </div>
+        </section>
+      }
+    }
+  }
+</div>
+
+<!-- Employee Detail Modal -->
+@if (showEmployeeModal() && selectedEmployee(); as emp) {
+  <div class="modal-overlay" (click)="closeEmployeeModal()">
+    <div class="modal-container modal-container--lg" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <div class="modal-avatar" [class]="'avatar--' + emp.gender">
+            {{ getEmployeeInitial(emp.name) }}
+          </div>
+          <div>
+            <h2 class="modal-title">{{ emp.name }}</h2>
+            @if (emp.englishName) {
+              <p class="modal-subtitle">{{ emp.englishName }} · {{ emp.employeeNo }}</p>
+            } @else {
+              <p class="modal-subtitle">{{ emp.employeeNo }}</p>
+            }
+          </div>
+        </div>
+        <button class="modal-close" (click)="closeEmployeeModal()" type="button">
+          <i class="ri-close-line"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="employee-detail">
+          <!-- Basic Info -->
+          <div class="detail-section">
+            <h3 class="section-title">基本資訊</h3>
+            <div class="detail-grid">
+              <div class="detail-item">
+                <span class="detail-label">工號</span>
+                <span class="detail-value">{{ emp.employeeNo }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">性別</span>
+                <span class="detail-value">{{ getGenderLabel(emp.gender) }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">電子郵件</span>
+                <span class="detail-value">{{ emp.email }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">公司電話</span>
+                <span class="detail-value">{{ emp.phone }}</span>
+              </div>
+              @if (emp.mobile) {
+                <div class="detail-item">
+                  <span class="detail-label">手機</span>
+                  <span class="detail-value">{{ emp.mobile }}</span>
+                </div>
+              }
+              <div class="detail-item">
+                <span class="detail-label">到職日期</span>
+                <span class="detail-value">{{ emp.hireDate | date: 'yyyy/MM/dd' }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">年資</span>
+                <span class="detail-value">{{ getTenure(emp.hireDate) }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">在職狀態</span>
+                <span class="detail-value">
+                  <span class="status-badge" [class]="getStatusClass(emp.status)">
+                    {{ getStatusLabel(emp.status) }}
+                  </span>
+                </span>
+              </div>
+              @if (emp.education) {
+                <div class="detail-item full-width">
+                  <span class="detail-label">學歷</span>
+                  <span class="detail-value">{{ emp.education }}</span>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Positions -->
+          <div class="detail-section">
+            <h3 class="section-title">
+              任職資訊
+              @if (isCrossCompanyEmployee(emp)) {
+                <span class="section-badge">跨公司任職</span>
+              }
+            </h3>
+            <div class="position-list">
+              @for (pos of emp.positions; track pos.id) {
+                <div class="position-item" [class.primary]="pos.isPrimary">
+                  @if (pos.isPrimary) {
+                    <span class="primary-badge">主要職位</span>
+                  }
+                  <div class="position-header">
+                    <span class="position-title">{{ pos.positionTitle }}</span>
+                    <span class="position-level">{{ pos.positionLevel }}</span>
+                  </div>
+                  <div class="position-details">
+                    <div class="position-detail">
+                      <i class="ri-building-line"></i>
+                      <span>{{ pos.companyName }}</span>
+                    </div>
+                    <div class="position-detail">
+                      <i class="ri-organization-chart"></i>
+                      <span>{{ pos.departmentName }}</span>
+                    </div>
+                    <div class="position-detail">
+                      <i class="ri-calendar-line"></i>
+                      <span>{{ pos.startDate | date: 'yyyy/MM/dd' }} 起</span>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Skills -->
+          @if (emp.skills && emp.skills.length > 0) {
+            <div class="detail-section">
+              <h3 class="section-title">專業技能</h3>
+              <div class="skill-tags">
+                @for (skill of emp.skills; track skill) {
+                  <span class="skill-tag">{{ skill }}</span>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Emergency Contact -->
+          @if (emp.emergencyContact) {
+            <div class="detail-section">
+              <h3 class="section-title">緊急聯絡人</h3>
+              <div class="detail-grid">
+                <div class="detail-item">
+                  <span class="detail-label">姓名</span>
+                  <span class="detail-value">{{ emp.emergencyContact.name }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">關係</span>
+                  <span class="detail-value">{{ emp.emergencyContact.relation }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">電話</span>
+                  <span class="detail-value">{{ emp.emergencyContact.phone }}</span>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeEmployeeModal()" type="button">關閉</button>
+        <button class="btn-primary" type="button">
+          <i class="ri-edit-line"></i> 編輯資料
+        </button>
+      </div>
+    </div>
+  </div>
+}
+

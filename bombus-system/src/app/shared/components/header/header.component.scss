@@ -89,6 +89,71 @@
   color: $color-muted-gray;
 }
 
+// Page Actions (projected from parent)
+.header__page-actions {
+  @include flex-start;
+  gap: $spacing-md;
+
+  // Style buttons passed from parent components
+  ::ng-deep {
+    .header-actions {
+      display: flex;
+      gap: $spacing-md;
+      align-items: center;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: $spacing-sm;
+      padding: $spacing-sm $spacing-lg;
+      background: $color-l3-petrol;
+      color: $color-pure-white;
+      border: none;
+      border-radius: $radius-md;
+      font-size: $font-size-sm;
+      font-weight: $font-weight-medium;
+      cursor: pointer;
+      transition: all $transition-fast;
+      white-space: nowrap;
+
+      &:hover {
+        background: darken($color-l3-petrol, 8%);
+      }
+
+      i {
+        font-size: $font-size-base;
+      }
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: $spacing-sm;
+      padding: $spacing-sm $spacing-lg;
+      background: $color-pure-white;
+      color: $color-text-primary;
+      border: 1px solid $color-soft-gray;
+      border-radius: $radius-md;
+      font-size: $font-size-sm;
+      font-weight: $font-weight-medium;
+      cursor: pointer;
+      transition: all $transition-fast;
+      white-space: nowrap;
+
+      &:hover {
+        background: $color-cloud-gray;
+        border-color: $color-l3-petrol;
+        color: $color-l3-petrol;
+      }
+
+      i {
+        font-size: $font-size-base;
+      }
+    }
+  }
+}
+
 // Actions
 .header__actions {
   @include flex-start;
@@ -142,6 +207,146 @@
 @include media-max-md {
   .header__action-btn:not(.header__action-btn--notification):not(.header__action-btn--user) {
     display: none;
+  }
+}
+
+// User Menu Wrapper
+.header__user-menu-wrapper {
+  position: relative;
+}
+
+.header__action-btn--user {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+
+  .user-arrow {
+    font-size: 16px;
+    color: $color-text-secondary;
+    transition: transform $transition-normal;
+
+    &.rotated {
+      transform: rotate(180deg);
+    }
+  }
+}
+
+// User Dropdown
+.user-dropdown {
+  position: absolute;
+  top: calc(100% + #{$spacing-sm});
+  right: 0;
+  width: 280px;
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-lg;
+  overflow: hidden;
+  animation: dropdownFadeIn 0.2s ease;
+  z-index: 200;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.user-dropdown__header {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-md;
+  background: linear-gradient(135deg, rgba($color-brand-main, 0.05), rgba($color-brand-light, 0.05));
+}
+
+.user-dropdown__avatar {
+  @include flex-center;
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, $color-brand-main, $color-brand-dark);
+  color: white;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  border-radius: $radius-md;
+  flex-shrink: 0;
+}
+
+.user-dropdown__info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.user-dropdown__name {
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+  @include text-truncate;
+}
+
+.user-dropdown__email {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  @include text-truncate;
+}
+
+.user-dropdown__divider {
+  height: 1px;
+  background: $color-soft-gray;
+}
+
+.user-dropdown__menu {
+  padding: $spacing-sm;
+}
+
+.user-dropdown__item {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  width: 100%;
+  padding: $spacing-sm $spacing-md;
+  background: transparent;
+  border: none;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  cursor: pointer;
+  transition: all $transition-fast;
+  text-align: left;
+
+  i {
+    font-size: 18px;
+    color: $color-text-secondary;
+    transition: color $transition-fast;
+  }
+
+  &:hover {
+    background: $color-cloud-gray;
+
+    i {
+      color: $color-brand-main;
+    }
+  }
+
+  &--danger {
+    color: $color-error;
+
+    i {
+      color: $color-error;
+    }
+
+    &:hover {
+      background: rgba($color-error, 0.08);
+
+      i {
+        color: darken($color-error, 10%);
+      }
+    }
   }
 }
 

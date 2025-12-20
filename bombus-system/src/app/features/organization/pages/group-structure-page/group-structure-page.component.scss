@@ -1,0 +1,1148 @@
+@import '../../../../../assets/styles/variables';
+@import '../../../../../assets/styles/mixins';
+
+// Organization Module Color (使用錦葵紫作為組織管理模組色)
+$module-color: $color-l4-mauve;
+$module-color-light: $color-l4-mauve-light;
+$module-color-dark: $color-l4-mauve-dark;
+
+.group-structure-page {
+  padding: calc(var(--header-height, 70px) + 20px) $spacing-lg $spacing-lg;
+  min-height: 100vh;
+  background: $color-cloud-gray;
+}
+
+// ============================================================
+// Statistics Section
+// ============================================================
+
+.stats-section {
+  margin-bottom: $spacing-lg;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: $spacing-md;
+
+  @media (max-width: $breakpoint-xl) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: $breakpoint-md) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-lg;
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-sm;
+  transition: transform $transition-fast, box-shadow $transition-fast;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: $shadow-md;
+  }
+
+  &__icon {
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: $radius-md;
+    font-size: 24px;
+
+    &--primary {
+      background: rgba($module-color, 0.12);
+      color: $module-color;
+    }
+
+    &--secondary {
+      background: rgba($color-l3-petrol, 0.12);
+      color: $color-l3-petrol;
+    }
+
+    &--tertiary {
+      background: rgba($color-l1-sage, 0.12);
+      color: $color-l1-sage;
+    }
+
+    &--accent {
+      background: rgba($color-info, 0.12);
+      color: $color-info;
+    }
+  }
+
+  &__content {
+    flex: 1;
+  }
+
+  &__value {
+    font-size: $font-size-3xl;
+    font-weight: $font-weight-bold;
+    color: $color-text-primary;
+    letter-spacing: -0.5px;
+  }
+
+  &__label {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    margin-top: 2px;
+  }
+}
+
+// ============================================================
+// Controls Section
+// ============================================================
+
+.controls-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-lg;
+  flex-wrap: wrap;
+  gap: $spacing-md;
+}
+
+.view-toggle {
+  display: flex;
+  background: $color-pure-white;
+  border-radius: $radius-md;
+  padding: $spacing-xs;
+  box-shadow: $shadow-sm;
+}
+
+.toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-lg;
+  border: none;
+  background: transparent;
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  border-radius: $radius-sm;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  i {
+    font-size: $font-size-base;
+  }
+
+  &:hover {
+    color: $module-color;
+    background: rgba($module-color, 0.05);
+  }
+
+  &.active {
+    background: $module-color;
+    color: $color-pure-white;
+  }
+}
+
+.canvas-tools {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  background: $color-pure-white;
+  border-radius: $radius-md;
+  padding: $spacing-xs $spacing-md;
+  box-shadow: $shadow-sm;
+}
+
+.tool-btn {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: $spacing-sm $spacing-md;
+  border: none;
+  background: transparent;
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  border-radius: $radius-sm;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  i {
+    font-size: $font-size-base;
+  }
+
+  &:hover {
+    color: $module-color;
+    background: rgba($module-color, 0.08);
+  }
+
+  &.active {
+    color: $module-color;
+    background: rgba($module-color, 0.12);
+  }
+
+  &--icon {
+    padding: $spacing-sm;
+    width: 32px;
+    height: 32px;
+    justify-content: center;
+  }
+}
+
+.tool-divider {
+  width: 1px;
+  height: 24px;
+  background: $color-soft-gray;
+  margin: 0 $spacing-xs;
+}
+
+.zoom-level {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  min-width: 45px;
+  text-align: center;
+}
+
+// ============================================================
+// Edit Toolbar
+// ============================================================
+
+.edit-toolbar {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-md $spacing-lg;
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-sm;
+  margin-bottom: $spacing-md;
+  flex-wrap: wrap;
+}
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.toolbar-label {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.toolbar-btn {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: $spacing-xs $spacing-sm;
+  border: 1px solid $color-soft-gray;
+  background: $color-pure-white;
+  color: $color-text-primary;
+  font-size: $font-size-sm;
+  border-radius: $radius-sm;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  i {
+    font-size: $font-size-sm;
+  }
+
+  &:hover:not(:disabled) {
+    border-color: $module-color;
+    color: $module-color;
+    background: rgba($module-color, 0.05);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  &--primary {
+    background: $module-color;
+    color: $color-pure-white;
+    border-color: $module-color;
+
+    &:hover:not(:disabled) {
+      background: $module-color-dark;
+      border-color: $module-color-dark;
+      color: $color-pure-white;
+    }
+  }
+}
+
+.btn-separator {
+  width: 1px;
+  height: 20px;
+  background: $color-soft-gray;
+  margin: 0 $spacing-xs;
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 32px;
+  background: $color-soft-gray;
+}
+
+.selection-count {
+  font-size: $font-size-xs;
+  color: $module-color;
+  font-weight: $font-weight-medium;
+  padding: $spacing-xs $spacing-sm;
+  background: rgba($module-color, 0.1);
+  border-radius: $radius-sm;
+}
+
+// ============================================================
+// Loading
+// ============================================================
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px $spacing-lg;
+  color: $color-text-secondary;
+  gap: $spacing-md;
+
+  .spinner {
+    font-size: 32px;
+    animation: spin 1s linear infinite;
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+// ============================================================
+// Canvas Section
+// ============================================================
+
+.canvas-section {
+  position: relative;
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-sm;
+  overflow: hidden;
+}
+
+.canvas-section {
+  &.edit-mode {
+    border: 2px dashed rgba($module-color, 0.4);
+  }
+}
+
+.canvas-container {
+  width: 100%;
+  height: 500px;
+  overflow: hidden;
+  cursor: grab;
+  background:
+    linear-gradient(90deg, rgba($color-soft-gray, 0.3) 1px, transparent 1px),
+    linear-gradient(rgba($color-soft-gray, 0.3) 1px, transparent 1px);
+  background-size: 20px 20px;
+  background-color: $color-cloud-gray;
+
+  &.panning {
+    cursor: grabbing;
+  }
+
+  &.editing {
+    cursor: default;
+  }
+}
+
+.grid-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba($module-color, 0.08) 1px, transparent 1px),
+    linear-gradient(rgba($module-color, 0.08) 1px, transparent 1px);
+  background-size: 20px 20px;
+  pointer-events: none;
+}
+
+.canvas-content {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-origin: center center;
+  transition: transform 0.1s ease;
+}
+
+.connections-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.connection-line {
+  stroke: $module-color;
+  stroke-width: 2;
+  stroke-dasharray: 8, 4;
+  fill: none;
+  opacity: 0.6;
+}
+
+// ============================================================
+// Company Node
+// ============================================================
+
+.company-node {
+  position: absolute;
+  width: 240px;
+  padding: $spacing-md;
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-md;
+  cursor: pointer;
+  transition: all $transition-fast;
+  border: 2px solid transparent;
+  user-select: none;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: $shadow-lg;
+  }
+
+  &.draggable {
+    cursor: grab;
+
+    &:active {
+      cursor: grabbing;
+    }
+
+    &:hover {
+      transform: none;
+    }
+  }
+
+  &.selected {
+    border-color: $module-color !important;
+    box-shadow: 0 0 0 3px rgba($module-color, 0.25), $shadow-lg;
+
+    .node-drag-handle {
+      opacity: 1;
+    }
+  }
+
+  &--hq {
+    border-color: $module-color;
+    background: linear-gradient(135deg, $color-pure-white 0%, rgba($module-color, 0.05) 100%);
+
+    .company-node__header {
+      color: $module-color;
+    }
+  }
+
+  &--subsidiary {
+    border-color: $color-l3-petrol;
+    background: linear-gradient(135deg, $color-pure-white 0%, rgba($color-l3-petrol, 0.05) 100%);
+
+    .company-node__header {
+      color: $color-l3-petrol;
+    }
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    margin-bottom: $spacing-sm;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+
+    i {
+      font-size: $font-size-base;
+    }
+  }
+
+  &__type {
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  &__name {
+    font-size: $font-size-base;
+    font-weight: $font-weight-semibold;
+    color: $color-text-primary;
+    margin-bottom: $spacing-sm;
+    line-height: $line-height-normal;
+  }
+
+  &__meta {
+    display: flex;
+    align-items: center;
+    gap: $spacing-md;
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    margin-bottom: $spacing-md;
+
+    i {
+      font-size: $font-size-sm;
+      margin-right: $spacing-xs;
+    }
+  }
+
+  &__status {
+    display: inline-flex;
+    align-items: center;
+    padding: $spacing-xs $spacing-sm;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-medium;
+    border-radius: $radius-full;
+
+    &.status--active {
+      background: rgba($color-success, 0.12);
+      color: $color-success;
+    }
+
+    &.status--inactive {
+      background: rgba($color-muted-gray, 0.12);
+      color: $color-muted-gray;
+    }
+  }
+}
+
+// ============================================================
+// Canvas Legend
+// ============================================================
+
+.canvas-legend {
+  position: absolute;
+  bottom: $spacing-md;
+  left: $spacing-md;
+  display: flex;
+  gap: $spacing-lg;
+  padding: $spacing-md $spacing-md;
+  background: rgba($color-pure-white, 0.95);
+  border-radius: $radius-md;
+  box-shadow: $shadow-sm;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+
+  &--hq {
+    background: $module-color;
+  }
+
+  &--subsidiary {
+    background: $color-l3-petrol;
+  }
+}
+
+.legend-line {
+  width: 24px;
+  height: 2px;
+  background: $module-color;
+  border-style: dashed;
+}
+
+// ============================================================
+// Node Drag Handle
+// ============================================================
+
+.node-drag-handle {
+  position: absolute;
+  top: $spacing-sm;
+  right: $spacing-sm;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba($module-color, 0.1);
+  border-radius: $radius-sm;
+  color: $module-color;
+  font-size: $font-size-base;
+  opacity: 0.5;
+  transition: opacity $transition-fast;
+  cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+// ============================================================
+// Edit Hint
+// ============================================================
+
+.edit-hint {
+  position: absolute;
+  bottom: $spacing-md;
+  right: $spacing-md;
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  background: rgba($module-color, 0.9);
+  color: $color-pure-white;
+  font-size: $font-size-xs;
+  border-radius: $radius-md;
+  box-shadow: $shadow-md;
+
+  i {
+    font-size: $font-size-sm;
+  }
+}
+
+// ============================================================
+// List Section
+// ============================================================
+
+.list-section {
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-sm;
+  overflow: hidden;
+}
+
+.list-container {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th, td {
+    padding: $spacing-md $spacing-md;
+    text-align: left;
+    border-bottom: 1px solid $color-soft-gray;
+  }
+
+  th {
+    background: $color-cloud-gray;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-text-secondary;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  td {
+    font-size: $font-size-sm;
+    color: $color-text-primary;
+  }
+}
+
+.data-row {
+  transition: background $transition-fast;
+
+  &:hover {
+    background: rgba($module-color, 0.03);
+  }
+
+  &.level-0 {
+    background: rgba($module-color, 0.05);
+    font-weight: $font-weight-medium;
+
+    &:hover {
+      background: rgba($module-color, 0.08);
+    }
+  }
+}
+
+.company-cell {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.tree-indicator {
+  color: $color-muted-gray;
+  font-family: $font-family-mono;
+  font-size: $font-size-base;
+}
+
+.company-info {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+
+  i {
+    font-size: $font-size-lg;
+    color: $module-color;
+  }
+}
+
+.company-name {
+  font-weight: $font-weight-medium;
+}
+
+.type-badge {
+  display: inline-flex;
+  padding: $spacing-xs $spacing-sm;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  border-radius: $radius-full;
+
+  &.headquarters {
+    background: rgba($module-color, 0.12);
+    color: $module-color;
+  }
+
+  &.subsidiary {
+    background: rgba($color-l3-petrol, 0.12);
+    color: $color-l3-petrol;
+  }
+}
+
+.status-badge {
+  display: inline-flex;
+  padding: $spacing-xs $spacing-sm;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  border-radius: $radius-full;
+
+  &.status--active {
+    background: rgba($color-success, 0.12);
+    color: $color-success;
+  }
+
+  &.status--inactive {
+    background: rgba($color-muted-gray, 0.12);
+    color: $color-muted-gray;
+  }
+}
+
+.action-btn {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: $color-text-secondary;
+  font-size: $font-size-base;
+  border-radius: $radius-sm;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    color: $module-color;
+    background: rgba($module-color, 0.08);
+  }
+}
+
+// ============================================================
+// Modal
+// ============================================================
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: $spacing-lg;
+}
+
+.modal-container {
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-xl;
+  width: 100%;
+  max-width: 640px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-lg $spacing-xl;
+  border-bottom: 1px solid $color-soft-gray;
+  gap: $spacing-md;
+}
+
+.modal-back-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: $color-soft-gray;
+  border: none;
+  border-radius: $radius-md;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+
+  i {
+    font-size: $font-size-lg;
+    color: $color-text-secondary;
+  }
+
+  &:hover {
+    background: $module-color;
+    i {
+      color: white;
+    }
+  }
+}
+
+.modal-title {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin: 0;
+  flex: 1;
+
+  i {
+    font-size: $font-size-xl;
+    color: $module-color;
+  }
+}
+
+.modal-close {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: $color-text-secondary;
+  font-size: $font-size-xl;
+  border-radius: $radius-sm;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    color: $color-text-primary;
+    background: $color-cloud-gray;
+  }
+}
+
+.modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: $spacing-xl;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: $spacing-md;
+  padding: $spacing-md $spacing-xl;
+  border-top: 1px solid $color-soft-gray;
+  background: $color-cloud-gray;
+}
+
+// ============================================================
+// Company Detail
+// ============================================================
+
+.company-detail {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xl;
+}
+
+.detail-section {
+  .section-title {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text-primary;
+    margin: 0 0 $spacing-md 0;
+    padding-bottom: $spacing-sm;
+    border-bottom: 1px solid $color-soft-gray;
+  }
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: $spacing-md;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+
+  &.full-width {
+    grid-column: span 2;
+  }
+}
+
+.detail-label {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.detail-value {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+}
+
+.company-description {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: $line-height-relaxed;
+  margin: 0;
+}
+
+.subsidiary-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.subsidiary-item {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-md $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  i {
+    font-size: $font-size-lg;
+    color: $color-l3-petrol;
+  }
+
+  &:hover {
+    background: rgba($color-l3-petrol, 0.1);
+  }
+}
+
+.subsidiary-name {
+  flex: 1;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+}
+
+.subsidiary-count {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+// ============================================================
+// Buttons
+// ============================================================
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-lg;
+  background: $module-color;
+  color: $color-pure-white;
+  border: none;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    background: $module-color-dark;
+  }
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-lg;
+  background: $color-pure-white;
+  color: $color-text-primary;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    background: $color-cloud-gray;
+    border-color: $module-color;
+    color: $module-color;
+  }
+}
+
+// ============================================================
+// Header Actions
+// ============================================================
+
+.header-actions {
+  display: flex;
+  gap: $spacing-md;
+}
+
+// ============================================================
+// Form Styles
+// ============================================================
+
+.modal-form {
+  max-width: 680px;
+}
+
+.modal-confirm {
+  max-width: 480px;
+}
+
+.modal-header--danger {
+  background: linear-gradient(135deg, $color-error 0%, darken($color-error, 10%) 100%);
+
+  .modal-title {
+    color: white;
+
+    i {
+      color: white;
+    }
+  }
+}
+
+.company-form {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: $spacing-lg;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+
+  &.full-width {
+    grid-column: span 2;
+  }
+}
+
+.form-label {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+
+  &.required::after {
+    content: ' *';
+    color: $color-error;
+  }
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+  padding: $spacing-sm $spacing-md;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  background: $color-pure-white;
+  transition: all $transition-fast;
+
+  &:focus {
+    outline: none;
+    border-color: $module-color;
+    box-shadow: 0 0 0 3px rgba($module-color, 0.1);
+  }
+
+  &::placeholder {
+    color: $color-muted-gray;
+  }
+
+  &:disabled {
+    background: $color-cloud-gray;
+    cursor: not-allowed;
+  }
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.confirm-content {
+  text-align: center;
+  padding: $spacing-lg 0;
+}
+
+.confirm-message {
+  font-size: $font-size-lg;
+  color: $color-text-primary;
+  margin: 0 0 $spacing-md 0;
+
+  strong {
+    color: $color-error;
+  }
+}
+
+.confirm-warning {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-sm;
+  font-size: $font-size-sm;
+  color: $color-warning;
+  margin: 0;
+
+  i {
+    font-size: $font-size-lg;
+  }
+}
+
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-lg;
+  background: $color-error;
+  color: white;
+  border: none;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    background: darken($color-error, 10%);
+  }
+}

@@ -1,0 +1,458 @@
+<app-header [pageTitle]="pageTitle" [breadcrumbs]="breadcrumbs"></app-header>
+
+<div class="framework-page">
+  <!-- Stats Cards -->
+  @if (stats(); as s) {
+    <section class="stats-section">
+      <div class="stats-grid">
+        <div class="stat-card stat-card--core">
+          <div class="stat-card__icon">
+            <i class="ri-heart-pulse-line"></i>
+          </div>
+          <div class="stat-card__content">
+            <div class="stat-card__value">{{ s.byCategory.core }}</div>
+            <div class="stat-card__label">核心職能</div>
+          </div>
+        </div>
+
+        <div class="stat-card stat-card--management">
+          <div class="stat-card__icon">
+            <i class="ri-team-line"></i>
+          </div>
+          <div class="stat-card__content">
+            <div class="stat-card__value">{{ s.byCategory.management }}</div>
+            <div class="stat-card__label">管理職能</div>
+          </div>
+        </div>
+
+        <div class="stat-card stat-card--ksa">
+          <div class="stat-card__icon">
+            <i class="ri-book-3-line"></i>
+          </div>
+          <div class="stat-card__content">
+            <div class="stat-card__value">{{ s.byCategory.ksa }}</div>
+            <div class="stat-card__label">KSA 職能</div>
+          </div>
+        </div>
+
+        <div class="stat-card stat-card--total">
+          <div class="stat-card__icon">
+            <i class="ri-stack-line"></i>
+          </div>
+          <div class="stat-card__content">
+            <div class="stat-card__value">{{ s.totalCompetencies }}</div>
+            <div class="stat-card__label">職能總數</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  }
+
+  <!-- Tab Navigation -->
+  <section class="tab-section">
+    <div class="tab-nav">
+      <button 
+        class="tab-btn" 
+        [class.active]="activeTab() === 'core'"
+        (click)="setActiveTab('core')"
+        type="button">
+        <i class="ri-heart-pulse-line"></i>
+        核心職能
+        <span class="tab-badge">{{ coreCompetencies().length }}</span>
+      </button>
+      <button 
+        class="tab-btn" 
+        [class.active]="activeTab() === 'management'"
+        (click)="setActiveTab('management')"
+        type="button">
+        <i class="ri-team-line"></i>
+        管理職能
+        <span class="tab-badge">{{ managementCompetencies().length }}</span>
+      </button>
+      <button 
+        class="tab-btn" 
+        [class.active]="activeTab() === 'ksa'"
+        (click)="setActiveTab('ksa')"
+        type="button">
+        <i class="ri-book-3-line"></i>
+        KSA 職能
+        <span class="tab-badge">{{ legacyCompetencies().length }}</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- Loading -->
+  @if (loading()) {
+    <div class="loading-container">
+      <i class="ri-loader-4-line spinner"></i>
+      <span>載入中...</span>
+    </div>
+  } @else {
+    <!-- Core Competencies Tab -->
+    @if (activeTab() === 'core') {
+      <section class="competency-hierarchy-section">
+        <div class="section-header">
+          <div class="section-header__left">
+            <h2 class="section-title">
+              <i class="ri-heart-pulse-line"></i>
+              核心職能框架
+            </h2>
+            <p class="section-subtitle">適用全員，涵蓋 5 項核心職能，每項職能分 L1-L6 共六個等級</p>
+          </div>
+          <div class="section-header__hint">
+            <i class="ri-information-line"></i>
+            <span>點選職能名稱展開查看各等級行為指標，等級為累進制（如 L3 需具備 L1-L3 所有行為指標）</span>
+          </div>
+        </div>
+
+        <div class="hierarchy-list">
+          @for (competency of coreCompetencies(); track competency.id) {
+            <div class="hierarchy-item" [class.expanded]="isCompetencyExpanded(competency.id)">
+              <!-- Competency Header -->
+              <div class="hierarchy-item__header" (click)="toggleCompetency(competency.id)">
+                <div class="hierarchy-item__toggle">
+                  <i [class]="isCompetencyExpanded(competency.id) ? 'ri-arrow-down-s-line' : 'ri-arrow-right-s-line'"></i>
+                </div>
+                <div class="hierarchy-item__icon" style="background-color: #D6A28C">
+                  <i class="ri-heart-pulse-line"></i>
+                </div>
+                <div class="hierarchy-item__info">
+                  <h3 class="hierarchy-item__name">{{ competency.name }}</h3>
+                  <p class="hierarchy-item__definition">{{ competency.definition }}</p>
+                </div>
+                <div class="hierarchy-item__levels">
+                  @for (levelData of competency.levels; track levelData.level) {
+                    <span 
+                      class="level-tag" 
+                      [style.background-color]="getLevelColor(levelData.level)"
+                      (click)="expandUpToLevel(competency.id, levelData.level); $event.stopPropagation()">
+                      {{ levelData.level }}
+                    </span>
+                  }
+                </div>
+              </div>
+
+              <!-- Level Details (Expanded) -->
+              @if (isCompetencyExpanded(competency.id)) {
+                <div class="hierarchy-item__body">
+                  <div class="level-timeline">
+                    @for (levelData of competency.levels; track levelData.level; let i = $index) {
+                      <div class="level-block" [class.expanded]="isLevelExpanded(competency.id + '-' + levelData.level)">
+                        <div class="level-block__header" (click)="toggleLevel(competency.id + '-' + levelData.level); $event.stopPropagation()">
+                          <div class="level-block__marker" [style.background-color]="getLevelColor(levelData.level)">
+                            {{ levelData.level }}
+                          </div>
+                          <div class="level-block__title">
+                            <span class="level-block__name">{{ levelLabels[levelData.level] }}</span>
+                            <span class="level-block__count">{{ levelData.indicators.length }} 項行為指標</span>
+                          </div>
+                          <div class="level-block__toggle">
+                            <i [class]="isLevelExpanded(competency.id + '-' + levelData.level) ? 'ri-subtract-line' : 'ri-add-line'"></i>
+                          </div>
+                        </div>
+                        
+                        @if (isLevelExpanded(competency.id + '-' + levelData.level)) {
+                          <div class="level-block__content">
+                            <ul class="indicator-list">
+                              @for (indicator of levelData.indicators; track indicator) {
+                                <li class="indicator-item">
+                                  <i class="ri-checkbox-circle-line"></i>
+                                  <span>{{ indicator }}</span>
+                                </li>
+                              }
+                            </ul>
+                          </div>
+                        }
+
+                        <!-- Connector line -->
+                        @if (i < competency.levels.length - 1) {
+                          <div class="level-connector"></div>
+                        }
+                      </div>
+                    }
+                  </div>
+
+                  <!-- Cumulative Note -->
+                  <div class="cumulative-note">
+                    <i class="ri-lightbulb-line"></i>
+                    <span><strong>等級累進說明：</strong>若職位要求為 L3，則需具備 L1、L2、L3 所有行為指標</span>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- Management Competencies Tab -->
+    @if (activeTab() === 'management') {
+      <section class="competency-hierarchy-section">
+        <div class="section-header">
+          <div class="section-header__left">
+            <h2 class="section-title">
+              <i class="ri-team-line"></i>
+              管理職能框架
+            </h2>
+            <p class="section-subtitle">適用於管理職，涵蓋 3 項管理職能，每項職能分 L1-L6 共六個等級</p>
+          </div>
+          <div class="section-header__hint">
+            <i class="ri-information-line"></i>
+            <span>點選職能名稱展開查看各等級行為指標，等級為累進制（如 L4 需具備 L1-L4 所有行為指標）</span>
+          </div>
+        </div>
+
+        <div class="hierarchy-list">
+          @for (competency of managementCompetencies(); track competency.id) {
+            <div class="hierarchy-item" [class.expanded]="isCompetencyExpanded(competency.id)">
+              <!-- Competency Header -->
+              <div class="hierarchy-item__header" (click)="toggleCompetency(competency.id)">
+                <div class="hierarchy-item__toggle">
+                  <i [class]="isCompetencyExpanded(competency.id) ? 'ri-arrow-down-s-line' : 'ri-arrow-right-s-line'"></i>
+                </div>
+                <div class="hierarchy-item__icon" style="background-color: #9A8C98">
+                  <i class="ri-team-line"></i>
+                </div>
+                <div class="hierarchy-item__info">
+                  <h3 class="hierarchy-item__name">{{ competency.name }}</h3>
+                  <p class="hierarchy-item__definition">{{ competency.definition }}</p>
+                </div>
+                <div class="hierarchy-item__levels">
+                  @for (levelData of competency.levels; track levelData.level) {
+                    <span 
+                      class="level-tag" 
+                      [style.background-color]="getLevelColor(levelData.level)"
+                      (click)="expandUpToLevel(competency.id, levelData.level); $event.stopPropagation()">
+                      {{ levelData.level }}
+                    </span>
+                  }
+                </div>
+              </div>
+
+              <!-- Level Details (Expanded) -->
+              @if (isCompetencyExpanded(competency.id)) {
+                <div class="hierarchy-item__body">
+                  <div class="level-timeline">
+                    @for (levelData of competency.levels; track levelData.level; let i = $index) {
+                      <div class="level-block" [class.expanded]="isLevelExpanded(competency.id + '-' + levelData.level)">
+                        <div class="level-block__header" (click)="toggleLevel(competency.id + '-' + levelData.level); $event.stopPropagation()">
+                          <div class="level-block__marker" [style.background-color]="getLevelColor(levelData.level)">
+                            {{ levelData.level }}
+                          </div>
+                          <div class="level-block__title">
+                            <span class="level-block__name">{{ levelLabels[levelData.level] }}</span>
+                            <span class="level-block__count">{{ levelData.indicators.length }} 項行為指標</span>
+                          </div>
+                          <div class="level-block__toggle">
+                            <i [class]="isLevelExpanded(competency.id + '-' + levelData.level) ? 'ri-subtract-line' : 'ri-add-line'"></i>
+                          </div>
+                        </div>
+                        
+                        @if (isLevelExpanded(competency.id + '-' + levelData.level)) {
+                          <div class="level-block__content">
+                            <ul class="indicator-list">
+                              @for (indicator of levelData.indicators; track indicator) {
+                                <li class="indicator-item">
+                                  <i class="ri-checkbox-circle-line"></i>
+                                  <span>{{ indicator }}</span>
+                                </li>
+                              }
+                            </ul>
+                          </div>
+                        }
+
+                        <!-- Connector line -->
+                        @if (i < competency.levels.length - 1) {
+                          <div class="level-connector"></div>
+                        }
+                      </div>
+                    }
+                  </div>
+
+                  <!-- Cumulative Note -->
+                  <div class="cumulative-note">
+                    <i class="ri-lightbulb-line"></i>
+                    <span><strong>等級累進說明：</strong>若職位要求為 L4，則需具備 L1、L2、L3、L4 所有行為指標</span>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- KSA Competencies Tab -->
+    @if (activeTab() === 'ksa') {
+      <section class="competencies-section">
+        <div class="section-header">
+          <div class="section-header__left">
+            <h2 class="section-title">
+              <i class="ri-book-3-line"></i>
+              KSA 職能項目清單
+            </h2>
+            <p class="section-subtitle">知識（Knowledge）、技能（Skill）、態度（Attitude），無等級區分，建立 JD 時僅需勾選</p>
+          </div>
+          <div class="section-actions">
+            <button class="btn-icon" [class.active]="viewMode() === 'card'" (click)="setViewMode('card')" type="button">
+              <i class="ri-layout-grid-line"></i>
+            </button>
+            <button class="btn-icon" [class.active]="viewMode() === 'list'" (click)="setViewMode('list')" type="button">
+              <i class="ri-list-check"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters-bar">
+          <div class="filter-group">
+            <label class="filter-label">KSA 類型</label>
+            <select class="filter-select" [ngModel]="selectedKsaType()" (ngModelChange)="onKsaTypeChange($event)">
+              <option value="">全部類型</option>
+              @for (opt of typeOptions; track opt.value) {
+                <option [value]="opt.value">{{ opt.label }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="filter-group filter-group--search">
+            <label class="filter-label">關鍵字搜尋</label>
+            <div class="search-input-wrapper">
+              <i class="ri-search-line"></i>
+              <input
+                type="text"
+                class="search-input"
+                placeholder="搜尋職能名稱、代碼..."
+                [ngModel]="searchKeyword()"
+                (ngModelChange)="onSearchChange($event)">
+            </div>
+          </div>
+
+          @if (selectedKsaType() || searchKeyword()) {
+            <button class="btn-clear" (click)="clearFilters()" type="button">
+              <i class="ri-close-line"></i> 清除篩選
+            </button>
+          }
+        </div>
+
+        <!-- Results count -->
+        <div class="results-info">
+          顯示 <strong>{{ filteredKsaCompetencies().length }}</strong> 項 KSA 職能
+        </div>
+
+        <!-- Card View -->
+        @if (viewMode() === 'card') {
+          <div class="competency-grid">
+            @for (competency of filteredKsaCompetencies(); track competency.id) {
+              <div class="competency-card" (click)="openDetailModal(competency)">
+                <div class="competency-card__header">
+                  <span class="competency-card__code">{{ competency.code }}</span>
+                  <span class="competency-card__type" [class]="getTypeClass(competency.type)">
+                    {{ getTypeLabel(competency.type) }}
+                  </span>
+                </div>
+                <h4 class="competency-card__name">{{ competency.name }}</h4>
+                <p class="competency-card__desc">{{ competency.description }}</p>
+                <div class="competency-card__footer">
+                  <span class="competency-card__type-full">{{ getTypeName(competency.type) }}</span>
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <!-- List View -->
+          <div class="competency-table-wrapper">
+            <table class="competency-table">
+              <thead>
+                <tr>
+                  <th>代碼</th>
+                  <th>職能名稱</th>
+                  <th>類型</th>
+                  <th>說明</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (competency of filteredKsaCompetencies(); track competency.id) {
+                  <tr (click)="openDetailModal(competency)">
+                    <td class="td-code">{{ competency.code }}</td>
+                    <td class="td-name">{{ competency.name }}</td>
+                    <td>
+                      <span class="type-badge" [class]="getTypeClass(competency.type)">
+                        {{ getTypeName(competency.type) }}
+                      </span>
+                    </td>
+                    <td class="td-desc">{{ competency.description }}</td>
+                    <td>
+                      <button class="btn-action" (click)="openDetailModal(competency); $event.stopPropagation()" type="button">
+                        <i class="ri-eye-line"></i>
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+
+        <!-- Empty State -->
+        @if (filteredKsaCompetencies().length === 0) {
+          <div class="empty-state">
+            <i class="ri-folder-open-line"></i>
+            <p>沒有符合條件的 KSA 職能項目</p>
+            <button class="btn-secondary" (click)="clearFilters()" type="button">清除篩選條件</button>
+          </div>
+        }
+      </section>
+    }
+  }
+</div>
+
+<!-- Detail Modal for KSA -->
+@if (showDetailModal() && selectedCompetency(); as comp) {
+  <div class="modal-backdrop" (click)="closeDetailModal()"></div>
+  <div class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-header__info">
+          <span class="modal-header__code">{{ comp.code }}</span>
+          <span class="modal-header__type" [class]="getTypeClass(comp.type)">
+            {{ getTypeName(comp.type) }}
+          </span>
+        </div>
+        <button class="btn-close" (click)="closeDetailModal()" type="button">
+          <i class="ri-close-line"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <h2 class="modal-title">{{ comp.name }}</h2>
+
+        <div class="modal-section">
+          <h4 class="modal-section__title">職能描述</h4>
+          <p class="modal-section__content">{{ comp.description }}</p>
+        </div>
+
+        <div class="modal-section">
+          <h4 class="modal-section__title">行為指標</h4>
+          <ul class="behavior-list">
+            @for (indicator of comp.behaviorIndicators; track indicator) {
+              <li class="behavior-item">
+                <i class="ri-checkbox-circle-line"></i>
+                <span>{{ indicator }}</span>
+              </li>
+            }
+          </ul>
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeDetailModal()" type="button">關閉</button>
+        <button class="btn-primary" type="button">
+          <i class="ri-edit-line"></i> 編輯職能
+        </button>
+      </div>
+    </div>
+  </div>
+}

@@ -97,9 +97,64 @@
             <!-- Match Score -->
             <div class="match-score-card">
               <div class="score-circle">{{ c.aiAnalysis.matchScore }}</div>
-              <div class="score-label">JD 初始匹配度</div>
-              <div class="score-desc">基於關鍵字與經歷年資比對</div>
+              <div class="score-label">JD 職能匹配度</div>
+              <div class="score-desc">基於職能需求綜合評估</div>
             </div>
+
+            <!-- Competency Matching Section (NEW) -->
+            @if (c.aiAnalysis.competencyMatches && c.aiAnalysis.competencyMatches.length > 0) {
+              <div class="analysis-section competency-section">
+                <div class="section-label section-label--highlight">
+                  <i class="ri-bar-chart-box-line"></i>
+                  職能需求匹配分析
+                  <span class="badge-ai">AI 評分</span>
+                </div>
+                <div class="competency-matches">
+                  @for (match of c.aiAnalysis.competencyMatches; track match.competencyId) {
+                    <div class="competency-match-item">
+                      <div class="match-header">
+                        <div class="match-info">
+                          <span class="competency-type {{ getCompetencyTypeClass(match.type) }}">
+                            {{ getCompetencyTypeLabel(match.type) }}
+                          </span>
+                          <span class="competency-name">{{ match.competencyName }}</span>
+                        </div>
+                        <div class="match-score {{ getMatchScoreClass(match.score) }}">
+                          {{ match.score }}分
+                        </div>
+                      </div>
+                      <div class="match-levels">
+                        <div class="level-info">
+                          <span class="level-label">要求等級</span>
+                          <div class="level-dots">
+                            @for (i of [1,2,3,4,5]; track i) {
+                              <span class="level-dot {{ i <= match.requiredLevel ? 'level-dot--required' : '' }}"></span>
+                            }
+                          </div>
+                          <span class="level-value">Lv.{{ match.requiredLevel }}</span>
+                        </div>
+                        <div class="level-info">
+                          <span class="level-label">評估等級</span>
+                          <div class="level-dots">
+                            @for (i of [1,2,3,4,5]; track i) {
+                              <span class="level-dot {{ i <= match.assessedLevel ? 'level-dot--assessed' : '' }}"></span>
+                            }
+                          </div>
+                          <span class="level-value">Lv.{{ match.assessedLevel }}</span>
+                        </div>
+                      </div>
+                      <div class="match-evidence">
+                        <i class="ri-lightbulb-line"></i>
+                        {{ match.evidence }}
+                      </div>
+                      <div class="match-weight">
+                        權重：{{ match.weight }}%
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
 
             <!-- Skills Section -->
             <div class="analysis-section">
@@ -157,6 +212,74 @@
                   }
                 </div>
                 <div class="position">{{ c.aiAnalysis.education.major }} {{ c.aiAnalysis.education.degree }}</div>
+              </div>
+            </div>
+
+            <!-- AI Suggestions Section (NEW) -->
+            <div class="analysis-section ai-suggestions-section">
+              <div class="section-label section-label--ai">
+                <i class="ri-lightbulb-flash-line"></i>
+                AI 綜合建議
+                <span class="badge-ai">AI 分析</span>
+              </div>
+              
+              <div class="ai-suggestions-grid">
+                <!-- 優勢 -->
+                <div class="suggestion-card suggestion-card--strength">
+                  <div class="suggestion-header">
+                    <i class="ri-thumb-up-line"></i>
+                    <span>優勢</span>
+                  </div>
+                  <ul class="suggestion-list">
+                    <li>具備 {{ c.experienceYears }} 年相關工作經驗，經驗豐富</li>
+                    <li>心理學背景有助於行為面試與人才評估</li>
+                    <li>曾獨立完成年度招募超過 50 人，執行力強</li>
+                    <li>熟悉多元招募管道，具備獵頭經驗</li>
+                  </ul>
+                </div>
+
+                <!-- 不足之處 -->
+                <div class="suggestion-card suggestion-card--weakness">
+                  <div class="suggestion-header">
+                    <i class="ri-alert-line"></i>
+                    <span>不足之處</span>
+                  </div>
+                  <ul class="suggestion-list">
+                    <li>尚未有 HRIS 系統操作經驗</li>
+                    <li>缺乏薪酬福利規劃相關經驗</li>
+                    <li>跨部門協調經驗較少</li>
+                  </ul>
+                </div>
+
+                <!-- 建議 -->
+                <div class="suggestion-card suggestion-card--recommendation">
+                  <div class="suggestion-header">
+                    <i class="ri-chat-check-line"></i>
+                    <span>面試建議</span>
+                  </div>
+                  <ul class="suggestion-list">
+                    <li>建議深入了解過往招募案例的具體成效</li>
+                    <li>評估對公司 HRIS 系統的學習意願與能力</li>
+                    <li>可詢問跨部門合作的經驗與處理方式</li>
+                    <li>確認對薪資福利的期望是否符合公司預算</li>
+                  </ul>
+                </div>
+              </div>
+
+              <!-- AI 評分資訊 -->
+              <div class="ai-scoring-info">
+                <div class="scoring-info-item">
+                  <i class="ri-time-line"></i>
+                  <span>AI 評分時間：2025/11/25 14:32:18</span>
+                </div>
+                <div class="scoring-info-item">
+                  <i class="ri-robot-line"></i>
+                  <span>AI 模型版本：Bombus AI v2.1</span>
+                </div>
+                <div class="scoring-info-item">
+                  <i class="ri-file-text-line"></i>
+                  <span>分析履歷字數：1,248 字</span>
+                </div>
               </div>
             </div>
           </div>

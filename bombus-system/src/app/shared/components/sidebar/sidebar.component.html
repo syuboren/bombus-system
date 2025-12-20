@@ -92,13 +92,17 @@
   <div class="sidebar__footer">
     <div class="user-info">
       <div class="user-info__avatar">
-        <span>A</span>
+        <span>{{ getUserInitial() }}</span>
       </div>
       <div class="user-info__details">
-        <div class="user-info__name">Admin</div>
-        <div class="user-info__role">系統管理員</div>
+        <div class="user-info__name">{{ currentUser()?.name || '使用者' }}</div>
+        <div class="user-info__role">{{ currentUser()?.department || '部門' }}</div>
       </div>
     </div>
+    <button class="logout-btn" type="button" (click)="onLogout()">
+      <i class="ri-logout-box-r-line"></i>
+      <span class="logout-btn__text">登出系統</span>
+    </button>
   </div>
 </aside>
 

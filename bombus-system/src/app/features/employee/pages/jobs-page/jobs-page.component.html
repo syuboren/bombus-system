@@ -123,6 +123,13 @@
                   @if (job.status === 'published') {
                     <button
                       class="icon-btn"
+                      title="匯入履歷"
+                      (click)="openImportModal(job)"
+                      type="button">
+                      <i class="ri-upload-cloud-line"></i>
+                    </button>
+                    <button
+                      class="icon-btn"
                       title="查看候選人"
                       (click)="viewCandidates(job)"
                       type="button">
@@ -187,6 +194,37 @@
       </button>
     </div>
     <div class="modal__body">
+      <!-- 選擇職務說明書 (JD) -->
+      <div class="form-group">
+        <label class="form-label">
+          <i class="ri-file-text-line"></i>
+          選擇職務說明書 (JD) <span class="required">*</span>
+        </label>
+        <select
+          class="form-select form-select--highlight"
+          [value]="newJob().jdId"
+          (change)="updateJobField('jdId', $any($event.target).value)">
+          <option value="">請選擇 JD（選擇後自動帶入職缺資訊）</option>
+          @for (jd of jobDescriptions(); track jd.id) {
+            <option [value]="jd.id">{{ jd.positionCode }} - {{ jd.positionName }} ({{ jd.department }})</option>
+          }
+        </select>
+        @if (selectedJD(); as jd) {
+          <div class="jd-preview">
+            <div class="jd-preview__header">
+              <i class="ri-checkbox-circle-fill"></i>
+              已選擇：{{ jd.positionName }}
+            </div>
+            <div class="jd-preview__content">
+              <p><strong>部門：</strong>{{ jd.department }}</p>
+              <p><strong>職等：</strong>{{ jd.gradeLevel }}</p>
+              <p><strong>摘要：</strong>{{ jd.summary }}</p>
+              <p><strong>職能要求：</strong>{{ jd.requiredCompetencies.length }} 項</p>
+            </div>
+          </div>
+        }
+      </div>
+
       <div class="form-group">
         <label class="form-label">職缺名稱 <span class="required">*</span></label>
         <input
@@ -203,8 +241,10 @@
           [value]="newJob().department"
           (change)="updateJobField('department', $any($event.target).value)">
           <option value="">請選擇部門</option>
-          <option value="資訊部">資訊部</option>
+          <option value="財務部">財務部</option>
           <option value="人資部">人資部</option>
+          <option value="專案部">專案部</option>
+          <option value="資訊部">資訊部</option>
           <option value="業務部">業務部</option>
           <option value="產品部">產品部</option>
           <option value="設計部">設計部</option>
@@ -220,7 +260,7 @@
           readonly>
       </div>
       <div class="form-group">
-        <label class="form-label">職務說明 (JD)</label>
+        <label class="form-label">職務說明</label>
         <textarea
           class="form-textarea"
           placeholder="請輸入職務內容與需求..."
@@ -232,6 +272,69 @@
     <div class="modal__footer">
       <button class="btn btn-secondary" (click)="closeModal()" type="button">取消</button>
       <button class="btn btn-primary" (click)="saveJob()" type="button">確認發布</button>
+    </div>
+  </div>
+}
+
+<!-- Import Resume Modal -->
+@if (showImportModal()) {
+  <div class="modal-backdrop" (click)="closeImportModal()"></div>
+  <div class="modal">
+    <div class="modal__header">
+      <h3 class="modal__title">
+        <i class="ri-upload-cloud-line"></i>
+        匯入履歷
+      </h3>
+      <button class="modal__close" (click)="closeImportModal()" type="button">
+        <i class="ri-close-line"></i>
+      </button>
+    </div>
+    <div class="modal__body">
+      @if (selectedJobForImport(); as job) {
+        <div class="import-info">
+          <p><strong>目標職缺：</strong>{{ job.title }}</p>
+          <p><strong>部門：</strong>{{ job.department }}</p>
+        </div>
+      }
+      <div class="import-options">
+        <div class="import-option">
+          <div class="import-option__icon">
+            <i class="ri-file-upload-line"></i>
+          </div>
+          <div class="import-option__content">
+            <h4>上傳履歷檔案</h4>
+            <p>支援 PDF、Word 格式，可一次上傳多份</p>
+            <button class="btn btn-outline" type="button">
+              <i class="ri-upload-2-line"></i>
+              選擇檔案
+            </button>
+          </div>
+        </div>
+        <div class="import-option">
+          <div class="import-option__icon">
+            <i class="ri-global-line"></i>
+          </div>
+          <div class="import-option__content">
+            <h4>從人力銀行匯入</h4>
+            <p>連接 104、1111 等人力銀行自動匯入</p>
+            <button class="btn btn-outline" type="button">
+              <i class="ri-link"></i>
+              連接 104 人力銀行
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="import-note">
+        <i class="ri-information-line"></i>
+        <span>匯入後將自動進行 AI 履歷評分，依據 JD 職能需求計算匹配分數</span>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-secondary" (click)="closeImportModal()" type="button">取消</button>
+      <button class="btn btn-primary" (click)="importResumes()" type="button">
+        <i class="ri-magic-line"></i>
+        確認匯入並評分
+      </button>
     </div>
   </div>
 }

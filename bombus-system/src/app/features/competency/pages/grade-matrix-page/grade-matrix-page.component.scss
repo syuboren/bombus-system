@@ -1,0 +1,1636 @@
+@import '../../../../../assets/styles/variables';
+@import '../../../../../assets/styles/mixins';
+
+// L2 Module Color
+$module-color: $color-l2-terracotta;
+$module-color-light: $color-l2-terracotta-light;
+$module-color-dark: $color-l2-terracotta-dark;
+
+.grade-matrix-page {
+  padding: calc(var(--header-height, 70px) + 20px) $spacing-lg $spacing-lg;
+  background: $color-cloud-gray;
+  min-height: 100vh;
+
+  @include media-max-md {
+    padding: calc(var(--header-height, 70px) + 16px) $spacing-md $spacing-md;
+  }
+}
+
+// ---------------------------------------------------------------
+// Tabs Section
+// ---------------------------------------------------------------
+.tabs-section {
+  margin-bottom: $spacing-lg;
+}
+
+.tabs-header {
+  @include flex-start;
+  gap: $spacing-xs;
+  background: $color-pure-white;
+  padding: $spacing-sm;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-soft;
+}
+
+.tab-btn {
+  @include flex-center;
+  gap: $spacing-xs;
+  padding: $spacing-sm $spacing-lg;
+  background: transparent;
+  border: none;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    background: $color-cloud-gray;
+    color: $color-text-primary;
+  }
+
+  &.active {
+    background: $module-color;
+    color: white;
+  }
+
+  i {
+    font-size: 18px;
+  }
+}
+
+// ---------------------------------------------------------------
+// Loading
+// ---------------------------------------------------------------
+.loading-container {
+  @include flex-center;
+  gap: $spacing-sm;
+  padding: $spacing-2xl;
+  color: $color-text-secondary;
+
+  .spinner {
+    animation: spin 1s linear infinite;
+    font-size: 24px;
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+// ---------------------------------------------------------------
+// Matrix Section
+// ---------------------------------------------------------------
+.matrix-section {
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-soft;
+}
+
+.filter-bar {
+  @include flex-between;
+  margin-bottom: $spacing-lg;
+  padding-bottom: $spacing-md;
+  border-bottom: 1px solid $color-soft-gray;
+}
+
+.filter-group {
+  @include flex-start;
+  gap: $spacing-sm;
+}
+
+.filter-label {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+}
+
+.filter-select {
+  @include input-base;
+  min-width: 150px;
+}
+
+.filter-info {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+
+  strong {
+    color: $module-color;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+// Track Section
+.track-section {
+  margin-bottom: $spacing-xl;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.track-header {
+  @include flex-start;
+  gap: $spacing-md;
+  margin-bottom: $spacing-lg;
+}
+
+.track-icon {
+  @include flex-center;
+  width: 56px;
+  height: 56px;
+  border-radius: $radius-md;
+  font-size: 24px;
+  color: white;
+
+  &.professional {
+    background: linear-gradient(135deg, $color-l1-sage 0%, darken($color-l1-sage, 10%) 100%);
+  }
+
+  &.management {
+    background: linear-gradient(135deg, $color-l4-mauve 0%, darken($color-l4-mauve, 10%) 100%);
+  }
+
+  &.specialist {
+    background: linear-gradient(135deg, $module-color 0%, $module-color-dark 100%);
+  }
+}
+
+.track-info {
+  flex: 1;
+}
+
+.track-title {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-text-dark;
+  margin: 0 0 $spacing-xs;
+}
+
+.track-desc {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin: 0;
+}
+
+// Grades Timeline
+.grades-timeline {
+  display: flex;
+  gap: $spacing-md;
+  overflow-x: auto;
+  padding: $spacing-sm 0;
+  @include custom-scrollbar;
+}
+
+.grade-card {
+  flex: 0 0 200px;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  cursor: pointer;
+  position: relative;
+  transition: all $transition-normal;
+  border: 2px solid transparent;
+
+  &:hover {
+    border-color: $module-color;
+    transform: translateY(-4px);
+    box-shadow: $shadow-md;
+  }
+
+  &:last-child .grade-arrow {
+    display: none;
+  }
+}
+
+.grade-level {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $module-color;
+  margin-bottom: $spacing-xs;
+}
+
+.grade-name {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+  margin-bottom: $spacing-sm;
+}
+
+.grade-salary {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.grade-arrow {
+  position: absolute;
+  right: -$spacing-md;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  background: $color-pure-white;
+  border-radius: $radius-full;
+  @include flex-center;
+  color: $module-color;
+  z-index: 1;
+  box-shadow: $shadow-sm;
+}
+
+// ---------------------------------------------------------------
+// Career Section
+// ---------------------------------------------------------------
+.career-section {
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-soft;
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: $spacing-xl;
+}
+
+.section-title {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-dark;
+  margin: 0 0 $spacing-xs;
+}
+
+.section-subtitle {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin: 0;
+}
+
+// Career Paths Grid
+.career-paths-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: $spacing-lg;
+}
+
+.career-path-card {
+  background: $color-cloud-gray;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  cursor: pointer;
+  transition: all $transition-normal;
+  border: 2px solid transparent;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: $shadow-lg;
+  }
+
+  &.path-vertical {
+    border-top: 4px solid $color-l1-sage;
+    &:hover { border-color: $color-l1-sage; }
+    .path-icon { background: rgba($color-l1-sage, 0.15); color: $color-l1-sage; }
+  }
+
+  &.path-horizontal {
+    border-top: 4px solid $color-l3-petrol;
+    &:hover { border-color: $color-l3-petrol; }
+    .path-icon { background: rgba($color-l3-petrol, 0.15); color: $color-l3-petrol; }
+  }
+
+  &.path-cross-department {
+    border-top: 4px solid $color-l4-mauve;
+    &:hover { border-color: $color-l4-mauve; }
+    .path-icon { background: rgba($color-l4-mauve, 0.15); color: $color-l4-mauve; }
+  }
+}
+
+.path-header {
+  @include flex-between;
+  margin-bottom: $spacing-md;
+}
+
+.path-icon {
+  @include flex-center;
+  width: 48px;
+  height: 48px;
+  border-radius: $radius-md;
+  font-size: 24px;
+}
+
+.path-type-badge {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  padding: 4px 10px;
+  border-radius: $radius-full;
+  background: rgba($module-color, 0.15);
+  color: $module-color;
+}
+
+.path-name {
+  font-size: $font-size-base;
+  font-weight: $font-weight-bold;
+  color: $color-text-dark;
+  margin: 0 0 $spacing-xs;
+}
+
+.path-desc {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin: 0 0 $spacing-md;
+  line-height: $line-height-relaxed;
+}
+
+.path-journey {
+  @include flex-start;
+  gap: $spacing-md;
+  padding: $spacing-md;
+  background: $color-pure-white;
+  border-radius: $radius-md;
+  margin-bottom: $spacing-md;
+}
+
+.journey-point {
+  flex: 1;
+
+  .journey-label {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .journey-value {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+  }
+}
+
+.journey-arrow {
+  color: $module-color;
+  font-size: 20px;
+}
+
+.path-footer {
+  @include flex-between;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+
+  span {
+    @include flex-center;
+    gap: $spacing-xs;
+  }
+}
+
+// ---------------------------------------------------------------
+// AI Section - Enhanced
+// ---------------------------------------------------------------
+.ai-section {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
+
+// Employee Selection
+.ai-employee-select {
+  background: linear-gradient(135deg, $module-color 0%, $module-color-dark 100%);
+  border-radius: $radius-lg;
+  padding: $spacing-xl;
+  color: white;
+}
+
+.select-header {
+  @include flex-start;
+  gap: $spacing-lg;
+  margin-bottom: $spacing-lg;
+
+  @include media-max-md {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+.select-icon {
+  @include flex-center;
+  width: 64px;
+  height: 64px;
+  background: rgba(white, 0.2);
+  border-radius: $radius-lg;
+  font-size: 32px;
+  flex-shrink: 0;
+}
+
+.select-info {
+  h2 {
+    font-size: $font-size-xl;
+    font-weight: $font-weight-bold;
+    margin: 0 0 $spacing-xs;
+  }
+
+  p {
+    font-size: $font-size-sm;
+    opacity: 0.9;
+    margin: 0;
+  }
+}
+
+.select-form {
+  display: flex;
+  align-items: flex-end;
+  gap: $spacing-md;
+  flex-wrap: wrap;
+
+  .form-label {
+    color: rgba(white, 0.9);
+    margin-bottom: $spacing-xs;
+  }
+
+  .form-select {
+    @include input-base;
+    min-width: 300px;
+    background: white;
+  }
+
+  .btn-analyze {
+    white-space: nowrap;
+  }
+}
+
+// AI Tabs
+.ai-tabs {
+  @include flex-start;
+  gap: $spacing-xs;
+  background: $color-pure-white;
+  padding: $spacing-sm;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-soft;
+  overflow-x: auto;
+  @include custom-scrollbar;
+}
+
+.ai-tab-btn {
+  @include flex-center;
+  gap: $spacing-xs;
+  padding: $spacing-sm $spacing-md;
+  background: transparent;
+  border: none;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: all $transition-fast;
+  white-space: nowrap;
+
+  &:hover {
+    background: $color-cloud-gray;
+    color: $color-text-primary;
+  }
+
+  &.active {
+    background: $module-color;
+    color: white;
+  }
+
+  i {
+    font-size: 16px;
+  }
+}
+
+// AI Content Sections
+.ai-content-section {
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-soft;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.section-title {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-text-dark;
+  margin: 0 0 $spacing-sm;
+}
+
+.section-subtitle {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+  margin: 0 0 $spacing-md;
+}
+
+.section-desc {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin: 0 0 $spacing-lg;
+}
+
+// Employee Profile Card
+.employee-profile-card {
+  background: $color-cloud-gray;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-lg;
+}
+
+.profile-header {
+  @include flex-start;
+  gap: $spacing-md;
+  margin-bottom: $spacing-lg;
+
+  @include media-max-sm {
+    flex-wrap: wrap;
+  }
+}
+
+.profile-avatar {
+  @include flex-center;
+  width: 56px;
+  height: 56px;
+  background: $module-color;
+  color: white;
+  border-radius: $radius-full;
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  flex-shrink: 0;
+}
+
+.profile-info {
+  flex: 1;
+
+  h3 {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-bold;
+    color: $color-text-dark;
+    margin: 0 0 $spacing-xs;
+  }
+
+  p {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    margin: 0;
+  }
+}
+
+.profile-grade {
+  text-align: center;
+
+  .grade-badge {
+    display: block;
+    font-size: $font-size-xl;
+    font-weight: $font-weight-bold;
+    color: $module-color;
+  }
+
+  .grade-name {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+  }
+}
+
+.profile-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $spacing-md;
+
+  @include media-max-sm {
+    grid-template-columns: 1fr;
+  }
+}
+
+.stat-item {
+  text-align: center;
+  padding: $spacing-md;
+  background: $color-pure-white;
+  border-radius: $radius-md;
+
+  .stat-value {
+    font-size: $font-size-2xl;
+    font-weight: $font-weight-bold;
+    color: $module-color;
+    display: block;
+  }
+
+  .stat-label {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+  }
+}
+
+// Competency Analysis
+.competency-analysis {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $spacing-lg;
+
+  @include media-max-md {
+    grid-template-columns: 1fr;
+  }
+}
+
+.analysis-chart {
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+}
+
+.radar-chart {
+  width: 100%;
+  height: 300px;
+}
+
+.analysis-detail {
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+}
+
+.competency-score-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.score-item {
+  padding: $spacing-sm;
+  background: $color-pure-white;
+  border-radius: $radius-sm;
+}
+
+.score-info {
+  @include flex-between;
+  margin-bottom: $spacing-xs;
+
+  .score-name {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: $color-text-dark;
+  }
+
+  .score-values {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+
+    &.score-good { color: $color-success; }
+    &.score-warning { color: $color-warning; }
+    &.score-danger { color: $color-error; }
+  }
+}
+
+.score-bar {
+  position: relative;
+  height: 6px;
+  background: $color-soft-gray;
+  border-radius: $radius-full;
+  overflow: visible;
+}
+
+.score-fill {
+  height: 100%;
+  background: $module-color;
+  border-radius: $radius-full;
+  transition: width 0.5s ease-out;
+}
+
+.score-required {
+  position: absolute;
+  top: -4px;
+  width: 2px;
+  height: 14px;
+  background: $color-text-secondary;
+  transform: translateX(-50%);
+}
+
+// Paths Grid
+.paths-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $spacing-lg;
+
+  @include media-max-lg {
+    grid-template-columns: 1fr;
+  }
+}
+
+.path-recommendation-card {
+  background: $color-cloud-gray;
+  border-radius: $radius-lg;
+  overflow: hidden;
+  border-top: 4px solid;
+
+  &.path-vertical {
+    border-color: $color-l1-sage;
+    .path-icon { background: rgba($color-l1-sage, 0.15); color: $color-l1-sage; }
+  }
+
+  &.path-horizontal {
+    border-color: $color-l3-petrol;
+    .path-icon { background: rgba($color-l3-petrol, 0.15); color: $color-l3-petrol; }
+  }
+
+  &.path-cross {
+    border-color: $color-l4-mauve;
+    .path-icon { background: rgba($color-l4-mauve, 0.15); color: $color-l4-mauve; }
+  }
+}
+
+.path-card-header {
+  @include flex-start;
+  gap: $spacing-sm;
+  padding: $spacing-md;
+  background: $color-pure-white;
+}
+
+.path-icon {
+  @include flex-center;
+  width: 40px;
+  height: 40px;
+  border-radius: $radius-md;
+  font-size: 20px;
+}
+
+.path-type-label {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+  flex: 1;
+}
+
+.feasibility-badge {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  padding: 4px 8px;
+  border-radius: $radius-full;
+
+  &.feasibility-high {
+    background: rgba($color-success, 0.15);
+    color: $color-success;
+  }
+
+  &.feasibility-medium {
+    background: rgba($color-warning, 0.15);
+    color: $color-warning;
+  }
+
+  &.feasibility-low {
+    background: rgba($color-error, 0.15);
+    color: $color-error;
+  }
+}
+
+.path-card-body {
+  padding: $spacing-md;
+}
+
+.target-info {
+  margin-bottom: $spacing-md;
+
+  .target-label {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .target-value {
+    font-size: $font-size-base;
+    font-weight: $font-weight-bold;
+    color: $color-text-dark;
+    display: block;
+    margin-bottom: $spacing-xs;
+  }
+
+  .time-estimate {
+    @include flex-start;
+    gap: $spacing-xs;
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+  }
+}
+
+.gap-competencies {
+  margin-bottom: $spacing-md;
+
+  .gap-title {
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-text-secondary;
+    display: block;
+    margin-bottom: $spacing-xs;
+  }
+}
+
+.gap-comp-item {
+  @include flex-between;
+  padding: $spacing-xs;
+  background: $color-pure-white;
+  border-radius: $radius-sm;
+  margin-bottom: $spacing-xs;
+  font-size: $font-size-sm;
+
+  .comp-name {
+    color: $color-text-primary;
+  }
+
+  .comp-gap {
+    color: $module-color;
+    font-weight: $font-weight-medium;
+  }
+}
+
+.path-recommendation {
+  @include flex-start;
+  gap: $spacing-sm;
+  padding: $spacing-sm;
+  background: rgba($module-color, 0.1);
+  border-radius: $radius-sm;
+
+  i {
+    color: $module-color;
+    flex-shrink: 0;
+  }
+
+  p {
+    font-size: $font-size-xs;
+    color: $color-text-primary;
+    margin: 0;
+    line-height: $line-height-relaxed;
+  }
+}
+
+// Training Section
+.training-header {
+  @include flex-between;
+  margin-bottom: $spacing-lg;
+
+  @include media-max-sm {
+    flex-direction: column;
+    gap: $spacing-md;
+  }
+}
+
+.training-header-info {
+  .section-title {
+    margin-bottom: $spacing-xs;
+  }
+
+  .section-desc {
+    margin-bottom: 0;
+  }
+}
+
+.training-summary {
+  .summary-badge {
+    @include flex-center;
+    gap: $spacing-xs;
+    padding: $spacing-sm $spacing-md;
+    background: rgba($module-color, 0.15);
+    border-radius: $radius-md;
+    font-size: $font-size-sm;
+    color: $module-color;
+    font-weight: $font-weight-medium;
+  }
+}
+
+.training-course-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.course-card {
+  @include flex-start;
+  gap: $spacing-md;
+  padding: $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+  border-left: 4px solid;
+
+  &.priority-high {
+    border-color: $color-error;
+    .course-priority { color: $color-error; }
+  }
+
+  &.priority-medium {
+    border-color: $color-warning;
+    .course-priority { color: $color-warning; }
+  }
+
+  &.priority-low {
+    border-color: $color-muted-gray;
+    .course-priority { color: $color-muted-gray; }
+  }
+}
+
+.course-priority {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.course-info {
+  flex: 1;
+
+  .course-name {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+    margin: 0 0 $spacing-xs;
+  }
+
+  .course-meta {
+    @include flex-start;
+    gap: $spacing-md;
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+
+    .course-duration {
+      @include flex-center;
+      gap: $spacing-xs;
+    }
+  }
+}
+
+.course-actions {
+  .btn-outline {
+    @include button-secondary;
+    padding: $spacing-xs $spacing-sm;
+    font-size: $font-size-xs;
+  }
+}
+
+.training-note {
+  @include flex-start;
+  gap: $spacing-sm;
+  margin-top: $spacing-lg;
+  padding: $spacing-md;
+  background: rgba($color-l3-petrol, 0.1);
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  color: $color-l3-petrol;
+
+  i {
+    flex-shrink: 0;
+  }
+
+  p {
+    margin: 0;
+  }
+}
+
+// Progress Section
+.progress-header {
+  @include flex-between;
+  margin-bottom: $spacing-lg;
+
+  .next-review {
+    @include flex-center;
+    gap: $spacing-xs;
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+  }
+}
+
+.progress-overview {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: $spacing-xl;
+
+  @include media-max-md {
+    grid-template-columns: 1fr;
+  }
+}
+
+.readiness-gauge {
+  text-align: center;
+}
+
+.gauge-circle {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  margin: 0 auto $spacing-md;
+
+  svg {
+    transform: rotate(0deg);
+  }
+
+  circle {
+    transition: stroke-dashoffset 1s ease-out;
+  }
+}
+
+.gauge-value {
+  position: absolute;
+  inset: 0;
+  @include flex-center;
+
+  .value {
+    font-size: $font-size-3xl;
+    font-weight: $font-weight-bold;
+    color: $module-color;
+  }
+
+  .unit {
+    font-size: $font-size-lg;
+    color: $module-color;
+  }
+}
+
+.gauge-label {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+}
+
+.milestones-timeline {
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+  padding: $spacing-lg;
+}
+
+.timeline-title {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+  margin: 0 0 $spacing-lg;
+}
+
+.milestone-item {
+  @include flex-start;
+  gap: $spacing-md;
+  padding: $spacing-sm 0;
+  position: relative;
+
+  &:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: 11px;
+    top: 32px;
+    bottom: -8px;
+    width: 2px;
+    background: $color-soft-gray;
+  }
+
+  &.milestone-completed {
+    .milestone-marker i { color: $color-success; }
+  }
+
+  &.milestone-in_progress {
+    .milestone-marker i {
+      color: $module-color;
+      animation: spin 1s linear infinite;
+    }
+  }
+
+  &.milestone-pending {
+    .milestone-marker i { color: $color-muted-gray; }
+    .milestone-content { opacity: 0.6; }
+  }
+}
+
+.milestone-marker {
+  @include flex-center;
+  width: 24px;
+  height: 24px;
+  background: $color-pure-white;
+  border-radius: $radius-full;
+  z-index: 1;
+  flex-shrink: 0;
+}
+
+.milestone-content {
+  flex: 1;
+  @include flex-between;
+
+  .milestone-title {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: $color-text-dark;
+  }
+
+  .milestone-date {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+  }
+}
+
+// Simulation Section
+.simulation-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: $spacing-lg;
+}
+
+.simulation-card {
+  background: $color-cloud-gray;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+}
+
+.sim-header {
+  @include flex-between;
+  margin-bottom: $spacing-lg;
+
+  .sim-path-name {
+    font-size: $font-size-base;
+    font-weight: $font-weight-bold;
+    color: $color-text-dark;
+    margin: 0;
+  }
+}
+
+.risk-badge {
+  @include flex-center;
+  gap: $spacing-xs;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  padding: 4px 8px;
+  border-radius: $radius-full;
+
+  &.risk-low {
+    background: rgba($color-success, 0.15);
+    color: $color-success;
+  }
+
+  &.risk-medium {
+    background: rgba($color-warning, 0.15);
+    color: $color-warning;
+  }
+
+  &.risk-high {
+    background: rgba($color-error, 0.15);
+    color: $color-error;
+  }
+}
+
+.sim-timeline {
+  position: relative;
+  padding-left: $spacing-xl;
+  margin-bottom: $spacing-lg;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 8px;
+    bottom: 8px;
+    width: 2px;
+    background: linear-gradient(to bottom, $module-color, $color-soft-gray);
+  }
+}
+
+.sim-step {
+  position: relative;
+  padding-bottom: $spacing-md;
+
+  &:last-child {
+    padding-bottom: 0;
+  }
+}
+
+.step-year {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  margin-bottom: 2px;
+}
+
+.step-dot {
+  position: absolute;
+  left: calc(-#{$spacing-xl} + 2px);
+  top: 8px;
+  width: 10px;
+  height: 10px;
+  background: $module-color;
+  border-radius: $radius-full;
+  border: 2px solid $color-pure-white;
+}
+
+.step-info {
+  background: $color-pure-white;
+  border-radius: $radius-sm;
+  padding: $spacing-sm;
+
+  .step-position {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: $color-text-dark;
+    display: block;
+  }
+
+  .step-salary {
+    font-size: $font-size-xs;
+    color: $color-success;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+.sim-summary {
+  @include flex-between;
+  padding-top: $spacing-md;
+  border-top: 1px solid $color-soft-gray;
+
+  .summary-item {
+    text-align: center;
+
+    .summary-label {
+      font-size: $font-size-xs;
+      color: $color-text-secondary;
+      display: block;
+    }
+
+    .summary-value {
+      font-size: $font-size-base;
+      font-weight: $font-weight-bold;
+      color: $color-text-dark;
+
+      &.highlight {
+        color: $color-success;
+      }
+    }
+  }
+}
+
+// AI Actions
+.ai-actions {
+  @include flex-end;
+  gap: $spacing-sm;
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  padding: $spacing-md $spacing-lg;
+  box-shadow: $shadow-soft;
+}
+
+.form-label {
+  display: block;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  margin-bottom: $spacing-xs;
+}
+
+.form-select {
+  @include input-base;
+}
+
+.btn-analyze {
+  @include flex-center;
+  gap: $spacing-sm;
+}
+
+// ---------------------------------------------------------------
+// Buttons
+// ---------------------------------------------------------------
+.btn-primary {
+  @include button-primary;
+  background: $module-color;
+
+  &:hover:not(:disabled) {
+    background: $module-color-dark;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.btn-secondary {
+  @include button-secondary;
+}
+
+// ---------------------------------------------------------------
+// Modal
+// ---------------------------------------------------------------
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+
+.modal {
+  @include flex-center;
+  position: fixed;
+  inset: 0;
+  z-index: 1001;
+  padding: $spacing-md;
+
+  &--large .modal-content {
+    max-width: 700px;
+  }
+}
+
+.modal-content {
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-xl;
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-header {
+  @include flex-between;
+  padding: $spacing-md $spacing-lg;
+  border-bottom: 1px solid $color-soft-gray;
+}
+
+.modal-header-info {
+  @include flex-start;
+  gap: $spacing-sm;
+}
+
+.grade-code-badge {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $module-color;
+}
+
+.grade-type-badge {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  padding: 4px 10px;
+  border-radius: $radius-full;
+
+  &.type-professional {
+    background: rgba($color-l1-sage, 0.15);
+    color: $color-l1-sage;
+  }
+
+  &.type-management {
+    background: rgba($color-l4-mauve, 0.15);
+    color: $color-l4-mauve;
+  }
+
+  &.type-specialist {
+    background: rgba($module-color, 0.15);
+    color: $module-color;
+  }
+}
+
+.btn-close {
+  @include button-icon;
+  width: 36px;
+  height: 36px;
+  font-size: 20px;
+}
+
+.modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: $spacing-lg;
+}
+
+.modal-title {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-dark;
+  margin: 0 0 $spacing-md;
+}
+
+.modal-desc {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin: 0 0 $spacing-lg;
+}
+
+.modal-section {
+  margin-bottom: $spacing-lg;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.modal-section-title {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+  margin: 0 0 $spacing-sm;
+  padding-bottom: $spacing-xs;
+  border-bottom: 2px solid $module-color;
+  display: inline-block;
+}
+
+// Salary Range
+.salary-range {
+  @include flex-center;
+  gap: $spacing-md;
+}
+
+.salary-min,
+.salary-max {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  white-space: nowrap;
+}
+
+.salary-bar {
+  flex: 1;
+  height: 8px;
+  background: $color-soft-gray;
+  border-radius: $radius-full;
+  overflow: hidden;
+}
+
+.salary-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, $color-success 0%, $module-color 100%);
+  border-radius: $radius-full;
+}
+
+// Requirements List
+.requirements-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.requirement-item {
+  @include flex-start;
+  gap: $spacing-sm;
+  padding: $spacing-sm 0;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  border-bottom: 1px dashed $color-soft-gray;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  i {
+    color: $color-success;
+    flex-shrink: 0;
+  }
+}
+
+// Competencies Tags
+.competencies-tags {
+  @include flex-start;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+}
+
+.competency-tag {
+  padding: $spacing-xs $spacing-sm;
+  background: rgba($module-color, 0.1);
+  border: 1px solid rgba($module-color, 0.3);
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  color: $module-color;
+}
+
+// Path Overview
+.path-overview {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $spacing-md;
+  padding: $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+  margin-bottom: $spacing-lg;
+
+  @include media-max-sm {
+    grid-template-columns: 1fr;
+  }
+}
+
+.overview-item {
+  text-align: center;
+
+  .overview-label {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    display: block;
+    margin-bottom: $spacing-xs;
+  }
+
+  .overview-value {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+  }
+}
+
+// Steps Timeline
+.steps-timeline {
+  position: relative;
+  padding-left: $spacing-xl;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 11px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: $color-soft-gray;
+  }
+}
+
+.timeline-step {
+  position: relative;
+  padding-bottom: $spacing-lg;
+
+  &:last-child {
+    padding-bottom: 0;
+  }
+
+  &.step-completed {
+    .step-marker i {
+      color: $color-success;
+    }
+  }
+
+  &.step-current {
+    .step-marker i {
+      color: $module-color;
+    }
+    .step-content {
+      background: rgba($module-color, 0.05);
+      border-color: $module-color;
+    }
+  }
+
+  &.step-pending {
+    .step-marker i {
+      color: $color-muted-gray;
+    }
+  }
+}
+
+.step-marker {
+  position: absolute;
+  left: -$spacing-xl;
+  top: 0;
+  width: 24px;
+  height: 24px;
+  background: $color-pure-white;
+  border-radius: $radius-full;
+  @include flex-center;
+  font-size: 16px;
+  z-index: 1;
+}
+
+.step-content {
+  padding: $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+  border-left: 3px solid transparent;
+}
+
+.step-header {
+  @include flex-between;
+  margin-bottom: $spacing-xs;
+}
+
+.step-title {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+}
+
+.step-duration {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.step-desc {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin: 0;
+}
+
+.modal-footer {
+  @include flex-end;
+  gap: $spacing-sm;
+  padding: $spacing-md $spacing-lg;
+  border-top: 1px solid $color-soft-gray;
+}
+

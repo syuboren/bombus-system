@@ -1,0 +1,206 @@
+<app-header [pageTitle]="pageTitle" [breadcrumbs]="breadcrumbs"></app-header>
+
+<div class="gap-analysis-page">
+  <!-- Department Summary -->
+  <section class="summary-section">
+    <div class="section-header">
+      <h2 class="section-title">各部門職能落差概覽</h2>
+    </div>
+    <div class="department-cards">
+      @for (dept of departmentSummary(); track dept.department) {
+        <div class="dept-card">
+          <div class="dept-card__header">
+            <span class="dept-card__name">{{ dept.department }}</span>
+            <span class="dept-card__badge" [class.critical]="dept.criticalCount > 2">
+              {{ dept.criticalCount }} 項待改善
+            </span>
+          </div>
+          <div class="dept-card__progress">
+            <div class="progress-bar">
+              <div class="progress-fill" [style.width.%]="100 - dept.avgGap * 5"></div>
+            </div>
+            <span class="dept-card__score">平均落差 {{ dept.avgGap }}%</span>
+          </div>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- Employee Selection -->
+  <section class="employee-section">
+    <div class="employee-selector">
+      <label class="selector-label">選擇員工進行分析</label>
+      <select class="selector-input" [ngModel]="selectedEmployee()" (ngModelChange)="onEmployeeChange($event)">
+        @for (opt of employeeOptions; track opt.value) {
+          <option [value]="opt.value">{{ opt.label }}</option>
+        }
+      </select>
+    </div>
+  </section>
+
+  @if (loading()) {
+    <div class="loading-container">
+      <i class="ri-loader-4-line spinner"></i>
+      <span>載入分析報告中...</span>
+    </div>
+  } @else {
+    @if (report(); as rpt) {
+    <!-- Employee Info Card -->
+    <section class="employee-info-section">
+      <div class="employee-info-card">
+        <div class="employee-avatar">
+          <span>{{ rpt.employeeName.charAt(0) }}</span>
+        </div>
+        <div class="employee-details">
+          <h3 class="employee-name">{{ rpt.employeeName }}</h3>
+          <p class="employee-position">{{ rpt.department }} / {{ rpt.position }}</p>
+        </div>
+        <div class="employee-score">
+          <div class="score-label">整體落差指數</div>
+          <div class="score-value" [class.high]="rpt.overallGapScore > 20">
+            {{ rpt.overallGapScore }}%
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Analysis Content -->
+    <div class="analysis-content">
+      <!-- Left: Radar Chart -->
+      <section class="chart-section">
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3 class="chart-title">職能雷達圖</h3>
+            <p class="chart-subtitle">JD 要求 vs 實際評估</p>
+          </div>
+          <div class="chart-container">
+            <div #radarChart class="radar-chart"></div>
+          </div>
+          <div class="chart-legend">
+            <div class="legend-item">
+              <span class="legend-color legend-color--required"></span>
+              <span>JD 要求標準</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-color legend-color--actual"></span>
+              <span>實際評估分數</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right: Gap Details -->
+      <section class="gaps-section">
+        <!-- Gaps that need improvement -->
+        @if (hasGaps()) {
+          <div class="gaps-card gaps-card--warning">
+            <div class="gaps-card__header">
+              <i class="ri-alert-line"></i>
+              <h3 class="gaps-card__title">待改善職能</h3>
+            </div>
+            <div class="gaps-list">
+              @for (gap of getCriticalGaps(); track gap.competencyId) {
+                <div class="gap-item">
+                  <div class="gap-item__header">
+                    <span class="gap-item__name">{{ gap.competencyName }}</span>
+                    <span class="gap-item__severity" [class]="getSeverityClass(gap.severity)">
+                      {{ getSeverityLabel(gap.severity) }}
+                    </span>
+                  </div>
+                  <div class="gap-item__scores">
+                    <div class="score-row">
+                      <span class="score-label">JD 要求</span>
+                      <span class="score-value">{{ gap.required }}</span>
+                    </div>
+                    <div class="score-row">
+                      <span class="score-label">實際分數</span>
+                      <span class="score-value">{{ gap.actual }}</span>
+                    </div>
+                    <div class="score-row score-row--gap">
+                      <span class="score-label">落差</span>
+                      <span class="score-value" [style.color]="getGapColor(gap.severity)">
+                        <i [class]="getGapIcon(gap.gap)"></i>
+                        {{ gap.gap > 0 ? '-' : '+' }}{{ Math.abs(gap.gap) }}
+                      </span>
+                    </div>
+                  </div>
+                  <div class="gap-item__progress">
+                    <div class="progress-bar">
+                      <div
+                        class="progress-fill"
+                        [style.width.%]="getProgressWidth(gap.actual, gap.required)"
+                        [style.background-color]="getGapColor(gap.severity)">
+                      </div>
+                    </div>
+                  </div>
+                  @if (gap.recommendedCourses.length > 0) {
+                    <div class="gap-item__courses">
+                      <span class="courses-label">推薦課程：</span>
+                      @for (course of gap.recommendedCourses; track course.id) {
+                        <span class="course-tag">
+                          <i class="ri-book-2-line"></i> {{ course.name }}
+                        </span>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Achieved competencies -->
+        <div class="gaps-card gaps-card--success">
+          <div class="gaps-card__header">
+            <i class="ri-checkbox-circle-line"></i>
+            <h3 class="gaps-card__title">已達標職能</h3>
+          </div>
+          <div class="achieved-list">
+            @for (comp of getAchievedCompetencies(); track comp.competencyId) {
+              <div class="achieved-item">
+                <div class="achieved-item__info">
+                  <span class="achieved-item__name">{{ comp.competencyName }}</span>
+                  <span class="achieved-item__score">
+                    {{ comp.actual }} / {{ comp.required }}
+                    @if (comp.gap < 0) {
+                      <span class="exceed-badge">超越 +{{ Math.abs(comp.gap) }}</span>
+                    }
+                  </span>
+                </div>
+                <i class="ri-check-double-line achieved-icon"></i>
+              </div>
+            }
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Recommendations -->
+    <section class="recommendations-section">
+      <div class="recommendations-card">
+        <div class="recommendations-header">
+          <i class="ri-lightbulb-flash-line"></i>
+          <h3 class="recommendations-title">AI 發展建議</h3>
+        </div>
+        <ul class="recommendations-list">
+          @for (rec of rpt.recommendations; track rec) {
+            <li class="recommendation-item">
+              <i class="ri-arrow-right-s-line"></i>
+              <span>{{ rec }}</span>
+            </li>
+          }
+        </ul>
+        <div class="recommendations-actions">
+          <button class="btn-secondary" type="button">
+            <i class="ri-download-line"></i> 匯出報告
+          </button>
+          <button class="btn-primary" type="button">
+            <i class="ri-calendar-line"></i> 安排培訓計畫
+          </button>
+        </div>
+      </div>
+    </section>
+    }
+  }
+</div>
+

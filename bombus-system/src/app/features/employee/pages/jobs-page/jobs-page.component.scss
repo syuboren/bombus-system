@@ -320,3 +320,154 @@
   resize: vertical;
 }
 
+// ---------------------------------------------------------------
+// JD Selection & Preview
+// ---------------------------------------------------------------
+.form-select--highlight {
+  border: 2px solid $color-l1-sage;
+  background-color: rgba($color-l1-sage, 0.05);
+
+  &:focus {
+    border-color: darken($color-l1-sage, 10%);
+    box-shadow: 0 0 0 3px rgba($color-l1-sage, 0.15);
+  }
+}
+
+.jd-preview {
+  margin-top: $spacing-md;
+  padding: $spacing-md;
+  background: linear-gradient(135deg, rgba($color-l1-sage, 0.08), rgba($color-l1-sage, 0.03));
+  border: 1px solid rgba($color-l1-sage, 0.3);
+  border-radius: $radius-md;
+
+  &__header {
+    @include flex-start;
+    gap: $spacing-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-l1-sage;
+    margin-bottom: $spacing-sm;
+
+    i {
+      font-size: 18px;
+    }
+  }
+
+  &__content {
+    font-size: $font-size-sm;
+    color: $color-text-primary;
+
+    p {
+      margin: 0 0 $spacing-xs;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      strong {
+        color: $color-text-dark;
+      }
+    }
+  }
+}
+
+// ---------------------------------------------------------------
+// Import Resume Modal
+// ---------------------------------------------------------------
+.import-info {
+  padding: $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+  margin-bottom: $spacing-lg;
+
+  p {
+    margin: 0 0 $spacing-xs;
+    font-size: $font-size-sm;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    strong {
+      color: $color-text-dark;
+    }
+  }
+}
+
+.import-options {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.import-option {
+  display: flex;
+  gap: $spacing-lg;
+  padding: $spacing-lg;
+  border: 2px dashed $color-soft-gray;
+  border-radius: $radius-lg;
+  transition: all $transition-normal;
+
+  &:hover {
+    border-color: $color-l1-sage;
+    background: rgba($color-l1-sage, 0.03);
+  }
+
+  &__icon {
+    @include flex-center;
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, $color-l1-sage, lighten($color-l1-sage, 10%));
+    border-radius: $radius-md;
+    color: white;
+    flex-shrink: 0;
+
+    i {
+      font-size: 24px;
+    }
+  }
+
+  &__content {
+    flex: 1;
+
+    h4 {
+      margin: 0 0 $spacing-xs;
+      font-size: $font-size-base;
+      font-weight: $font-weight-semibold;
+      color: $color-text-dark;
+    }
+
+    p {
+      margin: 0 0 $spacing-sm;
+      font-size: $font-size-sm;
+      color: $color-text-secondary;
+    }
+  }
+}
+
+.btn-outline {
+  @include button-base;
+  background: transparent;
+  border: 1px solid $color-l1-sage;
+  color: $color-l1-sage;
+
+  &:hover {
+    background: rgba($color-l1-sage, 0.1);
+  }
+}
+
+.import-note {
+  @include flex-start;
+  gap: $spacing-sm;
+  margin-top: $spacing-lg;
+  padding: $spacing-md;
+  background: rgba($color-info, 0.1);
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  color: $color-info;
+
+  i {
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+}
+

@@ -1,0 +1,531 @@
+@import '../../../../../assets/styles/variables';
+@import '../../../../../assets/styles/mixins';
+
+// L2 Module Color
+$module-color: $color-l2-terracotta;
+$module-color-light: $color-l2-terracotta-light;
+$module-color-dark: $color-l2-terracotta-dark;
+
+.assessment-page {
+  padding: calc(var(--header-height, 70px) + 20px) $spacing-lg $spacing-lg;
+  background: $color-cloud-gray;
+  min-height: 100vh;
+
+  @include media-max-md {
+    padding: calc(var(--header-height, 70px) + 16px) $spacing-md $spacing-md;
+  }
+}
+
+// ---------------------------------------------------------------
+// Stats Section
+// ---------------------------------------------------------------
+.stats-section {
+  margin-bottom: $spacing-lg;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: $spacing-md;
+
+  @include media-max-lg {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include media-max-sm {
+    grid-template-columns: 1fr;
+  }
+}
+
+.stat-card {
+  @include flex-start;
+  gap: $spacing-md;
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-soft;
+  position: relative;
+  overflow: hidden;
+
+  &__icon {
+    @include flex-center;
+    width: 56px;
+    height: 56px;
+    border-radius: $radius-md;
+    font-size: 24px;
+    flex-shrink: 0;
+  }
+
+  &__content {
+    flex: 1;
+  }
+
+  &__value {
+    font-size: $font-size-3xl;
+    font-weight: $font-weight-bold;
+    color: $color-text-dark;
+    line-height: 1;
+    margin-bottom: $spacing-xs;
+  }
+
+  &__label {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+  }
+
+  &__progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+  }
+
+  // Variants
+  &--total {
+    .stat-card__icon {
+      background: rgba($module-color, 0.15);
+      color: $module-color;
+    }
+  }
+
+  &--completed {
+    .stat-card__icon {
+      background: rgba($color-success, 0.15);
+      color: $color-success;
+    }
+  }
+
+  &--progress {
+    .stat-card__icon {
+      background: rgba($color-warning, 0.15);
+      color: darken($color-warning, 15%);
+    }
+  }
+
+  &--rate {
+    .stat-card__icon {
+      background: rgba($color-info, 0.15);
+      color: $color-info;
+    }
+    .stat-card__value {
+      color: $module-color;
+    }
+  }
+}
+
+.mini-progress-bar {
+  height: 4px;
+  background: $color-soft-gray;
+}
+
+.mini-progress-fill {
+  height: 100%;
+  background: $module-color;
+  transition: width $transition-normal;
+}
+
+// ---------------------------------------------------------------
+// Tabs Section
+// ---------------------------------------------------------------
+.tabs-section {
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-soft;
+  overflow: hidden;
+}
+
+.tabs-header {
+  @include flex-start;
+  border-bottom: 1px solid $color-soft-gray;
+  padding: 0 $spacing-md;
+}
+
+.tab-btn {
+  @include flex-center;
+  gap: $spacing-xs;
+  padding: $spacing-md $spacing-lg;
+  background: none;
+  border: none;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  cursor: pointer;
+  position: relative;
+  transition: color $transition-fast;
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: transparent;
+    transition: background $transition-fast;
+  }
+
+  &:hover {
+    color: $color-text-primary;
+  }
+
+  &.active {
+    color: $module-color;
+
+    &::after {
+      background: $module-color;
+    }
+  }
+
+  i {
+    font-size: 18px;
+  }
+}
+
+.tab-content {
+  padding: $spacing-lg;
+}
+
+// ---------------------------------------------------------------
+// Schedules List
+// ---------------------------------------------------------------
+.schedules-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.schedule-card {
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+  padding: $spacing-lg;
+  border-left: 4px solid $module-color;
+
+  &__header {
+    @include flex-between;
+    margin-bottom: $spacing-md;
+  }
+
+  &__title {
+    font-size: $font-size-base;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+    margin: 0;
+  }
+
+  &__status {
+    font-size: $font-size-xs;
+    padding: 4px 10px;
+    border-radius: $radius-full;
+    font-weight: $font-weight-medium;
+
+    &.schedule-scheduled {
+      background: rgba($color-info, 0.15);
+      color: $color-info;
+    }
+
+    &.schedule-in-progress {
+      background: rgba($color-warning, 0.15);
+      color: darken($color-warning, 20%);
+    }
+
+    &.schedule-completed {
+      background: rgba($color-success, 0.15);
+      color: $color-success;
+    }
+  }
+
+  &__body {
+    margin-bottom: $spacing-md;
+  }
+
+  &__actions {
+    @include flex-end;
+    gap: $spacing-sm;
+    padding-top: $spacing-md;
+    border-top: 1px solid $color-soft-gray;
+  }
+}
+
+.schedule-info {
+  @include flex-start;
+  gap: $spacing-lg;
+  margin-bottom: $spacing-md;
+
+  @include media-max-sm {
+    flex-direction: column;
+    gap: $spacing-sm;
+  }
+}
+
+.info-item {
+  @include flex-start;
+  gap: $spacing-xs;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+
+  i {
+    color: $module-color;
+  }
+}
+
+.schedule-progress {
+  .progress-header {
+    @include flex-between;
+    margin-bottom: $spacing-xs;
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+  }
+
+  .progress-value {
+    font-weight: $font-weight-semibold;
+    color: $module-color;
+  }
+}
+
+.progress-bar {
+  height: 8px;
+  background: $color-soft-gray;
+  border-radius: $radius-full;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: $module-color;
+  border-radius: $radius-full;
+  transition: width $transition-normal;
+}
+
+// ---------------------------------------------------------------
+// Filters
+// ---------------------------------------------------------------
+.filters-bar {
+  @include flex-start;
+  gap: $spacing-md;
+  margin-bottom: $spacing-md;
+  padding: $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.filter-label {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+}
+
+.filter-select {
+  @include input-base;
+  min-width: 150px;
+}
+
+// ---------------------------------------------------------------
+// Loading & Empty
+// ---------------------------------------------------------------
+.loading-container {
+  @include flex-center;
+  gap: $spacing-sm;
+  padding: $spacing-2xl;
+  color: $color-text-secondary;
+
+  .spinner {
+    animation: spin 1s linear infinite;
+    font-size: 24px;
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.empty-state {
+  @include flex-center;
+  flex-direction: column;
+  padding: $spacing-2xl;
+  color: $color-text-secondary;
+
+  i {
+    font-size: 48px;
+    margin-bottom: $spacing-md;
+    opacity: 0.5;
+  }
+}
+
+// ---------------------------------------------------------------
+// Assessment Table
+// ---------------------------------------------------------------
+.table-wrapper {
+  overflow-x: auto;
+}
+
+.assessment-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th, td {
+    padding: $spacing-sm $spacing-md;
+    text-align: left;
+    border-bottom: 1px solid $color-soft-gray;
+  }
+
+  th {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text-secondary;
+    background: $color-cloud-gray;
+    white-space: nowrap;
+  }
+
+  tbody tr {
+    transition: background $transition-fast;
+
+    &:hover {
+      background: rgba($module-color, 0.03);
+    }
+  }
+}
+
+.employee-cell {
+  @include flex-start;
+  gap: $spacing-sm;
+}
+
+.employee-avatar {
+  @include flex-center;
+  width: 36px;
+  height: 36px;
+  background: $module-color;
+  border-radius: $radius-md;
+  color: white;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+  flex-shrink: 0;
+}
+
+.employee-name {
+  font-weight: $font-weight-medium;
+  color: $color-text-dark;
+}
+
+.dept-position {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  .dept {
+    font-size: $font-size-sm;
+    color: $color-text-primary;
+  }
+
+  .position {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+  }
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+
+  &.status-not-started {
+    background: rgba($color-muted-gray, 0.2);
+    color: $color-text-secondary;
+  }
+
+  &.status-self-assessment {
+    background: rgba($color-info, 0.15);
+    color: $color-info;
+  }
+
+  &.status-manager-review {
+    background: rgba($color-warning, 0.15);
+    color: darken($color-warning, 20%);
+  }
+
+  &.status-completed {
+    background: rgba($color-success, 0.15);
+    color: $color-success;
+  }
+}
+
+.score-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  background: rgba($module-color, 0.15);
+  border-radius: $radius-sm;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+  color: $module-color;
+}
+
+.score-pending {
+  color: $color-muted-gray;
+}
+
+.btn-action {
+  @include flex-center;
+  gap: $spacing-xs;
+  padding: $spacing-xs $spacing-sm;
+  background: transparent;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    border-color: $module-color;
+    color: $module-color;
+  }
+
+  &--start {
+    background: $module-color;
+    border-color: $module-color;
+    color: white;
+
+    &:hover {
+      background: $module-color-dark;
+      border-color: $module-color-dark;
+      color: white;
+    }
+  }
+}
+
+.btn-outline {
+  @include flex-center;
+  gap: $spacing-xs;
+  padding: $spacing-sm $spacing-md;
+  background: transparent;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    border-color: $module-color;
+    color: $module-color;
+  }
+}
+
+.btn-primary {
+  @include button-primary;
+  background: $module-color;
+
+  &:hover {
+    background: $module-color-dark;
+  }
+}
+

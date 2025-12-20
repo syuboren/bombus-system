@@ -24,6 +24,11 @@
       </nav>
     </div>
 
+    <!-- Page Actions (from parent component) -->
+    <div class="header__page-actions">
+      <ng-content></ng-content>
+    </div>
+
     <!-- Header Actions -->
     <div class="header__actions">
       <!-- Search -->
@@ -55,13 +60,48 @@
       </button>
 
       <!-- User Menu -->
-      <button
-        class="header__action-btn header__action-btn--user"
-        (click)="onUserMenu()"
-        type="button"
-        aria-label="User menu">
-        <span class="user-avatar">A</span>
-      </button>
+      <div class="header__user-menu-wrapper">
+        <button
+          class="header__action-btn header__action-btn--user"
+          (click)="toggleUserMenu()"
+          type="button"
+          aria-label="User menu"
+          [attr.aria-expanded]="showUserMenu()">
+          <span class="user-avatar">{{ getUserInitial() }}</span>
+          <i class="ri-arrow-down-s-line user-arrow" [class.rotated]="showUserMenu()"></i>
+        </button>
+
+        <!-- Dropdown Menu -->
+        @if (showUserMenu()) {
+          <div class="user-dropdown">
+            <div class="user-dropdown__header">
+              <div class="user-dropdown__avatar">{{ getUserInitial() }}</div>
+              <div class="user-dropdown__info">
+                <span class="user-dropdown__name">{{ currentUser()?.name || '使用者' }}</span>
+                <span class="user-dropdown__email">{{ currentUser()?.email || '' }}</span>
+              </div>
+            </div>
+            <div class="user-dropdown__divider"></div>
+            <div class="user-dropdown__menu">
+              <button class="user-dropdown__item" type="button">
+                <i class="ri-user-line"></i>
+                <span>個人資料</span>
+              </button>
+              <button class="user-dropdown__item" type="button">
+                <i class="ri-settings-3-line"></i>
+                <span>帳號設定</span>
+              </button>
+            </div>
+            <div class="user-dropdown__divider"></div>
+            <div class="user-dropdown__menu">
+              <button class="user-dropdown__item user-dropdown__item--danger" type="button" (click)="onLogout()">
+                <i class="ri-logout-box-r-line"></i>
+                <span>登出系統</span>
+              </button>
+            </div>
+          </div>
+        }
+      </div>
     </div>
   </div>
 </header>

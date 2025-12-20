@@ -76,5 +76,33 @@ export class ProfileDetailPageComponent implements OnInit {
     };
     return classes[level] || '';
   }
+
+  // 職能類型樣式
+  getCompetencyTypeClass(type: string): string {
+    const classes: Record<string, string> = {
+      knowledge: 'type--knowledge',
+      skill: 'type--skill',
+      attitude: 'type--attitude'
+    };
+    return classes[type] || '';
+  }
+
+  // 職能類型標籤
+  getCompetencyTypeLabel(type: string): string {
+    const labels: Record<string, string> = {
+      knowledge: 'K',
+      skill: 'S',
+      attitude: 'A'
+    };
+    return labels[type] || type;
+  }
+
+  // 匹配分數樣式
+  getMatchScoreClass(score: number): string {
+    if (score >= 85) return 'score--excellent';
+    if (score >= 70) return 'score--good';
+    if (score >= 60) return 'score--fair';
+    return 'score--poor';
+  }
 }
 

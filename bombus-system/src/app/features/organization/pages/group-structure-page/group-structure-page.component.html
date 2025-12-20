@@ -1,0 +1,654 @@
+<app-header [pageTitle]="pageTitle" [breadcrumbs]="breadcrumbs">
+  <div class="header-actions">
+    <button class="btn-secondary" type="button">
+      <i class="ri-download-line"></i> 匯出組織圖
+    </button>
+    <button class="btn-primary" type="button" (click)="openCreateCompanyForm()">
+      <i class="ri-add-line"></i> 新增公司
+    </button>
+  </div>
+</app-header>
+
+<div class="group-structure-page">
+  <!-- Statistics Cards -->
+  <section class="stats-section">
+    @if (stats(); as s) {
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-card__icon stat-card__icon--primary">
+            <i class="ri-building-line"></i>
+          </div>
+          <div class="stat-card__content">
+            <div class="stat-card__value">{{ s.totalCompanies }}</div>
+            <div class="stat-card__label">集團公司數</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__icon stat-card__icon--secondary">
+            <i class="ri-organization-chart"></i>
+          </div>
+          <div class="stat-card__content">
+            <div class="stat-card__value">{{ s.totalDepartments }}</div>
+            <div class="stat-card__label">部門總數</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__icon stat-card__icon--tertiary">
+            <i class="ri-team-line"></i>
+          </div>
+          <div class="stat-card__content">
+            <div class="stat-card__value">{{ s.totalEmployees }}</div>
+            <div class="stat-card__label">員工總數</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__icon stat-card__icon--accent">
+            <i class="ri-user-shared-line"></i>
+          </div>
+          <div class="stat-card__content">
+            <div class="stat-card__value">{{ s.crossCompanyEmployees }}</div>
+            <div class="stat-card__label">跨公司任職人數</div>
+          </div>
+        </div>
+      </div>
+    }
+  </section>
+
+  <!-- View Mode Toggle & Controls -->
+  <section class="controls-section">
+    <div class="view-toggle">
+      <button
+        class="toggle-btn"
+        [class.active]="viewMode() === 'canvas'"
+        (click)="setViewMode('canvas')"
+        type="button">
+        <i class="ri-artboard-line"></i> 畫布模式
+      </button>
+      <button
+        class="toggle-btn"
+        [class.active]="viewMode() === 'list'"
+        (click)="setViewMode('list')"
+        type="button">
+        <i class="ri-list-check-2"></i> 列表模式
+      </button>
+    </div>
+
+    @if (viewMode() === 'canvas') {
+      <div class="canvas-tools">
+        <!-- Edit Mode Toggle -->
+        <button
+          class="tool-btn"
+          [class.active]="isEditMode()"
+          (click)="toggleEditMode()"
+          type="button"
+          title="編輯模式">
+          <i class="ri-edit-2-line"></i>
+          <span>{{ isEditMode() ? '完成編輯' : '編輯佈局' }}</span>
+        </button>
+
+        <div class="tool-divider"></div>
+
+        <!-- Grid Snap -->
+        <button
+          class="tool-btn tool-btn--icon"
+          [class.active]="gridSnapEnabled()"
+          (click)="toggleGridSnap()"
+          type="button"
+          title="網格吸附">
+          <i class="ri-grid-line"></i>
+        </button>
+
+        <!-- Zoom Controls -->
+        <button class="tool-btn tool-btn--icon" (click)="zoomOut()" type="button" title="縮小">
+          <i class="ri-zoom-out-line"></i>
+        </button>
+        <span class="zoom-level">{{ (canvasScale() * 100).toFixed(0) }}%</span>
+        <button class="tool-btn tool-btn--icon" (click)="zoomIn()" type="button" title="放大">
+          <i class="ri-zoom-in-line"></i>
+        </button>
+        <button class="tool-btn tool-btn--icon" (click)="resetZoom()" type="button" title="重置">
+          <i class="ri-refresh-line"></i>
+        </button>
+      </div>
+    }
+  </section>
+
+  <!-- Edit Toolbar (when in edit mode) -->
+  @if (viewMode() === 'canvas' && isEditMode()) {
+    <section class="edit-toolbar">
+      <div class="toolbar-group">
+        <span class="toolbar-label">選取：</span>
+        <button class="toolbar-btn" (click)="selectAllNodes()" type="button">
+          <i class="ri-checkbox-multiple-line"></i> 全選
+        </button>
+        <button class="toolbar-btn" (click)="clearSelection()" type="button" [disabled]="selectedNodes().size === 0">
+          <i class="ri-close-circle-line"></i> 取消選取
+        </button>
+        <span class="selection-count" *ngIf="selectedNodes().size > 0">
+          已選取 {{ selectedNodes().size }} 項
+        </span>
+      </div>
+
+      <div class="toolbar-divider"></div>
+
+      <div class="toolbar-group">
+        <span class="toolbar-label">對齊：</span>
+        <button class="toolbar-btn" (click)="alignNodes('left')" type="button" [disabled]="selectedNodes().size < 2" title="靠左對齊">
+          <i class="ri-align-left"></i>
+        </button>
+        <button class="toolbar-btn" (click)="alignNodes('center-h')" type="button" [disabled]="selectedNodes().size < 2" title="水平置中">
+          <i class="ri-align-center"></i>
+        </button>
+        <button class="toolbar-btn" (click)="alignNodes('right')" type="button" [disabled]="selectedNodes().size < 2" title="靠右對齊">
+          <i class="ri-align-right"></i>
+        </button>
+        <div class="btn-separator"></div>
+        <button class="toolbar-btn" (click)="alignNodes('top')" type="button" [disabled]="selectedNodes().size < 2" title="靠上對齊">
+          <i class="ri-align-top"></i>
+        </button>
+        <button class="toolbar-btn" (click)="alignNodes('center-v')" type="button" [disabled]="selectedNodes().size < 2" title="垂直置中">
+          <i class="ri-align-vertically"></i>
+        </button>
+        <button class="toolbar-btn" (click)="alignNodes('bottom')" type="button" [disabled]="selectedNodes().size < 2" title="靠下對齊">
+          <i class="ri-align-bottom"></i>
+        </button>
+      </div>
+
+      <div class="toolbar-divider"></div>
+
+      <div class="toolbar-group">
+        <span class="toolbar-label">分布：</span>
+        <button class="toolbar-btn" (click)="alignNodes('distribute-h')" type="button" [disabled]="selectedNodes().size < 3" title="水平等距">
+          <i class="ri-space-ship-line" style="transform: rotate(90deg);"></i>
+        </button>
+        <button class="toolbar-btn" (click)="alignNodes('distribute-v')" type="button" [disabled]="selectedNodes().size < 3" title="垂直等距">
+          <i class="ri-space-ship-line"></i>
+        </button>
+      </div>
+
+      <div class="toolbar-divider"></div>
+
+      <div class="toolbar-group">
+        <button class="toolbar-btn" (click)="undo()" type="button" [disabled]="!canUndo()" title="還原上一步 (Ctrl+Z)">
+          <i class="ri-arrow-go-back-line"></i> 還原
+        </button>
+        <button class="toolbar-btn toolbar-btn--primary" (click)="autoArrange()" type="button" title="自動整理">
+          <i class="ri-layout-grid-line"></i> 自動整理
+        </button>
+      </div>
+    </section>
+  }
+
+  <!-- Main Content -->
+  @if (loading()) {
+    <div class="loading-container">
+      <i class="ri-loader-4-line spinner"></i>
+      <span>載入組織架構中...</span>
+    </div>
+  } @else {
+    <!-- Canvas View -->
+    @if (viewMode() === 'canvas') {
+      <section class="canvas-section" [class.edit-mode]="isEditMode()">
+        <div
+          #canvasContainer
+          class="canvas-container"
+          (mousedown)="onCanvasMouseDown($event)"
+          (mousemove)="onCanvasMouseMove($event)"
+          (mouseup)="onCanvasMouseUp()"
+          (mouseleave)="onCanvasMouseUp()"
+          (wheel)="onCanvasWheel($event)"
+          [class.panning]="isPanning()"
+          [class.editing]="isEditMode()">
+          <div
+            class="canvas-content"
+            [style.transform]="'translate(' + canvasPanX() + 'px, ' + canvasPanY() + 'px) scale(' + canvasScale() + ')'">
+
+            <!-- Grid overlay (visible in edit mode) -->
+            @if (isEditMode() && gridSnapEnabled()) {
+              <div class="grid-overlay"></div>
+            }
+
+            <!-- SVG for connection lines - large size to accommodate dragging -->
+            <svg class="connections-svg" width="3000" height="2000" style="overflow: visible;">
+              @if (treeData(); as tree) {
+                @for (child of tree.children; track child.company.id) {
+                  <path
+                    class="connection-line"
+                    [attr.d]="getConnectionPath(tree.company.id, child.company.id)"
+                    fill="none"
+                    stroke="#D6A28C"
+                    stroke-width="2"
+                    stroke-dasharray="5,5"/>
+                }
+              }
+            </svg>
+
+            <!-- Company Nodes -->
+            @if (treeData(); as tree) {
+              <!-- Headquarters Node -->
+              <div
+                class="company-node company-node--hq"
+                [class.selected]="isNodeSelected(tree.company.id)"
+                [class.draggable]="isEditMode()"
+                [style.left.px]="getNodePosition(tree.company.id).x - 120"
+                [style.top.px]="getNodePosition(tree.company.id).y"
+                (mousedown)="onNodeMouseDown($event, tree.company.id)"
+                (click)="onNodeClick($event, tree.company)">
+                @if (isEditMode()) {
+                  <div class="node-drag-handle">
+                    <i class="ri-draggable"></i>
+                  </div>
+                }
+                <div class="company-node__header">
+                  <i class="ri-building-4-line"></i>
+                  <span class="company-node__type">母公司</span>
+                </div>
+                <div class="company-node__name">{{ tree.company.name }}</div>
+                <div class="company-node__meta">
+                  <span><i class="ri-team-line"></i> {{ tree.company.employeeCount }} 人</span>
+                  <span><i class="ri-organization-chart"></i> {{ tree.company.departmentCount }} 部門</span>
+                </div>
+                <div class="company-node__status" [class]="getStatusClass(tree.company.status)">
+                  {{ tree.company.status === 'active' ? '營運中' : '已停止' }}
+                </div>
+              </div>
+
+              <!-- Subsidiary Nodes -->
+              @for (child of tree.children; track child.company.id) {
+                <div
+                  class="company-node company-node--subsidiary"
+                  [class.selected]="isNodeSelected(child.company.id)"
+                  [class.draggable]="isEditMode()"
+                  [style.left.px]="getNodePosition(child.company.id).x - 120"
+                  [style.top.px]="getNodePosition(child.company.id).y"
+                  (mousedown)="onNodeMouseDown($event, child.company.id)"
+                  (click)="onNodeClick($event, child.company)">
+                  @if (isEditMode()) {
+                    <div class="node-drag-handle">
+                      <i class="ri-draggable"></i>
+                    </div>
+                  }
+                  <div class="company-node__header">
+                    <i class="ri-building-2-line"></i>
+                    <span class="company-node__type">子公司</span>
+                  </div>
+                  <div class="company-node__name">{{ child.company.name }}</div>
+                  <div class="company-node__meta">
+                    <span><i class="ri-team-line"></i> {{ child.company.employeeCount }} 人</span>
+                    <span><i class="ri-organization-chart"></i> {{ child.company.departmentCount }} 部門</span>
+                  </div>
+                  <div class="company-node__status" [class]="getStatusClass(child.company.status)">
+                    {{ child.company.status === 'active' ? '營運中' : '已停止' }}
+                  </div>
+                </div>
+              }
+            }
+          </div>
+        </div>
+
+        <!-- Canvas Legend -->
+        <div class="canvas-legend">
+          <div class="legend-item">
+            <span class="legend-dot legend-dot--hq"></span>
+            <span>母公司 (集團總部)</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot legend-dot--subsidiary"></span>
+            <span>子公司</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-line"></span>
+            <span>隸屬關係</span>
+          </div>
+        </div>
+
+        <!-- Edit mode hint -->
+        @if (isEditMode()) {
+          <div class="edit-hint">
+            <i class="ri-information-line"></i>
+            <span>拖曳節點調整位置 · Ctrl/Cmd + 點擊多選 · 使用工具列對齊</span>
+          </div>
+        }
+      </section>
+    }
+
+    <!-- List View -->
+    @if (viewMode() === 'list') {
+      <section class="list-section">
+        <div class="list-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th class="col-name">公司名稱</th>
+                <th class="col-code">公司代碼</th>
+                <th class="col-type">類型</th>
+                <th class="col-employees">員工數</th>
+                <th class="col-departments">部門數</th>
+                <th class="col-established">成立日期</th>
+                <th class="col-status">狀態</th>
+                <th class="col-actions">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of flatList(); track item.company.id) {
+                <tr class="data-row" [class.level-0]="item.level === 0" [class.level-1]="item.level === 1">
+                  <td class="col-name">
+                    <div class="company-cell" [style.padding-left.px]="item.level * 24">
+                      @if (item.level > 0) {
+                        <span class="tree-indicator">└</span>
+                      }
+                      <div class="company-info">
+                        <i [class]="item.company.type === 'headquarters' ? 'ri-building-4-line' : 'ri-building-2-line'"></i>
+                        <span class="company-name">{{ item.company.name }}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="col-code">{{ item.company.code }}</td>
+                  <td class="col-type">
+                    <span class="type-badge" [class]="item.company.type">
+                      {{ getCompanyTypeLabel(item.company.type) }}
+                    </span>
+                  </td>
+                  <td class="col-employees">{{ item.company.employeeCount }} 人</td>
+                  <td class="col-departments">{{ item.company.departmentCount }} 個</td>
+                  <td class="col-established">{{ item.company.establishedDate | date: 'yyyy/MM/dd' }}</td>
+                  <td class="col-status">
+                    <span class="status-badge" [class]="getStatusClass(item.company.status)">
+                      {{ item.company.status === 'active' ? '營運中' : '已停止' }}
+                    </span>
+                  </td>
+                  <td class="col-actions">
+                    <button class="action-btn" (click)="selectCompany(item.company)" type="button" title="檢視詳情">
+                      <i class="ri-eye-line"></i>
+                    </button>
+                    <button class="action-btn" type="button" title="編輯">
+                      <i class="ri-edit-line"></i>
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+  }
+</div>
+
+<!-- Company Detail Modal -->
+@if (showCompanyModal() && selectedCompany(); as company) {
+  <div class="modal-overlay" (click)="closeCompanyModal()">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        @if (canGoBackCompany()) {
+          <button class="modal-back-btn" (click)="goBackCompany()" type="button">
+            <i class="ri-arrow-left-line"></i>
+          </button>
+        }
+        <h2 class="modal-title">
+          <i [class]="company.type === 'headquarters' ? 'ri-building-4-line' : 'ri-building-2-line'"></i>
+          {{ company.name }}
+        </h2>
+        <button class="modal-close" (click)="closeCompanyModal()" type="button">
+          <i class="ri-close-line"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="company-detail">
+          <div class="detail-section">
+            <h3 class="section-title">基本資訊</h3>
+            <div class="detail-grid">
+              <div class="detail-item">
+                <span class="detail-label">公司代碼</span>
+                <span class="detail-value">{{ company.code }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">公司類型</span>
+                <span class="detail-value">
+                  <span class="type-badge" [class]="company.type">
+                    {{ getCompanyTypeLabel(company.type) }}
+                  </span>
+                </span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">統一編號</span>
+                <span class="detail-value">{{ company.taxId || '-' }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">成立日期</span>
+                <span class="detail-value">{{ company.establishedDate | date: 'yyyy/MM/dd' }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">員工人數</span>
+                <span class="detail-value">{{ company.employeeCount }} 人</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">營運狀態</span>
+                <span class="detail-value">
+                  <span class="status-badge" [class]="getStatusClass(company.status)">
+                    {{ company.status === 'active' ? '營運中' : '已停止' }}
+                  </span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-section">
+            <h3 class="section-title">聯絡資訊</h3>
+            <div class="detail-grid">
+              <div class="detail-item full-width">
+                <span class="detail-label">地址</span>
+                <span class="detail-value">{{ company.address }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">電話</span>
+                <span class="detail-value">{{ company.phone || '-' }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">電子郵件</span>
+                <span class="detail-value">{{ company.email || '-' }}</span>
+              </div>
+            </div>
+          </div>
+
+          @if (company.description) {
+            <div class="detail-section">
+              <h3 class="section-title">公司簡介</h3>
+              <p class="company-description">{{ company.description }}</p>
+            </div>
+          }
+
+          <!-- Subsidiaries -->
+          @if (getSubsidiaries(company.id).length > 0) {
+            <div class="detail-section">
+              <h3 class="section-title">轄下子公司</h3>
+              <div class="subsidiary-list">
+                @for (sub of getSubsidiaries(company.id); track sub.id) {
+                  <div class="subsidiary-item" (click)="selectCompany(sub)">
+                    <i class="ri-building-2-line"></i>
+                    <span class="subsidiary-name">{{ sub.name }}</span>
+                    <span class="subsidiary-count">{{ sub.employeeCount }} 人</span>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        @if (company.type !== 'headquarters') {
+          <button class="btn-danger" type="button" (click)="confirmDeleteCompany(company)">
+            <i class="ri-delete-bin-line"></i> 刪除公司
+          </button>
+        }
+        <button class="btn-secondary" (click)="closeCompanyModal()" type="button">關閉</button>
+        <button class="btn-primary" type="button" (click)="openEditCompanyForm(company)">
+          <i class="ri-edit-line"></i> 編輯資訊
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Create/Edit Company Modal -->
+@if (showCompanyForm()) {
+  <div class="modal-overlay" (click)="closeCompanyForm()">
+    <div class="modal-container modal-form" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">
+          <i [class]="isEditingCompany() ? 'ri-edit-line' : 'ri-add-line'"></i>
+          {{ isEditingCompany() ? '編輯公司資訊' : '新增公司' }}
+        </h2>
+        <button class="modal-close" (click)="closeCompanyForm()" type="button">
+          <i class="ri-close-line"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <form class="company-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label required">公司名稱</label>
+              <input type="text" class="form-input"
+                [ngModel]="companyForm().name"
+                (ngModelChange)="updateFormField('name', $event)"
+                placeholder="請輸入公司名稱" />
+            </div>
+            <div class="form-group">
+              <label class="form-label required">公司代碼</label>
+              <input type="text" class="form-input"
+                [ngModel]="companyForm().code"
+                (ngModelChange)="updateFormField('code', $event)"
+                placeholder="例如：BOMBUS-TECH" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">公司類型</label>
+              <select class="form-select"
+                [ngModel]="companyForm().type"
+                (ngModelChange)="updateFormField('type', $event)">
+                <option value="headquarters">母公司</option>
+                <option value="subsidiary">子公司</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">上級公司</label>
+              <select class="form-select"
+                [ngModel]="companyForm().parentCompanyId"
+                (ngModelChange)="updateFormField('parentCompanyId', $event)"
+                [disabled]="companyForm().type === 'headquarters'">
+                <option value="">無</option>
+                @for (c of companies(); track c.id) {
+                  @if (c.id !== companyForm().id) {
+                    <option [value]="c.id">{{ c.name }}</option>
+                  }
+                }
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group full-width">
+              <label class="form-label">公司地址</label>
+              <input type="text" class="form-input"
+                [ngModel]="companyForm().address"
+                (ngModelChange)="updateFormField('address', $event)"
+                placeholder="請輸入公司地址" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">聯絡電話</label>
+              <input type="text" class="form-input"
+                [ngModel]="companyForm().phone"
+                (ngModelChange)="updateFormField('phone', $event)"
+                placeholder="例如：02-2345-6789" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">電子郵件</label>
+              <input type="email" class="form-input"
+                [ngModel]="companyForm().email"
+                (ngModelChange)="updateFormField('email', $event)"
+                placeholder="例如：info@company.com" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">統一編號</label>
+              <input type="text" class="form-input"
+                [ngModel]="companyForm().taxId"
+                (ngModelChange)="updateFormField('taxId', $event)"
+                placeholder="8位數字" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">公司狀態</label>
+              <select class="form-select"
+                [ngModel]="companyForm().status"
+                (ngModelChange)="updateFormField('status', $event)">
+                <option value="active">營運中</option>
+                <option value="inactive">已停止</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group full-width">
+              <label class="form-label">公司簡介</label>
+              <textarea class="form-textarea"
+                [ngModel]="companyForm().description"
+                (ngModelChange)="updateFormField('description', $event)"
+                rows="3"
+                placeholder="請輸入公司簡介"></textarea>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeCompanyForm()" type="button">取消</button>
+        <button class="btn-primary" type="button" (click)="saveCompany()">
+          <i class="ri-save-line"></i> {{ isEditingCompany() ? '儲存變更' : '建立公司' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Delete Confirmation Modal -->
+@if (showDeleteConfirm() && companyToDelete(); as company) {
+  <div class="modal-overlay" (click)="cancelDelete()">
+    <div class="modal-container modal-confirm" (click)="$event.stopPropagation()">
+      <div class="modal-header modal-header--danger">
+        <h2 class="modal-title">
+          <i class="ri-error-warning-line"></i>
+          確認刪除
+        </h2>
+      </div>
+
+      <div class="modal-body">
+        <div class="confirm-content">
+          <p class="confirm-message">
+            您確定要刪除公司 <strong>{{ company.name }}</strong> 嗎？
+          </p>
+          <p class="confirm-warning">
+            <i class="ri-alert-line"></i>
+            此操作無法復原，請謹慎操作。
+          </p>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="cancelDelete()" type="button">取消</button>
+        <button class="btn-danger" type="button" (click)="executeDeleteCompany()">
+          <i class="ri-delete-bin-line"></i> 確認刪除
+        </button>
+      </div>
+    </div>
+  </div>
+}

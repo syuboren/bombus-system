@@ -313,3 +313,558 @@
   }
 }
 
+// ---------------------------------------------------------------
+// AI Action Bar
+// ---------------------------------------------------------------
+.ai-action-bar {
+  @include flex-between;
+  @include card;
+  padding: $spacing-md $spacing-lg;
+  margin-bottom: $spacing-lg;
+  background: linear-gradient(135deg, rgba($color-l1-sage, 0.08), rgba($color-l1-sage, 0.03));
+  border: 1px solid rgba($color-l1-sage, 0.3);
+
+  &__info {
+    @include flex-start;
+    gap: $spacing-sm;
+    font-size: $font-size-sm;
+    color: $color-l1-sage;
+
+    i {
+      font-size: 20px;
+    }
+  }
+}
+
+.btn-ai {
+  @include button-base;
+  background: linear-gradient(135deg, $color-l1-sage, darken($color-l1-sage, 10%));
+  color: white;
+  gap: $spacing-xs;
+
+  &:hover {
+    background: linear-gradient(135deg, darken($color-l1-sage, 5%), darken($color-l1-sage, 15%));
+    transform: translateY(-1px);
+  }
+
+  i {
+    font-size: 18px;
+  }
+}
+
+// ---------------------------------------------------------------
+// Score Section (Header)
+// ---------------------------------------------------------------
+.score-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: $spacing-xs;
+}
+
+.scoring-status {
+  @include flex-center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: $radius-full;
+  font-size: 10px;
+  font-weight: $font-weight-semibold;
+
+  i {
+    font-size: 12px;
+  }
+}
+
+.scoring--pending {
+  background: rgba($color-text-secondary, 0.15);
+  color: $color-text-secondary;
+}
+
+.scoring--scoring {
+  background: rgba($color-warning, 0.15);
+  color: darken($color-warning, 15%);
+  animation: pulse 1.5s infinite;
+}
+
+.scoring--scored {
+  background: rgba($color-success, 0.15);
+  color: $color-success;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+// ---------------------------------------------------------------
+// Footer with Decision Buttons
+// ---------------------------------------------------------------
+.card__footer {
+  @include flex-between;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.footer-left {
+  display: flex;
+  align-items: center;
+}
+
+.footer-actions {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.decision-buttons {
+  display: flex;
+  gap: $spacing-xs;
+}
+
+.decision-btn {
+  @include flex-center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid;
+  background: white;
+  cursor: pointer;
+  transition: all $transition-normal;
+
+  i {
+    font-size: 18px;
+    font-weight: bold;
+  }
+
+  &--reject {
+    border-color: $color-error;
+    color: $color-error;
+
+    &:hover {
+      background: $color-error;
+      color: white;
+      transform: scale(1.1);
+    }
+  }
+
+  &--accept {
+    border-color: $color-success;
+    color: $color-success;
+
+    &:hover {
+      background: $color-success;
+      color: white;
+      transform: scale(1.1);
+    }
+  }
+}
+
+.btn-action {
+  width: auto;
+  padding: $spacing-xs $spacing-md;
+}
+
+// ---------------------------------------------------------------
+// AI Scoring Overlay
+// ---------------------------------------------------------------
+.ai-scoring-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.ai-scoring-content {
+  text-align: center;
+  color: white;
+  max-width: 500px;
+  padding: $spacing-2xl;
+}
+
+.ai-scoring-icon {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto $spacing-xl;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  i {
+    font-size: 60px;
+    color: $color-l1-sage;
+    animation: pulse 2s ease-in-out infinite;
+  }
+}
+
+.pulse-ring {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border: 2px solid $color-l1-sage;
+  border-radius: 50%;
+  animation: pulseRing 2s ease-out infinite;
+
+  &.delay-1 {
+    animation-delay: 0.5s;
+  }
+
+  &.delay-2 {
+    animation-delay: 1s;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+@keyframes pulseRing {
+  0% {
+    transform: scale(0.8);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+.ai-scoring-title {
+  font-size: $font-size-2xl;
+  font-weight: $font-weight-bold;
+  margin-bottom: $spacing-sm;
+}
+
+.ai-scoring-message {
+  font-size: $font-size-base;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: $spacing-xl;
+}
+
+.ai-scoring-progress {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  margin-bottom: $spacing-xl;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: $radius-full;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, $color-l1-sage, lighten($color-l1-sage, 15%));
+  border-radius: $radius-full;
+  transition: width 0.3s ease-out;
+}
+
+.progress-text {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  min-width: 50px;
+}
+
+.ai-scoring-steps {
+  display: flex;
+  justify-content: center;
+  gap: $spacing-lg;
+  flex-wrap: wrap;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-xs;
+  opacity: 0.4;
+  transition: all 0.3s ease;
+
+  &.active {
+    opacity: 1;
+
+    i {
+      color: $color-l1-sage;
+      transform: scale(1.1);
+    }
+  }
+
+  i {
+    font-size: 24px;
+    transition: all 0.3s ease;
+  }
+
+  span {
+    font-size: $font-size-xs;
+  }
+}
+
+// ---------------------------------------------------------------
+// Match Badge Pending State
+// ---------------------------------------------------------------
+.match-badge--pending {
+  background: $color-cloud-gray !important;
+  color: $color-muted-gray !important;
+}
+
+.animate-score {
+  animation: scorePopIn 0.5s ease-out;
+}
+
+@keyframes scorePopIn {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+// ---------------------------------------------------------------
+// Interview Modal
+// ---------------------------------------------------------------
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+
+.interview-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  max-width: 500px;
+  background: white;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-lg;
+  z-index: 1001;
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -45%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-lg;
+  border-bottom: 1px solid $color-soft-gray;
+}
+
+.modal-title {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-text-dark;
+  margin: 0;
+
+  i {
+    color: $color-l1-sage;
+    font-size: 24px;
+  }
+}
+
+.btn-close {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  border-radius: $radius-md;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+
+  &:hover {
+    background: $color-cloud-gray;
+  }
+
+  i {
+    font-size: 20px;
+    color: $color-muted-gray;
+  }
+}
+
+.modal-body {
+  padding: $spacing-lg;
+}
+
+.candidate-preview {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+  margin-bottom: $spacing-lg;
+
+  .candidate-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: $font-size-lg;
+    font-weight: $font-weight-bold;
+  }
+
+  .candidate-info {
+    h4 {
+      margin: 0 0 4px;
+      font-size: $font-size-base;
+      font-weight: $font-weight-semibold;
+      color: $color-text-dark;
+    }
+
+    p {
+      margin: 0;
+      font-size: $font-size-sm;
+      color: $color-text-secondary;
+    }
+  }
+}
+
+.form-group {
+  margin-bottom: $spacing-md;
+}
+
+.form-label {
+  display: block;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  margin-bottom: $spacing-xs;
+
+  .required {
+    color: $color-error;
+  }
+}
+
+.form-row {
+  display: flex;
+  gap: $spacing-md;
+
+  .form-group {
+    flex: 1;
+  }
+}
+
+.form-input,
+.form-textarea,
+.form-select {
+  @include input-base;
+  width: 100%;
+}
+
+.form-select {
+  cursor: pointer;
+}
+
+.form-textarea {
+  resize: vertical;
+}
+
+.radio-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+}
+
+.radio-item {
+  flex: 1;
+  min-width: 120px;
+
+  input {
+    display: none;
+
+    &:checked + .radio-label {
+      background: rgba($color-l1-sage, 0.1);
+      border-color: $color-l1-sage;
+      color: $color-l1-sage;
+    }
+  }
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-xs;
+  padding: $spacing-sm $spacing-md;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: $font-size-sm;
+
+  &:hover {
+    border-color: $color-l1-sage;
+  }
+
+  i {
+    font-size: 18px;
+  }
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: $spacing-sm;
+  padding: $spacing-md $spacing-lg;
+  border-top: 1px solid $color-soft-gray;
+}
+
+.btn-secondary {
+  @include button-secondary;
+}
+
+.btn-primary {
+  @include button-primary;
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+}
+
