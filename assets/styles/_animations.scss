@@ -1,0 +1,482 @@
+// =====================================================
+// 共用動畫 SCSS
+// =====================================================
+
+// ---------------------------------------------------------------
+// 變數
+// ---------------------------------------------------------------
+$animation-duration-fast: 150ms;
+$animation-duration-normal: 300ms;
+$animation-duration-slow: 500ms;
+$animation-easing-standard: cubic-bezier(0.4, 0, 0.2, 1);
+$animation-easing-decelerate: cubic-bezier(0, 0, 0.2, 1);
+$animation-easing-accelerate: cubic-bezier(0.4, 0, 1, 1);
+$animation-easing-sharp: cubic-bezier(0.4, 0, 0.6, 1);
+$animation-easing-elastic: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+// ---------------------------------------------------------------
+// 淡入動畫
+// ---------------------------------------------------------------
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+// ---------------------------------------------------------------
+// 縮放動畫
+// ---------------------------------------------------------------
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes scaleInElastic {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes popIn {
+  0% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  60% {
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+// ---------------------------------------------------------------
+// 脈動動畫
+// ---------------------------------------------------------------
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(var(--pulse-color, 59, 130, 246), 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(var(--pulse-color, 59, 130, 246), 0);
+  }
+}
+
+@keyframes heartbeat {
+  0%, 100% {
+    transform: scale(1);
+  }
+  25% {
+    transform: scale(1.1);
+  }
+  50% {
+    transform: scale(1);
+  }
+  75% {
+    transform: scale(1.1);
+  }
+}
+
+// ---------------------------------------------------------------
+// 旋轉動畫
+// ---------------------------------------------------------------
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes spinPulse {
+  0% {
+    transform: rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: rotate(360deg);
+    opacity: 1;
+  }
+}
+
+// ---------------------------------------------------------------
+// 搖擺動畫
+// ---------------------------------------------------------------
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-5px); }
+  40%, 80% { transform: translateX(5px); }
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-3deg); }
+  75% { transform: rotate(3deg); }
+}
+
+// ---------------------------------------------------------------
+// 彈跳動畫
+// ---------------------------------------------------------------
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px);
+  }
+  60% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+// ---------------------------------------------------------------
+// 滑動動畫
+// ---------------------------------------------------------------
+@keyframes slideInUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+// ---------------------------------------------------------------
+// 光效動畫
+// ---------------------------------------------------------------
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(var(--glow-color, 59, 130, 246), 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(var(--glow-color, 59, 130, 246), 0.6);
+  }
+}
+
+@keyframes borderGlow {
+  0%, 100% {
+    border-color: rgba(var(--glow-color, 59, 130, 246), 0.3);
+  }
+  50% {
+    border-color: rgba(var(--glow-color, 59, 130, 246), 1);
+  }
+}
+
+// ---------------------------------------------------------------
+// 打字機效果
+// ---------------------------------------------------------------
+@keyframes typing {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@keyframes blink {
+  0%, 50% { border-color: currentColor; }
+  51%, 100% { border-color: transparent; }
+}
+
+// ---------------------------------------------------------------
+// 漣漪效果
+// ---------------------------------------------------------------
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+// ---------------------------------------------------------------
+// 進度條動畫
+// ---------------------------------------------------------------
+@keyframes progressStripe {
+  0% { background-position: 1rem 0; }
+  100% { background-position: 0 0; }
+}
+
+@keyframes progressPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+// ---------------------------------------------------------------
+// 懸浮動畫
+// ---------------------------------------------------------------
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes floatShadow {
+  0%, 100% {
+    transform: translateY(0);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  50% {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 20px rgba(0, 0, 0, 0.15);
+  }
+}
+
+// ---------------------------------------------------------------
+// 掃描光效
+// ---------------------------------------------------------------
+@keyframes scanLine {
+  0% {
+    top: -100%;
+  }
+  100% {
+    top: 100%;
+  }
+}
+
+// ---------------------------------------------------------------
+// Mixins
+// ---------------------------------------------------------------
+@mixin animate-fade-in($duration: $animation-duration-normal, $delay: 0ms) {
+  animation: fadeIn $duration $animation-easing-decelerate $delay both;
+}
+
+@mixin animate-fade-in-up($duration: $animation-duration-normal, $delay: 0ms) {
+  animation: fadeInUp $duration $animation-easing-decelerate $delay both;
+}
+
+@mixin animate-scale-in($duration: $animation-duration-normal, $delay: 0ms) {
+  animation: scaleIn $duration $animation-easing-elastic $delay both;
+}
+
+@mixin animate-pop-in($duration: $animation-duration-slow, $delay: 0ms) {
+  animation: popIn $duration $animation-easing-elastic $delay both;
+}
+
+@mixin animate-pulse($duration: 2s) {
+  animation: pulse $duration infinite;
+}
+
+@mixin animate-glow($duration: 2s) {
+  animation: glow $duration infinite;
+}
+
+@mixin animate-float($duration: 3s) {
+  animation: float $duration ease-in-out infinite;
+}
+
+@mixin animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+// 交錯動畫 mixin
+@mixin stagger-animation($base-delay: 50ms, $max-items: 20) {
+  @for $i from 1 through $max-items {
+    &:nth-child(#{$i}) {
+      animation-delay: $base-delay * $i;
+    }
+  }
+}
+
+// 懸停提升效果
+@mixin hover-lift($lift: -5px, $shadow: 0 10px 30px rgba(0, 0, 0, 0.15)) {
+  transition: transform $animation-duration-normal $animation-easing-standard,
+              box-shadow $animation-duration-normal $animation-easing-standard;
+  
+  &:hover {
+    transform: translateY($lift);
+    box-shadow: $shadow;
+  }
+}
+
+// 懸停縮放效果
+@mixin hover-scale($scale: 1.02) {
+  transition: transform $animation-duration-fast $animation-easing-elastic;
+  
+  &:hover {
+    transform: scale($scale);
+  }
+}
+
+// 骨架屏載入
+@mixin skeleton-loading {
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 25%,
+    #e0e0e0 50%,
+    #f0f0f0 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+// 按鈕漣漪效果
+@mixin ripple-effect($color: rgba(255, 255, 255, 0.3)) {
+  position: relative;
+  overflow: hidden;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: $color;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+  }
+  
+  &:active::after {
+    width: 200px;
+    height: 200px;
+    opacity: 0;
+    transition: width 0.3s, height 0.3s, opacity 0.3s;
+  }
+}
+
