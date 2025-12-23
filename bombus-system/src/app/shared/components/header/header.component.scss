@@ -73,6 +73,11 @@
   @include flex-start;
   gap: $spacing-xs;
   flex-wrap: wrap;
+
+  // 手機版隱藏麵包屑
+  @include media-max-md {
+    display: none;
+  }
 }
 
 .breadcrumb-item {
