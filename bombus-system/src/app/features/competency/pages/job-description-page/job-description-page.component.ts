@@ -304,6 +304,28 @@ export class JobDescriptionPageComponent implements OnInit {
     return competencies.reduce((sum, c) => sum + c.weight, 0);
   }
 
+  // 計算所有職能需求的總權重 (核心 + 管理 + KSA)
+  getAllCompetenciesTotalWeight(jd: JobDescription): number {
+    let total = 0;
+    
+    // 核心職能權重
+    if (jd.coreCompetencyRequirements) {
+      total += jd.coreCompetencyRequirements.reduce((sum, c) => sum + c.weight, 0);
+    }
+    
+    // 管理職能權重
+    if (jd.managementCompetencyRequirements) {
+      total += jd.managementCompetencyRequirements.reduce((sum, c) => sum + c.weight, 0);
+    }
+    
+    // KSA 職能權重
+    if (jd.ksaCompetencyRequirements) {
+      total += jd.ksaCompetencyRequirements.reduce((sum, c) => sum + c.weight, 0);
+    }
+    
+    return total;
+  }
+
   // 職能需求選擇方法
   toggleCoreCompetency(competencyId: string, level: CompetencyGradeLevel | null): void {
     const selected = new Map(this.selectedCoreCompetencies());

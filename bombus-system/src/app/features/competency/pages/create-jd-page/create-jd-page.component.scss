@@ -923,3 +923,227 @@ $module-color-dark: $color-l2-terracotta-dark;
   white-space: nowrap;
 }
 
+// ===============================================================
+// AI 生成全畫面動畫
+// ===============================================================
+.ai-generation-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  background: linear-gradient(135deg, rgba($module-color-dark, 0.95), rgba($module-color, 0.9));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease-out;
+
+  // 背景網格效果
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    animation: gridMove 20s linear infinite;
+  }
+
+  // 掃描光效果
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+    animation: scanLine 3s linear infinite;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes gridMove {
+  0% { background-position: 0 0; }
+  100% { background-position: 40px 40px; }
+}
+
+@keyframes scanLine {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(100vh); }
+}
+
+.ai-generation-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  color: white;
+  padding: $spacing-2xl;
+  background: transparent;
+  box-shadow: none;
+  border: none;
+}
+
+.ai-icon-container {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto $spacing-xl;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  i {
+    font-size: 48px;
+    color: white;
+    animation: pulse 2s ease-in-out infinite;
+  }
+}
+
+.rotating-ring {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 3px solid transparent;
+  border-top-color: rgba(255,255,255,0.8);
+  border-radius: 50%;
+  animation: rotate 1.5s linear infinite;
+
+  &.reverse {
+    border: 2px solid transparent;
+    border-bottom-color: rgba(255,255,255,0.5);
+    animation: rotateReverse 2s linear infinite;
+  }
+}
+
+@keyframes rotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes rotateReverse {
+  0% { transform: rotate(360deg); }
+  100% { transform: rotate(0deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.ai-title {
+  font-size: 28px;
+  font-weight: $font-weight-bold;
+  margin-bottom: $spacing-md;
+  color: white;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+
+.ai-message {
+  font-size: 18px;
+  opacity: 0.9;
+  margin-bottom: $spacing-xl;
+  min-height: 28px;
+  animation: textFade 0.5s ease-out;
+}
+
+@keyframes textFade {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 0.9; transform: translateY(0); }
+}
+
+.ai-progress {
+  max-width: 400px;
+  margin: 0 auto $spacing-xl;
+}
+
+.progress-track {
+  height: 8px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: $spacing-sm;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, rgba(255,255,255,0.8), white);
+  border-radius: 4px;
+  transition: width 0.5s ease-out;
+  box-shadow: 0 0 10px rgba(255,255,255,0.5);
+}
+
+.progress-percent {
+  font-size: 14px;
+  font-weight: $font-weight-semibold;
+  opacity: 0.8;
+}
+
+.ai-steps {
+  display: flex;
+  justify-content: center;
+  gap: $spacing-lg;
+  flex-wrap: wrap;
+}
+
+.ai-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-xs;
+  opacity: 0.4;
+  transition: all 0.3s ease;
+
+  i {
+    font-size: 24px;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+    background: rgba(255,255,255,0.05);
+  }
+
+  span {
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  &.active {
+    opacity: 1;
+
+    i {
+      border-color: white;
+      background: rgba(255,255,255,0.15);
+      animation: stepPulse 1s ease-in-out infinite;
+    }
+  }
+
+  &.completed {
+    opacity: 0.8;
+
+    i {
+      border-color: rgba(255,255,255,0.6);
+      background: rgba(255,255,255,0.1);
+    }
+  }
+}
+
+@keyframes stepPulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,255,255,0.4); }
+  50% { transform: scale(1.05); box-shadow: 0 0 20px 5px rgba(255,255,255,0.2); }
+}
+

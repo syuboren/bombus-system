@@ -338,9 +338,9 @@
           <div class="block-header">
             <span class="block-number">6</span>
             <h4 class="block-title">職能需求</h4>
-            <span class="total-weight">
-              總權重：{{ getTotalWeight(jd.requiredCompetencies || []) }}%
-            </span>
+            <span class="total-weight" [class.warning]="getAllCompetenciesTotalWeight(jd) !== 100">
+              總權重：{{ getAllCompetenciesTotalWeight(jd) }}%
+                  </span>
           </div>
           <div class="block-content">
             <div class="competency-sections">
@@ -350,7 +350,7 @@
                   <i class="ri-heart-pulse-line"></i>
                   核心職能
                 </h5>
-                @if (jd.requiredCompetencies && jd.requiredCompetencies.length > 0) {
+                @if (jd.coreCompetencyRequirements && jd.coreCompetencyRequirements.length > 0) {
                   <table class="competency-table">
                     <thead>
                       <tr>
@@ -360,10 +360,10 @@
                       </tr>
                     </thead>
                     <tbody>
-            @for (comp of jd.requiredCompetencies; track comp.competencyId) {
+                      @for (comp of jd.coreCompetencyRequirements; track comp.competencyId) {
                         <tr>
                           <td>{{ comp.competencyName }}</td>
-                          <td><span class="level-badge">L{{ comp.requiredLevel }}</span></td>
+                          <td><span class="level-badge core">{{ comp.requiredLevel }}</span></td>
                           <td><span class="weight-badge">{{ comp.weight }}%</span></td>
                         </tr>
                       }
@@ -380,7 +380,28 @@
                   <i class="ri-team-line"></i>
                   管理職能
                 </h5>
-                <span class="no-data">未設定</span>
+                @if (jd.managementCompetencyRequirements && jd.managementCompetencyRequirements.length > 0) {
+                  <table class="competency-table">
+                    <thead>
+                      <tr>
+                        <th>職能名稱</th>
+                        <th>需求等級</th>
+                        <th>權重</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (comp of jd.managementCompetencyRequirements; track comp.competencyId) {
+                        <tr>
+                          <td>{{ comp.competencyName }}</td>
+                          <td><span class="level-badge management">{{ comp.requiredLevel }}</span></td>
+                          <td><span class="weight-badge">{{ comp.weight }}%</span></td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                } @else {
+                  <span class="no-data">未設定</span>
+                }
               </div>
 
               <!-- KSA 職能 -->
@@ -389,7 +410,26 @@
                   <i class="ri-book-3-line"></i>
                   KSA 職能
                 </h5>
-                @if (jd.ksaContent) {
+                @if (jd.ksaCompetencyRequirements && jd.ksaCompetencyRequirements.length > 0) {
+                  <table class="competency-table">
+                    <thead>
+                      <tr>
+                        <th>職能名稱</th>
+                        <th>類型</th>
+                        <th>權重</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (comp of jd.ksaCompetencyRequirements; track comp.competencyId) {
+                        <tr>
+                          <td>{{ comp.competencyName }}</td>
+                          <td><span class="ksa-type-badge" [class]="'type-' + comp.ksaType">{{ getKSACompetencyTypeLabel(comp.ksaType) }}</span></td>
+                          <td><span class="weight-badge">{{ comp.weight }}%</span></td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                } @else if (jd.ksaContent) {
                   @if (jd.ksaContent.knowledge && jd.ksaContent.knowledge.length > 0) {
                     <div class="ksa-category">
                       <span class="ksa-label">知識 (Knowledge)</span>

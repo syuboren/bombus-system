@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bombus 企業管理系統 - CEO Dashboard 整合示意</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans TC', sans-serif; }
+
+        /* Bombus 系統樣式模擬 */
+        .bombus-sidebar {
+            width: 260px;
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            min-height: 100vh;
+            transition: width 0.3s;
+        }
+        .bombus-sidebar.collapsed { width: 70px; }
+        .bombus-sidebar.collapsed .sidebar-text { display: none; }
+        .bombus-sidebar.collapsed .sidebar-logo-text { display: none; }
+
+        .sidebar-item {
+            padding: 10px 16px;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .sidebar-item:hover { background: rgba(255,255,255,0.05); color: #e2e8f0; }
+        .sidebar-item.active { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border-left: 3px solid #3b82f6; }
+
+        .sidebar-section {
+            padding: 16px 16px 8px;
+            color: #64748b;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* CEO Dashboard 樣式 */
+        .view-switcher {
+            display: flex;
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 4px;
+        }
+        .view-btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .view-btn.active { background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); color: #1e40af; font-weight: 500; }
+        .view-btn:not(.active):hover { background: rgba(255,255,255,0.5); }
+
+        .nav-tab { transition: all 0.3s; }
+        .nav-tab.active { background: #1e40af; color: white; }
+        .nav-tab:hover { background: #3b82f6; color: white; }
+
+        .card { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .health-ring { width: 100px; height: 100px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .heatmap-cell { width: 60px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; }
+        .risk-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .matrix-cell { width: 90px; height: 70px; border: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+
+        /* 整合建議標注 */
+        .integration-note {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border: 2px dashed #f59e0b;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+        }
+        .integration-note .note-icon { color: #f59e0b; }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="flex">
+        <!-- ========== 模擬 Bombus Sidebar ========== -->
+        <aside class="bombus-sidebar fixed left-0 top-0 z-40" id="sidebar">
+            <!-- Logo -->
+            <div class="flex items-center gap-3 p-4 border-b border-slate-700">
+                <div class="w-10 h-10 bg-amber-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <span class="text-white font-bold text-lg">B</span>
+                </div>
+                <span class="sidebar-logo-text text-white font-semibold text-lg">Bombus</span>
+                <button onclick="toggleSidebar()" class="ml-auto text-slate-400 hover:text-white">
+                    <i class="ri-menu-line text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="py-4">
+                <!-- 整合建議：新增 CEO 專用入口 -->
+                <div class="sidebar-section sidebar-text">經營管理</div>
+                <div class="sidebar-item active" onclick="switchView('ceo')">
+                    <i class="ri-dashboard-3-line text-lg"></i>
+                    <span class="sidebar-text">CEO 經營儀表板</span>
+                    <span class="sidebar-text ml-auto text-xs bg-blue-600 text-white px-2 py-0.5 rounded">NEW</span>
+                </div>
+                <div class="sidebar-item" onclick="switchView('operational')">
+                    <i class="ri-dashboard-line text-lg"></i>
+                    <span class="sidebar-text">營運儀表板</span>
+                    <span class="sidebar-text ml-auto text-xs text-slate-500">L0.0</span>
+                </div>
+
+                <div class="sidebar-section sidebar-text">員工管理模組</div>
+                <div class="sidebar-item">
+                    <i class="ri-briefcase-line text-lg"></i>
+                    <span class="sidebar-text">招募職缺管理</span>
+                </div>
+                <div class="sidebar-item">
+                    <i class="ri-robot-line text-lg"></i>
+                    <span class="sidebar-text">AI智能面試</span>
+                </div>
+                <div class="sidebar-item">
+                    <i class="ri-user-line text-lg"></i>
+                    <span class="sidebar-text">員工檔案管理</span>
+                </div>
+
+                <div class="sidebar-section sidebar-text">職能管理</div>
+                <div class="sidebar-item">
+                    <i class="ri-organization-chart text-lg"></i>
+                    <span class="sidebar-text">職等職級管理</span>
+                </div>
+                <div class="sidebar-item">
+                    <i class="ri-file-text-line text-lg"></i>
+                    <span class="sidebar-text">職務說明書</span>
+                </div>
+                <div class="sidebar-item">
+                    <i class="ri-bar-chart-grouped-line text-lg"></i>
+                    <span class="sidebar-text">職能落差分析</span>
+                </div>
+
+                <div class="sidebar-section sidebar-text">專案管理</div>
+                <div class="sidebar-item">
+                    <i class="ri-folder-chart-line text-lg"></i>
+                    <span class="sidebar-text">專案列表</span>
+                </div>
+                <div class="sidebar-item">
+                    <i class="ri-line-chart-line text-lg"></i>
+                    <span class="sidebar-text">AI損益預測</span>
+                </div>
+
+                <div class="sidebar-section sidebar-text">組織管理</div>
+                <div class="sidebar-item">
+                    <i class="ri-building-line text-lg"></i>
+                    <span class="sidebar-text">集團組織圖</span>
+                </div>
+            </nav>
+
+            <!-- User -->
+            <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-700">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center text-white text-sm">系</div>
+                    <div class="sidebar-text">
+                        <div class="text-white text-sm">系統管理員</div>
+                        <div class="text-slate-400 text-xs">資訊部</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ========== Main Content ========== -->
+        <main class="flex-1 ml-[260px] transition-all" id="main-content">
+            <!-- Header -->
+            <header class="bg-white border-b sticky top-0 z-30">
+                <div class="flex items-center justify-between px-6 h-16">
+                    <div>
+                        <h1 class="text-xl font-semibold text-gray-800">企業管理儀表板</h1>
+                        <nav class="text-sm text-gray-500">
+                            <span>首頁</span>
+                            <i class="ri-arrow-right-s-line mx-1"></i>
+                            <span id="breadcrumb-text">CEO 經營儀表板</span>
+                        </nav>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <!-- 整合建議：視角切換器 -->
+                        <div class="view-switcher">
+                            <div class="view-btn active" id="view-ceo" onclick="switchView('ceo')">
+                                <i class="ri-eye-line mr-1"></i>CEO 視角
+                            </div>
+                            <div class="view-btn" id="view-ops" onclick="switchView('operational')">
+                                <i class="ri-settings-3-line mr-1"></i>營運視角
+                            </div>
+                        </div>
+                        <button class="p-2 hover:bg-gray-100 rounded-lg"><i class="ri-search-line text-gray-500"></i></button>
+                        <button class="p-2 hover:bg-gray-100 rounded-lg relative">
+                            <i class="ri-notification-3-line text-gray-500"></i>
+                            <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- CEO Dashboard Tabs (僅在 CEO 視角顯示) -->
+                <div class="border-t px-6 py-2" id="ceo-tabs">
+                    <div class="flex gap-2 overflow-x-auto">
+                        <button onclick="showDashboard(1)" class="nav-tab active px-4 py-2 rounded-lg text-sm font-medium" id="tab-1">
+                            <i class="ri-home-4-line mr-1"></i>CEO Board
+                        </button>
+                        <button onclick="showDashboard(2)" class="nav-tab px-4 py-2 rounded-lg text-sm font-medium" id="tab-2">
+                            <i class="ri-fire-line mr-1"></i>能力地圖
+                        </button>
+                        <button onclick="showDashboard(3)" class="nav-tab px-4 py-2 rounded-lg text-sm font-medium" id="tab-3">
+                            <i class="ri-alarm-warning-line mr-1"></i>人才風險
+                        </button>
+                        <button onclick="showDashboard(4)" class="nav-tab px-4 py-2 rounded-lg text-sm font-medium" id="tab-4">
+                            <i class="ri-folder-chart-line mr-1"></i>專案交付
+                        </button>
+                        <button onclick="showDashboard(5)" class="nav-tab px-4 py-2 rounded-lg text-sm font-medium" id="tab-5">
+                            <i class="ri-money-dollar-circle-line mr-1"></i>毛利預測
+                        </button>
+                        <button onclick="showDashboard(6)" class="nav-tab px-4 py-2 rounded-lg text-sm font-medium" id="tab-6">
+                            <i class="ri-award-line mr-1"></i>績效獎酬
+                        </button>
+                        <button onclick="showDashboard(7)" class="nav-tab px-4 py-2 rounded-lg text-sm font-medium" id="tab-7">
+                            <i class="ri-checkbox-circle-line mr-1"></i>決策面板
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Content Area -->
+            <div class="p-6">
+                <!-- 整合建議說明 -->
+                <div class="integration-note" id="integration-hint">
+                    <div class="flex items-start gap-3">
+                        <i class="ri-lightbulb-flash-line text-2xl note-icon"></i>
+                        <div>
+                            <div class="font-semibold text-amber-800">整合建議示意圖</div>
+                            <div class="text-sm text-amber-700 mt-1">
+                                此頁面展示 CEO Dashboard 如何整合進 Bombus 系統。<br>
+                                <strong>方案：</strong>新增「CEO 經營儀表板」作為獨立入口，並在 Header 加入「視角切換器」讓使用者可在 CEO/營運 兩種視角間切換。
+                            </div>
+                            <button onclick="this.parentElement.parentElement.parentElement.style.display='none'" class="text-xs text-amber-600 mt-2 hover:underline">
+                                關閉提示
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ========== CEO View Content ========== -->
+                <div id="ceo-view">
+
+                    <!-- Dashboard 1: CEO Board -->
+                    <section id="dashboard-1" class="dashboard-section">
+                        <div class="mb-6">
+                            <h2 class="text-2xl font-bold text-gray-800">CEO Board</h2>
+                            <p class="text-gray-500">三主軸健康度總覽 + 未來 6-12 月預警</p>
+                        </div>
+
+                        <!-- 三主軸健康度 -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                            <!-- People -->
+                            <div class="card p-5">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-gray-700">People 人才</h3>
+                                        <p class="text-sm text-gray-500">能力與風險可視化</p>
+                                    </div>
+                                    <div class="health-ring bg-gradient-to-br from-green-400 to-green-600 text-white">
+                                        <div class="text-center">
+                                            <div class="text-2xl font-bold">78</div>
+                                            <div class="text-xs">健康度</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="space-y-2 text-sm">
+                                    <div class="flex justify-between"><span class="text-gray-600">關鍵職能覆蓋率</span><span class="font-medium text-green-600">85%</span></div>
+                                    <div class="flex justify-between"><span class="text-gray-600">高風險人才數</span><span class="font-medium text-red-600">3 人</span></div>
+                                    <div class="flex justify-between"><span class="text-gray-600">接班覆蓋率</span><span class="font-medium text-yellow-600">67%</span></div>
+                                </div>
+                            </div>
+
+                            <!-- Project -->
+                            <div class="card p-5">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-gray-700">Project 專案</h3>
+                                        <p class="text-sm text-gray-500">人力配置→交付→毛利</p>
+                                    </div>
+                                    <div class="health-ring bg-gradient-to-br from-yellow-400 to-orange-500 text-white">
+                                        <div class="text-center">
+                                            <div class="text-2xl font-bold">72</div>
+                                            <div class="text-xs">健康度</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="space-y-2 text-sm">
+                                    <div class="flex justify-between"><span class="text-gray-600">專案交付健康度</span><span class="font-medium text-green-600">4/5 正常</span></div>
+                                    <div class="flex justify-between"><span class="text-gray-600">平均毛利率</span><span class="font-medium text-green-600">30%</span></div>
+                                    <div class="flex justify-between"><span class="text-gray-600">風險專案</span><span class="font-medium text-red-600">1 個</span></div>
+                                </div>
+                            </div>
+
+                            <!-- Culture -->
+                            <div class="card p-5">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-gray-700">Culture 文化</h3>
+                                        <p class="text-sm text-gray-500">行為訊號量化</p>
+                                    </div>
+                                    <div class="health-ring bg-gradient-to-br from-purple-400 to-purple-600 text-white">
+                                        <div class="text-center">
+                                            <div class="text-2xl font-bold">81</div>
+                                            <div class="text-xs">健康度</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="space-y-2 text-sm">
+                                    <div class="flex justify-between"><span class="text-gray-600">績效獎酬對齊度</span><span class="font-medium text-green-600">92%</span></div>
+                                    <div class="flex justify-between"><span class="text-gray-600">訓練轉化率</span><span class="font-medium text-yellow-600">68%</span></div>
+                                    <div class="flex justify-between"><span class="text-gray-600">文化訊號異常</span><span class="font-medium text-green-600">0 項</span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 預警 + 趨勢 -->
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div class="card p-5 lg:col-span-1">
+                                <h3 class="font-semibold text-gray-700 mb-4">
+                                    <i class="ri-alarm-warning-line text-red-500 mr-2"></i>未來 6-12 月紅燈預警
+                                </h3>
+                                <div class="space-y-3">
+                                    <div class="flex items-start gap-3 p-3 bg-red-50 rounded-lg">
+                                        <div class="risk-dot bg-red-500 mt-1"></div>
+                                        <div>
+                                            <div class="text-sm font-medium text-gray-800">資深專案經理職位</div>
+                                            <div class="text-xs text-gray-500">接班人數：0，預計 Q2 離職風險</div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-start gap-3 p-3 bg-red-50 rounded-lg">
+                                        <div class="risk-dot bg-red-500 mt-1"></div>
+                                        <div>
+                                            <div class="text-sm font-medium text-gray-800">行銷自動化專案</div>
+                                            <div class="text-xs text-gray-500">進度落後 15%，毛利預警</div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-start gap-3 p-3 bg-yellow-50 rounded-lg">
+                                        <div class="risk-dot bg-yellow-500 mt-1"></div>
+                                        <div>
+                                            <div class="text-sm font-medium text-gray-800">專案管理能力缺口</div>
+                                            <div class="text-xs text-gray-500">12 人待培訓，影響 Q3 交付</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card p-5 lg:col-span-2">
+                                <h3 class="font-semibold text-gray-700 mb-4">
+                                    <i class="ri-line-chart-line text-blue-500 mr-2"></i>經營結果趨勢（近 12 個月）
+                                </h3>
+                                <canvas id="trendChart" height="180"></canvas>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Dashboard 2: 能力地圖 -->
+                    <section id="dashboard-2" class="dashboard-section hidden">
+                        <div class="mb-6">
+                            <span class="px-2 py-1 bg-blue-100 text-blue-600 rounded text-sm">People 人才</span>
+                            <h2 class="text-2xl font-bold text-gray-800 mt-2">能力地圖 & 缺口熱力圖</h2>
+                            <p class="text-gray-500">我們不再用「缺人」描述問題，而是用「缺哪種能力」描述瓶頸</p>
+                        </div>
+
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                            <div class="card p-4"><div class="text-sm text-gray-500">關鍵職能覆蓋率</div><div class="text-2xl font-bold text-green-600">85%</div><div class="text-xs text-gray-400">較上季 +3%</div></div>
+                            <div class="card p-4"><div class="text-sm text-gray-500">職能達標率</div><div class="text-2xl font-bold text-blue-600">72%</div><div class="text-xs text-gray-400">目標 80%</div></div>
+                            <div class="card p-4"><div class="text-sm text-gray-500">平均上手時間</div><div class="text-2xl font-bold text-gray-800">45 天</div><div class="text-xs text-gray-400">到職→初評達標</div></div>
+                            <div class="card p-4"><div class="text-sm text-gray-500">能力缺口數</div><div class="text-2xl font-bold text-red-600">8 項</div><div class="text-xs text-gray-400">需優先處理</div></div>
+                        </div>
+
+                        <div class="card p-5">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="font-semibold text-gray-700">部門 × 核心職能 熱力圖</h3>
+                                <div class="flex gap-3 text-xs">
+                                    <span class="flex items-center gap-1"><span class="w-4 h-4 bg-green-500 rounded"></span>達標</span>
+                                    <span class="flex items-center gap-1"><span class="w-4 h-4 bg-yellow-500 rounded"></span>輕微落差</span>
+                                    <span class="flex items-center gap-1"><span class="w-4 h-4 bg-red-500 rounded"></span>嚴重落差</span>
+                                </div>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full">
+                                    <thead>
+                                        <tr>
+                                            <th class="text-left p-2 text-sm text-gray-600">部門</th>
+                                            <th class="text-center p-2 text-sm text-gray-600">專案管理</th>
+                                            <th class="text-center p-2 text-sm text-gray-600">技術開發</th>
+                                            <th class="text-center p-2 text-sm text-gray-600">溝通協調</th>
+                                            <th class="text-center p-2 text-sm text-gray-600">數據分析</th>
+                                            <th class="text-center p-2 text-sm text-gray-600">領導力</th>
+                                            <th class="text-center p-2 text-sm text-gray-600">創新思維</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td class="p-2 font-medium">研發部</td><td><div class="heatmap-cell bg-yellow-400 rounded mx-auto">3.2</div></td><td><div class="heatmap-cell bg-green-500 text-white rounded mx-auto">4.5</div></td><td><div class="heatmap-cell bg-green-400 rounded mx-auto">3.8</div></td><td><div class="heatmap-cell bg-green-500 text-white rounded mx-auto">4.2</div></td><td><div class="heatmap-cell bg-yellow-400 rounded mx-auto">3.0</div></td><td><div class="heatmap-cell bg-green-400 rounded mx-auto">3.9</div></td></tr>
+                                        <tr><td class="p-2 font-medium">業務部</td><td><div class="heatmap-cell bg-red-400 text-white rounded mx-auto">2.5</div></td><td><div class="heatmap-cell bg-yellow-400 rounded mx-auto">2.8</div></td><td><div class="heatmap-cell bg-green-500 text-white rounded mx-auto">4.3</div></td><td><div class="heatmap-cell bg-red-400 text-white rounded mx-auto">2.4</div></td><td><div class="heatmap-cell bg-green-400 rounded mx-auto">3.6</div></td><td><div class="heatmap-cell bg-yellow-400 rounded mx-auto">3.2</div></td></tr>
+                                        <tr><td class="p-2 font-medium">行銷部</td><td><div class="heatmap-cell bg-yellow-400 rounded mx-auto">3.0</div></td><td><div class="heatmap-cell bg-red-400 text-white rounded mx-auto">2.2</div></td><td><div class="heatmap-cell bg-green-500 text-white rounded mx-auto">4.1</div></td><td><div class="heatmap-cell bg-green-400 rounded mx-auto">3.7</div></td><td><div class="heatmap-cell bg-yellow-400 rounded mx-auto">3.1</div></td><td><div class="heatmap-cell bg-green-500 text-white rounded mx-auto">4.4</div></td></tr>
+                                        <tr><td class="p-2 font-medium">人資部</td><td><div class="heatmap-cell bg-green-400 rounded mx-auto">3.8</div></td><td><div class="heatmap-cell bg-red-400 text-white rounded mx-auto">2.0</div></td><td><div class="heatmap-cell bg-green-500 text-white rounded mx-auto">4.5</div></td><td><div class="heatmap-cell bg-yellow-400 rounded mx-auto">3.2</div></td><td><div class="heatmap-cell bg-green-400 rounded mx-auto">3.9</div></td><td><div class="heatmap-cell bg-yellow-400 rounded mx-auto">3.3</div></td></tr>
+                                        <tr><td class="p-2 font-medium">財務部</td><td><div class="heatmap-cell bg-green-400 rounded mx-auto">3.6</div></td><td><div class="heatmap-cell bg-yellow-400 rounded mx-auto">2.8</div></td><td><div class="heatmap-cell bg-green-400 rounded mx-auto">3.7</div></td><td><div class="heatmap-cell bg-green-500 text-white rounded mx-auto">4.6</div></td><td><div class="heatmap-cell bg-yellow-400 rounded mx-auto">3.2</div></td><td><div class="heatmap-cell bg-yellow-400 rounded mx-auto">2.9</div></td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="mt-6 p-4 bg-red-50 rounded-lg">
+                                <h4 class="font-medium text-red-800 mb-2">優先處理能力缺口</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div class="bg-white p-3 rounded"><div class="text-sm font-medium">業務部 - 專案管理</div><div class="text-xs text-gray-500">落差 -1.5，影響 3 個專案交付</div><div class="text-xs text-blue-600 mt-1">→ 建議：PMP 認證培訓</div></div>
+                                    <div class="bg-white p-3 rounded"><div class="text-sm font-medium">業務部 - 數據分析</div><div class="text-xs text-gray-500">落差 -1.6，影響銷售預測準確度</div><div class="text-xs text-blue-600 mt-1">→ 建議：Power BI 課程</div></div>
+                                    <div class="bg-white p-3 rounded"><div class="text-sm font-medium">行銷部 - 技術開發</div><div class="text-xs text-gray-500">落差 -1.8，影響 MarTech 導入</div><div class="text-xs text-blue-600 mt-1">→ 建議：跨部門協作或招募</div></div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Dashboard 3: 關鍵人才風險 -->
+                    <section id="dashboard-3" class="dashboard-section hidden">
+                        <div class="mb-6">
+                            <span class="px-2 py-1 bg-blue-100 text-blue-600 rounded text-sm">People 人才</span>
+                            <h2 class="text-2xl font-bold text-gray-800 mt-2">關鍵人才風險 & 接班覆蓋</h2>
+                            <p class="text-gray-500">老闆要的是「提早知道」，不是「事後處理」</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div class="card p-5">
+                                <h3 class="font-semibold text-gray-700 mb-4">風險象限圖（X=離職風險, Y=關鍵性）</h3>
+                                <div class="relative bg-gray-50 rounded-lg p-4" style="height: 280px;">
+                                    <div class="absolute top-2 right-2 text-xs text-red-600 font-medium">高風險高關鍵 ⚠️</div>
+                                    <div class="absolute top-2 left-2 text-xs text-green-600 font-medium">低風險高關鍵 ✓</div>
+                                    <div class="absolute bottom-2 right-2 text-xs text-yellow-600 font-medium">高風險低關鍵</div>
+                                    <div class="absolute bottom-2 left-2 text-xs text-gray-400 font-medium">低風險低關鍵</div>
+                                    <div class="absolute left-1/2 top-4 bottom-4 w-px bg-gray-300"></div>
+                                    <div class="absolute top-1/2 left-4 right-4 h-px bg-gray-300"></div>
+                                    <div class="absolute" style="top: 15%; right: 20%;"><div class="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold" title="王大明">王</div></div>
+                                    <div class="absolute" style="top: 25%; right: 30%;"><div class="w-8 h-8 bg-red-400 rounded-full flex items-center justify-center text-white text-xs font-bold" title="李小華">李</div></div>
+                                    <div class="absolute" style="top: 20%; left: 25%;"><div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold" title="張建國">張</div></div>
+                                    <div class="absolute" style="top: 35%; left: 35%;"><div class="w-8 h-8 bg-green-400 rounded-full flex items-center justify-center text-white text-xs font-bold" title="陳美玲">陳</div></div>
+                                    <div class="absolute" style="top: 60%; right: 25%;"><div class="w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center text-white text-xs font-bold" title="林志明">林</div></div>
+                                    <div class="absolute" style="top: 70%; left: 40%;"><div class="w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center text-white text-xs font-bold" title="吳小芳">吳</div></div>
+                                </div>
+                                <div class="mt-4 text-sm text-gray-600"><span class="font-medium text-red-600">右上象限 2 人</span> 需立即啟動留才計畫</div>
+                            </div>
+
+                            <div class="card p-5">
+                                <h3 class="font-semibold text-gray-700 mb-4">關鍵職位接班覆蓋率</h3>
+                                <div class="space-y-4">
+                                    <div><div class="flex justify-between text-sm mb-1"><span>技術長</span><span class="text-green-600">2 人可接班</span></div><div class="h-3 bg-gray-200 rounded-full"><div class="h-3 bg-green-500 rounded-full" style="width: 100%"></div></div></div>
+                                    <div><div class="flex justify-between text-sm mb-1"><span>財務主管</span><span class="text-green-600">1 人可接班</span></div><div class="h-3 bg-gray-200 rounded-full"><div class="h-3 bg-green-400 rounded-full" style="width: 66%"></div></div></div>
+                                    <div><div class="flex justify-between text-sm mb-1"><span>資深專案經理</span><span class="text-red-600">0 人可接班 ⚠️</span></div><div class="h-3 bg-gray-200 rounded-full"><div class="h-3 bg-red-500 rounded-full" style="width: 0%"></div></div></div>
+                                    <div><div class="flex justify-between text-sm mb-1"><span>業務總監</span><span class="text-yellow-600">1 人培養中</span></div><div class="h-3 bg-gray-200 rounded-full"><div class="h-3 bg-yellow-400 rounded-full" style="width: 50%"></div></div></div>
+                                    <div><div class="flex justify-between text-sm mb-1"><span>人資主管</span><span class="text-green-600">1 人可接班</span></div><div class="h-3 bg-gray-200 rounded-full"><div class="h-3 bg-green-400 rounded-full" style="width: 66%"></div></div></div>
+                                </div>
+                                <div class="mt-4 p-3 bg-gray-50 rounded-lg text-sm">
+                                    <div class="font-medium text-gray-700">整體接班覆蓋率：<span class="text-blue-600">67%</span></div>
+                                    <div class="text-gray-500 text-xs mt-1">目標 80%，缺口主要在專案管理職系</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card p-5 mt-6">
+                            <h3 class="font-semibold text-gray-700 mb-4">高風險人才詳情（需立即關注）</h3>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm">
+                                    <thead class="bg-gray-50"><tr><th class="text-left p-3">姓名</th><th class="text-left p-3">職位</th><th class="text-left p-3">部門</th><th class="text-center p-3">離職風險</th><th class="text-center p-3">關鍵性</th><th class="text-left p-3">風險訊號</th><th class="text-left p-3">建議行動</th></tr></thead>
+                                    <tbody>
+                                        <tr class="border-t"><td class="p-3 font-medium">王大明</td><td class="p-3">資深專案經理</td><td class="p-3">專案部</td><td class="p-3 text-center"><span class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs">高 85%</span></td><td class="p-3 text-center"><span class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs">極高</span></td><td class="p-3 text-xs text-gray-600">市場薪資差距 +25%、近期更新履歷</td><td class="p-3 text-xs text-blue-600">→ 本週安排留才面談</td></tr>
+                                        <tr class="border-t bg-gray-50"><td class="p-3 font-medium">李小華</td><td class="p-3">技術主管</td><td class="p-3">研發部</td><td class="p-3 text-center"><span class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs">高 72%</span></td><td class="p-3 text-center"><span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-xs">高</span></td><td class="p-3 text-xs text-gray-600">績效下滑 2 季、1:1 頻率下降</td><td class="p-3 text-xs text-blue-600">→ 了解職涯發展需求</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Dashboard 4: 專案交付 -->
+                    <section id="dashboard-4" class="dashboard-section hidden">
+                        <div class="mb-6">
+                            <span class="px-2 py-1 bg-orange-100 text-orange-600 rounded text-sm">Project 專案</span>
+                            <h2 class="text-2xl font-bold text-gray-800 mt-2">專案交付健康度 + 人力配置</h2>
+                            <p class="text-gray-500">專案問題表面看是進度，根因常是「能力配置不對」</p>
+                        </div>
+
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                            <div class="card p-4"><div class="text-sm text-gray-500">進行中專案</div><div class="text-2xl font-bold text-gray-800">5</div><div class="text-xs text-green-600">4 正常 / 1 風險</div></div>
+                            <div class="card p-4"><div class="text-sm text-gray-500">平均進度達成率</div><div class="text-2xl font-bold text-blue-600">87%</div><div class="text-xs text-gray-400">目標 90%</div></div>
+                            <div class="card p-4"><div class="text-sm text-gray-500">人力使用率</div><div class="text-2xl font-bold text-green-600">82%</div><div class="text-xs text-gray-400">最佳區間 75-85%</div></div>
+                            <div class="card p-4"><div class="text-sm text-gray-500">關鍵人力缺口</div><div class="text-2xl font-bold text-red-600">3 人</div><div class="text-xs text-gray-400">影響 2 個專案</div></div>
+                        </div>
+
+                        <div class="card p-5 mb-6">
+                            <h3 class="font-semibold text-gray-700 mb-4">專案 Portfolio（泡泡大小 = 預算規模）</h3>
+                            <canvas id="projectBubbleChart" height="250"></canvas>
+                            <div class="flex justify-center gap-6 mt-4 text-xs text-gray-500">
+                                <span>X軸：進度偏差（%）</span><span>Y軸：品質風險</span><span class="text-red-500">● 紅色區域需立即關注</span>
+                            </div>
+                        </div>
+
+                        <div class="card p-5">
+                            <h3 class="font-semibold text-gray-700 mb-4">專案人力配置分析</h3>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm">
+                                    <thead class="bg-gray-50"><tr><th class="text-left p-3">專案名稱</th><th class="text-center p-3">狀態</th><th class="text-center p-3">進度</th><th class="text-center p-3">PM</th><th class="text-center p-3">開發</th><th class="text-center p-3">設計</th><th class="text-center p-3">測試</th><th class="text-left p-3">人力問題</th></tr></thead>
+                                    <tbody>
+                                        <tr class="border-t"><td class="p-3 font-medium">企業級 CRM 重構</td><td class="p-3 text-center"><span class="px-2 py-1 bg-green-100 text-green-700 rounded text-xs">正常</span></td><td class="p-3 text-center">65%</td><td class="p-3 text-center">1</td><td class="p-3 text-center">4</td><td class="p-3 text-center">1</td><td class="p-3 text-center">1</td><td class="p-3 text-xs text-gray-500">-</td></tr>
+                                        <tr class="border-t bg-red-50"><td class="p-3 font-medium">行銷自動化平台</td><td class="p-3 text-center"><span class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs">風險</span></td><td class="p-3 text-center">40%</td><td class="p-3 text-center">1</td><td class="p-3 text-center"><span class="text-red-600 font-bold">2 ⚠️</span></td><td class="p-3 text-center">1</td><td class="p-3 text-center">0</td><td class="p-3 text-xs text-red-600">缺 2 名後端、缺測試人力</td></tr>
+                                        <tr class="border-t"><td class="p-3 font-medium">金融區塊鏈模組</td><td class="p-3 text-center"><span class="px-2 py-1 bg-green-100 text-green-700 rounded text-xs">正常</span></td><td class="p-3 text-center">82%</td><td class="p-3 text-center">1</td><td class="p-3 text-center">3</td><td class="p-3 text-center">0</td><td class="p-3 text-center">1</td><td class="p-3 text-xs text-gray-500">-</td></tr>
+                                        <tr class="border-t"><td class="p-3 font-medium">雲端資料倉儲遷移</td><td class="p-3 text-center"><span class="px-2 py-1 bg-green-100 text-green-700 rounded text-xs">正常</span></td><td class="p-3 text-center">55%</td><td class="p-3 text-center">1</td><td class="p-3 text-center">2</td><td class="p-3 text-center">0</td><td class="p-3 text-center">1</td><td class="p-3 text-xs text-yellow-600">資深架構師即將離職</td></tr>
+                                        <tr class="border-t"><td class="p-3 font-medium">AI 客服機器人 v2</td><td class="p-3 text-center"><span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">規劃中</span></td><td class="p-3 text-center">10%</td><td class="p-3 text-center">1</td><td class="p-3 text-center">0</td><td class="p-3 text-center">0</td><td class="p-3 text-center">0</td><td class="p-3 text-xs text-gray-500">待組建團隊</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Dashboard 5: 毛利預測 -->
+                    <section id="dashboard-5" class="dashboard-section hidden">
+                        <div class="mb-6">
+                            <span class="px-2 py-1 bg-orange-100 text-orange-600 rounded text-sm">Project 專案</span>
+                            <h2 class="text-2xl font-bold text-gray-800 mt-2">毛利預測 + 成本歸因</h2>
+                            <p class="text-gray-500">我們不是等結案才算帳，而是讓毛利在過程中就可被治理</p>
+                        </div>
+
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                            <div class="card p-4"><div class="text-sm text-gray-500">總預估營收</div><div class="text-2xl font-bold text-gray-800">$13.8M</div><div class="text-xs text-gray-400">5 個專案合計</div></div>
+                            <div class="card p-4"><div class="text-sm text-gray-500">平均毛利率</div><div class="text-2xl font-bold text-green-600">30%</div><div class="text-xs text-green-600">↑ 優於目標 3.5%</div></div>
+                            <div class="card p-4"><div class="text-sm text-gray-500">AI 預測信心度</div><div class="text-2xl font-bold text-blue-600">92%</div><div class="text-xs text-gray-400">基於歷史數據</div></div>
+                            <div class="card p-4"><div class="text-sm text-gray-500">毛利侵蝕預警</div><div class="text-2xl font-bold text-red-600">$200K</div><div class="text-xs text-red-600">1 個專案</div></div>
+                        </div>
+
+                        <div class="card p-5 mb-6">
+                            <h3 class="font-semibold text-gray-700 mb-4">毛利瀑布圖（預估 → 實際）</h3>
+                            <canvas id="waterfallChart" height="220"></canvas>
+                        </div>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div class="card p-5">
+                                <h3 class="font-semibold text-gray-700 mb-4">專案獲利排行榜</h3>
+                                <div class="space-y-3">
+                                    <div class="flex items-center gap-4"><div class="w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center text-white font-bold">1</div><div class="flex-1"><div class="flex justify-between"><span class="font-medium">金融區塊鏈交易模組</span><span class="text-green-600 font-bold">+45.2%</span></div><div class="text-xs text-gray-500">營收 $3.5M｜David Wu</div></div></div>
+                                    <div class="flex items-center gap-4"><div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-white font-bold">2</div><div class="flex-1"><div class="flex justify-between"><span class="font-medium">企業級 CRM 系統重構</span><span class="text-green-600 font-bold">+32.5%</span></div><div class="text-xs text-gray-500">營收 $4.0M｜Alex Chen</div></div></div>
+                                    <div class="flex items-center gap-4"><div class="w-8 h-8 bg-orange-400 rounded-full flex items-center justify-center text-white font-bold">3</div><div class="flex-1"><div class="flex justify-between"><span class="font-medium">雲端資料倉儲遷移</span><span class="text-green-600 font-bold">+28.1%</span></div><div class="text-xs text-gray-500">營收 $2.8M｜Jessica Lin</div></div></div>
+                                    <div class="flex items-center gap-4"><div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 font-bold">4</div><div class="flex-1"><div class="flex justify-between"><span class="font-medium">AI 客服機器人開發</span><span class="text-yellow-600 font-bold">+12.4%</span></div><div class="text-xs text-gray-500">營收 $1.5M｜Mike Wang</div></div></div>
+                                    <div class="flex items-center gap-4 bg-red-50 p-2 rounded-lg -mx-2"><div class="w-8 h-8 bg-red-400 rounded-full flex items-center justify-center text-white font-bold">5</div><div class="flex-1"><div class="flex justify-between"><span class="font-medium">Q4 行銷自動化平台</span><span class="text-red-600 font-bold">-5.2%</span></div><div class="text-xs text-gray-500">營收 $2.0M｜Sarah Lin</div></div></div>
+                                </div>
+                            </div>
+                            <div class="card p-5">
+                                <h3 class="font-semibold text-gray-700 mb-4">毛利侵蝕 Top 5 原因</h3>
+                                <div class="space-y-4">
+                                    <div><div class="flex justify-between text-sm mb-1"><span>需求變更</span><span class="font-medium">$85K</span></div><div class="h-3 bg-gray-200 rounded-full"><div class="h-3 bg-red-500 rounded-full" style="width: 100%"></div></div></div>
+                                    <div><div class="flex justify-between text-sm mb-1"><span>返工修正</span><span class="font-medium">$62K</span></div><div class="h-3 bg-gray-200 rounded-full"><div class="h-3 bg-red-400 rounded-full" style="width: 73%"></div></div></div>
+                                    <div><div class="flex justify-between text-sm mb-1"><span>加班成本</span><span class="font-medium">$45K</span></div><div class="h-3 bg-gray-200 rounded-full"><div class="h-3 bg-orange-400 rounded-full" style="width: 53%"></div></div></div>
+                                    <div><div class="flex justify-between text-sm mb-1"><span>關鍵人力短缺</span><span class="font-medium">$38K</span></div><div class="h-3 bg-gray-200 rounded-full"><div class="h-3 bg-yellow-400 rounded-full" style="width: 45%"></div></div></div>
+                                    <div><div class="flex justify-between text-sm mb-1"><span>延誤罰款</span><span class="font-medium">$20K</span></div><div class="h-3 bg-gray-200 rounded-full"><div class="h-3 bg-yellow-300 rounded-full" style="width: 24%"></div></div></div>
+                                </div>
+                                <div class="mt-4 p-3 bg-blue-50 rounded-lg text-sm">
+                                    <div class="font-medium text-blue-800"><i class="ri-robot-line mr-1"></i>AI 建議</div>
+                                    <div class="text-blue-600 text-xs mt-1">需求變更佔比最高，建議強化變更管理流程，可減少 40% 毛利侵蝕</div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Dashboard 6: 績效獎酬 -->
+                    <section id="dashboard-6" class="dashboard-section hidden">
+                        <div class="mb-6">
+                            <span class="px-2 py-1 bg-purple-100 text-purple-600 rounded text-sm">Culture 文化</span>
+                            <h2 class="text-2xl font-bold text-gray-800 mt-2">績效 × 獎酬 訊號矩陣</h2>
+                            <p class="text-gray-500">獎金是訊號，不只是成本；訊號亂了，文化就亂了</p>
+                        </div>
+
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                            <div class="card p-4"><div class="text-sm text-gray-500">績效獎酬對齊度</div><div class="text-2xl font-bold text-green-600">92%</div><div class="text-xs text-gray-400">目標 90%</div></div>
+                            <div class="card p-4"><div class="text-sm text-gray-500">高績效低獎酬</div><div class="text-2xl font-bold text-red-600">3 人</div><div class="text-xs text-red-600">留才風險 ⚠️</div></div>
+                            <div class="card p-4"><div class="text-sm text-gray-500">低績效高獎酬</div><div class="text-2xl font-bold text-yellow-600">2 人</div><div class="text-xs text-yellow-600">文化破壞風險</div></div>
+                            <div class="card p-4"><div class="text-sm text-gray-500">調薪公平性</div><div class="text-2xl font-bold text-blue-600">88%</div><div class="text-xs text-gray-400">同職級同績效一致性</div></div>
+                        </div>
+
+                        <div class="card p-5 mb-6">
+                            <h3 class="font-semibold text-gray-700 mb-4">績效 × 獎酬 九宮格</h3>
+                            <div class="flex justify-center">
+                                <div>
+                                    <div class="text-xs text-gray-500 text-center mb-2">獎酬水平</div>
+                                    <div class="flex">
+                                        <div class="w-8 flex flex-col justify-around text-xs text-gray-500 pr-2"><span>高</span><span>中</span><span>低</span></div>
+                                        <div class="grid grid-cols-3 gap-1">
+                                            <div class="matrix-cell bg-yellow-100"><div class="text-lg font-bold text-yellow-700">2</div><div class="text-xs text-yellow-600">觀察</div></div>
+                                            <div class="matrix-cell bg-green-100"><div class="text-lg font-bold text-green-700">15</div><div class="text-xs text-green-600">合理</div></div>
+                                            <div class="matrix-cell bg-green-200"><div class="text-lg font-bold text-green-700">8</div><div class="text-xs text-green-600">明星</div></div>
+                                            <div class="matrix-cell bg-gray-100"><div class="text-lg font-bold text-gray-700">12</div><div class="text-xs text-gray-600">待發展</div></div>
+                                            <div class="matrix-cell bg-blue-100"><div class="text-lg font-bold text-blue-700">45</div><div class="text-xs text-blue-600">主力</div></div>
+                                            <div class="matrix-cell bg-green-100"><div class="text-lg font-bold text-green-700">18</div><div class="text-xs text-green-600">待調薪</div></div>
+                                            <div class="matrix-cell bg-gray-50"><div class="text-lg font-bold text-gray-500">8</div><div class="text-xs text-gray-500">待觀察</div></div>
+                                            <div class="matrix-cell bg-yellow-100"><div class="text-lg font-bold text-yellow-700">5</div><div class="text-xs text-yellow-600">檢視</div></div>
+                                            <div class="matrix-cell bg-red-100"><div class="text-lg font-bold text-red-700">3</div><div class="text-xs text-red-600">留才風險</div></div>
+                                        </div>
+                                    </div>
+                                    <div class="flex justify-around text-xs text-gray-500 mt-2 ml-8"><span>低</span><span>中</span><span>高</span></div>
+                                    <div class="text-xs text-gray-500 text-center mt-1">績效評級</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div class="card p-5">
+                                <h3 class="font-semibold text-red-700 mb-4">⚠️ 高績效低獎酬（留才風險）</h3>
+                                <div class="space-y-3">
+                                    <div class="flex items-center justify-between p-3 bg-red-50 rounded-lg"><div><div class="font-medium">王大明</div><div class="text-xs text-gray-500">資深專案經理｜績效 A</div></div><div class="text-right"><div class="text-sm text-red-600">獎酬 P30</div><div class="text-xs text-gray-500">市場 P75</div></div></div>
+                                    <div class="flex items-center justify-between p-3 bg-red-50 rounded-lg"><div><div class="font-medium">李小華</div><div class="text-xs text-gray-500">技術主管｜績效 A-</div></div><div class="text-right"><div class="text-sm text-red-600">獎酬 P25</div><div class="text-xs text-gray-500">市場 P60</div></div></div>
+                                    <div class="flex items-center justify-between p-3 bg-red-50 rounded-lg"><div><div class="font-medium">陳志明</div><div class="text-xs text-gray-500">資深工程師｜績效 A</div></div><div class="text-right"><div class="text-sm text-red-600">獎酬 P35</div><div class="text-xs text-gray-500">市場 P65</div></div></div>
+                                </div>
+                            </div>
+                            <div class="card p-5">
+                                <h3 class="font-semibold text-yellow-700 mb-4">⚠️ 低績效高獎酬（文化破壞）</h3>
+                                <div class="space-y-3">
+                                    <div class="flex items-center justify-between p-3 bg-yellow-50 rounded-lg"><div><div class="font-medium">張建華</div><div class="text-xs text-gray-500">業務經理｜績效 C+</div></div><div class="text-right"><div class="text-sm text-yellow-600">獎酬 P80</div><div class="text-xs text-gray-500">歷史因素</div></div></div>
+                                    <div class="flex items-center justify-between p-3 bg-yellow-50 rounded-lg"><div><div class="font-medium">林美玲</div><div class="text-xs text-gray-500">行政主管｜績效 C</div></div><div class="text-right"><div class="text-sm text-yellow-600">獎酬 P70</div><div class="text-xs text-gray-500">年資因素</div></div></div>
+                                </div>
+                                <div class="mt-4 p-3 bg-blue-50 rounded-lg text-sm"><div class="font-medium text-blue-800">建議行動</div><div class="text-blue-600 text-xs mt-1">安排績效改善計畫，若無改善則調整獎酬結構</div></div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Dashboard 7: 決策面板 -->
+                    <section id="dashboard-7" class="dashboard-section hidden">
+                        <div class="mb-6">
+                            <h2 class="text-2xl font-bold text-gray-800">CEO Board - 每日決策面板</h2>
+                            <p class="text-gray-500">老闆每天只需要看這一頁</p>
+                        </div>
+
+                        <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+                            <div class="card p-4 text-center border-l-4 border-blue-500"><div class="text-xs text-gray-500 mb-1">People</div><div class="text-sm font-medium text-gray-600">關鍵職能覆蓋</div><div class="text-3xl font-bold text-blue-600 my-2">85%</div><div class="text-xs text-green-600">↑ 3%</div></div>
+                            <div class="card p-4 text-center border-l-4 border-red-500"><div class="text-xs text-gray-500 mb-1">People</div><div class="text-sm font-medium text-gray-600">關鍵人才風險</div><div class="text-3xl font-bold text-red-600 my-2">2 人</div><div class="text-xs text-red-600">需關注</div></div>
+                            <div class="card p-4 text-center border-l-4 border-orange-500"><div class="text-xs text-gray-500 mb-1">Project</div><div class="text-sm font-medium text-gray-600">交付健康度</div><div class="text-3xl font-bold text-orange-600 my-2">4/5</div><div class="text-xs text-yellow-600">1 個風險</div></div>
+                            <div class="card p-4 text-center border-l-4 border-green-500"><div class="text-xs text-gray-500 mb-1">Project</div><div class="text-sm font-medium text-gray-600">毛利達成率</div><div class="text-3xl font-bold text-green-600 my-2">103%</div><div class="text-xs text-green-600">優於目標</div></div>
+                            <div class="card p-4 text-center border-l-4 border-purple-500"><div class="text-xs text-gray-500 mb-1">Culture</div><div class="text-sm font-medium text-gray-600">訊號對齊度</div><div class="text-3xl font-bold text-purple-600 my-2">92%</div><div class="text-xs text-green-600">正常</div></div>
+                        </div>
+
+                        <div class="card p-5 mb-6">
+                            <h3 class="font-semibold text-gray-700 mb-4">本週待決策事項</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="p-4 bg-red-50 rounded-lg border-l-4 border-red-500"><div class="flex items-center gap-2 mb-2"><span class="w-2 h-2 bg-red-500 rounded-full"></span><span class="font-medium text-red-800">緊急</span></div><div class="text-sm text-gray-800 font-medium">行銷自動化專案</div><div class="text-xs text-gray-600 mt-1">進度落後 15%，建議本週召開檢討會</div><button class="mt-3 text-xs text-red-600 font-medium hover:underline">查看詳情 →</button></div>
+                                <div class="p-4 bg-yellow-50 rounded-lg border-l-4 border-yellow-500"><div class="flex items-center gap-2 mb-2"><span class="w-2 h-2 bg-yellow-500 rounded-full"></span><span class="font-medium text-yellow-800">重要</span></div><div class="text-sm text-gray-800 font-medium">專案管理能力缺口</div><div class="text-xs text-gray-600 mt-1">12 人待培訓，建議啟動 Q1 PMP 班</div><button class="mt-3 text-xs text-yellow-600 font-medium hover:underline">查看詳情 →</button></div>
+                                <div class="p-4 bg-green-50 rounded-lg border-l-4 border-green-500"><div class="flex items-center gap-2 mb-2"><span class="w-2 h-2 bg-green-500 rounded-full"></span><span class="font-medium text-green-800">機會</span></div><div class="text-sm text-gray-800 font-medium">金融區塊鏈專案</div><div class="text-xs text-gray-600 mt-1">毛利率 45%，建議複製模式到下季專案</div><button class="mt-3 text-xs text-green-600 font-medium hover:underline">查看詳情 →</button></div>
+                            </div>
+                        </div>
+
+                        <div class="card p-5">
+                            <h3 class="font-semibold text-gray-700 mb-4">三主軸健康度趨勢（近 6 個月）</h3>
+                            <canvas id="healthTrendChart" height="180"></canvas>
+                        </div>
+                    </section>
+
+                </div>
+
+                <!-- ========== Operational View Content (原營運儀表板) ========== -->
+                <div id="operational-view" class="hidden">
+                    <div class="mb-6">
+                        <h2 class="text-xl font-semibold text-gray-800">歡迎回來，Admin！</h2>
+                        <p class="text-gray-500">今天是 2025-12-22 (一)，系統運作正常</p>
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                        <div class="card p-4"><div class="flex items-center gap-3"><i class="ri-team-line text-2xl text-blue-500"></i><div><div class="text-sm text-gray-500">總員工數</div><div class="text-2xl font-bold">1,247</div><div class="text-xs text-green-600">較上月 +3.2%</div></div></div></div>
+                        <div class="card p-4"><div class="flex items-center gap-3"><i class="ri-book-open-line text-2xl text-green-500"></i><div><div class="text-sm text-gray-500">培訓完成率</div><div class="text-2xl font-bold">72%</div><div class="text-xs text-green-600">較上季 +5%</div></div></div></div>
+                        <div class="card p-4"><div class="flex items-center gap-3"><i class="ri-folder-chart-line text-2xl text-orange-500"></i><div><div class="text-sm text-gray-500">進行中專案</div><div class="text-2xl font-bold">42</div><div class="text-xs text-gray-400">與上月持平</div></div></div></div>
+                        <div class="card p-4"><div class="flex items-center gap-3"><i class="ri-medal-line text-2xl text-purple-500"></i><div><div class="text-sm text-gray-500">平均績效分數</div><div class="text-2xl font-bold">85</div><div class="text-xs text-green-600">較上季 +2.1</div></div></div></div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2">
+                            <div class="card p-5">
+                                <div class="flex items-center justify-between mb-4"><h3 class="font-semibold text-gray-700">快速存取</h3><a href="#" class="text-sm text-blue-600 hover:underline">查看全部 →</a></div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <a href="#" class="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition"><div class="flex items-center gap-3"><i class="ri-fire-line text-xl text-orange-500"></i><div><div class="font-medium">職能熱力圖</div><div class="text-xs text-gray-500">快速定位組織職能短板</div></div></div></a>
+                                    <a href="#" class="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition"><div class="flex items-center gap-3"><i class="ri-grid-line text-xl text-blue-500"></i><div><div class="font-medium">人才九宮格</div><div class="text-xs text-gray-500">績效潛力矩陣分析</div></div></div></a>
+                                    <a href="#" class="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition"><div class="flex items-center gap-3"><i class="ri-road-map-line text-xl text-green-500"></i><div><div class="font-medium">學習路徑圖</div><div class="text-xs text-gray-500">智能推薦學習路徑</div></div></div></a>
+                                    <a href="#" class="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition"><div class="flex items-center gap-3"><i class="ri-user-star-line text-xl text-purple-500"></i><div><div class="font-medium">關鍵人才儀表板</div><div class="text-xs text-gray-500">高風險人才預警</div></div></div></a>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="card p-5">
+                                <h4 class="font-semibold text-gray-700 mb-4">系統活動紀錄</h4>
+                                <div class="space-y-4">
+                                    <div class="flex items-start gap-3"><div class="w-2 h-2 bg-green-500 rounded-full mt-2"></div><div><div class="text-sm font-medium">新增員工檔案</div><div class="text-xs text-gray-500">王小明已完成入職程序</div><div class="text-xs text-gray-400 mt-1">5 分鐘前</div></div></div>
+                                    <div class="flex items-start gap-3"><div class="w-2 h-2 bg-blue-500 rounded-full mt-2"></div><div><div class="text-sm font-medium">培訓課程完成</div><div class="text-xs text-gray-500">15位員工完成「Python進階開發」</div><div class="text-xs text-gray-400 mt-1">1 小時前</div></div></div>
+                                    <div class="flex items-start gap-3"><div class="w-2 h-2 bg-orange-500 rounded-full mt-2"></div><div><div class="text-sm font-medium">績效考核啟動</div><div class="text-xs text-gray-500">Q4績效考核週期已開始</div><div class="text-xs text-gray-400 mt-1">3 小時前</div></div></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <footer class="bg-white border-t py-4 mt-8">
+                <div class="px-6 text-center text-sm text-gray-500">
+                    © 2025 Bombus 企業管理系統 | CEO Dashboard 整合示意 v1.0
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <script>
+        // Sidebar 收合
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const main = document.getElementById('main-content');
+            sidebar.classList.toggle('collapsed');
+            main.style.marginLeft = sidebar.classList.contains('collapsed') ? '70px' : '260px';
+        }
+
+        // 視角切換
+        function switchView(view) {
+            const ceoView = document.getElementById('ceo-view');
+            const opsView = document.getElementById('operational-view');
+            const ceoTabs = document.getElementById('ceo-tabs');
+            const viewCeo = document.getElementById('view-ceo');
+            const viewOps = document.getElementById('view-ops');
+            const breadcrumb = document.getElementById('breadcrumb-text');
+
+            // 更新 sidebar active 狀態
+            document.querySelectorAll('.sidebar-item').forEach(item => item.classList.remove('active'));
+
+            if (view === 'ceo') {
+                ceoView.classList.remove('hidden');
+                opsView.classList.add('hidden');
+                ceoTabs.classList.remove('hidden');
+                viewCeo.classList.add('active');
+                viewOps.classList.remove('active');
+                breadcrumb.textContent = 'CEO 經營儀表板';
+                document.querySelectorAll('.sidebar-item')[0].classList.add('active');
+            } else {
+                ceoView.classList.add('hidden');
+                opsView.classList.remove('hidden');
+                ceoTabs.classList.add('hidden');
+                viewCeo.classList.remove('active');
+                viewOps.classList.add('active');
+                breadcrumb.textContent = '營運儀表板';
+                document.querySelectorAll('.sidebar-item')[1].classList.add('active');
+            }
+        }
+
+        // Dashboard Tab 切換
+        function showDashboard(num) {
+            document.querySelectorAll('.dashboard-section').forEach(el => el.classList.add('hidden'));
+            document.getElementById('dashboard-' + num).classList.remove('hidden');
+            document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + num).classList.add('active');
+
+            if (num === 1) initTrendChart();
+            if (num === 4) initBubbleChart();
+            if (num === 5) initWaterfallChart();
+            if (num === 7) initHealthTrendChart();
+        }
+
+        // Charts
+        function initTrendChart() {
+            const ctx = document.getElementById('trendChart');
+            if (!ctx) return;
+            if (ctx.chart) ctx.chart.destroy();
+            ctx.chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
+                    datasets: [{
+                        label: '營收 (百萬)',
+                        data: [8.2, 8.5, 9.1, 8.8, 9.4, 10.2, 9.8, 10.5, 11.2, 11.8, 12.3, 13.8],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }, {
+                        label: '毛利率 (%)',
+                        data: [25, 26, 27, 26, 28, 29, 28, 30, 31, 30, 29, 30],
+                        borderColor: '#10b981',
+                        backgroundColor: 'transparent',
+                        tension: 0.4,
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { position: 'bottom' } },
+                    scales: {
+                        y: { beginAtZero: false, position: 'left' },
+                        y1: { beginAtZero: false, position: 'right', grid: { drawOnChartArea: false } }
+                    }
+                }
+            });
+        }
+
+        function initBubbleChart() {
+            const ctx = document.getElementById('projectBubbleChart');
+            if (!ctx) return;
+            if (ctx.chart) ctx.chart.destroy();
+            ctx.chart = new Chart(ctx, {
+                type: 'bubble',
+                data: {
+                    datasets: [{
+                        label: '正常專案',
+                        data: [
+                            { x: -5, y: 20, r: 20, name: 'CRM 重構' },
+                            { x: 2, y: 15, r: 18, name: '區塊鏈' },
+                            { x: -3, y: 25, r: 15, name: '雲端遷移' },
+                            { x: 0, y: 10, r: 12, name: 'AI 客服' }
+                        ],
+                        backgroundColor: 'rgba(34, 197, 94, 0.6)',
+                        borderColor: 'rgba(34, 197, 94, 1)'
+                    }, {
+                        label: '風險專案',
+                        data: [{ x: 15, y: 60, r: 16, name: '行銷自動化' }],
+                        backgroundColor: 'rgba(239, 68, 68, 0.6)',
+                        borderColor: 'rgba(239, 68, 68, 1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { position: 'bottom' } },
+                    scales: {
+                        x: { title: { display: true, text: '進度偏差 (%)' }, min: -20, max: 30 },
+                        y: { title: { display: true, text: '品質風險' }, min: 0, max: 100 }
+                    }
+                }
+            });
+        }
+
+        function initWaterfallChart() {
+            const ctx = document.getElementById('waterfallChart');
+            if (!ctx) return;
+            if (ctx.chart) ctx.chart.destroy();
+            ctx.chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['預估毛利', '需求變更', '返工修正', '加班成本', '人力短缺', '延誤罰款', '實際毛利'],
+                    datasets: [{
+                        label: '金額 (K)',
+                        data: [4500, -85, -62, -45, -38, -20, 4250],
+                        backgroundColor: ['#3b82f6', '#ef4444', '#ef4444', '#f97316', '#f97316', '#eab308', '#22c55e']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: false } }
+                }
+            });
+        }
+
+        function initHealthTrendChart() {
+            const ctx = document.getElementById('healthTrendChart');
+            if (!ctx) return;
+            if (ctx.chart) ctx.chart.destroy();
+            ctx.chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['7月', '8月', '9月', '10月', '11月', '12月'],
+                    datasets: [{
+                        label: 'People',
+                        data: [72, 74, 75, 76, 77, 78],
+                        borderColor: '#3b82f6',
+                        tension: 0.4
+                    }, {
+                        label: 'Project',
+                        data: [68, 70, 69, 71, 70, 72],
+                        borderColor: '#f97316',
+                        tension: 0.4
+                    }, {
+                        label: 'Culture',
+                        data: [78, 79, 80, 80, 81, 81],
+                        borderColor: '#8b5cf6',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { position: 'bottom' } },
+                    scales: { y: { min: 60, max: 90 } }
+                }
+            });
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', function() {
+            initTrendChart();
+        });
+    </script>
+</body>
+</html>

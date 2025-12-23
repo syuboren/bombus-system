@@ -130,19 +130,21 @@ export interface CompetencyFramework {
 // =====================================================
 // JD 中的職能需求設定
 // =====================================================
-// 核心/管理職能需求 - 指定等級
+// 核心/管理職能需求 - 指定等級與權重
 export interface CoreMgmtCompetencyRequirement {
   competencyId: string;
   competencyName: string;
   type: 'core' | 'management';
   requiredLevel: CompetencyGradeLevel;  // L1-L6
+  weight: number;  // 權重百分比
 }
 
-// KSA職能需求 - 僅勾選
+// KSA職能需求 - 指定權重
 export interface KSACompetencyRequirement {
   competencyId: string;
   competencyName: string;
   ksaType: CompetencyType;  // knowledge/skill/attitude
+  weight: number;  // 權重百分比
 }
 
 // ---------------------------------------------------------------
@@ -170,9 +172,14 @@ export interface JobDescription {
 
   // 5. 職能基準 (包含 KSA)
   competencyStandards: CompetencyStandard[];
-  requiredCompetencies: CompetencyRequirement[];
+  requiredCompetencies: CompetencyRequirement[];  // 舊版相容
 
-  // 5.1 職能內涵 (K/S/A 詳細內容)
+  // 5.1 職能需求 (分類含權重)
+  coreCompetencyRequirements?: CoreMgmtCompetencyRequirement[];      // 核心職能需求
+  managementCompetencyRequirements?: CoreMgmtCompetencyRequirement[]; // 管理職能需求
+  ksaCompetencyRequirements?: KSACompetencyRequirement[];            // KSA 職能需求
+
+  // 5.2 職能內涵 (K/S/A 詳細內容)
   ksaContent?: KSAContent;
 
   // 6. 工作描述

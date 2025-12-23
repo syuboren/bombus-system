@@ -4,6 +4,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { StatCardComponent } from '../../../../shared/components/stat-card/stat-card.component';
+import { CircularProgressComponent } from '../../../../shared/components/circular-progress/circular-progress.component';
 import { NotificationService } from '../../../../core/services/notification.service';
 import { JobService } from '../../services/job.service';
 import { JobCandidate, CandidateStats } from '../../models/job.model';
@@ -16,7 +17,7 @@ interface CandidateWithUI extends JobCandidate {
 @Component({
   selector: 'app-job-candidates-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, HeaderComponent, StatCardComponent],
+  imports: [CommonModule, FormsModule, HeaderComponent, StatCardComponent, CircularProgressComponent],
   templateUrl: './job-candidates-page.component.html',
   styleUrl: './job-candidates-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -276,6 +277,16 @@ export class JobCandidatesPageComponent implements OnInit {
       low: 'score--low'
     };
     return classes[level] || '';
+  }
+
+  getScoreColor(level: string): string {
+    // 使用莫蘭迪色系
+    const colors: Record<string, string> = {
+      high: '#8DA399',    // sage 莫蘭迪綠
+      medium: '#D6A28C',  // terracotta 莫蘭迪橘
+      low: '#B87D7B'      // brick 莫蘭迪磚紅
+    };
+    return colors[level] || '#9A8C98'; // mauve 莫蘭迪紫
   }
 
   getStatusClass(status: string): string {

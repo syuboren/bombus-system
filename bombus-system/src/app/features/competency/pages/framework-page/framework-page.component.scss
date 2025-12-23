@@ -1,5 +1,6 @@
 @import '../../../../../assets/styles/variables';
 @import '../../../../../assets/styles/mixins';
+@import '../../../../../assets/styles/animations';
 
 // L2 Module Color
 $module-color: $color-l2-terracotta;
@@ -49,11 +50,19 @@ $ksa-color: #8DA399;
   border-radius: $radius-lg;
   padding: $spacing-lg;
   box-shadow: $shadow-soft;
-  transition: transform $transition-normal, box-shadow $transition-normal;
+  transition: transform 0.3s $animation-easing-elastic,
+              box-shadow 0.3s $animation-easing-standard;
+  animation: fadeInUp 0.5s $animation-easing-decelerate both;
+  @include stagger-animation(80ms, 4);
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: $shadow-md;
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: $shadow-lg;
+
+    .stat-card__icon {
+      transform: scale(1.1);
+      animation: pulse 0.5s ease;
+    }
   }
 
   &__icon {
@@ -63,6 +72,7 @@ $ksa-color: #8DA399;
     border-radius: $radius-md;
     font-size: 24px;
     flex-shrink: 0;
+    transition: transform 0.3s $animation-easing-elastic;
   }
 
   &__content {
@@ -159,15 +169,46 @@ $ksa-color: #8DA399;
   font-weight: $font-weight-medium;
   color: $color-text-secondary;
   cursor: pointer;
-  transition: all $transition-fast;
+  transition: all 0.3s $animation-easing-standard;
+  position: relative;
+  overflow: hidden;
+
+  // Ripple effect
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba($module-color, 0.2);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.4s ease, height 0.4s ease;
+  }
+
+  &:active::after {
+    width: 200px;
+    height: 200px;
+  }
 
   &:hover {
-    background: $color-cloud-gray;
+    background: rgba($module-color, 0.08);
     color: $color-text-dark;
+    transform: translateY(-1px);
+
+    i {
+      transform: scale(1.1);
+    }
+  }
+
+  i {
+    transition: transform 0.3s $animation-easing-elastic;
   }
 
   &.active {
     background: $module-color;
+    animation: scaleIn 0.3s $animation-easing-elastic;
     color: white;
     box-shadow: $shadow-md;
 
@@ -274,15 +315,23 @@ $ksa-color: #8DA399;
   border: 1px solid $color-soft-gray;
   border-radius: $radius-lg;
   overflow: hidden;
-  transition: all $transition-normal;
+  transition: all 0.3s $animation-easing-standard,
+              transform 0.3s $animation-easing-elastic;
+  animation: fadeInUp 0.4s $animation-easing-decelerate both;
+  @include stagger-animation(100ms, 10);
 
   &:hover {
     box-shadow: $shadow-md;
+    transform: translateX(4px);
   }
 
   &.expanded {
     border-color: $module-color;
-    box-shadow: $shadow-md;
+    box-shadow: 0 4px 20px rgba($module-color, 0.15);
+    
+    .hierarchy-item__expand-icon {
+      transform: rotate(180deg);
+    }
   }
 
   &__header {
@@ -291,6 +340,7 @@ $ksa-color: #8DA399;
     gap: $spacing-md;
     padding: $spacing-md $spacing-lg;
     background: $color-cloud-gray;
+    transition: background 0.2s ease;
     cursor: pointer;
     transition: background $transition-fast;
 
@@ -496,8 +546,8 @@ $ksa-color: #8DA399;
   @include flex-start;
   gap: $spacing-sm;
   padding: $spacing-sm 0;
-  font-size: $font-size-sm;
-  color: $color-text-primary;
+    font-size: $font-size-sm;
+    color: $color-text-primary;
   border-bottom: 1px dashed $color-soft-gray;
   line-height: $line-height-relaxed;
 

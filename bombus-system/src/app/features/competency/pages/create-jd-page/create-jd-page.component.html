@@ -730,21 +730,6 @@
     </div>
   }
 
-  <!-- Generating Animation -->
-  @if (isGenerating()) {
-    <div class="generating-overlay">
-      <div class="generating-content">
-        <div class="generating-icon">
-          <i class="ri-loader-4-line spinner"></i>
-        </div>
-        <h3 class="generating-title">正在生成職務說明書...</h3>
-        <p class="generating-desc">AI 正在分析職能需求並生成結構化內容</p>
-        <div class="generating-progress">
-          <div class="progress-bar" [style.width.%]="75"></div>
-        </div>
-      </div>
-    </div>
-  }
 
   <!-- Step 5: Review and Edit -->
   @if (currentStep() === 'review' && generatedJD() && isEditing()) {
@@ -935,4 +920,47 @@
     </div>
   }
 </div>
+
+<!-- AI 生成全畫面動畫 -->
+@if (isGenerating()) {
+  <div class="ai-generation-overlay">
+    <div class="ai-generation-content">
+      <div class="ai-icon-container">
+        <div class="rotating-ring"></div>
+        <div class="rotating-ring reverse"></div>
+        <i class="ri-robot-2-line"></i>
+      </div>
+      <h2 class="ai-title">AI 職務撰寫助手</h2>
+      <p class="ai-message">{{ aiGenerationMessage() }}</p>
+      <div class="ai-progress">
+        <div class="progress-track">
+          <div class="progress-fill" [style.width.%]="aiGenerationProgress()"></div>
+        </div>
+        <span class="progress-percent">{{ aiGenerationProgress() }}%</span>
+      </div>
+      <div class="ai-steps">
+        <div class="ai-step" [class.active]="aiGenerationProgress() >= 15" [class.completed]="aiGenerationProgress() > 15">
+          <i class="ri-file-search-line"></i>
+          <span>分析需求</span>
+        </div>
+        <div class="ai-step" [class.active]="aiGenerationProgress() >= 30" [class.completed]="aiGenerationProgress() > 30">
+          <i class="ri-settings-3-line"></i>
+          <span>解析職能</span>
+        </div>
+        <div class="ai-step" [class.active]="aiGenerationProgress() >= 50" [class.completed]="aiGenerationProgress() > 50">
+          <i class="ri-file-text-line"></i>
+          <span>生成內容</span>
+        </div>
+        <div class="ai-step" [class.active]="aiGenerationProgress() >= 70" [class.completed]="aiGenerationProgress() > 70">
+          <i class="ri-links-line"></i>
+          <span>匹配職能</span>
+        </div>
+        <div class="ai-step" [class.active]="aiGenerationProgress() >= 100" [class.completed]="aiGenerationProgress() >= 100">
+          <i class="ri-check-double-line"></i>
+          <span>完成</span>
+        </div>
+      </div>
+    </div>
+  </div>
+}
 

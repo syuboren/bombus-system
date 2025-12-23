@@ -1,11 +1,17 @@
 @import '../../../../../assets/styles/variables';
 @import '../../../../../assets/styles/mixins';
+@import '../../../../../assets/styles/animations';
 
 // ---------------------------------------------------------------
 // Page Actions
 // ---------------------------------------------------------------
 .page-actions {
   margin-bottom: $spacing-lg;
+}
+
+// Spinning animation
+.spinning {
+  animation: spin 1s linear infinite;
 }
 
 // ---------------------------------------------------------------
@@ -99,12 +105,19 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transition: all $transition-normal;
+  transition: all 0.3s $animation-easing-standard,
+              transform 0.3s $animation-easing-elastic;
+  animation: fadeInUp 0.5s $animation-easing-decelerate both;
+  @include stagger-animation(60ms, 20);
 
   &:hover {
-    transform: translateY(-4px);
-    box-shadow: $shadow-lg;
+    transform: translateY(-6px) scale(1.01);
+    box-shadow: 0 12px 30px rgba($color-l1-sage, 0.2);
     border-color: $color-l1-sage;
+
+    .candidate-avatar {
+      transform: scale(1.05);
+    }
   }
 }
 
@@ -129,6 +142,7 @@
   font-size: $font-size-lg;
   font-weight: $font-weight-bold;
   flex-shrink: 0;
+  transition: transform 0.3s $animation-easing-elastic;
 }
 
 .candidate-details {
@@ -474,17 +488,54 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.85);
+  background: radial-gradient(ellipse at center, rgba(10, 30, 25, 0.95) 0%, rgba(0, 0, 0, 0.98) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 9999;
-  animation: fadeIn 0.3s ease-out;
+  animation: fadeIn 0.4s $animation-easing-decelerate;
+  overflow: hidden;
+
+  // 科技感網格背景
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+      linear-gradient(rgba($color-l1-sage, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba($color-l1-sage, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    animation: gridMove 20s linear infinite;
+  }
+
+  // 掃描光線
+  &::after {
+    content: '';
+    position: absolute;
+    top: -100%;
+    left: 0;
+    right: 0;
+    height: 200px;
+    background: linear-gradient(to bottom, 
+      transparent, 
+      rgba($color-l1-sage, 0.1), 
+      rgba($color-l1-sage, 0.05), 
+      transparent);
+    animation: scanLine 3s ease-in-out infinite;
+  }
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+@keyframes gridMove {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(40px, 40px); }
+}
+
+@keyframes scanLine {
+  0% { top: -200px; }
+  100% { top: 100%; }
 }
 
 .ai-scoring-content {
@@ -492,22 +543,55 @@
   color: white;
   max-width: 500px;
   padding: $spacing-2xl;
+  position: relative;
+  z-index: 1;
+  animation: scaleInElastic 0.5s $animation-easing-elastic both;
 }
 
 .ai-scoring-icon {
   position: relative;
-  width: 120px;
-  height: 120px;
+  width: 140px;
+  height: 140px;
   margin: 0 auto $spacing-xl;
   display: flex;
   align-items: center;
   justify-content: center;
 
-  i {
-    font-size: 60px;
-    color: $color-l1-sage;
-    animation: pulse 2s ease-in-out infinite;
+  // 旋轉外圈
+  &::before {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border: 3px solid transparent;
+    border-top-color: $color-l1-sage;
+    border-radius: 50%;
+    animation: spin 1.5s linear infinite;
   }
+
+  // 反向旋轉圈
+  &::after {
+    content: '';
+    position: absolute;
+    width: 85%;
+    height: 85%;
+    border: 2px solid transparent;
+    border-bottom-color: rgba($color-l1-sage, 0.5);
+    border-radius: 50%;
+    animation: spin 2s linear infinite reverse;
+  }
+
+  i {
+    font-size: 50px;
+    color: $color-l1-sage;
+    animation: breathe 2s ease-in-out infinite;
+    text-shadow: 0 0 30px rgba($color-l1-sage, 0.5);
+  }
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.8; }
 }
 
 .pulse-ring {
@@ -560,27 +644,71 @@
   align-items: center;
   gap: $spacing-md;
   margin-bottom: $spacing-xl;
+  padding: 0 $spacing-lg;
 }
 
 .progress-bar {
   flex: 1;
-  height: 8px;
-  background: rgba(255, 255, 255, 0.2);
+  height: 10px;
+  background: rgba(255, 255, 255, 0.15);
   border-radius: $radius-full;
   overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+
+  // 條紋動畫背景
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 10px,
+      rgba(255, 255, 255, 0.03) 10px,
+      rgba(255, 255, 255, 0.03) 20px
+    );
+  }
 }
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, $color-l1-sage, lighten($color-l1-sage, 15%));
+  background: linear-gradient(90deg, 
+    darken($color-l1-sage, 10%), 
+    $color-l1-sage, 
+    lighten($color-l1-sage, 10%));
   border-radius: $radius-full;
   transition: width 0.3s ease-out;
+  position: relative;
+  box-shadow: 0 0 15px rgba($color-l1-sage, 0.5);
+
+  // 流動光效
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.4) 50%,
+      transparent 100%
+    );
+    animation: shimmer 1.5s infinite;
+  }
 }
 
 .progress-text {
-  font-size: $font-size-lg;
+  font-size: $font-size-xl;
   font-weight: $font-weight-bold;
-  min-width: 50px;
+  min-width: 60px;
+  text-shadow: 0 0 10px rgba($color-l1-sage, 0.5);
+  color: $color-l1-sage;
 }
 
 .ai-scoring-steps {
@@ -623,6 +751,14 @@
 .match-badge--pending {
   background: $color-cloud-gray !important;
   color: $color-muted-gray !important;
+}
+
+.match-badge--scoring {
+  background: linear-gradient(135deg, rgba($color-l1-sage, 0.1), rgba($color-l1-sage, 0.2));
+  color: $color-l1-sage;
+  border: 2px solid $color-l1-sage;
+  animation: pulseGlow 1.5s infinite;
+  --pulse-color: 138, 162, 155;
 }
 
 .animate-score {

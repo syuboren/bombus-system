@@ -187,7 +187,7 @@ export class FrameworkPageComponent implements OnInit {
       if (currentExpanded.has(`${competencyId}-${levels[i]}`)) {
         currentMaxIndex = i;
         break;
-      }
+  }
     }
 
     // Clear all levels for this competency first

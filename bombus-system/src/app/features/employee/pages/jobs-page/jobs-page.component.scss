@@ -1,5 +1,6 @@
 @import '../../../../../assets/styles/variables';
 @import '../../../../../assets/styles/mixins';
+@import '../../../../../assets/styles/animations';
 
 // ---------------------------------------------------------------
 // Stats Grid
@@ -87,10 +88,16 @@
   }
 
   tbody tr {
-    transition: background $transition-normal;
+    transition: background 0.25s $animation-easing-standard;
+    animation: fadeInUp 0.4s $animation-easing-decelerate both;
+    @include stagger-animation(40ms, 15);
 
     &:hover {
-      background: $color-cloud-gray;
+      background: rgba($color-l1-sage, 0.08);
+
+      td:first-child {
+        box-shadow: inset 3px 0 0 $color-l1-sage;
+      }
     }
   }
 }

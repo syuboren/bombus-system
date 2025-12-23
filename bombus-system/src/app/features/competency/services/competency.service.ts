@@ -1422,7 +1422,28 @@ export class CompetencyService {
           { competencyId: 'c-core-2', competencyName: '問題解決', type: 'skill' as const, requiredLevel: 4, weight: 15 }
         ],
 
-        // 5.1 職能內涵 (K/S/A)
+        // 5.1 職能需求 (分類含權重)
+        coreCompetencyRequirements: [
+          { competencyId: 'core-001', competencyName: '溝通表達', type: 'core' as const, requiredLevel: 'L5' as const, weight: 10 },
+          { competencyId: 'core-002', competencyName: '問題解決', type: 'core' as const, requiredLevel: 'L5' as const, weight: 10 },
+          { competencyId: 'core-003', competencyName: '專案思維', type: 'core' as const, requiredLevel: 'L4' as const, weight: 5 },
+          { competencyId: 'core-004', competencyName: '客戶導向', type: 'core' as const, requiredLevel: 'L4' as const, weight: 5 },
+          { competencyId: 'core-005', competencyName: '成長思維', type: 'core' as const, requiredLevel: 'L5' as const, weight: 5 }
+        ],
+        managementCompetencyRequirements: [
+          { competencyId: 'mgmt-001', competencyName: '人才發展', type: 'management' as const, requiredLevel: 'L5' as const, weight: 10 },
+          { competencyId: 'mgmt-002', competencyName: '決策能力', type: 'management' as const, requiredLevel: 'L6' as const, weight: 15 },
+          { competencyId: 'mgmt-003', competencyName: '團隊領導', type: 'management' as const, requiredLevel: 'L6' as const, weight: 15 }
+        ],
+        ksaCompetencyRequirements: [
+          { competencyId: 'ksa-k-001', competencyName: '經營管理知識', ksaType: 'knowledge' as const, weight: 5 },
+          { competencyId: 'ksa-k-002', competencyName: '財務管理知識', ksaType: 'knowledge' as const, weight: 5 },
+          { competencyId: 'ksa-s-001', competencyName: '策略規劃能力', ksaType: 'skill' as const, weight: 5 },
+          { competencyId: 'ksa-s-002', competencyName: '財務分析能力', ksaType: 'skill' as const, weight: 5 },
+          { competencyId: 'ksa-a-001', competencyName: '主動積極', ksaType: 'attitude' as const, weight: 5 }
+        ],
+
+        // 5.2 職能內涵 (K/S/A)
         ksaContent: {
           knowledge: [
             { code: 'K01', name: '經營管理知識', description: '了解企業經營管理的原理與方法' },
@@ -1607,7 +1628,22 @@ export class CompetencyService {
           { competencyId: 'c-hr-a-care', competencyName: '細心謹慎', type: 'attitude' as const, requiredLevel: 4, weight: 20 }
         ],
 
-        // 5.1 職能內涵 (K/S/A) - 依據 HR-4-095 MD 文件
+        // 5.1 職能需求 (分類含權重)
+        coreCompetencyRequirements: [
+          { competencyId: 'core-001', competencyName: '溝通表達', type: 'core' as const, requiredLevel: 'L3' as const, weight: 10 },
+          { competencyId: 'core-002', competencyName: '問題解決', type: 'core' as const, requiredLevel: 'L3' as const, weight: 15 },
+          { competencyId: 'core-005', competencyName: '成長思維', type: 'core' as const, requiredLevel: 'L3' as const, weight: 10 }
+        ],
+        managementCompetencyRequirements: [],
+        ksaCompetencyRequirements: [
+          { competencyId: 'ksa-k-001', competencyName: '財務相關法規', ksaType: 'knowledge' as const, weight: 15 },
+          { competencyId: 'ksa-k-002', competencyName: '財務報表相關知識', ksaType: 'knowledge' as const, weight: 15 },
+          { competencyId: 'ksa-s-001', competencyName: '分析規劃能力', ksaType: 'skill' as const, weight: 15 },
+          { competencyId: 'ksa-s-002', competencyName: '檢核能力', ksaType: 'skill' as const, weight: 10 },
+          { competencyId: 'ksa-a-001', competencyName: '謹慎細心', ksaType: 'attitude' as const, weight: 10 }
+        ],
+
+        // 5.2 職能內涵 (K/S/A) - 依據 HR-4-095 MD 文件
         ksaContent: {
           knowledge: [
             { code: 'K01', name: '財務相關法規', description: 'TIFRS(國際會計準則)、商業會計法、商業會計處理準則、稅法、洗錢防制法、公司法、證券交易法' },
@@ -1798,7 +1834,25 @@ export class CompetencyService {
           { competencyId: 'c-hr-a-resp', competencyName: '責任感', type: 'attitude' as const, requiredLevel: 4, weight: 10 }
         ],
 
-        // 5.1 職能內涵 (K/S/A) - 依據 HR-4-098 PDF 文件
+        // 5.1 職能需求 (分類含權重)
+        coreCompetencyRequirements: [
+          { competencyId: 'core-001', competencyName: '溝通表達', type: 'core' as const, requiredLevel: 'L4' as const, weight: 10 },
+          { competencyId: 'core-002', competencyName: '問題解決', type: 'core' as const, requiredLevel: 'L4' as const, weight: 10 },
+          { competencyId: 'core-003', competencyName: '專案思維', type: 'core' as const, requiredLevel: 'L4' as const, weight: 10 },
+          { competencyId: 'core-004', competencyName: '客戶導向', type: 'core' as const, requiredLevel: 'L3' as const, weight: 5 }
+        ],
+        managementCompetencyRequirements: [
+          { competencyId: 'mgmt-003', competencyName: '團隊領導', type: 'management' as const, requiredLevel: 'L4' as const, weight: 15 },
+          { competencyId: 'mgmt-001', competencyName: '人才發展', type: 'management' as const, requiredLevel: 'L3' as const, weight: 10 }
+        ],
+        ksaCompetencyRequirements: [
+          { competencyId: 'ksa-k-001', competencyName: '專案管理知識', ksaType: 'knowledge' as const, weight: 10 },
+          { competencyId: 'ksa-s-001', competencyName: '專案規劃能力', ksaType: 'skill' as const, weight: 15 },
+          { competencyId: 'ksa-s-002', competencyName: '供應商管理能力', ksaType: 'skill' as const, weight: 10 },
+          { competencyId: 'ksa-a-001', competencyName: '責任感', ksaType: 'attitude' as const, weight: 5 }
+        ],
+
+        // 5.2 職能內涵 (K/S/A) - 依據 HR-4-098 PDF 文件
         ksaContent: {
           knowledge: [
             { code: 'K01', name: '專案管理知識', description: '熟悉專案管理工具和方法（如PMP、Agile、Scrum等）' },
@@ -1978,7 +2032,23 @@ export class CompetencyService {
           { competencyId: 'c-hr-a-integ', competencyName: '誠信正直', type: 'attitude' as const, requiredLevel: 4, weight: 15 }
         ],
 
-        // 5.1 職能內涵 (K/S/A) - 依據 AD-4-125 MD 文件
+        // 5.1 職能需求 (分類含權重)
+        coreCompetencyRequirements: [
+          { competencyId: 'core-001', competencyName: '溝通表達', type: 'core' as const, requiredLevel: 'L2' as const, weight: 10 },
+          { competencyId: 'core-002', competencyName: '問題解決', type: 'core' as const, requiredLevel: 'L2' as const, weight: 10 },
+          { competencyId: 'core-005', competencyName: '成長思維', type: 'core' as const, requiredLevel: 'L2' as const, weight: 5 }
+        ],
+        managementCompetencyRequirements: [],
+        ksaCompetencyRequirements: [
+          { competencyId: 'ksa-k-001', competencyName: '會計專業知識', ksaType: 'knowledge' as const, weight: 20 },
+          { competencyId: 'ksa-k-002', competencyName: '銀行作業知識', ksaType: 'knowledge' as const, weight: 15 },
+          { competencyId: 'ksa-s-001', competencyName: '資金管理能力', ksaType: 'skill' as const, weight: 15 },
+          { competencyId: 'ksa-s-002', competencyName: '帳務處理能力', ksaType: 'skill' as const, weight: 10 },
+          { competencyId: 'ksa-a-001', competencyName: '謹慎細心', ksaType: 'attitude' as const, weight: 10 },
+          { competencyId: 'ksa-a-002', competencyName: '正直誠實', ksaType: 'attitude' as const, weight: 5 }
+        ],
+
+        // 5.2 職能內涵 (K/S/A) - 依據 AD-4-125 MD 文件
         ksaContent: {
           knowledge: [
             { code: 'K01', name: '財務相關法規', description: 'TIFRS(國際會計準則)、商業會計法、商業會計處理準則、稅法' },
@@ -2146,7 +2216,23 @@ export class CompetencyService {
           { competencyId: 'c-hr-a-proact', competencyName: '積極主動', type: 'attitude' as const, requiredLevel: 4, weight: 15 }
         ],
 
-        // 5.1 職能內涵 (K/S/A) - 依據 HR-4-084 MD 文件
+        // 5.1 職能需求 (分類含權重)
+        coreCompetencyRequirements: [
+          { competencyId: 'core-001', competencyName: '溝通表達', type: 'core' as const, requiredLevel: 'L4' as const, weight: 15 },
+          { competencyId: 'core-002', competencyName: '問題解決', type: 'core' as const, requiredLevel: 'L3' as const, weight: 10 },
+          { competencyId: 'core-004', competencyName: '客戶導向', type: 'core' as const, requiredLevel: 'L3' as const, weight: 10 }
+        ],
+        managementCompetencyRequirements: [],
+        ksaCompetencyRequirements: [
+          { competencyId: 'ksa-k-001', competencyName: '勞動法規知識', ksaType: 'knowledge' as const, weight: 15 },
+          { competencyId: 'ksa-k-002', competencyName: '績效管理知識', ksaType: 'knowledge' as const, weight: 10 },
+          { competencyId: 'ksa-s-001', competencyName: '招募甄選能力', ksaType: 'skill' as const, weight: 15 },
+          { competencyId: 'ksa-s-002', competencyName: '面試技巧', ksaType: 'skill' as const, weight: 10 },
+          { competencyId: 'ksa-a-001', competencyName: '主動積極', ksaType: 'attitude' as const, weight: 10 },
+          { competencyId: 'ksa-a-002', competencyName: '正直誠實', ksaType: 'attitude' as const, weight: 5 }
+        ],
+
+        // 5.2 職能內涵 (K/S/A) - 依據 HR-4-084 MD 文件
         ksaContent: {
           knowledge: [
             { code: 'K01', name: '產業、公司概況與人事規章制度', description: '了解產業趨勢與公司人事規定' },
@@ -2327,7 +2413,23 @@ export class CompetencyService {
           { competencyId: 'c-hr-a-care', competencyName: '細心謹慎', type: 'attitude' as const, requiredLevel: 4, weight: 20 }
         ],
 
-        // 5.1 職能內涵 (K/S/A) - 依據 HR-4-096 MD 文件
+        // 5.1 職能需求 (分類含權重)
+        coreCompetencyRequirements: [
+          { competencyId: 'core-001', competencyName: '溝通表達', type: 'core' as const, requiredLevel: 'L3' as const, weight: 10 },
+          { competencyId: 'core-002', competencyName: '問題解決', type: 'core' as const, requiredLevel: 'L3' as const, weight: 10 },
+          { competencyId: 'core-005', competencyName: '成長思維', type: 'core' as const, requiredLevel: 'L3' as const, weight: 5 }
+        ],
+        managementCompetencyRequirements: [],
+        ksaCompetencyRequirements: [
+          { competencyId: 'ksa-k-001', competencyName: '會計專業知識', ksaType: 'knowledge' as const, weight: 20 },
+          { competencyId: 'ksa-k-002', competencyName: '稅務法規知識', ksaType: 'knowledge' as const, weight: 15 },
+          { competencyId: 'ksa-s-001', competencyName: '資料分析能力', ksaType: 'skill' as const, weight: 15 },
+          { competencyId: 'ksa-s-002', competencyName: '財務報表編製能力', ksaType: 'skill' as const, weight: 10 },
+          { competencyId: 'ksa-a-001', competencyName: '謹慎細心', ksaType: 'attitude' as const, weight: 10 },
+          { competencyId: 'ksa-a-002', competencyName: '持續學習', ksaType: 'attitude' as const, weight: 5 }
+        ],
+
+        // 5.2 職能內涵 (K/S/A) - 依據 HR-4-096 MD 文件
         ksaContent: {
           knowledge: [
             { code: 'K01', name: '財務相關法規', description: 'TIFRS(國際會計準則)、商業會計法、商業會計處理準則、稅法、洗錢防制法、公司法、證券交易法' },
@@ -2478,7 +2580,23 @@ export class CompetencyService {
           { competencyId: 'c-hr-a-proact', competencyName: '積極主動', type: 'attitude' as const, requiredLevel: 4, weight: 15 }
         ],
 
-        // 5.1 職能內涵 (K/S/A) - 依據 HR-4-093 PDF 文件
+        // 5.1 職能需求 (分類含權重)
+        coreCompetencyRequirements: [
+          { competencyId: 'core-001', competencyName: '溝通表達', type: 'core' as const, requiredLevel: 'L4' as const, weight: 15 },
+          { competencyId: 'core-002', competencyName: '問題解決', type: 'core' as const, requiredLevel: 'L3' as const, weight: 10 },
+          { competencyId: 'core-004', competencyName: '客戶導向', type: 'core' as const, requiredLevel: 'L4' as const, weight: 15 }
+        ],
+        managementCompetencyRequirements: [],
+        ksaCompetencyRequirements: [
+          { competencyId: 'ksa-k-001', competencyName: '產品知識', ksaType: 'knowledge' as const, weight: 15 },
+          { competencyId: 'ksa-k-002', competencyName: '市場知識', ksaType: 'knowledge' as const, weight: 10 },
+          { competencyId: 'ksa-s-001', competencyName: '談判協商能力', ksaType: 'skill' as const, weight: 15 },
+          { competencyId: 'ksa-s-002', competencyName: '客戶關係管理能力', ksaType: 'skill' as const, weight: 10 },
+          { competencyId: 'ksa-a-001', competencyName: '服務導向', ksaType: 'attitude' as const, weight: 5 },
+          { competencyId: 'ksa-a-002', competencyName: '積極主動', ksaType: 'attitude' as const, weight: 5 }
+        ],
+
+        // 5.2 職能內涵 (K/S/A) - 依據 HR-4-093 PDF 文件
         ksaContent: {
           knowledge: [
             { code: 'K01', name: '產業與公司概況知識', description: '了解產業趨勢與公司產品服務' },
@@ -2633,7 +2751,23 @@ export class CompetencyService {
           { competencyId: 'c-hr-a-proact', competencyName: '積極主動', type: 'attitude' as const, requiredLevel: 4, weight: 10 }
         ],
 
-        // 5.1 職能內涵 (K/S/A) - 依據 HR-4-088 PDF 文件
+        // 5.1 職能需求 (分類含權重)
+        coreCompetencyRequirements: [
+          { competencyId: 'core-001', competencyName: '溝通表達', type: 'core' as const, requiredLevel: 'L3' as const, weight: 10 },
+          { competencyId: 'core-002', competencyName: '問題解決', type: 'core' as const, requiredLevel: 'L4' as const, weight: 15 },
+          { competencyId: 'core-003', competencyName: '專案思維', type: 'core' as const, requiredLevel: 'L3' as const, weight: 10 },
+          { competencyId: 'core-005', competencyName: '成長思維', type: 'core' as const, requiredLevel: 'L3' as const, weight: 5 }
+        ],
+        managementCompetencyRequirements: [],
+        ksaCompetencyRequirements: [
+          { competencyId: 'ksa-k-001', competencyName: '網路技術知識', ksaType: 'knowledge' as const, weight: 20 },
+          { competencyId: 'ksa-k-002', competencyName: '資訊安全知識', ksaType: 'knowledge' as const, weight: 15 },
+          { competencyId: 'ksa-s-001', competencyName: '系統維運能力', ksaType: 'skill' as const, weight: 10 },
+          { competencyId: 'ksa-s-002', competencyName: '故障排除能力', ksaType: 'skill' as const, weight: 10 },
+          { competencyId: 'ksa-a-001', competencyName: '主動積極', ksaType: 'attitude' as const, weight: 5 }
+        ],
+
+        // 5.2 職能內涵 (K/S/A) - 依據 HR-4-088 PDF 文件
         ksaContent: {
           knowledge: [
             { code: 'K01', name: '網路協定知識', description: '了解路由協定、TCP/IP、MPLS等網路協定' },
@@ -2793,7 +2927,27 @@ export class CompetencyService {
           { competencyId: 'c-core-3', competencyName: '溝通表達', type: 'skill' as const, requiredLevel: 4, weight: 20 }
         ],
 
-        // 5.1 職能內涵 (K/S/A) - 依據 HR-4-082 MD 文件
+        // 5.1 職能需求 (分類含權重)
+        coreCompetencyRequirements: [
+          { competencyId: 'core-001', competencyName: '溝通表達', type: 'core' as const, requiredLevel: 'L4' as const, weight: 10 },
+          { competencyId: 'core-002', competencyName: '問題解決', type: 'core' as const, requiredLevel: 'L4' as const, weight: 10 },
+          { competencyId: 'core-003', competencyName: '專案思維', type: 'core' as const, requiredLevel: 'L4' as const, weight: 10 },
+          { competencyId: 'core-004', competencyName: '客戶導向', type: 'core' as const, requiredLevel: 'L4' as const, weight: 5 },
+          { competencyId: 'core-005', competencyName: '成長思維', type: 'core' as const, requiredLevel: 'L4' as const, weight: 5 }
+        ],
+        managementCompetencyRequirements: [
+          { competencyId: 'mgmt-001', competencyName: '人才發展', type: 'management' as const, requiredLevel: 'L4' as const, weight: 10 },
+          { competencyId: 'mgmt-002', competencyName: '決策能力', type: 'management' as const, requiredLevel: 'L4' as const, weight: 10 },
+          { competencyId: 'mgmt-003', competencyName: '團隊領導', type: 'management' as const, requiredLevel: 'L4' as const, weight: 10 }
+        ],
+        ksaCompetencyRequirements: [
+          { competencyId: 'ksa-k-001', competencyName: '經營管理知識', ksaType: 'knowledge' as const, weight: 10 },
+          { competencyId: 'ksa-s-001', competencyName: '策略規劃能力', ksaType: 'skill' as const, weight: 10 },
+          { competencyId: 'ksa-s-002', competencyName: '營運管理能力', ksaType: 'skill' as const, weight: 5 },
+          { competencyId: 'ksa-a-001', competencyName: '主動積極', ksaType: 'attitude' as const, weight: 5 }
+        ],
+
+        // 5.2 職能內涵 (K/S/A) - 依據 HR-4-082 MD 文件
         ksaContent: {
           knowledge: [
             { code: 'K01', name: '財務相關法規', description: 'TIFRS(國際會計準則)、商業會計法、稅法等財務法規' },

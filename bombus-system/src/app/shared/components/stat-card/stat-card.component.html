@@ -4,7 +4,17 @@
   </div>
   <div class="stat-card__content">
     <div class="stat-card__label">{{ label() }}</div>
+    @if (animateValue() && isNumericValue()) {
+      <div class="stat-card__value">
+        <span 
+          [appCountUp]="numericValue()" 
+          [duration]="800" 
+          [delay]="animationDelay()">
+        </span>
+      </div>
+    } @else {
     <div class="stat-card__value">{{ value() }}</div>
+    }
     @if (changeText()) {
       <div class="stat-card__change stat-card__change--{{ changeType() }}">
         <i [class]="getChangeIcon()"></i>

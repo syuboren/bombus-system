@@ -91,7 +91,7 @@
     <!-- Core Competencies Tab -->
     @if (activeTab() === 'core') {
       <section class="competency-hierarchy-section">
-        <div class="section-header">
+    <div class="section-header">
           <div class="section-header__left">
             <h2 class="section-title">
               <i class="ri-heart-pulse-line"></i>
@@ -149,8 +149,8 @@
                           <div class="level-block__toggle">
                             <i [class]="isLevelExpanded(competency.id + '-' + levelData.level) ? 'ri-subtract-line' : 'ri-add-line'"></i>
                           </div>
-                        </div>
-                        
+    </div>
+
                         @if (isLevelExpanded(competency.id + '-' + levelData.level)) {
                           <div class="level-block__content">
                             <ul class="indicator-list">
@@ -181,7 +181,7 @@
               }
             </div>
           }
-        </div>
+            </div>
       </section>
     }
 
@@ -276,16 +276,16 @@
                   </div>
                 </div>
               }
-            </div>
-          }
         </div>
-      </section>
+      }
+    </div>
+  </section>
     }
 
     <!-- KSA Competencies Tab -->
     @if (activeTab() === 'ksa') {
-      <section class="competencies-section">
-        <div class="section-header">
+  <section class="competencies-section">
+    <div class="section-header">
           <div class="section-header__left">
             <h2 class="section-title">
               <i class="ri-book-3-line"></i>
@@ -293,116 +293,116 @@
             </h2>
             <p class="section-subtitle">知識（Knowledge）、技能（Skill）、態度（Attitude），無等級區分，建立 JD 時僅需勾選</p>
           </div>
-          <div class="section-actions">
-            <button class="btn-icon" [class.active]="viewMode() === 'card'" (click)="setViewMode('card')" type="button">
-              <i class="ri-layout-grid-line"></i>
-            </button>
-            <button class="btn-icon" [class.active]="viewMode() === 'list'" (click)="setViewMode('list')" type="button">
-              <i class="ri-list-check"></i>
-            </button>
-          </div>
-        </div>
+      <div class="section-actions">
+        <button class="btn-icon" [class.active]="viewMode() === 'card'" (click)="setViewMode('card')" type="button">
+          <i class="ri-layout-grid-line"></i>
+        </button>
+        <button class="btn-icon" [class.active]="viewMode() === 'list'" (click)="setViewMode('list')" type="button">
+          <i class="ri-list-check"></i>
+        </button>
+      </div>
+    </div>
 
-        <!-- Filters -->
-        <div class="filters-bar">
-          <div class="filter-group">
-            <label class="filter-label">KSA 類型</label>
+    <!-- Filters -->
+    <div class="filters-bar">
+      <div class="filter-group">
+        <label class="filter-label">KSA 類型</label>
             <select class="filter-select" [ngModel]="selectedKsaType()" (ngModelChange)="onKsaTypeChange($event)">
-              <option value="">全部類型</option>
-              @for (opt of typeOptions; track opt.value) {
-                <option [value]="opt.value">{{ opt.label }}</option>
-              }
-            </select>
-          </div>
+          <option value="">全部類型</option>
+          @for (opt of typeOptions; track opt.value) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+      </div>
 
-          <div class="filter-group filter-group--search">
-            <label class="filter-label">關鍵字搜尋</label>
-            <div class="search-input-wrapper">
-              <i class="ri-search-line"></i>
-              <input
-                type="text"
-                class="search-input"
-                placeholder="搜尋職能名稱、代碼..."
-                [ngModel]="searchKeyword()"
-                (ngModelChange)="onSearchChange($event)">
-            </div>
-          </div>
+      <div class="filter-group filter-group--search">
+        <label class="filter-label">關鍵字搜尋</label>
+        <div class="search-input-wrapper">
+          <i class="ri-search-line"></i>
+          <input
+            type="text"
+            class="search-input"
+            placeholder="搜尋職能名稱、代碼..."
+            [ngModel]="searchKeyword()"
+            (ngModelChange)="onSearchChange($event)">
+        </div>
+      </div>
 
           @if (selectedKsaType() || searchKeyword()) {
-            <button class="btn-clear" (click)="clearFilters()" type="button">
-              <i class="ri-close-line"></i> 清除篩選
-            </button>
+        <button class="btn-clear" (click)="clearFilters()" type="button">
+          <i class="ri-close-line"></i> 清除篩選
+        </button>
+      }
+    </div>
+
+    <!-- Results count -->
+    <div class="results-info">
+          顯示 <strong>{{ filteredKsaCompetencies().length }}</strong> 項 KSA 職能
+    </div>
+
+      <!-- Card View -->
+      @if (viewMode() === 'card') {
+        <div class="competency-grid">
+            @for (competency of filteredKsaCompetencies(); track competency.id) {
+            <div class="competency-card" (click)="openDetailModal(competency)">
+              <div class="competency-card__header">
+                <span class="competency-card__code">{{ competency.code }}</span>
+                <span class="competency-card__type" [class]="getTypeClass(competency.type)">
+                  {{ getTypeLabel(competency.type) }}
+                </span>
+              </div>
+              <h4 class="competency-card__name">{{ competency.name }}</h4>
+              <p class="competency-card__desc">{{ competency.description }}</p>
+              <div class="competency-card__footer">
+                  <span class="competency-card__type-full">{{ getTypeName(competency.type) }}</span>
+              </div>
+            </div>
           }
         </div>
-
-        <!-- Results count -->
-        <div class="results-info">
-          顯示 <strong>{{ filteredKsaCompetencies().length }}</strong> 項 KSA 職能
-        </div>
-
-        <!-- Card View -->
-        @if (viewMode() === 'card') {
-          <div class="competency-grid">
-            @for (competency of filteredKsaCompetencies(); track competency.id) {
-              <div class="competency-card" (click)="openDetailModal(competency)">
-                <div class="competency-card__header">
-                  <span class="competency-card__code">{{ competency.code }}</span>
-                  <span class="competency-card__type" [class]="getTypeClass(competency.type)">
-                    {{ getTypeLabel(competency.type) }}
-                  </span>
-                </div>
-                <h4 class="competency-card__name">{{ competency.name }}</h4>
-                <p class="competency-card__desc">{{ competency.description }}</p>
-                <div class="competency-card__footer">
-                  <span class="competency-card__type-full">{{ getTypeName(competency.type) }}</span>
-                </div>
-              </div>
-            }
-          </div>
-        } @else {
-          <!-- List View -->
-          <div class="competency-table-wrapper">
-            <table class="competency-table">
-              <thead>
-                <tr>
-                  <th>代碼</th>
-                  <th>職能名稱</th>
-                  <th>類型</th>
+      } @else {
+        <!-- List View -->
+        <div class="competency-table-wrapper">
+          <table class="competency-table">
+            <thead>
+              <tr>
+                <th>代碼</th>
+                <th>職能名稱</th>
+                <th>類型</th>
                   <th>說明</th>
-                  <th>操作</th>
-                </tr>
-              </thead>
-              <tbody>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
                 @for (competency of filteredKsaCompetencies(); track competency.id) {
-                  <tr (click)="openDetailModal(competency)">
-                    <td class="td-code">{{ competency.code }}</td>
-                    <td class="td-name">{{ competency.name }}</td>
-                    <td>
-                      <span class="type-badge" [class]="getTypeClass(competency.type)">
-                        {{ getTypeName(competency.type) }}
-                      </span>
-                    </td>
+                <tr (click)="openDetailModal(competency)">
+                  <td class="td-code">{{ competency.code }}</td>
+                  <td class="td-name">{{ competency.name }}</td>
+                  <td>
+                    <span class="type-badge" [class]="getTypeClass(competency.type)">
+                      {{ getTypeName(competency.type) }}
+                    </span>
+                  </td>
                     <td class="td-desc">{{ competency.description }}</td>
-                    <td>
-                      <button class="btn-action" (click)="openDetailModal(competency); $event.stopPropagation()" type="button">
-                        <i class="ri-eye-line"></i>
-                      </button>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        }
+                  <td>
+                    <button class="btn-action" (click)="openDetailModal(competency); $event.stopPropagation()" type="button">
+                      <i class="ri-eye-line"></i>
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
 
-        <!-- Empty State -->
+      <!-- Empty State -->
         @if (filteredKsaCompetencies().length === 0) {
-          <div class="empty-state">
-            <i class="ri-folder-open-line"></i>
+        <div class="empty-state">
+          <i class="ri-folder-open-line"></i>
             <p>沒有符合條件的 KSA 職能項目</p>
-            <button class="btn-secondary" (click)="clearFilters()" type="button">清除篩選條件</button>
-          </div>
-        }
+          <button class="btn-secondary" (click)="clearFilters()" type="button">清除篩選條件</button>
+        </div>
+      }
       </section>
     }
   }

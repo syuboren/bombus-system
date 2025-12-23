@@ -1,12 +1,28 @@
 @import '../../../../assets/styles/variables';
 @import '../../../../assets/styles/mixins';
+@import '../../../../assets/styles/animations';
 
 .stat-card {
   @include card;
-  @include card-hover;
   @include flex-start;
   gap: $spacing-md;
   padding: $spacing-lg;
+  transition: transform 0.3s $animation-easing-elastic,
+              box-shadow 0.3s $animation-easing-standard;
+  animation: fadeInUp 0.5s $animation-easing-decelerate both;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: $shadow-lg;
+
+    .stat-card__icon {
+      transform: scale(1.1);
+      
+      i {
+        animation: pulse 0.6s ease-in-out;
+      }
+    }
+  }
 
   &--l1 {
     .stat-card__icon {
@@ -57,9 +73,12 @@
   height: 56px;
   border-radius: $radius-lg;
   flex-shrink: 0;
+  transition: transform 0.3s $animation-easing-elastic,
+              background-color 0.3s ease;
 
   i {
     font-size: 28px;
+    transition: transform 0.3s ease;
   }
 }
 

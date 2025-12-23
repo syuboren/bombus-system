@@ -64,6 +64,10 @@ export class CreateJDPageComponent implements OnInit {
   generatedJD = signal<Partial<JobDescription> | null>(null);
   isEditing = signal(false);
 
+  // AI 生成動畫狀態
+  aiGenerationProgress = signal(0);
+  aiGenerationMessage = signal('');
+
   // 職能基準庫資料
   coreCompetencies = signal<CoreManagementCompetency[]>([]);
   managementCompetencies = signal<CoreManagementCompetency[]>([]);
@@ -295,18 +299,42 @@ export class CreateJDPageComponent implements OnInit {
   generateWithAI(): void {
     if (!this.aiInputText()) return;
     this.isGenerating.set(true);
+    this.aiGenerationProgress.set(0);
+    this.aiGenerationMessage.set('正在分析職位需求...');
     
-    // 模擬 AI 生成
-    setTimeout(() => {
-      this.basicInfo.set({
-        positionCode: 'HR-4-XXX',
-        positionName: 'AI 生成的職位',
-        department: '人資部',
-        gradeLevel: '中階'
-      });
-      this.isGenerating.set(false);
-      this.currentStep.set('competency');
-    }, 2000);
+    // 模擬 AI 生成進度
+    const messages = [
+      { progress: 15, message: '正在分析職位需求...' },
+      { progress: 30, message: '解析職能要求...' },
+      { progress: 50, message: '生成職務說明內容...' },
+      { progress: 70, message: '匹配職能基準庫...' },
+      { progress: 85, message: '優化結構化內容...' },
+      { progress: 100, message: '生成完成！' }
+    ];
+
+    let step = 0;
+    const interval = setInterval(() => {
+      if (step < messages.length) {
+        this.aiGenerationProgress.set(messages[step].progress);
+        this.aiGenerationMessage.set(messages[step].message);
+        step++;
+      } else {
+        clearInterval(interval);
+        
+        // 設定生成的基本資訊
+        this.basicInfo.set({
+          positionCode: 'HR-4-XXX',
+          positionName: 'AI 生成的職位',
+          department: '人資部',
+          gradeLevel: '中階'
+        });
+        
+        setTimeout(() => {
+          this.isGenerating.set(false);
+          this.currentStep.set('competency');
+        }, 500);
+      }
+    }, 600);
   }
 
   // Template import

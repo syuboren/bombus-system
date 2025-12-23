@@ -122,10 +122,16 @@
               </span>
               <!-- AI 匹配分數 -->
               @if (candidate.aiScoringStatus === 'scored') {
-                <div
-                  class="match-badge {{ getScoreClass(candidate.scoreLevel) }} animate-score"
-                  title="AI 職能匹配度">
-                  {{ candidate.displayScore }}
+                <app-circular-progress
+                  [value]="candidate.displayScore"
+                  [size]="52"
+                  [strokeWidth]="5"
+                  [progressColor]="getScoreColor(candidate.scoreLevel)"
+                  [animationDuration]="1000"
+                />
+              } @else if (candidate.aiScoringStatus === 'scoring') {
+                <div class="match-badge match-badge--scoring" title="評分中">
+                  <i class="ri-loader-4-line spinning"></i>
                 </div>
               } @else {
                 <div class="match-badge match-badge--pending" title="待評分">

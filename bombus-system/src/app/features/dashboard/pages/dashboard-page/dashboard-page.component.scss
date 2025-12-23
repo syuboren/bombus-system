@@ -1,8 +1,2188 @@
 @import '../../../../../assets/styles/variables';
 @import '../../../../../assets/styles/mixins';
+@import '../../../../../assets/styles/animations';
 
 // ---------------------------------------------------------------
-// Welcome Banner
+// 有質感的數字字體樣式
+// ---------------------------------------------------------------
+@mixin stylish-number {
+  font-family: 'Georgia', 'Times New Roman', serif;
+  font-style: italic;
+  font-weight: $font-weight-bold;
+}
+
+// ---------------------------------------------------------------
+// View Switcher
+// ---------------------------------------------------------------
+.view-switcher {
+  display: flex;
+  background: $color-cloud-gray;
+  border-radius: $radius-lg;
+  padding: 4px;
+  gap: 4px;
+}
+
+.view-btn {
+  @include flex-center;
+  gap: $spacing-xs;
+  padding: $spacing-sm $spacing-md;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all $transition-normal;
+
+  i { font-size: 16px; }
+
+  &:hover {
+    background: rgba(white, 0.5);
+    color: $color-text-primary;
+  }
+
+  &.active {
+    background: white;
+    color: $color-brand-main;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+}
+
+// ---------------------------------------------------------------
+// CEO Bento Layout
+// ---------------------------------------------------------------
+.ceo-bento-layout {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+  animation: fadeIn 0.4s ease-out;
+}
+
+// ---------------------------------------------------------------
+// Row 1: 三主軸健康度總覽 (新設計 - 彩色頭 + 白色內容)
+// ---------------------------------------------------------------
+.bento-row--health {
+  animation: fadeInUp 0.5s ease-out both;
+}
+
+.bento-header-row {
+  @include flex-start;
+  gap: $spacing-sm;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+  margin-bottom: $spacing-md;
+
+  i {
+    font-size: 22px;
+    color: $color-brand-main;
+  }
+}
+
+.health-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $spacing-lg;
+
+  @include media-max-lg {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include media-max-md {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ---------------------------------------------------------------
+// Sparkline Card 風格
+// ---------------------------------------------------------------
+.health-sparkline-card {
+  border-radius: $radius-xl;
+  overflow: hidden;
+  box-shadow: $shadow-md;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  background: white;
+  min-height: 380px; // 增加高度 (原 320 + 1/3)
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: $shadow-lg;
+  }
+}
+
+.health-sparkline-card__header {
+  padding: $spacing-lg $spacing-xl;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+// 右上角圓形圖示容器 (半露出效果)
+.health-sparkline-card__icon-wrap {
+  position: absolute;
+  top: -20px;
+  right: -20px;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  @include flex-center;
+
+  i {
+    font-size: 28px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-left: -16px;
+    margin-top: 16px;
+  }
+}
+
+.health-sparkline-card__label {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  opacity: 0.95;
+}
+
+.health-sparkline-card__score-box {
+  text-align: center;
+  margin-right: 40px; // 往左移動，避免與圓形圖示重疊
+}
+
+.health-sparkline-card__score-label {
+  display: block;
+  font-size: $font-size-xs;
+  opacity: 0.85;
+  margin-bottom: 2px;
+}
+
+.health-sparkline-card__score {
+  display: block;
+  font-size: 40px;
+  line-height: 1;
+  @include stylish-number;
+}
+
+.health-sparkline-card__body {
+  padding: $spacing-lg $spacing-xl;
+  flex: 1;
+}
+
+// Sparkline 圖表區域 (貼齊底部與左右)
+.health-sparkline-card__chart {
+  width: 100%;
+  height: 100px; // 增加圖表高度
+  margin-top: auto; // 推到底部
+  margin-left: 0;
+  margin-right: 0;
+  padding: 0;
+}
+
+.health-metric-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-sm 0;
+  border-bottom: 1px solid $color-soft-gray;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.health-metric-row__left {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.health-metric-row__dot {
+  font-size: 8px;
+
+  &.status--positive { color: $color-success; }
+  &.status--warning { color: $color-warning; }
+  &.status--danger { color: $color-error; }
+}
+
+.health-metric-row__label {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.health-metric-row__value {
+  font-size: $font-size-base;
+  color: $color-text-dark;
+  @include stylish-number;
+
+  &.status--positive { color: $color-success; }
+  &.status--warning { color: darken($color-warning, 8%); }
+  &.status--danger { color: $color-error; }
+}
+
+// ---------------------------------------------------------------
+// Bento Box Row Layout
+// ---------------------------------------------------------------
+.bento-box-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $spacing-lg;
+
+  @include media-max-lg {
+    grid-template-columns: 1fr;
+  }
+
+  &.bento-box-row--2-1 {
+    grid-template-columns: 2fr 1fr;
+
+    @include media-max-lg {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &.bento-box-row--triple {
+    grid-template-columns: repeat(3, 1fr);
+
+    @include media-max-xl {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @include media-max-lg {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+// ---------------------------------------------------------------
+// Bento Box 基礎樣式
+// ---------------------------------------------------------------
+.bento-box {
+  @include card;
+  padding: $spacing-lg;
+  border-radius: $radius-xl;
+  transition: all 0.3s ease;
+  animation: fadeInUp 0.5s ease-out both;
+
+  &:hover {
+    box-shadow: $shadow-lg;
+  }
+}
+
+.bento-header {
+  @include flex-start;
+  gap: $spacing-sm;
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+  margin-bottom: $spacing-md;
+
+  i {
+    font-size: 20px;
+    color: $color-brand-main;
+  }
+
+  &.bento-header--danger i { color: $color-error; }
+  &.bento-header--people i { color: $color-l1-sage; }
+  &.bento-header--project i { color: $color-l2-terracotta; }
+  &.bento-header--culture i { color: $color-l4-mauve; }
+}
+
+.bento-link {
+  margin-left: auto;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $color-brand-main;
+
+  &:hover { text-decoration: underline; }
+}
+
+// ---------------------------------------------------------------
+// Row 2: 經營趨勢 + 預警
+// ---------------------------------------------------------------
+.bento-box--trend {
+  animation-delay: 0.1s;
+}
+
+.bento-box--alerts {
+  animation-delay: 0.15s;
+}
+
+.chart-wrapper {
+  width: 100%;
+
+  &.chart-wrapper--health {
+    height: 260px;
+  }
+
+  &.chart-wrapper--trend {
+    height: 260px;
+  }
+}
+
+// ---------------------------------------------------------------
+// Row 3: 待決策事項 (全寬 + 輪播)
+// ---------------------------------------------------------------
+.bento-box--decisions-full {
+  @include card;
+  padding: $spacing-lg;
+  border-radius: $radius-xl;
+  animation: fadeInUp 0.5s ease-out both;
+  animation-delay: 0.2s;
+}
+
+.decision-nav {
+  margin-left: auto;
+  @include flex-center;
+  gap: $spacing-sm;
+}
+
+.decision-nav__btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid $color-soft-gray;
+  background: white;
+  @include flex-center;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover:not(:disabled) {
+    background: $color-cloud-gray;
+    border-color: $color-brand-main;
+    color: $color-brand-main;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  i { font-size: 18px; }
+}
+
+.decision-nav__indicator {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  min-width: 50px;
+  text-align: center;
+}
+
+.decision-carousel {
+  overflow: hidden;
+  margin-top: $spacing-md;
+}
+
+.decision-carousel__track {
+  display: flex;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.decision-carousel__column {
+  flex: 0 0 33.333%;
+  padding: 0 $spacing-md;
+
+  @include media-max-md {
+    flex: 0 0 100%;
+  }
+}
+
+.decision-column__header {
+  @include flex-between;
+  padding-bottom: $spacing-sm;
+  border-bottom: 2px solid;
+  margin-bottom: $spacing-md;
+
+  &.priority--urgent {
+    border-color: $color-error;
+    .decision-column__badge { color: $color-error; }
+    .decision-column__count { background: rgba($color-error, 0.1); color: $color-error; }
+  }
+
+  &.priority--important {
+    border-color: $color-warning;
+    .decision-column__badge { color: darken($color-warning, 10%); }
+    .decision-column__count { background: rgba($color-warning, 0.15); color: darken($color-warning, 10%); }
+  }
+
+  &.priority--opportunity {
+    border-color: $color-success;
+    .decision-column__badge { color: $color-success; }
+    .decision-column__count { background: rgba($color-success, 0.1); color: $color-success; }
+  }
+}
+
+.decision-column__badge {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+}
+
+.decision-column__count {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+  padding: 2px 8px;
+  border-radius: $radius-full;
+}
+
+.decision-cards-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.decision-card {
+  padding: $spacing-lg;
+  border-radius: $radius-xl;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  animation: fadeIn 0.3s ease-out;
+  position: relative;
+  overflow: hidden;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: $shadow-lg;
+
+    .decision-card__number {
+      transform: translate(-5px, 5px) scale(1.2);
+    }
+
+    .decision-card__icon {
+      transform: scale(1.1);
+    }
+  }
+
+  &.priority--urgent {
+    background: linear-gradient(135deg, #fff5f5 0%, #ffffff 60%);
+    box-shadow: 0 2px 8px rgba($color-error, 0.08);
+
+    .decision-card__number { background: rgba($color-error, 0.12); color: $color-error; }
+    .decision-card__icon { color: $color-error; background: rgba($color-error, 0.1); }
+  }
+
+  &.priority--important {
+    background: linear-gradient(135deg, #fffbf5 0%, #ffffff 60%);
+    box-shadow: 0 2px 8px rgba($color-warning, 0.08);
+
+    .decision-card__number { background: rgba($color-warning, 0.15); color: darken($color-warning, 15%); }
+    .decision-card__icon { color: darken($color-warning, 10%); background: rgba($color-warning, 0.12); }
+  }
+
+  &.priority--opportunity {
+    background: linear-gradient(135deg, #f5fff8 0%, #ffffff 60%);
+    box-shadow: 0 2px 8px rgba($color-success, 0.08);
+
+    .decision-card__number { background: rgba($color-success, 0.12); color: $color-success; }
+    .decision-card__icon { color: $color-success; background: rgba($color-success, 0.1); }
+  }
+}
+
+// 右上角數字編號
+.decision-card__number {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  @include flex-center;
+  font-size: 20px;
+  font-weight: $font-weight-bold;
+  font-style: italic;
+  font-family: 'Georgia', serif;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: top right;
+  z-index: 1;
+}
+
+.decision-card__header {
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-md;
+  margin-bottom: $spacing-sm;
+}
+
+.decision-card__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: $radius-md;
+  @include flex-center;
+  font-size: 18px;
+  flex-shrink: 0;
+  transition: transform 0.3s ease;
+}
+
+.decision-card__title {
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+  flex: 1;
+  line-height: 1.4;
+}
+
+.decision-card__desc {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: 1.6;
+  margin-left: 52px; // icon width + gap
+}
+
+.decision-card__badge {
+  display: inline-block;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  padding: 2px 8px;
+  border-radius: $radius-full;
+  margin-top: $spacing-sm;
+  margin-left: 52px;
+}
+
+.alert-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.alert-item {
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-md;
+  padding: $spacing-md;
+  border-radius: $radius-lg;
+  transition: all 0.2s;
+
+  &:hover { transform: translateX(4px); }
+
+  &.severity--critical {
+    background: rgba($color-error, 0.06);
+    .alert-item__dot { background: $color-error; animation: pulse 2s infinite; }
+  }
+
+  &.severity--warning {
+    background: rgba($color-warning, 0.06);
+    .alert-item__dot { background: $color-warning; }
+  }
+}
+
+.alert-item__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.alert-item__title {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-dark;
+  margin-bottom: $spacing-xs;
+}
+
+.alert-item__desc {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  line-height: 1.4;
+}
+
+// ---------------------------------------------------------------
+// Row 4: 能力地圖 + 人才風險
+// ---------------------------------------------------------------
+.bento-box--capability {
+  flex: 1.4;
+  animation-delay: 0.3s;
+}
+
+.bento-box--talent-risk {
+  flex: 0.6;
+  animation-delay: 0.35s;
+}
+
+// 熱力圖 - 縮小版
+.competency-heatmap--compact {
+  margin-top: $spacing-md;
+  margin-bottom: $spacing-sm;
+}
+
+.heatmap-table-wrap {
+  overflow-x: auto;
+}
+
+.heatmap-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 4px;
+}
+
+.heatmap-table--compact {
+  border-spacing: 3px;
+}
+
+.heatmap-table__dept-header,
+.heatmap-table__comp-header {
+  padding: $spacing-xs $spacing-sm;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.heatmap-table__dept-header {
+  text-align: left;
+  min-width: 60px;
+}
+
+.heatmap-table__dept-cell {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+  padding: $spacing-xs $spacing-sm;
+  white-space: nowrap;
+}
+
+.heatmap-table__score-cell {
+  padding: 2px;
+  text-align: center;
+}
+
+.heatmap-score {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 32px;
+  border-radius: $radius-sm;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+  color: white;
+  transition: all 0.2s ease;
+
+  &:hover {
+    transform: scale(1.1);
+    box-shadow: $shadow-md;
+  }
+
+  &.heatmap-score--achieved {
+    background: $color-success;
+  }
+
+  &.heatmap-score--slight {
+    background: $color-warning;
+  }
+
+  &.heatmap-score--severe {
+    background: $color-error;
+  }
+}
+
+.heatmap-score--compact {
+  width: 38px;
+  height: 28px;
+  font-size: $font-size-xs;
+}
+
+.heatmap-score--clickable {
+  cursor: pointer;
+  border: none;
+
+  &:hover {
+    transform: scale(1.15);
+    box-shadow: $shadow-md;
+    z-index: 5;
+  }
+}
+
+.heatmap-score--selected {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 3px rgba($color-brand-main, 0.4), $shadow-md;
+  z-index: 5;
+}
+
+// 人員詳細面板
+.heatmap-employee-panel {
+  margin-top: $spacing-lg;
+  padding: $spacing-lg;
+  background: $color-cloud-gray;
+  border-radius: $radius-lg;
+  animation: fadeIn 0.3s ease;
+}
+
+.heatmap-employee-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-md;
+}
+
+.heatmap-employee-panel__title {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+  margin: 0;
+
+  i {
+    font-size: 18px;
+    color: $color-brand-main;
+  }
+}
+
+.loading-spinner {
+  text-align: center;
+  padding: $spacing-lg;
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+}
+
+.employee-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.employee-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-md;
+  background: white;
+  border-radius: $radius-md;
+  transition: all 0.2s ease;
+
+  &:hover {
+    box-shadow: $shadow-sm;
+  }
+}
+
+.employee-card__avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: $color-brand-main;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+  flex-shrink: 0;
+}
+
+.employee-card__info {
+  display: flex;
+  flex-direction: column;
+  min-width: 80px;
+}
+
+.employee-card__name {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+}
+
+.employee-card__position {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.employee-card__scores {
+  display: flex;
+  gap: $spacing-sm;
+}
+
+.score-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: $spacing-xs $spacing-sm;
+  background: $color-cloud-gray;
+  border-radius: $radius-sm;
+  min-width: 48px;
+}
+
+.score-box__label {
+  font-size: 10px;
+  color: $color-text-secondary;
+}
+
+.score-box__value {
+  font-size: $font-size-sm;
+  @include stylish-number;
+  color: $color-text-dark;
+
+  &.status--achieved { color: $color-success; }
+  &.status--slight { color: darken($color-warning, 10%); }
+  &.status--severe { color: $color-error; }
+  &.negative { color: $color-error; }
+  &.positive { color: $color-success; }
+}
+
+.employee-card__suggestion {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  min-width: 200px;
+
+  i {
+    color: $color-warning;
+    font-size: 14px;
+  }
+}
+
+.employee-card__courses {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-xs;
+  margin-top: $spacing-xs;
+  padding-top: $spacing-xs;
+  border-top: 1px dashed $color-soft-gray;
+}
+
+.course-tag {
+  display: inline-block;
+  padding: 2px $spacing-sm;
+  background: rgba($color-info, 0.1);
+  color: $color-info;
+  border-radius: $radius-full;
+  font-size: 10px;
+}
+
+// 分隔線
+.capability-divider {
+  height: 1px;
+  background: $color-soft-gray;
+  margin: $spacing-lg 0;
+}
+
+.heatmap-legend {
+  display: flex;
+  gap: $spacing-lg;
+  margin-top: $spacing-md;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 4px;
+}
+
+.legend-item--achieved .legend-dot {
+  background: $color-success;
+}
+
+.legend-item--slight .legend-dot {
+  background: $color-warning;
+}
+
+.legend-item--severe .legend-dot {
+  background: $color-error;
+}
+
+.capability-content {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.mini-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $spacing-md;
+  margin-bottom: $spacing-lg;
+
+  @include media-max-md {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.mini-kpi {
+  text-align: center;
+  padding: $spacing-md $spacing-sm;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+}
+
+.mini-kpi__value {
+  display: block;
+  font-size: $font-size-xl;
+  color: $color-text-dark;
+  @include stylish-number;
+
+  &.text-success { color: $color-success; }
+  &.text-info { color: $color-info; }
+  &.text-error { color: $color-error; }
+}
+
+.mini-kpi__label {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.gap-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $spacing-xs;
+
+  &.gap-tags--spaced {
+    margin-top: $spacing-sm;
+  }
+}
+
+.gap-tag-title {
+  font-size: $font-size-xs;
+  color: $color-error;
+  font-weight: $font-weight-medium;
+}
+
+.gap-tag {
+  display: inline-block;
+  padding: 2px $spacing-sm;
+  background: rgba($color-error, 0.1);
+  color: $color-error;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+}
+
+// 人才風險
+.bento-box--talent-risk {
+  animation-delay: 0.35s;
+}
+
+.talent-risk-content {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.talent-risk-kpis {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $spacing-md;
+
+  @include media-max-md {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ---------------------------------------------------------------
+// 風險象限圖
+// ---------------------------------------------------------------
+.risk-quadrant {
+  padding: $spacing-sm 0;
+  border-top: 1px solid $color-soft-gray;
+  margin-top: $spacing-xs;
+}
+
+.risk-quadrant__title {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+  margin-bottom: $spacing-sm;
+}
+
+.risk-quadrant__chart {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+  position: relative;
+  padding-left: 32px;
+  padding-right: $spacing-md;
+}
+
+.risk-quadrant__y-axis {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 24px;
+  width: 28px;
+  justify-content: space-between;
+  padding: $spacing-xs 0;
+
+  .axis-label {
+    font-size: 10px;
+    font-weight: $font-weight-medium;
+    color: $color-text-secondary;
+    writing-mode: vertical-lr;
+    text-orientation: mixed;
+    letter-spacing: 2px;
+  }
+
+  .axis-value {
+    font-size: 9px;
+    color: lighten($color-text-secondary, 15%);
+  }
+}
+
+.risk-quadrant__grid {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  overflow: hidden;
+}
+
+.quadrant-zone {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+
+  &.quadrant-zone--protect {
+    background: rgba($color-success, 0.08);
+    border-right: 1px dashed rgba($color-soft-gray, 0.8);
+    border-bottom: 1px dashed rgba($color-soft-gray, 0.8);
+  }
+
+  &.quadrant-zone--critical {
+    background: rgba($color-error, 0.12);
+    border-bottom: 1px dashed rgba($color-soft-gray, 0.8);
+  }
+
+  &.quadrant-zone--stable {
+    background: rgba($color-soft-gray, 0.3);
+    border-right: 1px dashed rgba($color-soft-gray, 0.8);
+  }
+
+  &.quadrant-zone--monitor {
+    background: rgba($color-warning, 0.1);
+  }
+
+  .zone-label {
+    font-size: 9px;
+    color: lighten($color-text-secondary, 15%);
+    opacity: 0.7;
+  }
+}
+
+.quadrant-dot {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: $shadow-sm;
+  cursor: pointer;
+  transform: translate(-50%, 50%);
+  transition: all 0.2s ease;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: $color-text-secondary;
+
+  &:hover {
+    transform: translate(-50%, 50%) scale(1.2);
+    box-shadow: $shadow-md;
+    z-index: 10;
+  }
+
+  &.quadrant-dot--selected {
+    transform: translate(-50%, 50%) scale(1.3);
+    box-shadow: 0 0 0 3px rgba($color-brand-main, 0.3), $shadow-md;
+    z-index: 10;
+  }
+
+  &.quadrant-dot--critical {
+    background: $color-error;
+  }
+
+  &.quadrant-dot--protect {
+    background: $color-success;
+  }
+
+  &.quadrant-dot--monitor {
+    background: $color-warning;
+  }
+
+  &.quadrant-dot--stable {
+    background: $color-text-secondary;
+  }
+}
+
+.quadrant-dot__avatar {
+  font-size: 9px;
+  font-weight: $font-weight-bold;
+  color: white;
+  letter-spacing: -0.5px;
+}
+
+.risk-quadrant__x-axis {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-xs 0;
+
+  .axis-label {
+    font-size: 10px;
+    font-weight: $font-weight-medium;
+    color: $color-text-secondary;
+  }
+
+  .axis-value {
+    font-size: 9px;
+    color: lighten($color-text-secondary, 15%);
+  }
+}
+
+// 人員詳細面板
+.person-detail-panel {
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  animation: fadeIn 0.2s ease;
+}
+
+.person-detail-panel__header {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-md;
+}
+
+.person-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: $color-brand-main;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+
+  &.person-avatar--lg {
+    width: 40px;
+    height: 40px;
+    font-size: $font-size-sm;
+  }
+}
+
+.person-info {
+  flex: 1;
+}
+
+.person-info__name {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+  margin: 0;
+}
+
+.person-info__position {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  margin: 0;
+}
+
+.close-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: $color-text-secondary;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: $color-text-dark;
+  }
+}
+
+.person-detail-panel__scores {
+  display: flex;
+  gap: $spacing-md;
+  margin-bottom: $spacing-md;
+}
+
+.score-item {
+  flex: 1;
+  text-align: center;
+  padding: $spacing-sm;
+  background: white;
+  border-radius: $radius-sm;
+}
+
+.score-item__label {
+  display: block;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  margin-bottom: 2px;
+}
+
+.score-item__value {
+  display: block;
+  font-size: $font-size-lg;
+  @include stylish-number;
+
+  .score-item--risk & {
+    color: $color-error;
+  }
+
+  .score-item--criticality & {
+    color: $color-brand-main;
+  }
+}
+
+.person-detail-panel__section {
+  margin-bottom: $spacing-sm;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+  margin: 0 0 $spacing-xs 0;
+
+  i {
+    font-size: 14px;
+    color: $color-text-secondary;
+  }
+}
+
+.signal-list,
+.action-list {
+  margin: 0;
+  padding-left: $spacing-lg;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.signal-list__item,
+.action-list__item {
+  margin-bottom: 2px;
+  line-height: 1.4;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.signal-list__item::marker {
+  color: $color-error;
+}
+
+.action-list__item::marker {
+  color: $color-success;
+}
+
+.quadrant-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-xs;
+  padding: $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+  font-size: $font-size-xs;
+  color: lighten($color-text-secondary, 15%);
+
+  i {
+    font-size: 16px;
+  }
+}
+
+.succession-mini__header,
+.risk-talent-mini__header {
+  @include flex-between;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  margin-bottom: $spacing-sm;
+  padding-bottom: $spacing-xs;
+  border-bottom: 1px solid $color-soft-gray;
+
+  .text-warning,
+  .text-error {
+    @include stylish-number;
+    font-size: $font-size-lg;
+  }
+}
+
+// 接班覆蓋率卡片樣式
+.succession-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.succession-card {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-md $spacing-lg;
+  background: $color-cloud-gray;
+  border-radius: $radius-lg;
+  transition: all 0.2s ease;
+
+  &:hover {
+    transform: translateX(4px);
+    box-shadow: $shadow-sm;
+  }
+}
+
+.succession-card__badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: $color-brand-main;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+  flex-shrink: 0;
+}
+
+.succession-card__name {
+  min-width: 80px;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-dark;
+}
+
+.succession-card__bar {
+  flex: 1;
+  height: 10px;
+  background: darken($color-cloud-gray, 8%);
+  border-radius: $radius-full;
+  overflow: hidden;
+}
+
+.succession-card__fill {
+  height: 100%;
+  border-radius: $radius-full;
+  transition: width 0.5s ease;
+  background: linear-gradient(90deg, $color-success, lighten($color-success, 10%));
+}
+
+.succession-card.coverage--partial .succession-card__fill {
+  background: linear-gradient(90deg, lighten($color-success, 8%), lighten($color-success, 15%));
+}
+
+.succession-card.coverage--training .succession-card__fill {
+  background: linear-gradient(90deg, $color-warning, lighten($color-warning, 10%));
+}
+
+.succession-card.coverage--none .succession-card__fill {
+  background: linear-gradient(90deg, $color-error, lighten($color-error, 10%));
+}
+
+.succession-card__percent,
+.succession-card__value {
+  min-width: 40px;
+  text-align: right;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  @include stylish-number;
+}
+
+// 高風險人才卡片樣式
+.risk-talent-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.risk-talent-card {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-md $spacing-lg;
+  background: $color-cloud-gray;
+  border-radius: $radius-lg;
+  transition: all 0.2s ease;
+
+  &:hover {
+    transform: translateX(4px);
+    box-shadow: $shadow-sm;
+  }
+}
+
+.risk-talent-card__badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: $color-error;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+  flex-shrink: 0;
+}
+
+.risk-talent-card__info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.risk-talent-card__name {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+}
+
+.risk-talent-card__detail {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.risk-talent-card__score {
+  font-size: $font-size-base;
+  color: $color-error;
+  @include stylish-number;
+}
+
+.succession-mini__bar {
+  flex: 1;
+  height: 8px;
+  background: $color-cloud-gray;
+  border-radius: $radius-full;
+  overflow: hidden;
+}
+
+.succession-mini__fill {
+  height: 100%;
+  border-radius: $radius-full;
+  transition: width 0.5s ease;
+
+  &.coverage--full { background: $color-success; }
+  &.coverage--partial { background: lighten($color-success, 10%); }
+  &.coverage--training { background: $color-warning; }
+  &.coverage--none { background: $color-error; }
+}
+
+.risk-talent-mini__item {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm;
+  background: rgba($color-error, 0.05);
+  border-radius: $radius-md;
+  margin-bottom: $spacing-xs;
+  font-size: $font-size-xs;
+}
+
+.risk-talent-mini__name {
+  font-weight: $font-weight-medium;
+  color: $color-text-dark;
+}
+
+.risk-talent-mini__pos {
+  flex: 1;
+  color: $color-text-secondary;
+}
+
+.risk-talent-mini__score {
+  color: $color-error;
+  @include stylish-number;
+}
+
+// ---------------------------------------------------------------
+// Row 5: 專案交付 + 毛利預測 + 績效獎酬
+// ---------------------------------------------------------------
+.bento-box--project {
+  animation-delay: 0.4s;
+}
+
+.project-content {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+// 泡泡圖區塊
+.bubble-chart-section {
+  margin-top: $spacing-sm;
+  padding-top: $spacing-md;
+  border-top: 1px solid $color-soft-gray;
+  display: flex;
+  flex-direction: column;
+}
+
+.project-bubble-chart {
+  height: 200px;
+  width: 100%;
+}
+
+.bubble-chart-legend {
+  display: flex;
+  justify-content: flex-end;
+  gap: $spacing-md;
+  padding: $spacing-xs $spacing-md;
+  font-size: 10px;
+  color: $color-text-secondary;
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+}
+
+.legend-bubble {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+
+  &--normal {
+    background: #8DA399;
+  }
+
+  &--warning {
+    background: #E3C088;
+  }
+
+  &--critical {
+    background: #C77F7F;
+  }
+}
+
+.project-summary {
+  display: flex;
+  align-items: center;
+  gap: $spacing-lg;
+}
+
+.project-ring {
+  text-align: center;
+}
+
+.project-ring__circle {
+  --progress: 0;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: conic-gradient(
+    $color-success calc(var(--progress) * 3.6deg),
+    rgba(0,0,0,0.08) calc(var(--progress) * 3.6deg)
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin: 0 auto $spacing-xs;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 8px;
+    background: white;
+    border-radius: 50%;
+  }
+}
+
+.project-ring__text {
+  position: relative;
+  z-index: 1;
+  font-size: $font-size-base;
+  color: $color-text-dark;
+  @include stylish-number;
+}
+
+.project-ring__label {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.project-stats {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.project-stat {
+  display: flex;
+  justify-content: space-between;
+  font-size: $font-size-sm;
+  padding: $spacing-xs 0;
+  border-bottom: 1px dashed $color-soft-gray;
+
+  &:last-child { border-bottom: none; }
+}
+
+.project-stat__value {
+  color: $color-text-dark;
+  @include stylish-number;
+
+  &.text-error { color: $color-error; }
+}
+
+.project-stat__label {
+  color: $color-text-secondary;
+}
+
+.project-list-mini__item {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm 0;
+  border-bottom: 1px solid $color-soft-gray;
+
+  &.risk {
+    background: rgba($color-error, 0.05);
+    padding: $spacing-sm;
+    margin: 0 (-$spacing-sm);
+    border-radius: $radius-md;
+    border-bottom: none;
+  }
+
+  &:last-child { border-bottom: none; }
+}
+
+.project-list-mini__name {
+  font-size: $font-size-xs;
+  color: $color-text-dark;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.project-list-mini__progress {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.progress-bar {
+  width: 60px;
+  height: 6px;
+  background: $color-cloud-gray;
+  border-radius: $radius-full;
+  overflow: hidden;
+}
+
+.progress-bar__fill {
+  height: 100%;
+  background: $color-brand-main;
+  border-radius: $radius-full;
+  transition: width 0.5s ease;
+
+  &.fill--risk {
+    background: $color-error;
+  }
+}
+
+.progress-bar--risk {
+  background: rgba($color-error, 0.15);
+}
+
+// 毛利預測
+.bento-box--profit {
+  animation-delay: 0.45s;
+}
+
+.bento-box--with-sparkline {
+  position: relative;
+  padding-bottom: 200px; // 為 sparkline 預留空間（增加高度）
+  overflow: hidden;
+}
+
+.profit-content {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+// 毛利趨勢迷你圖
+.profit-sparkline-container {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 240px;
+  display: flex;
+  flex-direction: column;
+}
+
+.profit-sparkline {
+  width: 100%;
+  height: 240px; // ECharts 需要明確高度
+}
+
+.profit-sparkline-legend {
+  display: flex;
+  justify-content: flex-end;
+  gap: $spacing-md;
+  padding: $spacing-xs $spacing-md;
+  font-size: 10px;
+  color: $color-text-secondary;
+  background: rgba(255, 255, 255, 0.9);
+  border-top: 1px solid $color-soft-gray;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.legend-line {
+  display: inline-block;
+  width: 16px;
+  height: 2px;
+  border-radius: 1px;
+
+  &--actual {
+    background: #8DA399;
+  }
+
+  &--predicted {
+    background: repeating-linear-gradient(
+      90deg,
+      #9A8C98 0px,
+      #9A8C98 4px,
+      transparent 4px,
+      transparent 6px
+    );
+  }
+
+  &--optimistic {
+    background: repeating-linear-gradient(
+      90deg,
+      #7FB095 0px,
+      #7FB095 2px,
+      transparent 2px,
+      transparent 4px
+    );
+  }
+
+  &--pessimistic {
+    background: repeating-linear-gradient(
+      90deg,
+      #C77F7F 0px,
+      #C77F7F 2px,
+      transparent 2px,
+      transparent 4px
+    );
+  }
+}
+
+.profit-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $spacing-sm;
+  text-align: center;
+}
+
+.profit-kpi__value {
+  display: block;
+  font-size: $font-size-lg;
+  color: $color-text-dark;
+  @include stylish-number;
+
+  &.text-success { color: $color-success; }
+  &.text-error { color: $color-error; }
+}
+
+.profit-kpi__label {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.ranking-mini__item {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm 0;
+  font-size: $font-size-sm;
+  border-bottom: 1px solid $color-soft-gray;
+
+  &:last-child { border-bottom: none; }
+
+  &.loss {
+    background: rgba($color-error, 0.05);
+    padding: $spacing-sm;
+    margin: 0 (-$spacing-sm);
+    border-radius: $radius-md;
+    border-bottom: none;
+  }
+}
+
+.ranking-mini__rank {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  @include flex-center;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+  background: $color-cloud-gray;
+  color: $color-text-secondary;
+  flex-shrink: 0;
+
+  &.rank--1 {
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    color: white;
+  }
+
+  &.rank--2 {
+    background: linear-gradient(135deg, #d1d5db, #9ca3af);
+    color: white;
+  }
+
+  &.rank--3 {
+    background: linear-gradient(135deg, $color-l2-terracotta, darken($color-l2-terracotta, 10%));
+    color: white;
+  }
+}
+
+.ranking-mini__name {
+  flex: 1;
+  color: $color-text-dark;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ranking-mini__rate {
+  font-weight: $font-weight-bold;
+  color: $color-success;
+
+  &.text-error { color: $color-error; }
+}
+
+// 績效獎酬
+.bento-box--reward {
+  animation-delay: 0.5s;
+}
+
+.reward-content {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.reward-summary {
+  display: flex;
+  align-items: center;
+  gap: $spacing-lg;
+}
+
+.reward-ring {
+  text-align: center;
+}
+
+.reward-ring__circle {
+  --progress: 0;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: conic-gradient(
+    $color-success calc(var(--progress) * 3.6deg),
+    rgba(0,0,0,0.08) calc(var(--progress) * 3.6deg)
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin: 0 auto $spacing-xs;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 8px;
+    background: white;
+    border-radius: 50%;
+  }
+}
+
+.reward-ring__text {
+  position: relative;
+  z-index: 1;
+  font-size: $font-size-base;
+  color: $color-text-dark;
+  @include stylish-number;
+}
+
+.reward-ring__label {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.reward-alerts {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.reward-alert {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm;
+  border-radius: $radius-md;
+  font-size: $font-size-xs;
+  cursor: pointer;
+  transition: all $transition-normal;
+  border: 2px solid transparent;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+
+  &.active {
+    border-color: currentColor;
+    box-shadow: $shadow-sm;
+  }
+
+  &.reward-alert--danger {
+    background: rgba($color-error, 0.08);
+    .reward-alert__count { color: $color-error; }
+    &.active { border-color: $color-error; }
+  }
+
+  &.reward-alert--warning {
+    background: rgba($color-warning, 0.08);
+    .reward-alert__count { color: darken($color-warning, 10%); }
+    &.active { border-color: $color-warning; }
+  }
+}
+
+.reward-alert__count {
+  font-size: $font-size-lg;
+  @include stylish-number;
+}
+
+.reward-alert__label {
+  color: $color-text-secondary;
+}
+
+.reward-risk-mini__item {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm;
+  background: rgba($color-error, 0.05);
+  border-radius: $radius-md;
+  margin-bottom: $spacing-xs;
+  font-size: $font-size-xs;
+}
+
+.reward-risk-mini__name {
+  font-weight: $font-weight-medium;
+  color: $color-text-dark;
+}
+
+.reward-risk-mini__perf {
+  color: $color-text-secondary;
+}
+
+.reward-risk-mini__level {
+  margin-left: auto;
+  color: $color-error;
+  font-weight: $font-weight-medium;
+}
+
+// 風險人員清單標題
+.reward-risk-header {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  margin-bottom: $spacing-sm;
+  padding-top: $spacing-sm;
+  border-top: 1px solid $color-soft-gray;
+}
+
+.reward-risk-header__icon {
+  font-size: $font-size-lg;
+}
+
+.reward-risk-header__title {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+}
+
+// 風險人員卡片清單
+.reward-risk-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.reward-risk-card {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-md;
+  border-radius: $radius-md;
+  transition: all $transition-normal;
+
+  &:hover {
+    transform: translateX(2px);
+  }
+
+  &.reward-risk-card--retention {
+    background: linear-gradient(90deg, rgba($color-error, 0.08) 0%, rgba($color-error, 0.02) 100%);
+  }
+
+  &.reward-risk-card--culture {
+    background: linear-gradient(90deg, rgba($color-warning, 0.12) 0%, rgba($color-warning, 0.02) 100%);
+  }
+}
+
+.reward-risk-card__icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 48px;
+
+  i {
+    font-size: 20px;
+  }
+
+  .perf-badge {
+    font-size: 10px;
+    font-weight: $font-weight-bold;
+    padding: 1px 6px;
+    border-radius: $radius-full;
+    background: rgba(0, 0, 0, 0.06);
+  }
+
+  &.perf-a {
+    i { color: $color-success; }
+    .perf-badge {
+      background: rgba($color-success, 0.15);
+      color: darken($color-success, 10%);
+    }
+  }
+
+  &.perf-b {
+    i { color: $color-info; }
+    .perf-badge {
+      background: rgba($color-info, 0.15);
+      color: darken($color-info, 10%);
+    }
+  }
+
+  &.perf-c {
+    i { color: $color-warning; }
+    .perf-badge {
+      background: rgba($color-warning, 0.15);
+      color: darken($color-warning, 15%);
+    }
+  }
+}
+
+.reward-risk-card__left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.reward-risk-card__name {
+  font-size: $font-size-base;
+  font-weight: $font-weight-bold;
+  color: $color-text-dark;
+}
+
+.reward-risk-card__position {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.reward-risk-card__right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.reward-risk-card__reward {
+  font-size: $font-size-base;
+  font-weight: $font-weight-bold;
+  @include stylish-number;
+}
+
+.reward-risk-card__market {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+// 建議行動
+.reward-suggestion {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+  margin-top: $spacing-md;
+  padding: $spacing-md;
+  background: rgba($color-info, 0.08);
+  border-radius: $radius-md;
+  border-left: 3px solid $color-info;
+}
+
+.reward-suggestion__title {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+  color: $color-info;
+}
+
+.reward-suggestion__text {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  line-height: 1.5;
+}
+
+// ---------------------------------------------------------------
+// 文字顏色 Utilities
+// ---------------------------------------------------------------
+.text-success { color: $color-success !important; }
+.text-warning { color: $color-warning !important; }
+.text-error { color: $color-error !important; }
+.text-info { color: $color-info !important; }
+
+// ---------------------------------------------------------------
+// 原本營運視角樣式
 // ---------------------------------------------------------------
 .welcome-banner {
   @include card;
@@ -41,35 +2221,20 @@
   background: rgba(white, 0.2);
   border-radius: $radius-xl;
 
-  i {
-    font-size: 40px;
-  }
+  i { font-size: 40px; }
 }
 
-// ---------------------------------------------------------------
-// Stats Grid
-// ---------------------------------------------------------------
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: $spacing-md;
   margin-bottom: $spacing-lg;
 
-  @include media-max-xl {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  @include media-max-md {
-    grid-template-columns: 1fr;
-  }
+  @include media-max-xl { grid-template-columns: repeat(2, 1fr); }
+  @include media-max-md { grid-template-columns: 1fr; }
 }
 
-// ---------------------------------------------------------------
-// Section
-// ---------------------------------------------------------------
-.section {
-  margin-bottom: $spacing-lg;
-}
+.section { margin-bottom: $spacing-lg; }
 
 .section__header {
   @include flex-between;
@@ -89,30 +2254,18 @@
   font-size: $font-size-sm;
   color: $color-brand-main;
 
-  &:hover {
-    color: $color-brand-dark;
-  }
+  &:hover { color: $color-brand-dark; }
 
-  i {
-    font-size: 16px;
-  }
+  i { font-size: 16px; }
 }
 
-// ---------------------------------------------------------------
-// Quick Access Grid
-// ---------------------------------------------------------------
 .quick-access-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: $spacing-md;
 
-  @include media-max-xl {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  @include media-max-md {
-    grid-template-columns: 1fr;
-  }
+  @include media-max-xl { grid-template-columns: repeat(2, 1fr); }
+  @include media-max-md { grid-template-columns: 1fr; }
 }
 
 .quick-card {
@@ -132,35 +2285,12 @@
   border-radius: $radius-lg;
   font-size: 28px;
 
-  &.module-l1 {
-    background: rgba($color-l1-sage, 0.1);
-    color: $color-l1-sage;
-  }
-
-  &.module-l2 {
-    background: rgba($color-l2-terracotta, 0.1);
-    color: $color-l2-terracotta;
-  }
-
-  &.module-l3 {
-    background: rgba($color-l3-petrol, 0.1);
-    color: $color-l3-petrol;
-  }
-
-  &.module-l4 {
-    background: rgba($color-l4-mauve, 0.1);
-    color: $color-l4-mauve;
-  }
-
-  &.module-l5 {
-    background: rgba($color-l5-brick, 0.1);
-    color: $color-l5-brick;
-  }
-
-  &.module-l6 {
-    background: rgba($color-l6-rose, 0.1);
-    color: $color-l6-rose;
-  }
+  &.module-l1 { background: rgba($color-l1-sage, 0.1); color: $color-l1-sage; }
+  &.module-l2 { background: rgba($color-l2-terracotta, 0.1); color: $color-l2-terracotta; }
+  &.module-l3 { background: rgba($color-l3-petrol, 0.1); color: $color-l3-petrol; }
+  &.module-l4 { background: rgba($color-l4-mauve, 0.1); color: $color-l4-mauve; }
+  &.module-l5 { background: rgba($color-l5-brick, 0.1); color: $color-l5-brick; }
+  &.module-l6 { background: rgba($color-l6-rose, 0.1); color: $color-l6-rose; }
 }
 
 .quick-card__title {
@@ -175,31 +2305,15 @@
   color: $color-text-secondary;
 }
 
-// ---------------------------------------------------------------
-// Content Row
-// ---------------------------------------------------------------
 .content-row {
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: $spacing-md;
   margin-bottom: $spacing-lg;
 
-  @include media-max-lg {
-    grid-template-columns: 1fr;
-  }
+  @include media-max-lg { grid-template-columns: 1fr; }
 }
 
-.content-col-8 {
-  // Takes 2fr
-}
-
-.content-col-4 {
-  // Takes 1fr
-}
-
-// ---------------------------------------------------------------
-// Activity Timeline
-// ---------------------------------------------------------------
 .activity-timeline {
   display: flex;
   flex-direction: column;
@@ -238,10 +2352,7 @@
   &.module-l6 { background: $color-l6-rose; }
 }
 
-.timeline-item__content {
-  flex: 1;
-  min-width: 0;
-}
+.timeline-item__content { flex: 1; min-width: 0; }
 
 .timeline-item__title {
   font-size: $font-size-sm;
@@ -261,9 +2372,6 @@
   color: $color-muted-gray;
 }
 
-// ---------------------------------------------------------------
-// Todo List
-// ---------------------------------------------------------------
 .todo-list {
   display: flex;
   flex-direction: column;
@@ -278,9 +2386,7 @@
   cursor: pointer;
   transition: background $transition-normal;
 
-  &:hover {
-    background: $color-cloud-gray;
-  }
+  &:hover { background: $color-cloud-gray; }
 }
 
 .todo-item__checkbox {
@@ -303,9 +2409,6 @@
   }
 }
 
-// ---------------------------------------------------------------
-// Footer
-// ---------------------------------------------------------------
 .system-footer {
   padding-top: $spacing-lg;
   border-top: 1px solid $color-soft-gray;
@@ -335,9 +2438,38 @@
     font-size: $font-size-sm;
     color: $color-text-secondary;
 
-    &:hover {
-      color: $color-brand-main;
-    }
+    &:hover { color: $color-brand-main; }
   }
 }
+
+// ---------------------------------------------------------------
+// Animations
+// ---------------------------------------------------------------
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.2);
+  }
+}
+
 
