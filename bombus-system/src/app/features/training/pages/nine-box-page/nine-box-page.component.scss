@@ -1,0 +1,17 @@
+@import '../../../../../assets/styles/variables';
+@import '../../../../../assets/styles/mixins';
+
+.main-content {
+  padding: $spacing-lg;
+  margin-top: $header-height;
+
+  @include media-max-md {
+    padding: $spacing-md;
+  }
+}
+
+.content-container {
+  max-width: 1600px;
+  margin: 0 auto;
+}
+

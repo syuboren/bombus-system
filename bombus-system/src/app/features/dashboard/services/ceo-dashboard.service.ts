@@ -20,7 +20,12 @@ import {
   NineBoxData,
   RiskQuadrantPerson,
   CompetencyEmployee,
-  ProjectBubble
+  ProjectBubble,
+  ProjectGanttItem,
+  ProjectStatusStats,
+  ProjectTypeStats,
+  CostStructureItem,
+  CostWarningItem
 } from '../models/ceo-dashboard.model';
 
 @Injectable({ providedIn: 'root' })
@@ -35,6 +40,7 @@ export class CEODashboardService {
         name: 'people',
         label: 'People 人才',
         score: 78,
+        trend: 6,
         description: '能力與風險可視化',
         icon: 'ri-team-line',
         color: '#8DA399',
@@ -49,6 +55,7 @@ export class CEODashboardService {
         name: 'project',
         label: 'Project 專案',
         score: 72,
+        trend: 4,
         description: '人力配置→交付→毛利',
         icon: 'ri-folder-chart-line',
         color: '#D6A28C',
@@ -63,6 +70,7 @@ export class CEODashboardService {
         name: 'culture',
         label: 'Culture 文化',
         score: 81,
+        trend: -2,
         description: '行為訊號量化',
         icon: 'ri-heart-line',
         color: '#9A8C98',
@@ -92,26 +100,81 @@ export class CEODashboardService {
 
   getRiskAlerts(): Observable<RiskAlert[]> {
     const data: RiskAlert[] = [
+      // 人才風險 - 關鍵職位 (紅色)
       {
-        id: '1',
+        id: 't1',
         title: '資深專案經理職位',
         description: '接班人數：0，預計 Q2 離職風險',
         severity: 'critical',
-        category: 'people'
+        category: 'people',
+        alertType: 'key-position',
+        icon: 'ri-user-star-line'
       },
       {
-        id: '2',
-        title: '行銷自動化專案',
-        description: '進度落後 15%，毛利預警',
+        id: 't2',
+        title: '技術長',
+        description: '現任者已提出轉調意向',
         severity: 'critical',
-        category: 'project'
+        category: 'people',
+        alertType: 'key-position',
+        icon: 'ri-user-star-line'
       },
       {
-        id: '3',
+        id: 't3',
+        title: '財務主管',
+        description: '關鍵人才離職率偏高',
+        severity: 'critical',
+        category: 'people',
+        alertType: 'key-position',
+        icon: 'ri-user-star-line'
+      },
+      // 人才風險 - 能力缺口 (黃色)
+      {
+        id: 't4',
         title: '專案管理能力缺口',
         description: '12 人待培訓，影響 Q3 交付',
         severity: 'warning',
-        category: 'people'
+        category: 'people',
+        alertType: 'capability-gap',
+        icon: 'ri-lightbulb-flash-line'
+      },
+      {
+        id: 't5',
+        title: '技術新技術導入落差',
+        description: '需補足 AI/ML 領域人才 5 名',
+        severity: 'warning',
+        category: 'people',
+        alertType: 'capability-gap',
+        icon: 'ri-lightbulb-flash-line'
+      },
+      // 專案風險 - 高風險 (紅色)
+      {
+        id: 'p1',
+        title: 'PRJ-001 網路設備整合',
+        description: '進度落後 15%，建議本週召開檢討會',
+        severity: 'critical',
+        category: 'project',
+        alertType: 'project-risk',
+        icon: 'ri-timer-flash-line'
+      },
+      {
+        id: 'p2',
+        title: 'PRJ-003 通訊設備採購',
+        description: '核心成員即將離職，需啟動知識轉移',
+        severity: 'critical',
+        category: 'project',
+        alertType: 'project-risk',
+        icon: 'ri-user-unfollow-line'
+      },
+      // 專案風險 - 中風險 (黃色)
+      {
+        id: 'p3',
+        title: 'PRJ-006 資訊設備標案',
+        description: 'A 級客戶合約 2 週後到期，需續約談判',
+        severity: 'warning',
+        category: 'project',
+        alertType: 'project-risk',
+        icon: 'ri-file-warning-line'
       }
     ];
     return of(data).pipe(delay(200));
@@ -122,7 +185,7 @@ export class CEODashboardService {
       // 緊急
       {
         id: '1',
-        title: '行銷自動化專案',
+        title: 'PRJ-001 網路設備整合',
         description: '進度落後 15%，建議本週召開檢討會',
         priority: 'urgent',
         icon: 'ri-alarm-warning-line',
@@ -130,7 +193,7 @@ export class CEODashboardService {
       },
       {
         id: '2',
-        title: '資深架構師離職預警',
+        title: 'PRJ-003 通訊設備採購',
         description: '核心成員即將離職，需啟動知識轉移',
         priority: 'urgent',
         icon: 'ri-user-unfollow-line',
@@ -138,7 +201,7 @@ export class CEODashboardService {
       },
       {
         id: '3',
-        title: '客戶合約到期',
+        title: 'PRJ-006 資訊設備標案',
         description: 'A 級客戶合約 2 週後到期，需續約談判',
         priority: 'urgent',
         icon: 'ri-file-warning-line',
@@ -147,7 +210,7 @@ export class CEODashboardService {
       // 重要
       {
         id: '4',
-        title: '專案管理能力缺口',
+        title: 'PRJ-007 通訊設備採購案',
         description: '12 人待培訓，建議啟動 Q1 PMP 班',
         priority: 'important',
         icon: 'ri-user-settings-line',
@@ -155,7 +218,7 @@ export class CEODashboardService {
       },
       {
         id: '5',
-        title: '技術債務清理',
+        title: 'PRJ-004 系統建置',
         description: '累積 45 項技術債，建議安排 Sprint 處理',
         priority: 'important',
         icon: 'ri-code-box-line',
@@ -163,7 +226,7 @@ export class CEODashboardService {
       },
       {
         id: '6',
-        title: '年度績效評估',
+        title: 'PRJ-005 通訊設備採購案',
         description: '距離評估截止日剩 3 週，已完成 65%',
         priority: 'important',
         icon: 'ri-survey-line',
@@ -171,7 +234,7 @@ export class CEODashboardService {
       },
       {
         id: '7',
-        title: '新進人員培訓',
+        title: 'PRJ-011 軟體升級專案',
         description: '5 名新進人員待完成入職培訓',
         priority: 'important',
         icon: 'ri-graduation-cap-line',
@@ -180,7 +243,7 @@ export class CEODashboardService {
       // 機會
       {
         id: '8',
-        title: '金融區塊鏈專案',
+        title: 'PRJ-021 金融區塊鏈專案',
         description: '毛利率 45%，建議複製模式到下季專案',
         priority: 'opportunity',
         icon: 'ri-lightbulb-line',
@@ -188,7 +251,7 @@ export class CEODashboardService {
       },
       {
         id: '9',
-        title: 'AI 客服機器人商機',
+        title: 'PRJ-023 AI 客服機器人建置',
         description: '3 家潛在客戶表達興趣，預估營收 $2M',
         priority: 'opportunity',
         icon: 'ri-robot-line',
@@ -196,7 +259,7 @@ export class CEODashboardService {
       },
       {
         id: '10',
-        title: '內部工具 SaaS 化',
+        title: 'PRJ-014 內部工具 SaaS 化',
         description: '專案管理工具可對外銷售，市場潛力大',
         priority: 'opportunity',
         icon: 'ri-cloud-line',
@@ -498,6 +561,8 @@ export class CEODashboardService {
         position: '資深專案經理',
         department: '專案部',
         riskScore: 85,
+        performanceGrade: 'A',
+        leaveReason: '月度績效下滑',
         criticality: 'extreme',
         signals: '市場薪資差距 +25%、近期更新履歷',
         action: '本週安排留才面談'
@@ -508,6 +573,8 @@ export class CEODashboardService {
         position: '技術主管',
         department: '研發部',
         riskScore: 78,
+        performanceGrade: 'A+',
+        leaveReason: '工作負荷過重',
         criticality: 'extreme',
         signals: '獵頭接觸頻繁、加班時數減少',
         action: '提供技術領導機會'
@@ -518,6 +585,8 @@ export class CEODashboardService {
         position: '業務總監',
         department: '業務部',
         riskScore: 65,
+        performanceGrade: 'A-',
+        leaveReason: '缺乏晉升機會',
         criticality: 'high',
         signals: '業績壓力大、團隊人員流動',
         action: '檢視業績目標合理性'
@@ -528,6 +597,8 @@ export class CEODashboardService {
         position: '資深工程師',
         department: '研發部',
         riskScore: 70,
+        performanceGrade: 'A',
+        leaveReason: '缺乏實務機會',
         criticality: 'high',
         signals: '技術成長停滯、市場競爭力高',
         action: '提供進修補助'
@@ -590,22 +661,43 @@ export class CEODashboardService {
   // ---------------------------------------------------------------
   getProfitKPI(): Observable<ProfitKPI> {
     const data: ProfitKPI = {
+      confirmedRevenue: 68,
+      confirmedProjects: 9,
+      avgProfitRate: 28,
+      profitRateTarget: 30,
+      costControlRate: 86,
+      anomalyWarnings: 2,
       totalRevenue: 13.8,
-      avgProfitRate: 30,
-      profitRateChange: 3.5,
-      aiConfidence: 92,
       erosionWarning: 200
     };
     return of(data).pipe(delay(200));
   }
 
+  getCostStructure(): Observable<CostStructureItem[]> {
+    const data: CostStructureItem[] = [
+      { id: 'fixed', label: '固定成本', estimated: 25, actual: 28, difference: 3, estimatedAmount: 250, actualAmount: 280 },
+      { id: 'indirect', label: '間接成本', estimated: 15, actual: 12, difference: -3, estimatedAmount: 150, actualAmount: 120 },
+      { id: 'labor', label: '人力成本', estimated: 45, actual: 52, difference: 7, estimatedAmount: 450, actualAmount: 520 },
+      { id: 'other', label: '其他', estimated: 15, actual: 8, difference: -7, estimatedAmount: 150, actualAmount: 80 }
+    ];
+    return of(data).pipe(delay(200));
+  }
+
+  getCostWarnings(): Observable<CostWarningItem[]> {
+    const data: CostWarningItem[] = [
+      { id: '1', projectName: '網路設備整合案', category: '人力成本', overBudget: 45, severity: 'high' },
+      { id: '2', projectName: '系統建置專案', category: '固定成本', overBudget: 28, severity: 'medium' }
+    ];
+    return of(data).pipe(delay(200));
+  }
+
   getProjectRankings(): Observable<ProjectRanking[]> {
     const data: ProjectRanking[] = [
-      { rank: 1, name: '金融區塊鏈交易模組', profitRate: 45.2, revenue: 3.5, pm: 'David Wu' },
-      { rank: 2, name: '企業級 CRM 系統重構', profitRate: 32.5, revenue: 4.0, pm: 'Alex Chen' },
-      { rank: 3, name: '雲端資料倉儲遷移', profitRate: 28.1, revenue: 2.8, pm: 'Jessica Lin' },
-      { rank: 4, name: 'AI 客服機器人開發', profitRate: 12.4, revenue: 1.5, pm: 'Mike Wang' },
-      { rank: 5, name: 'Q4 行銷自動化平台', profitRate: -5.2, revenue: 2.0, pm: 'Sarah Lin' }
+      { rank: 1, name: '金融區塊鏈交易模組', profitRate: 45.2, revenue: 3.5, pm: 'David Wu', contractValue: 7.8, costStatus: 'better' },
+      { rank: 2, name: '企業級 CRM 系統重構', profitRate: 32.5, revenue: 4.0, pm: 'Alex Chen', contractValue: 12.3, costStatus: 'normal' },
+      { rank: 3, name: '雲端資料倉儲遷移', profitRate: 28.1, revenue: 2.8, pm: 'Jessica Lin', contractValue: 10.0, costStatus: 'better' },
+      { rank: 4, name: 'AI 客服機器人開發', profitRate: 12.4, revenue: 1.5, pm: 'Mike Wang', contractValue: 5.5, costStatus: 'normal' },
+      { rank: 5, name: 'Q4 行銷自動化平台', profitRate: -5.2, revenue: 2.0, pm: 'Sarah Lin', contractValue: 8.2, costStatus: 'pending' }
     ];
     return of(data).pipe(delay(200));
   }
@@ -676,6 +768,100 @@ export class CEODashboardService {
       { category: 'low-high', count: 8, label: '待觀察', color: '#f5f5f5' },
       { category: 'low-mid', count: 5, label: '檢視', color: '#E3C088' },
       { category: 'low-low', count: 3, label: '留才風險', color: '#C77F7F' }
+    ];
+    return of(data).pipe(delay(200));
+  }
+
+  // ---------------------------------------------------------------
+  // 專案甘特圖數據
+  // ---------------------------------------------------------------
+  getProjectGanttItems(): Observable<ProjectGanttItem[]> {
+    const data: ProjectGanttItem[] = [
+      {
+        id: 'PRJ-001',
+        title: '網路設備整合案',
+        type: 'integration',
+        pm: { name: '待指派', avatar: null },
+        progress: 30,
+        stage: '履約中',
+        status: 'risk',
+        startDate: '2025-12-01',
+        endDate: '2026-02-15'
+      },
+      {
+        id: 'PRJ-002',
+        title: '設備維護服務案',
+        type: 'service',
+        pm: { name: '林經理', avatar: null },
+        progress: 20,
+        stage: '規劃中',
+        status: 'delay',
+        startDate: '2025-12-10',
+        endDate: '2026-01-20'
+      },
+      {
+        id: 'PRJ-003',
+        title: '通訊設備採購案',
+        type: 'procurement',
+        pm: { name: '陳專員', avatar: null },
+        progress: 50,
+        stage: '履約中',
+        status: 'normal',
+        startDate: '2025-11-20',
+        endDate: '2026-01-15'
+      },
+      {
+        id: 'PRJ-004',
+        title: '系統建置專案',
+        type: 'integration',
+        pm: { name: '張大銘', avatar: null },
+        progress: 45,
+        stage: '履約中',
+        status: 'normal',
+        startDate: '2025-12-05',
+        endDate: '2026-03-01'
+      },
+      {
+        id: 'PRJ-005',
+        title: '軟體升級專案',
+        type: 'software',
+        pm: { name: '王小美', avatar: null },
+        progress: 35,
+        stage: '開發中',
+        status: 'normal',
+        startDate: '2025-12-15',
+        endDate: '2026-02-28'
+      },
+      {
+        id: 'PRJ-006',
+        title: '資訊設備標案',
+        type: 'procurement',
+        pm: { name: '李建國', avatar: null },
+        progress: 60,
+        stage: '驗收中',
+        status: 'normal',
+        startDate: '2025-11-01',
+        endDate: '2025-12-31'
+      }
+    ];
+    return of(data).pipe(delay(200));
+  }
+
+  getProjectStatusStats(): Observable<ProjectStatusStats[]> {
+    const data: ProjectStatusStats[] = [
+      { status: 'normal', count: 4, label: '正常', color: '#7FB095' },
+      { status: 'risk', count: 1, label: '風險', color: '#E3C088' },
+      { status: 'delay', count: 1, label: '延遲', color: '#C77F7F' }
+    ];
+    return of(data).pipe(delay(200));
+  }
+
+  getProjectTypeStats(): Observable<ProjectTypeStats[]> {
+    const data: ProjectTypeStats[] = [
+      { type: 'integration', count: 2, label: '整合', color: '#b8a99a' },
+      { type: 'procurement', count: 2, label: '採購', color: '#7F9CA0' },
+      { type: 'service', count: 1, label: '服務', color: '#9A8C98' },
+      { type: 'software', count: 1, label: '軟體', color: '#D6A28C' }
     ];
     return of(data).pipe(delay(200));
   }

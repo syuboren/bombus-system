@@ -1,0 +1,1732 @@
+@import '../../../../../assets/styles/variables';
+@import '../../../../../assets/styles/mixins';
+
+.main-content {
+  padding: $spacing-lg;
+  margin-top: $header-height;
+
+  @include media-max-md {
+    padding: $spacing-md;
+  }
+}
+
+.content-container {
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+// 頁面工具列
+.page-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-lg;
+  flex-wrap: wrap;
+  gap: $spacing-md;
+}
+
+// 視圖切換標籤
+.view-tabs {
+  display: flex;
+  gap: $spacing-sm;
+  padding: $spacing-xs;
+  background: $color-cloud-gray;
+  border-radius: $radius-lg;
+  width: fit-content;
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: $spacing-sm $spacing-lg;
+  background: transparent;
+  border: none;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  i {
+    font-size: $font-size-base;
+  }
+
+  &:hover {
+    color: $color-text-dark;
+  }
+
+  &.active {
+    background: $color-pure-white;
+    color: $color-brand-main;
+    box-shadow: $shadow-sm;
+  }
+}
+
+// ==================== 日曆視圖 ====================
+.calendar-view {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: $spacing-lg;
+
+  @include media-max-lg {
+    grid-template-columns: 1fr;
+  }
+}
+
+.calendar-container {
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-sm;
+  padding: $spacing-lg;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-lg;
+}
+
+.calendar-nav {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+}
+
+.nav-btn {
+  @include button-icon;
+  width: 36px;
+  height: 36px;
+
+  i {
+    font-size: 20px;
+  }
+}
+
+.calendar-title {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+  min-width: 140px;
+  text-align: center;
+}
+
+.today-btn {
+  padding: $spacing-xs $spacing-md;
+  background: $color-cloud-gray;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    background: $color-brand-main;
+    color: $color-pure-white;
+    border-color: $color-brand-main;
+  }
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  margin-bottom: $spacing-sm;
+}
+
+.weekday {
+  text-align: center;
+  padding: $spacing-sm;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  background: $color-soft-gray;
+  border-radius: $radius-md;
+  overflow: hidden;
+}
+
+.calendar-day {
+  background: $color-pure-white;
+  min-height: 100px;
+  padding: $spacing-xs;
+  cursor: pointer;
+  transition: background $transition-fast;
+
+  &:hover {
+    background: rgba($color-brand-main, 0.03);
+  }
+
+  &.other-month {
+    background: $color-cloud-gray;
+
+    .day-number {
+      color: $color-muted-gray;
+    }
+  }
+
+  &.today {
+    .day-number {
+      background: $color-brand-main;
+      color: $color-pure-white;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+}
+
+.day-number {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-dark;
+  margin-bottom: $spacing-xs;
+}
+
+.day-events {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.event-dot {
+  padding: 4px 8px;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  color: $color-pure-white;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: transform $transition-fast;
+
+  &:hover {
+    transform: scale(1.02);
+  }
+
+  .event-title {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: $font-weight-medium;
+  }
+}
+
+.more-events {
+  font-size: 10px;
+  color: $color-text-secondary;
+  padding: 2px 6px;
+}
+
+// 側邊欄
+.today-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
+
+.sidebar-title {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+  margin-bottom: $spacing-md;
+
+  i {
+    font-size: 18px;
+    color: $color-brand-main;
+  }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: $spacing-xl;
+  color: $color-text-secondary;
+
+  i {
+    font-size: 48px;
+    margin-bottom: $spacing-sm;
+    opacity: 0.5;
+  }
+
+  p {
+    font-size: $font-size-sm;
+  }
+}
+
+.today-meetings {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.today-meeting-card {
+  display: flex;
+  gap: $spacing-md;
+  padding: $spacing-md;
+  background: $color-pure-white;
+  border-radius: $radius-md;
+  box-shadow: $shadow-sm;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    box-shadow: $shadow-md;
+    transform: translateY(-2px);
+  }
+}
+
+.meeting-time {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-brand-main;
+  min-width: 60px;
+
+  .time-separator {
+    font-size: 10px;
+    color: $color-muted-gray;
+  }
+}
+
+.meeting-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.meeting-title {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-dark;
+  margin-bottom: $spacing-xs;
+  @include text-truncate;
+}
+
+.meeting-meta {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.meeting-type {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: $font-size-xs;
+
+  i {
+    font-size: 12px;
+  }
+}
+
+// 即將到來
+.upcoming-section {
+  padding-top: $spacing-lg;
+  border-top: 1px solid $color-soft-gray;
+}
+
+.upcoming-card {
+  display: flex;
+  gap: $spacing-md;
+  padding: $spacing-sm $spacing-md;
+  border-radius: $radius-md;
+  cursor: pointer;
+  transition: background $transition-fast;
+
+  &:hover {
+    background: $color-cloud-gray;
+  }
+}
+
+.upcoming-date {
+  display: flex;
+  flex-direction: column;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  min-width: 50px;
+
+  .date-day {
+    font-weight: $font-weight-medium;
+    color: $color-text-dark;
+  }
+}
+
+.upcoming-info {
+  flex: 1;
+
+  h4 {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: $color-text-dark;
+    margin-bottom: 2px;
+    @include text-truncate;
+  }
+
+  .attendee-count {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+
+    i {
+      margin-right: 4px;
+    }
+  }
+}
+
+// ==================== 列表視圖 ====================
+.list-view {
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-sm;
+  padding: $spacing-lg;
+}
+
+.list-filters {
+  display: flex;
+  gap: $spacing-md;
+  margin-bottom: $spacing-lg;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+
+  label {
+    font-size: $font-size-xs;
+    font-weight: $font-weight-medium;
+    color: $color-text-secondary;
+  }
+}
+
+.form-select {
+  padding: $spacing-sm $spacing-md;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  color: $color-text-dark;
+  background: $color-pure-white;
+  min-width: 150px;
+
+  &:focus {
+    outline: none;
+    border-color: $color-brand-main;
+  }
+}
+
+.meeting-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.meeting-card {
+  display: flex;
+  align-items: stretch;
+  background: $color-pure-white;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    border-color: $color-brand-main;
+    box-shadow: $shadow-sm;
+  }
+}
+
+.meeting-card__indicator {
+  width: 4px;
+  flex-shrink: 0;
+}
+
+.meeting-card__content {
+  flex: 1;
+  padding: $spacing-md;
+  min-width: 0;
+}
+
+.meeting-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-sm;
+}
+
+.meeting-card__title {
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+}
+
+.meeting-card__status {
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+}
+
+.meeting-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-md;
+  margin-bottom: $spacing-sm;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+
+  i {
+    font-size: 14px;
+  }
+}
+
+.meeting-card__footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+}
+
+.meeting-type-badge,
+.recurrence-badge,
+.conclusion-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+}
+
+.meeting-type-badge {
+  color: $color-pure-white;
+}
+
+.recurrence-badge {
+  background: rgba($color-brand-main, 0.1);
+  color: $color-brand-main;
+}
+
+.conclusion-badge {
+  background: rgba($color-success, 0.1);
+  color: $color-success;
+}
+
+.meeting-card__actions {
+  display: flex;
+  align-items: center;
+  padding: 0 $spacing-md;
+
+  .action-btn {
+    @include button-icon;
+    width: 32px;
+    height: 32px;
+
+    i {
+      font-size: 20px;
+    }
+  }
+}
+
+// 狀態樣式
+.status--scheduled {
+  background: rgba($color-brand-main, 0.1);
+  color: $color-brand-main;
+}
+
+.status--progress {
+  background: rgba($color-warning, 0.1);
+  color: $color-warning;
+}
+
+.status--completed {
+  background: rgba($color-success, 0.1);
+  color: $color-success;
+}
+
+.status--cancelled {
+  background: rgba($color-muted-gray, 0.1);
+  color: $color-muted-gray;
+}
+
+.status--pending {
+  background: rgba($color-warning, 0.1);
+  color: $color-warning;
+}
+
+.status--overdue {
+  background: rgba($color-error, 0.1);
+  color: $color-error;
+}
+
+// ==================== 追蹤視圖 ====================
+.tracking-view {
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-sm;
+  padding: $spacing-lg;
+}
+
+.tracking-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-lg;
+  flex-wrap: wrap;
+  gap: $spacing-md;
+
+  h2 {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+  }
+}
+
+.tracking-stats {
+  display: flex;
+  gap: $spacing-lg;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: $spacing-sm $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+
+  .stat-value {
+    font-size: $font-size-xl;
+    font-weight: $font-weight-bold;
+    color: $color-text-dark;
+  }
+
+  .stat-label {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+  }
+
+  &--success .stat-value {
+    color: $color-success;
+  }
+
+  &--warning .stat-value {
+    color: $color-warning;
+  }
+
+  &--danger .stat-value {
+    color: $color-error;
+  }
+}
+
+.tracking-table-container {
+  overflow-x: auto;
+}
+
+.tracking-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th,
+  td {
+    padding: $spacing-md;
+    text-align: left;
+    border-bottom: 1px solid $color-soft-gray;
+  }
+
+  th {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text-secondary;
+    background: $color-cloud-gray;
+  }
+
+  td {
+    font-size: $font-size-sm;
+    color: $color-text-dark;
+  }
+
+  tr:hover td {
+    background: rgba($color-brand-main, 0.02);
+  }
+
+  tr.overdue td {
+    background: rgba($color-error, 0.03);
+  }
+}
+
+.dept-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  background: rgba($color-brand-main, 0.1);
+  color: $color-brand-main;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+}
+
+.content-cell {
+  max-width: 300px;
+}
+
+.responsible-cell {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+
+  .avatar {
+    width: 28px;
+    height: 28px;
+    background: $color-brand-main;
+    color: $color-pure-white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-bold;
+  }
+}
+
+.due-date {
+  white-space: nowrap;
+
+  &.overdue {
+    color: $color-error;
+  }
+
+  .overdue-days {
+    color: $color-error;
+    font-size: $font-size-xs;
+  }
+
+  .due-soon {
+    color: $color-warning;
+    font-size: $font-size-xs;
+  }
+}
+
+.progress-cell {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  min-width: 120px;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 6px;
+  background: $color-soft-gray;
+  border-radius: $radius-full;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: $color-brand-main;
+  border-radius: $radius-full;
+  transition: width $transition-normal;
+}
+
+.progress-text {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  min-width: 35px;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+}
+
+.btn-sm {
+  padding: $spacing-xs $spacing-sm;
+  background: $color-cloud-gray;
+  border: none;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    background: $color-brand-main;
+    color: $color-pure-white;
+  }
+}
+
+// ==================== 統計視圖 ====================
+.stats-view {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
+
+.stats-overview {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: $spacing-md;
+
+  @include media-max-lg {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include media-max-sm {
+    grid-template-columns: 1fr;
+  }
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-lg;
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-sm;
+
+  &__icon {
+    width: 56px;
+    height: 56px;
+    border-radius: $radius-md;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    i {
+      font-size: 28px;
+    }
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__value {
+    font-size: $font-size-2xl;
+    font-weight: $font-weight-bold;
+    color: $color-text-dark;
+    font-family: 'Georgia', serif;
+    font-style: italic;
+  }
+
+  &__label {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+  }
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: $spacing-lg;
+
+  @include media-max-lg {
+    grid-template-columns: 1fr;
+  }
+}
+
+.stats-card {
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-sm;
+  padding: $spacing-lg;
+
+  &--full {
+    grid-column: 1 / -1;
+  }
+
+  &__title {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    font-size: $font-size-base;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+    margin-bottom: $spacing-lg;
+
+    i {
+      font-size: 20px;
+      color: $color-brand-main;
+    }
+  }
+}
+
+.dept-stats-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.dept-stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.dept-info {
+  display: flex;
+  justify-content: space-between;
+}
+
+.dept-name {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-dark;
+}
+
+.dept-hours {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-brand-main;
+}
+
+.dept-bar {
+  height: 8px;
+  background: $color-soft-gray;
+  border-radius: $radius-full;
+  overflow: hidden;
+}
+
+.dept-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #8DA399, #9A8C98);
+  border-radius: $radius-full;
+}
+
+.dept-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.personal-load-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.personal-load-item {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-sm;
+  border-radius: $radius-md;
+  transition: background $transition-fast;
+
+  &:hover {
+    background: $color-cloud-gray;
+  }
+}
+
+.person-avatar {
+  width: 40px;
+  height: 40px;
+  background: $color-brand-main;
+  color: $color-pure-white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: $font-weight-bold;
+}
+
+.person-info {
+  flex: 1;
+}
+
+.person-name {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-dark;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.person-stats {
+  display: flex;
+  gap: $spacing-md;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+
+  span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .has-overdue {
+    color: $color-error;
+  }
+
+  .overdue-count {
+    color: $color-error;
+  }
+}
+
+.load-indicator {
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  background: rgba($color-success, 0.1);
+  color: $color-success;
+
+  &.medium {
+    background: rgba($color-warning, 0.1);
+    color: $color-warning;
+  }
+
+  &.high {
+    background: rgba($color-error, 0.1);
+    color: $color-error;
+  }
+}
+
+.efficiency-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: $spacing-lg;
+
+  @include media-max-lg {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.efficiency-item {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+}
+
+.efficiency-icon {
+  width: 48px;
+  height: 48px;
+  background: rgba($color-brand-main, 0.1);
+  border-radius: $radius-md;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  i {
+    font-size: 24px;
+    color: $color-brand-main;
+  }
+}
+
+.efficiency-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.efficiency-value {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-dark;
+  font-family: 'Georgia', serif;
+  font-style: italic;
+}
+
+.efficiency-label {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+// ==================== Modal 樣式 ====================
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: $spacing-lg;
+}
+
+.modal-container {
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: modalSlideIn 0.2s ease;
+
+  &--large {
+    width: 100%;
+    max-width: 900px;
+  }
+
+  &--small {
+    width: 100%;
+    max-width: 500px;
+  }
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: $spacing-lg;
+  border-bottom: 1px solid $color-soft-gray;
+  border-left: 4px solid transparent;
+
+  h2 {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+  }
+}
+
+.modal-header-content {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.meeting-type-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $color-pure-white;
+  width: fit-content;
+}
+
+.modal-close {
+  @include button-icon;
+  width: 36px;
+  height: 36px;
+
+  i {
+    font-size: 20px;
+  }
+}
+
+.modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: $spacing-lg;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: $spacing-md;
+  padding: $spacing-md $spacing-lg;
+  border-top: 1px solid $color-soft-gray;
+}
+
+// 表單樣式
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: $spacing-lg;
+
+  @include media-max-md {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+
+  &--full {
+    grid-column: 1 / -1;
+  }
+}
+
+.form-section-title {
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+  margin-bottom: $spacing-sm;
+}
+
+.form-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $spacing-md;
+}
+
+.form-label {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+
+  &.required::after {
+    content: ' *';
+    color: $color-error;
+  }
+}
+
+.form-input,
+.form-textarea {
+  padding: $spacing-sm $spacing-md;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  color: $color-text-dark;
+  transition: border-color $transition-fast;
+
+  &:focus {
+    outline: none;
+    border-color: $color-brand-main;
+  }
+
+  &::placeholder {
+    color: $color-muted-gray;
+  }
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.location-input {
+  display: flex;
+  gap: $spacing-md;
+  align-items: center;
+
+  .form-input {
+    flex: 1;
+  }
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  cursor: pointer;
+  white-space: nowrap;
+
+  input[type='checkbox'] {
+    width: 16px;
+    height: 16px;
+    accent-color: $color-brand-main;
+  }
+}
+
+.reminder-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-md;
+}
+
+.attendee-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: $spacing-sm;
+
+  @include media-max-sm {
+    grid-template-columns: 1fr;
+  }
+}
+
+.attendee-option {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm;
+  border: 2px solid $color-soft-gray;
+  border-radius: $radius-md;
+  cursor: pointer;
+  transition: all $transition-fast;
+  position: relative;
+
+  input[type='checkbox'] {
+    display: none;
+  }
+
+  &:hover {
+    border-color: $color-brand-main;
+  }
+
+  &.selected {
+    border-color: $color-brand-main;
+    background: rgba($color-brand-main, 0.08);
+
+    .attendee-avatar {
+      background: $color-brand-main;
+    }
+  }
+}
+
+.attendee-check {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 22px;
+  height: 22px;
+  background: $color-brand-main;
+  color: $color-pure-white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  animation: checkPop 0.2s ease;
+}
+
+@keyframes checkPop {
+  0% {
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.attendee-avatar {
+  width: 36px;
+  height: 36px;
+  background: $color-brand-main;
+  color: $color-pure-white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+}
+
+.attendee-info {
+  display: flex;
+  flex-direction: column;
+
+  .attendee-name {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: $color-text-dark;
+  }
+
+  .attendee-dept {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+  }
+}
+
+.empty-agenda {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: $spacing-xl;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+  color: $color-text-secondary;
+
+  i {
+    font-size: 40px;
+    margin-bottom: $spacing-sm;
+    opacity: 0.5;
+  }
+
+  p {
+    margin-bottom: $spacing-md;
+  }
+}
+
+.agenda-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.agenda-item {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-sm $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+}
+
+.agenda-order {
+  width: 24px;
+  height: 24px;
+  background: $color-brand-main;
+  color: $color-pure-white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+  flex-shrink: 0;
+}
+
+.agenda-content {
+  flex: 1;
+  min-width: 0;
+
+  .agenda-title {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: $color-text-dark;
+    display: block;
+  }
+
+  .agenda-meta {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+
+    i {
+      margin: 0 4px 0 8px;
+
+      &:first-child {
+        margin-left: 0;
+      }
+    }
+  }
+}
+
+.btn-icon-sm {
+  @include button-icon;
+  width: 28px;
+  height: 28px;
+
+  i {
+    font-size: 16px;
+  }
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid $color-soft-gray;
+  color: $color-text-primary;
+
+  &:hover {
+    border-color: $color-brand-main;
+    color: $color-brand-main;
+    background: transparent;
+  }
+}
+
+.btn-secondary {
+  padding: $spacing-sm $spacing-lg;
+  background: $color-cloud-gray;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    background: darken($color-cloud-gray, 5%);
+  }
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-lg;
+  background: $color-brand-main;
+  border: none;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-pure-white;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    background: darken($color-brand-main, 8%);
+  }
+
+  i {
+    font-size: $font-size-base;
+  }
+}
+
+// 會議詳情 Modal
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: $spacing-lg;
+
+  @include media-max-md {
+    grid-template-columns: 1fr;
+  }
+}
+
+.detail-section {
+  &--full {
+    grid-column: 1 / -1;
+  }
+}
+
+.detail-section-title {
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+  margin-bottom: $spacing-md;
+  padding-bottom: $spacing-sm;
+  border-bottom: 1px solid $color-soft-gray;
+}
+
+.detail-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+
+  i {
+    font-size: 18px;
+    color: $color-text-secondary;
+    width: 24px;
+  }
+}
+
+.online-badge {
+  padding: 2px 6px;
+  background: rgba($color-brand-main, 0.1);
+  color: $color-brand-main;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  margin-left: $spacing-sm;
+}
+
+.attendee-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.attendee-item {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm;
+  border-radius: $radius-md;
+
+  &:hover {
+    background: $color-cloud-gray;
+  }
+}
+
+.organizer-badge {
+  padding: 1px 6px;
+  background: $color-brand-main;
+  color: $color-pure-white;
+  border-radius: $radius-full;
+  font-size: 10px;
+  margin-left: $spacing-xs;
+}
+
+.signed-badge {
+  margin-left: auto;
+  font-size: $font-size-xs;
+  color: $color-success;
+
+  i {
+    margin-right: 2px;
+  }
+}
+
+.empty-state-sm {
+  padding: $spacing-md;
+  text-align: center;
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+}
+
+.agenda-detail-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.agenda-detail-item {
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-md;
+  padding: $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+
+  &.discussed {
+    opacity: 0.7;
+
+    .agenda-title {
+      text-decoration: line-through;
+    }
+  }
+}
+
+.agenda-desc {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  margin-top: 4px;
+}
+
+.agenda-status {
+  padding: 2px 8px;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  margin-left: auto;
+}
+
+.conclusion-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.conclusion-item {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+}
+
+.conclusion-content {
+  flex: 1;
+
+  p {
+    font-size: $font-size-sm;
+    color: $color-text-dark;
+    margin-bottom: $spacing-xs;
+  }
+}
+
+.conclusion-meta {
+  display: flex;
+  gap: $spacing-md;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+
+  span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+}
+
+.conclusion-progress {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  min-width: 100px;
+
+  .progress-bar {
+    flex: 1;
+  }
+}
+
+.attachment-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.attachment-item {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+
+  i {
+    font-size: 20px;
+    color: $color-brand-main;
+  }
+}
+
+.attachment-name {
+  flex: 1;
+  font-size: $font-size-sm;
+  color: $color-text-dark;
+}
+
+.attachment-size {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+

@@ -2,6 +2,7 @@ import {
   Component,
   ChangeDetectionStrategy,
   signal,
+  computed,
   inject,
   OnInit,
   AfterViewInit,
@@ -32,8 +33,22 @@ import {
   RewardRiskEmployee,
   RiskQuadrantPerson,
   CompetencyEmployee,
-  ProjectBubble
+  ProjectBubble,
+  ProjectGanttItem,
+  ProjectStatusStats,
+  ProjectTypeStats,
+  CostStructureItem,
+  CostWarningItem
 } from '../../models/ceo-dashboard.model';
+import { TrainingService } from '../../../training/services/training.service';
+import {
+  TrainingKPI,
+  CourseTypeStats,
+  TrainingEffectiveness,
+  UpcomingCourse,
+  TrainingRecommendation,
+  CourseCategory
+} from '../../../training/models/training.model';
 import * as echarts from 'echarts';
 
 interface HealthTrendData {
@@ -90,6 +105,7 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
   @ViewChild('projectBubbleChart') projectBubbleChartRef!: ElementRef<HTMLDivElement>;
 
   private ceoService = inject(CEODashboardService);
+  private trainingService = inject(TrainingService);
   private cdr = inject(ChangeDetectorRef);
 
   // Charts
@@ -109,6 +125,8 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
   // View state
   currentView = signal<DashboardView>('ceo');
   currentDate = signal<string>('');
+  showQuickNav = signal(true);
+  activeSection = signal('section-overview');
 
   // Decision carousel
   decisionPage = signal<number>(0);
@@ -118,6 +136,7 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
   healthAxes = signal<HealthAxis[]>([]);
   healthTrendData = signal<HealthTrendData[]>([]);
   riskAlerts = signal<RiskAlert[]>([]);
+  projectRiskAlerts = computed(() => this.riskAlerts().filter(a => a.category === 'project'));
   decisionItems = signal<DecisionItem[]>([]);
   trendData = signal<TrendData[]>([]);
 
@@ -150,11 +169,36 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
   profitKPI = signal<ProfitKPI | null>(null);
   projectRankings = signal<ProjectRanking[]>([]);
   profitTrendData = signal<{ month: string; actual: number | null; predicted: number | null; optimistic: number | null; pessimistic: number | null }[]>([]);
+  costStructure = signal<CostStructureItem[]>([]);
+  costWarnings = signal<CostWarningItem[]>([]);
 
   // 績效獎酬
   rewardKPI = signal<RewardKPI | null>(null);
   rewardRiskEmployees = signal<RewardRiskEmployee[]>([]);
   selectedRewardRiskType = signal<'retention' | 'culture'>('retention');
+
+  // 教育訓練
+  trainingKPI = signal<TrainingKPI | null>(null);
+  courseTypeStats = signal<CourseTypeStats[]>([]);
+  trainingEffectiveness = signal<TrainingEffectiveness[]>([]);
+  upcomingCourses = signal<UpcomingCourse[]>([]);
+  trainingRecommendations = signal<TrainingRecommendation[]>([]);
+
+  // 專案甘特圖
+  projectGanttItems = signal<ProjectGanttItem[]>([]);
+  projectStatusStats = signal<ProjectStatusStats[]>([]);
+  projectTypeStats = signal<ProjectTypeStats[]>([]);
+  selectedProjectStatus = signal<string | null>(null);
+  selectedProjectType = signal<string | null>(null);
+  selectedGanttProject = signal<ProjectGanttItem | null>(null);
+  ganttTimeRange = signal<{ start: Date; end: Date }>({
+    start: new Date('2025-11-01'),
+    end: new Date('2026-03-31')
+  });
+
+  // 專案甘特圖統計圖表
+  private projectStatusDonutChart: echarts.ECharts | null = null;
+  private projectTypeBarChart: echarts.ECharts | null = null;
 
   // 依類型篩選績效獎酬風險人員
   getFilteredRewardEmployees(): RewardRiskEmployee[] {
@@ -164,6 +208,118 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
   // 切換績效獎酬風險類型
   switchRewardRiskType(type: 'retention' | 'culture'): void {
     this.selectedRewardRiskType.set(type);
+  }
+
+  // 取得課程類別標籤
+  getCategoryLabel(category: CourseCategory): string {
+    return this.trainingService.getCategoryLabel(category);
+  }
+
+  // 取得課程類別顏色
+  getCategoryColor(category: CourseCategory): string {
+    return this.trainingService.getCategoryColor(category);
+  }
+
+  // 取得成效等級樣式
+  getEffectivenessClass(status: string): string {
+    return `effectiveness--${status}`;
+  }
+
+  // 取得總課程數
+  getTotalCourses(): number {
+    return this.courseTypeStats().reduce((sum, stat) => sum + stat.count, 0);
+  }
+
+  // 根據分數取得成效配色 class
+  getEffectivenessColorClass(score: number): string {
+    if (score >= 80) return 'effectiveness--green';
+    if (score >= 60) return 'effectiveness--yellow';
+    return 'effectiveness--red';
+  }
+
+  // 初始化課程類型環狀圖
+  private courseTypeDonutChart: echarts.ECharts | null = null;
+
+  private initCourseTypeDonutChart(): void {
+    const container = document.getElementById('course-type-donut-chart');
+    if (!container) return;
+
+    if (this.courseTypeDonutChart) {
+      this.courseTypeDonutChart.dispose();
+    }
+
+    this.courseTypeDonutChart = echarts.init(container);
+    const stats = this.courseTypeStats();
+    const total = this.getTotalCourses();
+
+    const option: echarts.EChartsOption = {
+      tooltip: {
+        trigger: 'item',
+        formatter: '{b}: {c} 門 ({d}%)'
+      },
+      series: [{
+        type: 'pie',
+        radius: ['55%', '85%'],
+        center: ['50%', '50%'],
+        avoidLabelOverlap: false,
+        itemStyle: {
+          borderRadius: 8,
+          borderColor: '#fff',
+          borderWidth: 3
+        },
+        label: {
+          show: true,
+          position: 'center',
+          formatter: () => `{value|${total}}\n{label|門課程}`,
+          rich: {
+            value: {
+              fontSize: 28,
+              fontFamily: 'Georgia, serif',
+              fontStyle: 'italic',
+              fontWeight: 'bold',
+              color: '#374151',
+              lineHeight: 32
+            },
+            label: {
+              fontSize: 12,
+              color: '#9CA3AF',
+              lineHeight: 18
+            }
+          }
+        },
+        emphasis: {
+          label: { show: true },
+          itemStyle: {
+            shadowBlur: 10,
+            shadowOffsetX: 0,
+            shadowColor: 'rgba(0, 0, 0, 0.2)'
+          },
+          scale: true,
+          scaleSize: 6
+        },
+        labelLine: { show: false },
+        data: stats.map(stat => ({
+          name: stat.label,
+          value: stat.count,
+          itemStyle: { color: stat.color }
+        }))
+      }]
+    };
+
+    this.courseTypeDonutChart.setOption(option);
+  }
+
+  // 取得優先級樣式
+  getPriorityClass(priority: string): string {
+    return `priority--${priority}`;
+  }
+
+  // 格式化日期
+  formatCourseDate(date: Date): string {
+    return new Date(date).toLocaleDateString('zh-TW', {
+      month: '2-digit',
+      day: '2-digit'
+    });
   }
 
   // 營運視角資料 (原本的)
@@ -207,28 +363,28 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
       title: '職能熱力圖',
       description: '快速定位組織職能短板',
       icon: 'ri-fire-line',
-      route: '/training/talent-map',
+      route: '/training/competency-heatmap',
       moduleClass: 'module-l3'
     },
     {
       title: '人才九宮格',
       description: '績效潛力矩陣分析',
       icon: 'ri-grid-line',
-      route: '/training/talent-map',
+      route: '/training/nine-box',
       moduleClass: 'module-l3'
     },
     {
       title: '學習路徑圖',
       description: '智能推薦學習路徑',
       icon: 'ri-route-line',
-      route: '/training/talent-map',
+      route: '/training/learning-path',
       moduleClass: 'module-l3'
     },
     {
       title: '關鍵人才儀表板',
       description: '高風險人才預警',
       icon: 'ri-star-line',
-      route: '/training/talent-map',
+      route: '/training/key-talent',
       moduleClass: 'module-l3'
     }
   ];
@@ -267,11 +423,17 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   ngAfterViewInit(): void {
-    setTimeout(() => this.initTrendChart(), 300);
+    setTimeout(() => {
+      this.initTrendChart();
+      if (this.currentView() === 'ceo') {
+        this.initScrollListener();
+      }
+    }, 300);
   }
 
   ngOnDestroy(): void {
     window.removeEventListener('resize', this.resizeHandler);
+    window.removeEventListener('scroll', this.handleScroll);
     this.disposeCharts();
   }
 
@@ -285,9 +447,67 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
 
     if (view === 'ceo') {
       // 延遲初始化圖表，確保 DOM 已經渲染
-      setTimeout(() => this.initTrendChart(), 200);
+      setTimeout(() => {
+        this.initTrendChart();
+        this.initScrollListener();
+      }, 200);
+    } else {
+      window.removeEventListener('scroll', this.handleScroll);
     }
   }
+
+  // 快速導航邏輯
+  toggleQuickNav(): void {
+    this.showQuickNav.update(v => !v);
+  }
+
+  scrollToSection(sectionId: string): void {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      this.activeSection.set(sectionId);
+      const headerOffset = 100; // 考慮到 Header 高度
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+  }
+
+  private initScrollListener(): void {
+    window.addEventListener('scroll', this.handleScroll);
+  }
+
+  private handleScroll = () => {
+    if (this.currentView() !== 'ceo') return;
+
+    const sections = [
+      'section-overview',
+      'section-talent',
+      'section-project',
+      'section-profit',
+      'section-culture',
+      'section-decision'
+    ];
+
+    const currentScrollPos = window.pageYOffset + 150;
+
+    for (const sectionId of sections) {
+      const element = document.getElementById(sectionId);
+      if (element) {
+        const { top, bottom } = element.getBoundingClientRect();
+        const elementTop = top + window.pageYOffset;
+        const elementBottom = bottom + window.pageYOffset;
+
+        if (currentScrollPos >= elementTop && currentScrollPos < elementBottom) {
+          this.activeSection.set(sectionId);
+          break;
+        }
+      }
+    }
+  };
 
   private disposeCharts(): void {
     if (this.trendChart) {
@@ -297,6 +517,22 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
     if (this.healthTrendChart) {
       this.healthTrendChart.dispose();
       this.healthTrendChart = null;
+    }
+    if (this.profitSparklineChart) {
+      this.profitSparklineChart.dispose();
+      this.profitSparklineChart = null;
+    }
+    if (this.projectBubbleChart) {
+      this.projectBubbleChart.dispose();
+      this.projectBubbleChart = null;
+    }
+    if (this.projectStatusDonutChart) {
+      this.projectStatusDonutChart.dispose();
+      this.projectStatusDonutChart = null;
+    }
+    if (this.projectTypeBarChart) {
+      this.projectTypeBarChart.dispose();
+      this.projectTypeBarChart = null;
     }
     // Dispose sparkline charts
     this.sparklineCharts.forEach(chart => chart.dispose());
@@ -383,6 +619,17 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
     return 'stable'; // 左下：低風險低關鍵
   }
 
+  getRiskLevel(riskScore: number): string {
+    if (riskScore >= 80) return 'critical';
+    if (riskScore >= 60) return 'high';
+    if (riskScore >= 40) return 'medium';
+    return 'low';
+  }
+
+  getAlertsByType(alertType: 'key-position' | 'capability-gap' | 'project-risk') {
+    return this.riskAlerts().filter(alert => alert.alertType === alertType);
+  }
+
   private updateCurrentDate(): void {
     const today = new Date();
     const year = today.getFullYear();
@@ -439,6 +686,8 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
     this.ceoService.getCompetencyHeatmap().subscribe(data => {
       this.competencyHeatmap.set(data);
       this.cdr.detectChanges();
+      // 預設開啟研發部 - 專案管理
+      setTimeout(() => this.selectHeatmapCell('研發部', '專案管理', 3.2), 100);
     });
 
     // 人才風險區塊
@@ -485,6 +734,16 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
       this.cdr.detectChanges();
     });
 
+    this.ceoService.getCostStructure().subscribe(data => {
+      this.costStructure.set(data);
+      this.cdr.detectChanges();
+    });
+
+    this.ceoService.getCostWarnings().subscribe(data => {
+      this.costWarnings.set(data);
+      this.cdr.detectChanges();
+    });
+
     this.ceoService.getProjectRankings().subscribe(data => {
       this.projectRankings.set(data);
       this.cdr.detectChanges();
@@ -506,12 +765,65 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
       this.rewardRiskEmployees.set(data);
       this.cdr.detectChanges();
     });
+
+    // 教育訓練區塊
+    this.trainingService.getTrainingKPI().subscribe(data => {
+      this.trainingKPI.set(data);
+      this.cdr.detectChanges();
+    });
+
+    this.trainingService.getCourseTypeStats().subscribe(data => {
+      this.courseTypeStats.set(data);
+      this.cdr.detectChanges();
+      setTimeout(() => this.initCourseTypeDonutChart(), 100);
+    });
+
+    this.trainingService.getTrainingEffectiveness().subscribe(data => {
+      this.trainingEffectiveness.set(data);
+      this.cdr.detectChanges();
+    });
+
+    this.trainingService.getUpcomingCourses().subscribe(data => {
+      this.upcomingCourses.set(data);
+      this.cdr.detectChanges();
+    });
+
+    this.trainingService.getTrainingRecommendations().subscribe(data => {
+      this.trainingRecommendations.set(data);
+      this.cdr.detectChanges();
+    });
+
+    // 專案甘特圖區塊
+    this.ceoService.getProjectGanttItems().subscribe(data => {
+      this.projectGanttItems.set(data);
+      this.cdr.detectChanges();
+    });
+
+    this.ceoService.getProjectStatusStats().subscribe(data => {
+      this.projectStatusStats.set(data);
+      this.cdr.detectChanges();
+      setTimeout(() => this.initProjectStatusDonutChart(), 100);
+    });
+
+    this.ceoService.getProjectTypeStats().subscribe(data => {
+      this.projectTypeStats.set(data);
+      this.cdr.detectChanges();
+      setTimeout(() => this.initProjectTypeBarChart(), 100);
+    });
   }
 
   private initTrendChart(): void {
     if (this.currentView() !== 'ceo') return;
     this.updateTrendChart();
     this.initSparklineCharts();
+    // 初始化專案交付和毛利預測圖表
+    setTimeout(() => {
+      this.initProfitSparkline();
+      this.initProjectBubbleChart();
+      this.initCourseTypeDonutChart();
+      this.initProjectStatusDonutChart();
+      this.initProjectTypeBarChart();
+    }, 100);
   }
 
   private updateTrendChart(): void {
@@ -1065,5 +1377,372 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
     };
 
     this.projectBubbleChart.setOption(option);
+  }
+
+  // ---------------------------------------------------------------
+  // 專案甘特圖相關方法
+  // ---------------------------------------------------------------
+
+  // 取得頭像顯示文字（PM 名稱第一個字）
+  getAvatarLabel(name: string): string {
+    return name ? name.charAt(0) : '?';
+  }
+
+  // 根據 PM 名稱生成固定的柔和背景色
+  getAvatarColor(name: string): string {
+    const colors = [
+      '#8DA399', // L1 Sage
+      '#D6A28C', // L2 Terracotta
+      '#9A8C98', // L4 Mauve
+      '#7F9CA0', // L3 Petrol light
+      '#E3C088', // Warning
+      '#7FB095', // Success light
+      '#B8A9C9', // Purple light
+      '#A3C4BC'  // Teal light
+    ];
+    // 使用名稱的 charCode 總和來決定顏色
+    const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return colors[hash % colors.length];
+  }
+
+  // 取得專案類型顏色
+  getProjectTypeColor(type: string): string {
+    const colors: Record<string, string> = {
+      integration: '#b8a99a',  // 整合 - 米棕色
+      procurement: '#7F9CA0',  // 採購 - Petrol
+      service: '#9A8C98',      // 服務 - Mauve
+      software: '#D6A28C'      // 軟體 - Terracotta
+    };
+    return colors[type] || '#b8a99a';
+  }
+
+  // 取得專案類型標籤
+  getProjectTypeLabel(type: string): string {
+    const labels: Record<string, string> = {
+      integration: '整合',
+      procurement: '採購',
+      service: '服務',
+      software: '軟體'
+    };
+    return labels[type] || type;
+  }
+
+  // 取得專案狀態標籤
+  getProjectStatusLabel(status: string): string {
+    const labels: Record<string, string> = {
+      normal: '正常',
+      risk: '風險',
+      delay: '延遲'
+    };
+    return labels[status] || status;
+  }
+
+  // 顯示專案詳細資訊
+  showProjectDetail(item: ProjectGanttItem): void {
+    this.selectedGanttProject.set(item);
+  }
+
+  // 關閉專案詳細資訊
+  closeProjectDetail(): void {
+    this.selectedGanttProject.set(null);
+  }
+
+  // 計算甘特圖專案條的位置和寬度
+  getGanttBarStyle(item: ProjectGanttItem): { left: string; width: string } {
+    const range = this.ganttTimeRange();
+    const totalDays = this.getDaysBetween(range.start, range.end);
+    const startDate = new Date(item.startDate);
+    const endDate = new Date(item.endDate);
+
+    const startOffset = this.getDaysBetween(range.start, startDate);
+    const duration = this.getDaysBetween(startDate, endDate);
+
+    const leftPercent = Math.max(0, (startOffset / totalDays) * 100);
+    const widthPercent = Math.min(100 - leftPercent, (duration / totalDays) * 100);
+
+    return {
+      left: `${leftPercent}%`,
+      width: `${Math.max(widthPercent, 5)}%`
+    };
+  }
+
+  // 計算兩個日期之間的天數
+  private getDaysBetween(start: Date, end: Date): number {
+    const oneDay = 24 * 60 * 60 * 1000;
+    return Math.round((end.getTime() - start.getTime()) / oneDay);
+  }
+
+  // 依據專案類型篩選專案
+  filterByType(type: string | null): void {
+    if (this.selectedProjectType() === type) {
+      this.selectedProjectType.set(null);
+    } else {
+      this.selectedProjectType.set(type);
+    }
+    this.updateChartsOnFilter();
+  }
+
+  // 依據專案狀態篩選專案
+  filterByStatus(status: string | null): void {
+    if (this.selectedProjectStatus() === status) {
+      this.selectedProjectStatus.set(null);
+    } else {
+      this.selectedProjectStatus.set(status);
+    }
+    this.updateChartsOnFilter();
+  }
+
+  // 取得過濾後的專案列表
+  getFilteredGanttItems(): ProjectGanttItem[] {
+    let items = this.projectGanttItems();
+    const status = this.selectedProjectStatus();
+    const type = this.selectedProjectType();
+
+    if (status) {
+      items = items.filter(item => item.status === status);
+    }
+    if (type) {
+      items = items.filter(item => item.type === type);
+    }
+    return items;
+  }
+
+  // 篩選時更新圖表
+  private updateChartsOnFilter(): void {
+    this.updateProjectStatusDonutChart();
+    this.updateProjectTypeBarChart();
+  }
+
+  // 初始化專案狀態環狀圖
+  private initProjectStatusDonutChart(): void {
+    const container = document.getElementById('project-status-donut-chart');
+    if (!container) return;
+
+    if (this.projectStatusDonutChart) {
+      this.projectStatusDonutChart.dispose();
+    }
+
+    this.projectStatusDonutChart = echarts.init(container);
+    this.updateProjectStatusDonutChart();
+
+    // 添加點擊事件
+    this.projectStatusDonutChart.on('click', (params: any) => {
+      this.filterByStatus(params.data?.status || null);
+    });
+  }
+
+  // 更新專案狀態環狀圖
+  private updateProjectStatusDonutChart(): void {
+    if (!this.projectStatusDonutChart) return;
+
+    const allItems = this.projectGanttItems();
+    const selectedStatus = this.selectedProjectStatus();
+    const selectedType = this.selectedProjectType();
+
+    // 根據選中的類型過濾，計算每個狀態的數量
+    const filteredItems = selectedType
+      ? allItems.filter(item => item.type === selectedType)
+      : allItems;
+
+    const statusCounts: Record<string, number> = {
+      normal: 0,
+      risk: 0,
+      delay: 0
+    };
+    filteredItems.forEach(item => {
+      statusCounts[item.status] = (statusCounts[item.status] || 0) + 1;
+    });
+
+    const stats = this.projectStatusStats();
+    const total = filteredItems.length;
+
+    const option: echarts.EChartsOption = {
+      tooltip: {
+        trigger: 'item',
+        formatter: '{b}: {c} 個 ({d}%)'
+      },
+      series: [{
+        type: 'pie',
+        radius: ['50%', '75%'],
+        center: ['50%', '50%'],
+        avoidLabelOverlap: false,
+        itemStyle: {
+          borderRadius: 6,
+          borderColor: '#fff',
+          borderWidth: 2
+        },
+        label: {
+          show: true,
+          position: 'center',
+          formatter: () => `{value|${total}}\n{name|專案}`,
+          rich: {
+            value: {
+              fontFamily: 'Georgia, serif',
+              fontSize: 24,
+              fontWeight: 'bold',
+              fontStyle: 'italic',
+              color: '#464E56',
+              lineHeight: 30
+            },
+            name: {
+              fontSize: 12,
+              color: '#6B7280',
+              lineHeight: 20
+            }
+          }
+        },
+        emphasis: {
+          label: { show: true },
+          itemStyle: {
+            shadowBlur: 10,
+            shadowColor: 'rgba(0, 0, 0, 0.2)'
+          }
+        },
+        data: stats.map(s => ({
+          value: statusCounts[s.status] || 0,
+          name: s.label,
+          status: s.status,
+          itemStyle: {
+            color: s.color,
+            opacity: selectedStatus && selectedStatus !== s.status ? 0.3 : 1
+          }
+        }))
+      }]
+    };
+
+    this.projectStatusDonutChart.setOption(option);
+  }
+
+  // 初始化專案類型柱狀圖
+  private initProjectTypeBarChart(): void {
+    const container = document.getElementById('project-type-bar-chart');
+    if (!container) return;
+
+    if (this.projectTypeBarChart) {
+      this.projectTypeBarChart.dispose();
+    }
+
+    this.projectTypeBarChart = echarts.init(container);
+    this.updateProjectTypeBarChart();
+
+    // 添加點擊事件
+    this.projectTypeBarChart.on('click', (params: any) => {
+      this.filterByType(params.data?.type || null);
+    });
+  }
+
+  // 更新專案類型柱狀圖
+  private updateProjectTypeBarChart(): void {
+    if (!this.projectTypeBarChart) return;
+
+    const allItems = this.projectGanttItems();
+    const selectedStatus = this.selectedProjectStatus();
+    const selectedType = this.selectedProjectType();
+
+    // 根據選中的狀態過濾，計算每個類型的數量
+    const filteredItems = selectedStatus
+      ? allItems.filter(item => item.status === selectedStatus)
+      : allItems;
+
+    const typeCounts: Record<string, number> = {
+      integration: 0,
+      procurement: 0,
+      service: 0,
+      software: 0
+    };
+    filteredItems.forEach(item => {
+      typeCounts[item.type] = (typeCounts[item.type] || 0) + 1;
+    });
+
+    const stats = this.projectTypeStats();
+
+    const option: echarts.EChartsOption = {
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'shadow' },
+        formatter: '{b}: {c} 個'
+      },
+      grid: {
+        left: '3%',
+        right: '12%',
+        bottom: '5%',
+        top: '5%',
+        containLabel: true
+      },
+      xAxis: {
+        type: 'value',
+        axisLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: { show: false },
+        splitLine: { show: false }
+      },
+      yAxis: {
+        type: 'category',
+        data: stats.map(s => s.label),
+        axisLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: {
+          color: '#6B7280',
+          fontSize: 13,
+          fontWeight: 500
+        }
+      },
+      series: [{
+        type: 'bar',
+        barWidth: 16,
+        barCategoryGap: '40%',
+        itemStyle: {
+          borderRadius: 12
+        },
+        data: stats.map(s => ({
+          value: typeCounts[s.type] || 0,
+          name: s.label,
+          type: s.type,
+          itemStyle: {
+            color: s.color,
+            opacity: selectedType && selectedType !== s.type ? 0.3 : 1
+          }
+        })),
+        label: {
+          show: true,
+          position: 'right',
+          formatter: '{c}',
+          color: '#6B7280',
+          fontSize: 12,
+          fontWeight: 'bold'
+        }
+      }]
+    };
+
+    this.projectTypeBarChart.setOption(option);
+  }
+
+  // 取得甘特圖時間軸刻度
+  getGanttTimeMarkers(): { label: string; position: string }[] {
+    const range = this.ganttTimeRange();
+    const totalDays = this.getDaysBetween(range.start, range.end);
+    const markers: { label: string; position: string }[] = [];
+
+    // 每月顯示一個刻度（包含年份）
+    const current = new Date(range.start);
+    let lastYear = -1;
+    while (current <= range.end) {
+      const offset = this.getDaysBetween(range.start, current);
+      const position = `${(offset / totalDays) * 100}%`;
+      const year = current.getFullYear();
+      const month = current.getMonth() + 1;
+
+      // 如果是新的一年或第一個刻度，顯示年份
+      const label = year !== lastYear ? `${year}/${month}月` : `${month}月`;
+      lastYear = year;
+
+      markers.push({ label, position });
+
+      // 移到下個月
+      current.setMonth(current.getMonth() + 1);
+      current.setDate(1);
+    }
+
+    return markers;
   }
 }

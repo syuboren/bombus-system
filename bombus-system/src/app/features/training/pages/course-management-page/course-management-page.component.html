@@ -1,0 +1,333 @@
+<app-header
+  pageTitle="課程管理"
+  [breadcrumbs]="['首頁', '教育訓練', '課程管理']">
+</app-header>
+
+<div class="course-management">
+  <!-- KPI 總覽 -->
+  <section class="kpi-section">
+    <div class="section-header">
+      <h2 class="section-title">
+        <i class="ri-bar-chart-box-line"></i>
+        培訓 KPI 總覽
+      </h2>
+    </div>
+
+    @if (trainingKPI()) {
+      <div class="kpi-grid">
+        <div class="kpi-card kpi-card--completion">
+          <div class="kpi-card__icon">
+            <i class="ri-check-double-line"></i>
+          </div>
+          <div class="kpi-card__content">
+            <span class="kpi-card__value">{{ trainingKPI()!.completionRate }}%</span>
+            <span class="kpi-card__label">培訓完成率</span>
+          </div>
+          <div class="kpi-card__detail">
+            {{ trainingKPI()!.totalTrainees }} 人次
+          </div>
+        </div>
+
+        <div class="kpi-card kpi-card--budget">
+          <div class="kpi-card__icon">
+            <i class="ri-wallet-3-line"></i>
+          </div>
+          <div class="kpi-card__content">
+            <span class="kpi-card__value">{{ trainingKPI()!.budgetUtilization }}%</span>
+            <span class="kpi-card__label">預算執行率</span>
+          </div>
+          <div class="kpi-card__detail">
+            {{ formatBudget(trainingKPI()!.usedBudget) }} / {{ formatBudget(trainingKPI()!.plannedBudget) }}
+          </div>
+        </div>
+
+        <div class="kpi-card kpi-card--roi">
+          <div class="kpi-card__icon">
+            <i class="ri-line-chart-line"></i>
+          </div>
+          <div class="kpi-card__content">
+            <span class="kpi-card__value">{{ trainingKPI()!.trainingROI }}%</span>
+            <span class="kpi-card__label">培訓 ROI</span>
+          </div>
+          <div class="kpi-card__detail">
+            投資報酬率
+          </div>
+        </div>
+
+        <div class="kpi-card kpi-card--satisfaction">
+          <div class="kpi-card__icon">
+            <i class="ri-star-line"></i>
+          </div>
+          <div class="kpi-card__content">
+            <span class="kpi-card__value">{{ trainingKPI()!.avgSatisfaction }}</span>
+            <span class="kpi-card__label">平均滿意度</span>
+          </div>
+          <div class="kpi-card__detail">
+            滿分 5.0
+          </div>
+        </div>
+      </div>
+    }
+  </section>
+
+  <!-- 課程統計與成效 -->
+  <section class="stats-section">
+    <div class="stats-grid">
+      <!-- 課程類型分佈 -->
+      <div class="stats-card">
+        <h3 class="stats-card__title">
+          <i class="ri-pie-chart-line"></i>
+          課程類型分佈
+        </h3>
+        <div class="type-distribution">
+          @for (stat of courseTypeStats(); track stat.category) {
+            <div class="type-item">
+              <div class="type-item__header">
+                <span class="type-item__dot" [style.background]="stat.color"></span>
+                <span class="type-item__label">{{ stat.label }}</span>
+                <span class="type-item__count">{{ stat.count }} 門</span>
+              </div>
+              <div class="type-item__bar">
+                <div class="type-item__fill"
+                     [style.width.%]="stat.percentage"
+                     [style.background]="stat.color">
+                </div>
+              </div>
+              <span class="type-item__percentage">{{ stat.percentage }}%</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- 培訓成效追蹤 -->
+      <div class="stats-card">
+        <h3 class="stats-card__title">
+          <i class="ri-pulse-line"></i>
+          培訓成效追蹤 (Kirkpatrick 四級)
+        </h3>
+        <div class="effectiveness-list">
+          @for (item of trainingEffectiveness(); track item.level) {
+            <div class="effectiveness-item" [class]="getEffectivenessClass(item.status)">
+              <div class="effectiveness-item__level">L{{ item.level }}</div>
+              <div class="effectiveness-item__info">
+                <span class="effectiveness-item__name">{{ item.name }}</span>
+                <span class="effectiveness-item__desc">{{ item.description }}</span>
+              </div>
+              <div class="effectiveness-item__progress">
+                <div class="effectiveness-item__bar">
+                  <div class="effectiveness-item__fill" [style.width.%]="item.score"></div>
+                </div>
+                <span class="effectiveness-item__score">{{ item.score }}%</span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 課程狀態統計 -->
+  <section class="status-section">
+    <div class="status-cards">
+      <div class="status-card status-card--total" (click)="setStatus('all')">
+        <i class="ri-book-open-line"></i>
+        <span class="status-card__count">{{ totalCourses() }}</span>
+        <span class="status-card__label">全部課程</span>
+      </div>
+      <div class="status-card status-card--upcoming" (click)="setStatus('upcoming')">
+        <i class="ri-calendar-check-line"></i>
+        <span class="status-card__count">{{ upcomingCount() }}</span>
+        <span class="status-card__label">即將開課</span>
+      </div>
+      <div class="status-card status-card--ongoing" (click)="setStatus('ongoing')">
+        <i class="ri-play-circle-line"></i>
+        <span class="status-card__count">{{ ongoingCount() }}</span>
+        <span class="status-card__label">進行中</span>
+      </div>
+      <div class="status-card status-card--completed" (click)="setStatus('completed')">
+        <i class="ri-check-line"></i>
+        <span class="status-card__count">{{ completedCount() }}</span>
+        <span class="status-card__label">已完成</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 篩選與搜尋 -->
+  <section class="filter-section">
+    <div class="filter-row">
+      <div class="filter-group">
+        <label>課程類型</label>
+        <div class="filter-buttons">
+          <button class="filter-btn"
+                  [class.active]="selectedCategory() === 'all'"
+                  (click)="setCategory('all')">
+            全部
+          </button>
+          <button class="filter-btn"
+                  [class.active]="selectedCategory() === 'general'"
+                  (click)="setCategory('general')">
+            通識職能
+          </button>
+          <button class="filter-btn"
+                  [class.active]="selectedCategory() === 'professional'"
+                  (click)="setCategory('professional')">
+            專業職能
+          </button>
+          <button class="filter-btn"
+                  [class.active]="selectedCategory() === 'management'"
+                  (click)="setCategory('management')">
+            管理職能
+          </button>
+        </div>
+      </div>
+
+      <div class="search-box">
+        <i class="ri-search-line"></i>
+        <input type="text"
+               placeholder="搜尋課程名稱或講師..."
+               (input)="onSearch($event)">
+      </div>
+    </div>
+  </section>
+
+  <!-- 課程列表 -->
+  <section class="courses-section">
+    <div class="section-header">
+      <h2 class="section-title">
+        <i class="ri-list-check-2"></i>
+        課程列表
+        <span class="count-badge">{{ filteredCourses().length }}</span>
+      </h2>
+      <button class="btn btn--primary">
+        <i class="ri-add-line"></i>
+        新增課程
+      </button>
+    </div>
+
+    <div class="courses-table-wrapper">
+      <table class="courses-table">
+        <thead>
+          <tr>
+            <th>課程名稱</th>
+            <th>類型</th>
+            <th>講師</th>
+            <th>時數</th>
+            <th>日期</th>
+            <th>人數</th>
+            <th>狀態</th>
+            <th>滿意度</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (course of filteredCourses(); track course.id) {
+            <tr>
+              <td>
+                <div class="course-name">
+                  <span class="course-name__text">{{ course.name }}</span>
+                  <span class="course-name__type">{{ course.type }}</span>
+                </div>
+              </td>
+              <td>
+                <span class="category-badge"
+                      [style.background]="getCategoryColor(course.category) + '20'"
+                      [style.color]="getCategoryColor(course.category)">
+                  {{ getCategoryLabel(course.category) }}
+                </span>
+              </td>
+              <td>{{ course.instructor }}</td>
+              <td>{{ course.duration }}h</td>
+              <td>{{ formatFullDate(course.startDate) }}</td>
+              <td>
+                <span class="participants">
+                  {{ course.currentParticipants }}/{{ course.maxParticipants }}
+                </span>
+              </td>
+              <td>
+                <span class="status-badge" [class]="getStatusClass(course.status)">
+                  {{ getStatusLabel(course.status) }}
+                </span>
+              </td>
+              <td>
+                @if (course.satisfactionScore) {
+                  <span class="satisfaction">
+                    <i class="ri-star-fill"></i>
+                    {{ course.satisfactionScore }}
+                  </span>
+                } @else {
+                  <span class="satisfaction satisfaction--na">-</span>
+                }
+              </td>
+              <td>
+                <div class="actions">
+                  <button class="action-btn" title="檢視">
+                    <i class="ri-eye-line"></i>
+                  </button>
+                  <button class="action-btn" title="編輯">
+                    <i class="ri-edit-line"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 側邊資訊 -->
+  <aside class="side-panel">
+    <!-- 近期課程 -->
+    <div class="side-card">
+      <h3 class="side-card__title">
+        <i class="ri-calendar-line"></i>
+        近期課程
+      </h3>
+      <div class="upcoming-list">
+        @for (course of upcomingCourses(); track course.id) {
+          <div class="upcoming-item">
+            <div class="upcoming-item__date">
+              <span class="day">{{ formatDate(course.date) }}</span>
+            </div>
+            <div class="upcoming-item__info">
+              <span class="upcoming-item__name">{{ course.name }}</span>
+              <span class="upcoming-item__meta">
+                <i class="ri-user-line"></i> {{ course.instructor }}
+                <i class="ri-group-line"></i> {{ course.participants }}人
+              </span>
+            </div>
+            <span class="upcoming-item__category"
+                  [style.background]="getCategoryColor(course.category)">
+            </span>
+          </div>
+        }
+      </div>
+      <a routerLink="/training/learning-path" class="side-card__link">
+        查看學習路徑 →
+      </a>
+    </div>
+
+    <!-- 熱門課程 -->
+    <div class="side-card">
+      <h3 class="side-card__title">
+        <i class="ri-fire-line"></i>
+        熱門課程
+      </h3>
+      <div class="popular-list">
+        @for (course of popularCourses(); track course.id; let i = $index) {
+          <div class="popular-item">
+            <span class="popular-item__rank">{{ i + 1 }}</span>
+            <div class="popular-item__info">
+              <span class="popular-item__name">{{ course.name }}</span>
+              <span class="popular-item__stats">
+                <span><i class="ri-group-line"></i> {{ course.enrollmentCount }}</span>
+                <span><i class="ri-star-fill"></i> {{ course.satisfactionScore }}</span>
+              </span>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </aside>
+</div>
+

@@ -62,7 +62,8 @@ export class SidebarComponent {
             { label: '招募職缺管理', icon: '', route: '/employee/jobs' },
             { label: 'AI智能面試', icon: '', route: '/employee/recruitment' },
             { label: '員工檔案管理', icon: '', route: '/employee/profile' },
-            { label: '人才庫管理', icon: '', route: '/employee/talent-pool' }
+            { label: '人才庫管理', icon: '', route: '/employee/talent-pool' },
+            { label: '會議管理', icon: '', route: '/employee/meeting' }
           ]
         },
         {
@@ -82,7 +83,11 @@ export class SidebarComponent {
           icon: 'ri-book-open-line',
           moduleClass: 'module-l3',
           children: [
-            { label: '人才地圖總覽', icon: '', route: '/training/talent-map' }
+            { label: '課程管理', icon: '', route: '/training/course-management' },
+            { label: '組織職能熱力圖', icon: '', route: '/training/competency-heatmap' },
+            { label: '人才九宮格', icon: '', route: '/training/nine-box' },
+            { label: '學習發展路徑圖', icon: '', route: '/training/learning-path' },
+            { label: '關鍵人才儀表板', icon: '', route: '/training/key-talent' }
           ]
         },
         {

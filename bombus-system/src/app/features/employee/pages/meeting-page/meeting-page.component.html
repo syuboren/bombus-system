@@ -1,0 +1,911 @@
+<app-header
+  pageTitle="會議管理"
+  [breadcrumbs]="['員工管理', '會議管理']">
+</app-header>
+
+<main class="main-content">
+  <div class="content-container">
+    <!-- 頁面操作列 -->
+    <div class="page-toolbar">
+      <nav class="view-tabs" role="tablist">
+      <button
+        class="tab-btn"
+        [class.active]="viewMode() === 'calendar'"
+        (click)="setViewMode('calendar')"
+        type="button">
+        <i class="ri-calendar-line"></i>
+        <span>會議日曆</span>
+      </button>
+      <button
+        class="tab-btn"
+        [class.active]="viewMode() === 'list'"
+        (click)="setViewMode('list')"
+        type="button">
+        <i class="ri-list-check"></i>
+        <span>會議列表</span>
+      </button>
+      <button
+        class="tab-btn"
+        [class.active]="viewMode() === 'tracking'"
+        (click)="setViewMode('tracking')"
+        type="button">
+        <i class="ri-task-line"></i>
+        <span>結論追蹤</span>
+      </button>
+      <button
+        class="tab-btn"
+        [class.active]="viewMode() === 'stats'"
+        (click)="setViewMode('stats')"
+        type="button">
+        <i class="ri-bar-chart-line"></i>
+        <span>會議統計</span>
+      </button>
+      </nav>
+      <button class="btn-primary" (click)="openAddMeetingModal()">
+        <i class="ri-add-line"></i>
+        <span>新增會議</span>
+      </button>
+    </div>
+
+    <!-- 日曆視圖 -->
+    @if (viewMode() === 'calendar') {
+      <div class="calendar-view">
+        <div class="calendar-container">
+          <!-- 日曆標題列 -->
+          <div class="calendar-header">
+            <div class="calendar-nav">
+              <button class="nav-btn" (click)="prevMonth()">
+                <i class="ri-arrow-left-s-line"></i>
+              </button>
+              <h2 class="calendar-title">{{ currentMonthLabel() }}</h2>
+              <button class="nav-btn" (click)="nextMonth()">
+                <i class="ri-arrow-right-s-line"></i>
+              </button>
+            </div>
+            <button class="today-btn" (click)="goToToday()">今天</button>
+          </div>
+
+          <!-- 星期標題 -->
+          <div class="calendar-weekdays">
+            <div class="weekday">日</div>
+            <div class="weekday">一</div>
+            <div class="weekday">二</div>
+            <div class="weekday">三</div>
+            <div class="weekday">四</div>
+            <div class="weekday">五</div>
+            <div class="weekday">六</div>
+          </div>
+
+          <!-- 日曆格子 -->
+          <div class="calendar-grid">
+            @for (day of calendarDays(); track day.date.toISOString()) {
+              <div
+                class="calendar-day"
+                [class.other-month]="!day.isCurrentMonth"
+                [class.today]="day.isToday"
+                [class.has-events]="day.events.length > 0">
+                <span class="day-number">{{ day.date.getDate() }}</span>
+                <div class="day-events">
+                  @for (event of day.events.slice(0, 3); track event.id) {
+                    <div
+                      class="event-dot"
+                      [style.background-color]="event.color"
+                      [title]="event.title"
+                      (click)="openMeetingDetail(event.meeting)">
+                      <span class="event-title">{{ event.title }}</span>
+                    </div>
+                  }
+                  @if (day.events.length > 3) {
+                    <div class="more-events">+{{ day.events.length - 3 }} 更多</div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- 側邊今日會議 -->
+        <aside class="today-sidebar">
+          <h3 class="sidebar-title">
+            <i class="ri-calendar-todo-line"></i>
+            今日會議
+          </h3>
+          @if (todayMeetings().length === 0) {
+            <div class="empty-state">
+              <i class="ri-calendar-line"></i>
+              <p>今日沒有會議</p>
+            </div>
+          } @else {
+            <div class="today-meetings">
+              @for (event of todayMeetings(); track event.id) {
+                <div class="today-meeting-card" (click)="openMeetingDetail(event.meeting)">
+                  <div class="meeting-time">
+                    <span>{{ formatTime(event.start) }}</span>
+                    <span class="time-separator">-</span>
+                    <span>{{ formatTime(event.end) }}</span>
+                  </div>
+                  <div class="meeting-info">
+                    <h4 class="meeting-title">{{ event.title }}</h4>
+                    <div class="meeting-meta">
+                      <span class="meeting-type" [style.color]="event.color">
+                        <i [class]="getMeetingTypeIcon(event.type)"></i>
+                        {{ getMeetingTypeLabel(event.type) }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+
+          <div class="upcoming-section">
+            <h3 class="sidebar-title">
+              <i class="ri-time-line"></i>
+              即將到來
+            </h3>
+            @for (meeting of upcomingMeetings(); track meeting.id) {
+              <div class="upcoming-card" (click)="openMeetingDetail(meeting)">
+                <div class="upcoming-date">
+                  <span class="date-day">{{ formatDate(meeting.startTime) }}</span>
+                  <span class="date-time">{{ formatTime(meeting.startTime) }}</span>
+                </div>
+                <div class="upcoming-info">
+                  <h4>{{ meeting.title }}</h4>
+                  <span class="attendee-count">
+                    <i class="ri-user-line"></i>
+                    {{ meeting.attendees.length }} 人
+                  </span>
+                </div>
+              </div>
+            }
+          </div>
+        </aside>
+      </div>
+    }
+
+    <!-- 列表視圖 -->
+    @if (viewMode() === 'list') {
+      <div class="list-view">
+        <div class="list-filters">
+          <div class="filter-group">
+            <label>會議類型</label>
+            <select class="form-select">
+              <option value="">全部類型</option>
+              @for (type of meetingTypeOptions; track type.value) {
+                <option [value]="type.value">{{ type.label }}</option>
+              }
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>狀態</label>
+            <select class="form-select">
+              <option value="">全部狀態</option>
+              <option value="scheduled">已排程</option>
+              <option value="completed">已完成</option>
+              <option value="cancelled">已取消</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="meeting-list">
+          @for (meeting of meetings(); track meeting.id) {
+            <div class="meeting-card" (click)="openMeetingDetail(meeting)">
+              <div class="meeting-card__indicator" [style.background-color]="getMeetingTypeColor(meeting.type)"></div>
+              <div class="meeting-card__content">
+                <div class="meeting-card__header">
+                  <h3 class="meeting-card__title">{{ meeting.title }}</h3>
+                  <span class="meeting-card__status" [class]="getStatusClass(meeting.status)">
+                    {{ getStatusLabel(meeting.status) }}
+                  </span>
+                </div>
+                <div class="meeting-card__meta">
+                  <span class="meta-item">
+                    <i class="ri-calendar-line"></i>
+                    {{ formatDateTime(meeting.startTime) }}
+                  </span>
+                  <span class="meta-item">
+                    <i class="ri-time-line"></i>
+                    {{ formatDuration(meeting.duration) }}
+                  </span>
+                  <span class="meta-item">
+                    <i class="ri-map-pin-line"></i>
+                    {{ meeting.location }}
+                  </span>
+                  <span class="meta-item">
+                    <i class="ri-user-line"></i>
+                    {{ meeting.attendees.length }} 人
+                  </span>
+                </div>
+                <div class="meeting-card__footer">
+                  <span class="meeting-type-badge" [style.background-color]="getMeetingTypeColor(meeting.type)">
+                    <i [class]="getMeetingTypeIcon(meeting.type)"></i>
+                    {{ getMeetingTypeLabel(meeting.type) }}
+                  </span>
+                  @if (meeting.recurrence !== 'none') {
+                    <span class="recurrence-badge">
+                      <i class="ri-repeat-line"></i>
+                      {{ getRecurrenceLabel(meeting.recurrence) }}
+                    </span>
+                  }
+                  @if (meeting.conclusions.length > 0) {
+                    <span class="conclusion-badge">
+                      <i class="ri-checkbox-circle-line"></i>
+                      {{ getCompletedConclusionsCount(meeting.conclusions) }}/{{ meeting.conclusions.length }} 結論完成
+                    </span>
+                  }
+                </div>
+              </div>
+              <div class="meeting-card__actions">
+                <button class="action-btn" title="查看詳情">
+                  <i class="ri-arrow-right-s-line"></i>
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- 結論追蹤視圖 -->
+    @if (viewMode() === 'tracking') {
+      <div class="tracking-view">
+        <div class="tracking-header">
+          <h2>關鍵結論執行進度表</h2>
+          <div class="tracking-stats">
+            @if (stats(); as s) {
+              <div class="stat-item">
+                <span class="stat-value">{{ s.conclusionCount }}</span>
+                <span class="stat-label">總結論數</span>
+              </div>
+              <div class="stat-item stat-item--success">
+                <span class="stat-value">{{ s.completedConclusions }}</span>
+                <span class="stat-label">已完成</span>
+              </div>
+              <div class="stat-item stat-item--warning">
+                <span class="stat-value">{{ s.conclusionCount - s.completedConclusions - s.overdueConclusions }}</span>
+                <span class="stat-label">進行中</span>
+              </div>
+              <div class="stat-item stat-item--danger">
+                <span class="stat-value">{{ s.overdueConclusions }}</span>
+                <span class="stat-label">已逾期</span>
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="tracking-table-container">
+          <table class="tracking-table">
+            <thead>
+              <tr>
+                <th>議題部門</th>
+                <th>執行事項</th>
+                <th>當責人</th>
+                <th>完成時間</th>
+                <th>進度</th>
+                <th>狀態</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (conclusion of pendingConclusions(); track conclusion.id) {
+                <tr [class.overdue]="conclusion.status === 'overdue'">
+                  <td>
+                    <span class="dept-badge">{{ conclusion.department }}</span>
+                  </td>
+                  <td class="content-cell">{{ conclusion.content }}</td>
+                  <td>
+                    <div class="responsible-cell">
+                      <span class="avatar">{{ conclusion.responsible.substring(0, 1) }}</span>
+                      <span>{{ conclusion.responsible }}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="due-date" [class.overdue]="getDaysUntil(conclusion.dueDate) < 0">
+                      {{ formatDate(conclusion.dueDate) }}
+                      @if (getDaysUntil(conclusion.dueDate) < 0) {
+                        <span class="overdue-days">(逾期 {{ -getDaysUntil(conclusion.dueDate) }} 天)</span>
+                      } @else if (getDaysUntil(conclusion.dueDate) <= 3) {
+                        <span class="due-soon">({{ getDaysUntil(conclusion.dueDate) }} 天後到期)</span>
+                      }
+                    </span>
+                  </td>
+                  <td>
+                    <div class="progress-cell">
+                      <div class="progress-bar">
+                        <div class="progress-fill" [style.width.%]="conclusion.progress"></div>
+                      </div>
+                      <span class="progress-text">{{ conclusion.progress }}%</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="status-badge" [class]="getStatusClass(conclusion.status)">
+                      {{ getStatusLabel(conclusion.status) }}
+                    </span>
+                  </td>
+                  <td>
+                    <button class="btn-sm" title="更新進度">
+                      <i class="ri-edit-line"></i>
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+
+    <!-- 統計視圖 -->
+    @if (viewMode() === 'stats') {
+      <div class="stats-view">
+        <!-- 總覽 KPI -->
+        <div class="stats-overview">
+          @if (stats(); as s) {
+            <div class="stat-card">
+              <div class="stat-card__icon" style="background: rgba(141, 163, 153, 0.15);">
+                <i class="ri-calendar-check-line" style="color: #8DA399;"></i>
+              </div>
+              <div class="stat-card__content">
+                <span class="stat-card__value">{{ s.totalMeetings }}</span>
+                <span class="stat-card__label">總會議數</span>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card__icon" style="background: rgba(154, 140, 152, 0.15);">
+                <i class="ri-time-line" style="color: #9A8C98;"></i>
+              </div>
+              <div class="stat-card__content">
+                <span class="stat-card__value">{{ s.totalHours | number:'1.1-1' }}</span>
+                <span class="stat-card__label">總會議時數</span>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card__icon" style="background: rgba(214, 162, 140, 0.15);">
+                <i class="ri-checkbox-circle-line" style="color: #D6A28C;"></i>
+              </div>
+              <div class="stat-card__content">
+                <span class="stat-card__value">{{ s.executionRate }}%</span>
+                <span class="stat-card__label">結論執行率</span>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card__icon" style="background: rgba(184, 125, 123, 0.15);">
+                <i class="ri-alarm-warning-line" style="color: #B87D7B;"></i>
+              </div>
+              <div class="stat-card__content">
+                <span class="stat-card__value">{{ s.overdueConclusions }}</span>
+                <span class="stat-card__label">逾期項目</span>
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="stats-grid">
+          <!-- 部門會議時數統計 -->
+          <div class="stats-card">
+            <h3 class="stats-card__title">
+              <i class="ri-building-line"></i>
+              各部門會議時數統計
+            </h3>
+            <div class="dept-stats-list">
+              @for (dept of departmentStats(); track dept.department) {
+                <div class="dept-stat-item">
+                  <div class="dept-info">
+                    <span class="dept-name">{{ dept.department }}</span>
+                    <span class="dept-hours">{{ dept.totalHours }} 小時</span>
+                  </div>
+                  <div class="dept-bar">
+                    <div class="dept-bar-fill" [style.width.%]="(dept.totalHours / 25) * 100"></div>
+                  </div>
+                  <div class="dept-meta">
+                    <span>{{ dept.meetingCount }} 場會議</span>
+                    <span>執行率 {{ dept.executionRate }}%</span>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- 個人會議負荷 -->
+          <div class="stats-card">
+            <h3 class="stats-card__title">
+              <i class="ri-user-heart-line"></i>
+              個人會議負荷分析
+            </h3>
+            <div class="personal-load-list">
+              @for (person of personalLoads(); track person.employeeId) {
+                <div class="personal-load-item">
+                  <div class="person-avatar">{{ person.employeeName.substring(0, 1) }}</div>
+                  <div class="person-info">
+                    <span class="person-name">{{ person.employeeName }}</span>
+                    <div class="person-stats">
+                      <span class="weekly-hours">
+                        <i class="ri-time-line"></i>
+                        {{ person.weeklyMeetingHours }} 小時/週
+                      </span>
+                      <span class="pending-tasks" [class.has-overdue]="person.overdueTasks > 0">
+                        <i class="ri-task-line"></i>
+                        {{ person.pendingTasks }} 待辦
+                        @if (person.overdueTasks > 0) {
+                          <span class="overdue-count">({{ person.overdueTasks }} 逾期)</span>
+                        }
+                      </span>
+                    </div>
+                  </div>
+                  <div class="load-indicator" [class.high]="person.weeklyMeetingHours > 12" [class.medium]="person.weeklyMeetingHours > 8 && person.weeklyMeetingHours <= 12">
+                    {{ person.weeklyMeetingHours > 12 ? '負荷高' : person.weeklyMeetingHours > 8 ? '適中' : '正常' }}
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- 會議效能報告 -->
+          <div class="stats-card stats-card--full">
+            <h3 class="stats-card__title">
+              <i class="ri-line-chart-line"></i>
+              會議效能報告
+            </h3>
+            @if (efficiency(); as eff) {
+              <div class="efficiency-grid">
+                <div class="efficiency-item">
+                  <div class="efficiency-icon">
+                    <i class="ri-timer-line"></i>
+                  </div>
+                  <div class="efficiency-content">
+                    <span class="efficiency-value">{{ eff.avgMeetingDuration }} 分鐘</span>
+                    <span class="efficiency-label">平均會議時長</span>
+                  </div>
+                </div>
+                <div class="efficiency-item">
+                  <div class="efficiency-icon">
+                    <i class="ri-file-list-3-line"></i>
+                  </div>
+                  <div class="efficiency-content">
+                    <span class="efficiency-value">{{ eff.conclusionsPerMeeting | number:'1.1-1' }}</span>
+                    <span class="efficiency-label">平均結論產出/會議</span>
+                  </div>
+                </div>
+                <div class="efficiency-item">
+                  <div class="efficiency-icon">
+                    <i class="ri-checkbox-circle-line"></i>
+                  </div>
+                  <div class="efficiency-content">
+                    <span class="efficiency-value">{{ eff.completionRate }}%</span>
+                    <span class="efficiency-label">追蹤項目完成率</span>
+                  </div>
+                </div>
+                <div class="efficiency-item">
+                  <div class="efficiency-icon">
+                    <i class="ri-calendar-check-line"></i>
+                  </div>
+                  <div class="efficiency-content">
+                    <span class="efficiency-value">{{ eff.onTimeRate }}%</span>
+                    <span class="efficiency-label">準時完成率</span>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</main>
+
+<!-- 新增會議 Modal -->
+@if (showAddMeetingModal()) {
+  <div class="modal-overlay" (click)="closeAddMeetingModal()">
+    <div class="modal-container modal-container--large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>新增會議</h2>
+        <button class="modal-close" (click)="closeAddMeetingModal()">
+          <i class="ri-close-line"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <!-- 基本資訊 -->
+          <div class="form-section">
+            <h3 class="form-section-title">基本資訊</h3>
+
+            <div class="form-group">
+              <label class="form-label required">會議主題</label>
+              <input
+                type="text"
+                class="form-input"
+                placeholder="輸入會議主題"
+                [value]="newMeeting().title"
+                (input)="updateNewMeeting('title', $any($event.target).value)" />
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label required">會議類型</label>
+                <select
+                  class="form-select"
+                  [value]="newMeeting().type"
+                  (change)="updateNewMeeting('type', $any($event.target).value)">
+                  @for (type of meetingTypeOptions; track type.value) {
+                    <option [value]="type.value">{{ type.label }}</option>
+                  }
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">週期設定</label>
+                <select
+                  class="form-select"
+                  [value]="newMeeting().recurrence"
+                  (change)="updateNewMeeting('recurrence', $any($event.target).value)">
+                  @for (rec of recurrenceOptions; track rec.value) {
+                    <option [value]="rec.value">{{ rec.label }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label required">開始時間</label>
+                <input
+                  type="datetime-local"
+                  class="form-input"
+                  [value]="newMeeting().startTime | date:'yyyy-MM-ddTHH:mm'"
+                  (change)="updateNewMeeting('startTime', $any($event.target).valueAsDate)" />
+              </div>
+              <div class="form-group">
+                <label class="form-label required">結束時間</label>
+                <input
+                  type="datetime-local"
+                  class="form-input"
+                  [value]="newMeeting().endTime | date:'yyyy-MM-ddTHH:mm'"
+                  (change)="updateNewMeeting('endTime', $any($event.target).valueAsDate)" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">會議地點</label>
+              <div class="location-input">
+                <input
+                  type="text"
+                  class="form-input"
+                  placeholder="輸入會議地點或會議室"
+                  [value]="newMeeting().location"
+                  (input)="updateNewMeeting('location', $any($event.target).value)" />
+                <label class="checkbox-label">
+                  <input
+                    type="checkbox"
+                    [checked]="newMeeting().isOnline"
+                    (change)="updateNewMeeting('isOnline', $any($event.target).checked)" />
+                  線上會議
+                </label>
+              </div>
+            </div>
+
+            @if (newMeeting().isOnline) {
+              <div class="form-group">
+                <label class="form-label">會議連結</label>
+                <input
+                  type="url"
+                  class="form-input"
+                  placeholder="輸入線上會議連結 (如: https://meet.google.com/...)"
+                  [value]="newMeeting().meetingLink || ''"
+                  (input)="updateNewMeeting('meetingLink', $any($event.target).value)" />
+              </div>
+            }
+
+            <div class="form-group">
+              <label class="form-label">會議提醒</label>
+              <div class="reminder-options">
+                @for (reminder of newMeeting().reminders; track reminder.id) {
+                  <label class="checkbox-label">
+                    <input
+                      type="checkbox"
+                      [checked]="reminder.enabled"
+                      (change)="toggleReminder(reminder.timing)" />
+                    {{ getReminderLabel(reminder.timing) }}
+                  </label>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- 出席人員 -->
+          <div class="form-section">
+            <h3 class="form-section-title">出席人員</h3>
+            <div class="attendee-grid">
+              @for (attendee of attendees(); track attendee.id) {
+                <label
+                  class="attendee-option"
+                  [class.selected]="isAttendeeSelected(attendee.id)">
+                  <input
+                    type="checkbox"
+                    [checked]="isAttendeeSelected(attendee.id)"
+                    (change)="toggleAttendee(attendee)" />
+                  <span class="attendee-avatar">{{ attendee.avatar }}</span>
+                  <div class="attendee-info">
+                    <span class="attendee-name">{{ attendee.name }}</span>
+                    <span class="attendee-dept">{{ attendee.department }}</span>
+                  </div>
+                  @if (isAttendeeSelected(attendee.id)) {
+                    <span class="attendee-check">
+                      <i class="ri-check-line"></i>
+                    </span>
+                  }
+                </label>
+              }
+            </div>
+          </div>
+
+          <!-- 議程項目 -->
+          <div class="form-section form-section--full">
+            <div class="form-section-header">
+              <h3 class="form-section-title">議程項目</h3>
+              <button class="btn-sm btn-outline" (click)="openAgendaModal()">
+                <i class="ri-add-line"></i>
+                新增議程
+              </button>
+            </div>
+            @if ((newMeeting().agenda?.length || 0) === 0) {
+              <div class="empty-agenda">
+                <i class="ri-file-list-3-line"></i>
+                <p>尚未新增議程項目</p>
+                <button class="btn-sm" (click)="openAgendaModal()">新增第一個議程</button>
+              </div>
+            } @else {
+              <div class="agenda-list">
+                @for (item of newMeeting().agenda; track item.id; let i = $index) {
+                  <div class="agenda-item">
+                    <span class="agenda-order">{{ i + 1 }}</span>
+                    <div class="agenda-content">
+                      <span class="agenda-title">{{ item.title }}</span>
+                      <span class="agenda-meta">
+                        <i class="ri-user-line"></i> {{ item.presenter }}
+                        <i class="ri-time-line"></i> {{ item.duration }} 分鐘
+                      </span>
+                    </div>
+                    <button class="btn-icon-sm" (click)="removeAgendaItem(item.id)">
+                      <i class="ri-delete-bin-line"></i>
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeAddMeetingModal()">取消</button>
+        <button class="btn-primary" (click)="saveMeeting()">
+          <i class="ri-calendar-check-line"></i>
+          建立會議
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- 議程項目 Modal -->
+@if (showAgendaModal()) {
+  <div class="modal-overlay" (click)="closeAgendaModal()">
+    <div class="modal-container modal-container--small" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>新增議程項目</h2>
+        <button class="modal-close" (click)="closeAgendaModal()">
+          <i class="ri-close-line"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label required">議程標題</label>
+          <input
+            type="text"
+            class="form-input"
+            placeholder="輸入議程標題"
+            [value]="newAgendaItem().title"
+            (input)="updateAgendaField('title', $any($event.target).value)" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">說明</label>
+          <textarea
+            class="form-textarea"
+            rows="3"
+            placeholder="議程說明（選填）"
+            [value]="newAgendaItem().description"
+            (input)="updateAgendaField('description', $any($event.target).value)"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">報告人</label>
+            <input
+              type="text"
+              class="form-input"
+              placeholder="報告人姓名"
+              [value]="newAgendaItem().presenter"
+              (input)="updateAgendaField('presenter', $any($event.target).value)" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">預計時間（分鐘）</label>
+            <input
+              type="number"
+              class="form-input"
+              min="5"
+              step="5"
+              [value]="newAgendaItem().duration"
+              (input)="updateAgendaField('duration', +$any($event.target).value)" />
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeAgendaModal()">取消</button>
+        <button class="btn-primary" (click)="addAgendaItem()">
+          <i class="ri-add-line"></i>
+          新增
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- 會議詳情 Modal -->
+@if (showMeetingDetailModal() && selectedMeeting()) {
+  <div class="modal-overlay" (click)="closeMeetingDetailModal()">
+    <div class="modal-container modal-container--large" (click)="$event.stopPropagation()">
+      <div class="modal-header" [style.border-left-color]="getMeetingTypeColor(selectedMeeting()!.type)">
+        <div class="modal-header-content">
+          <span class="meeting-type-tag" [style.background-color]="getMeetingTypeColor(selectedMeeting()!.type)">
+            <i [class]="getMeetingTypeIcon(selectedMeeting()!.type)"></i>
+            {{ getMeetingTypeLabel(selectedMeeting()!.type) }}
+          </span>
+          <h2>{{ selectedMeeting()!.title }}</h2>
+          <span class="status-badge" [class]="getStatusClass(selectedMeeting()!.status)">
+            {{ getStatusLabel(selectedMeeting()!.status) }}
+          </span>
+        </div>
+        <button class="modal-close" (click)="closeMeetingDetailModal()">
+          <i class="ri-close-line"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="detail-grid">
+          <!-- 會議資訊 -->
+          <div class="detail-section">
+            <h3 class="detail-section-title">會議資訊</h3>
+            <div class="detail-list">
+              <div class="detail-item">
+                <i class="ri-calendar-line"></i>
+                <span>{{ formatDateTime(selectedMeeting()!.startTime) }} - {{ formatTime(selectedMeeting()!.endTime) }}</span>
+              </div>
+              <div class="detail-item">
+                <i class="ri-time-line"></i>
+                <span>{{ formatDuration(selectedMeeting()!.duration) }}</span>
+              </div>
+              <div class="detail-item">
+                <i class="ri-map-pin-line"></i>
+                <span>{{ selectedMeeting()!.location }}</span>
+                @if (selectedMeeting()!.isOnline) {
+                  <span class="online-badge">線上會議</span>
+                }
+              </div>
+              @if (selectedMeeting()!.recurrence !== 'none') {
+                <div class="detail-item">
+                  <i class="ri-repeat-line"></i>
+                  <span>{{ getRecurrenceLabel(selectedMeeting()!.recurrence) }}</span>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- 出席人員 -->
+          <div class="detail-section">
+            <h3 class="detail-section-title">出席人員 ({{ selectedMeeting()!.attendees.length }})</h3>
+            <div class="attendee-list">
+              @for (attendee of selectedMeeting()!.attendees; track attendee.id) {
+                <div class="attendee-item">
+                  <span class="attendee-avatar">{{ attendee.avatar }}</span>
+                  <div class="attendee-info">
+                    <span class="attendee-name">
+                      {{ attendee.name }}
+                      @if (attendee.isOrganizer) {
+                        <span class="organizer-badge">主辦人</span>
+                      }
+                    </span>
+                    <span class="attendee-dept">{{ attendee.department }} - {{ attendee.position }}</span>
+                  </div>
+                  @if (attendee.signedIn) {
+                    <span class="signed-badge"><i class="ri-check-line"></i> 已簽到</span>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- 議程 -->
+          <div class="detail-section detail-section--full">
+            <h3 class="detail-section-title">會議議程</h3>
+            @if (selectedMeeting()!.agenda.length === 0) {
+              <div class="empty-state-sm">尚未設定議程</div>
+            } @else {
+              <div class="agenda-detail-list">
+                @for (item of selectedMeeting()!.agenda; track item.id; let i = $index) {
+                  <div class="agenda-detail-item" [class.discussed]="item.status === 'discussed'">
+                    <span class="agenda-order">{{ i + 1 }}</span>
+                    <div class="agenda-content">
+                      <span class="agenda-title">{{ item.title }}</span>
+                      @if (item.description) {
+                        <p class="agenda-desc">{{ item.description }}</p>
+                      }
+                    </div>
+                    <div class="agenda-meta">
+                      <span><i class="ri-user-line"></i> {{ item.presenter }}</span>
+                      <span><i class="ri-time-line"></i> {{ item.duration }} 分鐘</span>
+                    </div>
+                    <span class="agenda-status" [class]="getStatusClass(item.status)">
+                      {{ item.status === 'discussed' ? '已討論' : item.status === 'deferred' ? '延後' : '待討論' }}
+                    </span>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- 會議結論 -->
+          @if (selectedMeeting()!.conclusions.length > 0) {
+            <div class="detail-section detail-section--full">
+              <h3 class="detail-section-title">會議結論</h3>
+              <div class="conclusion-list">
+                @for (conclusion of selectedMeeting()!.conclusions; track conclusion.id) {
+                  <div class="conclusion-item" [class]="getStatusClass(conclusion.status)">
+                    <div class="conclusion-content">
+                      <p>{{ conclusion.content }}</p>
+                      <div class="conclusion-meta">
+                        <span><i class="ri-user-line"></i> {{ conclusion.responsible }}</span>
+                        <span><i class="ri-calendar-line"></i> {{ formatDate(conclusion.dueDate) }}</span>
+                      </div>
+                    </div>
+                    <div class="conclusion-progress">
+                      <div class="progress-bar">
+                        <div class="progress-fill" [style.width.%]="conclusion.progress"></div>
+                      </div>
+                      <span>{{ conclusion.progress }}%</span>
+                    </div>
+                    <span class="status-badge" [class]="getStatusClass(conclusion.status)">
+                      {{ getStatusLabel(conclusion.status) }}
+                    </span>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- 附件 -->
+          @if (selectedMeeting()!.attachments.length > 0) {
+            <div class="detail-section detail-section--full">
+              <h3 class="detail-section-title">會前資料與附件</h3>
+              <div class="attachment-list">
+                @for (file of selectedMeeting()!.attachments; track file.id) {
+                  <div class="attachment-item">
+                    <i class="ri-file-line"></i>
+                    <span class="attachment-name">{{ file.name }}</span>
+                    <span class="attachment-size">{{ (file.size / 1024 / 1024) | number:'1.1-1' }} MB</span>
+                    <button class="btn-icon-sm"><i class="ri-download-line"></i></button>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeMeetingDetailModal()">關閉</button>
+        @if (selectedMeeting()!.status === 'scheduled') {
+          <button class="btn-primary">
+            <i class="ri-edit-line"></i>
+            編輯會議
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+}
+

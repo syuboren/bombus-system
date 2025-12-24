@@ -7,6 +7,7 @@ export interface HealthAxis {
   name: string;
   label: string;
   score: number;
+  trend: number; // 近6個月趨勢變化（正負值）
   description: string;
   icon: string;
   color: string;
@@ -27,6 +28,8 @@ export interface RiskAlert {
   description: string;
   severity: 'critical' | 'warning' | 'info';
   category: 'people' | 'project' | 'culture';
+  alertType: 'key-position' | 'capability-gap' | 'project-risk';
+  icon?: string; // 新增圖示欄位
   timestamp?: Date;
 }
 
@@ -82,6 +85,8 @@ export interface HighRiskTalent {
   position: string;
   department: string;
   riskScore: number;
+  performanceGrade: 'A+' | 'A' | 'A-' | 'B+' | 'B' | 'B-' | 'C';
+  leaveReason: string;
   criticality: 'extreme' | 'high' | 'medium';
   signals: string;
   action: string;
@@ -134,11 +139,16 @@ export interface ProjectStatus {
 
 // 毛利預測 KPI
 export interface ProfitKPI {
-  totalRevenue: number;
-  avgProfitRate: number;
-  profitRateChange: number;
-  aiConfidence: number;
-  erosionWarning: number;
+  confirmedRevenue: number;      // 已確認營收 (%)
+  confirmedProjects: number;     // 已簽約專案數
+  avgProfitRate: number;         // 平均毛利率 (%)
+  profitRateTarget: number;      // 毛利率目標 (%)
+  costControlRate: number;       // 成本控制率 (%)
+  anomalyWarnings: number;       // 異常預警數
+  totalRevenue?: number;
+  profitRateChange?: number;
+  aiConfidence?: number;
+  erosionWarning?: number;
 }
 
 // 專案獲利排行
@@ -148,6 +158,8 @@ export interface ProjectRanking {
   profitRate: number;
   revenue: number;
   pm: string;
+  contractValue: number;  // 合約金額 (M)
+  costStatus: 'pending' | 'better' | 'normal';  // 成本控制狀態
 }
 
 // 毛利侵蝕原因
@@ -220,4 +232,56 @@ export interface ProjectBubble {
 
 // CEO Dashboard Tab
 export type CEODashboardTab = 'overview' | 'capability' | 'talent-risk' | 'project' | 'profit' | 'reward';
+
+// 專案甘特圖項目
+export interface ProjectGanttItem {
+  id: string;
+  title: string;
+  type: 'integration' | 'procurement' | 'service' | 'software';
+  pm: {
+    name: string;
+    avatar: string | null;
+  };
+  progress: number;
+  stage: string;
+  status: 'normal' | 'risk' | 'delay';
+  startDate: string;
+  endDate: string;
+}
+
+// 專案狀態統計
+export interface ProjectStatusStats {
+  status: 'normal' | 'risk' | 'delay';
+  count: number;
+  label: string;
+  color: string;
+}
+
+// 專案類型統計
+export interface ProjectTypeStats {
+  type: 'integration' | 'procurement' | 'service' | 'software';
+  count: number;
+  label: string;
+  color: string;
+}
+
+// 成本結構分析
+export interface CostStructureItem {
+  id: string;
+  label: string;
+  estimated: number;       // 估算成本比例 (%)
+  actual: number;          // 實際成本比例 (%)
+  difference: number;      // 差異百分比 (actual - estimated)
+  estimatedAmount: number; // 估算金額 (萬)
+  actualAmount: number;    // 實際金額 (萬)
+}
+
+// 成本預警項目
+export interface CostWarningItem {
+  id: string;
+  projectName: string;
+  category: string;
+  overBudget: number;  // 超支金額 (萬)
+  severity: 'high' | 'medium';
+}
 

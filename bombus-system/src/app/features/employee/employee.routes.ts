@@ -35,5 +35,10 @@ export const EMPLOYEE_ROUTES: Routes = [
     path: 'talent-pool',
     loadComponent: () => import('./pages/talent-pool-page/talent-pool-page.component')
       .then(m => m.TalentPoolPageComponent)
+  },
+  {
+    path: 'meeting',
+    loadComponent: () => import('./pages/meeting-page/meeting-page.component')
+      .then(m => m.MeetingPageComponent)
   }
 ];
