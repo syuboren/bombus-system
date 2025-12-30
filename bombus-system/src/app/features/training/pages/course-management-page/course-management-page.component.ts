@@ -7,18 +7,18 @@ import {
   OnInit
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { TrainingService } from '../../services/training.service';
 import {
   Course,
   CourseCategory,
+  CourseType,
   CourseStatus,
-  CourseTypeStats,
-  TrainingKPI,
-  TrainingEffectiveness,
   UpcomingCourse,
-  PopularCourse
+  PopularCourse,
+  Instructor
 } from '../../models/training.model';
 
 @Component({
@@ -26,6 +26,7 @@ import {
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     RouterLink,
     HeaderComponent
   ],
@@ -36,20 +37,20 @@ import {
 export class CourseManagementPageComponent implements OnInit {
   private trainingService = inject(TrainingService);
 
-  // 狀態
+  // 資料狀態
   courses = signal<Course[]>([]);
-  trainingKPI = signal<TrainingKPI | null>(null);
-  courseTypeStats = signal<CourseTypeStats[]>([]);
-  trainingEffectiveness = signal<TrainingEffectiveness[]>([]);
   upcomingCourses = signal<UpcomingCourse[]>([]);
   popularCourses = signal<PopularCourse[]>([]);
+  instructors = signal<Instructor[]>([]);
 
   // 篩選
   selectedCategory = signal<CourseCategory | 'all'>('all');
   selectedStatus = signal<CourseStatus | 'all'>('all');
+  selectedCourseType = signal<CourseType | 'all'>('all');
   searchKeyword = signal<string>('');
+  viewMode = signal<'table' | 'card'>('table');
 
-  // 計算屬性
+  // 計算屬性 - 課程篩選
   filteredCourses = computed(() => {
     let result = this.courses();
 
@@ -59,6 +60,10 @@ export class CourseManagementPageComponent implements OnInit {
 
     if (this.selectedStatus() !== 'all') {
       result = result.filter(c => c.status === this.selectedStatus());
+    }
+
+    if (this.selectedCourseType() !== 'all') {
+      result = result.filter(c => c.type === this.selectedCourseType());
     }
 
     if (this.searchKeyword()) {
@@ -78,6 +83,11 @@ export class CourseManagementPageComponent implements OnInit {
   ongoingCount = computed(() => this.courses().filter(c => c.status === 'ongoing').length);
   completedCount = computed(() => this.courses().filter(c => c.status === 'completed').length);
 
+  // 待處理事項統計 (模擬數據)
+  pendingEnrollments = signal(5);
+  todayCourses = signal(2);
+  pendingFeedback = signal(8);
+
   ngOnInit(): void {
     this.loadData();
   }
@@ -87,24 +97,16 @@ export class CourseManagementPageComponent implements OnInit {
       this.courses.set(data);
     });
 
-    this.trainingService.getTrainingKPI().subscribe(data => {
-      this.trainingKPI.set(data);
-    });
-
-    this.trainingService.getCourseTypeStats().subscribe(data => {
-      this.courseTypeStats.set(data);
-    });
-
-    this.trainingService.getTrainingEffectiveness().subscribe(data => {
-      this.trainingEffectiveness.set(data);
-    });
-
     this.trainingService.getUpcomingCourses().subscribe(data => {
       this.upcomingCourses.set(data);
     });
 
     this.trainingService.getPopularCourses().subscribe(data => {
       this.popularCourses.set(data);
+    });
+
+    this.trainingService.getInstructors().subscribe(data => {
+      this.instructors.set(data);
     });
   }
 
@@ -114,6 +116,14 @@ export class CourseManagementPageComponent implements OnInit {
 
   setStatus(status: CourseStatus | 'all'): void {
     this.selectedStatus.set(status);
+  }
+
+  setCourseType(type: CourseType | 'all'): void {
+    this.selectedCourseType.set(type);
+  }
+
+  setViewMode(mode: 'table' | 'card'): void {
+    this.viewMode.set(mode);
   }
 
   onSearch(event: Event): void {
@@ -149,10 +159,6 @@ export class CourseManagementPageComponent implements OnInit {
     return classes[status];
   }
 
-  getEffectivenessClass(status: string): string {
-    return `effectiveness--${status}`;
-  }
-
   formatDate(date: Date): string {
     return new Date(date).toLocaleDateString('zh-TW', {
       month: '2-digit',
@@ -168,8 +174,13 @@ export class CourseManagementPageComponent implements OnInit {
     });
   }
 
-  formatBudget(amount: number): string {
-    return (amount / 10000).toFixed(0) + ' 萬';
+  openAddCourseModal(): void {
+    // TODO: Implement add course modal
+    console.log('Open add course modal');
+  }
+
+  openEnrollmentModal(course: Course): void {
+    // TODO: Implement enrollment modal
+    console.log('Open enrollment modal for:', course.name);
   }
 }
-

@@ -1,0 +1,394 @@
+<app-header
+  pageTitle="目標與任務管理"
+  [breadcrumbs]="['績效管理', '目標與任務管理']" />
+
+<div class="goal-task-page">
+  <!-- Stats Overview -->
+  <div class="stats-grid">
+    <div class="stat-card stat-card--total">
+      <div class="stat-icon"><i class="ri-flag-line"></i></div>
+      <div class="stat-content">
+        <div class="stat-label">總目標數</div>
+        <div class="stat-value">{{ goalStats().total }}</div>
+      </div>
+    </div>
+    <div class="stat-card stat-card--success">
+      <div class="stat-icon"><i class="ri-checkbox-circle-line"></i></div>
+      <div class="stat-content">
+        <div class="stat-label">順利進行</div>
+        <div class="stat-value">{{ goalStats().onTrack }}</div>
+      </div>
+    </div>
+    <div class="stat-card stat-card--warning">
+      <div class="stat-icon"><i class="ri-error-warning-line"></i></div>
+      <div class="stat-content">
+        <div class="stat-label">有風險</div>
+        <div class="stat-value">{{ goalStats().atRisk }}</div>
+      </div>
+    </div>
+    <div class="stat-card stat-card--danger">
+      <div class="stat-icon"><i class="ri-close-circle-line"></i></div>
+      <div class="stat-content">
+        <div class="stat-label">落後</div>
+        <div class="stat-value">{{ goalStats().behind }}</div>
+      </div>
+    </div>
+    <div class="stat-card stat-card--task">
+      <div class="stat-icon"><i class="ri-task-line"></i></div>
+      <div class="stat-content">
+        <div class="stat-label">進行中任務</div>
+        <div class="stat-value">{{ taskStats().inProgress }}</div>
+      </div>
+    </div>
+    <div class="stat-card stat-card--overdue">
+      <div class="stat-icon"><i class="ri-time-line"></i></div>
+      <div class="stat-content">
+        <div class="stat-label">逾期任務</div>
+        <div class="stat-value">{{ taskStats().overdue }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="content-grid">
+    <!-- Left: Goals List -->
+    <div class="content-main">
+      <!-- Filters -->
+      <div class="filter-bar">
+        <div class="filter-group">
+          <select class="form-select" [ngModel]="selectedType()" (ngModelChange)="selectedType.set($event)">
+            <option value="all">全部類型</option>
+            <option value="okr">OKR</option>
+            <option value="smart">SMART</option>
+          </select>
+          <select class="form-select" [ngModel]="selectedStatus()" (ngModelChange)="selectedStatus.set($event)">
+            <option value="all">全部狀態</option>
+            <option value="on_track">順利進行</option>
+            <option value="at_risk">有風險</option>
+            <option value="behind">落後</option>
+            <option value="completed">已完成</option>
+          </select>
+          <select class="form-select" [ngModel]="selectedDepartment()" (ngModelChange)="selectedDepartment.set($event)">
+            <option value="all">全部部門</option>
+            @for (dept of departments(); track dept) {
+              <option [value]="dept">{{ dept }}</option>
+            }
+          </select>
+        </div>
+        <div class="search-box">
+          <i class="ri-search-line"></i>
+          <input 
+            type="text" 
+            placeholder="搜尋目標或負責人..."
+            [ngModel]="searchKeyword()"
+            (ngModelChange)="searchKeyword.set($event)">
+        </div>
+      </div>
+
+      <!-- Goals Grid -->
+      <div class="goals-grid">
+        @for (goal of filteredGoals(); track goal.id) {
+          <div class="goal-card" (click)="selectGoal(goal)">
+            <div class="goal-header">
+              <span class="goal-type" [class.goal-type--okr]="goal.type === 'okr'">
+                {{ getTypeLabel(goal.type) }}
+              </span>
+              <span class="goal-status" [ngClass]="getStatusClass(goal.status)">
+                {{ getStatusLabel(goal.status) }}
+              </span>
+            </div>
+            <h3 class="goal-title">{{ goal.title }}</h3>
+            <p class="goal-desc">{{ goal.description }}</p>
+            
+            <div class="goal-meta">
+              <div class="goal-owner">
+                <span class="avatar">{{ goal.ownerAvatar }}</span>
+                <span>{{ goal.owner }}</span>
+              </div>
+              <span class="goal-dept">{{ goal.department }}</span>
+            </div>
+
+            <div class="goal-progress">
+              <div class="progress-header">
+                <span>進度</span>
+                <span class="progress-value" [style.color]="getProgressColor(goal.progress)">
+                  {{ goal.progress }}%
+                </span>
+              </div>
+              <div class="progress-bar">
+                <div 
+                  class="progress-fill" 
+                  [style.width.%]="goal.progress"
+                  [style.backgroundColor]="getProgressColor(goal.progress)">
+                </div>
+              </div>
+            </div>
+
+            <div class="goal-footer">
+              <span class="goal-date">
+                <i class="ri-calendar-line"></i>
+                {{ formatDate(goal.endDate) }}
+              </span>
+              <span class="goal-tasks">
+                <i class="ri-task-line"></i>
+                {{ getGoalTasks(goal.id).length }} 個任務
+              </span>
+            </div>
+          </div>
+        } @empty {
+          <div class="empty-state">
+            <i class="ri-flag-line"></i>
+            <span>暫無符合條件的目標</span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Right: Charts & Summary -->
+    <div class="content-sidebar">
+      <!-- Progress Chart -->
+      <div class="chart-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <i class="ri-pie-chart-line"></i>
+            目標狀態分布
+          </div>
+        </div>
+        <div #progressChart class="chart-container"></div>
+        <div class="chart-legend">
+          <div class="legend-item">
+            <span class="legend-dot" style="background: #7FB095;"></span>
+            <span>順利進行</span>
+            <span class="legend-value">{{ goalStats().onTrack }}</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot" style="background: #E3C088;"></span>
+            <span>有風險</span>
+            <span class="legend-value">{{ goalStats().atRisk }}</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot" style="background: #C77F7F;"></span>
+            <span>落後</span>
+            <span class="legend-value">{{ goalStats().behind }}</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot" style="background: #7F9CA0;"></span>
+            <span>已完成</span>
+            <span class="legend-value">{{ goalStats().completed }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Department Progress -->
+      <div class="chart-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <i class="ri-building-line"></i>
+            部門進度
+          </div>
+        </div>
+        <div #departmentChart class="chart-container chart-container--bar"></div>
+      </div>
+
+      <!-- Task Summary -->
+      <div class="chart-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <i class="ri-task-line"></i>
+            任務統計
+          </div>
+        </div>
+        <div class="task-summary">
+          <div class="task-stat">
+            <span class="task-stat-label">待開始</span>
+            <span class="task-stat-value">{{ taskStats().pending }}</span>
+          </div>
+          <div class="task-stat">
+            <span class="task-stat-label">進行中</span>
+            <span class="task-stat-value task-stat-value--active">{{ taskStats().inProgress }}</span>
+          </div>
+          <div class="task-stat">
+            <span class="task-stat-label">已完成</span>
+            <span class="task-stat-value task-stat-value--success">{{ taskStats().completed }}</span>
+          </div>
+          <div class="task-stat">
+            <span class="task-stat-label">逾期</span>
+            <span class="task-stat-value task-stat-value--danger">{{ taskStats().overdue }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Goal Detail Modal -->
+@if (showGoalModal() && selectedGoal(); as goal) {
+  <div class="modal-overlay" (click)="closeGoalModal()">
+    <div class="modal-content modal-content--large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span class="goal-type" [class.goal-type--okr]="goal.type === 'okr'">
+            {{ getTypeLabel(goal.type) }}
+          </span>
+          <h3>{{ goal.title }}</h3>
+        </div>
+        <button class="btn-close" (click)="closeGoalModal()">
+          <i class="ri-close-line"></i>
+        </button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="goal-detail-grid">
+          <!-- Left: Info -->
+          <div class="goal-info">
+            <div class="info-section">
+              <h4>目標描述</h4>
+              <p>{{ goal.description }}</p>
+            </div>
+
+            <div class="info-row">
+              <div class="info-item">
+                <span class="info-label">負責人</span>
+                <span class="info-value">
+                  <span class="avatar">{{ goal.ownerAvatar }}</span>
+                  {{ goal.owner }}
+                </span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">部門</span>
+                <span class="info-value">{{ goal.department }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">狀態</span>
+                <span class="info-value">
+                  <span class="goal-status" [ngClass]="getStatusClass(goal.status)">
+                    {{ getStatusLabel(goal.status) }}
+                  </span>
+                </span>
+              </div>
+            </div>
+
+            <div class="info-row">
+              <div class="info-item">
+                <span class="info-label">開始日期</span>
+                <span class="info-value">{{ formatDate(goal.startDate) }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">結束日期</span>
+                <span class="info-value">{{ formatDate(goal.endDate) }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">總進度</span>
+                <span class="info-value" [style.color]="getProgressColor(goal.progress)">
+                  {{ goal.progress }}%
+                </span>
+              </div>
+            </div>
+
+            <!-- OKR Key Results -->
+            @if (goal.type === 'okr' && goal.keyResults) {
+              <div class="info-section">
+                <h4>關鍵結果 (Key Results)</h4>
+                <div class="kr-list">
+                  @for (kr of goal.keyResults; track kr.id) {
+                    <div class="kr-item">
+                      <div class="kr-header">
+                        <span class="kr-title">{{ kr.title }}</span>
+                        <span class="kr-weight">權重 {{ kr.weight }}%</span>
+                      </div>
+                      <div class="kr-progress">
+                        <div class="progress-bar">
+                          <div 
+                            class="progress-fill" 
+                            [style.width.%]="kr.progress"
+                            [style.backgroundColor]="getProgressColor(kr.progress)">
+                          </div>
+                        </div>
+                        <span class="kr-value">{{ kr.current }} / {{ kr.target }} {{ kr.unit }}</span>
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- SMART Criteria -->
+            @if (goal.type === 'smart') {
+              <div class="info-section">
+                <h4>SMART 準則</h4>
+                <div class="smart-list">
+                  <div class="smart-item">
+                    <span class="smart-label">S - 具體的</span>
+                    <span class="smart-value">{{ goal.specific }}</span>
+                  </div>
+                  <div class="smart-item">
+                    <span class="smart-label">M - 可衡量的</span>
+                    <span class="smart-value">{{ goal.measurable }}</span>
+                  </div>
+                  <div class="smart-item">
+                    <span class="smart-label">A - 可達成的</span>
+                    <span class="smart-value">{{ goal.achievable }}</span>
+                  </div>
+                  <div class="smart-item">
+                    <span class="smart-label">R - 相關的</span>
+                    <span class="smart-value">{{ goal.relevant }}</span>
+                  </div>
+                  <div class="smart-item">
+                    <span class="smart-label">T - 有時限的</span>
+                    <span class="smart-value">{{ goal.timeBound }}</span>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- Right: Tasks -->
+          <div class="goal-tasks-panel">
+            <h4>相關任務</h4>
+            <div class="task-list">
+              @for (task of getGoalTasks(goal.id); track task.id) {
+                <div class="task-item">
+                  <div class="task-header">
+                    <span class="task-title">{{ task.title }}</span>
+                    <span class="task-status" [ngClass]="getTaskStatusClass(task.status)">
+                      {{ getTaskStatusLabel(task.status) }}
+                    </span>
+                  </div>
+                  <div class="task-meta">
+                    <span class="task-assignee">
+                      <span class="avatar avatar--small">{{ task.assigneeAvatar }}</span>
+                      {{ task.assignee }}
+                    </span>
+                    <span class="task-priority" [ngClass]="getPriorityClass(task.priority)">
+                      {{ getPriorityLabel(task.priority) }}
+                    </span>
+                    <span class="task-due">
+                      <i class="ri-calendar-line"></i>
+                      {{ formatDate(task.dueDate) }}
+                    </span>
+                  </div>
+                  <div class="task-progress">
+                    <div class="progress-bar">
+                      <div 
+                        class="progress-fill" 
+                        [style.width.%]="task.progress"
+                        [style.backgroundColor]="getProgressColor(task.progress)">
+                      </div>
+                    </div>
+                    <span>{{ task.progress }}%</span>
+                  </div>
+                </div>
+              } @empty {
+                <div class="empty-state empty-state--small">
+                  <i class="ri-task-line"></i>
+                  <span>暫無相關任務</span>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+

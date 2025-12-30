@@ -247,6 +247,14 @@ export interface ProjectGanttItem {
   status: 'normal' | 'risk' | 'delay';
   startDate: string;
   endDate: string;
+  budget: number;                    // 預算金額 (萬元)
+  nextMilestone: {                   // 下一里程碑
+    percentage: number;              // e.g. 60
+    label: string;                   // e.g. "合約談判"
+    expectedDate: string;            // e.g. "2025/07"
+  };
+  salesLead: string;                 // 業務負責
+  engineeringLead: string;           // 工程負責
 }
 
 // 專案狀態統計
@@ -283,5 +291,138 @@ export interface CostWarningItem {
   category: string;
   overBudget: number;  // 超支金額 (萬)
   severity: 'high' | 'medium';
+}
+
+// 願景使命摘要 (Dashboard 用)
+export interface VisionMissionSummary {
+  vision: string;
+  mission: string;
+  coreValues: { name: string; icon: string; description: string }[];
+  version: string;
+}
+
+// 員工關懷福利項目
+export interface EAPBenefit {
+  id: string;
+  name: string;
+  icon: string;
+  quota: string;        // e.g. "4天/年"
+  description: string;  // e.g. "免費・匿名"
+  status: 'active' | 'coming-soon';
+  launchDate?: string;  // For coming-soon items
+}
+
+// EAP 摘要 (Dashboard 用)
+export interface EAPSummary {
+  benefits: EAPBenefit[];
+  impact: {
+    productivityImprovement: number;  // 生產力提升 %
+    turnoverReduction: number;        // 離職率降低 %
+    roi: number;                      // 投資報酬率 %
+  };
+}
+
+// 員工故事摘要 (Dashboard 便利貼風格)
+export type StoryCategory = 'training' | 'interaction' | 'customer' | 'collaboration';
+
+export interface EmployeeStoryItem {
+  id: string;
+  title: string;
+  excerpt: string;           // 簡短摘要
+  author: string;
+  department: string;
+  category: StoryCategory;
+  likes: number;
+  date: string;
+  moodColor: string;        // 便利貼顏色
+}
+
+export interface StoryCategoryStats {
+  category: StoryCategory;
+  label: string;
+  icon: string;
+  count: number;
+  color: string;
+}
+
+export interface EmployeeStorySummary {
+  kpi: {
+    newThisMonth: number;    // 本月新增
+    totalStories: number;    // 總故事數
+  };
+  categoryStats: StoryCategoryStats[];
+  featuredStories: EmployeeStoryItem[];   // 精選故事（便利貼）
+}
+
+// 儀表板獲獎記錄
+export interface DashboardAward {
+  id: string;
+  name: string;
+  year: number;
+  status: 'won' | 'applying' | 'submitted';
+  category?: 'hr' | 'employer' | 'innovation' | 'industry' | 'government';
+  icon?: string;
+}
+
+// 獎金卡片
+export interface BonusCard {
+  id: string;
+  title: string;
+  subtitle: string;
+  amount: number;
+  year: number;
+  formula: string;
+  settlement: string;
+  hasExample?: boolean;
+  icon: string;
+  color: string;
+}
+
+// 獎金排行榜
+export interface BonusRanking {
+  rank: number;
+  name: string;
+  department: string;
+  multiplier: number;
+  estimatedBonus: number;
+}
+
+// 專案進度階段定義
+export const PROJECT_STAGES: Record<number, { label: string; description: string }> = {
+  10: { label: '初步接觸', description: '客戶首次接觸專案，處於探索需求階段' },
+  20: { label: '需求確認', description: '建立初步需求，雙方尚未確立具體合作方向' },
+  30: { label: '解決方案建議', description: '提出初步解決方案，獲得客戶對方案方向的基本認可' },
+  40: { label: '提案與預算討論', description: '遞交正式提案與初步預算，進入詳細商議階段' },
+  50: { label: '初步承諾', description: '客戶對提案方向及預算表達認可，尚未簽訂合約' },
+  60: { label: '合約談判', description: '就合約條款、付款計劃、交付時間進行最終確認' },
+  70: { label: '專案啟動', description: '專案正式啟動，執行計劃開始推進' },
+  80: { label: '合約簽訂', description: '正式簽署合約，進入執行準備階段' },
+  90: { label: '成果交付', description: '根據合約交付產品或服務，完成驗收' },
+  100: { label: '結案', description: '專案完成，進入營後支援或維護階段' },
+};
+
+// Forecast Pipeline 階段
+export interface ForecastStage {
+  percentage: number;      // 10, 20, 30... 100
+  label: string;           // 接觸、需求、提案...
+  count: number;           // 該階段專案數
+  color: string;           // 方塊顏色
+}
+
+// Forecast Pipeline 群組金額統計
+export interface ForecastGroup {
+  id: string;              // 'exploration', 'proposal', 'execution', 'closing'
+  label: string;           // 探索期、提案期、執行期、結案期
+  range: string;           // (10-30%), (40-50%)...
+  amount: number;          // 金額 (萬元)
+  color: string;           // 卡片底色
+}
+
+// Forecast Pipeline 完整資料
+export interface ForecastPipeline {
+  stages: ForecastStage[];
+  groups: ForecastGroup[];
+  totalAmount: number;     // 總金額
+  totalProjects: number;   // 總專案數
 }
 

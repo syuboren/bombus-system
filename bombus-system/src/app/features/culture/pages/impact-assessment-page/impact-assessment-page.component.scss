@@ -1,0 +1,747 @@
+@import '../../../../../assets/styles/variables';
+
+.impact-page {
+  padding: $spacing-lg;
+  padding-top: calc(var(--header-height) + $spacing-lg);
+  min-height: 100vh;
+  background: $color-cloud-gray;
+}
+
+// 頁籤導航
+.page-tabs {
+  display: flex;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-lg;
+  background: $color-pure-white;
+  padding: $spacing-xs;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-sm;
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: $spacing-sm $spacing-md;
+  border: none;
+  background: transparent;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  font-weight: 500;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  i {
+    font-size: 1.1rem;
+  }
+
+  &:hover {
+    background: $color-cloud-gray;
+    color: $color-text-primary;
+  }
+
+  &.active {
+    background: $color-l6-rose;
+    color: $color-pure-white;
+  }
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  font-size: $font-size-lg;
+  font-weight: 600;
+  color: $color-text-primary;
+  margin: 0;
+
+  i {
+    color: $color-l6-rose;
+  }
+}
+
+.section-header {
+  margin-bottom: $spacing-lg;
+
+  .section-desc {
+    margin: $spacing-xs 0 0;
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+  }
+}
+
+// 報獎潛力分析
+.potentials-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: $spacing-lg;
+}
+
+.potential-card {
+  background: $color-pure-white;
+  border-radius: $radius-xl;
+  padding: $spacing-lg;
+  box-shadow: $shadow-sm;
+  border-top: 4px solid transparent;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: $shadow-lg;
+  }
+
+  &.score-excellent { border-top-color: $color-success; }
+  &.score-good { border-top-color: $color-l6-rose; }
+  &.score-fair { border-top-color: $color-warning; }
+  &.score-poor { border-top-color: $color-muted-gray; }
+}
+
+.potential-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: $spacing-md;
+}
+
+.award-info {
+  flex: 1;
+}
+
+.award-name {
+  font-size: $font-size-lg;
+  font-weight: 600;
+  color: $color-text-primary;
+  margin: 0 0 $spacing-xs;
+}
+
+.potential-badges {
+  display: flex;
+  gap: $spacing-xs;
+}
+
+.effort-badge {
+  padding: 4px $spacing-sm;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  font-weight: 500;
+
+  &.effort-low {
+    background: rgba($color-success, 0.1);
+    color: $color-success;
+  }
+
+  &.effort-medium {
+    background: rgba($color-warning, 0.1);
+    color: $color-warning;
+  }
+
+  &.effort-high {
+    background: rgba($color-error, 0.1);
+    color: $color-error;
+  }
+}
+
+.score-ring {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: $color-cloud-gray;
+
+  &.score-excellent { background: rgba($color-success, 0.1); .score-value { color: $color-success; } }
+  &.score-good { background: rgba($color-l6-rose, 0.1); .score-value { color: $color-l6-rose; } }
+  &.score-fair { background: rgba($color-warning, 0.1); .score-value { color: $color-warning; } }
+}
+
+.score-value {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-style: italic;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.score-label {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.probability-bar {
+  margin-bottom: $spacing-md;
+}
+
+.bar-label {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: $spacing-xs;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.probability-value {
+  font-weight: 600;
+
+  &.prob-high { color: $color-success; }
+  &.prob-medium { color: $color-warning; }
+  &.prob-low { color: $color-muted-gray; }
+}
+
+.bar-track {
+  height: 8px;
+  background: $color-cloud-gray;
+  border-radius: $radius-full;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, $color-l6-rose, lighten($color-l6-rose, 15%));
+  border-radius: $radius-full;
+  transition: width 0.5s ease;
+}
+
+.analysis-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $spacing-md;
+  margin-bottom: $spacing-md;
+}
+
+.strengths,
+.gaps {
+  h4 {
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+    font-size: $font-size-sm;
+    font-weight: 600;
+    margin: 0 0 $spacing-xs;
+  }
+
+  ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+
+    li {
+      font-size: $font-size-sm;
+      color: $color-text-secondary;
+      padding: 4px 0;
+      position: relative;
+      padding-left: $spacing-md;
+
+      &::before {
+        content: '•';
+        position: absolute;
+        left: 0;
+      }
+    }
+  }
+}
+
+.strengths h4 {
+  color: $color-success;
+}
+
+.gaps h4 {
+  color: $color-warning;
+}
+
+.recommendations {
+  padding: $spacing-md;
+  background: rgba($color-l6-rose, 0.05);
+  border-radius: $radius-md;
+  margin-bottom: $spacing-md;
+
+  h4 {
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+    font-size: $font-size-sm;
+    font-weight: 600;
+    color: $color-l6-rose;
+    margin: 0 0 $spacing-sm;
+  }
+}
+
+.action-item {
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-xs;
+  padding: 4px 0;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+
+  i {
+    color: $color-l6-rose;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+}
+
+.card-actions {
+  display: flex;
+  gap: $spacing-sm;
+}
+
+.btn-start,
+.btn-detail {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-xs;
+  padding: $spacing-sm;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-start {
+  background: $color-l6-rose;
+  color: $color-pure-white;
+  border: none;
+
+  &:hover {
+    background: darken($color-l6-rose, 8%);
+  }
+}
+
+.btn-detail {
+  background: transparent;
+  color: $color-text-secondary;
+  border: 1px solid $color-soft-gray;
+
+  &:hover {
+    border-color: $color-l6-rose;
+    color: $color-l6-rose;
+  }
+}
+
+// 文化影響力報告
+.impact-section {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
+
+.impact-header {
+  display: flex;
+  justify-content: center;
+}
+
+.impact-score-card {
+  display: flex;
+  align-items: center;
+  gap: $spacing-lg;
+  background: linear-gradient(135deg, $color-l6-rose 0%, darken($color-l6-rose, 10%) 100%);
+  color: $color-pure-white;
+  padding: $spacing-xl;
+  border-radius: $radius-xl;
+  box-shadow: $shadow-lg;
+}
+
+.score-circle {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  .big-score {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-style: italic;
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .score-unit {
+    font-size: $font-size-sm;
+    opacity: 0.8;
+  }
+}
+
+.score-info {
+  h2 {
+    font-size: $font-size-xl;
+    font-weight: 600;
+    margin: 0 0 $spacing-xs;
+  }
+
+  p {
+    font-size: $font-size-sm;
+    opacity: 0.8;
+    margin: 0;
+  }
+}
+
+.dimensions-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: $spacing-md;
+}
+
+.dimension-card {
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-sm;
+}
+
+.dim-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-sm;
+}
+
+.dim-name {
+  font-size: $font-size-sm;
+  font-weight: 600;
+  color: $color-text-primary;
+}
+
+.dim-score {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-style: italic;
+  font-size: $font-size-lg;
+  font-weight: 700;
+
+  &.score-excellent { color: $color-success; }
+  &.score-good { color: $color-l6-rose; }
+  &.score-fair { color: $color-warning; }
+}
+
+.dim-bar {
+  height: 6px;
+  background: $color-cloud-gray;
+  border-radius: $radius-full;
+  overflow: hidden;
+  margin-bottom: $spacing-sm;
+}
+
+.dim-fill {
+  height: 100%;
+  background: $color-l6-rose;
+  border-radius: $radius-full;
+}
+
+.dim-impact {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin: 0;
+  line-height: 1.4;
+}
+
+// EAP 效益
+.eap-impact-card,
+.recommendations-card {
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-sm;
+}
+
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  font-size: $font-size-base;
+  font-weight: 600;
+  color: $color-text-primary;
+  margin: 0 0 $spacing-md;
+
+  i {
+    color: $color-l6-rose;
+  }
+}
+
+.eap-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: $spacing-md;
+}
+
+.eap-metric {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-lg;
+}
+
+.metric-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: $radius-lg;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba($color-l6-rose, 0.1);
+
+  i {
+    font-size: 1.5rem;
+    color: $color-l6-rose;
+  }
+
+  &.productivity {
+    background: rgba($color-success, 0.1);
+    i { color: $color-success; }
+  }
+
+  &.retention {
+    background: rgba($color-l3-petrol, 0.1);
+    i { color: $color-l3-petrol; }
+  }
+
+  &.roi {
+    background: rgba($color-l5-brick, 0.1);
+    i { color: $color-l5-brick; }
+  }
+}
+
+.metric-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.metric-value {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-style: italic;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: $color-text-primary;
+}
+
+.metric-label {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+// 建議
+.recommendations-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.recommendation-item {
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-md;
+  padding: $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+}
+
+.rec-number {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: $color-l6-rose;
+  color: $color-pure-white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: $font-size-sm;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.rec-text {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  line-height: 1.5;
+}
+
+// 成果亮點
+.highlights-section {
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.export-buttons {
+  display: flex;
+  gap: $spacing-sm;
+}
+
+.btn-export {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: $spacing-xs $spacing-md;
+  background: $color-pure-white;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  i {
+    font-size: 1.1rem;
+  }
+
+  &[data-format="ppt"]:hover {
+    border-color: #E67E22;
+    color: #E67E22;
+    i { color: #E67E22; }
+  }
+
+  &[data-format="pdf"]:hover {
+    border-color: #E74C3C;
+    color: #E74C3C;
+    i { color: #E74C3C; }
+  }
+
+  &[data-format="word"]:hover {
+    border-color: #2980B9;
+    color: #2980B9;
+    i { color: #2980B9; }
+  }
+}
+
+.highlights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: $spacing-md;
+}
+
+.highlight-card {
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-sm;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: $shadow-md;
+  }
+}
+
+.highlight-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-sm;
+}
+
+.highlight-category {
+  padding: 4px $spacing-sm;
+  background: rgba($color-l6-rose, 0.1);
+  color: $color-l6-rose;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  font-weight: 500;
+}
+
+.source-module {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: $font-size-xs;
+  color: $color-muted-gray;
+
+  i {
+    font-size: 0.9rem;
+  }
+}
+
+.highlight-title {
+  font-size: $font-size-base;
+  font-weight: 600;
+  color: $color-text-primary;
+  margin: 0 0 $spacing-xs;
+}
+
+.highlight-desc {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin: 0 0 $spacing-md;
+  line-height: 1.5;
+}
+
+.highlight-metrics {
+  display: flex;
+  gap: $spacing-md;
+  padding-top: $spacing-md;
+  border-top: 1px solid $color-soft-gray;
+}
+
+.metric-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  .metric-value {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-style: italic;
+    font-size: $font-size-lg;
+    font-weight: 700;
+    color: $color-l6-rose;
+  }
+
+  .metric-label {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+  }
+}
+
+// 響應式
+@media (max-width: 1200px) {
+  .dimensions-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .eap-metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .impact-page {
+    padding: $spacing-md;
+    padding-top: calc(var(--header-height) + $spacing-md);
+  }
+
+  .page-tabs {
+    flex-wrap: wrap;
+  }
+
+  .potentials-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dimensions-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .eap-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .highlights-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .impact-score-card {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+

@@ -3,10 +3,12 @@
 
 .main-content {
   padding: $spacing-lg;
-  margin-top: $header-height;
+  padding-top: calc(var(--header-height, 70px) + 20px);
+  min-height: calc(100vh - 64px);
 
   @include media-max-md {
     padding: $spacing-md;
+    padding-top: calc(var(--header-height, 70px) + 16px);
   }
 }
 
@@ -15,42 +17,49 @@
   margin: 0 auto;
 }
 
-// 頁面工具列
-.page-toolbar {
+// Filter Bar (consistent with other pages)
+.filter-bar {
+  background: $color-pure-white;
+  padding: 15px 20px;
+  border-radius: 12px;
+  border: 1px solid $color-soft-gray;
   display: flex;
-  justify-content: space-between;
+  gap: 15px;
   align-items: center;
   margin-bottom: $spacing-lg;
   flex-wrap: wrap;
-  gap: $spacing-md;
 }
 
-// 視圖切換標籤
-.view-tabs {
+.filter-divider {
+  width: 1px;
+  height: 24px;
+  background: $color-soft-gray;
+}
+
+// View Toggle (consistent with other pages)
+.view-toggle {
   display: flex;
-  gap: $spacing-sm;
-  padding: $spacing-xs;
   background: $color-cloud-gray;
-  border-radius: $radius-lg;
-  width: fit-content;
+  border-radius: 8px;
+  padding: 4px;
 }
 
-.tab-btn {
+.toggle-btn {
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  color: $color-text-secondary;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 6px;
   display: flex;
   align-items: center;
-  gap: $spacing-xs;
-  padding: $spacing-sm $spacing-lg;
-  background: transparent;
-  border: none;
-  border-radius: $radius-md;
-  font-size: $font-size-sm;
-  font-weight: $font-weight-medium;
-  color: $color-text-secondary;
-  cursor: pointer;
-  transition: all $transition-fast;
+  gap: 6px;
+  transition: all 0.2s;
 
   i {
-    font-size: $font-size-base;
+    font-size: 16px;
   }
 
   &:hover {

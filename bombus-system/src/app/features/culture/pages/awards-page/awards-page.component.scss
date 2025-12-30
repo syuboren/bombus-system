@@ -1,0 +1,589 @@
+@import '../../../../../assets/styles/variables';
+
+.awards-page {
+  padding: $spacing-lg;
+  padding-top: calc(var(--header-height) + $spacing-lg);
+  min-height: 100vh;
+  background: $color-cloud-gray;
+}
+
+.awards-layout {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: $spacing-lg;
+}
+
+// 篩選列
+.filter-bar {
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  padding: $spacing-md;
+  margin-bottom: $spacing-md;
+  box-shadow: $shadow-sm;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+  margin-bottom: $spacing-md;
+
+  i {
+    color: $color-muted-gray;
+    font-size: 1.1rem;
+  }
+
+  input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: $font-size-sm;
+    color: $color-text-primary;
+
+    &::placeholder {
+      color: $color-muted-gray;
+    }
+
+    &:focus {
+      outline: none;
+    }
+  }
+}
+
+.category-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-xs;
+}
+
+.category-tab {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: $spacing-xs $spacing-sm;
+  background: transparent;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  i {
+    font-size: 0.9rem;
+  }
+
+  &:hover {
+    border-color: $color-l6-rose;
+    color: $color-l6-rose;
+  }
+
+  &.active {
+    background: $color-l6-rose;
+    border-color: $color-l6-rose;
+    color: $color-pure-white;
+  }
+}
+
+// 獎項卡片
+.awards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: $spacing-md;
+}
+
+.award-card {
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-sm;
+  transition: all 0.3s ease;
+  position: relative;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: $shadow-md;
+  }
+
+  &[data-priority="high"] {
+    border-left: 4px solid $color-l6-rose;
+  }
+
+  &[data-priority="medium"] {
+    border-left: 4px solid $color-l4-mauve;
+  }
+}
+
+.award-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-sm;
+}
+
+.award-category {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: 4px $spacing-sm;
+  background: rgba($color-l6-rose, 0.1);
+  color: $color-l6-rose;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  font-weight: 500;
+
+  i {
+    font-size: 0.9rem;
+  }
+}
+
+.award-status {
+  padding: 4px $spacing-sm;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  font-weight: 500;
+
+  &.status-upcoming {
+    background: rgba($color-info, 0.1);
+    color: $color-info;
+  }
+
+  &.status-applying {
+    background: rgba($color-warning, 0.1);
+    color: $color-warning;
+  }
+
+  &.status-submitted {
+    background: rgba($color-l3-petrol, 0.1);
+    color: $color-l3-petrol;
+  }
+
+  &.status-won {
+    background: rgba($color-success, 0.1);
+    color: $color-success;
+  }
+
+  &.status-not-won {
+    background: rgba($color-muted-gray, 0.1);
+    color: $color-muted-gray;
+  }
+}
+
+.award-name {
+  font-size: $font-size-base;
+  font-weight: 600;
+  color: $color-text-primary;
+  margin: 0 0 $spacing-xs;
+  line-height: 1.4;
+}
+
+.award-organizer {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin: 0 0 $spacing-sm;
+
+  i {
+    font-size: 0.9rem;
+    color: $color-muted-gray;
+  }
+}
+
+.award-description {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: 1.5;
+  margin: 0 0 $spacing-sm;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.award-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-xs;
+  margin-bottom: $spacing-md;
+
+  .tag {
+    padding: 2px $spacing-sm;
+    background: $color-cloud-gray;
+    color: $color-text-secondary;
+    border-radius: $radius-full;
+    font-size: $font-size-xs;
+  }
+}
+
+.award-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: $spacing-sm;
+  border-top: 1px solid $color-soft-gray;
+  margin-bottom: $spacing-md;
+}
+
+.deadline {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+
+  i {
+    font-size: 1rem;
+    color: $color-muted-gray;
+  }
+
+  .days-left {
+    padding: 2px $spacing-xs;
+    background: rgba($color-warning, 0.1);
+    color: $color-warning;
+    border-radius: $radius-sm;
+    font-size: $font-size-xs;
+    font-weight: 500;
+  }
+}
+
+.match-score {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: 4px $spacing-sm;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  font-weight: 500;
+
+  i {
+    font-size: 0.9rem;
+  }
+
+  &.score-high {
+    background: rgba($color-success, 0.1);
+    color: $color-success;
+  }
+
+  &.score-medium {
+    background: rgba($color-warning, 0.1);
+    color: $color-warning;
+  }
+
+  &.score-low {
+    background: rgba($color-muted-gray, 0.1);
+    color: $color-muted-gray;
+  }
+}
+
+.award-actions {
+  display: flex;
+  gap: $spacing-sm;
+}
+
+.btn-detail,
+.btn-apply {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-xs;
+  padding: $spacing-sm;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-detail {
+  background: transparent;
+  color: $color-text-secondary;
+  border: 1px solid $color-soft-gray;
+
+  &:hover {
+    border-color: $color-l6-rose;
+    color: $color-l6-rose;
+  }
+}
+
+.btn-apply {
+  background: $color-l6-rose;
+  color: $color-pure-white;
+  border: none;
+
+  &:hover {
+    background: darken($color-l6-rose, 8%);
+  }
+}
+
+// 側邊面板
+.side-panel {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+// 截止提醒
+.deadline-alert {
+  background: linear-gradient(135deg, rgba($color-warning, 0.1) 0%, rgba($color-warning, 0.05) 100%);
+  border: 1px solid rgba($color-warning, 0.2);
+  border-radius: $radius-lg;
+  padding: $spacing-md;
+}
+
+.alert-header {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-md;
+
+  i {
+    font-size: 1.25rem;
+    color: $color-warning;
+  }
+
+  span {
+    font-size: $font-size-sm;
+    font-weight: 600;
+    color: $color-warning;
+  }
+}
+
+.alert-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.alert-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-sm;
+  background: $color-pure-white;
+  border-radius: $radius-md;
+}
+
+.alert-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.alert-name {
+  font-size: $font-size-sm;
+  font-weight: 500;
+  color: $color-text-primary;
+}
+
+.alert-date {
+  font-size: $font-size-xs;
+  color: $color-muted-gray;
+}
+
+.alert-days {
+  padding: $spacing-xs $spacing-sm;
+  background: $color-warning;
+  color: $color-pure-white;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  font-weight: 600;
+}
+
+// 申請進度
+.applications-card,
+.stats-card {
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-sm;
+}
+
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  font-size: $font-size-base;
+  font-weight: 600;
+  color: $color-text-primary;
+  margin: 0 0 $spacing-md;
+
+  i {
+    color: $color-l6-rose;
+  }
+}
+
+.applications-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.application-item {
+  display: flex;
+  gap: $spacing-md;
+}
+
+.app-status-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: $radius-md;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  i {
+    font-size: 1.25rem;
+  }
+
+  &.status-won {
+    background: rgba($color-success, 0.1);
+    i { color: $color-success; }
+  }
+
+  &.status-applying {
+    background: rgba($color-warning, 0.1);
+    i { color: $color-warning; }
+  }
+
+  &.status-submitted {
+    background: rgba($color-l3-petrol, 0.1);
+    i { color: $color-l3-petrol; }
+  }
+}
+
+.app-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.app-name {
+  font-size: $font-size-sm;
+  font-weight: 600;
+  color: $color-text-primary;
+  margin: 0 0 4px;
+}
+
+.app-meta {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.app-year {
+  font-size: $font-size-xs;
+  color: $color-muted-gray;
+}
+
+.app-status {
+  padding: 2px $spacing-xs;
+  border-radius: $radius-sm;
+  font-size: 10px;
+  font-weight: 500;
+
+  &.status-won {
+    background: rgba($color-success, 0.1);
+    color: $color-success;
+  }
+
+  &.status-applying {
+    background: rgba($color-warning, 0.1);
+    color: $color-warning;
+  }
+}
+
+.app-notes {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  margin: $spacing-xs 0 0;
+}
+
+// 統計
+.stats-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $spacing-sm;
+  margin-bottom: $spacing-md;
+  padding-bottom: $spacing-md;
+  border-bottom: 1px solid $color-soft-gray;
+}
+
+.stat-item {
+  text-align: center;
+
+  .stat-value {
+    display: block;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-style: italic;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: $color-text-primary;
+  }
+
+  .stat-label {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+  }
+
+  &.highlight .stat-value {
+    color: $color-success;
+  }
+}
+
+.recent-wins {
+  h4 {
+    font-size: $font-size-sm;
+    font-weight: 500;
+    color: $color-text-secondary;
+    margin: 0 0 $spacing-sm;
+  }
+}
+
+.win-item {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-xs 0;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+
+  i {
+    color: #FFD700;
+    font-size: 1rem;
+  }
+
+  &:nth-child(2) i {
+    color: #C0C0C0;
+  }
+}
+
+// 響應式
+@media (max-width: 1024px) {
+  .awards-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .awards-page {
+    padding: $spacing-md;
+    padding-top: calc(var(--header-height) + $spacing-md);
+  }
+
+  .awards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .category-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: $spacing-xs;
+  }
+}
+

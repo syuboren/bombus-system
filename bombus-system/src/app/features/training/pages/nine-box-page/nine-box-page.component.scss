@@ -3,10 +3,12 @@
 
 .main-content {
   padding: $spacing-lg;
-  margin-top: $header-height;
+  padding-top: calc(var(--header-height, 70px) + 20px);
+  min-height: calc(100vh - 64px);
 
   @include media-max-md {
     padding: $spacing-md;
+    padding-top: calc(var(--header-height, 70px) + 16px);
   }
 }
 

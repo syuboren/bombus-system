@@ -1,0 +1,400 @@
+<app-header
+  pageTitle="學習地圖"
+  [breadcrumbs]="['首頁', '教育訓練', '學習地圖']">
+</app-header>
+
+<div class="learning-map-page">
+  <!-- 學習者概況 -->
+  <section class="profile-section">
+    @if (learnerProfile()) {
+      <div class="profile-card">
+        <!-- 人員切換 -->
+        <div class="profile-card__switcher">
+          <button class="switcher-btn" (click)="openEmployeeSelector()">
+            <i class="ri-user-search-line"></i>
+            <span>切換人員</span>
+          </button>
+        </div>
+        <div class="profile-card__avatar">
+          <div class="avatar-circle">
+            <i class="ri-user-3-line"></i>
+          </div>
+          <div class="progress-ring">
+            <svg viewBox="0 0 100 100">
+              <circle class="ring-bg" cx="50" cy="50" r="45" />
+              <circle class="ring-progress" cx="50" cy="50" r="45"
+                [style.stroke-dasharray]="totalProgress() * 2.83 + ', 283'" />
+            </svg>
+          </div>
+        </div>
+        <div class="profile-card__info">
+          <h2 class="profile-name">{{ learnerProfile()!.employeeName }}</h2>
+          <p class="profile-position">{{ learnerProfile()!.department }} · {{ learnerProfile()!.position }}</p>
+        </div>
+        <div class="profile-card__stats">
+          <div class="stat-item">
+            <span class="stat-value">{{ totalProgress() }}%</span>
+            <span class="stat-label">整體進度</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value">{{ learnerProfile()!.completedCourses }}</span>
+            <span class="stat-label">已完成課程</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value">{{ learnerProfile()!.totalLearningHours }}h</span>
+            <span class="stat-label">學習時數</span>
+          </div>
+          <div class="stat-item stat-item--alert" [class.has-alert]="highPriorityCount() > 0">
+            <span class="stat-value">{{ highPriorityCount() }}</span>
+            <span class="stat-label">待加強項目</span>
+          </div>
+        </div>
+      </div>
+    }
+  </section>
+
+  <!-- 職涯發展路徑選擇 -->
+  <section class="career-path-section">
+    <div class="career-path-selector">
+      <span class="selector-label">目標職涯路徑</span>
+      <div class="selector-dropdown" [class.open]="showCareerPathSelector()">
+        <button class="selector-trigger" (click)="toggleCareerPathSelector()">
+          @if (selectedCareerPath()) {
+            <i [class]="selectedCareerPath()!.icon"></i>
+            <span class="selected-path">
+              <strong>{{ selectedCareerPath()!.label }}</strong>
+              <span class="target-info">→ {{ selectedCareerPath()!.targetPosition }} ({{ selectedCareerPath()!.targetGrade }})</span>
+            </span>
+          } @else {
+            <span>選擇職涯發展方向</span>
+          }
+          <i class="ri-arrow-down-s-line dropdown-arrow"></i>
+        </button>
+        @if (showCareerPathSelector()) {
+          <div class="selector-options">
+            @for (path of careerPaths(); track path.id) {
+              <div class="path-option" [class.selected]="selectedCareerPath()?.id === path.id"
+                [class]="getCareerPathTypeClass(path.type)"
+                (click)="selectCareerPath(path)">
+                <div class="path-option__icon">
+                  <i [class]="path.icon"></i>
+                </div>
+                <div class="path-option__info">
+                  <span class="path-option__label">{{ path.label }}</span>
+                  <span class="path-option__target">{{ path.targetPosition }} ({{ path.targetGrade }})</span>
+                  <span class="path-option__desc">{{ path.description }}</span>
+                </div>
+                <div class="path-option__meta">
+                  <span class="feasibility">可行性 {{ path.feasibility }}%</span>
+                  <span class="time">{{ path.estimatedTime }}</span>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- 類別篩選 -->
+  <section class="filter-section">
+    <div class="category-tabs">
+      <button class="category-tab" [class.active]="selectedCategory() === 'all'"
+        (click)="selectCategory('all')">
+        <i class="ri-apps-line"></i>
+        <span>全部路徑</span>
+      </button>
+      @for (branch of learningBranches(); track branch.id) {
+        <button class="category-tab" [class.active]="selectedCategory() === branch.category"
+          [class]="getCategoryClass(branch.category)"
+          (click)="selectCategory(branch.category)">
+          <i [class]="branch.icon"></i>
+          <span>{{ branch.label }}</span>
+          <span class="tab-progress">{{ branch.overallProgress }}%</span>
+        </button>
+      }
+    </div>
+    <button class="recommendation-btn" [class.active]="showRecommendations()"
+      (click)="toggleRecommendations()">
+      <i class="ri-lightbulb-flash-line"></i>
+      <span>AI 推薦</span>
+      @if (highPriorityCount() > 0) {
+        <span class="badge">{{ highPriorityCount() }}</span>
+      }
+    </button>
+  </section>
+
+  <!-- 主要內容區 -->
+  <div class="main-content" [class.show-panel]="showRecommendations() || selectedNode()">
+    <!-- 技能樹視覺化 -->
+    <section class="skill-tree-section" #mapContainer>
+      <div class="skill-tree">
+        <!-- 學習分支 -->
+        @for (branch of filteredBranches(); track branch.id; let i = $index) {
+          <div class="learning-branch" [class]="getCategoryClass(branch.category)"
+            [style.--branch-index]="i">
+            <!-- 分支標題 -->
+            <div class="branch-header">
+              <div class="branch-icon">
+                <i [class]="branch.icon"></i>
+              </div>
+              <div class="branch-info">
+                <span class="branch-label">{{ branch.label }}</span>
+                <div class="branch-progress">
+                  <div class="branch-progress__bar">
+                    <div class="branch-progress__fill" [style.width.%]="branch.overallProgress"></div>
+                  </div>
+                  <span class="branch-progress__text">{{ branch.completedCourses }}/{{ branch.totalCourses }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 節點路徑 -->
+            <div class="node-path">
+              <!-- 學習節點 -->
+              <div class="nodes-container">
+                @for (node of branch.nodes; track node.id) {
+                  <div class="learning-node"
+                    [class]="getNodeStatusClass(node.status)"
+                    [class.priority-high]="node.priority === 'high'"
+                    [class.priority-medium]="node.priority === 'medium'"
+                    [class.selected]="selectedNode()?.id === node.id"
+                    [style.--node-delay]="$index * 0.1 + 's'"
+                    (click)="selectNode(node)">
+                    <div class="node-circle">
+                      @switch (node.status) {
+                        @case ('completed') {
+                          <i class="ri-check-line"></i>
+                        }
+                        @case ('in-progress') {
+                          <div class="node-progress-ring">
+                            <svg viewBox="0 0 36 36">
+                              <circle class="ring-bg" cx="18" cy="18" r="14" />
+                              <circle class="ring-fill" cx="18" cy="18" r="14"
+                                [style.stroke-dasharray]="node.progress * 0.88 + ', 88'" />
+                            </svg>
+                            <span class="progress-text">{{ node.progress }}%</span>
+                          </div>
+                        }
+                        @case ('available') {
+                          <i class="ri-play-line"></i>
+                        }
+                        @case ('locked') {
+                          <i class="ri-lock-line"></i>
+                        }
+                      }
+                    </div>
+                    <span class="node-label">{{ node.courseName }}</span>
+                    @if (node.priority === 'high') {
+                      <span class="priority-indicator"></span>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- 圖例 -->
+      <div class="legend">
+        <div class="legend-item">
+          <span class="legend-dot legend-dot--completed"></span>
+          <span>已完成</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot legend-dot--in-progress"></span>
+          <span>進行中</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot legend-dot--available"></span>
+          <span>可學習</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot legend-dot--locked"></span>
+          <span>未解鎖</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot legend-dot--priority"></span>
+          <span>高優先</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 側邊面板 -->
+    <aside class="side-panel" [class.visible]="showRecommendations() || selectedNode()">
+      <!-- 課程詳情 -->
+      @if (selectedNode()) {
+        <div class="panel-content panel-content--detail">
+          <div class="panel-header">
+            <h3>課程詳情</h3>
+            <button class="close-btn" (click)="closeNodeDetail()">
+              <i class="ri-close-line"></i>
+            </button>
+          </div>
+          <div class="course-detail">
+            <div class="detail-header" [class]="getCategoryClass(selectedNode()!.category)">
+              <span class="detail-category">
+                <i [class]="getCategoryIcon(selectedNode()!.category)"></i>
+                {{ getCategoryLabel(selectedNode()!.category) }}
+              </span>
+              <span class="detail-status" [class]="getNodeStatusClass(selectedNode()!.status)">
+                {{ getStatusLabel(selectedNode()!.status) }}
+              </span>
+            </div>
+            <h4 class="detail-title">{{ selectedNode()!.courseName }}</h4>
+            <div class="detail-meta">
+              <span><i class="ri-time-line"></i> {{ selectedNode()!.duration }}h</span>
+              <span class="priority-badge" [class]="getPriorityClass(selectedNode()!.priority)">
+                {{ getPriorityLabel(selectedNode()!.priority) }}
+              </span>
+            </div>
+
+            <div class="detail-section">
+              <h5>提升職能</h5>
+              <div class="competency-tags">
+                @for (comp of selectedNode()!.targetCompetencies; track comp) {
+                  <span class="competency-tag">{{ comp }}</span>
+                }
+              </div>
+            </div>
+
+            <div class="detail-section">
+              <h5>預期成效</h5>
+              <div class="growth-indicator">
+                <i class="ri-arrow-up-line"></i>
+                <span>職能提升 <strong>+{{ selectedNode()!.expectedGrowth }}%</strong></span>
+              </div>
+            </div>
+
+            @if (selectedNode()!.progress > 0 && selectedNode()!.progress < 100) {
+              <div class="detail-section">
+                <h5>學習進度</h5>
+                <div class="progress-bar">
+                  <div class="progress-fill" [style.width.%]="selectedNode()!.progress"></div>
+                </div>
+                <span class="progress-text">{{ selectedNode()!.progress }}% 完成</span>
+              </div>
+            }
+
+            @if (selectedNode()!.status === 'available') {
+              <button class="enroll-btn" (click)="enrollCourse(selectedNode()!.courseId)">
+                <i class="ri-play-circle-line"></i>
+                開始學習
+              </button>
+            }
+            @if (selectedNode()!.status === 'in-progress') {
+              <button class="enroll-btn enroll-btn--continue" (click)="enrollCourse(selectedNode()!.courseId)">
+                <i class="ri-arrow-right-line"></i>
+                繼續學習
+              </button>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- AI 推薦 -->
+      @if (showRecommendations() && !selectedNode()) {
+        <div class="panel-content panel-content--recommendations">
+          <div class="panel-header">
+            <h3>
+              <i class="ri-lightbulb-flash-line"></i>
+              AI 智慧推薦
+            </h3>
+            <button class="close-btn" (click)="toggleRecommendations()">
+              <i class="ri-close-line"></i>
+            </button>
+          </div>
+          <p class="panel-desc">根據您的職能落差分析，為您推薦以下課程：</p>
+
+          <div class="recommendation-list">
+            @for (rec of recommendations(); track rec.id) {
+              <div class="recommendation-card" [class]="getPriorityClass(rec.priority)">
+                <div class="rec-header">
+                  <span class="rec-category" [class]="getCategoryClass(rec.category)">
+                    <i [class]="getCategoryIcon(rec.category)"></i>
+                  </span>
+                  <span class="rec-match">匹配度 {{ rec.matchScore }}%</span>
+                </div>
+                <h4 class="rec-title">{{ rec.courseName }}</h4>
+                <div class="rec-meta">
+                  <span><i class="ri-time-line"></i> {{ rec.duration }}h</span>
+                  <span><i class="ri-user-line"></i> {{ rec.instructor }}</span>
+                </div>
+                <div class="rec-target">
+                  <span class="target-label">提升職能：</span>
+                  <span class="target-value">{{ rec.targetCompetency }}</span>
+                  <span class="growth-badge">+{{ rec.expectedGrowth }}%</span>
+                </div>
+                @if (rec.nextSessionDate) {
+                  <div class="rec-session">
+                    <i class="ri-calendar-line"></i>
+                    下期開課：{{ formatDate(rec.nextSessionDate) }}
+                  </div>
+                }
+                @if (rec.certifications && rec.certifications.length > 0) {
+                  <div class="rec-certs">
+                    @for (cert of rec.certifications; track cert) {
+                      <span class="cert-badge">
+                        <i class="ri-award-line"></i>
+                        {{ cert }}
+                      </span>
+                    }
+                  </div>
+                }
+                <button class="enroll-btn enroll-btn--small" (click)="enrollCourse(rec.courseId)">
+                  <i class="ri-add-line"></i>
+                  立即報名
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </aside>
+  </div>
+
+  <!-- 職能落差摘要 -->
+  @if (learnerProfile()?.competencyGaps) {
+    <section class="gaps-section">
+      <div class="section-header">
+        <h2 class="section-title">
+          <i class="ri-bar-chart-horizontal-line"></i>
+          職能落差分析
+        </h2>
+      </div>
+      <div class="gaps-grid">
+        @for (gap of learnerProfile()!.competencyGaps; track gap.id) {
+          <div class="gap-card" [class]="getPriorityClass(gap.priority)">
+            <div class="gap-header">
+              <span class="gap-name">{{ gap.competencyName }}</span>
+              <span class="gap-category" [class]="getCategoryClass(gap.category)">
+                {{ getCategoryLabel(gap.category) }}
+              </span>
+            </div>
+            <div class="gap-visual">
+              <div class="level-bar">
+                <div class="level-current" [style.width.%]="gap.currentLevel">
+                  <span class="level-label">現況 {{ gap.currentLevel }}%</span>
+                </div>
+                <div class="level-required" [style.left.%]="gap.requiredLevel">
+                  <span class="required-marker"></span>
+                  <span class="required-label">目標 {{ gap.requiredLevel }}%</span>
+                </div>
+              </div>
+            </div>
+            <div class="gap-footer">
+              <span class="gap-percentage" [class]="getPriorityClass(gap.priority)">
+                落差 {{ gap.gapPercentage }}%
+              </span>
+              <span class="gap-priority">
+                {{ getPriorityLabel(gap.priority) }}
+              </span>
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+  }
+</div>
+

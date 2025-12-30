@@ -1,13 +1,8 @@
+@import '../../../../../assets/styles/variables';
+@import '../../../../../assets/styles/mixins';
+
 // Project Detail Page Styles
-$color-l4-mauve: #9A8C98;
-$color-text-primary: #1e293b;
-$color-text-secondary: #64748b;
-$color-border: #e2e8f0;
-$color-bg-card: #ffffff;
-$color-bg-base: #f8fafc;
-$color-success: #7FB095;
-$color-danger: #C77F7F;
-$color-warning: #E3C088;
+$module-color: $color-l4-mauve;
 
 .loading-container {
   display: flex;
@@ -30,8 +25,14 @@ $color-warning: #E3C088;
 }
 
 .project-detail-page {
-  padding: 20px;
+  padding: $spacing-lg;
   padding-top: calc(var(--header-height, 70px) + 20px);
+  min-height: calc(100vh - 64px);
+
+  @include media-max-md {
+    padding: $spacing-md;
+    padding-top: calc(var(--header-height, 70px) + 16px);
+  }
 }
 
 // Page Toolbar
@@ -43,7 +44,7 @@ $color-warning: #E3C088;
   padding: 10px 20px;
   background: white;
   color: $color-text-primary;
-  border: 1px solid $color-border;
+  border: 1px solid $color-soft-gray;
   border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
@@ -58,7 +59,7 @@ $color-warning: #E3C088;
   }
 
   &:hover {
-    background: $color-bg-base;
+    background: $color-cloud-gray;
     border-color: $color-l4-mauve;
     color: $color-l4-mauve;
   }
@@ -66,9 +67,9 @@ $color-warning: #E3C088;
 
 // Project Header Card
 .project-header-card {
-  background: $color-bg-card;
+  background: $color-pure-white;
   border-radius: 12px;
-  border: 1px solid $color-border;
+  border: 1px solid $color-soft-gray;
   padding: 25px;
   margin-bottom: 20px;
 }
@@ -117,8 +118,8 @@ $color-warning: #E3C088;
   }
 
   &--risk {
-    background: rgba($color-danger, 0.15);
-    color: $color-danger;
+    background: rgba($color-error, 0.15);
+    color: $color-error;
   }
 
   &--planning {
@@ -145,7 +146,7 @@ $color-warning: #E3C088;
 .ph-stats {
   display: flex;
   gap: 30px;
-  background: $color-bg-base;
+  background: $color-cloud-gray;
   padding: 15px 25px;
   border-radius: 8px;
   flex-wrap: wrap;
@@ -155,7 +156,7 @@ $color-warning: #E3C088;
   text-align: center;
 
   &--bordered {
-    border-left: 1px solid $color-border;
+    border-left: 1px solid $color-soft-gray;
     padding-left: 20px;
   }
 }
@@ -207,7 +208,7 @@ $color-warning: #E3C088;
 .project-tabs {
   background: white;
   border-radius: 12px 12px 0 0;
-  border: 1px solid $color-border;
+  border: 1px solid $color-soft-gray;
   border-bottom: none;
   display: flex;
   padding: 0 20px;
@@ -236,7 +237,7 @@ $color-warning: #E3C088;
 .tab-content-wrapper {
   background: white;
   border-radius: 0 0 12px 12px;
-  border: 1px solid $color-border;
+  border: 1px solid $color-soft-gray;
   padding: 25px;
   min-height: 500px;
 }
@@ -260,7 +261,7 @@ $color-warning: #E3C088;
 
 .inner-card {
   background: white;
-  border: 1px solid $color-border;
+  border: 1px solid $color-soft-gray;
   border-radius: 8px;
   padding: 20px;
 
@@ -311,16 +312,16 @@ $color-warning: #E3C088;
   th {
     text-align: left;
     padding: 12px 15px;
-    background: $color-bg-base;
+    background: $color-cloud-gray;
     color: $color-text-secondary;
     font-size: 13px;
     font-weight: 600;
-    border-bottom: 1px solid $color-border;
+    border-bottom: 1px solid $color-soft-gray;
   }
 
   td {
     padding: 12px 15px;
-    border-bottom: 1px solid $color-border;
+    border-bottom: 1px solid $color-soft-gray;
     font-size: 14px;
     color: $color-text-primary;
   }
@@ -330,7 +331,7 @@ $color-warning: #E3C088;
   cursor: pointer;
 
   &:hover {
-    background: $color-bg-base;
+    background: $color-cloud-gray;
   }
 }
 
@@ -416,7 +417,7 @@ $color-warning: #E3C088;
 }
 
 .text-danger {
-  color: $color-danger !important;
+  color: $color-error !important;
 }
 
 .text-success {
@@ -464,7 +465,7 @@ $color-warning: #E3C088;
 
 .alert-icon {
   i {
-    color: $color-danger;
+    color: $color-error;
     font-size: 18px;
   }
 }
@@ -475,7 +476,7 @@ $color-warning: #E3C088;
 
 .alert-title {
   font-weight: 700;
-  color: $color-danger;
+  color: $color-error;
   font-size: 14px;
   margin-bottom: 4px;
 }
@@ -553,7 +554,7 @@ $color-warning: #E3C088;
 }
 
 .cost-row--subtotal {
-  background: $color-bg-base;
+  background: $color-cloud-gray;
   font-weight: 600;
 }
 
@@ -561,7 +562,7 @@ $color-warning: #E3C088;
   background: #f1f5f9;
   font-weight: 700;
   color: $color-l4-mauve;
-  border-top: 2px solid $color-border;
+  border-top: 2px solid $color-soft-gray;
 }
 
 // Buttons
@@ -588,7 +589,7 @@ $color-warning: #E3C088;
   padding: 10px 20px;
   background: white;
   color: $color-text-primary;
-  border: 1px solid $color-border;
+  border: 1px solid $color-soft-gray;
   border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
@@ -599,7 +600,7 @@ $color-warning: #E3C088;
   transition: all 0.2s;
 
   &:hover {
-    background: #f1f5f9;
+    background: $color-cloud-gray;
     border-color: #cbd5e1;
   }
 }
@@ -618,7 +619,7 @@ $color-warning: #E3C088;
   font-size: 20px;
 
   &:hover {
-    background: #f1f5f9;
+    background: $color-cloud-gray;
   }
 }
 
@@ -649,7 +650,7 @@ $color-warning: #E3C088;
 
   &__header {
     padding: 20px 25px;
-    border-bottom: 1px solid $color-border;
+    border-bottom: 1px solid $color-soft-gray;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -668,8 +669,8 @@ $color-warning: #E3C088;
 
   &__footer {
     padding: 20px 25px;
-    border-top: 1px solid $color-border;
-    background: $color-bg-base;
+    border-top: 1px solid $color-soft-gray;
+    background: $color-cloud-gray;
     display: flex;
     justify-content: flex-end;
     gap: 10px;
@@ -694,7 +695,7 @@ $color-warning: #E3C088;
 .form-textarea {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid $color-border;
+  border: 1px solid $color-soft-gray;
   border-radius: 8px;
   font-size: 14px;
   color: $color-text-primary;
@@ -731,10 +732,10 @@ $color-warning: #E3C088;
 }
 
 .cost-calc-box {
-  background: $color-bg-base;
+  background: $color-cloud-gray;
   padding: 20px;
   border-radius: 8px;
-  border: 1px solid $color-border;
+  border: 1px solid $color-soft-gray;
   margin-top: 15px;
 }
 
@@ -749,7 +750,7 @@ $color-warning: #E3C088;
     font-weight: 700;
     font-size: 18px;
     color: $color-l4-mauve;
-    border-top: 1px solid $color-border;
+    border-top: 1px solid $color-soft-gray;
     padding-top: 12px;
     margin-top: 12px;
     margin-bottom: 0;

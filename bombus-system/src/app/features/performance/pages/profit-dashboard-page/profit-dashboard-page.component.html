@@ -1,0 +1,214 @@
+<app-header
+  pageTitle="毛利監控儀表板"
+  [breadcrumbs]="['績效管理', '毛利監控']" />
+
+<div class="profit-dashboard-page">
+  <!-- Period Selector & Actions -->
+  <div class="page-toolbar">
+    <div class="period-selector">
+      <label>計算週期：</label>
+      <select 
+        class="form-select" 
+        [ngModel]="selectedPeriod()" 
+        (ngModelChange)="onPeriodChange($event)">
+        @for (option of periodOptions; track option.value) {
+          <option [value]="option.value">{{ option.label }}</option>
+        }
+      </select>
+    </div>
+    <div class="toolbar-actions">
+      <button class="btn-secondary" (click)="navigateToBonusDistribution()">
+        <i class="ri-calculator-line"></i>
+        獎金分配計算
+      </button>
+    </div>
+  </div>
+
+  <!-- KPI Summary Cards -->
+  @if (kpiSummary(); as kpi) {
+    <div class="kpi-grid">
+      <div class="kpi-card kpi-card--profit">
+        <div class="kpi-icon">
+          <i class="ri-money-dollar-circle-line"></i>
+        </div>
+        <div class="kpi-content">
+          <div class="kpi-label">當期毛利</div>
+          <div class="kpi-value">{{ formatCurrency(kpi.currentProfit) }}</div>
+          <div class="kpi-trend" [ngClass]="getTrendClass(kpi.profitTrend)">
+            <i [class]="getTrendIcon(kpi.profitTrend)"></i>
+            {{ kpi.trendValue > 0 ? '+' : '' }}{{ kpi.trendValue }}%
+          </div>
+        </div>
+      </div>
+
+      <div class="kpi-card kpi-card--margin">
+        <div class="kpi-icon">
+          <i class="ri-percent-line"></i>
+        </div>
+        <div class="kpi-content">
+          <div class="kpi-label">毛利率</div>
+          <div class="kpi-value">{{ kpi.profitMargin }}%</div>
+          <div class="kpi-sub">目標 30%</div>
+        </div>
+      </div>
+
+      <div class="kpi-card kpi-card--target">
+        <div class="kpi-icon">
+          <i class="ri-flag-line"></i>
+        </div>
+        <div class="kpi-content">
+          <div class="kpi-label">目標達成率</div>
+          <div class="kpi-value" [class.value--success]="kpi.targetAchievement >= 100">
+            {{ kpi.targetAchievement }}%
+          </div>
+          <div class="kpi-progress">
+            <div class="progress-bar">
+              <div 
+                class="progress-fill" 
+                [style.width.%]="Math.min(kpi.targetAchievement, 100)"
+                [class.fill--success]="kpi.targetAchievement >= 100">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="kpi-card kpi-card--bonus">
+        <div class="kpi-icon">
+          <i class="ri-gift-line"></i>
+        </div>
+        <div class="kpi-content">
+          <div class="kpi-label">預估獎金池</div>
+          <div class="kpi-value">{{ formatCurrency(kpi.estimatedBonusPool) }}</div>
+          <div class="kpi-sub">依目前毛利估算</div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Main Content Grid -->
+  <div class="dashboard-grid">
+    <!-- Left Column -->
+    <div class="dashboard-column dashboard-column--main">
+      <!-- Profit Trend Chart -->
+      <div class="chart-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <i class="ri-line-chart-line"></i>
+            毛利趨勢分析
+          </div>
+        </div>
+        <div #profitTrendChart class="chart-container chart-container--large"></div>
+      </div>
+
+      <!-- Department Profit Ranking -->
+      <div class="chart-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <i class="ri-bar-chart-horizontal-line"></i>
+            部門毛利排行
+          </div>
+        </div>
+        <div #departmentBarChart class="chart-container chart-container--medium"></div>
+      </div>
+    </div>
+
+    <!-- Right Column -->
+    <div class="dashboard-column dashboard-column--side">
+      <!-- Cost Structure -->
+      <div class="chart-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <i class="ri-pie-chart-line"></i>
+            成本結構分析
+          </div>
+        </div>
+        <div #costDonutChart class="chart-container chart-container--donut"></div>
+        <div class="cost-legend">
+          @for (item of costStructure(); track item.category) {
+            <div class="legend-item">
+              <span class="legend-dot" [style.backgroundColor]="item.color"></span>
+              <span class="legend-label">{{ item.label }}</span>
+              <span class="legend-value">{{ item.amount.toLocaleString() }}萬</span>
+              <span class="legend-percent">{{ item.percentage }}%</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Alerts -->
+      <div class="chart-panel">
+        <div class="panel-header">
+          <div class="panel-title panel-title--warning">
+            <i class="ri-alarm-warning-line"></i>
+            異常警示
+          </div>
+          <span class="alert-count">{{ alerts().length }}</span>
+        </div>
+        <div class="alert-list">
+          @for (alert of alerts(); track alert.id) {
+            <div class="alert-card" [ngClass]="getAlertSeverityClass(alert.severity)">
+              <div class="alert-icon">
+                <i [class]="getAlertIcon(alert.type)"></i>
+              </div>
+              <div class="alert-content">
+                <div class="alert-header">
+                  <span class="alert-dept">{{ alert.department }}</span>
+                  <span class="alert-value">{{ alert.value }}</span>
+                </div>
+                <div class="alert-message">{{ alert.message }}</div>
+              </div>
+            </div>
+          } @empty {
+            <div class="empty-state">
+              <i class="ri-checkbox-circle-line"></i>
+              <span>目前無異常警示</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Department Summary Table -->
+      <div class="chart-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <i class="ri-building-line"></i>
+            部門明細
+          </div>
+        </div>
+        <div class="department-table-wrapper">
+          <table class="department-table">
+            <thead>
+              <tr>
+                <th>部門</th>
+                <th>營收</th>
+                <th>毛利率</th>
+                <th>達成率</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (dept of sortedDepartments(); track dept.departmentId) {
+                <tr>
+                  <td>
+                    <span class="dept-indicator" [style.backgroundColor]="dept.color"></span>
+                    {{ dept.departmentName }}
+                  </td>
+                  <td>{{ dept.revenue.toLocaleString() }}萬</td>
+                  <td [class.value--success]="dept.profitMargin >= 30" 
+                      [class.value--warning]="dept.profitMargin < 30">
+                    {{ dept.profitMargin }}%
+                  </td>
+                  <td [class.value--success]="dept.targetAchievement >= 100"
+                      [class.value--warning]="dept.targetAchievement < 100">
+                    {{ dept.targetAchievement }}%
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

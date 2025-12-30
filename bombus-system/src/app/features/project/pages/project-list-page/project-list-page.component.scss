@@ -1,5 +1,8 @@
+@import '../../../../../assets/styles/variables';
+@import '../../../../../assets/styles/mixins';
+
 // Project List Page Styles
-$color-l4-mauve: #9A8C98;
+$module-color: $color-l4-mauve;
 $color-text-primary: #1e293b;
 $color-text-secondary: #64748b;
 $color-border: #e2e8f0;
@@ -10,8 +13,14 @@ $color-danger: #C77F7F;
 $color-warning: #E3C088;
 
 .project-list-page {
-  padding: 20px;
+  padding: $spacing-lg;
   padding-top: calc(var(--header-height, 70px) + 20px);
+  min-height: calc(100vh - 64px);
+
+  @include media-max-md {
+    padding: $spacing-md;
+    padding-top: calc(var(--header-height, 70px) + 16px);
+  }
 }
 
 // Dashboard Stats

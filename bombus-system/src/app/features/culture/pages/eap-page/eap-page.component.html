@@ -1,0 +1,246 @@
+<app-header
+  [pageTitle]="'員工協助方案 EAP'"
+  [breadcrumbs]="['文化管理']"
+/>
+
+<main class="eap-page">
+  <!-- 匿名提示 -->
+  <div class="privacy-notice">
+    <i class="ri-shield-check-line"></i>
+    <div class="notice-content">
+      <strong>隱私保護聲明</strong>
+      <p>您的 EAP 使用紀錄完全匿名。諮商內容不進入任何系統，HR 僅能查看整體使用率統計。</p>
+    </div>
+  </div>
+
+  <div class="eap-layout">
+    <!-- 左側：服務列表 -->
+    <section class="services-section">
+      <h2 class="section-title">
+        <i class="ri-hand-heart-line"></i>
+        可用服務
+      </h2>
+
+      <div class="services-grid">
+        @for (service of services(); track service.id) {
+          <div class="service-card" [class.low-quota]="getRemainingQuota(service) <= 1">
+            <div class="service-icon">
+              <i [class]="service.icon"></i>
+            </div>
+            <div class="service-content">
+              <h3 class="service-name">{{ service.name }}</h3>
+              <p class="service-desc">{{ service.description }}</p>
+              <div class="service-provider">
+                <i class="ri-building-2-line"></i>
+                {{ service.provider }}
+              </div>
+            </div>
+            <div class="service-quota">
+              <div class="quota-info">
+                <span class="quota-label">剩餘額度</span>
+                <span class="quota-value">{{ getRemainingQuota(service) }} / {{ service.annualQuota }}</span>
+              </div>
+              <div class="quota-bar">
+                <div class="quota-used" [style.width.%]="getQuotaPercentage(service)"></div>
+              </div>
+            </div>
+            <button class="btn-book" (click)="openBooking(service)" [disabled]="getRemainingQuota(service) === 0">
+              @if (getRemainingQuota(service) > 0) {
+                <i class="ri-calendar-check-line"></i>
+                匿名預約
+              } @else {
+                <i class="ri-close-circle-line"></i>
+                額度已用完
+              }
+            </button>
+          </div>
+        }
+      </div>
+    </section>
+
+    <!-- 右側：統計與活動 -->
+    <aside class="side-panel">
+      <!-- 使用統計 (去識別化) -->
+      @if (usageStats()) {
+        <div class="stats-card">
+          <h3 class="card-title">
+            <i class="ri-bar-chart-box-line"></i>
+            整體使用統計
+            <span class="period-badge">{{ usageStats()?.period }}</span>
+          </h3>
+
+          <div class="stats-overview">
+            <div class="stat-item">
+              <span class="stat-value">{{ usageStats()?.totalUsage }}</span>
+              <span class="stat-label">總使用人次</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value">{{ usageStats()?.satisfactionScore }}</span>
+              <span class="stat-label">滿意度 /5</span>
+            </div>
+            <div class="stat-item highlight">
+              <span class="stat-value">+{{ usageStats()?.yearOverYearChange }}%</span>
+              <span class="stat-label">年增率</span>
+            </div>
+          </div>
+
+          <div class="usage-breakdown">
+            <h4>服務類型分佈</h4>
+            @for (item of usageStats()?.serviceBreakdown; track item.type) {
+              <div class="breakdown-row">
+                <div class="breakdown-info">
+                  <i [class]="getServiceIcon(item.type)"></i>
+                  <span>{{ getServiceLabel(item.type) }}</span>
+                </div>
+                <div class="breakdown-bar-wrapper">
+                  <div class="breakdown-bar" [style.width.%]="item.percentage"></div>
+                </div>
+                <span class="breakdown-value">{{ item.percentage }}%</span>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- 健康促進計畫 -->
+      <div class="programs-card">
+        <h3 class="card-title">
+          <i class="ri-calendar-event-line"></i>
+          即將舉行的活動
+        </h3>
+
+        <div class="programs-list">
+          @for (program of healthPrograms(); track program.id) {
+            <div class="program-item">
+              <div class="program-icon" [attr.data-type]="program.type">
+                <i [class]="getProgramTypeIcon(program.type)"></i>
+              </div>
+              <div class="program-content">
+                <h4 class="program-name">{{ program.name }}</h4>
+                <p class="program-desc">{{ program.description }}</p>
+                <div class="program-meta">
+                  <span class="program-date">
+                    <i class="ri-calendar-line"></i>
+                    {{ formatDate(program.schedule) }}
+                  </span>
+                  @if (program.instructor) {
+                    <span class="program-instructor">
+                      <i class="ri-user-line"></i>
+                      {{ program.instructor }}
+                    </span>
+                  }
+                </div>
+                <div class="program-enrollment">
+                  <div class="enrollment-bar">
+                    <div class="enrollment-fill" [style.width.%]="getEnrollmentPercentage(program)"></div>
+                  </div>
+                  <span class="enrollment-text">{{ program.enrolled }} / {{ program.capacity }} 人</span>
+                </div>
+              </div>
+              <button class="btn-enroll" [disabled]="program.enrolled >= program.capacity">
+                @if (program.enrolled < program.capacity) {
+                  報名
+                } @else {
+                  已額滿
+                }
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- EAP 效益 -->
+      <div class="impact-card">
+        <h3 class="card-title">
+          <i class="ri-line-chart-line"></i>
+          EAP 效益分析
+        </h3>
+        <div class="impact-metrics">
+          <div class="impact-item">
+            <div class="impact-icon productivity">
+              <i class="ri-speed-up-line"></i>
+            </div>
+            <div class="impact-info">
+              <span class="impact-value">+8%</span>
+              <span class="impact-label">生產力提升</span>
+            </div>
+          </div>
+          <div class="impact-item">
+            <div class="impact-icon retention">
+              <i class="ri-user-heart-line"></i>
+            </div>
+            <div class="impact-info">
+              <span class="impact-value">-15%</span>
+              <span class="impact-label">離職率降低</span>
+            </div>
+          </div>
+          <div class="impact-item">
+            <div class="impact-icon roi">
+              <i class="ri-funds-line"></i>
+            </div>
+            <div class="impact-info">
+              <span class="impact-value">320%</span>
+              <span class="impact-label">投資報酬率</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<!-- 預約 Modal -->
+@if (showBookingModal() && selectedService()) {
+  <div class="modal-overlay" (click)="closeBookingModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>
+          <i [class]="selectedService()?.icon"></i>
+          預約 {{ selectedService()?.name }}
+        </h3>
+        <button class="btn-close" (click)="closeBookingModal()">
+          <i class="ri-close-line"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="booking-notice">
+          <i class="ri-information-line"></i>
+          <p>此預約為匿名模式，系統將使用匿名代碼追蹤預約狀態。</p>
+        </div>
+        <div class="booking-form">
+          <div class="form-group">
+            <label>預約模式</label>
+            <div class="radio-group">
+              <label class="radio-item">
+                <input type="radio" name="mode" value="anonymous" checked>
+                <span>匿名預約（推薦）</span>
+              </label>
+              <label class="radio-item">
+                <input type="radio" name="mode" value="named">
+                <span>具名預約</span>
+              </label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>偏好時段</label>
+            <select>
+              <option>週一至週五 上午</option>
+              <option>週一至週五 下午</option>
+              <option>週六 上午</option>
+              <option>無特別偏好</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>備註（選填）</label>
+            <textarea placeholder="請簡述您希望諮詢的方向..."></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="closeBookingModal()">取消</button>
+        <button class="btn-confirm">確認預約</button>
+      </div>
+    </div>
+  </div>
+}
+

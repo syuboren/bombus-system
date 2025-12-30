@@ -1,0 +1,189 @@
+<app-header
+  [pageTitle]="'獎項資料庫'"
+  [breadcrumbs]="['文化管理']"
+/>
+
+<main class="awards-page">
+  <div class="awards-layout">
+    <!-- 左側：獎項列表 -->
+    <section class="awards-section">
+      <!-- 搜尋與篩選 -->
+      <div class="filter-bar">
+        <div class="search-box">
+          <i class="ri-search-line"></i>
+          <input
+            type="text"
+            placeholder="搜尋獎項名稱、主辦單位..."
+            [value]="searchQuery()"
+            (input)="onSearch($event)"
+          >
+        </div>
+        <div class="category-tabs">
+          @for (cat of categories; track cat.value) {
+            <button
+              class="category-tab"
+              [class.active]="selectedCategory() === cat.value"
+              (click)="setCategory(cat.value)"
+            >
+              <i [class]="cat.icon"></i>
+              {{ cat.label }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- 獎項卡片列表 -->
+      <div class="awards-grid">
+        @for (award of filteredAwards(); track award.id) {
+          <article class="award-card" [attr.data-priority]="award.priority">
+            <div class="award-header">
+              <div class="award-category">
+                <i [class]="getCategoryIcon(award.category)"></i>
+                {{ getCategoryLabel(award.category) }}
+              </div>
+              <div class="award-status" [class]="getStatusClass(award.status)">
+                {{ getStatusLabel(award.status) }}
+              </div>
+            </div>
+
+            <h3 class="award-name">{{ award.name }}</h3>
+            <p class="award-organizer">
+              <i class="ri-building-line"></i>
+              {{ award.organizer }}
+            </p>
+            <p class="award-description">{{ award.description }}</p>
+
+            <div class="award-tags">
+              @for (tag of award.tags; track tag) {
+                <span class="tag">{{ tag }}</span>
+              }
+            </div>
+
+            <div class="award-meta">
+              <div class="deadline">
+                <i class="ri-calendar-event-line"></i>
+                <span>截止: {{ formatDate(award.applicationDeadline) }}</span>
+                @if (getDaysUntilDeadline(award.applicationDeadline) <= 30 && getDaysUntilDeadline(award.applicationDeadline) > 0) {
+                  <span class="days-left">剩 {{ getDaysUntilDeadline(award.applicationDeadline) }} 天</span>
+                }
+              </div>
+              @if (award.matchScore) {
+                <div class="match-score" [class]="getMatchScoreClass(award.matchScore)">
+                  <i class="ri-ai-generate"></i>
+                  匹配度 {{ award.matchScore }}%
+                </div>
+              }
+            </div>
+
+            <div class="award-actions">
+              <button class="btn-detail">
+                <i class="ri-file-list-3-line"></i>
+                查看詳情
+              </button>
+              @if (award.status === 'upcoming' || award.status === 'applying') {
+                <button class="btn-apply">
+                  <i class="ri-edit-line"></i>
+                  開始申請
+                </button>
+              }
+            </div>
+          </article>
+        }
+      </div>
+    </section>
+
+    <!-- 右側面板 -->
+    <aside class="side-panel">
+      <!-- 即將截止提醒 -->
+      @if (upcomingDeadlines().length > 0) {
+        <div class="deadline-alert">
+          <div class="alert-header">
+            <i class="ri-alarm-warning-line"></i>
+            <span>即將截止</span>
+          </div>
+          <div class="alert-list">
+            @for (award of upcomingDeadlines(); track award.id) {
+              <div class="alert-item">
+                <div class="alert-info">
+                  <span class="alert-name">{{ award.name }}</span>
+                  <span class="alert-date">{{ formatDate(award.applicationDeadline) }}</span>
+                </div>
+                <span class="alert-days">{{ getDaysUntilDeadline(award.applicationDeadline) }} 天</span>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- 申請進度 -->
+      <div class="applications-card">
+        <h3 class="card-title">
+          <i class="ri-file-edit-line"></i>
+          申請進度追蹤
+        </h3>
+
+        <div class="applications-list">
+          @for (app of applications(); track app.id) {
+            <div class="application-item">
+              <div class="app-status-icon" [class]="getStatusClass(app.status)">
+                @if (app.status === 'won') {
+                  <i class="ri-trophy-line"></i>
+                } @else if (app.status === 'applying') {
+                  <i class="ri-edit-line"></i>
+                } @else {
+                  <i class="ri-file-list-line"></i>
+                }
+              </div>
+              <div class="app-content">
+                <h4 class="app-name">{{ app.awardName }}</h4>
+                <div class="app-meta">
+                  <span class="app-year">{{ app.year }}</span>
+                  <span class="app-status" [class]="getStatusClass(app.status)">
+                    {{ getStatusLabel(app.status) }}
+                  </span>
+                </div>
+                @if (app.notes) {
+                  <p class="app-notes">{{ app.notes }}</p>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- 歷年成績 -->
+      <div class="stats-card">
+        <h3 class="card-title">
+          <i class="ri-bar-chart-grouped-line"></i>
+          歷年獲獎成績
+        </h3>
+        <div class="stats-summary">
+          <div class="stat-item">
+            <span class="stat-value">12</span>
+            <span class="stat-label">累計獲獎</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value">3</span>
+            <span class="stat-label">2024 年</span>
+          </div>
+          <div class="stat-item highlight">
+            <span class="stat-value">85%</span>
+            <span class="stat-label">成功率</span>
+          </div>
+        </div>
+        <div class="recent-wins">
+          <h4>近期獲獎</h4>
+          <div class="win-item">
+            <i class="ri-trophy-fill"></i>
+            <span>亞洲最佳雇主獎 2024</span>
+          </div>
+          <div class="win-item">
+            <i class="ri-medal-fill"></i>
+            <span>國家人才發展獎 2024</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</main>
+

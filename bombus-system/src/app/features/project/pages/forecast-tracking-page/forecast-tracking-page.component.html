@@ -1,0 +1,348 @@
+<app-header
+  pageTitle="Forecast 預測系統"
+  [breadcrumbs]="['專案管理', 'Forecast 追蹤']" />
+
+<div class="forecast-page">
+  <!-- View Toggle Bar -->
+  <div class="filter-bar">
+    <div class="filter-item filter-item--search">
+      <i class="ri-search-line"></i>
+      <input
+        type="text"
+        placeholder="搜尋專案名稱、客戶或 PM..."
+        [value]="searchTerm()"
+        (input)="onSearchChange($event)">
+    </div>
+    <div class="filter-divider"></div>
+    <div class="filter-item">
+      <select [ngModel]="filterStatus()" (ngModelChange)="setFilterStatus($event)">
+        <option value="all">全部狀態</option>
+        <option value="on-track">正常</option>
+        <option value="at-risk">有風險</option>
+        <option value="delayed">延遲</option>
+      </select>
+    </div>
+    <div class="view-toggle">
+      <button
+        class="toggle-btn"
+        [class.active]="viewMode() === 'table'"
+        (click)="setViewMode('table')">
+        <i class="ri-table-line"></i> 表格
+      </button>
+      <button
+        class="toggle-btn"
+        [class.active]="viewMode() === 'gantt'"
+        (click)="setViewMode('gantt')">
+        <i class="ri-bar-chart-horizontal-line"></i> 甘特圖
+      </button>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-container">
+      <i class="ri-loader-4-line loading-spinner"></i>
+      <span>載入中...</span>
+    </div>
+  } @else {
+    <!-- Summary Cards -->
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="summary-icon">
+          <i class="ri-folder-chart-line"></i>
+        </div>
+        <div class="summary-content">
+          <span class="summary-label">總專案數</span>
+          <span class="summary-value">{{ summary()?.totalProjects || 0 }}</span>
+        </div>
+      </div>
+
+      <div class="summary-card">
+        <div class="summary-icon summary-icon--budget">
+          <i class="ri-money-dollar-circle-line"></i>
+        </div>
+        <div class="summary-content">
+          <span class="summary-label">總預算金額</span>
+          <span class="summary-value">{{ formatBudget(summary()?.totalBudget || 0) }}</span>
+        </div>
+      </div>
+
+      <div class="summary-card summary-card--success">
+        <div class="summary-icon">
+          <i class="ri-check-double-line"></i>
+        </div>
+        <div class="summary-content">
+          <span class="summary-label">正常推進</span>
+          <span class="summary-value">{{ summary()?.onTrack || 0 }}</span>
+        </div>
+      </div>
+
+      <div class="summary-card summary-card--warning">
+        <div class="summary-icon">
+          <i class="ri-alert-line"></i>
+        </div>
+        <div class="summary-content">
+          <span class="summary-label">有風險</span>
+          <span class="summary-value">{{ summary()?.atRisk || 0 }}</span>
+        </div>
+      </div>
+
+      <div class="summary-card summary-card--danger">
+        <div class="summary-icon">
+          <i class="ri-time-line"></i>
+        </div>
+        <div class="summary-content">
+          <span class="summary-label">延遲中</span>
+          <span class="summary-value">{{ summary()?.delayed || 0 }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="charts-section">
+      <div class="chart-card">
+        <h3 class="chart-title">
+          <i class="ri-pie-chart-line"></i>
+          階段分佈
+        </h3>
+        <div class="chart-container">
+          <div echarts [options]="stageChartOptions()" class="chart"></div>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <h3 class="chart-title">
+          <i class="ri-bar-chart-2-line"></i>
+          各階段預算金額
+        </h3>
+        <div class="chart-container">
+          <div echarts [options]="budgetChartOptions()" class="chart"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table View -->
+    @if (viewMode() === 'table') {
+      <div class="table-card">
+        <div class="table-wrapper">
+          <table class="forecast-table">
+            <thead>
+              <tr>
+                <th>客戶/歸屬</th>
+                <th>專案名稱</th>
+                <th>預算(萬)</th>
+                <th>專案經理</th>
+                <th>業務負責</th>
+                <th>工程負責</th>
+                <th>進度階段</th>
+                <th>狀態</th>
+                <th>進度說明</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (project of filteredProjects(); track project.id) {
+                <tr (click)="openDetail(project)">
+                  <td class="cell-client">{{ project.clientName }}</td>
+                  <td class="cell-name">
+                    <span class="project-name">{{ project.projectName }}</span>
+                    <span class="case-number">{{ project.caseNumber }}</span>
+                  </td>
+                  <td class="cell-budget">{{ (project.budgetAmount / 10000) | number:'1.0-0' }}</td>
+                  <td>{{ project.projectManager }}</td>
+                  <td>{{ project.salesManager }}</td>
+                  <td>{{ project.engineerManager }}</td>
+                  <td class="cell-stage">
+                    <div class="stage-indicator">
+                      <div class="stage-bar">
+                        <div class="stage-fill" [style.width.%]="project.currentStage"></div>
+                      </div>
+                      <span class="stage-text">{{ project.currentStage }}%</span>
+                    </div>
+                    <span class="stage-name">{{ getStageName(project.currentStage) }}</span>
+                  </td>
+                  <td>
+                    <span class="status-badge" [ngClass]="getStatusClass(project.forecastStatus)">
+                      {{ getStatusLabel(project.forecastStatus) }}
+                    </span>
+                  </td>
+                  <td class="cell-note">
+                    <span class="note-text">{{ project.progressNote }}</span>
+                  </td>
+                  <td class="cell-action">
+                    <button class="btn-icon" (click)="openDetail(project); $event.stopPropagation()">
+                      <i class="ri-arrow-right-s-line"></i>
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+
+    <!-- Gantt View -->
+    @if (viewMode() === 'gantt') {
+      <div class="gantt-card">
+        <div class="gantt-header">
+          <div class="gantt-label-col">專案</div>
+          <div class="gantt-bar-col">
+            <div class="gantt-scale">
+              @for (stage of getGanttStageMarkers(); track stage) {
+                <span class="scale-marker">{{ stage }}%</span>
+              }
+            </div>
+          </div>
+        </div>
+        <div class="gantt-body">
+          @for (project of filteredProjects(); track project.id) {
+            <div class="gantt-row" (click)="openDetail(project)">
+              <div class="gantt-label-col">
+                <div class="gantt-project-info">
+                  <span class="gantt-project-name">{{ project.projectName }}</span>
+                  <span class="gantt-project-client">{{ project.clientName }}</span>
+                </div>
+              </div>
+              <div class="gantt-bar-col">
+                <div class="gantt-track">
+                  @for (stage of getGanttStageMarkers(); track stage) {
+                    <div class="gantt-grid-line" [style.left.%]="stage"></div>
+                  }
+                  <div class="gantt-bar" [ngStyle]="getGanttBarStyle(project)">
+                    <span class="gantt-bar-label">{{ project.currentStage }}% - {{ getStageName(project.currentStage) }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Stage Legend -->
+    <div class="stage-legend">
+      <h4 class="legend-title">
+        <i class="ri-information-line"></i>
+        進度階段定義
+      </h4>
+      <div class="legend-grid">
+        @for (stage of stageDefinitions(); track stage.stage) {
+          <div class="legend-item">
+            <span class="legend-stage">{{ stage.stage }}%</span>
+            <span class="legend-name">{{ stage.name }}</span>
+            <span class="legend-desc">{{ stage.description }}</span>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Detail Modal -->
+  @if (showDetailModal() && selectedProject()) {
+    <div class="modal-backdrop" (click)="closeDetail()">
+      <div class="modal-container" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2 class="modal-title">
+            <i class="ri-folder-chart-line"></i>
+            專案詳情
+          </h2>
+          <button class="btn-close" (click)="closeDetail()">
+            <i class="ri-close-line"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="detail-section">
+            <h3 class="section-title">基本資訊</h3>
+            <div class="info-grid">
+              <div class="info-item">
+                <span class="info-label">客戶</span>
+                <span class="info-value">{{ selectedProject()!.clientName }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">專案名稱</span>
+                <span class="info-value">{{ selectedProject()!.projectName }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">案件編號</span>
+                <span class="info-value">{{ selectedProject()!.caseNumber }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">預算金額</span>
+                <span class="info-value highlight">{{ formatBudget(selectedProject()!.budgetAmount) }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-section">
+            <h3 class="section-title">負責團隊</h3>
+            <div class="team-grid">
+              <div class="team-item">
+                <i class="ri-user-star-line"></i>
+                <span class="team-role">專案經理</span>
+                <span class="team-name">{{ selectedProject()!.projectManager }}</span>
+              </div>
+              <div class="team-item">
+                <i class="ri-briefcase-line"></i>
+                <span class="team-role">業務負責</span>
+                <span class="team-name">{{ selectedProject()!.salesManager }}</span>
+              </div>
+              <div class="team-item">
+                <i class="ri-code-box-line"></i>
+                <span class="team-role">工程負責</span>
+                <span class="team-name">{{ selectedProject()!.engineerManager }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-section">
+            <h3 class="section-title">進度追蹤</h3>
+            <div class="progress-track">
+              <div class="progress-bar-container">
+                <div class="progress-bar" [style.width.%]="selectedProject()!.currentStage"></div>
+              </div>
+              <div class="progress-info">
+                <span class="progress-stage">{{ selectedProject()!.currentStage }}% - {{ getStageName(selectedProject()!.currentStage) }}</span>
+                <span class="status-badge" [ngClass]="getStatusClass(selectedProject()!.forecastStatus)">
+                  {{ getStatusLabel(selectedProject()!.forecastStatus) }}
+                </span>
+              </div>
+            </div>
+            <p class="progress-note">{{ selectedProject()!.progressNote }}</p>
+          </div>
+
+          <div class="detail-section">
+            <h3 class="section-title">階段歷程</h3>
+            <div class="timeline">
+              @for (history of selectedProject()!.stageHistory; track history.date) {
+                <div class="timeline-item">
+                  <div class="timeline-marker"></div>
+                  <div class="timeline-content">
+                    <span class="timeline-stage">{{ history.stage }}% - {{ getStageName(history.stage) }}</span>
+                    <span class="timeline-meta">{{ history.date }} · {{ history.updatedBy }}</span>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="detail-section">
+            <h3 class="section-title">預計時程</h3>
+            <div class="date-grid">
+              <div class="date-item">
+                <i class="ri-calendar-check-line"></i>
+                <span class="date-label">預計招標日期</span>
+                <span class="date-value">{{ selectedProject()!.expectedBiddingDate || '待定' }}</span>
+              </div>
+              <div class="date-item">
+                <i class="ri-calendar-todo-line"></i>
+                <span class="date-label">預計結案時間</span>
+                <span class="date-value">{{ selectedProject()!.expectedCloseDate || '待定' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>
+

@@ -1,0 +1,270 @@
+<app-header
+  [pageTitle]="'文件儲存庫'"
+  [breadcrumbs]="['文化管理']"
+/>
+
+<main class="repository-page">
+  <div class="repository-layout">
+    <!-- 主要區域 -->
+    <section class="main-section">
+      <!-- 工具列 -->
+      <div class="toolbar">
+        <div class="search-box">
+          <i class="ri-search-line"></i>
+          <input
+            type="text"
+            placeholder="搜尋文件名稱、分類、標籤..."
+            [value]="searchQuery()"
+            (input)="onSearch($event)"
+          >
+        </div>
+
+        <div class="toolbar-actions">
+          <div class="view-toggle">
+            <button
+              [class.active]="viewMode() === 'grid'"
+              (click)="setViewMode('grid')"
+            >
+              <i class="ri-grid-line"></i>
+            </button>
+            <button
+              [class.active]="viewMode() === 'list'"
+              (click)="setViewMode('list')"
+            >
+              <i class="ri-list-check"></i>
+            </button>
+          </div>
+
+          <button class="btn-upload">
+            <i class="ri-upload-cloud-line"></i>
+            上傳文件
+          </button>
+        </div>
+      </div>
+
+      <!-- 類型篩選 -->
+      <div class="type-filter">
+        @for (type of documentTypes; track type.value) {
+          <button
+            class="type-btn"
+            [class.active]="selectedType() === type.value"
+            (click)="setType(type.value)"
+          >
+            <i [class]="type.icon"></i>
+            {{ type.label }}
+          </button>
+        }
+      </div>
+
+      <!-- 文件列表 - Grid 模式 -->
+      @if (viewMode() === 'grid') {
+        <div class="documents-grid">
+          @for (doc of filteredDocuments(); track doc.id) {
+            <article class="document-card">
+              <div class="doc-icon" [attr.data-format]="doc.fileFormat">
+                <i [class]="getFormatIcon(doc.fileFormat)"></i>
+              </div>
+
+              <div class="doc-content">
+                <h3 class="doc-name">{{ doc.name }}</h3>
+                <div class="doc-meta">
+                  <span class="doc-type">
+                    <i [class]="getTypeIcon(doc.type)"></i>
+                    {{ getTypeLabel(doc.type) }}
+                  </span>
+                  <span class="doc-size">{{ formatFileSize(doc.fileSize) }}</span>
+                </div>
+
+                <div class="doc-tags">
+                  @for (tag of doc.tags.slice(0, 2); track tag) {
+                    <span class="tag">{{ tag }}</span>
+                  }
+                  @if (doc.tags.length > 2) {
+                    <span class="tag more">+{{ doc.tags.length - 2 }}</span>
+                  }
+                </div>
+
+                <div class="doc-footer">
+                  <div class="doc-info">
+                    <span class="doc-version">v{{ doc.version }}</span>
+                    <span class="doc-status" [attr.data-status]="doc.status">
+                      {{ getStatusLabel(doc.status) }}
+                    </span>
+                  </div>
+                  <span class="doc-date">{{ formatDate(doc.lastModified) }}</span>
+                </div>
+              </div>
+
+              <div class="doc-actions">
+                <button class="btn-action" title="下載">
+                  <i class="ri-download-line"></i>
+                </button>
+                <button class="btn-action" title="預覽">
+                  <i class="ri-eye-line"></i>
+                </button>
+                <button class="btn-action" title="更多">
+                  <i class="ri-more-2-fill"></i>
+                </button>
+              </div>
+
+              @if (doc.accessLevel === 'confidential') {
+                <div class="access-badge confidential">
+                  <i class="ri-lock-line"></i>
+                </div>
+              }
+            </article>
+          }
+        </div>
+      }
+
+      <!-- 文件列表 - List 模式 -->
+      @if (viewMode() === 'list') {
+        <div class="documents-table">
+          <div class="table-header">
+            <span class="col-name">文件名稱</span>
+            <span class="col-type">類型</span>
+            <span class="col-size">大小</span>
+            <span class="col-version">版本</span>
+            <span class="col-status">狀態</span>
+            <span class="col-date">更新日期</span>
+            <span class="col-actions">操作</span>
+          </div>
+          @for (doc of filteredDocuments(); track doc.id) {
+            <div class="table-row">
+              <div class="col-name">
+                <i [class]="getFormatIcon(doc.fileFormat)" [attr.data-format]="doc.fileFormat"></i>
+                <span>{{ doc.name }}</span>
+                @if (doc.accessLevel === 'confidential') {
+                  <i class="ri-lock-line lock-icon"></i>
+                }
+              </div>
+              <span class="col-type">{{ getTypeLabel(doc.type) }}</span>
+              <span class="col-size">{{ formatFileSize(doc.fileSize) }}</span>
+              <span class="col-version">v{{ doc.version }}</span>
+              <span class="col-status" [attr.data-status]="doc.status">
+                {{ getStatusLabel(doc.status) }}
+              </span>
+              <span class="col-date">{{ formatDate(doc.lastModified) }}</span>
+              <div class="col-actions">
+                <button class="btn-action" title="下載">
+                  <i class="ri-download-line"></i>
+                </button>
+                <button class="btn-action" title="預覽">
+                  <i class="ri-eye-line"></i>
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </section>
+
+    <!-- 側邊面板 -->
+    <aside class="side-panel">
+      <!-- 即將到期提醒 -->
+      @if (expiringDocuments().length > 0) {
+        <div class="expiry-alert">
+          <div class="alert-header">
+            <i class="ri-alarm-warning-line"></i>
+            <span>即將到期文件</span>
+          </div>
+          <div class="alert-list">
+            @for (doc of expiringDocuments(); track doc.id) {
+              <div class="alert-item">
+                <i [class]="getFormatIcon(doc.fileFormat)"></i>
+                <div class="alert-info">
+                  <span class="alert-name">{{ doc.name }}</span>
+                  <span class="alert-expiry">
+                    到期: {{ formatDate(doc.expiryDate!) }}
+                    ({{ getDaysUntilExpiry(doc.expiryDate!) }} 天)
+                  </span>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- 儲存空間 -->
+      <div class="storage-card">
+        <h3 class="card-title">
+          <i class="ri-hard-drive-2-line"></i>
+          儲存空間
+        </h3>
+        <div class="storage-info">
+          <div class="storage-used">
+            <span class="used-value">4.2</span>
+            <span class="used-unit">GB</span>
+            <span class="used-label">/ 10 GB</span>
+          </div>
+          <div class="storage-bar">
+            <div class="storage-fill" style="width: 42%"></div>
+          </div>
+        </div>
+        <div class="storage-breakdown">
+          <div class="breakdown-item">
+            <i class="ri-file-pdf-2-line pdf"></i>
+            <span>PDF 文件</span>
+            <span class="breakdown-size">1.8 GB</span>
+          </div>
+          <div class="breakdown-item">
+            <i class="ri-file-excel-2-line excel"></i>
+            <span>Excel 文件</span>
+            <span class="breakdown-size">1.2 GB</span>
+          </div>
+          <div class="breakdown-item">
+            <i class="ri-file-word-2-line word"></i>
+            <span>Word 文件</span>
+            <span class="breakdown-size">0.8 GB</span>
+          </div>
+          <div class="breakdown-item">
+            <i class="ri-file-line other"></i>
+            <span>其他</span>
+            <span class="breakdown-size">0.4 GB</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 最近活動 -->
+      <div class="activity-card">
+        <h3 class="card-title">
+          <i class="ri-history-line"></i>
+          最近活動
+        </h3>
+        <div class="activity-list">
+          <div class="activity-item">
+            <div class="activity-icon upload">
+              <i class="ri-upload-line"></i>
+            </div>
+            <div class="activity-content">
+              <span class="activity-action">上傳新文件</span>
+              <span class="activity-name">年度培訓計畫.xlsx</span>
+              <span class="activity-time">2 小時前</span>
+            </div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-icon update">
+              <i class="ri-edit-line"></i>
+            </div>
+            <div class="activity-content">
+              <span class="activity-action">更新版本</span>
+              <span class="activity-name">員工手冊 2024.pdf</span>
+              <span class="activity-time">昨天</span>
+            </div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-icon download">
+              <i class="ri-download-line"></i>
+            </div>
+            <div class="activity-content">
+              <span class="activity-action">下載文件</span>
+              <span class="activity-name">TTQS 認證證書.pdf</span>
+              <span class="activity-time">3 天前</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</main>
+

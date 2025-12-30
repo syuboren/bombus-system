@@ -16,7 +16,14 @@ import {
   CostItem,
   OKRContribution,
   TeamContribution,
-  VarianceAlert
+  VarianceAlert,
+  ForecastProject,
+  ForecastStageDefinition,
+  ForecastSummary,
+  ForecastStage,
+  ProjectReport,
+  ProjectHeatmapData,
+  ProjectPortfolioStats
 } from '../models/project.model';
 
 @Injectable({ providedIn: 'root' })
@@ -462,6 +469,427 @@ export class ProjectService {
     return of({
       months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
       values: [20, 25, 22, 28, 30, 32]
+    }).pipe(delay(200));
+  }
+
+  // ===============================================================
+  // Forecast 預測系統 (4.3)
+  // ===============================================================
+
+  readonly forecastStageDefinitions: ForecastStageDefinition[] = [
+    { stage: 10, name: '初步接觸', nameEn: 'Initial Contact', description: '客戶首次接觸專案，尚處於探索需求階段' },
+    { stage: 20, name: '需求確認', nameEn: 'Needs Analysis', description: '建立初步需求，雙方尚未確立具體合作方向' },
+    { stage: 30, name: '解決方案建議', nameEn: 'Solution Proposal', description: '提出初步解決方案，獲得客戶對方案方向的基本認可' },
+    { stage: 40, name: '提案與預算討論', nameEn: 'Proposal Discussion', description: '提交正式提案與初步預算，進入細節磋商階段' },
+    { stage: 50, name: '初步承諾', nameEn: 'Initial Commitment', description: '客戶對提案方向及預算表達認可，尚未簽訂合約' },
+    { stage: 60, name: '合約談判', nameEn: 'Contract Negotiation', description: '就合約條款、付款計劃、交付時間進行最終確認' },
+    { stage: 70, name: '專案啟動', nameEn: 'Project Kick-off', description: '專案正式啟動，執行計劃開始推進' },
+    { stage: 80, name: '合約簽訂', nameEn: 'Contract Signed', description: '正式簽署合約，進入執行準備階段' },
+    { stage: 90, name: '成果交付', nameEn: 'Delivery', description: '根據合約交付產品或服務，完成驗收' },
+    { stage: 100, name: '結案', nameEn: 'Project Closure', description: '專案完成，進入售後支援或維護階段' }
+  ];
+
+  private readonly mockForecastProjects: ForecastProject[] = [
+    {
+      id: 'FC2025001',
+      clientName: '台積電',
+      projectName: '智慧製造 AI 監控系統',
+      budgetAmount: 8500000,
+      projectManager: 'Alex Chen',
+      salesManager: '王建國',
+      engineerManager: 'David Wu',
+      currentStage: 70,
+      stageHistory: [
+        { stage: 10, date: '2024-09-15', updatedBy: '王建國' },
+        { stage: 20, date: '2024-10-01', updatedBy: '王建國' },
+        { stage: 30, date: '2024-10-20', updatedBy: 'Alex Chen' },
+        { stage: 40, date: '2024-11-05', updatedBy: 'Alex Chen' },
+        { stage: 50, date: '2024-11-25', updatedBy: '王建國' },
+        { stage: 60, date: '2024-12-10', updatedBy: 'Alex Chen' },
+        { stage: 70, date: '2025-01-08', updatedBy: 'Alex Chen' }
+      ],
+      progressNote: '專案已正式啟動，目前進行需求細節確認與技術架構設計',
+      forecastStatus: 'on-track',
+      expectedBiddingDate: '2024-11-15',
+      expectedCloseDate: '2025-06-30',
+      opportunityAccount: 'TSMC-2024',
+      opportunityName: 'TSMC Smart Manufacturing',
+      caseNumber: 'CX-2024-0892'
+    },
+    {
+      id: 'FC2025002',
+      clientName: '富邦金控',
+      projectName: '數位銀行 2.0 升級專案',
+      budgetAmount: 12000000,
+      projectManager: 'Jessica Lin',
+      salesManager: '林志明',
+      engineerManager: 'Kevin Wu',
+      currentStage: 50,
+      stageHistory: [
+        { stage: 10, date: '2024-10-01', updatedBy: '林志明' },
+        { stage: 20, date: '2024-10-25', updatedBy: '林志明' },
+        { stage: 30, date: '2024-11-15', updatedBy: 'Jessica Lin' },
+        { stage: 40, date: '2024-12-05', updatedBy: 'Jessica Lin' },
+        { stage: 50, date: '2025-01-10', updatedBy: '林志明' }
+      ],
+      progressNote: '客戶已初步認可提案，等待內部預算核准',
+      forecastStatus: 'on-track',
+      expectedBiddingDate: '2025-01-20',
+      expectedCloseDate: '2025-09-30',
+      opportunityAccount: 'FUBON-2024',
+      opportunityName: 'Fubon Digital Bank 2.0',
+      caseNumber: 'CX-2024-1023'
+    },
+    {
+      id: 'FC2025003',
+      clientName: '統一企業',
+      projectName: '供應鏈管理優化系統',
+      budgetAmount: 4500000,
+      projectManager: 'Mike Wang',
+      salesManager: '陳美玲',
+      engineerManager: 'David Wu',
+      currentStage: 30,
+      stageHistory: [
+        { stage: 10, date: '2024-11-20', updatedBy: '陳美玲' },
+        { stage: 20, date: '2024-12-15', updatedBy: '陳美玲' },
+        { stage: 30, date: '2025-01-05', updatedBy: 'Mike Wang' }
+      ],
+      progressNote: '已提出初步解決方案，客戶評估中',
+      forecastStatus: 'at-risk',
+      expectedBiddingDate: '2025-02-28',
+      expectedCloseDate: '2025-08-31',
+      opportunityAccount: 'PCSC-2024',
+      opportunityName: 'Uni-President SCM',
+      caseNumber: 'CX-2024-1156'
+    },
+    {
+      id: 'FC2025004',
+      clientName: '中華電信',
+      projectName: '5G 企業專網解決方案',
+      budgetAmount: 15000000,
+      projectManager: 'Sarah Lin',
+      salesManager: '張志豪',
+      engineerManager: 'Kevin Wu',
+      currentStage: 80,
+      stageHistory: [
+        { stage: 10, date: '2024-06-01', updatedBy: '張志豪' },
+        { stage: 20, date: '2024-06-20', updatedBy: '張志豪' },
+        { stage: 30, date: '2024-07-15', updatedBy: 'Sarah Lin' },
+        { stage: 40, date: '2024-08-10', updatedBy: 'Sarah Lin' },
+        { stage: 50, date: '2024-09-05', updatedBy: '張志豪' },
+        { stage: 60, date: '2024-10-01', updatedBy: 'Sarah Lin' },
+        { stage: 70, date: '2024-11-15', updatedBy: 'Sarah Lin' },
+        { stage: 80, date: '2024-12-20', updatedBy: '張志豪' }
+      ],
+      progressNote: '合約已簽訂，正在進行執行前準備',
+      forecastStatus: 'on-track',
+      expectedBiddingDate: '2024-09-30',
+      expectedCloseDate: '2025-12-31',
+      opportunityAccount: 'CHT-2024',
+      opportunityName: 'CHT 5G Enterprise',
+      caseNumber: 'CX-2024-0567'
+    },
+    {
+      id: 'FC2025005',
+      clientName: '長榮航空',
+      projectName: '旅客服務數位轉型',
+      budgetAmount: 6800000,
+      projectManager: 'Alex Chen',
+      salesManager: '王建國',
+      engineerManager: 'Mary Yang',
+      currentStage: 20,
+      stageHistory: [
+        { stage: 10, date: '2024-12-10', updatedBy: '王建國' },
+        { stage: 20, date: '2025-01-08', updatedBy: '王建國' }
+      ],
+      progressNote: '正在收集詳細需求，預計下週進行技術評估',
+      forecastStatus: 'on-track',
+      expectedBiddingDate: '2025-04-15',
+      expectedCloseDate: '2025-12-31',
+      opportunityAccount: 'EVA-2025',
+      opportunityName: 'EVA Air Digital CX',
+      caseNumber: 'CX-2025-0012'
+    },
+    {
+      id: 'FC2025006',
+      clientName: '遠東集團',
+      projectName: '零售數據分析平台',
+      budgetAmount: 3200000,
+      projectManager: 'Jessica Lin',
+      salesManager: '林志明',
+      engineerManager: 'Mike Wang',
+      currentStage: 40,
+      stageHistory: [
+        { stage: 10, date: '2024-10-15', updatedBy: '林志明' },
+        { stage: 20, date: '2024-11-10', updatedBy: '林志明' },
+        { stage: 30, date: '2024-12-05', updatedBy: 'Jessica Lin' },
+        { stage: 40, date: '2025-01-02', updatedBy: 'Jessica Lin' }
+      ],
+      progressNote: '預算討論階段，客戶希望能降低初期投資',
+      forecastStatus: 'delayed',
+      expectedBiddingDate: '2025-02-10',
+      expectedCloseDate: '2025-07-31',
+      opportunityAccount: 'FEG-2024',
+      opportunityName: 'Far Eastern Retail Analytics',
+      caseNumber: 'CX-2024-1089'
+    },
+    {
+      id: 'FC2025007',
+      clientName: '國泰人壽',
+      projectName: 'AI 理賠自動化系統',
+      budgetAmount: 9500000,
+      projectManager: 'David Wu',
+      salesManager: '陳美玲',
+      engineerManager: 'Kevin Wu',
+      currentStage: 90,
+      stageHistory: [
+        { stage: 10, date: '2024-03-01', updatedBy: '陳美玲' },
+        { stage: 20, date: '2024-03-20', updatedBy: '陳美玲' },
+        { stage: 30, date: '2024-04-15', updatedBy: 'David Wu' },
+        { stage: 40, date: '2024-05-10', updatedBy: 'David Wu' },
+        { stage: 50, date: '2024-06-05', updatedBy: '陳美玲' },
+        { stage: 60, date: '2024-07-01', updatedBy: 'David Wu' },
+        { stage: 70, date: '2024-08-15', updatedBy: 'David Wu' },
+        { stage: 80, date: '2024-09-20', updatedBy: '陳美玲' },
+        { stage: 90, date: '2024-12-15', updatedBy: 'David Wu' }
+      ],
+      progressNote: '系統已完成交付，進行最終驗收測試',
+      forecastStatus: 'on-track',
+      expectedBiddingDate: '2024-06-30',
+      expectedCloseDate: '2025-01-31',
+      opportunityAccount: 'CATHAY-2024',
+      opportunityName: 'Cathay Life AI Claims',
+      caseNumber: 'CX-2024-0234'
+    }
+  ];
+
+  getForecastStageDefinitions(): Observable<ForecastStageDefinition[]> {
+    return of(this.forecastStageDefinitions).pipe(delay(100));
+  }
+
+  getForecastProjects(): Observable<ForecastProject[]> {
+    return of(this.mockForecastProjects).pipe(delay(300));
+  }
+
+  getForecastSummary(): Observable<ForecastSummary> {
+    const projects = this.mockForecastProjects;
+    const byStage = this.forecastStageDefinitions.map(def => {
+      const stageProjects = projects.filter(p => p.currentStage === def.stage);
+      return {
+        stage: def.stage,
+        count: stageProjects.length,
+        budget: stageProjects.reduce((sum, p) => sum + p.budgetAmount, 0)
+      };
+    });
+
+    return of({
+      totalProjects: projects.length,
+      totalBudget: projects.reduce((sum, p) => sum + p.budgetAmount, 0),
+      byStage,
+      onTrack: projects.filter(p => p.forecastStatus === 'on-track').length,
+      atRisk: projects.filter(p => p.forecastStatus === 'at-risk').length,
+      delayed: projects.filter(p => p.forecastStatus === 'delayed').length
+    }).pipe(delay(200));
+  }
+
+  updateForecastStage(projectId: string, newStage: ForecastStage): Observable<ForecastProject> {
+    const project = this.mockForecastProjects.find(p => p.id === projectId);
+    if (project) {
+      project.currentStage = newStage;
+      project.stageHistory.push({
+        stage: newStage,
+        date: new Date().toISOString().split('T')[0],
+        updatedBy: 'Current User'
+      });
+    }
+    return of(project!).pipe(delay(300));
+  }
+
+  // ===============================================================
+  // 專案報表與分析 (4.4)
+  // ===============================================================
+
+  getProjectReports(): Observable<ProjectReport[]> {
+    return of([
+      {
+        projectId: 'P2025001',
+        projectName: '企業級 CRM 系統重構',
+        projectCode: 'PROJ-2025001',
+        pm: 'Alex Chen',
+        department: 'RD',
+        objective: '重構現有 CRM 系統，提升數據處理效能 50%',
+        scope: '使用者介面更新、後端 API 優化、AI 模型整合',
+        acceptanceCriteria: ['API 回應時間 < 200ms', '系統可用性達 99.9%', '用戶滿意度提升 20%'],
+        overallProgress: 65,
+        taskCompletion: { completed: 18, total: 28 },
+        milestoneCompletion: { completed: 3, total: 5 },
+        budgetAmount: 4000000,
+        actualCost: 2400000,
+        costVariance: -100000,
+        costVariancePercent: -4.2,
+        revenue: 5200000,
+        grossProfit: 1300000,
+        grossMarginRate: 32.5,
+        startDate: '2025-01-01',
+        endDate: '2025-06-30',
+        remainingDays: 120,
+        isDelayed: false,
+        riskCount: 2,
+        issueCount: 3
+      },
+      {
+        projectId: 'P2025002',
+        projectName: 'Q4 行銷自動化平台導入',
+        projectCode: 'PROJ-2025002',
+        pm: 'Sarah Lin',
+        department: 'Marketing',
+        objective: '導入行銷自動化平台，提升行銷效率',
+        scope: '平台選型、系統整合、人員訓練',
+        acceptanceCriteria: ['行銷效率提升 30%', '自動化覆蓋率 80%'],
+        overallProgress: 40,
+        taskCompletion: { completed: 8, total: 20 },
+        milestoneCompletion: { completed: 1, total: 4 },
+        budgetAmount: 2000000,
+        actualCost: 1800000,
+        costVariance: 200000,
+        costVariancePercent: 11.1,
+        revenue: 2300000,
+        grossProfit: -105000,
+        grossMarginRate: -5.2,
+        startDate: '2025-02-01',
+        endDate: '2025-05-31',
+        remainingDays: 45,
+        isDelayed: true,
+        riskCount: 4,
+        issueCount: 5
+      },
+      {
+        projectId: 'P2025004',
+        projectName: '金融區塊鏈交易模組',
+        projectCode: 'PROJ-2025004',
+        pm: 'David Wu',
+        department: 'RD',
+        objective: '開發金融區塊鏈交易模組',
+        scope: '智能合約開發、交易引擎、安全審計',
+        acceptanceCriteria: ['交易延遲 < 100ms', '99.99% 正常運行時間'],
+        overallProgress: 82,
+        taskCompletion: { completed: 25, total: 30 },
+        milestoneCompletion: { completed: 4, total: 5 },
+        budgetAmount: 3500000,
+        actualCost: 3200000,
+        costVariance: -200000,
+        costVariancePercent: -5.9,
+        revenue: 5075000,
+        grossProfit: 1575000,
+        grossMarginRate: 45.0,
+        startDate: '2024-10-01',
+        endDate: '2025-04-30',
+        remainingDays: 30,
+        isDelayed: false,
+        riskCount: 1,
+        issueCount: 1
+      },
+      {
+        projectId: 'P2025005',
+        projectName: '雲端資料倉儲遷移',
+        projectCode: 'PROJ-2025005',
+        pm: 'Jessica Lin',
+        department: 'RD',
+        objective: '將現有資料倉儲遷移至雲端',
+        scope: '資料遷移、架構優化、效能調校',
+        acceptanceCriteria: ['零資料遺失', '查詢效能提升 40%'],
+        overallProgress: 55,
+        taskCompletion: { completed: 12, total: 22 },
+        milestoneCompletion: { completed: 2, total: 4 },
+        budgetAmount: 2800000,
+        actualCost: 1400000,
+        costVariance: 0,
+        costVariancePercent: 0,
+        revenue: 3584000,
+        grossProfit: 784000,
+        grossMarginRate: 28.0,
+        startDate: '2025-01-15',
+        endDate: '2025-07-15',
+        remainingDays: 150,
+        isDelayed: false,
+        riskCount: 2,
+        issueCount: 2
+      }
+    ]).pipe(delay(300));
+  }
+
+  getProjectHeatmapData(): Observable<ProjectHeatmapData[]> {
+    const data: ProjectHeatmapData[] = [
+      {
+        projectId: 'P2025004',
+        projectName: '金融區塊鏈交易模組',
+        pm: 'David Wu',
+        department: 'RD',
+        progressScore: 92,
+        costScore: 88,
+        profitScore: 95,
+        overallScore: 92,
+        status: 'excellent'
+      },
+      {
+        projectId: 'P2025001',
+        projectName: '企業級 CRM 系統重構',
+        pm: 'Alex Chen',
+        department: 'RD',
+        progressScore: 78,
+        costScore: 82,
+        profitScore: 75,
+        overallScore: 78,
+        status: 'good'
+      },
+      {
+        projectId: 'P2025005',
+        projectName: '雲端資料倉儲遷移',
+        pm: 'Jessica Lin',
+        department: 'RD',
+        progressScore: 72,
+        costScore: 90,
+        profitScore: 70,
+        overallScore: 77,
+        status: 'good'
+      },
+      {
+        projectId: 'P2025003',
+        projectName: 'AI 客服機器人開發',
+        pm: 'Mike Wang',
+        department: 'RD',
+        progressScore: 45,
+        costScore: 75,
+        profitScore: 50,
+        overallScore: 57,
+        status: 'warning'
+      },
+      {
+        projectId: 'P2025002',
+        projectName: 'Q4 行銷自動化平台',
+        pm: 'Sarah Lin',
+        department: 'Marketing',
+        progressScore: 35,
+        costScore: 40,
+        profitScore: 20,
+        overallScore: 32,
+        status: 'critical'
+      }
+    ];
+    return of(data).pipe(delay(300));
+  }
+
+  getPortfolioStats(): Observable<ProjectPortfolioStats> {
+    return of({
+      totalProjects: 5,
+      totalBudget: 13800000,
+      totalSpent: 8900000,
+      avgProgress: 50.4,
+      avgProfitRate: 24.1,
+      onTimeProjects: 4,
+      delayedProjects: 1,
+      excellentProjects: 1,
+      atRiskProjects: 2
     }).pipe(delay(200));
   }
 }

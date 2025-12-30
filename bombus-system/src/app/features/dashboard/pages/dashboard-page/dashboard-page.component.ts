@@ -38,7 +38,15 @@ import {
   ProjectStatusStats,
   ProjectTypeStats,
   CostStructureItem,
-  CostWarningItem
+  CostWarningItem,
+  VisionMissionSummary,
+  EAPSummary,
+  EmployeeStorySummary,
+  StoryCategory,
+  DashboardAward,
+  BonusCard,
+  BonusRanking,
+  ForecastPipeline
 } from '../../models/ceo-dashboard.model';
 import { TrainingService } from '../../../training/services/training.service';
 import {
@@ -95,7 +103,7 @@ interface TodoItem {
   standalone: true,
   imports: [RouterLink, HeaderComponent, StatCardComponent],
   templateUrl: './dashboard-page.component.html',
-  styleUrl: './dashboard-page.component.scss',
+  styleUrls: ['./dashboard-page.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy {
@@ -103,6 +111,7 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
   @ViewChild('healthTrendChart') healthTrendChartRef!: ElementRef<HTMLDivElement>;
   @ViewChild('profitSparkline') profitSparklineRef!: ElementRef<HTMLDivElement>;
   @ViewChild('projectBubbleChart') projectBubbleChartRef!: ElementRef<HTMLDivElement>;
+  @ViewChild('storyBoard') storyBoardRef!: ElementRef<HTMLDivElement>;
 
   private ceoService = inject(CEODashboardService);
   private trainingService = inject(TrainingService);
@@ -114,6 +123,7 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
   private profitSparklineChart: echarts.ECharts | null = null;
   private projectBubbleChart: echarts.ECharts | null = null;
   private sparklineCharts: Map<string, echarts.ECharts> = new Map();
+  private storyBoardObserver: IntersectionObserver | null = null;
   private resizeHandler = () => {
     this.trendChart?.resize();
     this.healthTrendChart?.resize();
@@ -177,6 +187,83 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
   rewardRiskEmployees = signal<RewardRiskEmployee[]>([]);
   selectedRewardRiskType = signal<'retention' | 'culture'>('retention');
 
+  // 願景使命 & 員工關懷 (文化訊號)
+  visionMissionSummary = signal<VisionMissionSummary | null>(null);
+  eapSummary = signal<EAPSummary | null>(null);
+  employeeStorySummary = signal<EmployeeStorySummary | null>(null);
+  selectedStoryCategory = signal<StoryCategory | 'all'>('all');
+
+  // 獲獎記錄
+  awardsWon = signal<DashboardAward[]>([
+    { id: 'a1', name: '100MVP 經理人', year: 2025, status: 'won', category: 'hr', icon: 'ri-award-fill' },
+    { id: 'a2', name: '第 14 屆女性創業菁英獎', year: 2025, status: 'won', category: 'employer', icon: 'ri-women-fill' },
+    { id: 'a3', name: '第 22 屆國家品牌玉山獎－傑出企業領導人獎', year: 2025, status: 'won', category: 'government', icon: 'ri-government-fill' },
+    { id: 'a4', name: '第七屆品牌金舶獎－服務創新組', year: 2025, status: 'won', category: 'innovation', icon: 'ri-lightbulb-flash-fill' }
+  ]);
+
+  // 公平回報系統 - 獎金卡片
+  bonusCards = signal<BonusCard[]>([
+    {
+      id: 'okr',
+      title: 'OKR 獎金',
+      subtitle: '點數制',
+      amount: 850000,
+      year: 2025,
+      formula: 'OKR 達成點數 → 點數換算獎金',
+      settlement: '年度結算',
+      icon: 'ri-focus-3-line',
+      color: '#3b82f6'
+    },
+    {
+      id: 'performance',
+      title: '績效獎金',
+      subtitle: '專案毛利制',
+      amount: 2000000,
+      year: 2025,
+      formula: '績效考核 × 專案毛利 → 倍數核算',
+      settlement: '年度結算・依部門公式',
+      hasExample: true,
+      icon: 'ri-line-chart-line',
+      color: '#10b981'
+    }
+  ]);
+
+  // 年度獎金預估 TOP 5
+  bonusRankings = signal<BonusRanking[]>([
+    { rank: 1, name: '張小明', department: '業務部', multiplier: 3.2, estimatedBonus: 384000 },
+    { rank: 2, name: '李大華', department: '專案部', multiplier: 2.8, estimatedBonus: 336000 },
+    { rank: 3, name: '王美玲', department: '業務部', multiplier: 2.5, estimatedBonus: 300000 },
+    { rank: 4, name: '陳志強', department: '研發部', multiplier: 2.2, estimatedBonus: 264000 },
+    { rank: 5, name: '林佳穎', department: '專案部', multiplier: 2.0, estimatedBonus: 240000 }
+  ]);
+
+  // 獎金卡片動畫數值
+  bonusAnimatedAmounts = signal<Record<string, number>>({});
+
+  // 獎金計算範例彈窗狀態
+  showBonusExampleModal = signal(false);
+
+  // 開啟獎金計算範例
+  openBonusExample(): void {
+    this.showBonusExampleModal.set(true);
+  }
+
+  // 關閉獎金計算範例
+  closeBonusExample(): void {
+    this.showBonusExampleModal.set(false);
+  }
+
+
+  // 篩選後的故事列表
+  filteredStories = computed(() => {
+    const summary = this.employeeStorySummary();
+    if (!summary) return [];
+    const category = this.selectedStoryCategory();
+    if (category === 'all') return summary.featuredStories;
+    return summary.featuredStories.filter(s => s.category === category);
+  });
+
+
   // 教育訓練
   trainingKPI = signal<TrainingKPI | null>(null);
   courseTypeStats = signal<CourseTypeStats[]>([]);
@@ -196,6 +283,9 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
     end: new Date('2026-03-31')
   });
 
+  // Forecast Pipeline
+  forecastPipeline = signal<ForecastPipeline | null>(null);
+
   // 專案甘特圖統計圖表
   private projectStatusDonutChart: echarts.ECharts | null = null;
   private projectTypeBarChart: echarts.ECharts | null = null;
@@ -208,6 +298,22 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
   // 切換績效獎酬風險類型
   switchRewardRiskType(type: 'retention' | 'culture'): void {
     this.selectedRewardRiskType.set(type);
+  }
+
+  // 取得故事分類圖示
+  getCategoryIcon(category: string): string {
+    const icons: Record<string, string> = {
+      'training': 'ri-graduation-cap-line',
+      'interaction': 'ri-chat-smile-3-line',
+      'customer': 'ri-heart-line',
+      'collaboration': 'ri-team-line'
+    };
+    return icons[category] || 'ri-file-text-line';
+  }
+
+  // 切換故事分類篩選
+  filterByStoryCategory(category: StoryCategory | 'all'): void {
+    this.selectedStoryCategory.set(category);
   }
 
   // 取得課程類別標籤
@@ -427,6 +533,7 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
       this.initTrendChart();
       if (this.currentView() === 'ceo') {
         this.initScrollListener();
+        this.initStoryBoardObserver();
       }
     }, 300);
   }
@@ -434,6 +541,7 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
   ngOnDestroy(): void {
     window.removeEventListener('resize', this.resizeHandler);
     window.removeEventListener('scroll', this.handleScroll);
+    this.storyBoardObserver?.disconnect();
     this.disposeCharts();
   }
 
@@ -478,6 +586,23 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
 
   private initScrollListener(): void {
     window.addEventListener('scroll', this.handleScroll);
+  }
+
+  private initStoryBoardObserver(): void {
+    if (!this.storyBoardRef?.nativeElement) return;
+
+    this.storyBoardObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+          }
+        });
+      },
+      { threshold: 0.2 }
+    );
+
+    this.storyBoardObserver.observe(this.storyBoardRef.nativeElement);
   }
 
   private handleScroll = () => {
@@ -766,6 +891,22 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
       this.cdr.detectChanges();
     });
 
+    // 願景使命 & 員工關懷區塊
+    this.ceoService.getVisionMissionSummary().subscribe(data => {
+      this.visionMissionSummary.set(data);
+      this.cdr.detectChanges();
+    });
+
+    this.ceoService.getEAPSummary().subscribe(data => {
+      this.eapSummary.set(data);
+      this.cdr.detectChanges();
+    });
+
+    this.ceoService.getEmployeeStorySummary().subscribe(data => {
+      this.employeeStorySummary.set(data);
+      this.cdr.detectChanges();
+    });
+
     // 教育訓練區塊
     this.trainingService.getTrainingKPI().subscribe(data => {
       this.trainingKPI.set(data);
@@ -810,6 +951,51 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
       this.cdr.detectChanges();
       setTimeout(() => this.initProjectTypeBarChart(), 100);
     });
+
+    // Forecast Pipeline 區塊
+    this.ceoService.getForecastPipeline().subscribe(data => {
+      this.forecastPipeline.set(data);
+      this.cdr.detectChanges();
+    });
+
+    // 啟動獎金數字增加動畫
+    this.startBonusAnimation();
+  }
+
+  // 啟動獎金數字增加動畫
+  private startBonusAnimation(): void {
+    const cards = this.bonusCards();
+    const duration = 1500; // 動畫時長 1.5 秒
+    const fps = 60;
+    const totalSteps = (duration / 1000) * fps;
+
+    // 初始化數值為 0
+    const initial: Record<string, number> = {};
+    cards.forEach(card => initial[card.id] = 0);
+    this.bonusAnimatedAmounts.set(initial);
+
+    let currentStep = 0;
+    const interval = setInterval(() => {
+      currentStep++;
+      const progress = currentStep / totalSteps;
+
+      const next: Record<string, number> = {};
+      cards.forEach(card => {
+        // 使用 Ease Out Quadratic 動畫曲線
+        const easedProgress = 1 - (1 - progress) * (1 - progress);
+        next[card.id] = Math.floor(card.amount * easedProgress);
+      });
+
+      this.bonusAnimatedAmounts.set(next);
+
+      if (currentStep >= totalSteps) {
+        clearInterval(interval);
+        // 確保最後數值精確
+        const final: Record<string, number> = {};
+        cards.forEach(card => final[card.id] = card.amount);
+        this.bonusAnimatedAmounts.set(final);
+      }
+    }, 1000 / fps);
   }
 
   private initTrendChart(): void {

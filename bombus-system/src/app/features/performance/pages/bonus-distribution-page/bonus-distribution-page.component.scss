@@ -1,0 +1,758 @@
+// ============================================
+// L5 績效管理 - 獎金分配頁面
+// ============================================
+
+// Morandi Color Palette
+$color-l5: #B87D7B;
+$color-l5-light: rgba(#B87D7B, 0.15);
+$color-sage: #8DA399;
+$color-terracotta: #D6A28C;
+$color-petrol: #7F9CA0;
+$color-mauve: #9A8C98;
+
+// Neutral Colors
+$color-text-primary: #464E56;
+$color-text-secondary: #6B7280;
+$color-text-muted: #9CA3AF;
+$color-border: #E2E4E8;
+$color-bg-light: #F8F9FA;
+$color-bg-card: #FFFFFF;
+
+// Status Colors
+$color-success: #7FB095;
+$color-warning: #E3C088;
+$color-danger: #C77F7F;
+
+.bonus-distribution-page {
+  padding: 24px;
+  padding-top: calc(var(--header-height, 70px) + 20px);
+  background-color: $color-bg-light;
+  min-height: calc(100vh - 64px);
+}
+
+// ============================================
+// Toolbar
+// ============================================
+.page-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 16px 20px;
+  background: $color-bg-card;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.btn-back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: $color-text-secondary;
+  background: transparent;
+  border: 1px solid $color-border;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    color: $color-text-primary;
+    border-color: $color-text-secondary;
+  }
+
+  i {
+    font-size: 16px;
+  }
+}
+
+.period-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  label {
+    font-size: 14px;
+    font-weight: 500;
+    color: $color-text-secondary;
+  }
+
+  .form-select {
+    padding: 8px 32px 8px 12px;
+    font-size: 14px;
+    border: 1px solid $color-border;
+    border-radius: 8px;
+    background-color: $color-bg-card;
+    color: $color-text-primary;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+
+    &:focus {
+      outline: none;
+      border-color: $color-l5;
+      box-shadow: 0 0 0 3px rgba($color-l5, 0.1);
+    }
+  }
+}
+
+.toolbar-actions {
+  display: flex;
+  gap: 12px;
+
+  .btn-outline, .btn-primary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    i {
+      font-size: 18px;
+    }
+  }
+
+  .btn-outline {
+    color: $color-text-primary;
+    background: transparent;
+    border: 1px solid $color-border;
+
+    &:hover {
+      background: $color-bg-light;
+      border-color: $color-text-secondary;
+    }
+  }
+
+  .btn-primary {
+    color: $color-bg-card;
+    background: $color-l5;
+    border: none;
+
+    &:hover {
+      background: darken($color-l5, 8%);
+      transform: translateY(-1px);
+    }
+  }
+}
+
+// ============================================
+// Summary Cards
+// ============================================
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+
+  @media (max-width: 1400px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.summary-card {
+  padding: 16px 20px;
+  background: $color-bg-card;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  text-align: center;
+
+  &--highlight {
+    background: linear-gradient(135deg, $color-l5, darken($color-l5, 10%));
+
+    .summary-label {
+      color: rgba(255, 255, 255, 0.9) !important;
+    }
+
+    .summary-value {
+      color: #ffffff !important;
+    }
+  }
+
+  .summary-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: $color-text-secondary;
+    margin-bottom: 6px;
+  }
+
+  .summary-value {
+    font-size: 22px;
+    font-weight: 700;
+    font-family: 'Georgia', serif;
+    font-style: italic;
+    color: $color-text-primary;
+
+    &--period {
+      font-size: 16px;
+      font-style: normal;
+    }
+  }
+}
+
+// ============================================
+// Content Grid
+// ============================================
+.content-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+
+  @media (max-width: 1200px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.content-main {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.content-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+// ============================================
+// View Tabs
+// ============================================
+.view-tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: $color-text-secondary;
+  background: $color-bg-card;
+  border: 1px solid $color-border;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  i {
+    font-size: 18px;
+  }
+
+  &:hover:not(:disabled) {
+    border-color: $color-l5;
+    color: $color-l5;
+  }
+
+  &.active {
+    color: $color-bg-card;
+    background: $color-l5;
+    border-color: $color-l5;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .tab-badge {
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+  }
+}
+
+// ============================================
+// Chart Panels
+// ============================================
+.chart-panel {
+  background: $color-bg-card;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid $color-border;
+
+  .panel-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    color: $color-text-primary;
+
+    i {
+      font-size: 18px;
+      color: $color-l5;
+    }
+  }
+
+  .panel-hint {
+    font-size: 12px;
+    color: $color-text-muted;
+  }
+}
+
+.chart-container {
+  height: 300px;
+  padding: 16px;
+
+  &--small {
+    height: 180px;
+  }
+}
+
+// ============================================
+// Tables
+// ============================================
+.table-wrapper {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th, td {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 13px;
+    border-bottom: 1px solid $color-border;
+    white-space: nowrap;
+  }
+
+  th {
+    font-weight: 600;
+    color: $color-text-secondary;
+    background: $color-bg-light;
+  }
+
+  td {
+    color: $color-text-primary;
+  }
+
+  tbody tr {
+    transition: background 0.15s ease;
+
+    &:hover {
+      background: $color-bg-light;
+    }
+
+    &:last-child td {
+      border-bottom: none;
+    }
+
+    &.row--manager {
+      background: rgba($color-l5, 0.04);
+    }
+  }
+
+  .cell-dept {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    .dept-name {
+      font-weight: 600;
+    }
+
+    .dept-count {
+      font-size: 11px;
+      color: $color-text-muted;
+    }
+  }
+
+  .cell-bonus {
+    font-weight: 700;
+    color: $color-l5;
+  }
+
+  .cell-name {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    .avatar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      font-size: 13px;
+      font-weight: 600;
+      color: $color-bg-card;
+      background: $color-mauve;
+      border-radius: 8px;
+    }
+  }
+
+  .cell-total {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    strong {
+      color: $color-l5;
+    }
+
+    .bonus-ratio {
+      font-size: 11px;
+      color: $color-text-muted;
+    }
+  }
+
+  .value--success {
+    color: $color-success;
+    font-weight: 600;
+  }
+
+  .tier-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: $color-bg-card;
+    background: $color-petrol;
+    border-radius: 4px;
+  }
+
+  .manager-badge {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 2px 6px;
+    font-size: 10px;
+    font-weight: 600;
+    color: $color-l5;
+    background: $color-l5-light;
+    border-radius: 3px;
+  }
+
+  .contribution-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 4px;
+    margin-right: 6px;
+
+    &.level--excellent {
+      color: $color-success;
+      background: rgba($color-success, 0.12);
+    }
+
+    &.level--good {
+      color: $color-petrol;
+      background: rgba($color-petrol, 0.12);
+    }
+
+    &.level--normal {
+      color: $color-warning;
+      background: rgba($color-warning, 0.12);
+    }
+
+    &.level--low {
+      color: $color-danger;
+      background: rgba($color-danger, 0.12);
+    }
+  }
+
+  .contribution-weight {
+    font-size: 11px;
+    color: $color-text-muted;
+  }
+
+  .btn-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: transparent;
+    border: 1px solid $color-border;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    i {
+      font-size: 18px;
+      color: $color-text-secondary;
+    }
+
+    &:hover {
+      background: $color-l5;
+      border-color: $color-l5;
+
+      i {
+        color: $color-bg-card;
+      }
+    }
+  }
+}
+
+// Achievement classes
+.achievement--excellent {
+  color: $color-success;
+  font-weight: 700;
+}
+
+.achievement--good {
+  color: $color-petrol;
+  font-weight: 600;
+}
+
+.achievement--normal {
+  color: $color-text-primary;
+}
+
+.achievement--low {
+  color: $color-danger;
+  font-weight: 600;
+}
+
+// ============================================
+// Tier Legend & Formula
+// ============================================
+.tier-legend {
+  padding: 0 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tier-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+
+  .tier-range {
+    color: $color-text-secondary;
+  }
+
+  .tier-ratio {
+    font-weight: 700;
+  }
+}
+
+.formula-content {
+  padding: 16px 20px;
+}
+
+.formula-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  .formula-label {
+    min-width: 80px;
+    font-size: 12px;
+    font-weight: 600;
+    color: $color-text-secondary;
+  }
+
+  .formula-equation {
+    font-size: 13px;
+    font-family: 'SF Mono', 'Monaco', monospace;
+    color: $color-text-primary;
+
+    &--small {
+      font-size: 11px;
+      line-height: 1.5;
+    }
+  }
+}
+
+.formula-divider {
+  height: 1px;
+  background: $color-border;
+  margin: 16px 0;
+}
+
+// ============================================
+// Weight List
+// ============================================
+.weight-list {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.weight-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  .weight-label {
+    min-width: 80px;
+    font-size: 12px;
+    color: $color-text-secondary;
+  }
+
+  .weight-bar {
+    flex: 1;
+    height: 8px;
+    background: $color-bg-light;
+    border-radius: 4px;
+    overflow: hidden;
+
+    .weight-fill {
+      height: 100%;
+      background: $color-l5;
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+  }
+
+  .weight-value {
+    min-width: 35px;
+    font-size: 13px;
+    font-weight: 600;
+    color: $color-text-primary;
+    text-align: right;
+  }
+}
+
+// ============================================
+// Modal
+// ============================================
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 24px;
+}
+
+.modal-content {
+  width: 100%;
+  max-width: 600px;
+  background: $color-bg-card;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid $color-border;
+
+  h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: $color-text-primary;
+    margin: 0;
+  }
+
+  .btn-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+
+    i {
+      font-size: 20px;
+      color: $color-text-secondary;
+    }
+
+    &:hover {
+      background: $color-bg-light;
+    }
+  }
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid $color-border;
+  background: $color-bg-light;
+}
+
+.tier-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th, td {
+    padding: 12px;
+    text-align: center;
+    border: 1px solid $color-border;
+  }
+
+  th {
+    font-size: 13px;
+    font-weight: 600;
+    color: $color-text-secondary;
+    background: $color-bg-light;
+  }
+
+  .form-input {
+    width: 80px;
+    padding: 8px 12px;
+    font-size: 14px;
+    text-align: center;
+    border: 1px solid $color-border;
+    border-radius: 6px;
+    background: $color-bg-card;
+
+    &:focus {
+      outline: none;
+      border-color: $color-l5;
+      box-shadow: 0 0 0 3px rgba($color-l5, 0.1);
+    }
+  }
+}
+

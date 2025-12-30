@@ -1,0 +1,248 @@
+<app-header
+  [pageTitle]="'AI 申請助理'"
+  [breadcrumbs]="['文化管理']"
+/>
+
+<main class="ai-assistant-page">
+  <div class="assistant-layout">
+    <!-- 左側：獎項選擇與檢核表 -->
+    <section class="main-section">
+      <!-- 獎項選擇 -->
+      <div class="award-selector">
+        <h2 class="section-title">
+          <i class="ri-trophy-line"></i>
+          選擇申請獎項
+        </h2>
+        <div class="awards-list">
+          @for (award of awards(); track award.id) {
+            <button
+              class="award-item"
+              [class.selected]="selectedAward()?.id === award.id"
+              (click)="selectAward(award)"
+            >
+              <div class="award-info">
+                <span class="award-name">{{ award.name }}</span>
+                <span class="award-organizer">{{ award.organizer }}</span>
+              </div>
+              @if (award.matchScore) {
+                <span class="match-badge">{{ award.matchScore }}%</span>
+              }
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- 檢核表 -->
+      @if (checklist()) {
+        <div class="checklist-section">
+          <div class="checklist-header">
+            <h2 class="section-title">
+              <i class="ri-list-check-2"></i>
+              申請檢核表
+            </h2>
+            <div class="progress-indicator">
+              <div class="progress-ring">
+                <svg viewBox="0 0 36 36">
+                  <path
+                    class="progress-bg"
+                    d="M18 2.0845
+                      a 15.9155 15.9155 0 0 1 0 31.831
+                      a 15.9155 15.9155 0 0 1 0 -31.831"
+                  />
+                  <path
+                    class="progress-fill"
+                    [attr.stroke-dasharray]="checklist()?.completionRate + ', 100'"
+                    d="M18 2.0845
+                      a 15.9155 15.9155 0 0 1 0 31.831
+                      a 15.9155 15.9155 0 0 1 0 -31.831"
+                  />
+                </svg>
+                <span class="progress-text">{{ checklist()?.completionRate }}%</span>
+              </div>
+              <span class="progress-label">完成度</span>
+            </div>
+          </div>
+
+          <div class="checklist-groups">
+            @for (group of getGroupedChecklist(); track group.category) {
+              <div class="checklist-group">
+                <div class="group-header">
+                  <span class="group-title">{{ group.category }}</span>
+                  <span class="group-progress">{{ getCategoryProgress(group.items) }}%</span>
+                </div>
+
+                <div class="group-items">
+                  @for (item of group.items; track item.id) {
+                    <div class="checklist-item" [attr.data-status]="item.status">
+                      <i [class]="getStatusIcon(item.status)" class="status-icon"></i>
+                      <div class="item-content">
+                        <span class="item-requirement">{{ item.requirement }}</span>
+                        @if (item.sourceModule) {
+                          <span class="item-source">
+                            <i class="ri-database-2-line"></i>
+                            {{ getSourceModuleLabel(item.sourceModule) }}
+                            @if (item.autoFilled) {
+                              <span class="auto-badge">自動帶入</span>
+                            }
+                          </span>
+                        }
+                        @if (item.value) {
+                          <span class="item-value">{{ item.value }}</span>
+                        }
+                        @if (item.notes) {
+                          <span class="item-notes">
+                            <i class="ri-information-line"></i>
+                            {{ item.notes }}
+                          </span>
+                        }
+                      </div>
+                      <div class="item-actions">
+                        @if (item.status === 'pending') {
+                          <button class="btn-fill">
+                            <i class="ri-magic-line"></i>
+                            AI 填入
+                          </button>
+                        }
+                        <button class="btn-edit">
+                          <i class="ri-edit-line"></i>
+                        </button>
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </section>
+
+    <!-- 右側：AI 工具面板 -->
+    <aside class="side-panel">
+      <!-- AI 文案產生器 -->
+      <div class="ai-generator-card">
+        <h3 class="card-title">
+          <i class="ri-ai-generate"></i>
+          AI 文案產生器
+        </h3>
+
+        <div class="generator-options">
+          <button class="generator-btn" (click)="generateContent('highlight')">
+            <i class="ri-star-line"></i>
+            <span>亮點摘要</span>
+            <small>自動萃取年度成果亮點</small>
+          </button>
+          <button class="generator-btn" (click)="generateContent('summary')">
+            <i class="ri-file-text-line"></i>
+            <span>企業摘要</span>
+            <small>產生企業簡介文案</small>
+          </button>
+          <button class="generator-btn">
+            <i class="ri-lightbulb-line"></i>
+            <span>案例故事</span>
+            <small>整理成功案例敘述</small>
+          </button>
+          <button class="generator-btn">
+            <i class="ri-bar-chart-grouped-line"></i>
+            <span>數據報告</span>
+            <small>彙整量化成效數據</small>
+          </button>
+        </div>
+
+        @if (generatingContent()) {
+          <div class="generating-indicator">
+            <i class="ri-loader-4-line spinning"></i>
+            <span>AI 正在產生內容...</span>
+          </div>
+        }
+
+        @if (generatedContent()) {
+          <div class="generated-content">
+            <div class="content-header">
+              <span>生成結果</span>
+              <div class="content-actions">
+                <button><i class="ri-file-copy-line"></i> 複製</button>
+                <button><i class="ri-edit-line"></i> 編輯</button>
+              </div>
+            </div>
+            <div class="content-body">
+              {{ generatedContent() }}
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- 簡報輸出 -->
+      <div class="export-card">
+        <h3 class="card-title">
+          <i class="ri-slideshow-3-line"></i>
+          簡報輸出
+        </h3>
+
+        <div class="export-preview">
+          <div class="preview-placeholder">
+            <i class="ri-presentation-line"></i>
+            <span>申請簡報預覽</span>
+          </div>
+        </div>
+
+        <div class="export-options">
+          <button class="export-btn ppt" (click)="exportPresentation('ppt')">
+            <i class="ri-file-ppt-2-line"></i>
+            <span>PowerPoint</span>
+          </button>
+          <button class="export-btn pdf" (click)="exportPresentation('pdf')">
+            <i class="ri-file-pdf-2-line"></i>
+            <span>PDF</span>
+          </button>
+          <button class="export-btn keynote" (click)="exportPresentation('keynote')">
+            <i class="ri-keynote-line"></i>
+            <span>Keynote</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 資料來源 -->
+      <div class="sources-card">
+        <h3 class="card-title">
+          <i class="ri-database-2-line"></i>
+          資料來源模組
+        </h3>
+
+        <div class="sources-list">
+          <div class="source-item connected">
+            <i class="ri-organization-chart"></i>
+            <span>L1 組織管理</span>
+            <i class="ri-check-line status"></i>
+          </div>
+          <div class="source-item connected">
+            <i class="ri-user-settings-line"></i>
+            <span>L2 職能管理</span>
+            <i class="ri-check-line status"></i>
+          </div>
+          <div class="source-item connected">
+            <i class="ri-book-open-line"></i>
+            <span>L3 教育訓練</span>
+            <i class="ri-check-line status"></i>
+          </div>
+          <div class="source-item connected">
+            <i class="ri-folder-chart-line"></i>
+            <span>L4 專案管理</span>
+            <i class="ri-check-line status"></i>
+          </div>
+          <div class="source-item connected">
+            <i class="ri-line-chart-line"></i>
+            <span>L5 績效管理</span>
+            <i class="ri-check-line status"></i>
+          </div>
+          <div class="source-item connected">
+            <i class="ri-heart-line"></i>
+            <span>L6 文化管理</span>
+            <i class="ri-check-line status"></i>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</main>
+

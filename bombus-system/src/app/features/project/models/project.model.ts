@@ -180,3 +180,111 @@ export interface CreateProjectForm {
   department: string;
 }
 
+// ===============================================================
+// Forecast 預測系統 Models (4.3)
+// ===============================================================
+
+export type ForecastStage = 10 | 20 | 30 | 40 | 50 | 60 | 70 | 80 | 90 | 100;
+
+export interface ForecastStageDefinition {
+  stage: ForecastStage;
+  name: string;
+  nameEn: string;
+  description: string;
+}
+
+export interface ForecastProject {
+  id: string;
+  clientName: string;
+  projectName: string;
+  budgetAmount: number;
+  projectManager: string;
+  salesManager: string;
+  engineerManager: string;
+  currentStage: ForecastStage;
+  stageHistory: ForecastStageHistory[];
+  progressNote: string;
+  forecastStatus: 'on-track' | 'at-risk' | 'delayed' | 'completed';
+  expectedBiddingDate: string | null;
+  expectedCloseDate: string | null;
+  opportunityAccount: string;
+  opportunityName: string;
+  caseNumber: string;
+}
+
+export interface ForecastStageHistory {
+  stage: ForecastStage;
+  date: string;
+  updatedBy: string;
+}
+
+export interface ForecastSummary {
+  totalProjects: number;
+  totalBudget: number;
+  byStage: { stage: ForecastStage; count: number; budget: number }[];
+  onTrack: number;
+  atRisk: number;
+  delayed: number;
+}
+
+// ===============================================================
+// 專案報表與分析 Models (4.4)
+// ===============================================================
+
+export interface ProjectReport {
+  projectId: string;
+  projectName: string;
+  projectCode: string;
+  pm: string;
+  department: string;
+  // 目標與範疇
+  objective: string;
+  scope: string;
+  acceptanceCriteria: string[];
+  // 進度
+  overallProgress: number;
+  taskCompletion: { completed: number; total: number };
+  milestoneCompletion: { completed: number; total: number };
+  // 成本
+  budgetAmount: number;
+  actualCost: number;
+  costVariance: number;
+  costVariancePercent: number;
+  // 毛利
+  revenue: number;
+  grossProfit: number;
+  grossMarginRate: number;
+  // 時程
+  startDate: string;
+  endDate: string;
+  remainingDays: number;
+  isDelayed: boolean;
+  // 風險摘要
+  riskCount: number;
+  issueCount: number;
+}
+
+export interface ProjectHeatmapData {
+  projectId: string;
+  projectName: string;
+  pm: string;
+  department: string;
+  progressScore: number;  // 0-100
+  costScore: number;      // 0-100
+  profitScore: number;    // 0-100
+  overallScore: number;   // 0-100
+  status: 'excellent' | 'good' | 'warning' | 'critical';
+}
+
+export interface ProjectPortfolioStats {
+  totalProjects: number;
+  totalBudget: number;
+  totalSpent: number;
+  avgProgress: number;
+  avgProfitRate: number;
+  onTimeProjects: number;
+  delayedProjects: number;
+  excellentProjects: number;
+  atRiskProjects: number;
+}
+

@@ -1,0 +1,209 @@
+<app-header
+  [pageTitle]="'智慧文件分析'"
+  [breadcrumbs]="['文化管理']"
+/>
+
+<main class="analysis-page">
+  <!-- KPI 摘要 -->
+  <section class="kpi-section">
+    <div class="kpi-card score" [class]="getScoreClass(overallScore())">
+      <div class="kpi-icon">
+        <i class="ri-shield-check-line"></i>
+      </div>
+      <div class="kpi-content">
+        <span class="kpi-value">{{ overallScore() }}%</span>
+        <span class="kpi-label">整體合規分數</span>
+      </div>
+    </div>
+
+    <div class="kpi-card gaps">
+      <div class="kpi-icon">
+        <i class="ri-file-damage-line"></i>
+      </div>
+      <div class="kpi-content">
+        <span class="kpi-value">{{ totalGaps() }}</span>
+        <span class="kpi-label">文件缺漏</span>
+      </div>
+    </div>
+
+    <div class="kpi-card critical">
+      <div class="kpi-icon">
+        <i class="ri-alarm-warning-line"></i>
+      </div>
+      <div class="kpi-content">
+        <span class="kpi-value">{{ criticalGaps() }}</span>
+        <span class="kpi-label">高優先缺漏</span>
+      </div>
+    </div>
+
+    <div class="kpi-card risks">
+      <div class="kpi-icon">
+        <i class="ri-error-warning-line"></i>
+      </div>
+      <div class="kpi-content">
+        <span class="kpi-value">{{ openRisks() }}</span>
+        <span class="kpi-label">待處理風險</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="analysis-layout">
+    <!-- 文件缺漏 -->
+    <section class="gaps-section">
+      <h2 class="section-title">
+        <i class="ri-file-search-line"></i>
+        文件缺漏偵測
+      </h2>
+
+      <div class="gaps-list">
+        @for (gap of documentGaps(); track gap.id) {
+          <div class="gap-card" [attr.data-severity]="gap.severity">
+            <div class="gap-header">
+              <div class="severity-badge" [attr.data-severity]="gap.severity">
+                <i [class]="getSeverityIcon(gap.severity)"></i>
+                {{ getSeverityLabel(gap.severity) }}
+              </div>
+              <div class="status-badge" [attr.data-status]="gap.status">
+                {{ getStatusLabel(gap.status) }}
+              </div>
+            </div>
+
+            <div class="gap-content">
+              <h3 class="gap-title">{{ gap.requiredDocument }}</h3>
+              <span class="gap-category">
+                <i class="ri-folder-line"></i>
+                {{ gap.category }}
+              </span>
+            </div>
+
+            <div class="gap-meta">
+              <div class="responsible">
+                <i class="ri-user-line"></i>
+                {{ gap.responsiblePerson }}
+              </div>
+              <div class="due-date" [class.overdue]="isOverdue(gap.dueDate)">
+                <i class="ri-calendar-line"></i>
+                @if (isOverdue(gap.dueDate)) {
+                  已逾期 {{ -getDaysUntilDue(gap.dueDate) }} 天
+                } @else {
+                  剩餘 {{ getDaysUntilDue(gap.dueDate) }} 天
+                }
+              </div>
+            </div>
+
+            <div class="gap-recommendation">
+              <i class="ri-lightbulb-line"></i>
+              <span>{{ gap.recommendation }}</span>
+            </div>
+
+            <div class="gap-actions">
+              <button class="btn-action">
+                <i class="ri-upload-line"></i>
+                上傳文件
+              </button>
+              <button class="btn-action secondary">
+                <i class="ri-more-line"></i>
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+
+    <!-- 合規風險 -->
+    <section class="risks-section">
+      <h2 class="section-title">
+        <i class="ri-shield-line"></i>
+        合規風險儀表板
+      </h2>
+
+      <div class="risks-list">
+        @for (risk of complianceRisks(); track risk.id) {
+          <div class="risk-card" [attr.data-level]="risk.riskLevel">
+            <div class="risk-header">
+              <div class="risk-level" [attr.data-level]="risk.riskLevel">
+                <i [class]="getSeverityIcon(risk.riskLevel)"></i>
+                {{ getSeverityLabel(risk.riskLevel) }}風險
+              </div>
+              <div class="risk-status" [attr.data-status]="risk.status">
+                {{ getRiskStatusLabel(risk.status) }}
+              </div>
+            </div>
+
+            <div class="risk-content">
+              <span class="risk-area">
+                <i class="ri-bookmark-line"></i>
+                {{ risk.area }}
+              </span>
+              <p class="risk-description">{{ risk.description }}</p>
+            </div>
+
+            <div class="risk-action-required">
+              <i class="ri-arrow-right-circle-line"></i>
+              <span>{{ risk.actionRequired }}</span>
+            </div>
+
+            <div class="risk-footer">
+              <div class="deadline" [class.overdue]="isOverdue(risk.deadline)">
+                <i class="ri-time-line"></i>
+                截止: {{ formatDate(risk.deadline) }}
+              </div>
+              <button class="btn-resolve">
+                @if (risk.status === 'open') {
+                  開始處理
+                } @else if (risk.status === 'in-progress') {
+                  標記完成
+                } @else {
+                  查看詳情
+                }
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+  </div>
+
+  <!-- AI 分析建議 -->
+  <section class="ai-insights">
+    <div class="insights-header">
+      <h2 class="section-title">
+        <i class="ri-ai-generate"></i>
+        AI 智慧分析建議
+      </h2>
+    </div>
+
+    <div class="insights-grid">
+      <div class="insight-card priority">
+        <div class="insight-icon">
+          <i class="ri-focus-3-line"></i>
+        </div>
+        <div class="insight-content">
+          <h3>優先處理建議</h3>
+          <p>建議優先處理「性騷擾防治辦法」缺漏，此為法規強制要求，逾期可能面臨主管機關裁罰。</p>
+        </div>
+      </div>
+
+      <div class="insight-card trend">
+        <div class="insight-icon">
+          <i class="ri-line-chart-line"></i>
+        </div>
+        <div class="insight-content">
+          <h3>趨勢分析</h3>
+          <p>本月文件缺漏數較上月減少 15%，認證類文件管理效率提升明顯。</p>
+        </div>
+      </div>
+
+      <div class="insight-card prediction">
+        <div class="insight-icon">
+          <i class="ri-calendar-check-line"></i>
+        </div>
+        <div class="insight-content">
+          <h3>到期預警</h3>
+          <p>未來 30 天內將有 2 項認證到期，建議提前安排續證審核。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+

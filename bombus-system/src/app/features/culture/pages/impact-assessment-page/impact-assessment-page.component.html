@@ -1,0 +1,279 @@
+<app-header
+  [pageTitle]="'影響力評估引擎'"
+  [breadcrumbs]="['文化管理']"
+/>
+
+<main class="impact-page">
+  <!-- 頁籤導航 -->
+  <nav class="page-tabs">
+    <button
+      class="tab-btn"
+      [class.active]="activeTab() === 'potential'"
+      (click)="setActiveTab('potential')"
+    >
+      <i class="ri-trophy-line"></i>
+      報獎潛力分析
+    </button>
+    <button
+      class="tab-btn"
+      [class.active]="activeTab() === 'impact'"
+      (click)="setActiveTab('impact')"
+    >
+      <i class="ri-line-chart-line"></i>
+      文化影響力報告
+    </button>
+    <button
+      class="tab-btn"
+      [class.active]="activeTab() === 'highlights'"
+      (click)="setActiveTab('highlights')"
+    >
+      <i class="ri-star-line"></i>
+      成果亮點摘要
+    </button>
+  </nav>
+
+  <!-- 報獎潛力分析 -->
+  @if (activeTab() === 'potential') {
+    <section class="potential-section">
+      <div class="section-header">
+        <h2 class="section-title">
+          <i class="ri-ai-generate"></i>
+          AI 報獎潛力評估
+        </h2>
+        <p class="section-desc">根據您的組織數據，AI 分析各獎項的獲獎機率與準備建議</p>
+      </div>
+
+      <div class="potentials-grid">
+        @for (potential of awardPotentials(); track potential.awardId) {
+          <article class="potential-card" [class]="getScoreClass(potential.potentialScore)">
+            <div class="potential-header">
+              <div class="award-info">
+                <h3 class="award-name">{{ potential.awardName }}</h3>
+                <div class="potential-badges">
+                  <span class="effort-badge" [class]="getEffortClass(potential.estimatedEffort)">
+                    {{ getEffortLabel(potential.estimatedEffort) }}
+                  </span>
+                </div>
+              </div>
+              <div class="score-ring" [class]="getScoreClass(potential.potentialScore)">
+                <span class="score-value">{{ potential.potentialScore }}</span>
+                <span class="score-label">分</span>
+              </div>
+            </div>
+
+            <div class="probability-bar">
+              <div class="bar-label">
+                <span>獲獎機率</span>
+                <span class="probability-value" [class]="getProbabilityClass(potential.successProbability)">
+                  {{ potential.successProbability }}%
+                </span>
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill" [style.width.%]="potential.successProbability"></div>
+              </div>
+            </div>
+
+            <div class="analysis-section">
+              <div class="strengths">
+                <h4>
+                  <i class="ri-check-double-line"></i>
+                  優勢
+                </h4>
+                <ul>
+                  @for (strength of potential.strengths; track strength) {
+                    <li>{{ strength }}</li>
+                  }
+                </ul>
+              </div>
+
+              <div class="gaps">
+                <h4>
+                  <i class="ri-error-warning-line"></i>
+                  待改進
+                </h4>
+                <ul>
+                  @for (gap of potential.gaps; track gap) {
+                    <li>{{ gap }}</li>
+                  }
+                </ul>
+              </div>
+            </div>
+
+            <div class="recommendations">
+              <h4>
+                <i class="ri-lightbulb-line"></i>
+                建議行動
+              </h4>
+              @for (action of potential.recommendedActions; track action) {
+                <div class="action-item">
+                  <i class="ri-arrow-right-s-line"></i>
+                  <span>{{ action }}</span>
+                </div>
+              }
+            </div>
+
+            <div class="card-actions">
+              <button class="btn-start">
+                <i class="ri-play-circle-line"></i>
+                開始準備
+              </button>
+              <button class="btn-detail">
+                <i class="ri-file-list-3-line"></i>
+                查看詳情
+              </button>
+            </div>
+          </article>
+        }
+      </div>
+    </section>
+  }
+
+  <!-- 文化影響力報告 -->
+  @if (activeTab() === 'impact' && impactReport()) {
+    <section class="impact-section">
+      <div class="impact-header">
+        <div class="impact-score-card">
+          <div class="score-circle" [class]="getScoreClass(impactReport()!.overallImpactScore)">
+            <span class="big-score">{{ impactReport()?.overallImpactScore }}</span>
+            <span class="score-unit">分</span>
+          </div>
+          <div class="score-info">
+            <h2>整體文化影響力</h2>
+            <p>{{ impactReport()?.period }} 年度綜合評估</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 各維度分析 -->
+      <div class="dimensions-grid">
+        @for (dim of impactReport()?.dimensions; track dim.name) {
+          <div class="dimension-card">
+            <div class="dim-header">
+              <span class="dim-name">{{ dim.name }}</span>
+              <span class="dim-score" [class]="getScoreClass(dim.score)">{{ dim.score }}分</span>
+            </div>
+            <div class="dim-bar">
+              <div class="dim-fill" [style.width.%]="dim.score"></div>
+            </div>
+            <p class="dim-impact">{{ dim.impact }}</p>
+          </div>
+        }
+      </div>
+
+      <!-- EAP 影響力 -->
+      <div class="eap-impact-card">
+        <h3 class="card-title">
+          <i class="ri-hand-heart-line"></i>
+          EAP 員工協助方案效益
+        </h3>
+        <div class="eap-metrics">
+          <div class="eap-metric">
+            <div class="metric-icon">
+              <i class="ri-user-follow-line"></i>
+            </div>
+            <div class="metric-info">
+              <span class="metric-value">{{ impactReport()?.eapImpact?.usageRate }}%</span>
+              <span class="metric-label">使用率</span>
+            </div>
+          </div>
+          <div class="eap-metric">
+            <div class="metric-icon productivity">
+              <i class="ri-speed-up-line"></i>
+            </div>
+            <div class="metric-info">
+              <span class="metric-value">+{{ impactReport()?.eapImpact?.productivityImprovement }}%</span>
+              <span class="metric-label">生產力提升</span>
+            </div>
+          </div>
+          <div class="eap-metric">
+            <div class="metric-icon retention">
+              <i class="ri-user-heart-line"></i>
+            </div>
+            <div class="metric-info">
+              <span class="metric-value">-{{ impactReport()?.eapImpact?.turnoverReduction }}%</span>
+              <span class="metric-label">離職率降低</span>
+            </div>
+          </div>
+          <div class="eap-metric">
+            <div class="metric-icon roi">
+              <i class="ri-funds-line"></i>
+            </div>
+            <div class="metric-info">
+              <span class="metric-value">{{ impactReport()?.eapImpact?.roi }}%</span>
+              <span class="metric-label">投資報酬率</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 建議 -->
+      <div class="recommendations-card">
+        <h3 class="card-title">
+          <i class="ri-lightbulb-flash-line"></i>
+          AI 改善建議
+        </h3>
+        <div class="recommendations-list">
+          @for (rec of impactReport()?.recommendations; track rec; let i = $index) {
+            <div class="recommendation-item">
+              <span class="rec-number">{{ i + 1 }}</span>
+              <span class="rec-text">{{ rec }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    </section>
+  }
+
+  <!-- 成果亮點摘要 -->
+  @if (activeTab() === 'highlights' && highlightSummary()) {
+    <section class="highlights-section">
+      <div class="section-header">
+        <h2 class="section-title">
+          <i class="ri-star-line"></i>
+          {{ highlightSummary()?.title }}
+        </h2>
+        <div class="export-buttons">
+          @for (format of highlightSummary()?.exportFormats; track format) {
+            <button class="btn-export" [attr.data-format]="format">
+              @if (format === 'ppt') {
+                <i class="ri-file-ppt-2-line"></i>
+              } @else if (format === 'pdf') {
+                <i class="ri-file-pdf-2-line"></i>
+              } @else {
+                <i class="ri-file-word-2-line"></i>
+              }
+              {{ format.toUpperCase() }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="highlights-grid">
+        @for (highlight of highlightSummary()?.highlights; track highlight.title) {
+          <article class="highlight-card">
+            <div class="highlight-header">
+              <span class="highlight-category">{{ highlight.category }}</span>
+              <span class="source-module">
+                <i [class]="getSourceModuleIcon(highlight.sourceModule)"></i>
+                {{ highlight.sourceModule }}
+              </span>
+            </div>
+
+            <h3 class="highlight-title">{{ highlight.title }}</h3>
+            <p class="highlight-desc">{{ highlight.description }}</p>
+
+            <div class="highlight-metrics">
+              @for (metric of highlight.metrics; track metric.label) {
+                <div class="metric-item">
+                  <span class="metric-value">{{ metric.value }}</span>
+                  <span class="metric-label">{{ metric.label }}</span>
+                </div>
+              }
+            </div>
+          </article>
+        }
+      </div>
+    </section>
+  }
+</main>
+

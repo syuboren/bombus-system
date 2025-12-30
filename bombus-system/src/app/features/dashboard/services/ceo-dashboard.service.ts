@@ -25,7 +25,11 @@ import {
   ProjectStatusStats,
   ProjectTypeStats,
   CostStructureItem,
-  CostWarningItem
+  CostWarningItem,
+  VisionMissionSummary,
+  EAPSummary,
+  EmployeeStorySummary,
+  ForecastPipeline
 } from '../models/ceo-dashboard.model';
 
 @Injectable({ providedIn: 'root' })
@@ -786,7 +790,11 @@ export class CEODashboardService {
         stage: '履約中',
         status: 'risk',
         startDate: '2025-12-01',
-        endDate: '2026-02-15'
+        endDate: '2026-02-15',
+        budget: 850,
+        nextMilestone: { percentage: 40, label: '提案與預算討論', expectedDate: '2025/01' },
+        salesLead: '張志遠',
+        engineeringLead: '王大明'
       },
       {
         id: 'PRJ-002',
@@ -797,7 +805,11 @@ export class CEODashboardService {
         stage: '規劃中',
         status: 'delay',
         startDate: '2025-12-10',
-        endDate: '2026-01-20'
+        endDate: '2026-01-20',
+        budget: 320,
+        nextMilestone: { percentage: 30, label: '解決方案建議', expectedDate: '2025/01' },
+        salesLead: '陳美玲',
+        engineeringLead: '林建宏'
       },
       {
         id: 'PRJ-003',
@@ -808,7 +820,11 @@ export class CEODashboardService {
         stage: '履約中',
         status: 'normal',
         startDate: '2025-11-20',
-        endDate: '2026-01-15'
+        endDate: '2026-01-15',
+        budget: 1200,
+        nextMilestone: { percentage: 60, label: '合約談判', expectedDate: '2025/01' },
+        salesLead: '黃雅婷',
+        engineeringLead: '吳俊傑'
       },
       {
         id: 'PRJ-004',
@@ -819,7 +835,11 @@ export class CEODashboardService {
         stage: '履約中',
         status: 'normal',
         startDate: '2025-12-05',
-        endDate: '2026-03-01'
+        endDate: '2026-03-01',
+        budget: 2500,
+        nextMilestone: { percentage: 50, label: '初步承諾', expectedDate: '2025/02' },
+        salesLead: '李小華',
+        engineeringLead: '陳建宏'
       },
       {
         id: 'PRJ-005',
@@ -830,7 +850,11 @@ export class CEODashboardService {
         stage: '開發中',
         status: 'normal',
         startDate: '2025-12-15',
-        endDate: '2026-02-28'
+        endDate: '2026-02-28',
+        budget: 680,
+        nextMilestone: { percentage: 40, label: '提案與預算討論', expectedDate: '2025/01' },
+        salesLead: '周怡君',
+        engineeringLead: '林雅婷'
       },
       {
         id: 'PRJ-006',
@@ -841,7 +865,11 @@ export class CEODashboardService {
         stage: '驗收中',
         status: 'normal',
         startDate: '2025-11-01',
-        endDate: '2025-12-31'
+        endDate: '2025-12-31',
+        budget: 1800,
+        nextMilestone: { percentage: 70, label: '專案啟動', expectedDate: '2025/01' },
+        salesLead: '張美玲',
+        engineeringLead: '王志明'
       }
     ];
     return of(data).pipe(delay(200));
@@ -863,6 +891,212 @@ export class CEODashboardService {
       { type: 'service', count: 1, label: '服務', color: '#9A8C98' },
       { type: 'software', count: 1, label: '軟體', color: '#D6A28C' }
     ];
+    return of(data).pipe(delay(200));
+  }
+
+  // ---------------------------------------------------------------
+  // 願景使命 & 員工關懷 (文化訊號區塊)
+  // ---------------------------------------------------------------
+  getVisionMissionSummary(): Observable<VisionMissionSummary> {
+    const data: VisionMissionSummary = {
+      vision: '成為亞太區最具創新力的人資科技領導者，引領企業邁向智慧人才管理新時代',
+      mission: '透過科技創新與人性化設計，協助企業建立高效能、高幸福感的工作環境，實現人才與組織的共同成長',
+      coreValues: [
+        { name: '創新', icon: 'ri-lightbulb-flash-line', description: '勇於突破・持續創新' },
+        { name: '誠信', icon: 'ri-shield-check-line', description: '誠實正直・言行一致' },
+        { name: '卓越', icon: 'ri-trophy-line', description: '追求卓越・超越期待' },
+        { name: '關懷', icon: 'ri-heart-line', description: '以人為本・關懷員工' }
+      ],
+      version: '3.0'
+    };
+    return of(data).pipe(delay(200));
+  }
+
+  getEAPSummary(): Observable<EAPSummary> {
+    const data: EAPSummary = {
+      benefits: [
+        {
+          id: 'mental-leave',
+          name: '心靈假',
+          icon: 'ri-mental-health-line',
+          quota: '4 天/年',
+          description: '身心調適假期',
+          status: 'active'
+        },
+        {
+          id: 'counseling',
+          name: '心理諮商',
+          icon: 'ri-empathize-line',
+          quota: '4 次/年',
+          description: '免費・匿名',
+          status: 'active'
+        },
+        {
+          id: 'legal',
+          name: '法律諮詢',
+          icon: 'ri-scales-3-line',
+          quota: '4 次/年',
+          description: '免費・專業律師',
+          status: 'active'
+        },
+        {
+          id: 'three-day-weekend',
+          name: '週休三日',
+          icon: 'ri-calendar-check-line',
+          quota: '績效獎勵式',
+          description: '預計 2026 上線',
+          status: 'coming-soon',
+          launchDate: '2026'
+        }
+      ],
+      impact: {
+        productivityImprovement: 8,
+        turnoverReduction: 15,
+        roi: 320
+      }
+    };
+    return of(data).pipe(delay(200));
+  }
+
+  // ---------------------------------------------------------------
+  // 員工故事區塊 (佈告欄便利貼風格)
+  // ---------------------------------------------------------------
+  getEmployeeStorySummary(): Observable<EmployeeStorySummary> {
+    const data: EmployeeStorySummary = {
+      kpi: {
+        newThisMonth: 12,
+        totalStories: 47
+      },
+      categoryStats: [
+        { category: 'training', label: '培訓回饋分享', icon: 'ri-graduation-cap-line', count: 18, color: '#FFB74D' },
+        { category: 'interaction', label: '日常互動故事', icon: 'ri-chat-smile-3-line', count: 15, color: '#81C784' },
+        { category: 'customer', label: '客戶感謝回饋', icon: 'ri-heart-line', count: 9, color: '#64B5F6' },
+        { category: 'collaboration', label: '跨部門協作', icon: 'ri-team-line', count: 5, color: '#BA68C8' }
+      ],
+      featuredStories: [
+        {
+          id: '1',
+          title: '培訓後的蛻變',
+          excerpt: '參加完領導力培訓後，終於有勇氣主動帶領專案！',
+          author: '王小美',
+          department: '產品部',
+          category: 'training',
+          likes: 32,
+          date: '2024-12-25',
+          moodColor: '#FFB74D'
+        },
+        {
+          id: '2',
+          title: '午餐時刻的溫暖',
+          excerpt: '同事知道我加班晚餐沒著落，悄悄幫我訂了便當 💕',
+          author: '李大華',
+          department: '研發部',
+          category: 'interaction',
+          likes: 45,
+          date: '2024-12-24',
+          moodColor: '#81C784'
+        },
+        {
+          id: '3',
+          title: '客戶的手寫卡片',
+          excerpt: '收到客戶親手寫的感謝卡，這就是工作的意義！',
+          author: '張美玲',
+          department: '客服部',
+          category: 'customer',
+          likes: 56,
+          date: '2024-12-23',
+          moodColor: '#64B5F6'
+        },
+        {
+          id: '4',
+          title: '跨部門的奇蹟',
+          excerpt: '研發×業務×客服一起熬夜完成不可能的任務 🎉',
+          author: '陳志明',
+          department: '業務部',
+          category: 'collaboration',
+          likes: 78,
+          date: '2024-12-22',
+          moodColor: '#BA68C8'
+        },
+        {
+          id: '5',
+          title: 'Excel 進階班收穫滿滿',
+          excerpt: '原來 VLOOKUP 還可以這樣用！效率提升 200%',
+          author: '林小芳',
+          department: '財務部',
+          category: 'training',
+          likes: 28,
+          date: '2024-12-21',
+          moodColor: '#FFB74D'
+        },
+        {
+          id: '6',
+          title: '新人的第一杯咖啡',
+          excerpt: '報到第一天，前輩就主動請我喝咖啡聊天 ☕',
+          author: '周俊傑',
+          department: '行銷部',
+          category: 'interaction',
+          likes: 41,
+          date: '2024-12-20',
+          moodColor: '#81C784'
+        },
+        {
+          id: '7',
+          title: '客戶主動續約',
+          excerpt: '客戶說很滿意我們的服務，直接簽了三年約！',
+          author: '黃雅琪',
+          department: '業務部',
+          category: 'customer',
+          likes: 67,
+          date: '2024-12-19',
+          moodColor: '#64B5F6'
+        },
+        {
+          id: '8',
+          title: '會議室裡的火花',
+          excerpt: '行銷跟研發一起腦力激盪，碰撞出超棒的新功能！',
+          author: '吳建宏',
+          department: '研發部',
+          category: 'collaboration',
+          likes: 52,
+          date: '2024-12-18',
+          moodColor: '#BA68C8'
+        }
+      ]
+    };
+    return of(data).pipe(delay(200));
+  }
+
+  // ---------------------------------------------------------------
+  // Forecast Pipeline 數據
+  // ---------------------------------------------------------------
+  getForecastPipeline(): Observable<ForecastPipeline> {
+    const data: ForecastPipeline = {
+      stages: [
+        // 探索期 (10-30%) - 藍色系，由淺到深
+        { percentage: 10, label: '接觸', count: 3, color: '#B8D4E8' },    // 淺藍
+        { percentage: 20, label: '需求', count: 2, color: '#8FBFE0' },    // 中藍
+        { percentage: 30, label: '提案', count: 4, color: '#5A9BD4' },    // 深藍
+        // 提案期 (40-50%) - 黃色系，由淺到深
+        { percentage: 40, label: '討論', count: 2, color: '#F5E6B8' },    // 淺黃
+        { percentage: 50, label: '承諾', count: 3, color: '#E3C088' },    // 深黃
+        // 執行期 (60-80%) - 紅/橙色系，由淺到深
+        { percentage: 60, label: '談判', count: 2, color: '#F0C4B8' },    // 淺紅
+        { percentage: 70, label: '啟動', count: 1, color: '#D9A89C' },    // 中紅
+        { percentage: 80, label: '簽約', count: 2, color: '#C77F7F' },    // 深紅
+        // 結案期 (90-100%) - 綠色系，由淺到深
+        { percentage: 90, label: '交付', count: 1, color: '#B8D9C4' },    // 淺綠
+        { percentage: 100, label: '結案', count: 5, color: '#7FB095' }    // 深綠
+      ],
+      groups: [
+        { id: 'exploration', label: '探索期', range: '(10-30%)', amount: 8210, color: '#5A9BD4' },   // 藍色 (與30%一致)
+        { id: 'proposal', label: '提案期', range: '(40-50%)', amount: 6500, color: '#E3C088' },      // 黃色 (與50%一致)
+        { id: 'execution', label: '執行期', range: '(60-80%)', amount: 1600, color: '#C77F7F' },     // 紅色 (與80%一致)
+        { id: 'closing', label: '結案期', range: '(90-100%)', amount: 620, color: '#7FB095' }        // 綠色 (與100%一致)
+      ],
+      totalAmount: 16930,
+      totalProjects: 25
+    };
     return of(data).pipe(delay(200));
   }
 }

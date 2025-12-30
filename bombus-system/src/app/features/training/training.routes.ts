@@ -3,8 +3,23 @@ import { Routes } from '@angular/router';
 export const TRAINING_ROUTES: Routes = [
   {
     path: '',
-    redirectTo: 'competency-heatmap',
+    redirectTo: 'course-management',
     pathMatch: 'full'
+  },
+  {
+    path: 'course-management',
+    loadComponent: () => import('./pages/course-management-page/course-management-page.component')
+      .then(m => m.CourseManagementPageComponent)
+  },
+  {
+    path: 'effectiveness',
+    loadComponent: () => import('./pages/training-effectiveness-page/training-effectiveness-page.component')
+      .then(m => m.TrainingEffectivenessPageComponent)
+  },
+  {
+    path: 'learning-map',
+    loadComponent: () => import('./pages/learning-map-page/learning-map-page.component')
+      .then(m => m.LearningMapPageComponent)
   },
   {
     path: 'competency-heatmap',
@@ -25,10 +40,5 @@ export const TRAINING_ROUTES: Routes = [
     path: 'key-talent',
     loadComponent: () => import('./pages/key-talent-page/key-talent-page.component')
       .then(m => m.KeyTalentPageComponent)
-  },
-  {
-    path: 'course-management',
-    loadComponent: () => import('./pages/course-management-page/course-management-page.component')
-      .then(m => m.CourseManagementPageComponent)
   }
 ];

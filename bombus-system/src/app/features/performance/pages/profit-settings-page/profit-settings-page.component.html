@@ -1,0 +1,486 @@
+<app-header
+  pageTitle="毛利計算參數設定"
+  [breadcrumbs]="['績效管理', '毛利監控', '參數設定']" />
+
+<div class="profit-settings-page">
+  <!-- Tabs -->
+  <div class="settings-tabs">
+    @for (tab of tabs; track tab.id) {
+      <button 
+        class="tab-btn" 
+        [class.active]="activeTab() === tab.id"
+        (click)="switchTab(tab.id)">
+        <i [class]="tab.icon"></i>
+        {{ tab.label }}
+      </button>
+    }
+  </div>
+
+  <!-- Tab Content -->
+  <div class="tab-content">
+    <!-- 基本薪資設定 -->
+    @if (activeTab() === 'salary') {
+      <div class="content-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <i class="ri-money-dollar-circle-line"></i>
+            員工基本薪資維護
+          </div>
+          <div class="panel-actions">
+            <button class="btn-outline" (click)="openImportModal()">
+              <i class="ri-upload-2-line"></i>
+              批次匯入
+            </button>
+          </div>
+        </div>
+
+        <div class="filter-bar">
+          <div class="filter-group">
+            <select class="form-select" [ngModel]="selectedDepartment()" (ngModelChange)="selectedDepartment.set($event)">
+              <option value="all">全部部門</option>
+              @for (dept of departments; track dept) {
+                <option [value]="dept">{{ dept }}</option>
+              }
+            </select>
+          </div>
+          <div class="search-box">
+            <i class="ri-search-line"></i>
+            <input 
+              type="text" 
+              placeholder="搜尋員工..."
+              [ngModel]="searchKeyword()"
+              (ngModelChange)="searchKeyword.set($event)">
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>員工編號</th>
+                <th>姓名</th>
+                <th>部門</th>
+                <th>職稱</th>
+                <th>職等</th>
+                <th>基本薪資</th>
+                <th>最後更新</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (emp of filteredSalaries; track emp.id) {
+                <tr>
+                  <td>{{ emp.id }}</td>
+                  <td class="cell-name">{{ emp.name }}</td>
+                  <td>{{ emp.department }}</td>
+                  <td>{{ emp.position }}</td>
+                  <td><span class="grade-badge">{{ emp.grade }}</span></td>
+                  <td class="cell-salary">
+                    @if (editingId() === emp.id) {
+                      <input 
+                        type="number" 
+                        class="form-input form-input--small"
+                        [ngModel]="emp.baseSalary"
+                        (ngModelChange)="emp.baseSalary = $event">
+                    } @else {
+                      ${{ formatCurrency(emp.baseSalary) }}
+                    }
+                  </td>
+                  <td class="cell-date">{{ formatDate(emp.lastUpdated) }}</td>
+                  <td class="cell-actions">
+                    @if (editingId() === emp.id) {
+                      <button class="btn-icon btn-icon--success" (click)="saveEdit()">
+                        <i class="ri-check-line"></i>
+                      </button>
+                      <button class="btn-icon" (click)="cancelEdit()">
+                        <i class="ri-close-line"></i>
+                      </button>
+                    } @else {
+                      <button class="btn-icon" (click)="startEdit(emp.id)">
+                        <i class="ri-edit-line"></i>
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+
+    <!-- 部門參數設定 -->
+    @if (activeTab() === 'department') {
+      <div class="content-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <i class="ri-building-line"></i>
+            部門參數設定
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>部門名稱</th>
+                <th>成本中心代碼</th>
+                <th>間接成本分攤比例</th>
+                <th>毛利目標</th>
+                <th>獎金池權重</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (dept of departmentParams(); track dept.id) {
+                <tr>
+                  <td class="cell-name">{{ dept.name }}</td>
+                  <td><code class="code-badge">{{ dept.costCenterCode }}</code></td>
+                  <td>
+                    @if (editingId() === dept.id) {
+                      <input type="number" class="form-input form-input--small" 
+                        [ngModel]="dept.indirectCostRatio" 
+                        (ngModelChange)="dept.indirectCostRatio = $event">
+                    } @else {
+                      {{ dept.indirectCostRatio }}%
+                    }
+                  </td>
+                  <td>
+                    @if (editingId() === dept.id) {
+                      <input type="number" class="form-input form-input--small" 
+                        [ngModel]="dept.profitTarget" 
+                        (ngModelChange)="dept.profitTarget = $event">
+                    } @else {
+                      {{ dept.profitTarget }}%
+                    }
+                  </td>
+                  <td>
+                    @if (editingId() === dept.id) {
+                      <input type="number" class="form-input form-input--small" 
+                        [ngModel]="dept.bonusWeight" 
+                        (ngModelChange)="dept.bonusWeight = $event">
+                    } @else {
+                      {{ dept.bonusWeight }}%
+                    }
+                  </td>
+                  <td class="cell-actions">
+                    @if (editingId() === dept.id) {
+                      <button class="btn-icon btn-icon--success" (click)="saveEdit()">
+                        <i class="ri-check-line"></i>
+                      </button>
+                      <button class="btn-icon" (click)="cancelEdit()">
+                        <i class="ri-close-line"></i>
+                      </button>
+                    } @else {
+                      <button class="btn-icon" (click)="startEdit(dept.id)">
+                        <i class="ri-edit-line"></i>
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+
+    <!-- 職稱參數設定 -->
+    @if (activeTab() === 'position') {
+      <div class="content-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <i class="ri-user-star-line"></i>
+            職稱參數設定
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>職稱</th>
+                <th>類型</th>
+                <th>薪資級距 (最低)</th>
+                <th>薪資級距 (最高)</th>
+                <th>績效係數</th>
+                <th>獎金比例</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (pos of positionParams(); track pos.id) {
+                <tr>
+                  <td class="cell-name">{{ pos.title }}</td>
+                  <td>
+                    <span class="type-badge" [class.type-badge--manager]="pos.isManager">
+                      {{ pos.isManager ? '管理職' : '專業職' }}
+                    </span>
+                  </td>
+                  <td>
+                    @if (editingId() === pos.id) {
+                      <input type="number" class="form-input form-input--small" 
+                        [ngModel]="pos.salaryMin" 
+                        (ngModelChange)="pos.salaryMin = $event">
+                    } @else {
+                      ${{ formatCurrency(pos.salaryMin) }}
+                    }
+                  </td>
+                  <td>
+                    @if (editingId() === pos.id) {
+                      <input type="number" class="form-input form-input--small" 
+                        [ngModel]="pos.salaryMax" 
+                        (ngModelChange)="pos.salaryMax = $event">
+                    } @else {
+                      ${{ formatCurrency(pos.salaryMax) }}
+                    }
+                  </td>
+                  <td>
+                    @if (editingId() === pos.id) {
+                      <input type="number" step="0.05" class="form-input form-input--small" 
+                        [ngModel]="pos.performanceCoefficient" 
+                        (ngModelChange)="pos.performanceCoefficient = $event">
+                    } @else {
+                      ×{{ pos.performanceCoefficient }}
+                    }
+                  </td>
+                  <td>
+                    @if (editingId() === pos.id) {
+                      <input type="number" class="form-input form-input--small" 
+                        [ngModel]="pos.bonusRatio" 
+                        (ngModelChange)="pos.bonusRatio = $event">
+                    } @else {
+                      {{ pos.bonusRatio }}%
+                    }
+                  </td>
+                  <td class="cell-actions">
+                    @if (editingId() === pos.id) {
+                      <button class="btn-icon btn-icon--success" (click)="saveEdit()">
+                        <i class="ri-check-line"></i>
+                      </button>
+                      <button class="btn-icon" (click)="cancelEdit()">
+                        <i class="ri-close-line"></i>
+                      </button>
+                    } @else {
+                      <button class="btn-icon" (click)="startEdit(pos.id)">
+                        <i class="ri-edit-line"></i>
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+
+    <!-- 成本分類設定 -->
+    @if (activeTab() === 'cost') {
+      <div class="content-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <i class="ri-pie-chart-line"></i>
+            成本分類設定
+          </div>
+        </div>
+
+        <div class="cost-grid">
+          <div class="cost-section">
+            <h3 class="section-title section-title--direct">
+              <i class="ri-arrow-right-circle-line"></i>
+              直接成本項目
+            </h3>
+            @for (cost of costCategories(); track cost.id) {
+              @if (cost.type === 'direct') {
+                <div class="cost-card">
+                  <div class="cost-header">
+                    <span class="cost-name">{{ cost.name }}</span>
+                  </div>
+                  <p class="cost-desc">{{ cost.description }}</p>
+                  <div class="cost-rule">
+                    <span class="rule-label">歸屬規則：</span>
+                    <span class="rule-value">{{ cost.allocationRule }}</span>
+                  </div>
+                </div>
+              }
+            }
+          </div>
+
+          <div class="cost-section">
+            <h3 class="section-title section-title--indirect">
+              <i class="ri-share-circle-line"></i>
+              間接成本項目
+            </h3>
+            @for (cost of costCategories(); track cost.id) {
+              @if (cost.type === 'indirect') {
+                <div class="cost-card">
+                  <div class="cost-header">
+                    <span class="cost-name">{{ cost.name }}</span>
+                  </div>
+                  <p class="cost-desc">{{ cost.description }}</p>
+                  <div class="cost-rule">
+                    <span class="rule-label">分攤規則：</span>
+                    <span class="rule-value">{{ cost.allocationRule }}</span>
+                  </div>
+                </div>
+              }
+            }
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- 計算公式設定 -->
+    @if (activeTab() === 'formula') {
+      <div class="content-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <i class="ri-calculator-line"></i>
+            毛利計算公式設定
+          </div>
+        </div>
+
+        <div class="formula-grid">
+          <!-- 人力成本計算 -->
+          <div class="formula-section">
+            <h3 class="section-title">
+              <i class="ri-user-line"></i>
+              人力成本計算
+            </h3>
+            
+            <div class="formula-card">
+              <div class="formula-row">
+                <span class="formula-label">工時單價公式</span>
+                <div class="formula-value formula-equation">
+                  月薪 ÷ <input type="number" class="form-input form-input--inline" 
+                    [ngModel]="formulaConfig().hourlyRateDivisor"
+                    (ngModelChange)="updateFormula('hourlyRateDivisor', $event)"> 小時 × 
+                  <input type="number" step="0.1" class="form-input form-input--inline" 
+                    [ngModel]="formulaConfig().hourlyRateCoefficient"
+                    (ngModelChange)="updateFormula('hourlyRateCoefficient', $event)">
+                </div>
+              </div>
+              
+              <div class="formula-row">
+                <span class="formula-label">加班成本倍數</span>
+                <div class="formula-value">
+                  <input type="number" step="0.1" class="form-input form-input--small" 
+                    [ngModel]="formulaConfig().overtimeMultiplier"
+                    (ngModelChange)="updateFormula('overtimeMultiplier', $event)">
+                  <span class="formula-unit">倍</span>
+                </div>
+              </div>
+              
+              <div class="formula-row">
+                <span class="formula-label">福利與保險分攤比例</span>
+                <div class="formula-value">
+                  <input type="number" class="form-input form-input--small" 
+                    [ngModel]="formulaConfig().benefitRatio"
+                    (ngModelChange)="updateFormula('benefitRatio', $event)">
+                  <span class="formula-unit">%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 毛利計算邏輯 -->
+          <div class="formula-section">
+            <h3 class="section-title">
+              <i class="ri-percent-line"></i>
+              毛利計算邏輯
+            </h3>
+            
+            <div class="formula-card">
+              <div class="formula-display">
+                <div class="formula-line">
+                  <span class="formula-name">毛利</span>
+                  <span class="formula-eq">= 營收 - Σ（直接成本 + 分攤間接成本）</span>
+                </div>
+                <div class="formula-line">
+                  <span class="formula-name">毛利率</span>
+                  <span class="formula-eq">= 毛利 ÷ 營收 × 100%</span>
+                </div>
+              </div>
+              
+              <div class="formula-row">
+                <span class="formula-label">計算週期</span>
+                <div class="formula-value">
+                  <select class="form-select" 
+                    [ngModel]="formulaConfig().calculationPeriod"
+                    (ngModelChange)="updateFormula('calculationPeriod', $event)">
+                    <option value="month">月</option>
+                    <option value="quarter">季</option>
+                    <option value="year">年</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 計算說明 -->
+          <div class="formula-section formula-section--full">
+            <h3 class="section-title">
+              <i class="ri-information-line"></i>
+              計算說明
+            </h3>
+            
+            <div class="info-cards">
+              <div class="info-card">
+                <div class="info-icon"><i class="ri-money-dollar-box-line"></i></div>
+                <div class="info-content">
+                  <h4>人力成本</h4>
+                  <p>基於員工薪資設定 × 實際工時計算，包含基本薪資、加班費及福利分攤</p>
+                </div>
+              </div>
+              <div class="info-card">
+                <div class="info-icon"><i class="ri-link"></i></div>
+                <div class="info-content">
+                  <h4>專案成本整合</h4>
+                  <p>自動整合 L4 專案管理模組的成本資料，確保數據一致性</p>
+                </div>
+              </div>
+              <div class="info-card">
+                <div class="info-icon"><i class="ri-share-forward-line"></i></div>
+                <div class="info-content">
+                  <h4>間接成本分攤</h4>
+                  <p>依設定的分攤規則（人數比例/營收比例）自動分攤至各部門</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- Import Modal -->
+@if (showImportModal()) {
+  <div class="modal-overlay" (click)="closeImportModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>批次匯入薪資資料</h3>
+        <button class="btn-close" (click)="closeImportModal()">
+          <i class="ri-close-line"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="upload-zone">
+          <i class="ri-upload-cloud-2-line"></i>
+          <p>拖曳檔案至此處或點擊選擇檔案</p>
+          <span class="upload-hint">支援 .xlsx, .csv 格式</span>
+        </div>
+        <div class="template-download">
+          <i class="ri-file-excel-2-line"></i>
+          <a href="#">下載匯入範本</a>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-outline" (click)="closeImportModal()">取消</button>
+        <button class="btn-primary" (click)="handleImport()">匯入</button>
+      </div>
+    </div>
+  </div>
+}
+

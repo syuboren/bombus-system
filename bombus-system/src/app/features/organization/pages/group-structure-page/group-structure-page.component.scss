@@ -7,9 +7,15 @@ $module-color-light: $color-l4-mauve-light;
 $module-color-dark: $color-l4-mauve-dark;
 
 .group-structure-page {
-  padding: calc(var(--header-height, 70px) + 20px) $spacing-lg $spacing-lg;
-  min-height: 100vh;
+  padding: $spacing-lg;
+  padding-top: calc(var(--header-height, 70px) + 20px);
+  min-height: calc(100vh - 64px);
   background: $color-cloud-gray;
+
+  @include media-max-md {
+    padding: $spacing-md;
+    padding-top: calc(var(--header-height, 70px) + 16px);
+  }
 }
 
 // ============================================================

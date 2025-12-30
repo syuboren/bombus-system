@@ -4,11 +4,426 @@
 
 <main class="main-content">
   <div class="content-container">
-    <div class="placeholder-card">
-      <i class="ri-database-2-line placeholder-icon"></i>
-      <h2>人才庫管理</h2>
-      <p>此功能正在開發中...</p>
+    <!-- KPI Stats -->
+    @if (stats(); as s) {
+      <section class="kpi-section">
+        <div class="kpi-card">
+          <div class="kpi-icon">
+            <i class="ri-user-star-line"></i>
+          </div>
+          <div class="kpi-content">
+            <span class="kpi-value">{{ s.totalCandidates }}</span>
+            <span class="kpi-label">人才總數</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon active">
+            <i class="ri-user-follow-line"></i>
+          </div>
+          <div class="kpi-content">
+            <span class="kpi-value">{{ s.activeCount }}</span>
+            <span class="kpi-label">待聯繫</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon contacted">
+            <i class="ri-phone-line"></i>
+          </div>
+          <div class="kpi-content">
+            <span class="kpi-value">{{ s.contactedThisMonth }}</span>
+            <span class="kpi-label">本月已聯繫</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon score">
+            <i class="ri-bar-chart-grouped-line"></i>
+          </div>
+          <div class="kpi-content">
+            <span class="kpi-value">{{ s.avgMatchScore }}%</span>
+            <span class="kpi-label">平均媒合度</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon reminder">
+            <i class="ri-notification-3-line"></i>
+          </div>
+          <div class="kpi-content">
+            <span class="kpi-value">{{ s.upcomingReminders }}</span>
+            <span class="kpi-label">待處理提醒</span>
+          </div>
+        </div>
+      </section>
+    }
+
+    <div class="page-layout">
+      <!-- Main Content -->
+      <div class="main-area">
+        <!-- Filter Bar -->
+        <section class="filter-section card">
+          <div class="filter-row">
+            <div class="search-box">
+              <i class="ri-search-line"></i>
+              <input
+                type="text"
+                class="search-input"
+                placeholder="搜尋姓名、職位、公司、技能..."
+                [value]="searchQuery()"
+                (input)="searchQuery.set($any($event.target).value)">
+            </div>
+
+            <div class="filter-group">
+              <select class="filter-select" [value]="selectedStatus()" (change)="selectedStatus.set($any($event.target).value)">
+                <option value="all">所有狀態</option>
+                <option value="active">待聯繫</option>
+                <option value="contacted">已聯繫</option>
+                <option value="scheduled">已排程</option>
+                <option value="hired">已錄用</option>
+                <option value="declined">已婉拒</option>
+              </select>
+
+              <select class="filter-select" [value]="selectedSource()" (change)="selectedSource.set($any($event.target).value)">
+                <option value="all">所有來源</option>
+                <option value="104">104人力銀行</option>
+                <option value="linkedin">LinkedIn</option>
+                <option value="referral">內部推薦</option>
+                <option value="website">官網投遞</option>
+                <option value="headhunter">獵頭推薦</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Tag Filters -->
+          <div class="tag-filters">
+            <span class="tag-label">標籤篩選：</span>
+            @for (tag of tags(); track tag.id) {
+              <button
+                type="button"
+                class="tag-btn"
+                [class.active]="selectedTags().includes(tag.id)"
+                [style.--tag-color]="tag.color"
+                (click)="toggleTag(tag.id)">
+                {{ tag.name }}
+              </button>
+            }
+          </div>
+        </section>
+
+        <!-- Candidate List -->
+        <section class="candidate-list-section">
+          <div class="section-header">
+            <h3>人才列表</h3>
+            <span class="count-badge">{{ filteredCandidates().length }} 人</span>
+          </div>
+
+          <div class="candidate-grid">
+            @for (candidate of filteredCandidates(); track candidate.id) {
+              <article
+                class="candidate-card"
+                [class.selected]="selectedCandidate()?.id === candidate.id"
+                (click)="selectCandidate(candidate)">
+                <div class="candidate-header">
+                  <div class="candidate-avatar">
+                    {{ candidate.name.charAt(0) }}
+                  </div>
+                  <div class="candidate-info">
+                    <h4 class="candidate-name">{{ candidate.name }}</h4>
+                    <p class="candidate-position">{{ candidate.currentPosition }}</p>
+                    <p class="candidate-company">{{ candidate.currentCompany }}</p>
+                  </div>
+                  <div class="match-score" [class]="getMatchClass(candidate.matchScore)">
+                    <span class="score-value">{{ candidate.matchScore }}</span>
+                    <span class="score-label">媒合度</span>
+                  </div>
+                </div>
+
+                <div class="candidate-meta">
+                  <span class="meta-item">
+                    <i class="ri-time-line"></i>
+                    {{ candidate.experience }}年經驗
+                  </span>
+                  <span class="meta-item">
+                    <i class="ri-map-pin-line"></i>
+                    {{ getSourceLabel(candidate.source) }}
+                  </span>
+                </div>
+
+                <div class="candidate-tags">
+                  @for (tag of candidate.tags.slice(0, 3); track tag.id) {
+                    <span class="tag" [style.background]="tag.color + '20'" [style.color]="tag.color">
+                      {{ tag.name }}
+                    </span>
+                  }
+                  @if (candidate.tags.length > 3) {
+                    <span class="tag more">+{{ candidate.tags.length - 3 }}</span>
+                  }
+                </div>
+
+                <div class="candidate-footer">
+                  <span class="status-badge status-{{ candidate.status }}">
+                    {{ getStatusLabel(candidate.status) }}
+                  </span>
+                  @if (candidate.nextContactDate) {
+                    <span class="next-contact">
+                      <i class="ri-calendar-line"></i>
+                      {{ formatDate(candidate.nextContactDate) }}
+                    </span>
+                  }
+                </div>
+              </article>
+            } @empty {
+              <div class="empty-state">
+                <i class="ri-user-search-line"></i>
+                <p>沒有找到符合條件的人才</p>
+              </div>
+            }
+          </div>
+        </section>
+      </div>
+
+      <!-- Side Panel -->
+      <aside class="side-panel">
+        <!-- Upcoming Reminders -->
+        <section class="card reminder-section">
+          <div class="card-header">
+            <h4 class="card-title">
+              <i class="ri-notification-3-line"></i>
+              待處理提醒
+            </h4>
+          </div>
+          <div class="card-body">
+            @for (reminder of upcomingReminders(); track reminder.id) {
+              <div class="reminder-item" [attr.data-type]="reminder.reminderType">
+                <div class="reminder-date">
+                  <span class="date-day">{{ reminder.reminderDate | date:'dd' }}</span>
+                  <span class="date-month">{{ reminder.reminderDate | date:'MMM' }}</span>
+                </div>
+                <div class="reminder-content">
+                  <span class="reminder-name">{{ reminder.candidateName }}</span>
+                  <span class="reminder-message">{{ reminder.message }}</span>
+                </div>
+                <button type="button" class="btn-complete" (click)="completeReminder(reminder); $event.stopPropagation()">
+                  <i class="ri-check-line"></i>
+                </button>
+              </div>
+            } @empty {
+              <p class="empty-text">沒有待處理的提醒</p>
+            }
+          </div>
+        </section>
+
+        <!-- Source Distribution -->
+        @if (stats(); as s) {
+          <section class="card source-section">
+            <div class="card-header">
+              <h4 class="card-title">
+                <i class="ri-pie-chart-line"></i>
+                來源分布
+              </h4>
+            </div>
+            <div class="card-body">
+              @for (item of s.sourceBreakdown; track item.source) {
+                <div class="source-item">
+                  <span class="source-name">{{ getSourceLabel(item.source) }}</span>
+                  <div class="source-bar-container">
+                    <div class="source-bar" [style.width.%]="item.percentage"></div>
+                  </div>
+                  <span class="source-count">{{ item.count }}</span>
+                </div>
+              }
+            </div>
+          </section>
+        }
+      </aside>
     </div>
+
+    <!-- Candidate Detail Modal -->
+    @if (selectedCandidate(); as candidate) {
+      <div class="detail-overlay" (click)="closeDetail()">
+        <div class="detail-modal" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <div class="candidate-profile">
+              <div class="profile-avatar">{{ candidate.name.charAt(0) }}</div>
+              <div class="profile-info">
+                <h3>{{ candidate.name }}</h3>
+                <p>{{ candidate.currentPosition }} &#64; {{ candidate.currentCompany }}</p>
+              </div>
+            </div>
+            <button type="button" class="btn-close" (click)="closeDetail()">
+              <i class="ri-close-line"></i>
+            </button>
+          </div>
+
+          <div class="modal-tabs">
+            <button
+              type="button"
+              class="tab-btn"
+              [class.active]="activeTab() === 'info'"
+              (click)="setActiveTab('info')">
+              基本資料
+            </button>
+            <button
+              type="button"
+              class="tab-btn"
+              [class.active]="activeTab() === 'history'"
+              (click)="setActiveTab('history')">
+              聯繫紀錄
+            </button>
+            <button
+              type="button"
+              class="tab-btn"
+              [class.active]="activeTab() === 'match'"
+              (click)="setActiveTab('match')">
+              職缺媒合
+            </button>
+          </div>
+
+          <div class="modal-content">
+            @if (activeTab() === 'info') {
+              <div class="info-grid">
+                <div class="info-item">
+                  <label>Email</label>
+                  <span>{{ candidate.email }}</span>
+                </div>
+                <div class="info-item">
+                  <label>電話</label>
+                  <span>{{ candidate.phone }}</span>
+                </div>
+                <div class="info-item">
+                  <label>經驗年資</label>
+                  <span>{{ candidate.experience }} 年</span>
+                </div>
+                <div class="info-item">
+                  <label>學歷</label>
+                  <span>{{ candidate.education }}</span>
+                </div>
+                <div class="info-item">
+                  <label>期望薪資</label>
+                  <span>{{ candidate.expectedSalary || '面議' }}</span>
+                </div>
+                <div class="info-item">
+                  <label>來源</label>
+                  <span>{{ getSourceLabel(candidate.source) }}</span>
+                </div>
+              </div>
+
+              <div class="info-section">
+                <h4>專業技能</h4>
+                <div class="skill-tags">
+                  @for (skill of candidate.skills; track skill) {
+                    <span class="skill-tag">{{ skill }}</span>
+                  }
+                </div>
+              </div>
+
+              <div class="info-section">
+                <h4>標籤</h4>
+                <div class="tag-list">
+                  @for (tag of candidate.tags; track tag.id) {
+                    <span class="tag" [style.background]="tag.color + '20'" [style.color]="tag.color">
+                      {{ tag.name }}
+                    </span>
+                  }
+                </div>
+              </div>
+
+              <div class="info-section">
+                <h4>備註</h4>
+                <p class="notes">{{ candidate.notes || '無備註' }}</p>
+              </div>
+            }
+
+            @if (activeTab() === 'history') {
+              <div class="history-list">
+                @for (history of contactHistory(); track history.id) {
+                  <div class="history-item" [attr.data-outcome]="history.outcome">
+                    <div class="history-date">{{ formatDate(history.contactDate) }}</div>
+                    <div class="history-content">
+                      <div class="history-header">
+                        <span class="history-method">
+                          @switch (history.contactMethod) {
+                            @case ('phone') { <i class="ri-phone-line"></i> 電話 }
+                            @case ('email') { <i class="ri-mail-line"></i> 信件 }
+                            @case ('interview') { <i class="ri-user-voice-line"></i> 面試 }
+                            @case ('meeting') { <i class="ri-team-line"></i> 會面 }
+                          }
+                        </span>
+                        <span class="history-by">{{ history.contactBy }}</span>
+                      </div>
+                      <p class="history-summary">{{ history.summary }}</p>
+                      @if (history.nextAction) {
+                        <p class="history-next">
+                          <i class="ri-arrow-right-line"></i>
+                          下一步：{{ history.nextAction }}
+                        </p>
+                      }
+                    </div>
+                  </div>
+                } @empty {
+                  <p class="empty-text">尚無聯繫紀錄</p>
+                }
+              </div>
+              <button type="button" class="btn-add-contact" (click)="openContactModal()">
+                <i class="ri-add-line"></i>
+                新增聯繫紀錄
+              </button>
+            }
+
+            @if (activeTab() === 'match') {
+              <div class="match-list">
+                @for (match of matchResults(); track match.jobId) {
+                  <div class="match-card" [class]="getMatchClass(match.matchScore)">
+                    <div class="match-header">
+                      <h5>{{ match.jobTitle }}</h5>
+                      <div class="match-score-badge">{{ match.matchScore }}%</div>
+                    </div>
+                    <div class="match-reasons">
+                      <h6><i class="ri-check-line"></i> 符合條件</h6>
+                      <ul>
+                        @for (reason of match.matchReasons; track reason) {
+                          <li>{{ reason }}</li>
+                        }
+                      </ul>
+                    </div>
+                    @if (match.gaps.length > 0) {
+                      <div class="match-gaps">
+                        <h6><i class="ri-error-warning-line"></i> 待補強</h6>
+                        <ul>
+                          @for (gap of match.gaps; track gap) {
+                            <li>{{ gap }}</li>
+                          }
+                        </ul>
+                      </div>
+                    }
+                    <div class="match-recommendation">
+                      <span class="rec-badge rec-{{ match.recommendation }}">
+                        {{ getRecommendationLabel(match.recommendation) }}
+                      </span>
+                    </div>
+                  </div>
+                } @empty {
+                  <p class="empty-text">尚無媒合職缺</p>
+                }
+              </div>
+            }
+          </div>
+
+          <div class="modal-footer">
+            <div class="status-actions">
+              <span class="current-status status-{{ candidate.status }}">
+                {{ getStatusLabel(candidate.status) }}
+              </span>
+              <div class="status-buttons">
+                <button type="button" class="btn-status" (click)="updateStatus('contacted')">
+                  <i class="ri-phone-line"></i> 標記已聯繫
+                </button>
+                <button type="button" class="btn-status" (click)="updateStatus('scheduled')">
+                  <i class="ri-calendar-line"></i> 安排面試
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
   </div>
 </main>
-

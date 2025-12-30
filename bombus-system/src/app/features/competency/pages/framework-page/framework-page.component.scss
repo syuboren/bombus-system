@@ -13,12 +13,14 @@ $management-color: #9A8C98;
 $ksa-color: #8DA399;
 
 .framework-page {
-  padding: calc(var(--header-height, 70px) + 20px) $spacing-lg $spacing-lg;
+  padding: $spacing-lg;
+  padding-top: calc(var(--header-height, 70px) + 20px);
+  min-height: calc(100vh - 64px);
   background: $color-cloud-gray;
-  min-height: 100vh;
 
   @include media-max-md {
-    padding: calc(var(--header-height, 70px) + 16px) $spacing-md $spacing-md;
+    padding: $spacing-md;
+    padding-top: calc(var(--header-height, 70px) + 16px);
   }
 }
 

@@ -9,7 +9,13 @@ import {
   TrainingRecommendation,
   UpcomingCourse,
   PopularCourse,
-  TrainingPendingItem
+  TrainingPendingItem,
+  TTQSIndicator,
+  FeedbackSession,
+  CourseROI,
+  ImprovementItem,
+  Instructor,
+  Enrollment
 } from '../models/training.model';
 
 @Injectable({
@@ -389,6 +395,294 @@ export class TrainingService {
       management: '#7D9EA8'
     };
     return colors[category];
+  }
+
+  // ===== 3.5 培訓成效追蹤 API =====
+
+  // 取得 TTQS 品質指標
+  getTTQSIndicators(): Observable<TTQSIndicator[]> {
+    const data: TTQSIndicator[] = [
+      {
+        phase: 'plan',
+        name: '計畫 (Plan)',
+        score: 85,
+        maxScore: 100,
+        status: 'excellent',
+        items: ['訓練需求分析', '年度培訓計畫', '預算規劃']
+      },
+      {
+        phase: 'design',
+        name: '設計 (Design)',
+        score: 78,
+        maxScore: 100,
+        status: 'good',
+        items: ['課程設計', '教材開發', '講師遴選']
+      },
+      {
+        phase: 'do',
+        name: '執行 (Do)',
+        score: 82,
+        maxScore: 100,
+        status: 'excellent',
+        items: ['課程執行', '出席追蹤', '教室日誌']
+      },
+      {
+        phase: 'review',
+        name: '查核 (Review)',
+        score: 65,
+        maxScore: 100,
+        status: 'warning',
+        items: ['滿意度調查', '學習評估', '行為追蹤']
+      },
+      {
+        phase: 'outcome',
+        name: '成果 (Outcome)',
+        score: 58,
+        maxScore: 100,
+        status: 'warning',
+        items: ['績效改善', 'ROI 計算', '持續改善']
+      }
+    ];
+    return of(data).pipe(delay(200));
+  }
+
+  // 取得三個月反饋會列表
+  getFeedbackSessions(): Observable<FeedbackSession[]> {
+    const today = new Date();
+    const data: FeedbackSession[] = [
+      {
+        id: '1',
+        courseId: 'c1',
+        courseName: 'Power BI 數據視覺化',
+        scheduledDate: new Date(today.getTime() + 5 * 24 * 60 * 60 * 1000),
+        status: 'scheduled',
+        attendees: 18,
+        behaviorConversionRate: undefined,
+        performanceImprovement: undefined,
+        knowledgeRetention: undefined,
+        managerSatisfaction: undefined
+      },
+      {
+        id: '2',
+        courseId: 'c2',
+        courseName: '敏捷專案管理實務',
+        scheduledDate: new Date(today.getTime() - 10 * 24 * 60 * 60 * 1000),
+        status: 'completed',
+        attendees: 15,
+        behaviorConversionRate: 75,
+        performanceImprovement: 12,
+        knowledgeRetention: 82,
+        managerSatisfaction: 4.2
+      },
+      {
+        id: '3',
+        courseId: 'c3',
+        courseName: '績效面談技巧',
+        scheduledDate: new Date(today.getTime() - 5 * 24 * 60 * 60 * 1000),
+        status: 'overdue',
+        attendees: 12,
+        behaviorConversionRate: undefined,
+        performanceImprovement: undefined,
+        knowledgeRetention: undefined,
+        managerSatisfaction: undefined
+      },
+      {
+        id: '4',
+        courseId: 'c4',
+        courseName: '領導力工作坊',
+        scheduledDate: new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000),
+        status: 'completed',
+        attendees: 20,
+        behaviorConversionRate: 68,
+        performanceImprovement: 8,
+        knowledgeRetention: 75,
+        managerSatisfaction: 4.5
+      }
+    ];
+    return of(data).pipe(delay(200));
+  }
+
+  // 取得課程 ROI 排行
+  getCourseROIRanking(): Observable<CourseROI[]> {
+    const data: CourseROI[] = [
+      {
+        id: '1',
+        courseName: 'Power BI 數據視覺化',
+        category: 'professional',
+        investmentCost: 120000,
+        benefit: 320000,
+        roi: 167,
+        behaviorConversionRate: 75,
+        recommendation: 'keep'
+      },
+      {
+        id: '2',
+        courseName: '敏捷專案管理實務',
+        category: 'professional',
+        investmentCost: 180000,
+        benefit: 380000,
+        roi: 111,
+        behaviorConversionRate: 72,
+        recommendation: 'keep'
+      },
+      {
+        id: '3',
+        courseName: '領導力工作坊',
+        category: 'management',
+        investmentCost: 150000,
+        benefit: 250000,
+        roi: 67,
+        behaviorConversionRate: 68,
+        recommendation: 'optimize'
+      },
+      {
+        id: '4',
+        courseName: '時間管理與效率提升',
+        category: 'general',
+        investmentCost: 80000,
+        benefit: 120000,
+        roi: 50,
+        behaviorConversionRate: 55,
+        recommendation: 'optimize'
+      },
+      {
+        id: '5',
+        courseName: '職業安全衛生教育',
+        category: 'general',
+        investmentCost: 50000,
+        benefit: 45000,
+        roi: -10,
+        behaviorConversionRate: 42,
+        recommendation: 'review'
+      }
+    ];
+    return of(data).pipe(delay(200));
+  }
+
+  // 取得持續改善項目
+  getImprovementItems(): Observable<ImprovementItem[]> {
+    const today = new Date();
+    const data: ImprovementItem[] = [
+      {
+        id: '1',
+        courseId: 'c5',
+        courseName: '職業安全衛生教育',
+        issue: '行為轉化率低於 50%',
+        suggestion: '增加實務案例與情境演練',
+        priority: 'high',
+        status: 'pending',
+        dueDate: new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000)
+      },
+      {
+        id: '2',
+        courseId: 'c3',
+        courseName: '績效面談技巧',
+        issue: '三個月反饋會未如期舉辦',
+        suggestion: '重新排程並發送提醒',
+        priority: 'high',
+        status: 'in-progress',
+        dueDate: new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
+      },
+      {
+        id: '3',
+        courseId: 'c4',
+        courseName: '領導力工作坊',
+        issue: '學員反映實務演練時間不足',
+        suggestion: '將課程時數從 8 小時延長至 12 小時',
+        priority: 'medium',
+        status: 'pending',
+        dueDate: new Date(today.getTime() + 60 * 24 * 60 * 60 * 1000)
+      }
+    ];
+    return of(data).pipe(delay(200));
+  }
+
+  // ===== 3.3 課程與報名管理 API =====
+
+  // 取得講師列表
+  getInstructors(): Observable<Instructor[]> {
+    const data: Instructor[] = [
+      {
+        id: '1',
+        name: '李顧問',
+        specialty: ['敏捷開發', '專案管理'],
+        rating: 4.8,
+        totalCourses: 15
+      },
+      {
+        id: '2',
+        name: '張經理',
+        specialty: ['領導力', '團隊管理'],
+        rating: 4.6,
+        totalCourses: 12
+      },
+      {
+        id: '3',
+        name: '陳講師',
+        specialty: ['數據分析', 'Power BI', 'Excel'],
+        rating: 4.9,
+        totalCourses: 20
+      },
+      {
+        id: '4',
+        name: '王講師',
+        specialty: ['資訊安全', '法規遵循'],
+        rating: 4.3,
+        totalCourses: 8
+      }
+    ];
+    return of(data).pipe(delay(200));
+  }
+
+  // 取得報名記錄
+  getEnrollments(courseId?: string): Observable<Enrollment[]> {
+    const today = new Date();
+    const data: Enrollment[] = [
+      {
+        id: '1',
+        courseId: 'c1',
+        employeeId: 'e1',
+        employeeName: '王小明',
+        department: '業務部',
+        status: 'pending',
+        appliedDate: new Date(today.getTime() - 2 * 24 * 60 * 60 * 1000)
+      },
+      {
+        id: '2',
+        courseId: 'c1',
+        employeeId: 'e2',
+        employeeName: '李小華',
+        department: '技術部',
+        status: 'approved',
+        appliedDate: new Date(today.getTime() - 5 * 24 * 60 * 60 * 1000),
+        approvedDate: new Date(today.getTime() - 3 * 24 * 60 * 60 * 1000)
+      },
+      {
+        id: '3',
+        courseId: 'c2',
+        employeeId: 'e3',
+        employeeName: '張大偉',
+        department: '財務部',
+        status: 'completed',
+        appliedDate: new Date(today.getTime() - 40 * 24 * 60 * 60 * 1000),
+        approvedDate: new Date(today.getTime() - 38 * 24 * 60 * 60 * 1000),
+        attendanceStatus: 'present'
+      },
+      {
+        id: '4',
+        courseId: 'c1',
+        employeeId: 'e4',
+        employeeName: '陳美麗',
+        department: '人資部',
+        status: 'rejected',
+        appliedDate: new Date(today.getTime() - 3 * 24 * 60 * 60 * 1000)
+      }
+    ];
+
+    if (courseId) {
+      return of(data.filter(e => e.courseId === courseId)).pipe(delay(200));
+    }
+    return of(data).pipe(delay(200));
   }
 }
 

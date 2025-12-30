@@ -1,0 +1,406 @@
+<app-header
+  pageTitle="獎金分配計算"
+  [breadcrumbs]="['績效管理', '毛利監控', '獎金分配']" />
+
+<div class="bonus-distribution-page">
+  <!-- Toolbar -->
+  <div class="page-toolbar">
+    <div class="toolbar-left">
+      <button class="btn-back" (click)="navigateBack()">
+        <i class="ri-arrow-left-line"></i>
+        @if (viewMode() === 'personal') {
+          返回部門
+        } @else {
+          返回儀表板
+        }
+      </button>
+
+      <div class="period-selector">
+        <label>計算週期：</label>
+        <select 
+          class="form-select" 
+          [ngModel]="selectedPeriod()" 
+          (ngModelChange)="onPeriodChange($event)">
+          @for (option of periodOptions; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <div class="toolbar-actions">
+      <button class="btn-outline" (click)="openSettingsModal()">
+        <i class="ri-settings-3-line"></i>
+        獎金設定
+      </button>
+      <button class="btn-primary" (click)="exportReport()">
+        <i class="ri-file-download-line"></i>
+        匯出報表
+      </button>
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  @if (bonusSummary(); as summary) {
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="summary-label">計算期間</div>
+        <div class="summary-value summary-value--period">{{ summary.period }}</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">總營收</div>
+        <div class="summary-value">{{ formatCurrency(summary.totalRevenue) }}</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">總毛利</div>
+        <div class="summary-value">{{ formatCurrency(summary.totalGrossProfit) }}</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">平均毛利率</div>
+        <div class="summary-value">{{ summary.avgProfitMargin }}%</div>
+      </div>
+      <div class="summary-card summary-card--highlight">
+        <div class="summary-label">總獎金池</div>
+        <div class="summary-value">{{ formatCurrency(summary.totalBonusPool) }}</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">人均獎金</div>
+        <div class="summary-value">{{ formatCurrency(summary.avgBonusPerPerson) }}</div>
+      </div>
+    </div>
+  }
+
+  <!-- Main Content -->
+  <div class="content-grid">
+    <!-- Left: Chart & Distribution -->
+    <div class="content-main">
+      <!-- View Mode Tabs -->
+      <div class="view-tabs">
+        <button 
+          class="tab-btn" 
+          [class.active]="viewMode() === 'department'"
+          (click)="switchViewMode('department')">
+          <i class="ri-building-line"></i>
+          部門獎金分配
+        </button>
+        <button 
+          class="tab-btn" 
+          [class.active]="viewMode() === 'personal'"
+          (click)="switchViewMode('personal')"
+          [disabled]="!selectedDepartment()">
+          <i class="ri-user-line"></i>
+          個人獎金明細
+          @if (selectedDepartment()) {
+            <span class="tab-badge">{{ getDepartmentName(selectedDepartment()!) }}</span>
+          }
+        </button>
+      </div>
+
+      <!-- Department View -->
+      @if (viewMode() === 'department') {
+        <div class="chart-panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <i class="ri-pie-chart-2-line"></i>
+              部門獎金佔比
+            </div>
+            <div class="panel-hint">點擊區塊查看個人明細</div>
+          </div>
+          <div #bonusDistributionChart class="chart-container"></div>
+        </div>
+
+        <!-- Department Table -->
+        <div class="chart-panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <i class="ri-table-line"></i>
+              部門獎金計算明細
+            </div>
+          </div>
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>部門</th>
+                  <th>營收 (萬)</th>
+                  <th>毛利 (萬)</th>
+                  <th>毛利率</th>
+                  <th>達成率</th>
+                  <th>適用比例</th>
+                  <th>獎金池 (萬)</th>
+                  <th>人均 (萬)</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (dept of sortedDepartments(); track dept.departmentId) {
+                  <tr>
+                    <td class="cell-dept">
+                      <span class="dept-name">{{ dept.departmentName }}</span>
+                      <span class="dept-count">{{ dept.employeeCount }} 人</span>
+                    </td>
+                    <td>{{ dept.revenue.toLocaleString() }}</td>
+                    <td>{{ dept.grossProfit.toLocaleString() }}</td>
+                    <td [class.value--success]="dept.profitMargin >= 30">
+                      {{ dept.profitMargin }}%
+                    </td>
+                    <td [ngClass]="getAchievementClass(dept.targetAchievement)">
+                      {{ dept.targetAchievement }}%
+                    </td>
+                    <td>
+                      <span class="tier-badge">{{ dept.bonusTierApplied }}%</span>
+                    </td>
+                    <td class="cell-bonus">{{ dept.bonusPool.toFixed(2) }}</td>
+                    <td>{{ dept.avgBonusPerPerson.toFixed(2) }}</td>
+                    <td>
+                      <button class="btn-icon" (click)="selectDepartment(dept.departmentId)">
+                        <i class="ri-arrow-right-s-line"></i>
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+
+      <!-- Personal View -->
+      @if (viewMode() === 'personal') {
+        <div class="chart-panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <i class="ri-user-star-line"></i>
+              {{ getDepartmentName(selectedDepartment()!) }} - 個人獎金明細
+            </div>
+          </div>
+          <div class="table-wrapper">
+            <table class="data-table data-table--personal">
+              <thead>
+                <tr>
+                  <th>員工</th>
+                  <th>職位</th>
+                  <th>任務完成</th>
+                  <th>專案參與</th>
+                  <th>績效分數</th>
+                  <th>職能等級</th>
+                  <th>貢獻度</th>
+                  <th>基本獎金</th>
+                  <th>主管加給</th>
+                  <th>總獎金</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (person of sortedPersonal(); track person.employeeId) {
+                  <tr [class.row--manager]="person.isManager">
+                    <td class="cell-name">
+                      <span class="avatar">{{ person.employeeName.charAt(0) }}</span>
+                      {{ person.employeeName }}
+                    </td>
+                    <td>
+                      {{ person.position }}
+                      @if (person.isManager) {
+                        <span class="manager-badge">主管</span>
+                      }
+                    </td>
+                    <td>{{ person.taskCompletionScore.toFixed(0) }}</td>
+                    <td>{{ person.projectParticipationScore.toFixed(0) }}</td>
+                    <td>{{ person.performanceScore.toFixed(0) }}</td>
+                    <td>L{{ person.competencyLevel }}</td>
+                    <td>
+                      <span 
+                        class="contribution-badge" 
+                        [ngClass]="getContributionClass(person.totalContributionScore)">
+                        {{ getContributionLevel(person.totalContributionScore) }}
+                      </span>
+                      <span class="contribution-weight">{{ person.contributionWeight.toFixed(1) }}%</span>
+                    </td>
+                    <td>{{ person.baseBonus.toFixed(2) }}</td>
+                    <td>
+                      @if (person.managerBonus > 0) {
+                        +{{ person.managerBonus.toFixed(2) }}
+                      } @else {
+                        -
+                      }
+                    </td>
+                    <td class="cell-total">
+                      <strong>{{ person.totalBonus.toFixed(2) }}</strong>
+                      <span class="bonus-ratio">({{ person.bonusRatio.toFixed(0) }}%)</span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Right: Settings & Info -->
+    <div class="content-sidebar">
+      <!-- Bonus Tier Chart -->
+      <div class="chart-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <i class="ri-bar-chart-grouped-line"></i>
+            獎金提撥比例
+          </div>
+        </div>
+        <div #tierChart class="chart-container chart-container--small"></div>
+        <div class="tier-legend">
+          @if (bonusSettings(); as settings) {
+            @for (tier of settings.bonusTiers; track tier.minAchievement) {
+              <div class="tier-item">
+                <span class="tier-range">
+                  {{ tier.minAchievement }}% - {{ tier.maxAchievement === 999 ? '∞' : tier.maxAchievement + '%' }}
+                </span>
+                <span class="tier-ratio" [style.color]="getTierColor(tier.bonusRatio)">
+                  {{ tier.bonusRatio }}%
+                </span>
+              </div>
+            }
+          }
+        </div>
+      </div>
+
+      <!-- Calculation Formula -->
+      <div class="chart-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <i class="ri-calculator-line"></i>
+            計算公式
+          </div>
+        </div>
+        <div class="formula-content">
+          <div class="formula-item">
+            <div class="formula-label">獎金池</div>
+            <div class="formula-equation">= 毛利 × 提撥比例</div>
+          </div>
+          <div class="formula-item">
+            <div class="formula-label">部門獎金</div>
+            <div class="formula-equation">= 獎金池 × 30%</div>
+          </div>
+          <div class="formula-item">
+            <div class="formula-label">個人獎金池</div>
+            <div class="formula-equation">= 獎金池 × 70%</div>
+          </div>
+          <div class="formula-divider"></div>
+          <div class="formula-item">
+            <div class="formula-label">貢獻度分數</div>
+            <div class="formula-equation formula-equation--small">
+              = 任務完成×30% + 專案參與×25%<br>
+              + 績效分數×30% + 職能等級×15%
+            </div>
+          </div>
+          <div class="formula-item">
+            <div class="formula-label">個人獎金</div>
+            <div class="formula-equation">= 個人獎金池 × 貢獻權重</div>
+          </div>
+          <div class="formula-item">
+            <div class="formula-label">主管加給</div>
+            <div class="formula-equation">= 個人獎金 × 10%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Weight Settings Preview -->
+      @if (bonusSettings(); as settings) {
+        <div class="chart-panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <i class="ri-scales-3-line"></i>
+              權重配置
+            </div>
+          </div>
+          <div class="weight-list">
+            <div class="weight-item">
+              <span class="weight-label">任務完成度</span>
+              <div class="weight-bar">
+                <div class="weight-fill" [style.width.%]="settings.contributionWeights.taskCompletion"></div>
+              </div>
+              <span class="weight-value">{{ settings.contributionWeights.taskCompletion }}%</span>
+            </div>
+            <div class="weight-item">
+              <span class="weight-label">專案參與度</span>
+              <div class="weight-bar">
+                <div class="weight-fill" [style.width.%]="settings.contributionWeights.projectParticipation"></div>
+              </div>
+              <span class="weight-value">{{ settings.contributionWeights.projectParticipation }}%</span>
+            </div>
+            <div class="weight-item">
+              <span class="weight-label">績效考核</span>
+              <div class="weight-bar">
+                <div class="weight-fill" [style.width.%]="settings.contributionWeights.performanceScore"></div>
+              </div>
+              <span class="weight-value">{{ settings.contributionWeights.performanceScore }}%</span>
+            </div>
+            <div class="weight-item">
+              <span class="weight-label">職能等級</span>
+              <div class="weight-bar">
+                <div class="weight-fill" [style.width.%]="settings.contributionWeights.competencyLevel"></div>
+              </div>
+              <span class="weight-value">{{ settings.contributionWeights.competencyLevel }}%</span>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+@if (showSettingsModal()) {
+  <div class="modal-overlay" (click)="closeSettingsModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>獎金提撥設定</h3>
+        <button class="btn-close" (click)="closeSettingsModal()">
+          <i class="ri-close-line"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <table class="tier-table">
+          <thead>
+            <tr>
+              <th>達成率下限 (%)</th>
+              <th>達成率上限 (%)</th>
+              <th>提撥比例 (%)</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (tier of editingTiers(); track tier.minAchievement; let i = $index) {
+              <tr>
+                <td>
+                  <input 
+                    type="number" 
+                    class="form-input" 
+                    [value]="tier.minAchievement"
+                    (change)="updateTierValue(i, 'minAchievement', $any($event.target).valueAsNumber)">
+                </td>
+                <td>
+                  <input 
+                    type="number" 
+                    class="form-input" 
+                    [value]="tier.maxAchievement"
+                    (change)="updateTierValue(i, 'maxAchievement', $any($event.target).valueAsNumber)">
+                </td>
+                <td>
+                  <input 
+                    type="number" 
+                    class="form-input" 
+                    [value]="tier.bonusRatio"
+                    (change)="updateTierValue(i, 'bonusRatio', $any($event.target).valueAsNumber)">
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-outline" (click)="closeSettingsModal()">取消</button>
+        <button class="btn-primary" (click)="saveSettings()">儲存設定</button>
+      </div>
+    </div>
+  </div>
+}
+

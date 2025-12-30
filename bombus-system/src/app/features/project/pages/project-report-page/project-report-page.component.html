@@ -1,0 +1,445 @@
+<app-header
+  pageTitle="專案報表與分析"
+  [breadcrumbs]="['專案管理', '專案報表']" />
+
+<div class="report-page">
+  <!-- Filter Bar -->
+  <div class="filter-bar">
+    <div class="view-toggle">
+      <button
+        class="toggle-btn"
+        [class.active]="viewMode() === 'portfolio'"
+        (click)="setViewMode('portfolio')">
+        <i class="ri-bar-chart-grouped-line"></i> Portfolio
+      </button>
+      <button
+        class="toggle-btn"
+        [class.active]="viewMode() === 'heatmap'"
+        (click)="setViewMode('heatmap')">
+        <i class="ri-fire-line"></i> 熱力圖
+      </button>
+    </div>
+    <div class="filter-divider"></div>
+    <button class="btn-export" (click)="exportReport('pdf')">
+      <i class="ri-file-pdf-line"></i> PDF
+    </button>
+    <button class="btn-export" (click)="exportReport('excel')">
+      <i class="ri-file-excel-line"></i> Excel
+    </button>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-container">
+      <i class="ri-loader-4-line loading-spinner"></i>
+      <span>載入中...</span>
+    </div>
+  } @else {
+    <!-- Portfolio Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">
+          <i class="ri-folder-chart-line"></i>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">總專案數</span>
+          <span class="stat-value">{{ portfolioStats()?.totalProjects || 0 }}</span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon stat-icon--budget">
+          <i class="ri-money-dollar-circle-line"></i>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">總預算</span>
+          <span class="stat-value">{{ formatCurrency(portfolioStats()?.totalBudget || 0) }}</span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon stat-icon--spent">
+          <i class="ri-wallet-3-line"></i>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">已支出</span>
+          <span class="stat-value">{{ formatCurrency(portfolioStats()?.totalSpent || 0) }}</span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon stat-icon--progress">
+          <i class="ri-pie-chart-line"></i>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">平均進度</span>
+          <span class="stat-value">{{ (portfolioStats()?.avgProgress || 0) | number:'1.1-1' }}%</span>
+        </div>
+      </div>
+
+      <div class="stat-card stat-card--highlight">
+        <div class="stat-icon">
+          <i class="ri-percent-line"></i>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">平均毛利率</span>
+          <span class="stat-value">{{ (portfolioStats()?.avgProfitRate || 0) | number:'1.1-1' }}%</span>
+        </div>
+      </div>
+
+      <div class="stat-card stat-card--success">
+        <div class="stat-icon">
+          <i class="ri-checkbox-circle-line"></i>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">準時專案</span>
+          <span class="stat-value">{{ portfolioStats()?.onTimeProjects || 0 }}</span>
+        </div>
+      </div>
+
+      <div class="stat-card stat-card--warning">
+        <div class="stat-icon">
+          <i class="ri-error-warning-line"></i>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">延遲專案</span>
+          <span class="stat-value">{{ portfolioStats()?.delayedProjects || 0 }}</span>
+        </div>
+      </div>
+
+      <div class="stat-card stat-card--danger">
+        <div class="stat-icon">
+          <i class="ri-alert-line"></i>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">風險專案</span>
+          <span class="stat-value">{{ portfolioStats()?.atRiskProjects || 0 }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Portfolio View -->
+    @if (viewMode() === 'portfolio') {
+      <div class="charts-row">
+        <div class="chart-card chart-card--wide">
+          <h3 class="chart-title">
+            <i class="ri-bar-chart-2-line"></i>
+            專案預算 vs 成本 vs 毛利
+          </h3>
+          <div class="chart-container chart-container--tall">
+            <div echarts [options]="portfolioChartOptions()" class="chart"></div>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <h3 class="chart-title">
+            <i class="ri-radar-line"></i>
+            毛利率雷達圖
+          </h3>
+          <div class="chart-container chart-container--tall">
+            <div echarts [options]="profitRadarOptions()" class="chart"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Project Reports Table -->
+      <div class="table-card">
+        <div class="table-header">
+          <h3 class="table-title">
+            <i class="ri-file-list-3-line"></i>
+            一頁式專案報告
+          </h3>
+        </div>
+        <div class="table-wrapper">
+          <table class="report-table">
+            <thead>
+              <tr>
+                <th>專案名稱</th>
+                <th>PM</th>
+                <th>進度</th>
+                <th>預算</th>
+                <th>實際成本</th>
+                <th>成本偏差</th>
+                <th>營收</th>
+                <th>毛利</th>
+                <th>毛利率</th>
+                <th>狀態</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (report of sortedReports(); track report.projectId) {
+                <tr (click)="openReport(report)">
+                  <td class="cell-name">
+                    <span class="project-name">{{ report.projectName }}</span>
+                    <span class="project-code">{{ report.projectCode }}</span>
+                  </td>
+                  <td>{{ report.pm }}</td>
+                  <td class="cell-progress">
+                    <div class="mini-progress">
+                      <div class="mini-progress-bar" [style.width.%]="report.overallProgress"></div>
+                    </div>
+                    <span class="progress-text">{{ report.overallProgress }}%</span>
+                  </td>
+                  <td class="cell-number">{{ formatCurrency(report.budgetAmount) }}</td>
+                  <td class="cell-number">{{ formatCurrency(report.actualCost) }}</td>
+                  <td class="cell-variance" [ngClass]="getVarianceClass(report.costVariancePercent)">
+                    {{ formatPercent(report.costVariancePercent) }}
+                  </td>
+                  <td class="cell-number">{{ formatCurrency(report.revenue) }}</td>
+                  <td class="cell-number" [ngClass]="report.grossProfit >= 0 ? 'text-success' : 'text-danger'">
+                    {{ formatCurrency(report.grossProfit) }}
+                  </td>
+                  <td class="cell-profit" [ngClass]="getProfitClass(report.grossMarginRate)">
+                    {{ report.grossMarginRate | number:'1.1-1' }}%
+                  </td>
+                  <td>
+                    @if (report.isDelayed) {
+                      <span class="delay-badge">
+                        <i class="ri-time-line"></i> 延遲
+                      </span>
+                    } @else {
+                      <span class="ontime-badge">
+                        <i class="ri-check-line"></i> 準時
+                      </span>
+                    }
+                  </td>
+                  <td class="cell-action">
+                    <button class="btn-icon" (click)="openReport(report); $event.stopPropagation()">
+                      <i class="ri-eye-line"></i>
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+
+    <!-- Heatmap View -->
+    @if (viewMode() === 'heatmap') {
+      <div class="heatmap-section">
+        <div class="chart-card chart-card--full">
+          <h3 class="chart-title">
+            <i class="ri-fire-line"></i>
+            專案績效熱力圖
+          </h3>
+          <p class="chart-desc">
+            以進度、成本、毛利三個維度評估各專案綜合表現（0-100分）
+          </p>
+          <div class="chart-container chart-container--heatmap">
+            <div echarts [options]="heatmapChartOptions()" class="chart"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Heatmap Summary Cards -->
+      <div class="heatmap-grid">
+        @for (item of heatmapData(); track item.projectId) {
+          <div class="heatmap-card" [ngClass]="getStatusClass(item.status)" (click)="openReport(reports()[0])">
+            <div class="heatmap-header">
+              <h4 class="heatmap-project">{{ item.projectName }}</h4>
+              <span class="heatmap-status" [ngClass]="getStatusClass(item.status)">
+                {{ getStatusLabel(item.status) }}
+              </span>
+            </div>
+            <div class="heatmap-scores">
+              <div class="score-item">
+                <span class="score-label">進度</span>
+                <span class="score-value">{{ item.progressScore }}</span>
+              </div>
+              <div class="score-item">
+                <span class="score-label">成本</span>
+                <span class="score-value">{{ item.costScore }}</span>
+              </div>
+              <div class="score-item">
+                <span class="score-label">毛利</span>
+                <span class="score-value">{{ item.profitScore }}</span>
+              </div>
+            </div>
+            <div class="heatmap-overall">
+              <span class="overall-label">綜合評分</span>
+              <span class="overall-value">{{ item.overallScore }}</span>
+            </div>
+            <div class="heatmap-meta">
+              <span>{{ item.pm }}</span>
+              <span>{{ item.department }}</span>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  }
+
+  <!-- Report Detail Modal -->
+  @if (showReportModal() && selectedReport()) {
+    <div class="modal-backdrop" (click)="closeReport()">
+      <div class="modal-container modal-container--large" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div class="modal-title-group">
+            <h2 class="modal-title">
+              <i class="ri-file-chart-line"></i>
+              一頁式專案報告
+            </h2>
+            <span class="modal-subtitle">{{ selectedReport()!.projectName }}</span>
+          </div>
+          <div class="modal-actions">
+            <button class="btn-export-sm" (click)="exportReport('pdf')">
+              <i class="ri-file-pdf-line"></i>
+            </button>
+            <button class="btn-close" (click)="closeReport()">
+              <i class="ri-close-line"></i>
+            </button>
+          </div>
+        </div>
+        <div class="modal-body">
+          <!-- Report Header -->
+          <div class="report-header">
+            <div class="report-info">
+              <div class="info-row">
+                <span class="info-label">專案代碼</span>
+                <span class="info-value">{{ selectedReport()!.projectCode }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">專案經理</span>
+                <span class="info-value">{{ selectedReport()!.pm }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">部門</span>
+                <span class="info-value">{{ selectedReport()!.department }}</span>
+              </div>
+            </div>
+            <div class="report-dates">
+              <div class="date-block">
+                <span class="date-label">開始日期</span>
+                <span class="date-value">{{ selectedReport()!.startDate }}</span>
+              </div>
+              <div class="date-block">
+                <span class="date-label">結束日期</span>
+                <span class="date-value">{{ selectedReport()!.endDate }}</span>
+              </div>
+              <div class="date-block">
+                <span class="date-label">剩餘天數</span>
+                <span class="date-value highlight">{{ selectedReport()!.remainingDays }} 天</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Objective & Scope -->
+          <div class="report-section">
+            <h3 class="section-title">
+              <i class="ri-target-line"></i>
+              目標與範疇
+            </h3>
+            <div class="section-content">
+              <p class="objective-text">{{ selectedReport()!.objective }}</p>
+              <p class="scope-text">{{ selectedReport()!.scope }}</p>
+            </div>
+            <div class="criteria-list">
+              <h4>驗收條件</h4>
+              <ul>
+                @for (criteria of selectedReport()!.acceptanceCriteria; track criteria) {
+                  <li>{{ criteria }}</li>
+                }
+              </ul>
+            </div>
+          </div>
+
+          <!-- Progress Section -->
+          <div class="report-section">
+            <h3 class="section-title">
+              <i class="ri-pie-chart-line"></i>
+              進度狀況
+            </h3>
+            <div class="progress-row">
+              <div class="progress-item">
+                <span class="progress-label">整體進度</span>
+                <div class="progress-bar-wrapper">
+                  <div class="progress-bar" [style.width.%]="selectedReport()!.overallProgress"></div>
+                </div>
+                <span class="progress-value">{{ selectedReport()!.overallProgress }}%</span>
+              </div>
+              <div class="completion-stats">
+                <div class="completion-item">
+                  <i class="ri-checkbox-circle-line"></i>
+                  <span>任務完成</span>
+                  <strong>{{ selectedReport()!.taskCompletion.completed }} / {{ selectedReport()!.taskCompletion.total }}</strong>
+                </div>
+                <div class="completion-item">
+                  <i class="ri-flag-line"></i>
+                  <span>里程碑</span>
+                  <strong>{{ selectedReport()!.milestoneCompletion.completed }} / {{ selectedReport()!.milestoneCompletion.total }}</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cost Section -->
+          <div class="report-section">
+            <h3 class="section-title">
+              <i class="ri-money-dollar-circle-line"></i>
+              成本分析
+            </h3>
+            <div class="cost-grid">
+              <div class="cost-item">
+                <span class="cost-label">預算金額</span>
+                <span class="cost-value">{{ formatCurrency(selectedReport()!.budgetAmount) }}</span>
+              </div>
+              <div class="cost-item">
+                <span class="cost-label">實際成本</span>
+                <span class="cost-value">{{ formatCurrency(selectedReport()!.actualCost) }}</span>
+              </div>
+              <div class="cost-item" [ngClass]="getVarianceClass(selectedReport()!.costVariancePercent)">
+                <span class="cost-label">成本偏差</span>
+                <span class="cost-value">{{ formatPercent(selectedReport()!.costVariancePercent) }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Profit Section -->
+          <div class="report-section">
+            <h3 class="section-title">
+              <i class="ri-funds-line"></i>
+              毛利分析
+            </h3>
+            <div class="profit-grid">
+              <div class="profit-item">
+                <span class="profit-label">專案營收</span>
+                <span class="profit-value">{{ formatCurrency(selectedReport()!.revenue) }}</span>
+              </div>
+              <div class="profit-item" [ngClass]="selectedReport()!.grossProfit >= 0 ? 'profit-positive' : 'profit-negative'">
+                <span class="profit-label">毛利金額</span>
+                <span class="profit-value">{{ formatCurrency(selectedReport()!.grossProfit) }}</span>
+              </div>
+              <div class="profit-item profit-rate" [ngClass]="getProfitClass(selectedReport()!.grossMarginRate)">
+                <span class="profit-label">毛利率</span>
+                <span class="profit-value">{{ selectedReport()!.grossMarginRate | number:'1.1-1' }}%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Risk Section -->
+          <div class="report-section">
+            <h3 class="section-title">
+              <i class="ri-shield-check-line"></i>
+              風險摘要
+            </h3>
+            <div class="risk-summary">
+              <div class="risk-item">
+                <i class="ri-error-warning-line"></i>
+                <span>未解決風險</span>
+                <strong>{{ selectedReport()!.riskCount }}</strong>
+              </div>
+              <div class="risk-item">
+                <i class="ri-bug-line"></i>
+                <span>待處理問題</span>
+                <strong>{{ selectedReport()!.issueCount }}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>
+

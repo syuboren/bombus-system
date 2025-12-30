@@ -1,19 +1,11 @@
 <!-- Header with View Switcher -->
-<app-header
-  pageTitle="企業管理儀表板"
-  [breadcrumbs]="currentView() === 'ceo' ? ['首頁', 'CEO 經營儀表板'] : ['首頁', '營運儀表板']">
+<app-header pageTitle="企業管理儀表板" [breadcrumbs]="currentView() === 'ceo' ? ['首頁', 'CEO 經營儀表板'] : ['首頁', '營運儀表板']">
   <div class="view-switcher">
-    <button
-      class="view-btn"
-      [class.active]="currentView() === 'ceo'"
-      (click)="switchView('ceo')">
+    <button class="view-btn" [class.active]="currentView() === 'ceo'" (click)="switchView('ceo')">
       <i class="ri-eye-line"></i>
       CEO 視角
     </button>
-    <button
-      class="view-btn"
-      [class.active]="currentView() === 'operational'"
-      (click)="switchView('operational')">
+    <button class="view-btn" [class.active]="currentView() === 'operational'" (click)="switchView('operational')">
       <i class="ri-settings-3-line"></i>
       營運視角
     </button>
@@ -26,95 +18,101 @@
 
     <!-- ========== CEO 視角 - 單頁 Bento Design ========== -->
     @if (currentView() === 'ceo') {
-      <div class="ceo-bento-layout">
+    <div class="ceo-bento-layout">
 
-        <!-- 快速導航 (質感隱藏式) -->
-        <nav class="quick-nav" [class.quick-nav--collapsed]="!showQuickNav()">
-          <button class="quick-nav__toggle" (click)="toggleQuickNav()" [title]="showQuickNav() ? '收合導航' : '展開導航'">
-            <i [class]="showQuickNav() ? 'ri-arrow-right-s-line' : 'ri-compass-3-line'"></i>
-          </button>
-          <div class="quick-nav__list">
-            <a (click)="scrollToSection('section-overview')" class="quick-nav__item" [class.active]="activeSection() === 'section-overview'">
-              <div class="quick-nav__icon"><i class="ri-pulse-line"></i></div>
-              <span class="quick-nav__label">總覽</span>
-            </a>
-            <a (click)="scrollToSection('section-talent')" class="quick-nav__item" [class.active]="activeSection() === 'section-talent'">
-              <div class="quick-nav__icon"><i class="ri-team-line"></i></div>
-              <span class="quick-nav__label">人才</span>
-            </a>
-            <a (click)="scrollToSection('section-project')" class="quick-nav__item" [class.active]="activeSection() === 'section-project'">
-              <div class="quick-nav__icon"><i class="ri-folder-chart-2-line"></i></div>
-              <span class="quick-nav__label">專案</span>
-            </a>
-            <a (click)="scrollToSection('section-profit')" class="quick-nav__item" [class.active]="activeSection() === 'section-profit'">
-              <div class="quick-nav__icon"><i class="ri-money-dollar-circle-line"></i></div>
-              <span class="quick-nav__label">毛利</span>
-            </a>
-            <a (click)="scrollToSection('section-culture')" class="quick-nav__item" [class.active]="activeSection() === 'section-culture'">
-              <div class="quick-nav__icon"><i class="ri-heart-pulse-line"></i></div>
-              <span class="quick-nav__label">文化</span>
-            </a>
-            <a (click)="scrollToSection('section-decision')" class="quick-nav__item" [class.active]="activeSection() === 'section-decision'">
-              <div class="quick-nav__icon"><i class="ri-checkbox-circle-line"></i></div>
-              <span class="quick-nav__label">決策</span>
-            </a>
-          </div>
-        </nav>
+      <!-- 快速導航 (質感隱藏式) -->
+      <nav class="quick-nav" [class.quick-nav--collapsed]="!showQuickNav()">
+        <button class="quick-nav__toggle" (click)="toggleQuickNav()" [title]="showQuickNav() ? '收合導航' : '展開導航'">
+          <i [class]="showQuickNav() ? 'ri-arrow-right-s-line' : 'ri-compass-3-line'"></i>
+        </button>
+        <div class="quick-nav__list">
+          <a (click)="scrollToSection('section-overview')" class="quick-nav__item"
+            [class.active]="activeSection() === 'section-overview'">
+            <div class="quick-nav__icon"><i class="ri-pulse-line"></i></div>
+            <span class="quick-nav__label">總覽</span>
+          </a>
+          <a (click)="scrollToSection('section-talent')" class="quick-nav__item"
+            [class.active]="activeSection() === 'section-talent'">
+            <div class="quick-nav__icon"><i class="ri-team-line"></i></div>
+            <span class="quick-nav__label">人才</span>
+          </a>
+          <a (click)="scrollToSection('section-project')" class="quick-nav__item"
+            [class.active]="activeSection() === 'section-project'">
+            <div class="quick-nav__icon"><i class="ri-folder-chart-2-line"></i></div>
+            <span class="quick-nav__label">專案</span>
+          </a>
+          <a (click)="scrollToSection('section-profit')" class="quick-nav__item"
+            [class.active]="activeSection() === 'section-profit'">
+            <div class="quick-nav__icon"><i class="ri-money-dollar-circle-line"></i></div>
+            <span class="quick-nav__label">毛利</span>
+          </a>
+          <a (click)="scrollToSection('section-culture')" class="quick-nav__item"
+            [class.active]="activeSection() === 'section-culture'">
+            <div class="quick-nav__icon"><i class="ri-heart-pulse-line"></i></div>
+            <span class="quick-nav__label">文化</span>
+          </a>
+          <a (click)="scrollToSection('section-decision')" class="quick-nav__item"
+            [class.active]="activeSection() === 'section-decision'">
+            <div class="quick-nav__icon"><i class="ri-checkbox-circle-line"></i></div>
+            <span class="quick-nav__label">決策</span>
+          </a>
+        </div>
+      </nav>
 
-        <!-- ============ Row 1: 三主軸健康度總覽 (3卡並排) ============ -->
-        <section id="section-overview" class="bento-row bento-row--health">
-          <div class="bento-header-row">
-            <i class="ri-pulse-line"></i>
-            <span>三主軸健康度總覽</span>
+      <!-- ============ Row 1: 三主軸健康度總覽 (3卡並排) ============ -->
+      <section id="section-overview" class="bento-row bento-row--health">
+        <div class="bento-header-row">
+          <i class="ri-pulse-line"></i>
+          <span>三主軸健康度總覽</span>
+        </div>
+        <div class="health-cards-grid">
+          @for (axis of healthAxes(); track axis.name; let idx = $index) {
+          <div class="health-sparkline-card" [class]="'health-sparkline-card--' + axis.name">
+            <!-- 卡片頭部 -->
+            <div class="health-sparkline-card__header" [style.background-color]="axis.color">
+              <div class="health-sparkline-card__icon-wrap">
+                <i [class]="axis.icon"></i>
+              </div>
+              <span class="health-sparkline-card__label">{{ axis.label }}</span>
+              <div class="health-sparkline-card__score-box">
+                <span class="health-sparkline-card__score-label">健康度</span>
+                <span class="health-sparkline-card__score">{{ axis.score }}</span>
+                <span class="health-sparkline-card__trend" [class.positive]="axis.trend > 0"
+                  [class.negative]="axis.trend < 0">
+                  @if (axis.trend > 0) {
+                  <i class="ri-arrow-up-s-fill"></i>+{{ axis.trend }}
+                  } @else if (axis.trend < 0) { <i class="ri-arrow-down-s-fill"></i>{{ axis.trend }}
+                    } @else {
+                    <i class="ri-subtract-line"></i>0
+                    }
+                </span>
+              </div>
+            </div>
+            <!-- 卡片內容 -->
+            <div class="health-sparkline-card__body">
+              @for (m of axis.metrics; track m.label) {
+              <div class="health-metric-row">
+                <div class="health-metric-row__left">
+                  <i class="ri-checkbox-blank-circle-fill health-metric-row__dot" [class]="'status--' + m.status"></i>
+                  <span class="health-metric-row__label">{{ m.label }}</span>
+                </div>
+                <span class="health-metric-row__value" [class]="'status--' + m.status">{{ m.value }}</span>
+              </div>
+              }
+            </div>
+            <!-- Sparkline 圖表 (貼齊底部) -->
+            <div class="health-sparkline-card__chart" [id]="'sparkline-' + axis.name"></div>
           </div>
-          <div class="health-cards-grid">
-            @for (axis of healthAxes(); track axis.name; let idx = $index) {
-               <div class="health-sparkline-card" [class]="'health-sparkline-card--' + axis.name">
-                 <!-- 卡片頭部 -->
-                 <div class="health-sparkline-card__header" [style.background-color]="axis.color">
-                   <div class="health-sparkline-card__icon-wrap">
-                     <i [class]="axis.icon"></i>
-                   </div>
-                   <span class="health-sparkline-card__label">{{ axis.label }}</span>
-                   <div class="health-sparkline-card__score-box">
-                     <span class="health-sparkline-card__score-label">健康度</span>
-                     <span class="health-sparkline-card__score">{{ axis.score }}</span>
-                     <span class="health-sparkline-card__trend" [class.positive]="axis.trend > 0" [class.negative]="axis.trend < 0">
-                       @if (axis.trend > 0) {
-                         <i class="ri-arrow-up-s-fill"></i>+{{ axis.trend }}
-                       } @else if (axis.trend < 0) {
-                         <i class="ri-arrow-down-s-fill"></i>{{ axis.trend }}
-                       } @else {
-                         <i class="ri-subtract-line"></i>0
-                       }
-                     </span>
-                   </div>
-                 </div>
-                 <!-- 卡片內容 -->
-                 <div class="health-sparkline-card__body">
-                   @for (m of axis.metrics; track m.label) {
-                     <div class="health-metric-row">
-                       <div class="health-metric-row__left">
-                         <i class="ri-checkbox-blank-circle-fill health-metric-row__dot" [class]="'status--' + m.status"></i>
-                         <span class="health-metric-row__label">{{ m.label }}</span>
-                       </div>
-                       <span class="health-metric-row__value" [class]="'status--' + m.status">{{ m.value }}</span>
-                     </div>
-                   }
-                 </div>
-                 <!-- Sparkline 圖表 (貼齊底部) -->
-                 <div class="health-sparkline-card__chart" [id]="'sparkline-' + axis.name"></div>
-               </div>
-            }
-          </div>
-        </section>
+          }
+        </div>
+      </section>
 
-        <!-- ============ 人才管理區塊 ============ -->
-        <section id="section-talent" class="bento-section bento-section--talent">
-          <div class="bento-section-header">
-            <i class="ri-team-line"></i>
-            <span>人才管理</span>
-          </div>
+      <!-- ============ 人才管理區塊 ============ -->
+      <section id="section-talent" class="bento-section bento-section--talent">
+        <div class="bento-section-header">
+          <i class="ri-team-line"></i>
+          <span>人才管理</span>
+        </div>
 
         <!-- ============ Row 2: 人才風險預警 + 高風險人才 + 風險象限圖 ============ -->
         <div class="bento-box-row bento-box-row--risk-triple">
@@ -128,20 +126,20 @@
             <div class="talent-risk-list">
               <!-- 使用 @for 迴圈呈現從 Service 抓取的資料 -->
               @for (alert of riskAlerts(); track alert.id; let i = $index) {
-                @if (alert.category === 'people') {
-                  <div class="project-risk-item" [class]="'project-risk-item--' + alert.severity">
-                    <div class="project-risk-item__icon-wrap">
-                      <i [class]="alert.icon"></i>
-                    </div>
-                    <div class="project-risk-item__content">
-                      <h4 class="project-risk-item__title">{{ alert.title }}</h4>
-                      <p class="project-risk-item__desc">{{ alert.description }}</p>
-                    </div>
-                    <div class="project-risk-item__decoration">
-                      <span class="decoration-number">{{ i + 1 }}</span>
-                    </div>
-                  </div>
-                }
+              @if (alert.category === 'people') {
+              <div class="project-risk-item" [class]="'project-risk-item--' + alert.severity">
+                <div class="project-risk-item__icon-wrap">
+                  <i [class]="alert.icon"></i>
+                </div>
+                <div class="project-risk-item__content">
+                  <h4 class="project-risk-item__title">{{ alert.title }}</h4>
+                  <p class="project-risk-item__desc">{{ alert.description }}</p>
+                </div>
+                <div class="project-risk-item__decoration">
+                  <span class="decoration-number">{{ i + 1 }}</span>
+                </div>
+              </div>
+              }
               }
             </div>
           </section>
@@ -155,24 +153,25 @@
             </div>
             <div class="high-risk-list">
               @for (talent of highRiskTalents(); track talent.id) {
-                <div class="high-risk-card" [class]="talent.riskScore >= 70 ? 'risk-high' : 'risk-medium'">
-                  <div class="high-risk-card__grade" [class]="'grade--' + talent.performanceGrade.charAt(0).toLowerCase()">
-                    {{ talent.performanceGrade }}
+              <div class="high-risk-card" [class]="talent.riskScore >= 70 ? 'risk-high' : 'risk-medium'">
+                <div class="high-risk-card__grade"
+                  [class]="'grade--' + talent.performanceGrade.charAt(0).toLowerCase()">
+                  {{ talent.performanceGrade }}
+                </div>
+                <div class="high-risk-card__main">
+                  <div class="high-risk-card__info">
+                    <span class="high-risk-card__name">{{ talent.name }}</span>
+                    <span class="high-risk-card__detail">{{ talent.department }} · {{ talent.position }}</span>
                   </div>
-                  <div class="high-risk-card__main">
-                    <div class="high-risk-card__info">
-                      <span class="high-risk-card__name">{{ talent.name }}</span>
-                      <span class="high-risk-card__detail">{{ talent.department }} · {{ talent.position }}</span>
-                    </div>
-                    <div class="high-risk-card__reason">
-                      <i class="ri-error-warning-line"></i>
-                      {{ talent.leaveReason }}
-                    </div>
-                  </div>
-                  <div class="high-risk-card__score">
-                    {{ talent.riskScore }}%
+                  <div class="high-risk-card__reason">
+                    <i class="ri-error-warning-line"></i>
+                    {{ talent.leaveReason }}
                   </div>
                 </div>
+                <div class="high-risk-card__score">
+                  {{ talent.riskScore }}%
+                </div>
+              </div>
               }
             </div>
           </section>
@@ -210,16 +209,12 @@
 
                   <!-- 人員點 -->
                   @for (person of riskQuadrantData(); track person.id) {
-                    <button
-                      class="quadrant-dot"
-                      [class.quadrant-dot--selected]="selectedQuadrantPerson()?.id === person.id"
-                      [class]="'quadrant-dot--' + getQuadrantZone(person)"
-                      [style.left.%]="person.turnoverRisk"
-                      [style.bottom.%]="person.criticality"
-                      (click)="selectQuadrantPerson(person)"
-                      [title]="person.name">
-                      <span class="quadrant-dot__avatar">{{ person.avatar }}</span>
-                    </button>
+                  <button class="quadrant-dot"
+                    [class.quadrant-dot--selected]="selectedQuadrantPerson()?.id === person.id"
+                    [class]="'quadrant-dot--' + getQuadrantZone(person)" [style.left.%]="person.turnoverRisk"
+                    [style.bottom.%]="person.criticality" (click)="selectQuadrantPerson(person)" [title]="person.name">
+                    <span class="quadrant-dot__avatar">{{ person.avatar }}</span>
+                  </button>
                   }
                 </div>
 
@@ -233,61 +228,61 @@
 
               <!-- 選中人員詳細資訊 (在象限圖下方) -->
               @if (selectedQuadrantPerson(); as person) {
-                <div class="person-detail-card">
-                  <div class="person-detail-card__header">
-                    <div class="person-detail-card__avatar">{{ person.avatar }}</div>
-                    <div class="person-detail-card__info">
-                      <span class="person-detail-card__name">{{ person.name }}</span>
-                      <span class="person-detail-card__position">{{ person.position }} · {{ person.department }}</span>
-                    </div>
-                    <button class="person-detail-card__close" (click)="clearSelectedPerson()">
-                      <i class="ri-close-line"></i>
-                    </button>
+              <div class="person-detail-card">
+                <div class="person-detail-card__header">
+                  <div class="person-detail-card__avatar">{{ person.avatar }}</div>
+                  <div class="person-detail-card__info">
+                    <span class="person-detail-card__name">{{ person.name }}</span>
+                    <span class="person-detail-card__position">{{ person.position }} · {{ person.department }}</span>
                   </div>
-
-                  <div class="person-detail-card__scores">
-                    <div class="score-box-lg">
-                      <span class="score-box-lg__label">離職風險</span>
-                      <span class="score-box-lg__value score-box-lg__value--danger">{{ person.turnoverRisk }}%</span>
-                    </div>
-                    <div class="score-box-lg">
-                      <span class="score-box-lg__label">關鍵性</span>
-                      <span class="score-box-lg__value score-box-lg__value--info">{{ person.criticality }}%</span>
-                    </div>
-                  </div>
-
-                  <div class="person-detail-card__sections-row">
-                    <div class="person-detail-card__section">
-                      <div class="section-header">
-                        <i class="ri-alarm-warning-line"></i>
-                        <span>風險訊號</span>
-                      </div>
-                      <div class="section-content">
-                        @for (signal of person.riskSignals; track signal) {
-                          <p class="section-text">{{ signal }}</p>
-                        }
-                      </div>
-                    </div>
-
-                    <div class="person-detail-card__section">
-                      <div class="section-header">
-                        <i class="ri-lightbulb-line"></i>
-                        <span>建議行動</span>
-                      </div>
-                      <div class="section-content">
-                        @for (action of person.suggestedActions; track action) {
-                          <p class="section-text">{{ action }}</p>
-                        }
-                      </div>
-                    </div>
-                  </div>
-
+                  <button class="person-detail-card__close" (click)="clearSelectedPerson()">
+                    <i class="ri-close-line"></i>
+                  </button>
                 </div>
+
+                <div class="person-detail-card__scores">
+                  <div class="score-box-lg">
+                    <span class="score-box-lg__label">離職風險</span>
+                    <span class="score-box-lg__value score-box-lg__value--danger">{{ person.turnoverRisk }}%</span>
+                  </div>
+                  <div class="score-box-lg">
+                    <span class="score-box-lg__label">關鍵性</span>
+                    <span class="score-box-lg__value score-box-lg__value--info">{{ person.criticality }}%</span>
+                  </div>
+                </div>
+
+                <div class="person-detail-card__sections-row">
+                  <div class="person-detail-card__section">
+                    <div class="section-header">
+                      <i class="ri-alarm-warning-line"></i>
+                      <span>風險訊號</span>
+                    </div>
+                    <div class="section-content">
+                      @for (signal of person.riskSignals; track signal) {
+                      <p class="section-text">{{ signal }}</p>
+                      }
+                    </div>
+                  </div>
+
+                  <div class="person-detail-card__section">
+                    <div class="section-header">
+                      <i class="ri-lightbulb-line"></i>
+                      <span>建議行動</span>
+                    </div>
+                    <div class="section-content">
+                      @for (action of person.suggestedActions; track action) {
+                      <p class="section-text">{{ action }}</p>
+                      }
+                    </div>
+                  </div>
+                </div>
+
+              </div>
               } @else {
-                <div class="quadrant-hint">
-                  <i class="ri-cursor-line"></i>
-                  <span>點擊圖中人員查看風險詳情</span>
-                </div>
+              <div class="quadrant-hint">
+                <i class="ri-cursor-line"></i>
+                <span>點擊圖中人員查看風險詳情</span>
+              </div>
               }
             </div>
           </section>
@@ -306,25 +301,25 @@
           </div>
           <div class="succession-cards-grid">
             @for (item of successionCoverages(); track item.position; let i = $index) {
-              <div class="succession-standalone-card" [class]="'coverage--' + item.coverage">
-                <div class="succession-standalone-card__header">
-                  <div class="succession-standalone-card__badge">{{ i + 1 }}</div>
-                  <span class="succession-standalone-card__position">{{ item.position }}</span>
-                </div>
-                <div class="succession-standalone-card__body">
-                  <div class="succession-standalone-card__bar-wrap">
-                    <div class="succession-standalone-card__bar">
-                      <div class="succession-standalone-card__fill"
-                        [style.width.%]="item.successorCount >= 2 ? 100 : item.successorCount * 50">
-                      </div>
+            <div class="succession-standalone-card" [class]="'coverage--' + item.coverage">
+              <div class="succession-standalone-card__header">
+                <div class="succession-standalone-card__badge">{{ i + 1 }}</div>
+                <span class="succession-standalone-card__position">{{ item.position }}</span>
+              </div>
+              <div class="succession-standalone-card__body">
+                <div class="succession-standalone-card__bar-wrap">
+                  <div class="succession-standalone-card__bar">
+                    <div class="succession-standalone-card__fill"
+                      [style.width.%]="item.successorCount >= 2 ? 100 : item.successorCount * 50">
                     </div>
                   </div>
-                  <div class="succession-standalone-card__count">
-                    <span class="count-value">{{ item.successorCount }}</span>
-                    <span class="count-label">人可接班</span>
-                  </div>
+                </div>
+                <div class="succession-standalone-card__count">
+                  <span class="count-value">{{ item.successorCount }}</span>
+                  <span class="count-label">人可接班</span>
                 </div>
               </div>
+            </div>
             }
           </div>
         </section>
@@ -341,65 +336,64 @@
 
             <!-- KPI 卡片 -->
             @if (capabilityKPI(); as kpi) {
-              <div class="mini-kpi-row">
-                <div class="mini-kpi">
-                  <span class="mini-kpi__value text-success">{{ kpi.coverageRate }}%</span>
-                  <span class="mini-kpi__label">職能覆蓋率</span>
-                </div>
-                <div class="mini-kpi">
-                  <span class="mini-kpi__value text-info">{{ kpi.achievementRate }}%</span>
-                  <span class="mini-kpi__label">達標率</span>
-                </div>
-                <div class="mini-kpi">
-                  <span class="mini-kpi__value text-error">{{ kpi.gapCount }}項</span>
-                  <span class="mini-kpi__label">能力缺口</span>
-                </div>
+            <div class="mini-kpi-row">
+              <div class="mini-kpi">
+                <span class="mini-kpi__value text-success">{{ kpi.coverageRate }}%</span>
+                <span class="mini-kpi__label">職能覆蓋率</span>
               </div>
+              <div class="mini-kpi">
+                <span class="mini-kpi__value text-info">{{ kpi.achievementRate }}%</span>
+                <span class="mini-kpi__label">達標率</span>
+              </div>
+              <div class="mini-kpi">
+                <span class="mini-kpi__value text-error">{{ kpi.gapCount }}項</span>
+                <span class="mini-kpi__label">能力缺口</span>
+              </div>
+            </div>
             }
 
             <!-- 部門 × 核心職能 熱力圖 (縮小版) -->
             @if (competencyHeatmap(); as heatmap) {
-              <div class="competency-heatmap competency-heatmap--compact">
-                <div class="heatmap-table-wrap">
-                  <table class="heatmap-table heatmap-table--compact">
-                    <thead>
-                      <tr>
-                        <th class="heatmap-table__dept-header">部門</th>
-                        @for (comp of heatmap.competencies; track comp) {
-                          <th class="heatmap-table__comp-header">{{ comp }}</th>
-                        }
-                      </tr>
-                    </thead>
-                    <tbody>
-                      @for (dept of heatmap.departments; track dept) {
-                        <tr>
-                          <td class="heatmap-table__dept-cell">{{ dept }}</td>
-                          @for (comp of heatmap.competencies; track comp) {
-                            @if (getHeatmapCell(dept, comp); as cell) {
-                              <td class="heatmap-table__score-cell">
-                                <button
-                                  class="heatmap-score heatmap-score--compact heatmap-score--clickable"
-                                  [class]="'heatmap-score--' + cell.status"
-                                  [class.heatmap-score--selected]="selectedHeatmapCell()?.dept === dept && selectedHeatmapCell()?.comp === comp"
-                                  (click)="selectHeatmapCell(dept, comp, cell.score)">
-                                  {{ cell.score }}
-                                </button>
-                              </td>
-                            }
-                          }
-                        </tr>
+            <div class="competency-heatmap competency-heatmap--compact">
+              <div class="heatmap-table-wrap">
+                <table class="heatmap-table heatmap-table--compact">
+                  <thead>
+                    <tr>
+                      <th class="heatmap-table__dept-header">部門</th>
+                      @for (comp of heatmap.competencies; track comp) {
+                      <th class="heatmap-table__comp-header">{{ comp }}</th>
                       }
-                    </tbody>
-                  </table>
-                </div>
-
-                <!-- 圖例 -->
-                <div class="heatmap-legend">
-                  <span class="legend-item legend-item--achieved"><span class="legend-dot"></span>達標 (≥4.0)</span>
-                  <span class="legend-item legend-item--slight"><span class="legend-dot"></span>輕微落差 (3.0-3.9)</span>
-                  <span class="legend-item legend-item--severe"><span class="legend-dot"></span>嚴重落差 (&lt;3.0)</span>
-                </div>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (dept of heatmap.departments; track dept) {
+                    <tr>
+                      <td class="heatmap-table__dept-cell">{{ dept }}</td>
+                      @for (comp of heatmap.competencies; track comp) {
+                      @if (getHeatmapCell(dept, comp); as cell) {
+                      <td class="heatmap-table__score-cell">
+                        <button class="heatmap-score heatmap-score--compact heatmap-score--clickable"
+                          [class]="'heatmap-score--' + cell.status"
+                          [class.heatmap-score--selected]="selectedHeatmapCell()?.dept === dept && selectedHeatmapCell()?.comp === comp"
+                          (click)="selectHeatmapCell(dept, comp, cell.score)">
+                          {{ cell.score }}
+                        </button>
+                      </td>
+                      }
+                      }
+                    </tr>
+                    }
+                  </tbody>
+                </table>
               </div>
+
+              <!-- 圖例 -->
+              <div class="heatmap-legend">
+                <span class="legend-item legend-item--achieved"><span class="legend-dot"></span>達標 (≥4.0)</span>
+                <span class="legend-item legend-item--slight"><span class="legend-dot"></span>輕微落差 (3.0-3.9)</span>
+                <span class="legend-item legend-item--severe"><span class="legend-dot"></span>嚴重落差 (&lt;3.0)</span>
+              </div>
+            </div>
             }
 
             <!-- 分隔線 -->
@@ -409,7 +403,7 @@
             <div class="gap-tags gap-tags--spaced">
               <span class="gap-tag-title">優先處理：</span>
               @for (gap of capabilityGaps(); track gap.competency) {
-                <span class="gap-tag">{{ gap.department }} · {{ gap.competency }}</span>
+              <span class="gap-tag">{{ gap.department }} · {{ gap.competency }}</span>
               }
             </div>
           </section>
@@ -417,67 +411,67 @@
           <!-- 右側：員工清單 (30%) -->
           <section class="bento-box bento-box--capability-right">
             @if (selectedHeatmapCell(); as selected) {
-              <div class="heatmap-employee-panel heatmap-employee-panel--sidebar">
-                <div class="heatmap-employee-panel__header">
-                  <h4 class="heatmap-employee-panel__title">
-                    <i class="ri-team-line"></i>
-                    {{ selected.dept }} - {{ selected.comp }}
-                  </h4>
-                  <button class="close-btn" (click)="clearHeatmapSelection()">
-                    <i class="ri-close-line"></i>
-                  </button>
-                </div>
+            <div class="heatmap-employee-panel heatmap-employee-panel--sidebar">
+              <div class="heatmap-employee-panel__header">
+                <h4 class="heatmap-employee-panel__title">
+                  <i class="ri-team-line"></i>
+                  {{ selected.dept }} - {{ selected.comp }}
+                </h4>
+                <button class="close-btn" (click)="clearHeatmapSelection()">
+                  <i class="ri-close-line"></i>
+                </button>
+              </div>
 
-                @if (loadingEmployees()) {
-                  <div class="loading-spinner">載入中...</div>
-                } @else {
-                  <div class="employee-list employee-list--sidebar">
-                    @for (emp of heatmapEmployees(); track emp.id) {
-                      <div class="employee-card employee-card--compact" [class]="'status--' + emp.status">
-                        <div class="employee-card__header">
-                          <div class="employee-card__avatar">{{ emp.avatar }}</div>
-                          <div class="employee-card__info">
-                            <span class="employee-card__name">{{ emp.name }}</span>
-                            <span class="employee-card__position">{{ emp.position }}</span>
-                          </div>
-                        </div>
-                        <div class="employee-card__scores employee-card__scores--inline">
-                          <div class="score-box score-box--mini">
-                            <span class="score-box__label">現況</span>
-                            <span class="score-box__value" [class]="'status--' + emp.status">{{ emp.currentScore }}</span>
-                          </div>
-                          <div class="score-box score-box--mini">
-                            <span class="score-box__label">目標</span>
-                            <span class="score-box__value">{{ emp.requiredScore }}</span>
-                          </div>
-                          <div class="score-box score-box--mini">
-                            <span class="score-box__label">落差</span>
-                            <span class="score-box__value" [class.negative]="emp.gap < 0" [class.positive]="emp.gap >= 0">
-                              {{ emp.gap >= 0 ? '+' : '' }}{{ emp.gap }}
-                            </span>
-                          </div>
-                        </div>
-                        <div class="employee-card__suggestion employee-card__suggestion--compact">
-                          <i class="ri-lightbulb-line"></i>
-                          {{ emp.suggestion }}
-                        </div>
-                        @if (emp.courses.length > 0) {
-                          <div class="employee-card__courses employee-card__courses--compact">
-                            @for (course of emp.courses; track course) {
-                              <span class="course-tag course-tag--small">{{ course }}</span>
-                            }
-                          </div>
-                        }
-                      </div>
+              @if (loadingEmployees()) {
+              <div class="loading-spinner">載入中...</div>
+              } @else {
+              <div class="employee-list employee-list--sidebar">
+                @for (emp of heatmapEmployees(); track emp.id) {
+                <div class="employee-card employee-card--compact" [class]="'status--' + emp.status">
+                  <div class="employee-card__header">
+                    <div class="employee-card__avatar">{{ emp.avatar }}</div>
+                    <div class="employee-card__info">
+                      <span class="employee-card__name">{{ emp.name }}</span>
+                      <span class="employee-card__position">{{ emp.position }}</span>
+                    </div>
+                  </div>
+                  <div class="employee-card__scores employee-card__scores--inline">
+                    <div class="score-box score-box--mini">
+                      <span class="score-box__label">現況</span>
+                      <span class="score-box__value" [class]="'status--' + emp.status">{{ emp.currentScore }}</span>
+                    </div>
+                    <div class="score-box score-box--mini">
+                      <span class="score-box__label">目標</span>
+                      <span class="score-box__value">{{ emp.requiredScore }}</span>
+                    </div>
+                    <div class="score-box score-box--mini">
+                      <span class="score-box__label">落差</span>
+                      <span class="score-box__value" [class.negative]="emp.gap < 0" [class.positive]="emp.gap >= 0">
+                        {{ emp.gap >= 0 ? '+' : '' }}{{ emp.gap }}
+                      </span>
+                    </div>
+                  </div>
+                  <div class="employee-card__suggestion employee-card__suggestion--compact">
+                    <i class="ri-lightbulb-line"></i>
+                    {{ emp.suggestion }}
+                  </div>
+                  @if (emp.courses.length > 0) {
+                  <div class="employee-card__courses employee-card__courses--compact">
+                    @for (course of emp.courses; track course) {
+                    <span class="course-tag course-tag--small">{{ course }}</span>
                     }
                   </div>
+                  }
+                </div>
                 }
               </div>
+              }
+            </div>
             } @else {
-              <div class="empty-sidebar">
-                <i class="ri-cursor-line"></i>
-                <p>點擊熱力圖中的分數<br/>查看員工職能詳情</p>
-              </div>
+            <div class="empty-sidebar">
+              <i class="ri-cursor-line"></i>
+              <p>點擊熱力圖中的分數<br />查看員工職能詳情</p>
+            </div>
             }
           </section>
         </div>
@@ -491,28 +485,28 @@
               <span>培訓概況</span>
             </div>
             @if (trainingKPI(); as kpi) {
-              <div class="training-kpi-large">
-                <div class="kpi-card-lg kpi-card-lg--completion">
-                  <div class="kpi-card-lg__icon"><i class="ri-check-double-line"></i></div>
-                  <div class="kpi-card-lg__value">{{ kpi.completionRate }}<span class="unit">%</span></div>
-                  <div class="kpi-card-lg__label">培訓完成率</div>
-                </div>
-                <div class="kpi-card-lg kpi-card-lg--budget">
-                  <div class="kpi-card-lg__icon"><i class="ri-wallet-3-line"></i></div>
-                  <div class="kpi-card-lg__value">{{ kpi.budgetUtilization }}<span class="unit">%</span></div>
-                  <div class="kpi-card-lg__label">預算執行率</div>
-                </div>
-                <div class="kpi-card-lg kpi-card-lg--roi">
-                  <div class="kpi-card-lg__icon"><i class="ri-line-chart-line"></i></div>
-                  <div class="kpi-card-lg__value">{{ kpi.trainingROI }}<span class="unit">%</span></div>
-                  <div class="kpi-card-lg__label">培訓 ROI</div>
-                </div>
-                <div class="kpi-card-lg kpi-card-lg--satisfaction">
-                  <div class="kpi-card-lg__icon"><i class="ri-star-line"></i></div>
-                  <div class="kpi-card-lg__value">{{ kpi.avgSatisfaction }}</div>
-                  <div class="kpi-card-lg__label">平均滿意度</div>
-                </div>
+            <div class="training-kpi-large">
+              <div class="kpi-card-lg kpi-card-lg--completion">
+                <div class="kpi-card-lg__icon"><i class="ri-check-double-line"></i></div>
+                <div class="kpi-card-lg__value">{{ kpi.completionRate }}<span class="unit">%</span></div>
+                <div class="kpi-card-lg__label">培訓完成率</div>
               </div>
+              <div class="kpi-card-lg kpi-card-lg--budget">
+                <div class="kpi-card-lg__icon"><i class="ri-wallet-3-line"></i></div>
+                <div class="kpi-card-lg__value">{{ kpi.budgetUtilization }}<span class="unit">%</span></div>
+                <div class="kpi-card-lg__label">預算執行率</div>
+              </div>
+              <div class="kpi-card-lg kpi-card-lg--roi">
+                <div class="kpi-card-lg__icon"><i class="ri-line-chart-line"></i></div>
+                <div class="kpi-card-lg__value">{{ kpi.trainingROI }}<span class="unit">%</span></div>
+                <div class="kpi-card-lg__label">培訓 ROI</div>
+              </div>
+              <div class="kpi-card-lg kpi-card-lg--satisfaction">
+                <div class="kpi-card-lg__icon"><i class="ri-star-line"></i></div>
+                <div class="kpi-card-lg__value">{{ kpi.avgSatisfaction }}</div>
+                <div class="kpi-card-lg__label">平均滿意度</div>
+              </div>
+            </div>
             }
           </section>
 
@@ -526,11 +520,11 @@
               <div id="course-type-donut-chart" class="donut-chart-container"></div>
               <div class="donut-legend">
                 @for (stat of courseTypeStats(); track stat.category) {
-                  <div class="legend-item">
-                    <span class="legend-item__dot" [style.background]="stat.color"></span>
-                    <span class="legend-item__label">{{ stat.label }}</span>
-                    <span class="legend-item__value">{{ stat.count }}</span>
-                  </div>
+                <div class="legend-item">
+                  <span class="legend-item__dot" [style.background]="stat.color"></span>
+                  <span class="legend-item__label">{{ stat.label }}</span>
+                  <span class="legend-item__value">{{ stat.count }}</span>
+                </div>
                 }
               </div>
             </div>
@@ -544,16 +538,16 @@
             </div>
             <div class="effectiveness-spaced">
               @for (item of trainingEffectiveness(); track item.level) {
-                <div class="effectiveness-card" [class]="getEffectivenessColorClass(item.score)">
-                  <div class="effectiveness-card__level">L{{ item.level }}</div>
-                  <div class="effectiveness-card__info">
-                    <span class="effectiveness-card__name">{{ item.name }}</span>
-                    <div class="effectiveness-card__bar">
-                      <div class="effectiveness-card__fill" [style.width.%]="item.score"></div>
-                    </div>
+              <div class="effectiveness-card" [class]="getEffectivenessColorClass(item.score)">
+                <div class="effectiveness-card__level">L{{ item.level }}</div>
+                <div class="effectiveness-card__info">
+                  <span class="effectiveness-card__name">{{ item.name }}</span>
+                  <div class="effectiveness-card__bar">
+                    <div class="effectiveness-card__fill" [style.width.%]="item.score"></div>
                   </div>
-                  <div class="effectiveness-card__score">{{ item.score }}%</div>
                 </div>
+                <div class="effectiveness-card__score">{{ item.score }}%</div>
+              </div>
               }
             </div>
           </section>
@@ -566,32 +560,32 @@
             </div>
             <div class="upcoming-spaced">
               @for (course of upcomingCourses().slice(0, 4); track course.id) {
-                <div class="upcoming-card">
-                  <div class="upcoming-card__date">{{ formatCourseDate(course.date) }}</div>
-                  <div class="upcoming-card__info">
-                    <span class="upcoming-card__name">{{ course.name }}</span>
-                    <div class="upcoming-card__progress">
-                      <div class="progress-mini">
-                        <div class="progress-mini__fill" [style.width.%]="(course.participants / 25) * 100"></div>
-                      </div>
-                      <span class="progress-mini__text">{{ course.participants }}/25 人</span>
+              <div class="upcoming-card">
+                <div class="upcoming-card__date">{{ formatCourseDate(course.date) }}</div>
+                <div class="upcoming-card__info">
+                  <span class="upcoming-card__name">{{ course.name }}</span>
+                  <div class="upcoming-card__progress">
+                    <div class="progress-mini">
+                      <div class="progress-mini__fill" [style.width.%]="(course.participants / 25) * 100"></div>
                     </div>
+                    <span class="progress-mini__text">{{ course.participants }}/25 人</span>
                   </div>
                 </div>
+              </div>
               }
             </div>
             <a routerLink="/training/course-management" class="bento-link-bottom">查看課程管理 →</a>
           </section>
         </div>
-        </section>
-        <!-- ============ 人才管理區塊結束 ============ -->
+      </section>
+      <!-- ============ 人才管理區塊結束 ============ -->
 
-        <!-- ============ 專案交付區塊 ============ -->
-        <section id="section-project" class="bento-section bento-section--project">
-          <div class="bento-section-header">
-            <i class="ri-folder-chart-2-line"></i>
-            <span>專案交付</span>
-          </div>
+      <!-- ============ 專案交付區塊 ============ -->
+      <section id="section-project" class="bento-section bento-section--project">
+        <div class="bento-section-header">
+          <i class="ri-folder-chart-2-line"></i>
+          <span>專案交付</span>
+        </div>
 
         <!-- ============ Row 5: 專案交付 KPI + 專案風險預警 + 專案風險矩陣 ============ -->
         <div class="bento-box-row bento-box-row--triple">
@@ -604,48 +598,49 @@
             </div>
             <div class="project-kpi-content">
               @if (projectDeliveryKPI(); as kpi) {
-                <div class="project-kpi-grid">
-                  <!-- 專案數量環狀圖 -->
-                  <div class="project-ring-card">
-                    <div class="project-ring">
-                      <div class="project-ring__circle" [style.--progress]="(kpi.onTrackCount / kpi.activeProjects) * 100">
-                        <span class="project-ring__text">{{ kpi.onTrackCount }}/{{ kpi.activeProjects }}</span>
-                      </div>
-                      <span class="project-ring__label">專案正常</span>
+              <div class="project-kpi-grid">
+                <!-- 專案數量環狀圖 -->
+                <div class="project-ring-card">
+                  <div class="project-ring">
+                    <div class="project-ring__circle"
+                      [style.--progress]="(kpi.onTrackCount / kpi.activeProjects) * 100">
+                      <span class="project-ring__text">{{ kpi.onTrackCount }}/{{ kpi.activeProjects }}</span>
+                    </div>
+                    <span class="project-ring__label">專案正常</span>
+                  </div>
+                </div>
+                <!-- KPI 指標 -->
+                <div class="project-kpi-stats">
+                  <div class="project-kpi-item">
+                    <i class="ri-flag-line"></i>
+                    <div class="project-kpi-item__data">
+                      <span class="project-kpi-item__value">72%</span>
+                      <span class="project-kpi-item__label">里程碑達成率</span>
                     </div>
                   </div>
-                  <!-- KPI 指標 -->
-                  <div class="project-kpi-stats">
-                    <div class="project-kpi-item">
-                      <i class="ri-flag-line"></i>
-                      <div class="project-kpi-item__data">
-                        <span class="project-kpi-item__value">72%</span>
-                        <span class="project-kpi-item__label">里程碑達成率</span>
-                      </div>
+                  <div class="project-kpi-item">
+                    <i class="ri-wallet-3-line"></i>
+                    <div class="project-kpi-item__data">
+                      <span class="project-kpi-item__value">68%</span>
+                      <span class="project-kpi-item__label">預算執行率</span>
                     </div>
-                    <div class="project-kpi-item">
-                      <i class="ri-wallet-3-line"></i>
-                      <div class="project-kpi-item__data">
-                        <span class="project-kpi-item__value">68%</span>
-                        <span class="project-kpi-item__label">預算執行率</span>
-                      </div>
+                  </div>
+                  <div class="project-kpi-item">
+                    <i class="ri-user-line"></i>
+                    <div class="project-kpi-item__data">
+                      <span class="project-kpi-item__value">78%</span>
+                      <span class="project-kpi-item__label">資源使用率</span>
                     </div>
-                    <div class="project-kpi-item">
-                      <i class="ri-user-line"></i>
-                      <div class="project-kpi-item__data">
-                        <span class="project-kpi-item__value">78%</span>
-                        <span class="project-kpi-item__label">資源使用率</span>
-                      </div>
-                    </div>
-                    <div class="project-kpi-item project-kpi-item--warning">
-                      <i class="ri-user-unfollow-line"></i>
-                      <div class="project-kpi-item__data">
-                        <span class="project-kpi-item__value text-error">3人</span>
-                        <span class="project-kpi-item__label">人力缺口</span>
-                      </div>
+                  </div>
+                  <div class="project-kpi-item project-kpi-item--warning">
+                    <i class="ri-user-unfollow-line"></i>
+                    <div class="project-kpi-item__data">
+                      <span class="project-kpi-item__value text-error">3人</span>
+                      <span class="project-kpi-item__label">人力缺口</span>
                     </div>
                   </div>
                 </div>
+              </div>
               }
               <!-- 重點專案進度 (5個) -->
               <div class="key-project-section">
@@ -653,15 +648,16 @@
                 <table class="key-project-table">
                   <tbody>
                     @for (p of projectStatuses().slice(0, 5); track p.id) {
-                      <tr class="key-project-row" [class.risk]="p.progress < 50">
-                        <td class="key-project-row__name">{{ p.name }}</td>
-                        <td class="key-project-row__bar">
-                          <div class="progress-bar-aligned" [class.progress-bar-aligned--risk]="p.progress < 50">
-                            <div class="progress-bar-aligned__fill" [class.fill--risk]="p.progress < 50" [style.width.%]="p.progress"></div>
-                          </div>
-                        </td>
-                        <td class="key-project-row__value" [class.text-error]="p.progress < 50">{{ p.progress }}%</td>
-                      </tr>
+                    <tr class="key-project-row" [class.risk]="p.progress < 50">
+                      <td class="key-project-row__name">{{ p.name }}</td>
+                      <td class="key-project-row__bar">
+                        <div class="progress-bar-aligned" [class.progress-bar-aligned--risk]="p.progress < 50">
+                          <div class="progress-bar-aligned__fill" [class.fill--risk]="p.progress < 50"
+                            [style.width.%]="p.progress"></div>
+                        </div>
+                      </td>
+                      <td class="key-project-row__value" [class.text-error]="p.progress < 50">{{ p.progress }}%</td>
+                    </tr>
                     }
                   </tbody>
                 </table>
@@ -678,18 +674,18 @@
             <div class="project-risk-list">
               <!-- 使用 @for 迴圈呈現專案風險預警資料 -->
               @for (alert of projectRiskAlerts(); track alert.id; let i = $index) {
-                <div class="project-risk-item" [class]="'project-risk-item--' + alert.severity">
-                  <div class="project-risk-item__icon-wrap">
-                    <i [class]="alert.icon"></i>
-                  </div>
-                  <div class="project-risk-item__content">
-                    <h4 class="project-risk-item__title">{{ alert.title }}</h4>
-                    <p class="project-risk-item__desc">{{ alert.description }}</p>
-                  </div>
-                  <div class="project-risk-item__decoration">
-                    <span class="decoration-number">{{ i + 1 }}</span>
-                  </div>
+              <div class="project-risk-item" [class]="'project-risk-item--' + alert.severity">
+                <div class="project-risk-item__icon-wrap">
+                  <i [class]="alert.icon"></i>
                 </div>
+                <div class="project-risk-item__content">
+                  <h4 class="project-risk-item__title">{{ alert.title }}</h4>
+                  <p class="project-risk-item__desc">{{ alert.description }}</p>
+                </div>
+                <div class="project-risk-item__decoration">
+                  <span class="decoration-number">{{ i + 1 }}</span>
+                </div>
+              </div>
               }
             </div>
           </section>
@@ -715,7 +711,51 @@
           </section>
         </div>
 
-        <!-- ============ Row 7: 專案狀態與類型統計 + 專案進度追蹤 (甘特圖) ============ -->
+        <!-- ============ Row 7: 專案 Forecast Pipeline ============ -->
+        <div class="bento-box-row bento-box-row--forecast">
+          <section class="bento-box bento-box--forecast-pipeline">
+            <div class="bento-header bento-header--project">
+              <i class="ri-flow-chart"></i>
+              <span>專案 Forecast Pipeline</span>
+              @if (forecastPipeline(); as p) {
+              <span class="bento-header__count">{{ p.totalProjects }} 專案</span>
+              }
+              <a routerLink="/project/report" class="bento-link">查看詳情 →</a>
+            </div>
+            @if (forecastPipeline(); as pipeline) {
+            <div class="forecast-content">
+              <!-- 上方：10 階段方塊 -->
+              <div class="forecast-stages">
+                @for (stage of pipeline.stages; track stage.percentage) {
+                <div class="forecast-stage" [style.background-color]="stage.color">
+                  <span class="forecast-stage__count">{{ stage.count }}</span>
+                  <div class="forecast-stage__info">
+                    <span class="forecast-stage__percent">{{ stage.percentage }}%</span>
+                    <span class="forecast-stage__label">{{ stage.label }}</span>
+                  </div>
+                </div>
+                }
+              </div>
+              <!-- 下方：4 群組金額統計 -->
+              <div class="forecast-groups">
+                @for (group of pipeline.groups; track group.id) {
+                <div class="forecast-group" [class]="'forecast-group--' + group.id">
+                  <span class="forecast-group__label">{{ group.label }} {{ group.range }}</span>
+                  <span class="forecast-group__amount">${{ group.amount.toLocaleString() }} 萬</span>
+                </div>
+                }
+              </div>
+            </div>
+            } @else {
+            <div class="forecast-loading">
+              <i class="ri-loader-4-line"></i>
+              <span>載入中...</span>
+            </div>
+            }
+          </section>
+        </div>
+
+        <!-- ============ Row 8: 專案狀態與類型統計 + 專案進度追蹤 (甘特圖) ============ -->
         <div class="bento-box-row bento-box-row--gantt">
           <!-- 專案狀態與類型統計 (30%) -->
           <section class="bento-box bento-box--project-stats">
@@ -726,16 +766,16 @@
             <div class="project-stats-content">
               <!-- 專案狀態環狀圖 -->
               <div class="project-stats-section project-stats-section--large">
-                <div id="project-status-donut-chart" class="project-status-donut-chart project-status-donut-chart--large"></div>
+                <div id="project-status-donut-chart"
+                  class="project-status-donut-chart project-status-donut-chart--large"></div>
                 <div class="project-stats-legend">
                   @for (stat of projectStatusStats(); track stat.status) {
-                    <div class="legend-item"
-                         [class.active]="selectedProjectStatus() === stat.status"
-                         (click)="filterByStatus(stat.status)">
-                      <span class="legend-dot" [style.background-color]="stat.color"></span>
-                      <span class="legend-label">{{ stat.label }}</span>
-                      <span class="legend-count">{{ stat.count }}</span>
-                    </div>
+                  <div class="legend-item" [class.active]="selectedProjectStatus() === stat.status"
+                    (click)="filterByStatus(stat.status)">
+                    <span class="legend-dot" [style.background-color]="stat.color"></span>
+                    <span class="legend-label">{{ stat.label }}</span>
+                    <span class="legend-count">{{ stat.count }}</span>
+                  </div>
                   }
                 </div>
               </div>
@@ -753,6 +793,7 @@
               <i class="ri-bar-chart-horizontal-line"></i>
               <span>專案進度追蹤</span>
               <span class="bento-header__count">{{ projectGanttItems().length }} 專案</span>
+              <a routerLink="/project/forecast" class="bento-link">查看詳情 →</a>
             </div>
             <div class="gantt-container">
               <!-- 甘特圖時間軸 -->
@@ -760,9 +801,9 @@
                 <div class="gantt-timeline__header"></div>
                 <div class="gantt-timeline__axis">
                   @for (marker of getGanttTimeMarkers(); track marker.label) {
-                    <div class="gantt-timeline__marker" [style.left]="marker.position">
-                      <span class="gantt-timeline__label">{{ marker.label }}</span>
-                    </div>
+                  <div class="gantt-timeline__marker" [style.left]="marker.position">
+                    <span class="gantt-timeline__label">{{ marker.label }}</span>
+                  </div>
                   }
                 </div>
               </div>
@@ -770,133 +811,167 @@
               <!-- 甘特圖專案列表 -->
               <div class="gantt-rows">
                 @for (item of getFilteredGanttItems(); track item.id) {
-                  <div class="gantt-row">
-                    <!-- 專案資訊 -->
-                    <div class="gantt-row__info">
-                      <div class="gantt-row__avatar" [style.background-color]="getAvatarColor(item.pm.name)">
-                        {{ getAvatarLabel(item.pm.name) }}
-                      </div>
-                      <div class="gantt-row__details">
-                        <span class="gantt-row__title">{{ item.title }}</span>
-                        <span class="gantt-row__meta">
-                          <span class="gantt-row__type" [style.background-color]="getProjectTypeColor(item.type)">
-                            {{ getProjectTypeLabel(item.type) }}
-                          </span>
-                          <span class="gantt-row__stage">{{ item.stage }}</span>
-                        </span>
-                      </div>
+                <div class="gantt-row">
+                  <!-- 專案資訊 -->
+                  <div class="gantt-row__info">
+                    <div class="gantt-row__avatar" [style.background-color]="getAvatarColor(item.pm.name)">
+                      {{ getAvatarLabel(item.pm.name) }}
                     </div>
+                    <div class="gantt-row__details">
+                      <!-- 第一行：專案名稱 -->
+                      <span class="gantt-row__title">{{ item.title }}</span>
+                      <!-- 第二行：類別與狀態 -->
+                      <span class="gantt-row__meta">
+                        <span class="gantt-row__type" [style.background-color]="getProjectTypeColor(item.type)">
+                          {{ getProjectTypeLabel(item.type) }}
+                        </span>
+                        <span class="gantt-row__stage">{{ item.stage }}</span>
+                      </span>
+                    </div>
+                  </div>
 
-                    <!-- 專案進度條 -->
+                  <!-- 專案進度區 -->
+                  <div class="gantt-row__chart-area">
+                    <!-- 第一行：進度條 (與專案名稱對齊) -->
                     <div class="gantt-row__chart">
                       <div class="gantt-bar-container">
-                        <div class="gantt-bar"
-                             [style.left]="getGanttBarStyle(item).left"
-                             [style.width]="getGanttBarStyle(item).width"
-                             [class.gantt-bar--risk]="item.status === 'risk'"
-                             [class.gantt-bar--delay]="item.status === 'delay'"
-                             (click)="showProjectDetail(item)">
-                          <span class="gantt-bar__progress"
-                                [style.width.%]="item.progress"
-                                [style.background-color]="getProjectTypeColor(item.type)"></span>
+                        <div class="gantt-bar" [style.left]="getGanttBarStyle(item).left"
+                          [style.width]="getGanttBarStyle(item).width" [class.gantt-bar--risk]="item.status === 'risk'"
+                          [class.gantt-bar--delay]="item.status === 'delay'" (click)="showProjectDetail(item)">
+                          <span class="gantt-bar__progress" [style.width.%]="item.progress"
+                            [style.background-color]="getProjectTypeColor(item.type)"></span>
                         </div>
                         <span class="gantt-bar__percent"
-                              [style.left]="'calc(' + getGanttBarStyle(item).left + ' + ' + getGanttBarStyle(item).width + ' + 8px)'">
+                          [style.left]="'calc(' + getGanttBarStyle(item).left + ' + ' + getGanttBarStyle(item).width + ' + 8px)'">
                           {{ item.progress }}%
                         </span>
                       </div>
                     </div>
+                    <!-- 第二行：里程碑說明 (與類別/狀態對齊) -->
+                    <div class="gantt-row__milestone">
+                      <i class="ri-flag-line"></i>
+                      {{ item.nextMilestone.percentage }}% {{ item.nextMilestone.label }} → 預計 {{
+                      item.nextMilestone.expectedDate }}
+                    </div>
                   </div>
+
+                  <!-- 預算金額 (右側，無圖示) -->
+                  <div class="gantt-row__budget">
+                    <span class="gantt-row__budget-amount">{{ item.budget.toLocaleString() }}萬</span>
+                  </div>
+                </div>
                 }
 
                 @if (getFilteredGanttItems().length === 0) {
-                  <div class="gantt-empty">
-                    <i class="ri-folder-open-line"></i>
-                    <span>沒有符合條件的專案</span>
-                  </div>
+                <div class="gantt-empty">
+                  <i class="ri-folder-open-line"></i>
+                  <span>沒有符合條件的專案</span>
+                </div>
                 }
               </div>
             </div>
 
             <!-- 專案詳細資訊浮動視窗 -->
             @if (selectedGanttProject(); as project) {
-              <div class="gantt-detail-overlay" (click)="closeProjectDetail()">
-                <div class="gantt-detail-modal" (click)="$event.stopPropagation()">
-                  <div class="gantt-detail-modal__header">
-                    <div class="gantt-detail-modal__title">
-                      <span class="gantt-detail-modal__id">{{ project.id }}</span>
-                      <h3>{{ project.title }}</h3>
-                    </div>
-                    <button class="gantt-detail-modal__close" (click)="closeProjectDetail()">
-                      <i class="ri-close-line"></i>
-                    </button>
+            <div class="gantt-detail-overlay" (click)="closeProjectDetail()">
+              <div class="gantt-detail-modal" (click)="$event.stopPropagation()">
+                <div class="gantt-detail-modal__header">
+                  <div class="gantt-detail-modal__title">
+                    <span class="gantt-detail-modal__id">{{ project.id }}</span>
+                    <h3>{{ project.title }}</h3>
                   </div>
-                  <div class="gantt-detail-modal__body">
-                    <div class="gantt-detail-info">
-                      <div class="gantt-detail-info__item">
-                        <span class="gantt-detail-info__label">專案經理</span>
-                        <div class="gantt-detail-info__pm">
-                          <span class="gantt-detail-info__avatar" [style.background-color]="getAvatarColor(project.pm.name)">
-                            {{ getAvatarLabel(project.pm.name) }}
-                          </span>
-                          <span class="gantt-detail-info__pm-name">{{ project.pm.name }}</span>
-                        </div>
-                      </div>
-                      <div class="gantt-detail-info__item">
-                        <span class="gantt-detail-info__label">專案類型</span>
-                        <span class="gantt-detail-info__type" [style.background-color]="getProjectTypeColor(project.type)">
-                          {{ getProjectTypeLabel(project.type) }}
+                  <button class="gantt-detail-modal__close" (click)="closeProjectDetail()">
+                    <i class="ri-close-line"></i>
+                  </button>
+                </div>
+                <div class="gantt-detail-modal__body">
+                  <div class="gantt-detail-info">
+                    <div class="gantt-detail-info__item">
+                      <span class="gantt-detail-info__label">專案經理</span>
+                      <div class="gantt-detail-info__pm">
+                        <span class="gantt-detail-info__avatar"
+                          [style.background-color]="getAvatarColor(project.pm.name)">
+                          {{ getAvatarLabel(project.pm.name) }}
                         </span>
-                      </div>
-                      <div class="gantt-detail-info__item">
-                        <span class="gantt-detail-info__label">專案階段</span>
-                        <span class="gantt-detail-info__value">{{ project.stage }}</span>
-                      </div>
-                      <div class="gantt-detail-info__item">
-                        <span class="gantt-detail-info__label">專案狀態</span>
-                        <span class="gantt-detail-info__status" [class]="'status--' + project.status">
-                          {{ getProjectStatusLabel(project.status) }}
-                        </span>
+                        <span class="gantt-detail-info__pm-name">{{ project.pm.name }}</span>
                       </div>
                     </div>
-                    <div class="gantt-detail-progress">
-                      <div class="gantt-detail-progress__header">
-                        <span class="gantt-detail-progress__label">進度</span>
-                        <span class="gantt-detail-progress__value">{{ project.progress }}%</span>
-                      </div>
-                      <div class="gantt-detail-progress__bar">
-                        <div class="gantt-detail-progress__fill"
-                             [style.width.%]="project.progress"
-                             [style.background-color]="getProjectTypeColor(project.type)"></div>
-                      </div>
+                    <div class="gantt-detail-info__item">
+                      <span class="gantt-detail-info__label">業務負責</span>
+                      <span class="gantt-detail-info__value">{{ project.salesLead }}</span>
                     </div>
-                    <div class="gantt-detail-dates">
-                      <div class="gantt-detail-dates__item">
-                        <i class="ri-calendar-line"></i>
-                        <span class="gantt-detail-dates__label">開始日期</span>
-                        <span class="gantt-detail-dates__value">{{ project.startDate }}</span>
-                      </div>
-                      <div class="gantt-detail-dates__item">
-                        <i class="ri-calendar-check-line"></i>
-                        <span class="gantt-detail-dates__label">結束日期</span>
-                        <span class="gantt-detail-dates__value">{{ project.endDate }}</span>
-                      </div>
+                    <div class="gantt-detail-info__item">
+                      <span class="gantt-detail-info__label">工程負責</span>
+                      <span class="gantt-detail-info__value">{{ project.engineeringLead }}</span>
+                    </div>
+                    <div class="gantt-detail-info__item">
+                      <span class="gantt-detail-info__label">專案類型</span>
+                      <span class="gantt-detail-info__type"
+                        [style.background-color]="getProjectTypeColor(project.type)">
+                        {{ getProjectTypeLabel(project.type) }}
+                      </span>
+                    </div>
+                    <div class="gantt-detail-info__item">
+                      <span class="gantt-detail-info__label">預算金額</span>
+                      <span class="gantt-detail-info__budget">
+                        ${{ project.budget.toLocaleString() }}萬
+                      </span>
+                    </div>
+                    <div class="gantt-detail-info__item">
+                      <span class="gantt-detail-info__label">專案階段</span>
+                      <span class="gantt-detail-info__value">{{ project.stage }}</span>
+                    </div>
+                    <div class="gantt-detail-info__item">
+                      <span class="gantt-detail-info__label">專案狀態</span>
+                      <span class="gantt-detail-info__status" [class]="'status--' + project.status">
+                        {{ getProjectStatusLabel(project.status) }}
+                      </span>
+                    </div>
+                  </div>
+                  <!-- 進度區塊 -->
+                  <div class="gantt-detail-progress">
+                    <div class="gantt-detail-progress__header">
+                      <span class="gantt-detail-progress__label">進度</span>
+                      <span class="gantt-detail-progress__value">{{ project.progress }}%</span>
+                    </div>
+                    <div class="gantt-detail-progress__bar">
+                      <div class="gantt-detail-progress__fill" [style.width.%]="project.progress"
+                        [style.background-color]="getProjectTypeColor(project.type)"></div>
+                    </div>
+                    <!-- 里程碑說明 (進度條下方) -->
+                    <div class="gantt-detail-progress__milestone">
+                      <i class="ri-flag-line"></i>
+                      <span>下一里程碑：{{ project.nextMilestone.percentage }}% {{ project.nextMilestone.label }} → 預計 {{
+                        project.nextMilestone.expectedDate }}</span>
+                    </div>
+                  </div>
+                  <div class="gantt-detail-dates">
+                    <div class="gantt-detail-dates__item">
+                      <i class="ri-calendar-line"></i>
+                      <span class="gantt-detail-dates__label">開始日期</span>
+                      <span class="gantt-detail-dates__value">{{ project.startDate }}</span>
+                    </div>
+                    <div class="gantt-detail-dates__item">
+                      <i class="ri-calendar-check-line"></i>
+                      <span class="gantt-detail-dates__label">結束日期</span>
+                      <span class="gantt-detail-dates__value">{{ project.endDate }}</span>
                     </div>
                   </div>
                 </div>
               </div>
+            </div>
             }
           </section>
         </div>
-        </section>
-        <!-- ============ 專案交付區塊結束 ============ -->
+      </section>
+      <!-- ============ 專案交付區塊結束 ============ -->
 
-        <!-- ============ 毛利損益區塊 ============ -->
-        <section id="section-profit" class="bento-section bento-section--profit">
-          <div class="bento-section-header">
-            <i class="ri-money-dollar-circle-line"></i>
-            <span>毛利損益</span>
-          </div>
+      <!-- ============ 毛利損益區塊 ============ -->
+      <section id="section-profit" class="bento-section bento-section--profit">
+        <div class="bento-section-header">
+          <i class="ri-money-dollar-circle-line"></i>
+          <span>毛利損益</span>
+        </div>
 
         <!-- ============ Row 8: 毛利預測 + 成本結構分析 ============ -->
         <div class="bento-box-row bento-box-row--double">
@@ -908,47 +983,47 @@
             </div>
             <div class="profit-content">
               @if (profitKPI(); as kpi) {
-                <div class="profit-kpi-row profit-kpi-row--4col">
-                  <div class="profit-kpi">
-                    <span class="profit-kpi__value">{{ kpi.confirmedRevenue }}%</span>
-                    <span class="profit-kpi__label">已確認營收</span>
-                    <span class="profit-kpi__sub">({{ kpi.confirmedProjects }} 專案已簽約)</span>
-                  </div>
-                  <div class="profit-kpi">
-                    <span class="profit-kpi__value" [class.text-warning]="kpi.avgProfitRate < kpi.profitRateTarget">{{ kpi.avgProfitRate }}%</span>
-                    <span class="profit-kpi__label">平均毛利率</span>
-                    <span class="profit-kpi__sub">(目標 {{ kpi.profitRateTarget }}%)</span>
-                  </div>
-                  <div class="profit-kpi">
-                    <span class="profit-kpi__value">{{ kpi.costControlRate }}%</span>
-                    <span class="profit-kpi__label">成本控制率</span>
-                    <span class="profit-kpi__sub">(實際/估算)</span>
-                  </div>
-                  <div class="profit-kpi">
-                    <span class="profit-kpi__value text-error">{{ kpi.anomalyWarnings }}項</span>
-                    <span class="profit-kpi__label">異常預警</span>
-                    <span class="profit-kpi__sub">(超支專案)</span>
-                  </div>
+              <div class="profit-kpi-row profit-kpi-row--4col">
+                <div class="profit-kpi">
+                  <span class="profit-kpi__value">{{ kpi.confirmedRevenue }}%</span>
+                  <span class="profit-kpi__label">已確認營收</span>
+                  <span class="profit-kpi__sub">({{ kpi.confirmedProjects }} 專案已簽約)</span>
                 </div>
+                <div class="profit-kpi">
+                  <span class="profit-kpi__value" [class.text-warning]="kpi.avgProfitRate < kpi.profitRateTarget">{{
+                    kpi.avgProfitRate }}%</span>
+                  <span class="profit-kpi__label">平均毛利率</span>
+                  <span class="profit-kpi__sub">(目標 {{ kpi.profitRateTarget }}%)</span>
+                </div>
+                <div class="profit-kpi">
+                  <span class="profit-kpi__value">{{ kpi.costControlRate }}%</span>
+                  <span class="profit-kpi__label">成本控制率</span>
+                  <span class="profit-kpi__sub">(實際/估算)</span>
+                </div>
+                <div class="profit-kpi">
+                  <span class="profit-kpi__value text-error">{{ kpi.anomalyWarnings }}項</span>
+                  <span class="profit-kpi__label">異常預警</span>
+                  <span class="profit-kpi__sub">(超支專案)</span>
+                </div>
+              </div>
               }
               <div class="ranking-mini">
                 @for (r of projectRankings().slice(0, 5); track r.rank) {
-                  <div class="ranking-mini__item" [class.loss]="r.profitRate < 0">
-                    <span class="ranking-mini__rank" [class]="'rank--' + r.rank">{{ r.rank }}</span>
-                    <div class="ranking-mini__info">
-                      <span class="ranking-mini__name">{{ r.name }}</span>
-                      <span class="ranking-mini__contract">${{ r.contractValue }}M</span>
-                    </div>
-                    <span class="ranking-mini__status"
-                          [class.status--better]="r.costStatus === 'better'"
-                          [class.status--normal]="r.costStatus === 'normal'"
-                          [class.status--pending]="r.costStatus === 'pending'">
-                      {{ r.costStatus === 'better' ? '優於預期' : r.costStatus === 'normal' ? '正常' : '待執行' }}
-                    </span>
-                    <span class="ranking-mini__rate" [class.text-error]="r.profitRate < 0">
-                      {{ r.profitRate > 0 ? '+' : '' }}{{ r.profitRate }}%
-                    </span>
+                <div class="ranking-mini__item" [class.loss]="r.profitRate < 0">
+                  <span class="ranking-mini__rank" [class]="'rank--' + r.rank">{{ r.rank }}</span>
+                  <div class="ranking-mini__info">
+                    <span class="ranking-mini__name">{{ r.name }}</span>
+                    <span class="ranking-mini__contract">${{ r.contractValue }}M</span>
                   </div>
+                  <span class="ranking-mini__status" [class.status--better]="r.costStatus === 'better'"
+                    [class.status--normal]="r.costStatus === 'normal'"
+                    [class.status--pending]="r.costStatus === 'pending'">
+                    {{ r.costStatus === 'better' ? '優於預期' : r.costStatus === 'normal' ? '正常' : '待執行' }}
+                  </span>
+                  <span class="ranking-mini__rate" [class.text-error]="r.profitRate < 0">
+                    {{ r.profitRate > 0 ? '+' : '' }}{{ r.profitRate }}%
+                  </span>
+                </div>
                 }
               </div>
             </div>
@@ -973,31 +1048,29 @@
             <div class="cost-structure-content">
               <div class="bullet-chart-container">
                 @for (cost of costStructure(); track cost.id) {
-                  <div class="bullet-chart-row">
-                    <div class="bullet-chart-label">{{ cost.label }}</div>
-                    <div class="bullet-chart-bar">
-                      <!-- 背景長條 - 估算成本 -->
-                      <div class="bullet-chart-bar__estimated" [style.width.%]="cost.estimated"></div>
-                      <!-- 前景實心條 - 實際成本 -->
-                      <div class="bullet-chart-bar__actual"
-                           [style.width.%]="cost.actual"
-                           [class.bullet-chart-bar__actual--over]="cost.actual > cost.estimated"
-                           [class.bullet-chart-bar__actual--under]="cost.actual <= cost.estimated">
-                        <span class="bullet-chart-bar__diff"
-                              [class.diff--positive]="cost.difference > 0"
-                              [class.diff--negative]="cost.difference < 0">
-                          {{ cost.difference > 0 ? '+' : '' }}{{ cost.difference }}%
-                        </span>
-                      </div>
-                    </div>
-                    <div class="bullet-chart-values">
-                      <span class="bullet-chart-value bullet-chart-value--actual">{{ cost.actual }}%</span>
-                      <span class="bullet-chart-value bullet-chart-value--estimated">/{{ cost.estimated }}%</span>
-                      <span class="bullet-chart-value bullet-chart-value--amount">
-                        ${{ cost.actualAmount }}萬/${{ cost.estimatedAmount }}萬
+                <div class="bullet-chart-row">
+                  <div class="bullet-chart-label">{{ cost.label }}</div>
+                  <div class="bullet-chart-bar">
+                    <!-- 背景長條 - 估算成本 -->
+                    <div class="bullet-chart-bar__estimated" [style.width.%]="cost.estimated"></div>
+                    <!-- 前景實心條 - 實際成本 -->
+                    <div class="bullet-chart-bar__actual" [style.width.%]="cost.actual"
+                      [class.bullet-chart-bar__actual--over]="cost.actual > cost.estimated"
+                      [class.bullet-chart-bar__actual--under]="cost.actual <= cost.estimated">
+                      <span class="bullet-chart-bar__diff" [class.diff--positive]="cost.difference > 0"
+                        [class.diff--negative]="cost.difference < 0">
+                        {{ cost.difference > 0 ? '+' : '' }}{{ cost.difference }}%
                       </span>
                     </div>
                   </div>
+                  <div class="bullet-chart-values">
+                    <span class="bullet-chart-value bullet-chart-value--actual">{{ cost.actual }}%</span>
+                    <span class="bullet-chart-value bullet-chart-value--estimated">/{{ cost.estimated }}%</span>
+                    <span class="bullet-chart-value bullet-chart-value--amount">
+                      ${{ cost.actualAmount }}萬/${{ cost.estimatedAmount }}萬
+                    </span>
+                  </div>
+                </div>
                 }
               </div>
 
@@ -1009,13 +1082,13 @@
                 </div>
                 <div class="cost-warnings__list">
                   @for (warning of costWarnings(); track warning.id) {
-                    <div class="cost-warning-item" [class.cost-warning-item--high]="warning.severity === 'high'">
-                      <div class="cost-warning-item__info">
-                        <span class="cost-warning-item__name">{{ warning.projectName }}</span>
-                        <span class="cost-warning-item__category">{{ warning.category }}</span>
-                      </div>
-                      <span class="cost-warning-item__amount">+{{ warning.overBudget }}萬</span>
+                  <div class="cost-warning-item" [class.cost-warning-item--high]="warning.severity === 'high'">
+                    <div class="cost-warning-item__info">
+                      <span class="cost-warning-item__name">{{ warning.projectName }}</span>
+                      <span class="cost-warning-item__category">{{ warning.category }}</span>
                     </div>
+                    <span class="cost-warning-item__amount">+{{ warning.overBudget }}萬</span>
+                  </div>
                   }
                 </div>
               </div>
@@ -1033,17 +1106,356 @@
             </div>
           </section>
         </div>
-        </section>
-        <!-- ============ 毛利損益區塊結束 ============ -->
+      </section>
+      <!-- ============ 毛利損益區塊結束 ============ -->
 
-        <!-- ============ 文化訊號區塊 ============ -->
-        <section id="section-culture" class="bento-section bento-section--culture">
-          <div class="bento-section-header">
-            <i class="ri-heart-pulse-line"></i>
-            <span>文化訊號</span>
+      <!-- ============ 文化與公平回報區塊 ============ -->
+      <section id="section-culture" class="bento-section bento-section--culture">
+        <div class="bento-section-header">
+          <i class="ri-heart-pulse-line"></i>
+          <span>文化與公平回報</span>
+        </div>
+
+        <!-- ============ Row 9: 願景使命 + 員工關懷 ============ -->
+        <div class="bento-box-row bento-box-row--double">
+          <!-- 願景與使命 -->
+          <section class="bento-box bento-box--vision-mission">
+            <div class="bento-header bento-header--culture">
+              <i class="ri-compass-3-line"></i>
+              <span>願景與使命</span>
+              <a routerLink="/culture/handbook" class="bento-link">查看詳情 →</a>
+            </div>
+            @if (visionMissionSummary(); as vm) {
+            <div class="vision-mission-content">
+              <!-- 願景與使命區塊 -->
+              <div class="vm-block">
+                <div class="vm-block__header">
+                  <i class="ri-eye-line"></i>
+                  <span>願景 Vision</span>
+                </div>
+                <p class="vm-block__text">{{ vm.vision }}</p>
+              </div>
+              <div class="vm-block">
+                <div class="vm-block__header">
+                  <i class="ri-rocket-line"></i>
+                  <span>使命 Mission</span>
+                </div>
+                <p class="vm-block__text">{{ vm.mission }}</p>
+              </div>
+
+              <!-- 核心價值觀 - 圖卡樣式 -->
+              <div class="vm-values-section">
+                <span class="vm-values__label">核心價值觀</span>
+                <div class="vm-values-cards">
+                  @for (value of vm.coreValues; track value.name) {
+                  <div class="vm-value-card">
+                    <i [class]="value.icon"></i>
+                    <div class="vm-value-card__content">
+                      <span class="vm-value-card__name">{{ value.name }}</span>
+                      <span class="vm-value-card__desc">{{ value.description }}</span>
+                    </div>
+                  </div>
+                  }
+                </div>
+              </div>
+            </div>
+            }
+          </section>
+
+          <!-- 員工關懷制度 -->
+          <section class="bento-box bento-box--eap">
+            <div class="bento-header bento-header--culture">
+              <i class="ri-hand-heart-line"></i>
+              <span>員工關懷制度</span>
+              <a routerLink="/culture/eap" class="bento-link">查看詳情 →</a>
+            </div>
+            @if (eapSummary(); as eap) {
+            <div class="eap-content">
+              <div class="eap-benefits-grid">
+                @for (benefit of eap.benefits; track benefit.id) {
+                <div class="eap-benefit-card" [class.coming-soon]="benefit.status === 'coming-soon'">
+                  <div class="eap-benefit-card__icon">
+                    <i [class]="benefit.icon"></i>
+                  </div>
+                  <div class="eap-benefit-card__info">
+                    <span class="eap-benefit-card__name">{{ benefit.name }}</span>
+                    <span class="eap-benefit-card__quota">{{ benefit.quota }}</span>
+                    <span class="eap-benefit-card__desc">{{ benefit.description }}</span>
+                  </div>
+                  @if (benefit.status === 'coming-soon') {
+                  <span class="eap-benefit-card__badge">即將推出</span>
+                  }
+                </div>
+                }
+              </div>
+              <div class="eap-impact">
+                <span class="eap-impact__label">EAP 效益</span>
+                <div class="eap-impact__metrics">
+                  <div class="eap-impact__item">
+                    <i class="ri-speed-up-line"></i>
+                    <span class="eap-impact__value">+{{ eap.impact.productivityImprovement }}%</span>
+                    <span class="eap-impact__desc">生產力提升</span>
+                  </div>
+                  <div class="eap-impact__item">
+                    <i class="ri-user-heart-line"></i>
+                    <span class="eap-impact__value">-{{ eap.impact.turnoverReduction }}%</span>
+                    <span class="eap-impact__desc">離職率降低</span>
+                  </div>
+                  <div class="eap-impact__item">
+                    <i class="ri-funds-line"></i>
+                    <span class="eap-impact__value">{{ eap.impact.roi }}%</span>
+                    <span class="eap-impact__desc">投資報酬率</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            }
+          </section>
+        </div>
+
+        <!-- ============ Row 10: 員工故事布告欄 ============ -->
+        <div class="bento-box-row bento-box-row--single">
+          <section class="bento-box bento-box--employee-stories">
+            <div class="bento-header bento-header--culture">
+              <i class="ri-quill-pen-line"></i>
+              <span>員工故事</span>
+              <a [routerLink]="['/culture/handbook']" [queryParams]="{ tab: 'stories' }" class="bento-link">查看詳情 →</a>
+            </div>
+            @if (employeeStorySummary(); as stories) {
+            <div class="story-board-content">
+              <!-- KPI + 分隔線 + 分類篩選 -->
+              <div class="story-filter-row">
+                <div class="story-kpi-item">
+                  <span class="story-kpi-value">{{ stories.kpi.newThisMonth }}</span>
+                  <span class="story-kpi-label">本月新增</span>
+                </div>
+                <div class="story-kpi-item">
+                  <span class="story-kpi-value">{{ stories.kpi.totalStories }}</span>
+                  <span class="story-kpi-label">總故事數</span>
+                </div>
+                <div class="story-kpi-divider"></div>
+                <!-- 分類篩選按鈕 -->
+                <button class="category-filter-btn" [class.active]="selectedStoryCategory() === 'all'"
+                  (click)="filterByStoryCategory('all')">
+                  <i class="ri-apps-line"></i>
+                  <span>全部</span>
+                </button>
+                @for (cat of stories.categoryStats; track cat.category) {
+                <button class="category-filter-btn" [class.active]="selectedStoryCategory() === cat.category"
+                  [style.--cat-color]="cat.color" (click)="filterByStoryCategory(cat.category)">
+                  <i [class]="cat.icon"></i>
+                  <span>{{ cat.label }}</span>
+                  <span class="filter-count">{{ cat.count }}</span>
+                </button>
+                }
+              </div>
+
+              <!-- 便利貼布告欄 -->
+              <div class="sticky-notes-board" #storyBoard>
+                @for (story of filteredStories(); track story.id; let i = $index) {
+                <div class="sticky-note" [style.--note-color]="story.moodColor" [style.--note-index]="i"
+                  [attr.data-index]="i">
+                  <div class="sticky-note__pin"></div>
+                  <div class="sticky-note__icon-badge">
+                    <i [class]="getCategoryIcon(story.category)"></i>
+                  </div>
+                  <div class="sticky-note__content">
+                    <h4 class="sticky-note__title">{{ story.title }}</h4>
+                    <p class="sticky-note__excerpt">{{ story.excerpt }}</p>
+                    <div class="sticky-note__footer">
+                      <span class="sticky-note__author">{{ story.author }}</span>
+                      <span class="sticky-note__dept">{{ story.department }}</span>
+                      <span class="sticky-note__likes">
+                        <i class="ri-heart-fill"></i> {{ story.likes }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                }
+              </div>
+            </div>
+            }
+          </section>
+        </div>
+
+        <!-- ============ Row 11: 三區塊佈局 (獲獎記錄 + 公平回報 + 獎金排行) ============ -->
+        <div class="bento-box-row bento-box-row--triple">
+          <!-- 區塊 1: 獲獎記錄 (40%) -->
+          <section class="bento-box bento-box--awards">
+            <div class="bento-header bento-header--culture">
+              <i class="ri-trophy-line"></i>
+              <span>獲獎記錄</span>
+              <a routerLink="/culture/awards" class="bento-link">查看詳情 →</a>
+            </div>
+            <div class="awards-content">
+              <div class="awards-list">
+                @for (award of awardsWon(); track award.id) {
+                <div class="award-item">
+                  <div class="award-item__icon-wrap">
+                    <i [class]="award.icon || 'ri-trophy-fill'"></i>
+                  </div>
+                  <div class="award-item__content">
+                    <h4 class="award-item__title">{{ award.name }}</h4>
+                    <div class="award-item__meta">
+                      <span class="award-item__year-tag">{{ award.year }} 年</span>
+                      <span class="award-item__status">已獲獎</span>
+                    </div>
+                  </div>
+                </div>
+                }
+              </div>
+              <div class="ai-assistant-section">
+                <a routerLink="/culture/ai-assistant" class="ai-assistant-btn">
+                  <i class="ri-sparkling-2-fill"></i>
+                  <span>AI 申請助理</span>
+                </a>
+              </div>
+            </div>
+          </section>
+
+          <!-- 區塊 2: 公平回報系統｜一秒算獎金 (20%) -->
+          <section class="bento-box bento-box--bonus-system">
+            <div class="bento-header bento-header--culture">
+              <i class="ri-gift-2-line"></i>
+              <span>公平回報系統</span>
+            </div>
+            <div class="bonus-system-content">
+              @for (card of bonusCards(); track card.id) {
+              <div class="bonus-card" [style.--card-color]="card.color"
+                [style.--card-color-rgb]="card.id === 'okr' ? '141, 163, 153' : '200, 164, 161'">
+                <div class="bonus-card__info">
+                  <div class="bonus-card__title">{{ card.title }}</div>
+                  <div class="bonus-card__tag">{{ card.subtitle }}</div>
+
+                  <div class="bonus-card__amount">
+                    ${{ (bonusAnimatedAmounts()[card.id] || 0).toLocaleString() }}
+                  </div>
+
+                  <div class="bonus-card__year">({{ card.year }} 年度)</div>
+
+                  <div class="bonus-card__details">
+                    <div class="bonus-card__formula">{{ card.formula }}</div>
+                    <div class="bonus-card__settlement">{{ card.settlement }}</div>
+                  </div>
+
+                  @if (card.hasExample) {
+                  <button class="bonus-card__example-btn" (click)="openBonusExample()">
+                    <i class="ri-calculator-line"></i>
+                    獎金計算範例
+                  </button>
+                  }
+                </div>
+              </div>
+              }
+            </div>
+          </section>
+
+          <!-- 區塊 3: 年度獎金預估 TOP 5 (40%) -->
+          <section class="bento-box bento-box--bonus-ranking">
+            <div class="bento-header bento-header--culture">
+              <i class="ri-medal-line"></i>
+              <span>年度獎金預估 TOP 5</span>
+              <a routerLink="/performance/bonus-distribution" class="bento-link">查看詳情 →</a>
+            </div>
+            <div class="bonus-ranking-content">
+              <div class="bonus-ranking-table">
+                <div class="ranking-header">
+                  <span class="col-rank">排名</span>
+                  <span class="col-name">姓名</span>
+                  <span class="col-multiplier">毛利倍數</span>
+                  <span class="col-bonus">預估獎金</span>
+                </div>
+                @for (item of bonusRankings(); track item.rank) {
+                <div class="ranking-row" [class.ranking-row--top3]="item.rank <= 3">
+                  <span class="col-rank">
+                    <span class="rank-badge" [attr.data-rank]="item.rank">{{ item.rank }}</span>
+                  </span>
+                  <span class="col-name">
+                    <span class="name-text">{{ item.name }}</span>
+                    <span class="dept-tag">{{ item.department }}</span>
+                  </span>
+                  <span class="col-multiplier">{{ item.multiplier }}倍</span>
+                  <span class="col-bonus">${{ item.estimatedBonus.toLocaleString() }}</span>
+                </div>
+                }
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- 獎金計算範例彈窗 -->
+        @if (showBonusExampleModal()) {
+        <div class="bonus-modal-overlay" (click)="closeBonusExample()">
+          <div class="bonus-modal" (click)="$event.stopPropagation()">
+            <div class="bonus-modal__header">
+              <span class="bonus-modal__badge">範例</span>
+              <h3>專案部門｜業務人員獎金計算邏輯</h3>
+              <button class="bonus-modal__close" (click)="closeBonusExample()">
+                <i class="ri-close-line"></i>
+              </button>
+            </div>
+            <div class="bonus-modal__content">
+              <table class="bonus-calc-table">
+                <thead>
+                  <tr>
+                    <th>計算項目</th>
+                    <th>業務 A</th>
+                    <th>說明</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>① 月薪基準</td>
+                    <td class="text-right">$50,000</td>
+                    <td>每月固定薪資</td>
+                  </tr>
+                  <tr>
+                    <td>② 年薪基準</td>
+                    <td class="text-right">$600,000</td>
+                    <td>= ① × 12 個月</td>
+                  </tr>
+                  <tr class="row-highlight">
+                    <td>③ 基本毛利門檻</td>
+                    <td class="text-right text-primary">$1,200,000</td>
+                    <td class="text-primary">= ② × 2 倍（基本要求）</td>
+                  </tr>
+                  <tr>
+                    <td>④ 業績認列毛利</td>
+                    <td class="text-right">3-9%</td>
+                    <td>公司提供比例區間</td>
+                  </tr>
+                  <tr>
+                    <td>⑤ 議價金額</td>
+                    <td class="text-right">100%</td>
+                    <td>議價成功全額認列</td>
+                  </tr>
+                  <tr>
+                    <td>⑥ 整年度請款</td>
+                    <td class="text-right">$2,400,000</td>
+                    <td>實際請款毛利合計</td>
+                  </tr>
+                  <tr class="row-highlight">
+                    <td>⑦ 倍數核算</td>
+                    <td class="text-right text-success">2.0倍</td>
+                    <td class="text-success">= ⑥ ÷ ③</td>
+                  </tr>
+                  <tr class="row-result">
+                    <td>⑧ 預估年度獎金</td>
+                    <td class="text-right text-primary">$120,000</td>
+                    <td class="text-primary">依倍數對應獎金級距</td>
+                  </tr>
+                </tbody>
+              </table>
+              <p class="bonus-modal__note">
+                <i class="ri-information-line"></i>
+                不同部門有不同計算公式，系統自動串接專案管理數據，每月即時更新預估獎金
+              </p>
+            </div>
           </div>
+        </div>
+        }
 
-        <!-- ============ Row 9: 績效薪資 ============ -->
+        <!-- ============ Row 12: 績效薪資 ============ -->
         <div class="bento-box-row bento-box-row--single">
           <section class="bento-box bento-box--reward">
             <div class="bento-header bento-header--culture">
@@ -1053,92 +1465,94 @@
             </div>
             <div class="reward-content">
               @if (rewardKPI(); as kpi) {
-                <div class="reward-summary">
-                  <div class="reward-ring">
-                    <div class="reward-ring__circle" [style.--progress]="kpi.alignmentRate">
-                      <span class="reward-ring__text">{{ kpi.alignmentRate }}%</span>
-                    </div>
-                    <span class="reward-ring__label">對齊度</span>
+              <div class="reward-summary">
+                <div class="reward-ring">
+                  <div class="reward-ring__circle" [style.--progress]="kpi.alignmentRate">
+                    <span class="reward-ring__text">{{ kpi.alignmentRate }}%</span>
                   </div>
-                  <div class="reward-ring">
-                    <div class="reward-ring__circle reward-ring__circle--fairness" [style.--progress]="kpi.fairnessRate">
-                      <span class="reward-ring__text">{{ kpi.fairnessRate }}%</span>
-                    </div>
-                    <span class="reward-ring__label">調薪公平性</span>
+                  <span class="reward-ring__label">對齊度</span>
+                </div>
+                <div class="reward-ring">
+                  <div class="reward-ring__circle reward-ring__circle--fairness" [style.--progress]="kpi.fairnessRate">
+                    <span class="reward-ring__text">{{ kpi.fairnessRate }}%</span>
                   </div>
-                  <div class="reward-alerts">
-                    <div class="reward-alert reward-alert--danger"
-                         [class.active]="selectedRewardRiskType() === 'retention'"
-                         (click)="switchRewardRiskType('retention')">
-                      <span class="reward-alert__count">{{ kpi.highPerfLowReward }}</span>
-                      <span class="reward-alert__label">高績效低薪資</span>
-                    </div>
-                    <div class="reward-alert reward-alert--warning"
-                         [class.active]="selectedRewardRiskType() === 'culture'"
-                         (click)="switchRewardRiskType('culture')">
-                      <span class="reward-alert__count">{{ kpi.lowPerfHighReward }}</span>
-                      <span class="reward-alert__label">低績效高薪資</span>
-                    </div>
+                  <span class="reward-ring__label">調薪公平性</span>
+                </div>
+                <div class="reward-alerts">
+                  <div class="reward-alert reward-alert--danger"
+                    [class.active]="selectedRewardRiskType() === 'retention'"
+                    (click)="switchRewardRiskType('retention')">
+                    <span class="reward-alert__count">{{ kpi.highPerfLowReward }}</span>
+                    <span class="reward-alert__label">高績效低薪資</span>
+                  </div>
+                  <div class="reward-alert reward-alert--warning"
+                    [class.active]="selectedRewardRiskType() === 'culture'" (click)="switchRewardRiskType('culture')">
+                    <span class="reward-alert__count">{{ kpi.lowPerfHighReward }}</span>
+                    <span class="reward-alert__label">低績效高薪資</span>
                   </div>
                 </div>
+              </div>
               }
 
               <!-- 風險人員清單標題 -->
               <div class="reward-risk-header">
                 @if (selectedRewardRiskType() === 'retention') {
-                  <i class="ri-alarm-warning-line reward-risk-header__icon text-error"></i>
-                  <span class="reward-risk-header__title text-error">高績效低薪資（留才風險）</span>
+                <i class="ri-alarm-warning-line reward-risk-header__icon text-error"></i>
+                <span class="reward-risk-header__title text-error">高績效低薪資（留才風險）</span>
                 } @else {
-                  <i class="ri-alert-line reward-risk-header__icon text-warning"></i>
-                  <span class="reward-risk-header__title text-warning">低績效高薪資（文化破壞）</span>
+                <i class="ri-alert-line reward-risk-header__icon text-warning"></i>
+                <span class="reward-risk-header__title text-warning">低績效高薪資（文化破壞）</span>
                 }
               </div>
 
               <!-- 風險人員卡片清單 -->
               <div class="reward-risk-list reward-risk-list--row">
                 @for (emp of getFilteredRewardEmployees(); track emp.id) {
-                  <div class="reward-risk-card" [class.reward-risk-card--retention]="emp.riskType === 'retention'" [class.reward-risk-card--culture]="emp.riskType === 'culture'">
-                    <div class="reward-risk-card__icon" [class.perf-a]="emp.performance.startsWith('A')" [class.perf-b]="emp.performance.startsWith('B')" [class.perf-c]="emp.performance.startsWith('C')">
-                      @if (emp.performance.startsWith('A')) {
-                        <i class="ri-star-fill"></i>
-                      } @else if (emp.performance.startsWith('B')) {
-                        <i class="ri-checkbox-circle-fill"></i>
-                      } @else {
-                        <i class="ri-error-warning-fill"></i>
-                      }
-                      <span class="perf-badge">{{ emp.performance }}</span>
-                    </div>
-                    <div class="reward-risk-card__left">
-                      <span class="reward-risk-card__name">{{ emp.name }}</span>
-                      <span class="reward-risk-card__position">{{ emp.position }}</span>
-                    </div>
-                    <div class="reward-risk-card__right">
-                      <span class="reward-risk-card__reward" [class.text-error]="emp.riskType === 'retention'" [class.text-warning]="emp.riskType === 'culture'">薪資 {{ emp.rewardLevel }}</span>
-                      <span class="reward-risk-card__market">市場 {{ emp.marketLevel }}</span>
-                    </div>
+                <div class="reward-risk-card" [class.reward-risk-card--retention]="emp.riskType === 'retention'"
+                  [class.reward-risk-card--culture]="emp.riskType === 'culture'">
+                  <div class="reward-risk-card__icon" [class.perf-a]="emp.performance.startsWith('A')"
+                    [class.perf-b]="emp.performance.startsWith('B')" [class.perf-c]="emp.performance.startsWith('C')">
+                    @if (emp.performance.startsWith('A')) {
+                    <i class="ri-star-fill"></i>
+                    } @else if (emp.performance.startsWith('B')) {
+                    <i class="ri-checkbox-circle-fill"></i>
+                    } @else {
+                    <i class="ri-error-warning-fill"></i>
+                    }
+                    <span class="perf-badge">{{ emp.performance }}</span>
                   </div>
+                  <div class="reward-risk-card__left">
+                    <span class="reward-risk-card__name">{{ emp.name }}</span>
+                    <span class="reward-risk-card__position">{{ emp.position }}</span>
+                  </div>
+                  <div class="reward-risk-card__right">
+                    <span class="reward-risk-card__reward" [class.text-error]="emp.riskType === 'retention'"
+                      [class.text-warning]="emp.riskType === 'culture'">薪資 {{ emp.rewardLevel }}</span>
+                    <span class="reward-risk-card__market">市場 {{ emp.marketLevel }}</span>
+                  </div>
+                </div>
                 }
               </div>
 
               <!-- 建議行動 (僅低績效高薪資時顯示) -->
               @if (selectedRewardRiskType() === 'culture') {
-                <div class="reward-suggestion">
-                  <span class="reward-suggestion__title">建議行動</span>
-                  <span class="reward-suggestion__text">安排績效改善計畫，若無改善則調整薪資結構</span>
-                </div>
+              <div class="reward-suggestion">
+                <span class="reward-suggestion__title">建議行動</span>
+                <span class="reward-suggestion__text">安排績效改善計畫，若無改善則調整薪資結構</span>
+              </div>
               }
             </div>
           </section>
         </div>
-        </section>
-        <!-- ============ 文化訊號區塊結束 ============ -->
+      </section>
+      <!-- ============ 文化訊號區塊結束 ============ -->
 
-        <!-- ============ 決策事項區塊 ============ -->
-        <section id="section-decision" class="bento-section bento-section--decision">
-          <div class="bento-section-header">
-            <i class="ri-checkbox-circle-line"></i>
-            <span>決策事項</span>
-          </div>
+      <!-- ============ 決策事項區塊 ============ -->
+      <section id="section-decision" class="bento-section bento-section--decision">
+        <div class="bento-section-header">
+          <i class="ri-checkbox-circle-line"></i>
+          <span>決策事項</span>
+        </div>
 
         <!-- ============ Row 10: 本週待決策事項 ============ -->
         <section class="bento-box bento-box--decisions-full">
@@ -1150,7 +1564,8 @@
                 <i class="ri-arrow-left-s-line"></i>
               </button>
               <span class="decision-nav__indicator">{{ decisionPage() + 1 }} / {{ totalDecisionPages() }}</span>
-              <button class="decision-nav__btn" (click)="nextDecisionPage()" [disabled]="decisionPage() >= totalDecisionPages() - 1">
+              <button class="decision-nav__btn" (click)="nextDecisionPage()"
+                [disabled]="decisionPage() >= totalDecisionPages() - 1">
                 <i class="ri-arrow-right-s-line"></i>
               </button>
             </div>
@@ -1165,16 +1580,16 @@
                 </div>
                 <div class="decision-cards-wrap">
                   @for (item of getDecisionsByPriority('urgent'); track item.id; let i = $index) {
-                    <div class="decision-card priority--urgent">
-                      <span class="decision-card__number">{{ i + 1 }}</span>
-                      <div class="decision-card__header">
-                        <div class="decision-card__icon">
-                          <i [class]="item.icon"></i>
-                        </div>
-                        <div class="decision-card__title">{{ item.title }}</div>
+                  <div class="decision-card priority--urgent">
+                    <span class="decision-card__number">{{ i + 1 }}</span>
+                    <div class="decision-card__header">
+                      <div class="decision-card__icon">
+                        <i [class]="item.icon"></i>
                       </div>
-                      <div class="decision-card__desc">{{ item.description }}</div>
+                      <div class="decision-card__title">{{ item.title }}</div>
                     </div>
+                    <div class="decision-card__desc">{{ item.description }}</div>
+                  </div>
                   }
                 </div>
               </div>
@@ -1186,16 +1601,16 @@
                 </div>
                 <div class="decision-cards-wrap">
                   @for (item of getDecisionsByPriority('important'); track item.id; let i = $index) {
-                    <div class="decision-card priority--important">
-                      <span class="decision-card__number">{{ i + 1 }}</span>
-                      <div class="decision-card__header">
-                        <div class="decision-card__icon">
-                          <i [class]="item.icon"></i>
-                        </div>
-                        <div class="decision-card__title">{{ item.title }}</div>
+                  <div class="decision-card priority--important">
+                    <span class="decision-card__number">{{ i + 1 }}</span>
+                    <div class="decision-card__header">
+                      <div class="decision-card__icon">
+                        <i [class]="item.icon"></i>
                       </div>
-                      <div class="decision-card__desc">{{ item.description }}</div>
+                      <div class="decision-card__title">{{ item.title }}</div>
                     </div>
+                    <div class="decision-card__desc">{{ item.description }}</div>
+                  </div>
                   }
                 </div>
               </div>
@@ -1207,130 +1622,120 @@
                 </div>
                 <div class="decision-cards-wrap">
                   @for (item of getDecisionsByPriority('opportunity'); track item.id; let i = $index) {
-                    <div class="decision-card priority--opportunity">
-                      <span class="decision-card__number">{{ i + 1 }}</span>
-                      <div class="decision-card__header">
-                        <div class="decision-card__icon">
-                          <i [class]="item.icon"></i>
-                        </div>
-                        <div class="decision-card__title">{{ item.title }}</div>
+                  <div class="decision-card priority--opportunity">
+                    <span class="decision-card__number">{{ i + 1 }}</span>
+                    <div class="decision-card__header">
+                      <div class="decision-card__icon">
+                        <i [class]="item.icon"></i>
                       </div>
-                      <div class="decision-card__desc">{{ item.description }}</div>
+                      <div class="decision-card__title">{{ item.title }}</div>
                     </div>
+                    <div class="decision-card__desc">{{ item.description }}</div>
+                  </div>
                   }
                 </div>
               </div>
             </div>
           </div>
         </section>
-        </section>
-        <!-- ============ 決策事項區塊結束 ============ -->
+      </section>
+      <!-- ============ 決策事項區塊結束 ============ -->
 
-      </div>
+    </div>
     }
 
     <!-- ========== 營運視角 ========== -->
     @if (currentView() === 'operational') {
-      <!-- Welcome Banner -->
-      <section class="welcome-banner">
-        <div class="welcome-banner__content">
-          <h2>歡迎回來，Admin！</h2>
-          <p>今天是 {{ currentDate() }}，系統運作正常</p>
-        </div>
-        <div class="welcome-banner__illustration">
-          <i class="ri-rocket-line"></i>
-        </div>
-      </section>
-
-      <!-- Stats Grid -->
-      <section class="stats-grid">
-        @for (stat of stats; track stat.label) {
-          <app-stat-card
-            [icon]="stat.icon"
-            [label]="stat.label"
-            [value]="stat.value"
-            [changeText]="stat.changeText"
-            [changeType]="stat.changeType"
-            [moduleType]="stat.moduleType" />
-        }
-      </section>
-
-      <!-- Quick Access Section -->
-      <section class="section">
-        <div class="section__header">
-          <h3 class="section__title">快速存取</h3>
-          <a routerLink="/training/competency-heatmap" class="section__link">
-            查看全部 <i class="ri-arrow-right-line"></i>
-          </a>
-        </div>
-        <div class="quick-access-grid">
-          @for (item of quickAccessItems; track item.title) {
-            <a [routerLink]="item.route" class="quick-card">
-              <div class="quick-card__icon" [class]="item.moduleClass">
-                <i [class]="item.icon"></i>
-              </div>
-              <div class="quick-card__title">{{ item.title }}</div>
-              <div class="quick-card__desc">{{ item.description }}</div>
-            </a>
-          }
-        </div>
-      </section>
-
-      <!-- Content Row -->
-      <div class="content-row">
-        <!-- Activities -->
-        <section class="content-col-8">
-          <div class="card">
-            <div class="card-header">
-              <h4 class="card-title">系統活動紀錄</h4>
-              <button class="btn-icon" type="button" aria-label="More options">
-                <i class="ri-more-2-line"></i>
-              </button>
-            </div>
-            <div class="card-body">
-              <div class="activity-timeline">
-                @for (activity of activities; track activity.title) {
-                  <div class="timeline-item">
-                    <div class="timeline-item__marker" [class]="activity.moduleClass"></div>
-                    <div class="timeline-item__content">
-                      <div class="timeline-item__title">{{ activity.title }}</div>
-                      <div class="timeline-item__desc">{{ activity.description }}</div>
-                      <div class="timeline-item__time">{{ activity.time }}</div>
-                    </div>
-                  </div>
-                }
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- Todos -->
-        <section class="content-col-4">
-          <div class="card">
-            <div class="card-header">
-              <h4 class="card-title">待辦事項</h4>
-            </div>
-            <div class="card-body">
-              <div class="todo-list">
-                @for (todo of todos(); track todo.id) {
-                  <label class="todo-item">
-                    <input
-                      type="checkbox"
-                      class="todo-item__checkbox"
-                      [checked]="todo.completed"
-                      (change)="toggleTodo(todo.id)">
-                    <span
-                      class="todo-item__text"
-                      [class.completed]="todo.completed">
-                      {{ todo.text }}
-                    </span>
-                  </label>
-                }
-              </div>
-            </div>
-          </div>
-        </section>
+    <!-- Welcome Banner -->
+    <section class="welcome-banner">
+      <div class="welcome-banner__content">
+        <h2>歡迎回來，Admin！</h2>
+        <p>今天是 {{ currentDate() }}，系統運作正常</p>
       </div>
+      <div class="welcome-banner__illustration">
+        <i class="ri-rocket-line"></i>
+      </div>
+    </section>
+
+    <!-- Stats Grid -->
+    <section class="stats-grid">
+      @for (stat of stats; track stat.label) {
+      <app-stat-card [icon]="stat.icon" [label]="stat.label" [value]="stat.value" [changeText]="stat.changeText"
+        [changeType]="stat.changeType" [moduleType]="stat.moduleType" />
+      }
+    </section>
+
+    <!-- Quick Access Section -->
+    <section class="section">
+      <div class="section__header">
+        <h3 class="section__title">快速存取</h3>
+        <a routerLink="/training/competency-heatmap" class="section__link">
+          查看全部 <i class="ri-arrow-right-line"></i>
+        </a>
+      </div>
+      <div class="quick-access-grid">
+        @for (item of quickAccessItems; track item.title) {
+        <a [routerLink]="item.route" class="quick-card">
+          <div class="quick-card__icon" [class]="item.moduleClass">
+            <i [class]="item.icon"></i>
+          </div>
+          <div class="quick-card__title">{{ item.title }}</div>
+          <div class="quick-card__desc">{{ item.description }}</div>
+        </a>
+        }
+      </div>
+    </section>
+
+    <!-- Content Row -->
+    <div class="content-row">
+      <!-- Activities -->
+      <section class="content-col-8">
+        <div class="card">
+          <div class="card-header">
+            <h4 class="card-title">系統活動紀錄</h4>
+            <button class="btn-icon" type="button" aria-label="More options">
+              <i class="ri-more-2-line"></i>
+            </button>
+          </div>
+          <div class="card-body">
+            <div class="activity-timeline">
+              @for (activity of activities; track activity.title) {
+              <div class="timeline-item">
+                <div class="timeline-item__marker" [class]="activity.moduleClass"></div>
+                <div class="timeline-item__content">
+                  <div class="timeline-item__title">{{ activity.title }}</div>
+                  <div class="timeline-item__desc">{{ activity.description }}</div>
+                  <div class="timeline-item__time">{{ activity.time }}</div>
+                </div>
+              </div>
+              }
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Todos -->
+      <section class="content-col-4">
+        <div class="card">
+          <div class="card-header">
+            <h4 class="card-title">待辦事項</h4>
+          </div>
+          <div class="card-body">
+            <div class="todo-list">
+              @for (todo of todos(); track todo.id) {
+              <label class="todo-item">
+                <input type="checkbox" class="todo-item__checkbox" [checked]="todo.completed"
+                  (change)="toggleTodo(todo.id)">
+                <span class="todo-item__text" [class.completed]="todo.completed">
+                  {{ todo.text }}
+                </span>
+              </label>
+              }
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
     }
 
     <!-- Footer -->

@@ -42,6 +42,16 @@ export const routes: Routes = [
       .then(m => m.organizationRoutes)
   },
   {
+    path: 'performance',
+    loadChildren: () => import('./features/performance/performance.routes')
+      .then(m => m.PERFORMANCE_ROUTES)
+  },
+  {
+    path: 'culture',
+    loadChildren: () => import('./features/culture/culture.routes')
+      .then(m => m.CULTURE_ROUTES)
+  },
+  {
     path: '**',
     redirectTo: 'login'
   }

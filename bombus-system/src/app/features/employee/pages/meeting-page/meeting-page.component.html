@@ -3,44 +3,45 @@
   [breadcrumbs]="['員工管理', '會議管理']">
 </app-header>
 
-<main class="main-content">
+<div class="main-content">
   <div class="content-container">
     <!-- 頁面操作列 -->
-    <div class="page-toolbar">
-      <nav class="view-tabs" role="tablist">
-      <button
-        class="tab-btn"
-        [class.active]="viewMode() === 'calendar'"
-        (click)="setViewMode('calendar')"
-        type="button">
-        <i class="ri-calendar-line"></i>
-        <span>會議日曆</span>
-      </button>
-      <button
-        class="tab-btn"
-        [class.active]="viewMode() === 'list'"
-        (click)="setViewMode('list')"
-        type="button">
-        <i class="ri-list-check"></i>
-        <span>會議列表</span>
-      </button>
-      <button
-        class="tab-btn"
-        [class.active]="viewMode() === 'tracking'"
-        (click)="setViewMode('tracking')"
-        type="button">
-        <i class="ri-task-line"></i>
-        <span>結論追蹤</span>
-      </button>
-      <button
-        class="tab-btn"
-        [class.active]="viewMode() === 'stats'"
-        (click)="setViewMode('stats')"
-        type="button">
-        <i class="ri-bar-chart-line"></i>
-        <span>會議統計</span>
-      </button>
-      </nav>
+    <div class="filter-bar">
+      <div class="view-toggle">
+        <button
+          class="toggle-btn"
+          [class.active]="viewMode() === 'calendar'"
+          (click)="setViewMode('calendar')"
+          type="button">
+          <i class="ri-calendar-line"></i>
+          會議日曆
+        </button>
+        <button
+          class="toggle-btn"
+          [class.active]="viewMode() === 'list'"
+          (click)="setViewMode('list')"
+          type="button">
+          <i class="ri-list-check"></i>
+          會議列表
+        </button>
+        <button
+          class="toggle-btn"
+          [class.active]="viewMode() === 'tracking'"
+          (click)="setViewMode('tracking')"
+          type="button">
+          <i class="ri-task-line"></i>
+          結論追蹤
+        </button>
+        <button
+          class="toggle-btn"
+          [class.active]="viewMode() === 'stats'"
+          (click)="setViewMode('stats')"
+          type="button">
+          <i class="ri-bar-chart-line"></i>
+          會議統計
+        </button>
+      </div>
+      <div class="filter-divider"></div>
       <button class="btn-primary" (click)="openAddMeetingModal()">
         <i class="ri-add-line"></i>
         <span>新增會議</span>
@@ -491,7 +492,7 @@
       </div>
     }
   </div>
-</main>
+</div>
 
 <!-- 新增會議 Modal -->
 @if (showAddMeetingModal()) {

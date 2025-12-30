@@ -83,7 +83,9 @@ export class SidebarComponent {
           icon: 'ri-book-open-line',
           moduleClass: 'module-l3',
           children: [
-            { label: '課程管理', icon: '', route: '/training/course-management' },
+            { label: '課程與報名管理', icon: '', route: '/training/course-management' },
+            { label: '學習地圖', icon: '', route: '/training/learning-map' },
+            { label: '培訓成效追蹤', icon: '', route: '/training/effectiveness' },
             { label: '組織職能熱力圖', icon: '', route: '/training/competency-heatmap' },
             { label: '人才九宮格', icon: '', route: '/training/nine-box' },
             { label: '學習發展路徑圖', icon: '', route: '/training/learning-path' },
@@ -96,7 +98,9 @@ export class SidebarComponent {
           moduleClass: 'module-l4',
           children: [
             { label: '專案列表', icon: '', route: '/project/list' },
-            { label: 'AI損益預測', icon: '', route: '/project/profit-prediction' }
+            { label: 'AI損益預測', icon: '', route: '/project/profit-prediction' },
+            { label: 'Forecast追蹤', icon: '', route: '/project/forecast' },
+            { label: '專案報表', icon: '', route: '/project/report' }
           ]
         },
         {
@@ -104,6 +108,10 @@ export class SidebarComponent {
           icon: 'ri-line-chart-line',
           moduleClass: 'module-l5',
           children: [
+            { label: '毛利監控儀表板', icon: '', route: '/performance/profit-dashboard' },
+            { label: '獎金分配計算', icon: '', route: '/performance/bonus-distribution' },
+            { label: '目標與任務管理', icon: '', route: '/performance/goal-task' },
+            { label: '毛利計算參數設定', icon: '', route: '/performance/profit-settings' },
             { label: '績效考核', icon: '', route: '/performance/review' },
             { label: '360度回饋', icon: '', route: '/performance/360-feedback' }
           ]
@@ -114,7 +122,12 @@ export class SidebarComponent {
           moduleClass: 'module-l6',
           children: [
             { label: '企業文化手冊', icon: '', route: '/culture/handbook' },
-            { label: 'EAP員工協助', icon: '', route: '/culture/eap' }
+            { label: 'EAP員工協助', icon: '', route: '/culture/eap' },
+            { label: '獎項資料庫', icon: '', route: '/culture/awards' },
+            { label: '文件儲存庫', icon: '', route: '/culture/documents' },
+            { label: 'AI申請助理', icon: '', route: '/culture/ai-assistant' },
+            { label: '智慧文件分析', icon: '', route: '/culture/analysis' },
+            { label: '影響力評估', icon: '', route: '/culture/impact' }
           ]
         }
       ]

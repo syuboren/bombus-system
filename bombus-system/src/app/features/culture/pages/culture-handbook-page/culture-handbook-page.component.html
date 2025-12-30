@@ -1,0 +1,263 @@
+<app-header
+  [pageTitle]="'企業文化手冊'"
+  [breadcrumbs]="['文化管理']"
+/>
+
+<main class="handbook-page">
+  <!-- 頁籤導航 -->
+  <nav class="page-tabs">
+    <button
+      class="tab-btn"
+      [class.active]="activeTab() === 'vision'"
+      (click)="setActiveTab('vision')"
+    >
+      <i class="ri-focus-3-line"></i>
+      願景與價值
+    </button>
+    <button
+      class="tab-btn"
+      [class.active]="activeTab() === 'stories'"
+      (click)="setActiveTab('stories')"
+    >
+      <i class="ri-book-open-line"></i>
+      文化故事
+    </button>
+    <button
+      class="tab-btn"
+      [class.active]="activeTab() === 'metrics'"
+      (click)="setActiveTab('metrics')"
+    >
+      <i class="ri-bar-chart-grouped-line"></i>
+      文化指標
+    </button>
+  </nav>
+
+  <!-- 願景與價值 -->
+  @if (activeTab() === 'vision') {
+    <div class="vision-section">
+      <!-- 願景使命卡片 -->
+      <div class="vision-mission-card">
+        <div class="vm-header">
+          <div class="vm-badge">
+            <i class="ri-compass-3-line"></i>
+            企業方向
+          </div>
+          @if (visionMission()) {
+            <span class="version-tag">v{{ visionMission()?.version }}</span>
+          }
+        </div>
+
+        @if (visionMission()) {
+          <div class="vm-content">
+            <div class="vm-item vision">
+              <div class="vm-label">
+                <i class="ri-eye-line"></i>
+                願景 Vision
+              </div>
+              <p class="vm-text">{{ visionMission()?.vision }}</p>
+            </div>
+            <div class="vm-divider"></div>
+            <div class="vm-item mission">
+              <div class="vm-label">
+                <i class="ri-rocket-line"></i>
+                使命 Mission
+              </div>
+              <p class="vm-text">{{ visionMission()?.mission }}</p>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- 核心價值觀 -->
+      <section class="values-section">
+        <h2 class="section-title">
+          <i class="ri-heart-3-line"></i>
+          核心價值觀
+        </h2>
+
+        <div class="values-grid">
+          @for (value of visionMission()?.coreValues; track value.id) {
+            <div
+              class="value-card"
+              [class.expanded]="selectedValueId() === value.id"
+              (click)="selectValue(value.id)"
+            >
+              <div class="value-header">
+                <div class="value-icon">
+                  <i [class]="value.icon"></i>
+                </div>
+                <div class="value-info">
+                  <h3 class="value-name">{{ value.name }}</h3>
+                  <p class="value-desc">{{ value.description }}</p>
+                </div>
+                <i class="expand-icon ri-arrow-down-s-line"></i>
+              </div>
+
+              @if (selectedValueId() === value.id) {
+                <div class="value-behaviors">
+                  <h4>行為準則</h4>
+                  <ul>
+                    @for (behavior of value.behaviors; track behavior) {
+                      <li>
+                        <i class="ri-checkbox-circle-line"></i>
+                        {{ behavior }}
+                      </li>
+                    }
+                  </ul>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </section>
+
+      <!-- 文化認同度調查摘要 -->
+      @if (getLatestSurvey()) {
+        <section class="survey-summary">
+          <h2 class="section-title">
+            <i class="ri-pie-chart-line"></i>
+            最新文化認同調查
+          </h2>
+
+          <div class="survey-card">
+            <div class="survey-header">
+              <div class="survey-info">
+                <h3>{{ getLatestSurvey()?.title }}</h3>
+                <span class="survey-period">{{ getLatestSurvey()?.period }}</span>
+              </div>
+              <div class="survey-score">
+                <span class="score-value">{{ getLatestSurvey()?.overallScore }}</span>
+                <span class="score-max">/5</span>
+              </div>
+            </div>
+
+            <div class="survey-stats">
+              <div class="stat-item">
+                <span class="stat-label">回覆率</span>
+                <span class="stat-value">{{ getLatestSurvey()?.responseRate }}%</span>
+              </div>
+            </div>
+
+            <div class="dimensions-chart">
+              @for (dim of getLatestSurvey()?.dimensions; track dim.name) {
+                <div class="dimension-row">
+                  <div class="dim-info">
+                    <span class="dim-name">{{ dim.name }}</span>
+                    <span class="dim-score">{{ dim.score }}</span>
+                  </div>
+                  <div class="dim-bar-wrapper">
+                    <div class="dim-bar" [style.width.%]="(dim.score / 5) * 100"></div>
+                    <div class="dim-benchmark" [style.left.%]="(dim.benchmark / 5) * 100"></div>
+                  </div>
+                  <i [class]="getTrendIcon(dim.trend)" [class.trend-up]="dim.trend === 'up'" [class.trend-down]="dim.trend === 'down'"></i>
+                </div>
+              }
+            </div>
+          </div>
+        </section>
+      }
+    </div>
+  }
+
+  <!-- 文化故事 -->
+  @if (activeTab() === 'stories') {
+    <div class="stories-section">
+      <div class="stories-header">
+        <h2 class="section-title">
+          <i class="ri-quill-pen-line"></i>
+          我們的故事
+        </h2>
+        <button class="btn-add-story">
+          <i class="ri-add-line"></i>
+          分享故事
+        </button>
+      </div>
+
+      <!-- 精選故事 -->
+      <div class="featured-stories">
+        @for (story of stories(); track story.id) {
+          @if (story.featured) {
+            <article class="story-card featured">
+              <div class="story-category">
+                <i [class]="getCategoryIcon(story.category)"></i>
+                {{ getCategoryLabel(story.category) }}
+              </div>
+              <h3 class="story-title">{{ story.title }}</h3>
+              <p class="story-excerpt">{{ story.content }}</p>
+              <div class="story-meta">
+                <div class="story-author">
+                  <div class="author-avatar">
+                    <i class="ri-user-line"></i>
+                  </div>
+                  <div class="author-info">
+                    <span class="author-name">{{ story.author }}</span>
+                    <span class="author-dept">{{ story.authorDepartment }}</span>
+                  </div>
+                </div>
+                <div class="story-stats">
+                  <span><i class="ri-heart-line"></i> {{ story.likes }}</span>
+                  <span><i class="ri-eye-line"></i> {{ story.views }}</span>
+                </div>
+              </div>
+            </article>
+          }
+        }
+      </div>
+
+      <!-- 所有故事 -->
+      <div class="all-stories">
+        @for (story of stories(); track story.id) {
+          @if (!story.featured) {
+            <article class="story-card">
+              <div class="story-category">
+                <i [class]="getCategoryIcon(story.category)"></i>
+                {{ getCategoryLabel(story.category) }}
+              </div>
+              <h3 class="story-title">{{ story.title }}</h3>
+              <p class="story-excerpt">{{ story.content }}</p>
+              <div class="story-meta">
+                <span class="author-name">{{ story.author }}</span>
+                <div class="story-stats">
+                  <span><i class="ri-heart-line"></i> {{ story.likes }}</span>
+                </div>
+              </div>
+            </article>
+          }
+        }
+      </div>
+    </div>
+  }
+
+  <!-- 文化指標 -->
+  @if (activeTab() === 'metrics') {
+    <div class="metrics-section">
+      <h2 class="section-title">
+        <i class="ri-dashboard-3-line"></i>
+        文化指標儀表板
+      </h2>
+
+      <div class="metrics-grid">
+        @for (metric of metrics(); track metric.id) {
+          <div class="metric-card" [attr.data-category]="metric.category">
+            <div class="metric-header">
+              <span class="metric-category">{{ getMetricCategoryLabel(metric.category) }}</span>
+              <i [class]="getTrendIcon(metric.trend)" [class.trend-up]="metric.trend === 'up'" [class.trend-down]="metric.trend === 'down'"></i>
+            </div>
+            <div class="metric-value">
+              <span class="value">{{ metric.value }}</span>
+              <span class="unit">{{ metric.unit }}</span>
+            </div>
+            <div class="metric-name">{{ metric.name }}</div>
+            <div class="metric-target">
+              目標: {{ metric.target }}{{ metric.unit }}
+            </div>
+            <div class="metric-progress">
+              <div class="progress-bar" [style.width.%]="(metric.value / metric.target) * 100"></div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</main>
+

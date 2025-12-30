@@ -1,27 +1,28 @@
+@import '../../../../../assets/styles/variables';
+@import '../../../../../assets/styles/mixins';
+
 // Profit Prediction Page Styles
-$color-l4-mauve: #9A8C98;
-$color-text-primary: #1e293b;
-$color-text-secondary: #64748b;
-$color-border: #e2e8f0;
-$color-bg-card: #ffffff;
-$color-bg-base: #f8fafc;
-$color-success: #7FB095;
-$color-danger: #C77F7F;
-$color-warning: #E3C088;
+$module-color: $color-l4-mauve;
 
 .profit-prediction-page {
+  padding: $spacing-lg;
+  padding-top: calc(var(--header-height, 70px) + 20px);
+  min-height: calc(100vh - 64px);
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  padding: 20px;
-  padding-top: calc(var(--header-height, 70px) + 20px);
+  gap: $spacing-lg;
+
+  @include media-max-md {
+    padding: $spacing-md;
+    padding-top: calc(var(--header-height, 70px) + 16px);
+  }
 }
 
 // Chart Panel
 .chart-panel {
-  background: $color-bg-card;
+  background: $color-pure-white;
   border-radius: 12px;
-  border: 1px solid $color-border;
+  border: 1px solid $color-soft-gray;
   padding: 25px;
 }
 
@@ -45,10 +46,10 @@ $color-warning: #E3C088;
   }
 
   &--danger {
-    color: $color-danger;
+    color: $color-error;
 
     i {
-      color: $color-danger;
+      color: $color-error;
     }
   }
 }
@@ -84,7 +85,7 @@ $color-warning: #E3C088;
 // Form Select
 .form-select {
   padding: 8px 12px;
-  border: 1px solid $color-border;
+  border: 1px solid $color-soft-gray;
   border-radius: 8px;
   background: white;
   font-size: 14px;
@@ -111,12 +112,12 @@ $color-warning: #E3C088;
     padding: 12px;
     color: $color-text-secondary;
     font-size: 13px;
-    border-bottom: 1px solid $color-border;
+    border-bottom: 1px solid $color-soft-gray;
   }
 
   td {
     padding: 15px 12px;
-    border-bottom: 1px solid $color-border;
+    border-bottom: 1px solid $color-soft-gray;
     font-size: 14px;
     color: $color-text-primary;
   }
@@ -126,7 +127,7 @@ $color-warning: #E3C088;
     transition: background 0.2s;
 
     &:hover {
-      background: $color-bg-base;
+      background: $color-cloud-gray;
     }
   }
 }
@@ -165,7 +166,7 @@ $color-warning: #E3C088;
 }
 
 .profit-negative {
-  color: $color-danger;
+  color: $color-error;
   font-weight: 600;
 }
 
@@ -178,8 +179,8 @@ $color-warning: #E3C088;
 
 .alert-card {
   background: white;
-  border: 1px solid rgba($color-danger, 0.3);
-  border-left: 4px solid $color-danger;
+  border: 1px solid rgba($color-error, 0.3);
+  border-left: 4px solid $color-error;
   border-radius: 8px;
   padding: 15px;
   position: relative;
@@ -193,13 +194,13 @@ $color-warning: #E3C088;
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, rgba($color-danger, 0.05) 0%, rgba(255, 255, 255, 0) 100%);
+    background: linear-gradient(90deg, rgba($color-error, 0.05) 0%, rgba(255, 255, 255, 0) 100%);
     pointer-events: none;
   }
 
   &:hover {
     transform: translateX(5px);
-    box-shadow: 0 5px 15px rgba($color-danger, 0.1);
+    box-shadow: 0 5px 15px rgba($color-error, 0.1);
   }
 
   &--warning {
@@ -228,7 +229,7 @@ $color-warning: #E3C088;
 }
 
 .alert-val {
-  color: $color-danger;
+  color: $color-error;
   font-weight: 700;
 
   &--warning {
@@ -248,7 +249,7 @@ $color-warning: #E3C088;
   padding: 8px 16px;
   background: white;
   color: $color-text-primary;
-  border: 1px solid $color-border;
+  border: 1px solid $color-soft-gray;
   border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
@@ -287,10 +288,10 @@ $color-warning: #E3C088;
 }
 
 .okr-card {
-  background: $color-bg-base;
+  background: $color-cloud-gray;
   border-radius: 8px;
   padding: 15px;
-  border: 1px solid $color-border;
+  border: 1px solid $color-soft-gray;
 }
 
 .okr-title {

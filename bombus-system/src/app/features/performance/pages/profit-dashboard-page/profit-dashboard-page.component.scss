@@ -1,0 +1,539 @@
+// ============================================
+// L5 績效管理 - 毛利監控儀表板
+// ============================================
+
+// Morandi Color Palette
+$color-l5: #B87D7B;           // L5 主色 (紅)
+$color-l5-light: rgba(#B87D7B, 0.15);
+$color-sage: #8DA399;
+$color-terracotta: #D6A28C;
+$color-petrol: #7F9CA0;
+$color-mauve: #9A8C98;
+
+// Neutral Colors
+$color-text-primary: #464E56;
+$color-text-secondary: #6B7280;
+$color-text-muted: #9CA3AF;
+$color-border: #E2E4E8;
+$color-bg-light: #F8F9FA;
+$color-bg-card: #FFFFFF;
+
+// Status Colors
+$color-success: #7FB095;
+$color-warning: #E3C088;
+$color-danger: #C77F7F;
+
+.profit-dashboard-page {
+  padding: 24px;
+  padding-top: calc(var(--header-height, 70px) + 20px);
+  background-color: $color-bg-light;
+  min-height: calc(100vh - 64px);
+}
+
+// ============================================
+// Toolbar
+// ============================================
+.page-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 16px 20px;
+  background: $color-bg-card;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.period-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  label {
+    font-size: 14px;
+    font-weight: 500;
+    color: $color-text-secondary;
+  }
+
+  .form-select {
+    padding: 8px 32px 8px 12px;
+    font-size: 14px;
+    border: 1px solid $color-border;
+    border-radius: 8px;
+    background-color: $color-bg-card;
+    color: $color-text-primary;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+
+    &:focus {
+      outline: none;
+      border-color: $color-l5;
+      box-shadow: 0 0 0 3px rgba($color-l5, 0.1);
+    }
+  }
+}
+
+.toolbar-actions {
+  .btn-secondary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    color: $color-bg-card;
+    background: $color-l5;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: darken($color-l5, 8%);
+      transform: translateY(-1px);
+    }
+
+    i {
+      font-size: 18px;
+    }
+  }
+}
+
+// ============================================
+// KPI Cards
+// ============================================
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-bottom: 24px;
+
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.kpi-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px;
+  background: $color-bg-card;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  }
+
+  .kpi-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+
+    i {
+      font-size: 24px;
+      color: $color-bg-card;
+    }
+  }
+
+  &--profit .kpi-icon {
+    background: linear-gradient(135deg, $color-sage, darken($color-sage, 10%));
+  }
+
+  &--margin .kpi-icon {
+    background: linear-gradient(135deg, $color-petrol, darken($color-petrol, 10%));
+  }
+
+  &--target .kpi-icon {
+    background: linear-gradient(135deg, $color-mauve, darken($color-mauve, 10%));
+  }
+
+  &--bonus .kpi-icon {
+    background: linear-gradient(135deg, $color-l5, darken($color-l5, 10%));
+  }
+
+  .kpi-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .kpi-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: $color-text-secondary;
+    margin-bottom: 4px;
+  }
+
+  .kpi-value {
+    font-size: 28px;
+    font-weight: 700;
+    font-family: 'Georgia', serif;
+    font-style: italic;
+    color: $color-text-primary;
+    line-height: 1.2;
+
+    &.value--success {
+      color: $color-success;
+    }
+  }
+
+  .kpi-trend {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 6px;
+    padding: 4px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 6px;
+
+    &.trend--up {
+      color: $color-success;
+      background: rgba($color-success, 0.12);
+    }
+
+    &.trend--down {
+      color: $color-danger;
+      background: rgba($color-danger, 0.12);
+    }
+
+    &.trend--flat {
+      color: $color-text-secondary;
+      background: rgba($color-text-secondary, 0.1);
+    }
+  }
+
+  .kpi-sub {
+    font-size: 12px;
+    color: $color-text-muted;
+    margin-top: 4px;
+  }
+
+  .kpi-progress {
+    margin-top: 8px;
+
+    .progress-bar {
+      height: 6px;
+      background: $color-bg-light;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: $color-mauve;
+      border-radius: 3px;
+      transition: width 0.4s ease;
+
+      &.fill--success {
+        background: $color-success;
+      }
+    }
+  }
+}
+
+// ============================================
+// Dashboard Grid
+// ============================================
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 24px;
+
+  @media (max-width: 1200px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dashboard-column {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+// ============================================
+// Chart Panels
+// ============================================
+.chart-panel {
+  background: $color-bg-card;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid $color-border;
+
+  .panel-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    color: $color-text-primary;
+
+    i {
+      font-size: 18px;
+      color: $color-l5;
+    }
+
+    &--warning i {
+      color: $color-warning;
+    }
+  }
+
+  .alert-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: $color-bg-card;
+    background: $color-danger;
+    border-radius: 12px;
+  }
+}
+
+.chart-container {
+  width: 100%;
+
+  &--large {
+    height: 320px;
+    padding: 16px;
+  }
+
+  &--medium {
+    height: 240px;
+    padding: 16px;
+  }
+
+  &--donut {
+    height: 200px;
+    padding: 16px;
+  }
+}
+
+// ============================================
+// Cost Legend
+// ============================================
+.cost-legend {
+  padding: 0 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+  }
+
+  .legend-label {
+    flex: 1;
+    color: $color-text-primary;
+  }
+
+  .legend-value {
+    font-weight: 600;
+    color: $color-text-primary;
+    min-width: 70px;
+    text-align: right;
+  }
+
+  .legend-percent {
+    color: $color-text-secondary;
+    min-width: 45px;
+    text-align: right;
+  }
+}
+
+// ============================================
+// Alerts
+// ============================================
+.alert-list {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.alert-card {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  border-left: 3px solid;
+  background: $color-bg-light;
+
+  &.alert--high {
+    border-left-color: $color-danger;
+    background: rgba($color-danger, 0.06);
+
+    .alert-icon {
+      color: $color-danger;
+    }
+  }
+
+  &.alert--medium {
+    border-left-color: $color-warning;
+    background: rgba($color-warning, 0.06);
+
+    .alert-icon {
+      color: $color-warning;
+    }
+  }
+
+  &.alert--low {
+    border-left-color: $color-text-muted;
+    background: $color-bg-light;
+
+    .alert-icon {
+      color: $color-text-muted;
+    }
+  }
+
+  .alert-icon {
+    font-size: 20px;
+  }
+
+  .alert-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .alert-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+
+  .alert-dept {
+    font-size: 13px;
+    font-weight: 600;
+    color: $color-text-primary;
+  }
+
+  .alert-value {
+    font-size: 12px;
+    font-weight: 700;
+    color: $color-danger;
+  }
+
+  .alert-message {
+    font-size: 12px;
+    color: $color-text-secondary;
+  }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  color: $color-text-muted;
+
+  i {
+    font-size: 40px;
+    color: $color-success;
+    margin-bottom: 8px;
+  }
+
+  span {
+    font-size: 14px;
+  }
+}
+
+// ============================================
+// Department Table
+// ============================================
+.department-table-wrapper {
+  overflow-x: auto;
+}
+
+.department-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th, td {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 13px;
+    border-bottom: 1px solid $color-border;
+  }
+
+  th {
+    font-weight: 600;
+    color: $color-text-secondary;
+    background: $color-bg-light;
+  }
+
+  td {
+    color: $color-text-primary;
+
+    &:first-child {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+  }
+
+  .dept-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+  }
+
+  .value--success {
+    color: $color-success;
+    font-weight: 600;
+  }
+
+  .value--warning {
+    color: $color-warning;
+    font-weight: 600;
+  }
+
+  tbody tr {
+    transition: background 0.15s ease;
+
+    &:hover {
+      background: $color-bg-light;
+    }
+
+    &:last-child td {
+      border-bottom: none;
+    }
+  }
+}
+

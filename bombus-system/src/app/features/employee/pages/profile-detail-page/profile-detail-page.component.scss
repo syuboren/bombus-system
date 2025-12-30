@@ -1,6 +1,22 @@
 @import '../../../../../assets/styles/variables';
 @import '../../../../../assets/styles/mixins';
 
+.main-content {
+  padding: $spacing-lg;
+  padding-top: calc(var(--header-height, 70px) + 20px);
+  min-height: calc(100vh - 64px);
+
+  @include media-max-md {
+    padding: $spacing-md;
+    padding-top: calc(var(--header-height, 70px) + 16px);
+  }
+}
+
+.content-container {
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
 // ---------------------------------------------------------------
 // Candidate Header
 // ---------------------------------------------------------------

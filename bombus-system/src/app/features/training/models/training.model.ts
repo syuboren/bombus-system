@@ -93,3 +93,174 @@ export interface TrainingPendingItem {
   urgency: 'high' | 'medium' | 'low';
 }
 
+// ===== 3.5 培訓成效追蹤與回饋循環 =====
+
+// TTQS 品質管理指標
+export interface TTQSIndicator {
+  phase: 'plan' | 'design' | 'do' | 'review' | 'outcome';
+  name: string;
+  score: number; // 0-100
+  maxScore: number;
+  status: 'excellent' | 'good' | 'warning' | 'danger';
+  items: string[];
+}
+
+// 三個月反饋會
+export interface FeedbackSession {
+  id: string;
+  courseId: string;
+  courseName: string;
+  scheduledDate: Date;
+  status: 'pending' | 'scheduled' | 'completed' | 'overdue';
+  attendees: number;
+  behaviorConversionRate?: number; // 行為轉化率
+  performanceImprovement?: number; // 績效提升度
+  knowledgeRetention?: number; // 知識留存率
+  managerSatisfaction?: number; // 主管滿意度 1-5
+}
+
+// 課程 ROI 排行
+export interface CourseROI {
+  id: string;
+  courseName: string;
+  category: CourseCategory;
+  investmentCost: number; // 投資成本
+  benefit: number; // 效益
+  roi: number; // ROI %
+  behaviorConversionRate: number;
+  recommendation: 'keep' | 'optimize' | 'review' | 'discontinue';
+}
+
+// 持續改善項目
+export interface ImprovementItem {
+  id: string;
+  courseId: string;
+  courseName: string;
+  issue: string;
+  suggestion: string;
+  priority: 'high' | 'medium' | 'low';
+  status: 'pending' | 'in-progress' | 'completed';
+  dueDate: Date;
+}
+
+// ===== 3.3 課程與報名管理 =====
+
+// 講師資訊
+export interface Instructor {
+  id: string;
+  name: string;
+  specialty: string[];
+  rating: number; // 1-5
+  totalCourses: number;
+  avatar?: string;
+}
+
+// 報名記錄
+export interface Enrollment {
+  id: string;
+  courseId: string;
+  employeeId: string;
+  employeeName: string;
+  department: string;
+  status: 'pending' | 'approved' | 'rejected' | 'completed' | 'cancelled';
+  appliedDate: Date;
+  approvedDate?: Date;
+  attendanceStatus?: 'present' | 'absent' | 'late';
+}
+
+// 簽到記錄
+export interface AttendanceRecord {
+  id: string;
+  courseId: string;
+  employeeId: string;
+  employeeName: string;
+  checkInTime: Date;
+  checkInMethod: 'qrcode' | 'manual';
+}
+
+// ===== 3.2 學習地圖與課程推薦 =====
+
+// 職能落差資訊
+export interface CompetencyGap {
+  id: string;
+  competencyName: string;
+  category: CourseCategory;
+  currentLevel: number; // 0-100
+  requiredLevel: number; // 0-100
+  gapPercentage: number; // 落差百分比
+  priority: 'high' | 'medium' | 'low'; // 紅燈/黃燈/綠燈
+}
+
+// 學習路徑節點
+export interface LearningPathNode {
+  id: string;
+  courseId: string;
+  courseName: string;
+  category: CourseCategory;
+  duration: number; // 小時
+  status: 'locked' | 'available' | 'in-progress' | 'completed';
+  progress: number; // 0-100
+  priority: 'high' | 'medium' | 'low';
+  targetCompetencies: string[];
+  expectedGrowth: number; // 預期職能提升 %
+  prerequisites: string[]; // 前置課程 ID
+  position: { x: number; y: number }; // 節點位置
+}
+
+// 學習分支 (三大類別)
+export interface LearningBranch {
+  id: string;
+  category: CourseCategory;
+  label: string;
+  icon: string;
+  color: string;
+  totalCourses: number;
+  completedCourses: number;
+  overallProgress: number;
+  nodes: LearningPathNode[];
+}
+
+// 員工學習概況
+export interface LearnerProfile {
+  employeeId: string;
+  employeeName: string;
+  department: string;
+  position: string;
+  avatar?: string;
+  overallProgress: number; // 整體學習進度
+  totalGaps: number; // 職能落差數
+  highPriorityGaps: number; // 高優先落差數
+  completedCourses: number;
+  inProgressCourses: number;
+  totalLearningHours: number;
+  competencyGaps: CompetencyGap[];
+}
+
+// 課程推薦
+export interface CourseRecommendation {
+  id: string;
+  courseId: string;
+  courseName: string;
+  category: CourseCategory;
+  type: CourseType;
+  duration: number;
+  instructor: string;
+  targetCompetency: string;
+  expectedGrowth: number; // 預期提升 %
+  priority: 'high' | 'medium' | 'low';
+  matchScore: number; // 匹配度 0-100
+  nextSessionDate?: Date;
+  certifications?: string[];
+}
+
+// 學習里程碑
+export interface LearningMilestone {
+  id: string;
+  title: string;
+  description: string;
+  targetDate: Date;
+  status: 'pending' | 'achieved' | 'overdue';
+  relatedCourses: string[];
+  reward?: string;
+}
+

@@ -1,0 +1,346 @@
+<app-header
+  pageTitle="培訓成效追蹤"
+  [breadcrumbs]="['首頁', '教育訓練', '培訓成效追蹤']">
+</app-header>
+
+<div class="effectiveness-page">
+  <!-- KPI 總覽 -->
+  <section class="kpi-section">
+    <div class="section-header">
+      <h2 class="section-title">
+        <i class="ri-bar-chart-box-line"></i>
+        培訓 KPI 總覽
+      </h2>
+    </div>
+
+    @if (trainingKPI()) {
+      <div class="kpi-grid">
+        <div class="kpi-card kpi-card--completion">
+          <div class="kpi-card__icon">
+            <i class="ri-check-double-line"></i>
+          </div>
+          <div class="kpi-card__content">
+            <span class="kpi-card__value">{{ trainingKPI()!.completionRate }}%</span>
+            <span class="kpi-card__label">培訓完成率</span>
+          </div>
+          <div class="kpi-card__detail">
+            {{ trainingKPI()!.totalTrainees }} 人次
+          </div>
+        </div>
+
+        <div class="kpi-card kpi-card--budget">
+          <div class="kpi-card__icon">
+            <i class="ri-wallet-3-line"></i>
+          </div>
+          <div class="kpi-card__content">
+            <span class="kpi-card__value">{{ trainingKPI()!.budgetUtilization }}%</span>
+            <span class="kpi-card__label">預算執行率</span>
+          </div>
+          <div class="kpi-card__detail">
+            {{ formatCurrency(trainingKPI()!.usedBudget) }} / {{ formatCurrency(trainingKPI()!.plannedBudget) }}
+          </div>
+        </div>
+
+        <div class="kpi-card kpi-card--roi">
+          <div class="kpi-card__icon">
+            <i class="ri-line-chart-line"></i>
+          </div>
+          <div class="kpi-card__content">
+            <span class="kpi-card__value">{{ trainingKPI()!.trainingROI }}%</span>
+            <span class="kpi-card__label">培訓 ROI</span>
+          </div>
+          <div class="kpi-card__detail">
+            投資報酬率
+          </div>
+        </div>
+
+        <div class="kpi-card kpi-card--satisfaction">
+          <div class="kpi-card__icon">
+            <i class="ri-star-line"></i>
+          </div>
+          <div class="kpi-card__content">
+            <span class="kpi-card__value">{{ trainingKPI()!.avgSatisfaction }}</span>
+            <span class="kpi-card__label">平均滿意度</span>
+          </div>
+          <div class="kpi-card__detail">
+            滿分 5.0
+          </div>
+        </div>
+      </div>
+    }
+  </section>
+
+  <!-- TTQS 品質管理系統 -->
+  <section class="ttqs-section">
+    <div class="section-header">
+      <h2 class="section-title">
+        <i class="ri-shield-check-line"></i>
+        TTQS 品質管理系統
+      </h2>
+      <div class="ttqs-score">
+        <span class="ttqs-score__label">整體評分</span>
+        <span class="ttqs-score__value">{{ ttqsTotalScore() }}</span>
+        <span class="ttqs-score__max">/ 100</span>
+      </div>
+    </div>
+
+    <div class="ttqs-grid">
+      @for (indicator of ttqsIndicators(); track indicator.phase) {
+        <div class="ttqs-card" [class]="getTTQSStatusClass(indicator.status)">
+          <div class="ttqs-card__header">
+            <span class="ttqs-card__phase">{{ indicator.name }}</span>
+            <span class="ttqs-card__score">{{ indicator.score }}分</span>
+          </div>
+          <div class="ttqs-card__progress">
+            <div class="ttqs-card__bar">
+              <div class="ttqs-card__fill" [style.width.%]="indicator.score"></div>
+            </div>
+          </div>
+          <ul class="ttqs-card__items">
+            @for (item of indicator.items; track item) {
+              <li>{{ item }}</li>
+            }
+          </ul>
+          <div class="ttqs-card__icon-circle">
+            <i [class]="getTTQSIcon(indicator.phase)"></i>
+          </div>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- Kirkpatrick 四級評估 -->
+  <section class="kirkpatrick-section">
+    <div class="section-header">
+      <h2 class="section-title">
+        <i class="ri-pulse-line"></i>
+        Kirkpatrick 四級評估
+      </h2>
+    </div>
+
+    <div class="kirkpatrick-grid">
+      @for (item of trainingEffectiveness(); track item.level) {
+        <div class="kirkpatrick-card" [class]="getEffectivenessClass(item.status)">
+          <div class="kirkpatrick-card__level">L{{ item.level }}</div>
+          <div class="kirkpatrick-card__info">
+            <span class="kirkpatrick-card__name">{{ item.name }}</span>
+            <span class="kirkpatrick-card__desc">{{ item.description }}</span>
+          </div>
+          <div class="kirkpatrick-card__score-wrapper">
+            <div class="kirkpatrick-card__score-value">{{ item.score }}%</div>
+            <div class="kirkpatrick-card__score-bar">
+              <div class="kirkpatrick-card__score-fill" [style.width.%]="item.score"></div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- 三個月反饋分享會 -->
+  <section class="feedback-section">
+    <div class="section-header">
+      <h2 class="section-title">
+        <i class="ri-calendar-check-line"></i>
+        三個月反饋分享會
+      </h2>
+      <div class="feedback-stats">
+        <span class="feedback-stat">
+          <i class="ri-time-line"></i>
+          待舉辦 <strong>{{ pendingFeedbackCount() }}</strong>
+        </span>
+        <span class="feedback-stat feedback-stat--success">
+          <i class="ri-check-line"></i>
+          已完成 <strong>{{ completedFeedbackCount() }}</strong>
+        </span>
+        <span class="feedback-stat">
+          <i class="ri-exchange-line"></i>
+          平均轉化率 <strong>{{ avgBehaviorConversion() }}%</strong>
+        </span>
+      </div>
+    </div>
+
+    <div class="feedback-table-wrapper">
+      <table class="feedback-table">
+        <thead>
+          <tr>
+            <th>課程名稱</th>
+            <th>排程日期</th>
+            <th>參與人數</th>
+            <th>狀態</th>
+            <th>行為轉化率</th>
+            <th>績效提升度</th>
+            <th>知識留存率</th>
+            <th>主管滿意度</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (session of feedbackSessions(); track session.id) {
+            <tr>
+              <td>
+                <span class="course-name">{{ session.courseName }}</span>
+              </td>
+              <td>{{ formatDate(session.scheduledDate) }}</td>
+              <td>{{ session.attendees }} 人</td>
+              <td>
+                <span class="status-badge" [class]="getSessionStatusClass(session.status)">
+                  {{ getSessionStatusLabel(session.status) }}
+                </span>
+              </td>
+              <td>
+                @if (session.behaviorConversionRate !== undefined) {
+                  <span class="metric-value" [class.high]="session.behaviorConversionRate >= 70"
+                        [class.warning]="session.behaviorConversionRate < 50">
+                    {{ session.behaviorConversionRate }}%
+                  </span>
+                } @else {
+                  <span class="metric-na">-</span>
+                }
+              </td>
+              <td>
+                @if (session.performanceImprovement !== undefined) {
+                  <span class="metric-value positive">+{{ session.performanceImprovement }}%</span>
+                } @else {
+                  <span class="metric-na">-</span>
+                }
+              </td>
+              <td>
+                @if (session.knowledgeRetention !== undefined) {
+                  <span class="metric-value">{{ session.knowledgeRetention }}%</span>
+                } @else {
+                  <span class="metric-na">-</span>
+                }
+              </td>
+              <td>
+                @if (session.managerSatisfaction !== undefined) {
+                  <span class="metric-value">
+                    <i class="ri-star-fill"></i>
+                    {{ session.managerSatisfaction }}
+                  </span>
+                } @else {
+                  <span class="metric-na">-</span>
+                }
+              </td>
+              <td>
+                <div class="actions">
+                  @if (session.status === 'scheduled' || session.status === 'overdue') {
+                    <button class="action-btn action-btn--primary" title="開始會議">
+                      <i class="ri-play-line"></i>
+                    </button>
+                  }
+                  <button class="action-btn" title="查看詳情">
+                    <i class="ri-eye-line"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 課程 ROI 排行榜 -->
+  <section class="roi-section">
+    <div class="section-header">
+      <h2 class="section-title">
+        <i class="ri-funds-line"></i>
+        課程 ROI 排行榜
+      </h2>
+    </div>
+
+    <div class="roi-table-wrapper">
+      <table class="roi-table">
+        <thead>
+          <tr>
+            <th>排名</th>
+            <th>課程名稱</th>
+            <th>投資成本</th>
+            <th>效益</th>
+            <th>ROI</th>
+            <th>行為轉化率</th>
+            <th>建議</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (course of courseROIRanking(); track course.id; let i = $index) {
+            <tr>
+              <td>
+                <span class="rank-badge" [class.top3]="i < 3">{{ i + 1 }}</span>
+              </td>
+              <td>
+                <span class="course-name">{{ course.courseName }}</span>
+              </td>
+              <td>{{ formatCurrency(course.investmentCost) }}</td>
+              <td>{{ formatCurrency(course.benefit) }}</td>
+              <td>
+                <span class="roi-value" [class.positive]="course.roi > 0" [class.negative]="course.roi < 0">
+                  {{ course.roi > 0 ? '+' : '' }}{{ course.roi }}%
+                </span>
+              </td>
+              <td>
+                <div class="conversion-bar">
+                  <div class="conversion-track">
+                    <div class="conversion-fill" [style.width.%]="course.behaviorConversionRate"></div>
+                  </div>
+                  <span class="conversion-value">{{ course.behaviorConversionRate }}%</span>
+                </div>
+              </td>
+              <td>
+                <span class="recommendation-badge" [class]="getROIRecommendationClass(course.recommendation)">
+                  {{ getROIRecommendationLabel(course.recommendation) }}
+                </span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 持續改善循環 -->
+  <section class="improvement-section">
+    <div class="section-header">
+      <h2 class="section-title">
+        <i class="ri-refresh-line"></i>
+        持續改善追蹤
+      </h2>
+      <div class="improvement-alert" [class.has-items]="highPriorityImprovements() > 0">
+        <i class="ri-alarm-warning-line"></i>
+        <span>高優先項目：{{ highPriorityImprovements() }} 項</span>
+      </div>
+    </div>
+
+    <div class="improvement-cards">
+      @for (item of improvementItems(); track item.id) {
+        <div class="improvement-card">
+          <div class="improvement-card__header">
+            <span class="improvement-card__course">{{ item.courseName }}</span>
+            <span class="priority-badge" [class]="getPriorityClass(item.priority)">
+              {{ getPriorityLabel(item.priority) }}優先
+            </span>
+          </div>
+          <div class="improvement-card__issue">
+            <i class="ri-error-warning-line"></i>
+            {{ item.issue }}
+          </div>
+          <div class="improvement-card__suggestion">
+            <i class="ri-lightbulb-line"></i>
+            {{ item.suggestion }}
+          </div>
+          <div class="improvement-card__footer">
+            <span class="improvement-card__due">
+              <i class="ri-calendar-line"></i>
+              預計完成：{{ formatDate(item.dueDate) }}
+            </span>
+            <span class="status-badge" [class]="getImprovementStatusClass(item.status)">
+              {{ getImprovementStatusLabel(item.status) }}
+            </span>
+          </div>
+        </div>
+      }
+    </div>
+  </section>
+</div>
+
