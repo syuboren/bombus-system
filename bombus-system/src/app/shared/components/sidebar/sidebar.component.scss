@@ -159,7 +159,7 @@
       }
 
       &:hover {
-        > .menu-item__link {
+        >.menu-item__link {
           background: $color-cloud-gray;
         }
 
@@ -200,11 +200,14 @@
   }
 
   .brand-text {
-    font-size: $font-size-xl;
-    font-weight: $font-weight-bold;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
     color: $color-brand-main;
     transition: opacity $transition-normal, width $transition-normal;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 140px;
   }
 }
 
@@ -297,12 +300,29 @@
   }
 
   // Module Colors
-  &.module-l1 { color: $color-l1-sage; }
-  &.module-l2 { color: $color-l2-terracotta; }
-  &.module-l3 { color: $color-l3-petrol; }
-  &.module-l4 { color: $color-l4-mauve; }
-  &.module-l5 { color: $color-l5-brick; }
-  &.module-l6 { color: $color-l6-rose; }
+  &.module-l1 {
+    color: $color-l1-sage;
+  }
+
+  &.module-l2 {
+    color: $color-l2-terracotta;
+  }
+
+  &.module-l3 {
+    color: $color-l3-petrol;
+  }
+
+  &.module-l4 {
+    color: $color-l4-mauve;
+  }
+
+  &.module-l5 {
+    color: $color-l5-brick;
+  }
+
+  &.module-l6 {
+    color: $color-l6-rose;
+  }
 }
 
 .menu-item__text {

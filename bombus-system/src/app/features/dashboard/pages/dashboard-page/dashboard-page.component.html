@@ -1143,20 +1143,15 @@
                 <p class="vm-block__text">{{ vm.mission }}</p>
               </div>
 
-              <!-- 核心價值觀 - 圖卡樣式 -->
-              <div class="vm-values-section">
-                <span class="vm-values__label">核心價值觀</span>
-                <div class="vm-values-cards">
-                  @for (value of vm.coreValues; track value.name) {
-                  <div class="vm-value-card">
-                    <i [class]="value.icon"></i>
-                    <div class="vm-value-card__content">
-                      <span class="vm-value-card__name">{{ value.name }}</span>
-                      <span class="vm-value-card__desc">{{ value.description }}</span>
-                    </div>
-                  </div>
-                  }
+              <!-- 核心價值觀 - 口號圖卡 -->
+              <div class="vm-values-section vm-values-section--single">
+                @for (value of vm.coreValues; track value.name) {
+                <div class="vm-slogan-card">
+                  <i class="ri-double-quotes-l"></i>
+                  <p class="vm-slogan-card__text">{{ value.description }}</p>
+                  <i class="ri-double-quotes-r"></i>
                 </div>
+                }
               </div>
             </div>
             }

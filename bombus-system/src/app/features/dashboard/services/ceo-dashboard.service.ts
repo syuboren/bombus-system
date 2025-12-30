@@ -899,13 +899,10 @@ export class CEODashboardService {
   // ---------------------------------------------------------------
   getVisionMissionSummary(): Observable<VisionMissionSummary> {
     const data: VisionMissionSummary = {
-      vision: '成為亞太區最具創新力的人資科技領導者，引領企業邁向智慧人才管理新時代',
-      mission: '透過科技創新與人性化設計，協助企業建立高效能、高幸福感的工作環境，實現人才與組織的共同成長',
+      vision: '藉由系統整合提供軍用標準的客製化解決方案，成為客戶不可或缺的夥伴、行業的標竿。',
+      mission: '防禦國家安全、守護人民安全，實現安全無虞的社會價值。',
       coreValues: [
-        { name: '創新', icon: 'ri-lightbulb-flash-line', description: '勇於突破・持續創新' },
-        { name: '誠信', icon: 'ri-shield-check-line', description: '誠實正直・言行一致' },
-        { name: '卓越', icon: 'ri-trophy-line', description: '追求卓越・超越期待' },
-        { name: '關懷', icon: 'ri-heart-line', description: '以人為本・關懷員工' }
+        { name: '使命宣言', icon: 'ri-lightbulb-flash-line', description: '我每一天的努力都是為了這個偉大的使命做出貢獻。' }
       ],
       version: '3.0'
     };

@@ -205,7 +205,7 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
   bonusCards = signal<BonusCard[]>([
     {
       id: 'okr',
-      title: 'OKR 獎金',
+      title: '配利獎金池',
       subtitle: '點數制',
       amount: 850000,
       year: 2025,
@@ -216,7 +216,7 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
     },
     {
       id: 'performance',
-      title: '績效獎金',
+      title: '年度考核獎金',
       subtitle: '專案毛利制',
       amount: 2000000,
       year: 2025,

@@ -4553,8 +4553,11 @@
 // ---------------------------------------------------------------
 .bento-box-row--gantt {
   display: grid;
-  grid-template-columns: 0.3fr 0.7fr;
+  grid-template-columns: minmax(280px, 0.3fr) minmax(0, 1fr);
   gap: $spacing-xl;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 
   @include media-max-lg {
     grid-template-columns: 1fr;
@@ -4852,6 +4855,8 @@
 // 甘特圖區塊
 .bento-box--gantt-chart {
   min-height: 450px;
+  width: 100%;
+  overflow: hidden;
 }
 
 .gantt-container {
@@ -4872,8 +4877,12 @@
     width: 200px;
     flex-shrink: 0;
 
+    @media (max-width: 1100px) {
+      width: 150px;
+    }
+
     @include media-max-md {
-      width: 140px;
+      width: 120px;
     }
   }
 
@@ -4944,8 +4953,12 @@
     align-items: flex-start;
     gap: $spacing-sm;
 
+    @media (max-width: 1100px) {
+      width: 150px;
+    }
+
     @include media-max-md {
-      width: 140px;
+      width: 120px;
     }
   }
 
@@ -5036,6 +5049,14 @@
     display: flex;
     align-items: center;
     justify-content: flex-end;
+
+    @media (max-width: 1100px) {
+      width: 80px;
+    }
+
+    @include media-max-md {
+      width: 70px;
+    }
   }
 
   &__budget-amount {
@@ -5735,6 +5756,43 @@
   &__desc {
     font-size: $font-size-xs;
     color: $color-text-secondary;
+  }
+}
+
+// 單一口號圖卡樣式
+.vm-values-section--single {
+  display: flex;
+  justify-content: center;
+  border-top: none;
+  padding-top: 0;
+}
+
+.vm-slogan-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-sm;
+  width: 100%;
+  padding: $spacing-lg $spacing-xl;
+  background: linear-gradient(135deg, rgba($color-l6-rose, 0.08), rgba($color-l1-sage, 0.08));
+  border-radius: $radius-lg;
+  border-left: 4px solid $color-l6-rose;
+  border-right: 4px solid $color-l6-rose;
+
+  .ri-double-quotes-l,
+  .ri-double-quotes-r {
+    font-size: 24px;
+    color: rgba($color-l6-rose, 0.4);
+  }
+
+  &__text {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-medium;
+    color: $color-text-dark;
+    text-align: center;
+    line-height: 1.6;
+    margin: 0;
+    font-style: italic;
   }
 }
 
