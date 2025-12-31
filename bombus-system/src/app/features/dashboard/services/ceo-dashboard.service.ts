@@ -64,9 +64,9 @@ export class CEODashboardService {
         icon: 'ri-folder-chart-line',
         color: '#D6A28C',
         metrics: [
-          { label: '專案交付健康度', value: '4/5 正常', status: 'positive' },
+          { label: '專案交付健康度', value: '3/5 正常', status: 'warning' },
           { label: '毛利達成率', value: '103%', status: 'positive' },
-          { label: '風險專案', value: '1 個', status: 'danger' }
+          { label: '風險專案', value: '2 個', status: 'danger' }
         ],
         sparklineData: [68, 50, 81, 91, 80, 72]
       },
@@ -80,8 +80,8 @@ export class CEODashboardService {
         color: '#9A8C98',
         metrics: [
           { label: '績效獎酬對齊度', value: '92%', status: 'positive' },
-          { label: '訓練轉化率', value: '68%', status: 'warning' },
-          { label: '訊號對齊度', value: '92%', status: 'positive' }
+          { label: '本年獎金池', value: '$2,850,000', status: 'positive' },
+          { label: '員工故事', value: '本月 +3 則', status: 'positive' }
         ],
         sparklineData: [85, 79, 70, 82, 90, 81]
       }
@@ -107,7 +107,7 @@ export class CEODashboardService {
       // 人才風險 - 關鍵職位 (紅色)
       {
         id: 't1',
-        title: '資深專案經理職位',
+        title: '人資主管職位',
         description: '接班人數：0，預計 Q2 離職風險',
         severity: 'critical',
         category: 'people',
@@ -340,7 +340,7 @@ export class CEODashboardService {
     data: { dept: string; comp: string; score: number; status: 'achieved' | 'slight' | 'severe' }[];
   }> {
     const departments = ['研發部', '業務部', '行銷部', '人資部', '財務部'];
-    const competencies = ['專案管理', '技術開發', '溝通協調', '數據分析', '領導力', '創新思維'];
+    const competencies = ['專案管理', '數據分析', '溝通協調', '團隊合作', '領導力', '創新思維'];
 
     const getStatus = (score: number): 'achieved' | 'slight' | 'severe' => {
       if (score >= 4.0) return 'achieved';
@@ -351,37 +351,37 @@ export class CEODashboardService {
     const rawData = [
       // 研發部
       { dept: '研發部', comp: '專案管理', score: 3.2 },
-      { dept: '研發部', comp: '技術開發', score: 4.5 },
-      { dept: '研發部', comp: '溝通協調', score: 3.8 },
       { dept: '研發部', comp: '數據分析', score: 4.2 },
+      { dept: '研發部', comp: '溝通協調', score: 3.8 },
+      { dept: '研發部', comp: '團隊合作', score: 4.5 },
       { dept: '研發部', comp: '領導力', score: 3.0 },
       { dept: '研發部', comp: '創新思維', score: 3.9 },
       // 業務部
       { dept: '業務部', comp: '專案管理', score: 2.5 },
-      { dept: '業務部', comp: '技術開發', score: 2.8 },
-      { dept: '業務部', comp: '溝通協調', score: 4.3 },
       { dept: '業務部', comp: '數據分析', score: 2.4 },
+      { dept: '業務部', comp: '溝通協調', score: 4.3 },
+      { dept: '業務部', comp: '團隊合作', score: 4.1 },
       { dept: '業務部', comp: '領導力', score: 3.6 },
       { dept: '業務部', comp: '創新思維', score: 3.2 },
       // 行銷部
       { dept: '行銷部', comp: '專案管理', score: 3.0 },
-      { dept: '行銷部', comp: '技術開發', score: 2.2 },
-      { dept: '行銷部', comp: '溝通協調', score: 4.1 },
       { dept: '行銷部', comp: '數據分析', score: 3.7 },
+      { dept: '行銷部', comp: '溝通協調', score: 4.1 },
+      { dept: '行銷部', comp: '團隊合作', score: 3.5 },
       { dept: '行銷部', comp: '領導力', score: 3.1 },
       { dept: '行銷部', comp: '創新思維', score: 4.4 },
       // 人資部
       { dept: '人資部', comp: '專案管理', score: 3.8 },
-      { dept: '人資部', comp: '技術開發', score: 2.0 },
-      { dept: '人資部', comp: '溝通協調', score: 4.5 },
       { dept: '人資部', comp: '數據分析', score: 3.2 },
+      { dept: '人資部', comp: '溝通協調', score: 4.5 },
+      { dept: '人資部', comp: '團隊合作', score: 4.2 },
       { dept: '人資部', comp: '領導力', score: 3.9 },
       { dept: '人資部', comp: '創新思維', score: 3.3 },
       // 財務部
       { dept: '財務部', comp: '專案管理', score: 3.6 },
-      { dept: '財務部', comp: '技術開發', score: 2.8 },
-      { dept: '財務部', comp: '溝通協調', score: 3.7 },
       { dept: '財務部', comp: '數據分析', score: 4.6 },
+      { dept: '財務部', comp: '溝通協調', score: 3.7 },
+      { dept: '財務部', comp: '團隊合作', score: 3.8 },
       { dept: '財務部', comp: '領導力', score: 3.2 },
       { dept: '財務部', comp: '創新思維', score: 2.9 }
     ];
