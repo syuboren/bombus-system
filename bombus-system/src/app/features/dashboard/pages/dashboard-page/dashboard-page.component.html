@@ -358,6 +358,15 @@
               <div class="heatmap-table-wrap">
                 <table class="heatmap-table heatmap-table--compact">
                   <thead>
+                    <tr class="heatmap-table__category-row">
+                      <th></th>
+                      <th colspan="2" class="heatmap-table__category-header heatmap-table__category-header--core">核心職能
+                      </th>
+                      <th colspan="2"
+                        class="heatmap-table__category-header heatmap-table__category-header--professional">專業職能</th>
+                      <th colspan="2" class="heatmap-table__category-header heatmap-table__category-header--general">
+                        通識職能</th>
+                    </tr>
                     <tr>
                       <th class="heatmap-table__dept-header">部門</th>
                       @for (comp of heatmap.competencies; track comp) {
@@ -1384,7 +1393,7 @@
           <div class="bonus-modal" (click)="$event.stopPropagation()">
             <div class="bonus-modal__header">
               <span class="bonus-modal__badge">範例</span>
-              <h3>專案部門｜業務人員獎金計算邏輯</h3>
+              <h3>專案部門｜專案人員獎金計算邏輯</h3>
               <button class="bonus-modal__close" (click)="closeBonusExample()">
                 <i class="ri-close-line"></i>
               </button>
