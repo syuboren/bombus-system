@@ -902,7 +902,7 @@ export class CEODashboardService {
       vision: '藉由系統整合提供軍用標準的客製化解決方案，成為客戶不可或缺的夥伴、行業的標竿。',
       mission: '防禦國家安全、守護人民安全，實現安全無虞的社會價值。',
       coreValues: [
-        { name: '使命宣言', icon: 'ri-lightbulb-flash-line', description: '我每一天的努力都是為了這個偉大的使命做出貢獻。' }
+        { name: '使命宣言', icon: 'ri-lightbulb-flash-line', description: '我們每一天的努力都是為了這個偉大的使命做出貢獻。' }
       ],
       version: '3.0'
     };
@@ -926,14 +926,6 @@ export class CEODashboardService {
           icon: 'ri-empathize-line',
           quota: '4 次/年',
           description: '免費・匿名',
-          status: 'active'
-        },
-        {
-          id: 'legal',
-          name: '法律諮詢',
-          icon: 'ri-scales-3-line',
-          quota: '4 次/年',
-          description: '免費・專業律師',
           status: 'active'
         },
         {
