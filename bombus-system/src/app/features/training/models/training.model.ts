@@ -1,5 +1,5 @@
 // 課程類型
-export type CourseCategory = 'general' | 'professional' | 'management';
+export type CourseCategory = 'core' | 'general' | 'professional' | 'management';
 export type CourseType = 'OJT' | 'Off-JT' | 'SD';
 export type CourseStatus = 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
 

@@ -153,7 +153,7 @@
             </div>
             <div class="high-risk-list">
               @for (talent of highRiskTalents(); track talent.id) {
-              <div class="high-risk-card" [class]="talent.riskScore >= 70 ? 'risk-high' : 'risk-medium'">
+              <div class="high-risk-card" [class]="'zone--' + talent.zone">
                 <div class="high-risk-card__grade"
                   [class]="'grade--' + talent.performanceGrade.charAt(0).toLowerCase()">
                   {{ talent.performanceGrade }}
@@ -168,7 +168,7 @@
                     {{ talent.leaveReason }}
                   </div>
                 </div>
-                <div class="high-risk-card__score">
+                <div class="high-risk-card__score" [class]="'score--' + talent.zone">
                   {{ talent.riskScore }}%
                 </div>
               </div>
@@ -657,15 +657,18 @@
                 <table class="key-project-table">
                   <tbody>
                     @for (p of projectStatuses().slice(0, 5); track p.id) {
-                    <tr class="key-project-row" [class.risk]="p.progress < 50">
+                    <tr class="key-project-row" [class.risk]="p.status === 'risk'"
+                      [class.warning]="p.status === 'warning'">
                       <td class="key-project-row__name">{{ p.name }}</td>
                       <td class="key-project-row__bar">
-                        <div class="progress-bar-aligned" [class.progress-bar-aligned--risk]="p.progress < 50">
-                          <div class="progress-bar-aligned__fill" [class.fill--risk]="p.progress < 50"
-                            [style.width.%]="p.progress"></div>
+                        <div class="progress-bar-aligned" [class.progress-bar-aligned--risk]="p.status === 'risk'"
+                          [class.progress-bar-aligned--warning]="p.status === 'warning'">
+                          <div class="progress-bar-aligned__fill" [class.fill--risk]="p.status === 'risk'"
+                            [class.fill--warning]="p.status === 'warning'" [style.width.%]="p.progress"></div>
                         </div>
                       </td>
-                      <td class="key-project-row__value" [class.text-error]="p.progress < 50">{{ p.progress }}%</td>
+                      <td class="key-project-row__value" [class.text-error]="p.status === 'risk'"
+                        [class.text-warning]="p.status === 'warning'">{{ p.progress }}%</td>
                     </tr>
                     }
                   </tbody>
@@ -1118,11 +1121,11 @@
       </section>
       <!-- ============ 毛利損益區塊結束 ============ -->
 
-      <!-- ============ 文化與公平回報區塊 ============ -->
+      <!-- ============ 公司文化與員工福利區塊 ============ -->
       <section id="section-culture" class="bento-section bento-section--culture">
         <div class="bento-section-header">
           <i class="ri-heart-pulse-line"></i>
-          <span>文化與公平回報</span>
+          <span>公司文化與員工福利</span>
         </div>
 
         <!-- ============ Row 9: 願景使命 + 員工關懷 ============ -->
@@ -1282,7 +1285,7 @@
           </section>
         </div>
 
-        <!-- ============ Row 11: 三區塊佈局 (獲獎記錄 + 公平回報 + 獎金排行) ============ -->
+        <!-- ============ Row 11: 三區塊佈局 (獲獎記錄 + 獎金系統 + 獎金排行) ============ -->
         <div class="bento-box-row bento-box-row--triple">
           <!-- 區塊 1: 獲獎記錄 (40%) -->
           <section class="bento-box bento-box--awards">
@@ -1317,11 +1320,11 @@
             </div>
           </section>
 
-          <!-- 區塊 2: 公平回報系統｜一秒算獎金 (20%) -->
+          <!-- 區塊 2: 獎金系統｜一秒算獎金 (20%) -->
           <section class="bento-box bento-box--bonus-system">
             <div class="bento-header bento-header--culture">
               <i class="ri-gift-2-line"></i>
-              <span>公平回報系統</span>
+              <span>獎金系統</span>
             </div>
             <div class="bonus-system-content">
               @for (card of bonusCards(); track card.id) {

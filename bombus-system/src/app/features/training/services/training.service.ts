@@ -42,25 +42,32 @@ export class TrainingService {
   getCourseTypeStats(): Observable<CourseTypeStats[]> {
     const data: CourseTypeStats[] = [
       {
-        category: 'general',
-        label: '通識職能',
-        count: 8,
-        percentage: 33,
-        color: '#8DA399' // Sage Green
+        category: 'core',
+        label: '核心職能',
+        count: 6,
+        percentage: 21,
+        color: '#7D9EA8' // Petrol Blue
       },
       {
         category: 'professional',
         label: '專業職能',
         count: 10,
-        percentage: 42,
+        percentage: 34,
         color: '#B8A89A' // Warm Taupe
       },
       {
         category: 'management',
         label: '管理職能',
         count: 6,
-        percentage: 25,
-        color: '#7D9EA8' // Petrol Blue
+        percentage: 21,
+        color: '#C8A4A1' // Dusty Rose
+      },
+      {
+        category: 'general',
+        label: '通識職能',
+        count: 7,
+        percentage: 24,
+        color: '#8DA399' // Sage Green
       }
     ];
     return of(data).pipe(delay(200));
@@ -380,6 +387,7 @@ export class TrainingService {
   // 取得課程類別標籤
   getCategoryLabel(category: CourseCategory): string {
     const labels: Record<CourseCategory, string> = {
+      core: '核心職能',
       general: '通識職能',
       professional: '專業職能',
       management: '管理職能'
@@ -390,9 +398,10 @@ export class TrainingService {
   // 取得課程類別顏色
   getCategoryColor(category: CourseCategory): string {
     const colors: Record<CourseCategory, string> = {
+      core: '#7D9EA8',
       general: '#8DA399',
       professional: '#B8A89A',
-      management: '#7D9EA8'
+      management: '#C8A4A1'
     };
     return colors[category];
   }

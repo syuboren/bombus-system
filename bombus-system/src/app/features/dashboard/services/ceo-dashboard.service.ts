@@ -173,7 +173,7 @@ export class CEODashboardService {
       // 專案風險 - 中風險 (黃色)
       {
         id: 'p3',
-        title: 'PRJ-006 資訊設備標案',
+        title: 'PRJ-006 雲端資料倉儲遷移',
         description: 'A 級客戶合約 2 週後到期，需續約談判',
         severity: 'warning',
         category: 'project',
@@ -205,7 +205,7 @@ export class CEODashboardService {
       },
       {
         id: '3',
-        title: 'PRJ-006 資訊設備標案',
+        title: 'PRJ-006 雲端資料倉儲遷移',
         description: 'A 級客戶合約 2 週後到期，需續約談判',
         priority: 'urgent',
         icon: 'ri-file-warning-line',
@@ -453,7 +453,7 @@ export class CEODashboardService {
   // ---------------------------------------------------------------
   getTalentRiskKPI(): Observable<TalentRiskKPI> {
     const data: TalentRiskKPI = {
-      highRiskCount: 3,
+      highRiskCount: 5,
       successionCoverage: 67,
       successionTarget: 80,
       keyPositionCount: 5,
@@ -463,8 +463,13 @@ export class CEODashboardService {
   }
 
   // 風險象限圖資料 (X=離職風險, Y=關鍵性)
+  // 危險區（右上）：離職風險 >= 50% 且 關鍵性 >= 50%
+  // 觀察區（右下）：離職風險 >= 50% 且 關鍵性 < 50%（黃色）
+  // 保護區（左上）：離職風險 < 50% 且 關鍵性 >= 50%
+  // 穩定區（左下）：離職風險 < 50% 且 關鍵性 < 50%
   getRiskQuadrantData(): Observable<RiskQuadrantPerson[]> {
     const data: RiskQuadrantPerson[] = [
+      // 危險區（右上）- 高離職風險 + 高關鍵性（紅色）
       {
         id: '1',
         name: '王大明',
@@ -479,7 +484,7 @@ export class CEODashboardService {
       {
         id: '2',
         name: '李小華',
-        position: '技術架構師',
+        position: '技術主管',
         department: '研發部',
         turnoverRisk: 78,
         criticality: 95,
@@ -498,6 +503,30 @@ export class CEODashboardService {
         riskSignals: ['業績壓力大', '團隊人員流動'],
         suggestedActions: ['檢視業績目標合理性', '提供團隊支援']
       },
+      // 觀察區（右下）- 高離職風險 + 低關鍵性（黃色）
+      {
+        id: '7',
+        name: '吳俊傑',
+        position: '資深工程師',
+        department: '研發部',
+        turnoverRisk: 70,
+        criticality: 40,
+        avatar: 'WJ',
+        riskSignals: ['技術成長停滯', '市場競爭力高'],
+        suggestedActions: ['提供進修補助', '參與新技術專案']
+      },
+      {
+        id: '9',
+        name: '蔡明宏',
+        position: '行銷專員',
+        department: '行銷部',
+        turnoverRisk: 62,
+        criticality: 35,
+        avatar: 'CM',
+        riskSignals: ['工作內容單調', '薪資成長有限'],
+        suggestedActions: ['提供跨部門專案機會', '安排職能培訓']
+      },
+      // 保護區（左上）- 低離職風險 + 高關鍵性（綠色）
       {
         id: '4',
         name: '陳美玲',
@@ -505,7 +534,7 @@ export class CEODashboardService {
         department: '人資部',
         turnoverRisk: 45,
         criticality: 70,
-        avatar: 'CM',
+        avatar: 'CL',
         riskSignals: ['職涯發展受限'],
         suggestedActions: ['討論跨部門輪調', '提供管理培訓']
       },
@@ -525,30 +554,20 @@ export class CEODashboardService {
         name: '黃雅婷',
         position: '產品經理',
         department: '產品部',
-        turnoverRisk: 55,
+        turnoverRisk: 45,
         criticality: 80,
         avatar: 'HY',
         riskSignals: ['專案延遲壓力', '跨部門溝通摩擦'],
         suggestedActions: ['提供專案管理支援', '協調跨部門資源']
       },
-      {
-        id: '7',
-        name: '吳俊傑',
-        position: '資深工程師',
-        department: '研發部',
-        turnoverRisk: 70,
-        criticality: 65,
-        avatar: 'WJ',
-        riskSignals: ['技術成長停滯', '市場競爭力高'],
-        suggestedActions: ['提供進修補助', '參與新技術專案']
-      },
+      // 穩定區（左下）- 低離職風險 + 低關鍵性
       {
         id: '8',
         name: '周怡君',
         position: '行銷專員',
         department: '行銷部',
         turnoverRisk: 25,
-        criticality: 50,
+        criticality: 45,
         avatar: 'ZY',
         riskSignals: ['狀態穩定'],
         suggestedActions: ['維持現狀']
@@ -557,8 +576,11 @@ export class CEODashboardService {
     return of(data).pipe(delay(200));
   }
 
+  // 高風險人才：危險區（離職風險≥50% 且 關鍵性≥50%）+ 觀察區（離職風險≥50% 且 關鍵性<50%）
+  // 排序方式：先依區域分組（危險區優先），再依離職風險由高到低排序
   getHighRiskTalents(): Observable<HighRiskTalent[]> {
     const data: HighRiskTalent[] = [
+      // 危險區（紅色）- 高離職風險 + 高關鍵性
       {
         id: '1',
         name: '王大明',
@@ -569,7 +591,8 @@ export class CEODashboardService {
         leaveReason: '月度績效下滑',
         criticality: 'extreme',
         signals: '市場薪資差距 +25%、近期更新履歷',
-        action: '本週安排留才面談'
+        action: '本週安排留才面談',
+        zone: 'danger'
       },
       {
         id: '2',
@@ -581,7 +604,8 @@ export class CEODashboardService {
         leaveReason: '工作負荷過重',
         criticality: 'extreme',
         signals: '獵頭接觸頻繁、加班時數減少',
-        action: '提供技術領導機會'
+        action: '提供技術領導機會',
+        zone: 'danger'
       },
       {
         id: '3',
@@ -593,22 +617,53 @@ export class CEODashboardService {
         leaveReason: '缺乏晉升機會',
         criticality: 'high',
         signals: '業績壓力大、團隊人員流動',
-        action: '檢視業績目標合理性'
+        action: '檢視業績目標合理性',
+        zone: 'danger'
       },
+      // 觀察區（黃色）- 高離職風險 + 低關鍵性
       {
-        id: '4',
+        id: '7',
         name: '吳俊傑',
         position: '資深工程師',
         department: '研發部',
         riskScore: 70,
         performanceGrade: 'A',
         leaveReason: '缺乏實務機會',
-        criticality: 'high',
+        criticality: 'medium',
         signals: '技術成長停滯、市場競爭力高',
-        action: '提供進修補助'
+        action: '提供進修補助',
+        zone: 'warning'
+      },
+      {
+        id: '9',
+        name: '蔡明宏',
+        position: '行銷專員',
+        department: '行銷部',
+        riskScore: 62,
+        performanceGrade: 'B+',
+        leaveReason: '工作內容單調',
+        criticality: 'medium',
+        signals: '工作內容單調、薪資成長有限',
+        action: '提供跨部門專案機會',
+        zone: 'warning'
       }
     ];
-    return of(data).pipe(delay(200));
+    // 排序：Group by zone（danger → warning → protected → stable），Order by 績效 DESC, 離職風險 DESC
+    const zoneOrder: Record<string, number> = { danger: 0, warning: 1, protected: 2, stable: 3 };
+    const gradeOrder: Record<string, number> = { 'A+': 0, 'A': 1, 'A-': 2, 'B+': 3, 'B': 4, 'B-': 5, 'C': 6 };
+    const sorted = data.sort((a, b) => {
+      // 1. 先按 zone 排序
+      if (a.zone !== b.zone) {
+        return zoneOrder[a.zone] - zoneOrder[b.zone];
+      }
+      // 2. 再按績效排序（A+ 最高）
+      if (a.performanceGrade !== b.performanceGrade) {
+        return gradeOrder[a.performanceGrade] - gradeOrder[b.performanceGrade];
+      }
+      // 3. 最後按離職風險排序（由高到低）
+      return b.riskScore - a.riskScore;
+    });
+    return of(sorted).pipe(delay(200));
   }
 
   getSuccessionCoverages(): Observable<SuccessionCoverage[]> {
@@ -640,10 +695,10 @@ export class CEODashboardService {
   getProjectStatuses(): Observable<ProjectStatus[]> {
     const data: ProjectStatus[] = [
       { id: '1', name: '企業級 CRM 重構', status: 'normal', progress: 65, pm: 1, dev: 4, design: 1, test: 1 },
-      { id: '2', name: '行銷自動化平台', status: 'risk', progress: 40, pm: 1, dev: 2, design: 1, test: 0, issue: '缺 2 名後端、缺測試人力' },
+      { id: '2', name: '網路設備整合', status: 'risk', progress: 40, pm: 1, dev: 2, design: 1, test: 0, issue: '缺 2 名後端、缺測試人力' },
       { id: '3', name: '金融區塊鏈模組', status: 'normal', progress: 82, pm: 1, dev: 3, design: 0, test: 1 },
-      { id: '4', name: '雲端資料倉儲遷移', status: 'normal', progress: 55, pm: 1, dev: 2, design: 0, test: 1, issue: '資深架構師即將離職' },
-      { id: '5', name: 'AI 客服機器人 v2', status: 'planning', progress: 10, pm: 1, dev: 0, design: 0, test: 0, issue: '待組建團隊' }
+      { id: '4', name: '雲端資料倉儲遷移', status: 'warning', progress: 55, pm: 1, dev: 2, design: 0, test: 1, issue: '資深架構師即將離職' },
+      { id: '5', name: '通訊設備採購', status: 'risk', progress: 10, pm: 1, dev: 0, design: 0, test: 0, issue: '待組建團隊' }
     ];
     return of(data).pipe(delay(200));
   }
@@ -652,10 +707,10 @@ export class CEODashboardService {
   getProjectBubbles(): Observable<ProjectBubble[]> {
     const data: ProjectBubble[] = [
       { id: '1', name: '企業級 CRM 重構', progressDeviation: -5, qualityRisk: 25, budgetScale: 4.0, needsAttention: false, pm: 'Alex Chen', status: 'normal' },
-      { id: '2', name: '行銷自動化平台', progressDeviation: -15, qualityRisk: 65, budgetScale: 2.0, needsAttention: true, pm: 'Sarah Lin', status: 'critical' },
+      { id: '2', name: '網路設備整合', progressDeviation: -15, qualityRisk: 65, budgetScale: 2.0, needsAttention: true, pm: 'Sarah Lin', status: 'critical' },
       { id: '3', name: '金融區塊鏈模組', progressDeviation: 8, qualityRisk: 15, budgetScale: 3.5, needsAttention: false, pm: 'David Wu', status: 'normal' },
       { id: '4', name: '雲端資料倉儲遷移', progressDeviation: -8, qualityRisk: 45, budgetScale: 2.8, needsAttention: false, pm: 'Jessica Lin', status: 'warning' },
-      { id: '5', name: 'AI 客服機器人 v2', progressDeviation: 0, qualityRisk: 30, budgetScale: 1.5, needsAttention: false, pm: 'Mike Wang', status: 'normal' }
+      { id: '5', name: '通訊設備採購', progressDeviation: -12, qualityRisk: 40, budgetScale: 1.5, needsAttention: true, pm: 'Mike Wang', status: 'warning' }
     ];
     return of(data).pipe(delay(200));
   }
@@ -858,7 +913,7 @@ export class CEODashboardService {
       },
       {
         id: 'PRJ-006',
-        title: '資訊設備標案',
+        title: '雲端資料倉儲遷移',
         type: 'procurement',
         pm: { name: '李建國', avatar: null },
         progress: 60,

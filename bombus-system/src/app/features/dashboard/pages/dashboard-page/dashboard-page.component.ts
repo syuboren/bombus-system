@@ -207,7 +207,7 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
       id: 'okr',
       title: '配利獎金池',
       subtitle: '點數制',
-      amount: 850000,
+      amount: 2850000,
       year: 2025,
       formula: 'OKR 達成點數 → 點數換算獎金',
       settlement: '年度結算',

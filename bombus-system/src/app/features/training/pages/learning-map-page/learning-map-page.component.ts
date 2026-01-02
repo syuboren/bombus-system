@@ -255,6 +255,7 @@ export class LearningMapPageComponent implements OnInit, AfterViewInit {
 
   getCategoryLabel(category: CourseCategory): string {
     const labels: Record<CourseCategory, string> = {
+      'core': '核心職能',
       'general': '通識職能',
       'professional': '專業職能',
       'management': '管理職能'
@@ -264,6 +265,7 @@ export class LearningMapPageComponent implements OnInit, AfterViewInit {
 
   getCategoryIcon(category: CourseCategory): string {
     const icons: Record<CourseCategory, string> = {
+      'core': 'ri-focus-3-line',
       'general': 'ri-book-2-line',
       'professional': 'ri-code-s-slash-line',
       'management': 'ri-team-line'

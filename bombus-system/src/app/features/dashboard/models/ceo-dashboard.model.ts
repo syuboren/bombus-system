@@ -90,6 +90,7 @@ export interface HighRiskTalent {
   criticality: 'extreme' | 'high' | 'medium';
   signals: string;
   action: string;
+  zone: 'danger' | 'warning' | 'protected' | 'stable';  // 危險區(紅) / 觀察區(黃) / 保護區(綠) / 穩定區(灰)
 }
 
 // 風險象限圖人員
@@ -128,7 +129,7 @@ export interface ProjectDeliveryKPI {
 export interface ProjectStatus {
   id: string;
   name: string;
-  status: 'normal' | 'risk' | 'planning';
+  status: 'normal' | 'risk' | 'planning' | 'warning';
   progress: number;
   pm: number;
   dev: number;

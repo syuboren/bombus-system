@@ -494,7 +494,8 @@
   border-radius: $radius-md;
   transition: all 0.2s ease;
 
-  &.risk-high {
+  // 危險區 - 紅色
+  &.zone--danger {
     background: rgba(199, 127, 127, 0.06);
 
     .high-risk-card__grade {
@@ -502,27 +503,18 @@
       color: white;
     }
 
-    .high-risk-card__score {
-      color: #C77F7F;
-      background: rgba(199, 127, 127, 0.12);
-    }
-
     .high-risk-card__reason {
       color: #C77F7F;
     }
   }
 
-  &.risk-medium {
+  // 觀察區 - 黃色
+  &.zone--warning {
     background: rgba(227, 192, 136, 0.06);
 
     .high-risk-card__grade {
       background: #E3C088;
       color: white;
-    }
-
-    .high-risk-card__score {
-      color: #b89a5e;
-      background: rgba(227, 192, 136, 0.15);
     }
 
     .high-risk-card__reason {
@@ -588,6 +580,18 @@
   padding: 6px 12px;
   border-radius: $radius-md;
   flex-shrink: 0;
+
+  // 危險區分數 - 紅色
+  &.score--danger {
+    color: #C77F7F;
+    background: rgba(199, 127, 127, 0.12);
+  }
+
+  // 觀察區分數 - 黃色
+  &.score--warning {
+    color: #b89a5e;
+    background: rgba(227, 192, 136, 0.15);
+  }
 }
 
 // 風險象限圖獨立版
@@ -1382,16 +1386,20 @@
 .competency-heatmap--compact {
   margin-top: $spacing-lg;
   margin-bottom: $spacing-lg;
+  width: 100%;
 }
 
 .heatmap-table-wrap {
   overflow-x: auto;
+  width: 100%;
 }
 
 .heatmap-table {
   width: 100%;
+  min-width: 100%;
   border-collapse: separate;
   border-spacing: 4px;
+  table-layout: fixed;
 }
 
 .heatmap-table--compact {
@@ -2530,10 +2538,18 @@
     &.fill--risk {
       background: $color-error;
     }
+
+    &.fill--warning {
+      background: $color-warning;
+    }
   }
 
   &--risk {
     background: rgba($color-error, 0.15);
+  }
+
+  &--warning {
+    background: rgba($color-warning, 0.15);
   }
 }
 
@@ -4105,7 +4121,8 @@
   grid-template-columns: 0.7fr 0.3fr;
   gap: $spacing-lg;
 
-  @include media-max-lg {
+  // 在 1000px 以下改為堆疊佈局
+  @media (max-width: 1000px) {
     grid-template-columns: 1fr;
   }
 }
