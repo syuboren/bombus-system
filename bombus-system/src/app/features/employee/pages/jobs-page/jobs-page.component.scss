@@ -1,7 +1,18 @@
+// ===============================================================
+// L1 員工管理 - 職缺管理頁面
+// 使用共用 mixin 重構版本
+// ===============================================================
+
 @import '../../../../../assets/styles/variables';
 @import '../../../../../assets/styles/mixins';
 @import '../../../../../assets/styles/animations';
 
+// 模組色定義
+$module-color: $color-l1-sage;
+
+// ---------------------------------------------------------------
+// 頁面佈局（保留原有）
+// ---------------------------------------------------------------
 .main-content {
   padding: $spacing-lg;
   padding-top: calc(var(--header-height, 70px) + 20px);
@@ -19,33 +30,16 @@
 }
 
 // ---------------------------------------------------------------
-// Stats Grid
+// 統計卡片區（使用共用類別 stats-grid）
 // ---------------------------------------------------------------
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: $spacing-md;
-  margin-bottom: $spacing-lg;
-
-  @include media-max-xl {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  @include media-max-md {
-    grid-template-columns: 1fr;
-  }
-}
+// 直接使用全域 .stats-grid 類別
 
 // ---------------------------------------------------------------
-// Filter Bar
+// 篩選區塊（使用共用 mixin）
 // ---------------------------------------------------------------
 .filter-bar {
-  @include card;
-  display: flex;
-  flex-wrap: wrap;
-  gap: $spacing-md;
-  padding: $spacing-lg;
-  margin-bottom: $spacing-lg;
+  @include filter-bar;
+  padding: $spacing-lg; // 保持原有的較大 padding
 }
 
 .filter-item {
@@ -73,7 +67,7 @@
 }
 
 // ---------------------------------------------------------------
-// Table Card
+// 資料表格（使用共用 mixin）
 // ---------------------------------------------------------------
 .table-card {
   @include card;
@@ -82,42 +76,22 @@
 }
 
 .job-table {
-  width: 100%;
-  border-collapse: collapse;
+  @include data-table($module-color);
 
-  th, td {
-    padding: $spacing-md $spacing-lg;
-    text-align: left;
-    border-bottom: 1px solid $color-soft-gray;
-  }
-
-  th {
-    background: $color-cloud-gray;
-    font-size: $font-size-xs;
-    font-weight: $font-weight-semibold;
-    color: $color-text-secondary;
-    text-transform: uppercase;
-  }
-
-  tr:last-child td {
-    border-bottom: none;
-  }
-
+  // 特有的行動畫效果
   tbody tr {
-    transition: background 0.25s $animation-easing-standard;
     animation: fadeInUp 0.4s $animation-easing-decelerate both;
     @include stagger-animation(40ms, 15);
 
     &:hover {
-      background: rgba($color-l1-sage, 0.08);
-
       td:first-child {
-        box-shadow: inset 3px 0 0 $color-l1-sage;
+        box-shadow: inset 3px 0 0 $module-color;
       }
     }
   }
 }
 
+// 職缺特有欄位樣式
 .job-title {
   font-weight: $font-weight-semibold;
   color: $color-text-dark;
@@ -139,11 +113,11 @@
   border-radius: $radius-full;
   font-size: $font-size-xs;
   font-weight: $font-weight-semibold;
-  background: $color-l1-sage;
+  background: $module-color;
   color: white;
 
   &--new {
-    background: #E76E6E;
+    background: $color-error;
   }
 }
 
@@ -156,37 +130,34 @@
   color: $color-muted-gray;
 }
 
-// Status Badge
+// ---------------------------------------------------------------
+// 狀態徽章（使用共用 mixin）
+// ---------------------------------------------------------------
 .status-badge {
-  @include flex-center;
-  display: inline-flex;
-  gap: $spacing-xs;
-  padding: 4px 12px;
-  border-radius: $radius-full;
-  font-size: $font-size-xs;
-  font-weight: $font-weight-semibold;
-
-  i {
-    font-size: 14px;
-  }
+  @include status-badge;
 }
 
 .status--published {
+  @extend .status-badge;
   background: rgba($color-success, 0.15);
   color: $color-success;
 }
 
 .status--draft {
+  @extend .status-badge;
   background: rgba($color-text-secondary, 0.15);
   color: $color-text-secondary;
 }
 
 .status--review {
+  @extend .status-badge;
   background: rgba($color-warning, 0.15);
   color: darken($color-warning, 15%);
 }
 
-// Action Group
+// ---------------------------------------------------------------
+// 操作按鈕
+// ---------------------------------------------------------------
 .action-group {
   @include flex-start;
   gap: $spacing-xs;
@@ -204,8 +175,8 @@
   transition: all $transition-normal;
 
   &:hover {
-    border-color: $color-l1-sage;
-    color: $color-l1-sage;
+    border-color: $module-color;
+    color: $module-color;
   }
 
   &--danger:hover {
@@ -218,6 +189,9 @@
   }
 }
 
+// ---------------------------------------------------------------
+// 空狀態
+// ---------------------------------------------------------------
 .empty-row {
   text-align: center;
   padding: $spacing-2xl !important;
@@ -236,54 +210,42 @@
 }
 
 // ---------------------------------------------------------------
-// Modal
+// Modal（使用共用 mixin）
 // ---------------------------------------------------------------
 .modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 1000;
+  @include modal-backdrop;
   animation: fadeIn 200ms ease;
 }
 
 .modal {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 90%;
-  max-width: 600px;
-  max-height: 90vh;
-  background: white;
-  border-radius: $radius-lg;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  z-index: 1001;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
+  @include modal-container(600px);
   animation: slideUp 200ms ease;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
   from {
     opacity: 0;
-    transform: translate(-50%, -45%);
+    transform: translateY(10px);
   }
+
   to {
     opacity: 1;
-    transform: translate(-50%, -50%);
+    transform: translateY(0);
   }
 }
 
 .modal__header {
-  @include flex-between;
-  padding: $spacing-lg;
-  border-bottom: 1px solid $color-soft-gray;
+  @include modal-header;
 }
 
 .modal__title {
@@ -294,7 +256,7 @@
 }
 
 .modal__close {
-  @include button-icon;
+  @include modal-close;
 
   i {
     font-size: 24px;
@@ -302,20 +264,18 @@
 }
 
 .modal__body {
-  padding: $spacing-lg;
-  overflow-y: auto;
-  flex: 1;
+  @include modal-body;
 }
 
 .modal__footer {
-  @include flex-start;
+  @include modal-footer;
   justify-content: flex-end;
   gap: $spacing-sm;
-  padding: $spacing-lg;
-  border-top: 1px solid $color-soft-gray;
 }
 
-// Form
+// ---------------------------------------------------------------
+// 表單（保留原有）
+// ---------------------------------------------------------------
 .form-group {
   margin-bottom: $spacing-lg;
 }
@@ -344,30 +304,30 @@
 }
 
 // ---------------------------------------------------------------
-// JD Selection & Preview
+// JD 選擇與預覽（特有功能）
 // ---------------------------------------------------------------
 .form-select--highlight {
-  border: 2px solid $color-l1-sage;
-  background-color: rgba($color-l1-sage, 0.05);
+  border: 2px solid $module-color;
+  background-color: rgba($module-color, 0.05);
 
   &:focus {
-    border-color: darken($color-l1-sage, 10%);
-    box-shadow: 0 0 0 3px rgba($color-l1-sage, 0.15);
+    border-color: darken($module-color, 10%);
+    box-shadow: 0 0 0 3px rgba($module-color, 0.15);
   }
 }
 
 .jd-preview {
   margin-top: $spacing-md;
   padding: $spacing-md;
-  background: linear-gradient(135deg, rgba($color-l1-sage, 0.08), rgba($color-l1-sage, 0.03));
-  border: 1px solid rgba($color-l1-sage, 0.3);
+  background: linear-gradient(135deg, rgba($module-color, 0.08), rgba($module-color, 0.03));
+  border: 1px solid rgba($module-color, 0.3);
   border-radius: $radius-md;
 
   &__header {
     @include flex-start;
     gap: $spacing-xs;
     font-weight: $font-weight-semibold;
-    color: $color-l1-sage;
+    color: $module-color;
     margin-bottom: $spacing-sm;
 
     i {
@@ -394,7 +354,7 @@
 }
 
 // ---------------------------------------------------------------
-// Import Resume Modal
+// 匯入履歷 Modal（特有功能）
 // ---------------------------------------------------------------
 .import-info {
   padding: $spacing-md;
@@ -431,15 +391,15 @@
   transition: all $transition-normal;
 
   &:hover {
-    border-color: $color-l1-sage;
-    background: rgba($color-l1-sage, 0.03);
+    border-color: $module-color;
+    background: rgba($module-color, 0.03);
   }
 
   &__icon {
     @include flex-center;
     width: 48px;
     height: 48px;
-    background: linear-gradient(135deg, $color-l1-sage, lighten($color-l1-sage, 10%));
+    background: linear-gradient(135deg, $module-color, lighten($module-color, 10%));
     border-radius: $radius-md;
     color: white;
     flex-shrink: 0;
@@ -467,15 +427,9 @@
   }
 }
 
+// 使用模組色按鈕
 .btn-outline {
-  @include button-base;
-  background: transparent;
-  border: 1px solid $color-l1-sage;
-  color: $color-l1-sage;
-
-  &:hover {
-    background: rgba($color-l1-sage, 0.1);
-  }
+  @include button-outline-module($module-color);
 }
 
 .import-note {
@@ -493,4 +447,3 @@
     flex-shrink: 0;
   }
 }
-

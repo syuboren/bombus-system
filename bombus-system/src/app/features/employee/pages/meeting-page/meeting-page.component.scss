@@ -17,17 +17,9 @@
   margin: 0 auto;
 }
 
-// Filter Bar (consistent with other pages)
+// Filter Bar (使用共用 mixin)
 .filter-bar {
-  background: $color-pure-white;
-  padding: 15px 20px;
-  border-radius: 12px;
-  border: 1px solid $color-soft-gray;
-  display: flex;
-  gap: 15px;
-  align-items: center;
-  margin-bottom: $spacing-lg;
-  flex-wrap: wrap;
+  @include filter-bar;
 }
 
 .filter-divider {
@@ -36,41 +28,9 @@
   background: $color-soft-gray;
 }
 
-// View Toggle (consistent with other pages)
+// View Toggle (使用共用 mixin)
 .view-toggle {
-  display: flex;
-  background: $color-cloud-gray;
-  border-radius: 8px;
-  padding: 4px;
-}
-
-.toggle-btn {
-  padding: 8px 16px;
-  border: none;
-  background: transparent;
-  color: $color-text-secondary;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.2s;
-
-  i {
-    font-size: 16px;
-  }
-
-  &:hover {
-    color: $color-text-dark;
-  }
-
-  &.active {
-    background: $color-pure-white;
-    color: $color-brand-main;
-    box-shadow: $shadow-sm;
-  }
+  @include view-toggle($color-brand-main);
 }
 
 // ==================== 日曆視圖 ====================
@@ -657,32 +617,9 @@
 }
 
 .tracking-table {
-  width: 100%;
-  border-collapse: collapse;
+  @include data-table($color-brand-main);
 
-  th,
-  td {
-    padding: $spacing-md;
-    text-align: left;
-    border-bottom: 1px solid $color-soft-gray;
-  }
-
-  th {
-    font-size: $font-size-sm;
-    font-weight: $font-weight-semibold;
-    color: $color-text-secondary;
-    background: $color-cloud-gray;
-  }
-
-  td {
-    font-size: $font-size-sm;
-    color: $color-text-dark;
-  }
-
-  tr:hover td {
-    background: rgba($color-brand-main, 0.02);
-  }
-
+  // 頁面特有：逾期行樣式
   tr.overdue td {
     background: rgba($color-error, 0.03);
   }
@@ -1075,26 +1012,11 @@
 
 // ==================== Modal 樣式 ====================
 .modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: $spacing-lg;
+  @include modal-backdrop;
 }
 
 .modal-container {
-  background: $color-pure-white;
-  border-radius: $radius-lg;
-  max-height: 90vh;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
+  @include modal-container;
   animation: modalSlideIn 0.2s ease;
 
   &--large {
@@ -1113,6 +1035,7 @@
     opacity: 0;
     transform: translateY(-20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1349,9 +1272,11 @@
   0% {
     transform: scale(0);
   }
+
   50% {
     transform: scale(1.2);
   }
+
   100% {
     transform: scale(1);
   }
@@ -1738,4 +1663,3 @@
   font-size: $font-size-xs;
   color: $color-text-secondary;
 }
-
