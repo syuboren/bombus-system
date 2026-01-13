@@ -1,0 +1,406 @@
+// ===============================================================
+// Bombus V6.0 - 共用元件樣式
+// UI 元件標準化 - 供各功能頁面直接使用的 CSS 類別
+// ===============================================================
+
+@import 'variables';
+@import 'mixins';
+
+// ---------------------------------------------------------------
+// 資料表格
+// ---------------------------------------------------------------
+// 使用方式：在頁面層級配合模組色使用
+// 例如：.data-table { @include data-table($color-l1-sage); }
+
+.data-table {
+    @include data-table;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+    @include custom-scrollbar;
+}
+
+.table-card {
+    @include card;
+    overflow: hidden;
+    padding: 0;
+}
+
+// ---------------------------------------------------------------
+// 篩選區塊
+// ---------------------------------------------------------------
+.filter-bar {
+    @include filter-bar;
+}
+
+.search-box {
+    @include search-box;
+}
+
+.filter-select {
+    @include filter-select;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-xs;
+}
+
+.filter-label {
+    font-size: $font-size-xs;
+    font-weight: $font-weight-medium;
+    color: $color-text-secondary;
+}
+
+.filter-divider {
+    width: 1px;
+    height: 24px;
+    background: $color-soft-gray;
+}
+
+// ---------------------------------------------------------------
+// Modal 對話框
+// ---------------------------------------------------------------
+.modal-backdrop {
+    @include modal-backdrop;
+}
+
+.modal-container {
+    @include modal-container;
+
+    &--sm {
+        max-width: 480px;
+    }
+
+    &--md {
+        max-width: 640px;
+    }
+
+    &--lg {
+        max-width: 800px;
+    }
+
+    &--xl {
+        max-width: 1000px;
+    }
+}
+
+.modal-header {
+    @include modal-header;
+}
+
+.modal-title {
+    @include modal-title;
+}
+
+.modal-body {
+    @include modal-body;
+}
+
+.modal-footer {
+    @include modal-footer;
+}
+
+.modal-close {
+    @include modal-close;
+}
+
+// ---------------------------------------------------------------
+// 統計卡片 - 三種變體
+// ---------------------------------------------------------------
+// 變體 A：背景圖標裝飾型
+.stat-card--decorative {
+    @include stat-card-decorative;
+}
+
+// 變體 B：左側圖標型
+.stat-card--icon-left {
+    @include stat-card-icon-left;
+}
+
+// 變體 C：漸層圖標型
+.stat-card--gradient {
+    @include stat-card-gradient;
+}
+
+// 統計卡片網格佈局
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: $spacing-md;
+    margin-bottom: $spacing-lg;
+
+    @include media-max-xl {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    @include media-max-md {
+        grid-template-columns: 1fr;
+    }
+}
+
+// ---------------------------------------------------------------
+// 視圖切換
+// ---------------------------------------------------------------
+.view-toggle {
+    @include view-toggle;
+}
+
+// ---------------------------------------------------------------
+// 狀態徽章
+// ---------------------------------------------------------------
+.status-badge {
+    @include status-badge;
+}
+
+// ---------------------------------------------------------------
+// 進度條
+// ---------------------------------------------------------------
+.progress-bar {
+    @include progress-bar;
+}
+
+.progress-bar--sm {
+    @include progress-bar($color-brand-main, 4px);
+}
+
+.progress-bar--lg {
+    @include progress-bar($color-brand-main, 8px);
+}
+
+// ---------------------------------------------------------------
+// 空狀態 & 載入狀態
+// ---------------------------------------------------------------
+.empty-state {
+    @include empty-state;
+}
+
+.loading-state {
+    @include loading-state;
+}
+
+// ---------------------------------------------------------------
+// 模組色按鈕生成
+// ---------------------------------------------------------------
+// L1 員工管理 - 鼠尾草綠
+.btn-l1 {
+    @include button-module($color-l1-sage);
+}
+
+.btn-outline-l1 {
+    @include button-outline-module($color-l1-sage);
+}
+
+// L2 職能管理 - 陶土橙
+.btn-l2 {
+    @include button-module($color-l2-terracotta);
+}
+
+.btn-outline-l2 {
+    @include button-outline-module($color-l2-terracotta);
+}
+
+// L3 教育訓練 - 復古藍綠
+.btn-l3 {
+    @include button-module($color-l3-petrol);
+}
+
+.btn-outline-l3 {
+    @include button-outline-module($color-l3-petrol);
+}
+
+// L4 專案管理 - 錦葵紫
+.btn-l4 {
+    @include button-module($color-l4-mauve);
+}
+
+.btn-outline-l4 {
+    @include button-outline-module($color-l4-mauve);
+}
+
+// L5 績效管理 - 磚紅
+.btn-l5 {
+    @include button-module($color-l5-brick);
+}
+
+.btn-outline-l5 {
+    @include button-outline-module($color-l5-brick);
+}
+
+// L6 文化管理 - 乾燥玫瑰
+.btn-l6 {
+    @include button-module($color-l6-rose);
+}
+
+.btn-outline-l6 {
+    @include button-outline-module($color-l6-rose);
+}
+
+// ---------------------------------------------------------------
+// 模組色統計卡片
+// ---------------------------------------------------------------
+// 使用方式：<div class="stat-card--decorative stat-card--l1">
+
+// 變體 A：裝飾型 + 模組色
+.stat-card--decorative {
+    &.stat-card--l1 {
+        @include stat-card-decorative($color-l1-sage);
+    }
+
+    &.stat-card--l2 {
+        @include stat-card-decorative($color-l2-terracotta);
+    }
+
+    &.stat-card--l3 {
+        @include stat-card-decorative($color-l3-petrol);
+    }
+
+    &.stat-card--l4 {
+        @include stat-card-decorative($color-l4-mauve);
+    }
+
+    &.stat-card--l5 {
+        @include stat-card-decorative($color-l5-brick);
+    }
+
+    &.stat-card--l6 {
+        @include stat-card-decorative($color-l6-rose);
+    }
+}
+
+// 變體 B：左側圖標型 + 模組色
+.stat-card--icon-left {
+    &.stat-card--l1 {
+        @include stat-card-icon-left($color-l1-sage);
+    }
+
+    &.stat-card--l2 {
+        @include stat-card-icon-left($color-l2-terracotta);
+    }
+
+    &.stat-card--l3 {
+        @include stat-card-icon-left($color-l3-petrol);
+    }
+
+    &.stat-card--l4 {
+        @include stat-card-icon-left($color-l4-mauve);
+    }
+
+    &.stat-card--l5 {
+        @include stat-card-icon-left($color-l5-brick);
+    }
+
+    &.stat-card--l6 {
+        @include stat-card-icon-left($color-l6-rose);
+    }
+}
+
+// 變體 C：漸層型 + 模組色
+.stat-card--gradient {
+    &.stat-card--l1 {
+        @include stat-card-gradient($color-l1-sage);
+    }
+
+    &.stat-card--l2 {
+        @include stat-card-gradient($color-l2-terracotta);
+    }
+
+    &.stat-card--l3 {
+        @include stat-card-gradient($color-l3-petrol);
+    }
+
+    &.stat-card--l4 {
+        @include stat-card-gradient($color-l4-mauve);
+    }
+
+    &.stat-card--l5 {
+        @include stat-card-gradient($color-l5-brick);
+    }
+
+    &.stat-card--l6 {
+        @include stat-card-gradient($color-l6-rose);
+    }
+}
+
+// ---------------------------------------------------------------
+// 模組色進度條
+// ---------------------------------------------------------------
+.progress-bar--l1 {
+    @include progress-bar($color-l1-sage);
+}
+
+.progress-bar--l2 {
+    @include progress-bar($color-l2-terracotta);
+}
+
+.progress-bar--l3 {
+    @include progress-bar($color-l3-petrol);
+}
+
+.progress-bar--l4 {
+    @include progress-bar($color-l4-mauve);
+}
+
+.progress-bar--l5 {
+    @include progress-bar($color-l5-brick);
+}
+
+.progress-bar--l6 {
+    @include progress-bar($color-l6-rose);
+}
+
+// ---------------------------------------------------------------
+// 模組色資料表格
+// ---------------------------------------------------------------
+.data-table--l1 {
+    @include data-table($color-l1-sage);
+}
+
+.data-table--l2 {
+    @include data-table($color-l2-terracotta);
+}
+
+.data-table--l3 {
+    @include data-table($color-l3-petrol);
+}
+
+.data-table--l4 {
+    @include data-table($color-l4-mauve);
+}
+
+.data-table--l5 {
+    @include data-table($color-l5-brick);
+}
+
+.data-table--l6 {
+    @include data-table($color-l6-rose);
+}
+
+// ---------------------------------------------------------------
+// 模組色視圖切換
+// ---------------------------------------------------------------
+.view-toggle--l1 {
+    @include view-toggle($color-l1-sage);
+}
+
+.view-toggle--l2 {
+    @include view-toggle($color-l2-terracotta);
+}
+
+.view-toggle--l3 {
+    @include view-toggle($color-l3-petrol);
+}
+
+.view-toggle--l4 {
+    @include view-toggle($color-l4-mauve);
+}
+
+.view-toggle--l5 {
+    @include view-toggle($color-l5-brick);
+}
+
+.view-toggle--l6 {
+    @include view-toggle($color-l6-rose);
+}
