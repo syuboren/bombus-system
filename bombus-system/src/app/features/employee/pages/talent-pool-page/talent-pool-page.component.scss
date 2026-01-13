@@ -1,4 +1,8 @@
 @import '../../../../../assets/styles/variables';
+@import '../../../../../assets/styles/mixins';
+
+// 模組色定義
+$module-color: $color-l1-sage;
 
 .main-content {
   padding: $spacing-lg;
@@ -54,22 +58,34 @@
 
   &.active {
     background: rgba($color-success, 0.1);
-    i { color: $color-success; }
+
+    i {
+      color: $color-success;
+    }
   }
 
   &.contacted {
     background: rgba($color-info, 0.1);
-    i { color: $color-info; }
+
+    i {
+      color: $color-info;
+    }
   }
 
   &.score {
     background: rgba($color-l3-petrol, 0.1);
-    i { color: $color-l3-petrol; }
+
+    i {
+      color: $color-l3-petrol;
+    }
   }
 
   &.reminder {
     background: rgba($color-warning, 0.1);
-    i { color: $color-warning; }
+
+    i {
+      color: $color-warning;
+    }
   }
 }
 
@@ -348,22 +364,34 @@
 
   &.match-excellent {
     background: rgba($color-success, 0.1);
-    .score-value { color: $color-success; }
+
+    .score-value {
+      color: $color-success;
+    }
   }
 
   &.match-good {
     background: rgba($color-l3-petrol, 0.1);
-    .score-value { color: $color-l3-petrol; }
+
+    .score-value {
+      color: $color-l3-petrol;
+    }
   }
 
   &.match-fair {
     background: rgba($color-warning, 0.1);
-    .score-value { color: $color-warning; }
+
+    .score-value {
+      color: $color-warning;
+    }
   }
 
   &.match-low {
     background: rgba($color-muted-gray, 0.1);
-    .score-value { color: $color-muted-gray; }
+
+    .score-value {
+      color: $color-muted-gray;
+    }
   }
 }
 
@@ -412,10 +440,7 @@
 }
 
 .status-badge {
-  padding: 4px $spacing-sm;
-  border-radius: $radius-full;
-  font-size: $font-size-xs;
-  font-weight: 500;
+  @include status-badge;
 
   &.status-active {
     background: rgba($color-success, 0.1);
@@ -433,8 +458,8 @@
   }
 
   &.status-hired {
-    background: rgba($color-l1-sage, 0.1);
-    color: $color-l1-sage;
+    background: rgba($module-color, 0.1);
+    color: $module-color;
   }
 
   &.status-declined {
@@ -582,30 +607,12 @@
   text-align: right;
 }
 
-// ===== Detail Modal =====
 .detail-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: $spacing-lg;
+  @include modal-backdrop;
 }
 
 .detail-modal {
-  width: 100%;
-  max-width: 640px;
-  max-height: 90vh;
-  background: $color-pure-white;
-  border-radius: $radius-xl;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  @include modal-container(640px);
 }
 
 .modal-header {
@@ -947,11 +954,15 @@
 }
 
 .match-reasons {
-  h6 i { color: $color-success; }
+  h6 i {
+    color: $color-success;
+  }
 }
 
 .match-gaps {
-  h6 i { color: $color-warning; }
+  h6 i {
+    color: $color-warning;
+  }
 }
 
 .match-recommendation {

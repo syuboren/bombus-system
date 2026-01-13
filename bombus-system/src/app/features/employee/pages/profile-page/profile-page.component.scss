@@ -1,4 +1,8 @@
 @import '../../../../../assets/styles/variables';
+@import '../../../../../assets/styles/mixins';
+
+// 模組色定義
+$module-color: $color-l1-sage;
 
 .main-content {
   padding: $spacing-lg;
@@ -54,22 +58,34 @@
 
   &.active {
     background: rgba($color-success, 0.1);
-    i { color: $color-success; }
+
+    i {
+      color: $color-success;
+    }
   }
 
   &.probation {
     background: rgba($color-info, 0.1);
-    i { color: $color-info; }
+
+    i {
+      color: $color-info;
+    }
   }
 
   &.tenure {
     background: rgba($color-l3-petrol, 0.1);
-    i { color: $color-l3-petrol; }
+
+    i {
+      color: $color-l3-petrol;
+    }
   }
 
   &.warning {
     background: rgba($color-warning, 0.1);
-    i { color: $color-warning; }
+
+    i {
+      color: $color-warning;
+    }
   }
 }
 
@@ -225,42 +241,16 @@
 }
 
 .employee-table {
-  width: 100%;
-  border-collapse: collapse;
+  @include data-table($module-color);
 
-  thead {
-    background: $color-pure-white;
-
-    th {
-      padding: $spacing-md $spacing-lg;
-      text-align: left;
-      font-size: $font-size-sm;
-      font-weight: 600;
-      color: $color-text-dark;
-      border-bottom: 2px solid $color-l1-sage;
-      white-space: nowrap;
-    }
+  // 頁面特有：表頭底線
+  thead th {
+    border-bottom: 2px solid $module-color;
   }
 
-  tbody {
-    tr {
-      border-bottom: 1px solid $color-soft-gray;
-      transition: background 0.2s ease;
-
-      &:hover {
-        background: rgba($color-l1-sage, 0.02);
-      }
-
-      &.selected {
-        background: rgba($color-l1-sage, 0.05);
-      }
-    }
-
-    td {
-      padding: $spacing-md $spacing-lg;
-      font-size: $font-size-sm;
-      color: $color-text-primary;
-    }
+  // 頁面特有：選中行
+  tbody tr.selected {
+    background: rgba($module-color, 0.05);
   }
 }
 
@@ -300,11 +290,7 @@
 }
 
 .status-badge {
-  display: inline-block;
-  padding: 4px $spacing-sm;
-  border-radius: $radius-full;
-  font-size: $font-size-xs;
-  font-weight: 500;
+  @include status-badge;
 
   &.status-active {
     background: rgba($color-success, 0.1);
@@ -407,7 +393,10 @@
 
   [data-status="expired"] & {
     background: rgba($color-error, 0.1);
-    i { color: $color-error; }
+
+    i {
+      color: $color-error;
+    }
   }
 }
 
@@ -540,19 +529,12 @@
   padding: $spacing-lg;
 }
 
-// ===== Detail Modal =====
 .detail-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: $spacing-lg;
+  @include modal-backdrop;
+}
+
+.detail-modal {
+  @include modal-container(800px);
 }
 
 .detail-modal {
@@ -803,11 +785,30 @@
   border-radius: $radius-full;
   font-weight: 500;
 
-  &.audit-create { background: rgba($color-success, 0.1); color: $color-success; }
-  &.audit-update { background: rgba($color-info, 0.1); color: $color-info; }
-  &.audit-delete { background: rgba($color-error, 0.1); color: $color-error; }
-  &.audit-view { background: rgba($color-muted-gray, 0.1); color: $color-muted-gray; }
-  &.audit-export { background: rgba($color-l3-petrol, 0.1); color: $color-l3-petrol; }
+  &.audit-create {
+    background: rgba($color-success, 0.1);
+    color: $color-success;
+  }
+
+  &.audit-update {
+    background: rgba($color-info, 0.1);
+    color: $color-info;
+  }
+
+  &.audit-delete {
+    background: rgba($color-error, 0.1);
+    color: $color-error;
+  }
+
+  &.audit-view {
+    background: rgba($color-muted-gray, 0.1);
+    color: $color-muted-gray;
+  }
+
+  &.audit-export {
+    background: rgba($color-l3-petrol, 0.1);
+    color: $color-l3-petrol;
+  }
 }
 
 .audit-field {
@@ -845,15 +846,21 @@
   margin-bottom: $spacing-lg;
 
   &[data-type="promotion"] {
-    .timeline-marker { background: $color-success; }
+    .timeline-marker {
+      background: $color-success;
+    }
   }
 
   &[data-type="transfer"] {
-    .timeline-marker { background: $color-info; }
+    .timeline-marker {
+      background: $color-info;
+    }
   }
 
   &[data-type="salary-adjustment"] {
-    .timeline-marker { background: $color-l3-petrol; }
+    .timeline-marker {
+      background: $color-l3-petrol;
+    }
   }
 }
 
@@ -1004,9 +1011,17 @@
   font-size: $font-size-xs;
   margin: 4px 0 0;
 
-  &.expiry-valid { color: $color-success; }
-  &.expiry-expiring { color: $color-warning; }
-  &.expiry-expired { color: $color-error; }
+  &.expiry-valid {
+    color: $color-success;
+  }
+
+  &.expiry-expiring {
+    color: $color-warning;
+  }
+
+  &.expiry-expired {
+    color: $color-error;
+  }
 }
 
 .doc-status {
@@ -1064,11 +1079,25 @@
   border-radius: $radius-lg;
   padding: $spacing-lg;
 
-  &[data-grade="A"] { border-top: 4px solid $color-success; }
-  &[data-grade="B"] { border-top: 4px solid $color-l3-petrol; }
-  &[data-grade="C"] { border-top: 4px solid $color-info; }
-  &[data-grade="D"] { border-top: 4px solid $color-warning; }
-  &[data-grade="E"] { border-top: 4px solid $color-error; }
+  &[data-grade="A"] {
+    border-top: 4px solid $color-success;
+  }
+
+  &[data-grade="B"] {
+    border-top: 4px solid $color-l3-petrol;
+  }
+
+  &[data-grade="C"] {
+    border-top: 4px solid $color-info;
+  }
+
+  &[data-grade="D"] {
+    border-top: 4px solid $color-warning;
+  }
+
+  &[data-grade="E"] {
+    border-top: 4px solid $color-error;
+  }
 }
 
 .perf-header {
@@ -1104,11 +1133,30 @@
   font-size: $font-size-sm;
   font-weight: 600;
 
-  &.grade-A { background: $color-success; color: $color-pure-white; }
-  &.grade-B { background: $color-l3-petrol; color: $color-pure-white; }
-  &.grade-C { background: $color-info; color: $color-pure-white; }
-  &.grade-D { background: $color-warning; color: $color-pure-white; }
-  &.grade-E { background: $color-error; color: $color-pure-white; }
+  &.grade-A {
+    background: $color-success;
+    color: $color-pure-white;
+  }
+
+  &.grade-B {
+    background: $color-l3-petrol;
+    color: $color-pure-white;
+  }
+
+  &.grade-C {
+    background: $color-info;
+    color: $color-pure-white;
+  }
+
+  &.grade-D {
+    background: $color-warning;
+    color: $color-pure-white;
+  }
+
+  &.grade-E {
+    background: $color-error;
+    color: $color-pure-white;
+  }
 }
 
 .goal-section {
@@ -1192,8 +1240,13 @@
   }
 }
 
-.strengths h6 i { color: $color-success; }
-.improvements h6 i { color: $color-warning; }
+.strengths h6 i {
+  color: $color-success;
+}
+
+.improvements h6 i {
+  color: $color-warning;
+}
 
 .perf-footer {
   display: flex;
@@ -1231,7 +1284,9 @@
 
     .roi-label,
     .roi-value-large,
-    .roi-trend { color: $color-pure-white; }
+    .roi-trend {
+      color: $color-pure-white;
+    }
   }
 }
 
@@ -1251,7 +1306,9 @@
   color: $color-text-dark;
   margin-bottom: $spacing-xs;
 
-  &.positive { color: $color-success; }
+  &.positive {
+    color: $color-success;
+  }
 }
 
 .roi-trend {
@@ -1260,9 +1317,17 @@
   gap: 4px;
   font-size: $font-size-xs;
 
-  &.trend-up { color: $color-success; }
-  &.trend-stable { color: $color-info; }
-  &.trend-down { color: $color-error; }
+  &.trend-up {
+    color: $color-success;
+  }
+
+  &.trend-stable {
+    color: $color-info;
+  }
+
+  &.trend-down {
+    color: $color-error;
+  }
 }
 
 .roi-value {
@@ -1343,9 +1408,17 @@
   height: 100%;
   border-radius: $radius-full;
 
-  &.personal { background: $color-l1-sage; }
-  &.department { background: $color-l3-petrol; }
-  &.company { background: $color-l4-mauve; }
+  &.personal {
+    background: $color-l1-sage;
+  }
+
+  &.department {
+    background: $color-l3-petrol;
+  }
+
+  &.company {
+    background: $color-l4-mauve;
+  }
 }
 
 .comp-value {
