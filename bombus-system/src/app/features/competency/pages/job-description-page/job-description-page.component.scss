@@ -130,36 +130,7 @@ $module-color-dark: $color-l2-terracotta-dark;
 }
 
 .filter-bar {
-  @include card;
-  display: flex;
-  flex-wrap: wrap;
-    gap: $spacing-md;
-  padding: $spacing-lg;
-}
-
-.filter-item {
-  flex: 1;
-  min-width: 200px;
-
-  &--action {
-    flex: 0 0 auto;
-    display: flex;
-    align-items: flex-end;
-  }
-}
-
-.filter-label {
-  display: block;
-  font-size: $font-size-sm;
-  font-weight: $font-weight-medium;
-  color: $color-text-primary;
-  margin-bottom: $spacing-xs;
-}
-
-.filter-input,
-.filter-select {
-  @include input-base;
-  width: 100%;
+  @include filter-bar($module-color);
 }
 
 // ---------------------------------------------------------------
@@ -173,34 +144,8 @@ $module-color-dark: $color-l2-terracotta-dark;
   @include flex-between;
 }
 
-.view-toggle {
-  @include flex-center;
-  background: $color-cloud-gray;
-  border-radius: $radius-md;
-  padding: 4px;
-}
 
-.view-btn {
-  @include flex-center;
-  width: 36px;
-  height: 36px;
-  background: transparent;
-  border: none;
-  border-radius: $radius-sm;
-  color: $color-muted-gray;
-  cursor: pointer;
-  transition: all $transition-fast;
-
-  &:hover {
-    color: $color-text-primary;
-  }
-
-  &.active {
-    background: $color-pure-white;
-    color: $module-color;
-    box-shadow: $shadow-sm;
-  }
-}
+// .view-toggle is handled by app-view-toggle component
 
 .result-count {
   font-size: $font-size-sm;
@@ -228,8 +173,13 @@ $module-color-dark: $color-l2-terracotta-dark;
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .empty-state {
@@ -249,10 +199,10 @@ $module-color-dark: $color-l2-terracotta-dark;
 // Content Section - Card View
 // ---------------------------------------------------------------
 .content-section {
-  background: $color-pure-white;
-  border-radius: $radius-lg;
-  padding: $spacing-lg;
-  box-shadow: $shadow-soft;
+  // Card view styles can stay for now or use card mixin if appropriate
+  background: transparent; // Reset
+  padding: 0; // Reset
+  box-shadow: none; // Reset
 }
 
 .jd-grid {
@@ -262,20 +212,18 @@ $module-color-dark: $color-l2-terracotta-dark;
 }
 
 .jd-card {
+  @include card-hover; // Use card-hover mixin
   background: $color-pure-white;
   border-radius: $radius-lg;
   padding: $spacing-lg;
   cursor: pointer;
-  transition: all 0.3s $animation-easing-standard,
-              transform 0.3s $animation-easing-elastic;
+  transition: all 0.3s $animation-easing-standard, transform 0.3s $animation-easing-elastic;
   border: 1px solid $color-soft-gray;
   animation: fadeInUp 0.5s $animation-easing-decelerate both;
   @include stagger-animation(60ms, 12);
 
   &:hover {
     border-color: $module-color;
-    transform: translateY(-6px) scale(1.01);
-    box-shadow: 0 12px 30px rgba($module-color, 0.15);
 
     .jd-code {
       transform: translateX(4px);
@@ -299,24 +247,18 @@ $module-color-dark: $color-l2-terracotta-dark;
 }
 
 .jd-status {
-  font-size: $font-size-xs;
-  font-weight: $font-weight-medium;
-  padding: 4px 10px;
-  border-radius: $radius-full;
+  @include status-badge;
 
   &.status-published {
-    background: rgba($color-success, 0.15);
-    color: $color-success;
+    @include status-badge-color($color-success);
   }
 
   &.status-draft {
-    background: rgba($color-warning, 0.15);
-    color: $color-warning;
+    @include status-badge-color($color-warning);
   }
 
   &.status-archived {
-    background: rgba($color-muted-gray, 0.15);
-    color: $color-muted-gray;
+    @include status-badge-color($color-muted-gray);
   }
 }
 
@@ -349,10 +291,7 @@ $module-color-dark: $color-l2-terracotta-dark;
   color: $color-text-primary;
   margin: 0 0 $spacing-md;
   line-height: $line-height-relaxed;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  @include text-clamp(2);
 }
 
 .jd-competencies {
@@ -425,39 +364,13 @@ $module-color-dark: $color-l2-terracotta-dark;
 .jd-table-container {
   overflow-x: auto;
   @include custom-scrollbar;
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-soft;
 }
 
-.jd-table {
-  width: 100%;
-  border-collapse: collapse;
-
-  th, td {
-    padding: $spacing-sm $spacing-md;
-    text-align: left;
-    border-bottom: 1px solid $color-soft-gray;
-    white-space: nowrap;
-  }
-
-  th {
-    font-size: $font-size-sm;
-    font-weight: $font-weight-semibold;
-    color: $color-text-secondary;
-    background: $color-cloud-gray;
-  }
-
-  td {
-    font-size: $font-size-sm;
-    color: $color-text-primary;
-  }
-
-  tbody tr {
-    cursor: pointer;
-    transition: background $transition-fast;
-
-    &:hover {
-      background: rgba($module-color, 0.05);
-    }
-  }
+.data-table {
+  @include data-table($module-color);
 }
 
 .code-cell {
@@ -521,10 +434,12 @@ $module-color-dark: $color-l2-terracotta-dark;
     opacity: 0;
     transform: scale(0.9) translateY(30px);
   }
+
   60% {
     opacity: 1;
     transform: scale(1.02) translateY(-5px);
   }
+
   100% {
     opacity: 1;
     transform: scale(1) translateY(0);
@@ -814,6 +729,7 @@ $module-color-dark: $color-l2-terracotta-dark;
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1086,7 +1002,8 @@ $module-color-dark: $color-l2-terracotta-dark;
   border-collapse: collapse;
   margin-top: $spacing-sm;
 
-  th, td {
+  th,
+  td {
     padding: $spacing-sm $spacing-md;
     text-align: left;
     border-bottom: 1px solid $color-soft-gray;
@@ -1374,7 +1291,11 @@ $module-color-dark: $color-l2-terracotta-dark;
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
+  from {
+    transform: rotate(0deg);
+  }
 
+  to {
+    transform: rotate(360deg);
+  }
+}

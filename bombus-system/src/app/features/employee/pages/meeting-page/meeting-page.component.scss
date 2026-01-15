@@ -1,6 +1,9 @@
 @import '../../../../../assets/styles/variables';
 @import '../../../../../assets/styles/mixins';
 
+// L1 模組色定義
+$module-color: $color-l1-sage;
+
 .main-content {
   padding: $spacing-lg;
   padding-top: calc(var(--header-height, 70px) + 20px);
@@ -17,9 +20,20 @@
   margin: 0 auto;
 }
 
-// Filter Bar (使用共用 mixin)
+// Page Toolbar (原 filter-bar，避免與 mixin 衝突)
+.page-toolbar {
+  @include card;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-md;
+  margin-bottom: $spacing-lg;
+}
+
+// Filter Bar (列表篩選區塊，使用共用 mixin)
 .filter-bar {
-  @include filter-bar;
+  @include filter-bar($module-color);
+  margin-bottom: $spacing-lg; // 確保與列表有間距
 }
 
 .filter-divider {
@@ -617,7 +631,7 @@
 }
 
 .tracking-table {
-  @include data-table($color-brand-main);
+  @include data-table($module-color);
 
   // 頁面特有：逾期行樣式
   tr.overdue td {
@@ -1010,14 +1024,56 @@
   color: $color-text-secondary;
 }
 
-// ==================== Modal 樣式 ====================
+// ==================== Modal 樣式 (統一) ====================
 .modal-overlay {
-  @include modal-backdrop;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  animation: fadeIn 200ms ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
 }
 
 .modal-container {
-  @include modal-container;
-  animation: modalSlideIn 0.2s ease;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  width: 640px;
+  max-width: 90vw;
+  max-height: 90vh;
+  z-index: 1001;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+  animation: modalFadeIn 200ms ease;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 
   &--large {
     width: 100%;
@@ -1027,18 +1083,6 @@
   &--small {
     width: 100%;
     max-width: 500px;
-  }
-}
-
-@keyframes modalSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
   }
 }
 

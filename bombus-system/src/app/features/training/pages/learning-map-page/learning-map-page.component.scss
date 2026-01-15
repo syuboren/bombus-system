@@ -1,6 +1,9 @@
 @import '../../../../../assets/styles/variables';
 @import '../../../../../assets/styles/mixins';
 
+// 模組色變數
+$module-color: $color-l3-petrol;
+
 // 質感數字字體
 @mixin elegant-number {
   font-family: Georgia, 'Times New Roman', serif;
@@ -427,7 +430,8 @@
   cursor: pointer;
   transition: all 0.3s ease;
 
-  &:hover, &.active {
+  &:hover,
+  &.active {
     background: $color-warning;
     color: $color-pure-white;
   }
@@ -443,8 +447,15 @@
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.6;
+  }
 }
 
 // ===== 主要內容區 =====
@@ -489,8 +500,15 @@
 }
 
 @keyframes originPulse {
-  0%, 100% { box-shadow: 0 4px 20px rgba($color-l3-petrol, 0.4); }
-  50% { box-shadow: 0 4px 30px rgba($color-l3-petrol, 0.6); }
+
+  0%,
+  100% {
+    box-shadow: 0 4px 20px rgba($color-l3-petrol, 0.4);
+  }
+
+  50% {
+    box-shadow: 0 4px 30px rgba($color-l3-petrol, 0.6);
+  }
 }
 
 // 學習分支 - 遊戲技能樹風格
@@ -524,6 +542,7 @@
     opacity: 0;
     transform: translateX(-20px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -603,9 +622,11 @@
   &::-webkit-scrollbar {
     height: 4px;
   }
+
   &::-webkit-scrollbar-track {
     background: transparent;
   }
+
   &::-webkit-scrollbar-thumb {
     background: $color-soft-gray;
     border-radius: $radius-full;
@@ -628,9 +649,8 @@
     right: 0;
     height: 2px;
     background: linear-gradient(90deg,
-      var(--branch-color) 0%,
-      rgba(var(--branch-color-rgb), 0.3) 100%
-    );
+        var(--branch-color) 0%,
+        rgba(var(--branch-color-rgb), 0.3) 100%);
     z-index: 0;
     transform: translateY(-20px);
   }
@@ -656,6 +676,7 @@
       transform: scale(1.15);
       box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
     }
+
     .node-label {
       color: $color-text-dark;
     }
@@ -790,8 +811,15 @@
 }
 
 @keyframes priorityBlink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
 }
 
 // 圖例
@@ -1404,9 +1432,17 @@
       font-size: $font-size-sm;
       @include elegant-number;
 
-      &.priority--high { color: $color-error; }
-      &.priority--medium { color: $color-warning; }
-      &.priority--low { color: $color-l1-sage; }
+      &.priority--high {
+        color: $color-error;
+      }
+
+      &.priority--medium {
+        color: $color-warning;
+      }
+
+      &.priority--low {
+        color: $color-l1-sage;
+      }
     }
 
     .gap-priority {
@@ -1415,4 +1451,3 @@
     }
   }
 }
-

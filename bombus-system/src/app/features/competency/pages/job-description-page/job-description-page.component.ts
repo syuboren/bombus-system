@@ -2,6 +2,7 @@ import { Component, ChangeDetectionStrategy, inject, signal, OnInit, computed } 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { ViewToggleComponent } from '../../../../shared/components/view-toggle/view-toggle.component';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { CompetencyService } from '../../services/competency.service';
 import { PdfExportService } from '../../services/pdf-export.service';
@@ -21,7 +22,7 @@ import {
 @Component({
   selector: 'app-job-description-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, HeaderComponent],
+  imports: [CommonModule, FormsModule, HeaderComponent, ViewToggleComponent],
   templateUrl: './job-description-page.component.html',
   styleUrl: './job-description-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -136,7 +137,7 @@ export class JobDescriptionPageComponent implements OnInit {
 
   loadData(): void {
     this.loading.set(true);
-    
+
     // Load job descriptions
     this.competencyService.getJobDescriptions().subscribe(data => {
       this.jobDescriptions.set(data);
@@ -307,22 +308,22 @@ export class JobDescriptionPageComponent implements OnInit {
   // 計算所有職能需求的總權重 (核心 + 管理 + KSA)
   getAllCompetenciesTotalWeight(jd: JobDescription): number {
     let total = 0;
-    
+
     // 核心職能權重
     if (jd.coreCompetencyRequirements) {
       total += jd.coreCompetencyRequirements.reduce((sum, c) => sum + c.weight, 0);
     }
-    
+
     // 管理職能權重
     if (jd.managementCompetencyRequirements) {
       total += jd.managementCompetencyRequirements.reduce((sum, c) => sum + c.weight, 0);
     }
-    
+
     // KSA 職能權重
     if (jd.ksaCompetencyRequirements) {
       total += jd.ksaCompetencyRequirements.reduce((sum, c) => sum + c.weight, 0);
     }
-    
+
     return total;
   }
 

@@ -109,6 +109,7 @@ $module-color-dark: $color-l2-terracotta-dark;
       background: rgba($color-info, 0.15);
       color: $color-info;
     }
+
     .stat-card__value {
       color: $module-color;
     }
@@ -301,31 +302,14 @@ $module-color-dark: $color-l2-terracotta-dark;
 // ---------------------------------------------------------------
 // Filters
 // ---------------------------------------------------------------
-.filters-bar {
-  @include flex-start;
-  gap: $spacing-md;
-  margin-bottom: $spacing-md;
-  padding: $spacing-md;
-  background: $color-cloud-gray;
-  border-radius: $radius-md;
+// ---------------------------------------------------------------
+// Filters
+// ---------------------------------------------------------------
+.filter-bar {
+  @include filter-bar($module-color);
 }
 
-.filter-group {
-  display: flex;
-  flex-direction: column;
-  gap: $spacing-xs;
-}
 
-.filter-label {
-  font-size: $font-size-xs;
-  font-weight: $font-weight-medium;
-  color: $color-text-secondary;
-}
-
-.filter-select {
-  @include input-base;
-  min-width: 150px;
-}
 
 // ---------------------------------------------------------------
 // Loading & Empty
@@ -343,8 +327,13 @@ $module-color-dark: $color-l2-terracotta-dark;
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .empty-state {
@@ -367,31 +356,8 @@ $module-color-dark: $color-l2-terracotta-dark;
   overflow-x: auto;
 }
 
-.assessment-table {
-  width: 100%;
-  border-collapse: collapse;
-
-  th, td {
-    padding: $spacing-sm $spacing-md;
-    text-align: left;
-    border-bottom: 1px solid $color-soft-gray;
-  }
-
-  th {
-    font-size: $font-size-sm;
-    font-weight: $font-weight-semibold;
-    color: $color-text-secondary;
-    background: $color-cloud-gray;
-    white-space: nowrap;
-  }
-
-  tbody tr {
-    transition: background $transition-fast;
-
-    &:hover {
-      background: rgba($module-color, 0.03);
-    }
-  }
+.data-table {
+  @include data-table($module-color);
 }
 
 .employee-cell {
@@ -433,30 +399,22 @@ $module-color-dark: $color-l2-terracotta-dark;
 }
 
 .status-badge {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: $radius-full;
-  font-size: $font-size-xs;
-  font-weight: $font-weight-medium;
+  @include status-badge;
 
   &.status-not-started {
-    background: rgba($color-muted-gray, 0.2);
-    color: $color-text-secondary;
+    @include status-badge-color($color-muted-gray);
   }
 
   &.status-self-assessment {
-    background: rgba($color-info, 0.15);
-    color: $color-info;
+    @include status-badge-color($color-info);
   }
 
   &.status-manager-review {
-    background: rgba($color-warning, 0.15);
-    color: darken($color-warning, 20%);
+    @include status-badge-color($color-warning);
   }
 
   &.status-completed {
-    background: rgba($color-success, 0.15);
-    color: $color-success;
+    @include status-badge-color($color-success);
   }
 }
 
@@ -530,4 +488,3 @@ $module-color-dark: $color-l2-terracotta-dark;
     background: $module-color-dark;
   }
 }
-

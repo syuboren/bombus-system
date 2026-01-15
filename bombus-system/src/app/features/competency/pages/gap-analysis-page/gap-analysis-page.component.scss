@@ -116,32 +116,18 @@ $module-color-dark: $color-l2-terracotta-dark;
 // ---------------------------------------------------------------
 // Employee Selection
 // ---------------------------------------------------------------
+// ---------------------------------------------------------------
+// Employee Selection
+// ---------------------------------------------------------------
 .employee-section {
   margin-bottom: $spacing-lg;
 }
 
-.employee-selector {
-  display: flex;
-  align-items: center;
-  gap: $spacing-md;
-  background: $color-pure-white;
-  padding: $spacing-md;
-  border-radius: $radius-md;
-  box-shadow: $shadow-soft;
+.filter-bar {
+  @include filter-bar($module-color);
 }
 
-.selector-label {
-  font-size: $font-size-sm;
-  font-weight: $font-weight-medium;
-  color: $color-text-primary;
-  white-space: nowrap;
-}
 
-.selector-input {
-  @include input-base;
-  flex: 1;
-  max-width: 400px;
-}
 
 // ---------------------------------------------------------------
 // Loading
@@ -159,8 +145,13 @@ $module-color-dark: $color-l2-terracotta-dark;
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 // ---------------------------------------------------------------
@@ -397,29 +388,22 @@ $module-color-dark: $color-l2-terracotta-dark;
   }
 
   &__severity {
-    font-size: $font-size-xs;
-    padding: 2px 8px;
-    border-radius: $radius-full;
-    font-weight: $font-weight-medium;
+    @include status-badge;
 
     &.severity-critical {
-      background: rgba($color-error, 0.15);
-      color: $color-error;
+      @include status-badge-color($color-error);
     }
 
     &.severity-moderate {
-      background: rgba($color-warning, 0.15);
-      color: darken($color-warning, 25%);
+      @include status-badge-color($color-warning);
     }
 
     &.severity-minor {
-      background: rgba($color-info, 0.15);
-      color: $color-info;
+      @include status-badge-color($color-info);
     }
 
     &.severity-none {
-      background: rgba($color-success, 0.15);
-      color: $color-success;
+      @include status-badge-color($color-success);
     }
   }
 
@@ -612,4 +596,3 @@ $module-color-dark: $color-l2-terracotta-dark;
     background: $module-color-dark;
   }
 }
-

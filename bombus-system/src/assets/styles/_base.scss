@@ -34,18 +34,40 @@ body {
 // ---------------------------------------------------------------
 // Typography
 // ---------------------------------------------------------------
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   color: $color-text-dark;
   font-weight: $font-weight-semibold;
   line-height: $line-height-tight;
 }
 
-h1 { font-size: $font-size-4xl; }
-h2 { font-size: $font-size-3xl; }
-h3 { font-size: $font-size-2xl; }
-h4 { font-size: $font-size-xl; }
-h5 { font-size: $font-size-lg; }
-h6 { font-size: $font-size-base; }
+h1 {
+  font-size: $font-size-4xl;
+}
+
+h2 {
+  font-size: $font-size-3xl;
+}
+
+h3 {
+  font-size: $font-size-2xl;
+}
+
+h4 {
+  font-size: $font-size-xl;
+}
+
+h5 {
+  font-size: $font-size-lg;
+}
+
+h6 {
+  font-size: $font-size-base;
+}
 
 p {
   margin-bottom: $spacing-md;
@@ -64,7 +86,8 @@ a {
 // ---------------------------------------------------------------
 // List Reset
 // ---------------------------------------------------------------
-ul, ol {
+ul,
+ol {
   list-style: none;
 }
 
@@ -85,7 +108,9 @@ button {
 // ---------------------------------------------------------------
 // Input Reset
 // ---------------------------------------------------------------
-input, textarea, select {
+input,
+textarea,
+select {
   font-family: inherit;
   font-size: inherit;
 
@@ -106,64 +131,187 @@ img {
 // ---------------------------------------------------------------
 // Utilities
 // ---------------------------------------------------------------
-.text-center { text-align: center; }
-.text-left { text-align: left; }
-.text-right { text-align: right; }
+.text-center {
+  text-align: center;
+}
 
-.text-primary { color: $color-text-primary; }
-.text-secondary { color: $color-text-secondary; }
-.text-muted { color: $color-muted-gray; }
+.text-left {
+  text-align: left;
+}
 
-.text-success { color: $color-success; }
-.text-warning { color: $color-warning; }
-.text-error { color: $color-error; }
-.text-info { color: $color-info; }
+.text-right {
+  text-align: right;
+}
 
-.fw-normal { font-weight: $font-weight-normal; }
-.fw-medium { font-weight: $font-weight-medium; }
-.fw-semibold { font-weight: $font-weight-semibold; }
-.fw-bold { font-weight: $font-weight-bold; }
+.text-primary {
+  color: $color-text-primary;
+}
 
-.fs-xs { font-size: $font-size-xs; }
-.fs-sm { font-size: $font-size-sm; }
-.fs-base { font-size: $font-size-base; }
-.fs-lg { font-size: $font-size-lg; }
-.fs-xl { font-size: $font-size-xl; }
+.text-secondary {
+  color: $color-text-secondary;
+}
+
+.text-muted {
+  color: $color-muted-gray;
+}
+
+.text-success {
+  color: $color-success;
+}
+
+.text-warning {
+  color: $color-warning;
+}
+
+.text-error {
+  color: $color-error;
+}
+
+.text-info {
+  color: $color-info;
+}
+
+.fw-normal {
+  font-weight: $font-weight-normal;
+}
+
+.fw-medium {
+  font-weight: $font-weight-medium;
+}
+
+.fw-semibold {
+  font-weight: $font-weight-semibold;
+}
+
+.fw-bold {
+  font-weight: $font-weight-bold;
+}
+
+.fs-xs {
+  font-size: $font-size-xs;
+}
+
+.fs-sm {
+  font-size: $font-size-sm;
+}
+
+.fs-base {
+  font-size: $font-size-base;
+}
+
+.fs-lg {
+  font-size: $font-size-lg;
+}
+
+.fs-xl {
+  font-size: $font-size-xl;
+}
 
 // ---------------------------------------------------------------
 // Spacing Utilities
 // ---------------------------------------------------------------
-.m-0 { margin: 0; }
-.mt-1 { margin-top: $spacing-xs; }
-.mt-2 { margin-top: $spacing-sm; }
-.mt-3 { margin-top: $spacing-md; }
-.mt-4 { margin-top: $spacing-lg; }
-.mb-1 { margin-bottom: $spacing-xs; }
-.mb-2 { margin-bottom: $spacing-sm; }
-.mb-3 { margin-bottom: $spacing-md; }
-.mb-4 { margin-bottom: $spacing-lg; }
+.m-0 {
+  margin: 0;
+}
 
-.p-0 { padding: 0; }
-.p-2 { padding: $spacing-sm; }
-.p-3 { padding: $spacing-md; }
-.p-4 { padding: $spacing-lg; }
+.mt-1 {
+  margin-top: $spacing-xs;
+}
+
+.mt-2 {
+  margin-top: $spacing-sm;
+}
+
+.mt-3 {
+  margin-top: $spacing-md;
+}
+
+.mt-4 {
+  margin-top: $spacing-lg;
+}
+
+.mb-1 {
+  margin-bottom: $spacing-xs;
+}
+
+.mb-2 {
+  margin-bottom: $spacing-sm;
+}
+
+.mb-3 {
+  margin-bottom: $spacing-md;
+}
+
+.mb-4 {
+  margin-bottom: $spacing-lg;
+}
+
+.p-0 {
+  padding: 0;
+}
+
+.p-2 {
+  padding: $spacing-sm;
+}
+
+.p-3 {
+  padding: $spacing-md;
+}
+
+.p-4 {
+  padding: $spacing-lg;
+}
 
 // ---------------------------------------------------------------
 // Display Utilities
 // ---------------------------------------------------------------
-.d-none { display: none; }
-.d-block { display: block; }
-.d-flex { display: flex; }
-.d-grid { display: grid; }
+.d-none {
+  display: none;
+}
 
-.flex-column { flex-direction: column; }
-.align-center { align-items: center; }
-.justify-center { justify-content: center; }
-.justify-between { justify-content: space-between; }
-.gap-1 { gap: $spacing-xs; }
-.gap-2 { gap: $spacing-sm; }
-.gap-3 { gap: $spacing-md; }
-.gap-4 { gap: $spacing-lg; }
+.d-block {
+  display: block;
+}
+
+.d-flex {
+  display: flex;
+}
+
+.d-grid {
+  display: grid;
+}
+
+.flex-column {
+  flex-direction: column;
+}
+
+.align-center {
+  align-items: center;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.gap-1 {
+  gap: $spacing-xs;
+}
+
+.gap-2 {
+  gap: $spacing-sm;
+}
+
+.gap-3 {
+  gap: $spacing-md;
+}
+
+.gap-4 {
+  gap: $spacing-lg;
+}
 
 // ---------------------------------------------------------------
 // Card Base
@@ -187,9 +335,8 @@ img {
   margin: 0;
 }
 
-.card-body {
-  // Default body styles
-}
+
+
 
 // ---------------------------------------------------------------
 // Button Styles
@@ -320,4 +467,3 @@ body {
   background: rgba($color-brand-main, 0.2);
   color: $color-text-dark;
 }
-

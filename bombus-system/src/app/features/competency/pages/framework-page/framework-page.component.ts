@@ -19,10 +19,12 @@ import {
 
 type ActiveTab = 'core' | 'management' | 'ksa';
 
+import { ViewToggleComponent } from '../../../../shared/components/view-toggle/view-toggle.component';
+
 @Component({
   selector: 'app-framework-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, HeaderComponent],
+  imports: [CommonModule, FormsModule, HeaderComponent, ViewToggleComponent],
   templateUrl: './framework-page.component.html',
   styleUrl: './framework-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -187,7 +189,7 @@ export class FrameworkPageComponent implements OnInit {
       if (currentExpanded.has(`${competencyId}-${levels[i]}`)) {
         currentMaxIndex = i;
         break;
-  }
+      }
     }
 
     // Clear all levels for this competency first

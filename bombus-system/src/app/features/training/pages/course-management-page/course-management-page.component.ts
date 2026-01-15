@@ -11,6 +11,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { TrainingService } from '../../services/training.service';
+import { ViewToggleComponent } from '../../../../shared/components/view-toggle/view-toggle.component';
 import {
   Course,
   CourseCategory,
@@ -28,7 +29,8 @@ import {
     CommonModule,
     FormsModule,
     RouterLink,
-    HeaderComponent
+    HeaderComponent,
+    ViewToggleComponent
   ],
   templateUrl: './course-management-page.component.html',
   styleUrl: './course-management-page.component.scss',
@@ -48,7 +50,7 @@ export class CourseManagementPageComponent implements OnInit {
   selectedStatus = signal<CourseStatus | 'all'>('all');
   selectedCourseType = signal<CourseType | 'all'>('all');
   searchKeyword = signal<string>('');
-  viewMode = signal<'table' | 'card'>('table');
+  viewMode = signal<'list' | 'card'>('list');
 
   // 計算屬性 - 課程篩選
   filteredCourses = computed(() => {
@@ -122,7 +124,7 @@ export class CourseManagementPageComponent implements OnInit {
     this.selectedCourseType.set(type);
   }
 
-  setViewMode(mode: 'table' | 'card'): void {
+  setViewMode(mode: 'list' | 'card'): void {
     this.viewMode.set(mode);
   }
 

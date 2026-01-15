@@ -339,59 +339,244 @@
 }
 
 // ---------------------------------------------------------------
-// 篩選區塊
+// 篩選區塊（參數化 mixin，統一風格）
 // ---------------------------------------------------------------
-@mixin filter-bar {
-  @include card;
-  display: flex;
-  flex-wrap: wrap;
-  gap: $spacing-md;
-  padding: $spacing-md $spacing-lg;
-  margin-bottom: $spacing-lg;
-  align-items: center;
-
-  @include media-max-md {
-    padding: $spacing-md;
-    gap: $spacing-sm;
-  }
-}
-
+// ---------------------------------------------------------------
+// 搜尋框與下拉選單 Mixins
+// ---------------------------------------------------------------
 @mixin search-box {
   display: flex;
   align-items: center;
-  gap: $spacing-sm;
-  padding: $spacing-sm $spacing-md;
-  background: $color-cloud-gray;
-  border-radius: $radius-md;
-  flex: 1;
-  max-width: 400px;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid $color-soft-gray;
+  border-radius: 8px;
+  background: $color-pure-white;
+  transition: border-color 0.2s;
+
+  &:focus-within {
+    border-color: $color-brand-main;
+  }
 
   i {
-    color: $color-muted-gray;
-    font-size: $font-size-base;
+    color: $color-text-secondary;
   }
 
   input {
-    flex: 1;
     border: none;
     background: transparent;
-    font-size: $font-size-sm;
+    outline: none;
+    width: 100%;
+    font-size: 14px;
     color: $color-text-primary;
 
     &::placeholder {
-      color: $color-muted-gray;
-    }
-
-    &:focus {
-      outline: none;
+      color: $color-text-secondary;
     }
   }
 }
 
 @mixin filter-select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid $color-soft-gray;
+  border-radius: 8px;
+  background: $color-pure-white;
+  font-size: 14px;
+  color: $color-text-primary;
+  cursor: pointer;
+
+  &:focus {
+    outline: none;
+    border-color: $color-brand-main;
+  }
+}
+
+// ---------------------------------------------------------------
+// 篩選區塊（參數化 mixin，統一風格）
+// ---------------------------------------------------------------
+@mixin filter-bar($module-color: $color-brand-main, $layout: 'row') {
+  background: $color-pure-white;
+  padding: 15px 20px;
+  border-radius: 12px;
+  border: 1px solid $color-soft-gray;
+
+  display: flex;
+
+  @if $layout =='stacked' {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0; // Spacing handled by children
+  }
+
+  @else {
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: nowrap;
+  }
+
+  margin-bottom: 20px;
+  box-shadow: $shadow-soft;
+
+  @include media-max-md {
+
+    // Media query overrides for 'row' layout to stack on mobile
+    @if $layout =='row' {
+      flex-wrap: wrap;
+      padding: $spacing-md;
+      gap: $spacing-sm;
+    }
+  }
+
+  // 搜尋框 (Primary Filter Item)
+
+
+  // 分隔線
+  .filter-divider {
+    width: 1px;
+    height: 24px;
+    background: $color-soft-gray;
+    flex-shrink: 0;
+  }
+
+  // 篩選項目 (Base & Modifier)
+  .filter-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 0 0 auto;
+    min-width: auto;
+
+    // Filter Label
+    .filter-label {
+      font-size: 14px;
+      color: $color-text-secondary;
+      white-space: nowrap;
+      margin: 0;
+    }
+
+    // Dropdown / Input Styles
+    .filter-select,
+    select {
+      border: 1px solid $color-soft-gray;
+      border-radius: 8px;
+      background: $color-pure-white;
+      padding: 6px 32px 6px 12px; // Right padding for arrow
+      font-size: 14px;
+      color: $color-text-primary;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        border-color: $module-color;
+      }
+
+
+      &:focus {
+        outline: none;
+      }
+    }
+
+    // Explicit standard input override if class present
+    input.filter-input,
+    select.filter-select.bordered {
+      min-width: 120px;
+      border: 1px solid $color-soft-gray;
+      border-radius: 6px;
+      padding: 6px 12px;
+      background-color: $color-pure-white;
+    }
+
+    // Search Modifier (High Specificity)
+    &--search {
+      flex: 1; // Search box takes remaining space
+      min-width: 200px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0;
+
+      .filter-label {
+        display: none;
+      }
+
+      input {
+        width: 100%;
+        border: none;
+        outline: none;
+        font-size: 14px;
+        color: $color-text-primary;
+        background: transparent;
+
+        &::placeholder {
+          color: $color-text-secondary;
+        }
+      }
+
+      i {
+        font-size: 18px;
+        color: $color-text-secondary;
+      }
+    }
+  }
+
+  // Action Button Group
+  .filter-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 10px;
+  }
+
+  // 標籤篩選區塊 (Restored)
+  .tag-filters {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid $color-soft-gray;
+
+    .tag-label {
+      font-size: 14px;
+      color: $color-text-secondary;
+    }
+
+    .tag-btn {
+      padding: 4px 12px;
+      border: 1px solid $color-soft-gray;
+      border-radius: 20px;
+      background: $color-pure-white;
+      font-size: 13px;
+      color: $color-text-secondary;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: $color-cloud-gray;
+      }
+
+      &.active {
+        background: $module-color;
+        color: $color-pure-white;
+        border-color: $module-color;
+      }
+    }
+  }
+}
+
+// 保留獨立 mixin 供特殊用途
+@mixin filter-select($module-color: $color-brand-main) {
   @include input-base;
   min-width: 150px;
   cursor: pointer;
+
+  &:focus {
+    border-color: $module-color;
+  }
 }
 
 // ---------------------------------------------------------------
@@ -716,8 +901,8 @@
     }
 
     &.active {
-      background: $color-pure-white;
-      color: $module-color;
+      background: $module-color;
+      color: white;
       box-shadow: $shadow-sm;
     }
   }
@@ -783,6 +968,12 @@
     background: rgba($color-muted-gray, 0.15);
     color: $color-text-secondary;
   }
+}
+
+// 參數化狀態徽章顏色
+@mixin status-badge-color($color) {
+  background: rgba($color, 0.15);
+  color: $color;
 }
 
 // ---------------------------------------------------------------

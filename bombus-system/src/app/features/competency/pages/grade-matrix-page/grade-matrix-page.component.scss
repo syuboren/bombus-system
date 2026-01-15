@@ -78,8 +78,13 @@ $module-color-dark: $color-l2-terracotta-dark;
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 // ---------------------------------------------------------------
@@ -93,27 +98,11 @@ $module-color-dark: $color-l2-terracotta-dark;
 }
 
 .filter-bar {
-  @include flex-between;
-  margin-bottom: $spacing-lg;
-  padding-bottom: $spacing-md;
-  border-bottom: 1px solid $color-soft-gray;
+  @include filter-bar($module-color);
+  justify-content: space-between; // Override default
 }
 
-.filter-group {
-  @include flex-start;
-  gap: $spacing-sm;
-}
 
-.filter-label {
-  font-size: $font-size-sm;
-  font-weight: $font-weight-medium;
-  color: $color-text-secondary;
-}
-
-.filter-select {
-  @include input-base;
-  min-width: 150px;
-}
 
 .filter-info {
   font-size: $font-size-sm;
@@ -292,20 +281,41 @@ $module-color-dark: $color-l2-terracotta-dark;
 
   &.path-vertical {
     border-top: 4px solid $color-l1-sage;
-    &:hover { border-color: $color-l1-sage; }
-    .path-icon { background: rgba($color-l1-sage, 0.15); color: $color-l1-sage; }
+
+    &:hover {
+      border-color: $color-l1-sage;
+    }
+
+    .path-icon {
+      background: rgba($color-l1-sage, 0.15);
+      color: $color-l1-sage;
+    }
   }
 
   &.path-horizontal {
     border-top: 4px solid $color-l3-petrol;
-    &:hover { border-color: $color-l3-petrol; }
-    .path-icon { background: rgba($color-l3-petrol, 0.15); color: $color-l3-petrol; }
+
+    &:hover {
+      border-color: $color-l3-petrol;
+    }
+
+    .path-icon {
+      background: rgba($color-l3-petrol, 0.15);
+      color: $color-l3-petrol;
+    }
   }
 
   &.path-cross-department {
     border-top: 4px solid $color-l4-mauve;
-    &:hover { border-color: $color-l4-mauve; }
-    .path-icon { background: rgba($color-l4-mauve, 0.15); color: $color-l4-mauve; }
+
+    &:hover {
+      border-color: $color-l4-mauve;
+    }
+
+    .path-icon {
+      background: rgba($color-l4-mauve, 0.15);
+      color: $color-l4-mauve;
+    }
   }
 }
 
@@ -512,8 +522,13 @@ $module-color-dark: $color-l2-terracotta-dark;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .section-title {
@@ -682,9 +697,17 @@ $module-color-dark: $color-l2-terracotta-dark;
     font-size: $font-size-sm;
     font-weight: $font-weight-semibold;
 
-    &.score-good { color: $color-success; }
-    &.score-warning { color: $color-warning; }
-    &.score-danger { color: $color-error; }
+    &.score-good {
+      color: $color-success;
+    }
+
+    &.score-warning {
+      color: $color-warning;
+    }
+
+    &.score-danger {
+      color: $color-error;
+    }
   }
 }
 
@@ -731,17 +754,29 @@ $module-color-dark: $color-l2-terracotta-dark;
 
   &.path-vertical {
     border-color: $color-l1-sage;
-    .path-icon { background: rgba($color-l1-sage, 0.15); color: $color-l1-sage; }
+
+    .path-icon {
+      background: rgba($color-l1-sage, 0.15);
+      color: $color-l1-sage;
+    }
   }
 
   &.path-horizontal {
     border-color: $color-l3-petrol;
-    .path-icon { background: rgba($color-l3-petrol, 0.15); color: $color-l3-petrol; }
+
+    .path-icon {
+      background: rgba($color-l3-petrol, 0.15);
+      color: $color-l3-petrol;
+    }
   }
 
   &.path-cross {
     border-color: $color-l4-mauve;
-    .path-icon { background: rgba($color-l4-mauve, 0.15); color: $color-l4-mauve; }
+
+    .path-icon {
+      background: rgba($color-l4-mauve, 0.15);
+      color: $color-l4-mauve;
+    }
   }
 }
 
@@ -768,24 +803,18 @@ $module-color-dark: $color-l2-terracotta-dark;
 }
 
 .feasibility-badge {
-  font-size: $font-size-xs;
-  font-weight: $font-weight-medium;
-  padding: 4px 8px;
-  border-radius: $radius-full;
+  @include status-badge;
 
   &.feasibility-high {
-    background: rgba($color-success, 0.15);
-    color: $color-success;
+    @include status-badge-color($color-success);
   }
 
   &.feasibility-medium {
-    background: rgba($color-warning, 0.15);
-    color: $color-warning;
+    @include status-badge-color($color-warning);
   }
 
   &.feasibility-low {
-    background: rgba($color-error, 0.15);
-    color: $color-error;
+    @include status-badge-color($color-error);
   }
 }
 
@@ -919,17 +948,26 @@ $module-color-dark: $color-l2-terracotta-dark;
 
   &.priority-high {
     border-color: $color-error;
-    .course-priority { color: $color-error; }
+
+    .course-priority {
+      color: $color-error;
+    }
   }
 
   &.priority-medium {
     border-color: $color-warning;
-    .course-priority { color: $color-warning; }
+
+    .course-priority {
+      color: $color-warning;
+    }
   }
 
   &.priority-low {
     border-color: $color-muted-gray;
-    .course-priority { color: $color-muted-gray; }
+
+    .course-priority {
+      color: $color-muted-gray;
+    }
   }
 }
 
@@ -1083,7 +1121,9 @@ $module-color-dark: $color-l2-terracotta-dark;
   }
 
   &.milestone-completed {
-    .milestone-marker i { color: $color-success; }
+    .milestone-marker i {
+      color: $color-success;
+    }
   }
 
   &.milestone-in_progress {
@@ -1094,8 +1134,13 @@ $module-color-dark: $color-l2-terracotta-dark;
   }
 
   &.milestone-pending {
-    .milestone-marker i { color: $color-muted-gray; }
-    .milestone-content { opacity: 0.6; }
+    .milestone-marker i {
+      color: $color-muted-gray;
+    }
+
+    .milestone-content {
+      opacity: 0.6;
+    }
   }
 }
 
@@ -1349,6 +1394,7 @@ $module-color-dark: $color-l2-terracotta-dark;
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1574,6 +1620,7 @@ $module-color-dark: $color-l2-terracotta-dark;
     .step-marker i {
       color: $module-color;
     }
+
     .step-content {
       background: rgba($module-color, 0.05);
       border-color: $module-color;
@@ -1635,4 +1682,3 @@ $module-color-dark: $color-l2-terracotta-dark;
   padding: $spacing-md $spacing-lg;
   border-top: 1px solid $color-soft-gray;
 }
-

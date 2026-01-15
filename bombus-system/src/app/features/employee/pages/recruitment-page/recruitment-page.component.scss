@@ -67,24 +67,17 @@
   color: $color-text-secondary;
 }
 
-.search-box {
-  position: relative;
+.search-section {
   padding: $spacing-md $spacing-lg;
   border-bottom: 1px solid $color-soft-gray;
-
-  i {
-    position: absolute;
-    left: calc(#{$spacing-lg} + #{$spacing-sm});
-    top: 50%;
-    transform: translateY(-50%);
-    color: $color-muted-gray;
-  }
 }
 
-.search-input {
-  @include input-base;
-  padding-left: 36px;
+.search-box {
+  @include search-box;
 }
+
+// 移除舊的 search-input 樣式，因為 mixin 已處理
+
 
 .candidate-list {
   flex: 1;
@@ -158,18 +151,14 @@
 }
 
 .status-badge {
-  display: inline-block;
-  padding: 2px 8px;
-  font-size: $font-size-xs;
-  border-radius: $radius-full;
+  @include status-badge;
 
   &--completed {
-    background: $color-success-light;
-    color: $color-success;
+    @include status-badge-color($color-success);
   }
 
   &--pending {
-    background: $color-warning-light;
+    @include status-badge-color($color-warning);
     color: darken($color-warning, 15%);
   }
 }
@@ -470,4 +459,3 @@
     margin: 0;
   }
 }
-

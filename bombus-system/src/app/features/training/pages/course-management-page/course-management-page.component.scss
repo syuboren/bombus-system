@@ -1,6 +1,9 @@
 @import '../../../../../assets/styles/variables';
 @import '../../../../../assets/styles/mixins';
 
+// 模組色變數
+$module-color: $color-l3-petrol;
+
 .course-management {
   display: grid;
   grid-template-columns: 1fr 320px;
@@ -35,11 +38,11 @@
   margin: 0;
 
   i {
-    color: $color-l3-petrol;
+    color: $module-color;
   }
 
   .count-badge {
-    background: $color-l3-petrol;
+    background: $module-color;
     color: $color-pure-white;
     padding: 2px 10px;
     border-radius: $radius-full;
@@ -84,18 +87,29 @@
   }
 
   &.active {
-    border-color: $color-l3-petrol;
-    background: rgba($color-l3-petrol, 0.05);
+    border-color: $module-color;
+    background: rgba($module-color, 0.05);
   }
 
   i {
     font-size: 24px;
   }
 
-  &--total i { color: $color-text-secondary; }
-  &--upcoming i { color: $color-l3-petrol; }
-  &--ongoing i { color: $color-l1-sage; }
-  &--completed i { color: $color-l2-terracotta; }
+  &--total i {
+    color: $color-text-secondary;
+  }
+
+  &--upcoming i {
+    color: $module-color;
+  }
+
+  &--ongoing i {
+    color: $color-l1-sage;
+  }
+
+  &--completed i {
+    color: $color-l2-terracotta;
+  }
 
   &__count {
     font-size: 1.75rem;
@@ -140,7 +154,7 @@
   }
 
   &--checkin {
-    border-left-color: $color-l3-petrol;
+    border-left-color: $module-color;
   }
 
   &--feedback {
@@ -163,8 +177,8 @@
   }
 
   &--checkin &__icon {
-    background: rgba($color-l3-petrol, 0.15);
-    color: $color-l3-petrol;
+    background: rgba($module-color, 0.15);
+    color: $module-color;
   }
 
   &--feedback &__icon {
@@ -202,96 +216,23 @@
     transition: all 0.2s;
 
     &:hover {
-      background: $color-l3-petrol;
+      background: $module-color;
       color: $color-pure-white;
     }
   }
 }
 
-// Filter Bar
+// Filter Bar - 使用標準化 mixin
 .filter-bar {
   grid-column: 1 / -1;
-  background: $color-pure-white;
-  padding: 15px 20px;
-  border-radius: 12px;
-  border: 1px solid $color-soft-gray;
-  display: flex;
-  gap: 15px;
-  align-items: center;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-}
-
-.filter-item {
-  flex: 1;
-  min-width: 150px;
-
-  &--search {
-    flex: 2;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-
-    i {
-      color: $color-text-secondary;
-    }
-
-    input {
-      border: none;
-      background: transparent;
-      outline: none;
-      width: 100%;
-      font-size: 14px;
-      color: $color-text-dark;
-
-      &::placeholder {
-        color: $color-text-secondary;
-      }
-    }
-  }
-
-  select {
-    width: 100%;
-    padding: 8px 12px;
-    border: 1px solid $color-soft-gray;
-    border-radius: 8px;
-    background: white;
-    font-size: 14px;
-    color: $color-text-dark;
-    cursor: pointer;
-
-    &:focus {
-      outline: none;
-      border-color: $color-l3-petrol;
-    }
-  }
-}
-
-.filter-divider {
-  width: 1px;
-  height: 24px;
-  background: $color-soft-gray;
+  @include filter-bar($module-color);
 }
 
 .btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 18px;
-  border: none;
-  border-radius: $radius-md;
-  font-size: $font-size-sm;
-  font-weight: $font-weight-medium;
-  cursor: pointer;
-  transition: all 0.2s;
+  @include button-base;
 
   &--primary {
-    background: $color-l3-petrol;
-    color: $color-pure-white;
-
-    &:hover {
-      background: darken($color-l3-petrol, 10%);
-    }
+    @include button-module($module-color);
   }
 }
 
@@ -304,74 +245,27 @@
   }
 }
 
-.view-toggle {
-  display: flex;
-  gap: 4px;
-  background: $color-cloud-gray;
-  padding: 4px;
-  border-radius: $radius-md;
-}
 
-.toggle-btn {
-  width: 36px;
-  height: 36px;
-  border: none;
-  background: transparent;
-  border-radius: $radius-sm;
-  color: $color-text-secondary;
-  cursor: pointer;
-  transition: all 0.2s;
+// ---------------------------------------------------------------
+// View Toggle
+// ---------------------------------------------------------------
+// .view-toggle is now handled by app-view-toggle component
 
-  &:hover {
-    color: $color-text-dark;
-  }
-
-  &.active {
-    background: $color-pure-white;
-    color: $color-l3-petrol;
-    box-shadow: $shadow-sm;
-  }
-}
 
 // Table View
 .courses-table-wrapper {
-  background: $color-pure-white;
-  border-radius: $radius-lg;
-  box-shadow: $shadow-sm;
+  @include card;
+  padding: 0;
   overflow: hidden;
 }
 
 .courses-table {
-  width: 100%;
-  border-collapse: collapse;
+  @include data-table($module-color);
 
   th {
-    background: $color-pure-white;
-    padding: 14px 12px;
-    text-align: left;
-    font-size: $font-size-sm;
-    font-weight: $font-weight-semibold;
-    color: $color-text-dark;
-    border-bottom: 2px solid $color-l3-petrol;
-    white-space: nowrap;
     position: sticky;
     top: 0;
     z-index: 1;
-  }
-
-  td {
-    padding: 14px 12px;
-    border-bottom: 1px solid $color-soft-gray;
-    font-size: $font-size-sm;
-    background: $color-pure-white;
-  }
-
-  tr:last-child td {
-    border-bottom: none;
-  }
-
-  tr:hover td {
-    background: rgba($color-l3-petrol, 0.05);
   }
 }
 
@@ -431,7 +325,7 @@
 
 .enrollment-fill {
   height: 100%;
-  background: $color-l3-petrol;
+  background: $module-color;
   border-radius: $radius-full;
   transition: width 0.3s ease;
 }
@@ -449,8 +343,8 @@
   font-weight: $font-weight-medium;
 
   &.status--upcoming {
-    background: rgba($color-l3-petrol, 0.15);
-    color: $color-l3-petrol;
+    background: rgba($module-color, 0.15);
+    color: $module-color;
   }
 
   &.status--ongoing {
@@ -504,16 +398,16 @@
   transition: all 0.2s;
 
   &:hover {
-    background: $color-l3-petrol;
+    background: $module-color;
     color: $color-pure-white;
   }
 
   &--qr {
-    background: rgba($color-l3-petrol, 0.15);
-    color: $color-l3-petrol;
+    background: rgba($module-color, 0.15);
+    color: $module-color;
 
     &:hover {
-      background: $color-l3-petrol;
+      background: $module-color;
       color: $color-pure-white;
     }
   }

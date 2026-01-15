@@ -35,35 +35,10 @@ $module-color: $color-l1-sage;
 // 直接使用全域 .stats-grid 類別
 
 // ---------------------------------------------------------------
-// 篩選區塊（使用共用 mixin）
+// 篩選區塊（使用參數化 mixin）
 // ---------------------------------------------------------------
 .filter-bar {
-  @include filter-bar;
-  padding: $spacing-lg; // 保持原有的較大 padding
-}
-
-.filter-item {
-  flex: 1;
-  min-width: 200px;
-
-  &--action {
-    flex: 0 0 auto;
-    display: flex;
-    align-items: flex-end;
-  }
-}
-
-.filter-label {
-  display: block;
-  font-size: $font-size-sm;
-  font-weight: $font-weight-medium;
-  color: $color-text-primary;
-  margin-bottom: $spacing-xs;
-}
-
-.filter-input,
-.filter-select {
-  @include input-base;
+  @include filter-bar($module-color);
 }
 
 // ---------------------------------------------------------------
@@ -210,16 +185,35 @@ $module-color: $color-l1-sage;
 }
 
 // ---------------------------------------------------------------
-// Modal（使用共用 mixin）
+// Modal（參考 project-list 樣式，優化動畫和滾軸）
 // ---------------------------------------------------------------
 .modal-backdrop {
-  @include modal-backdrop;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
   animation: fadeIn 200ms ease;
 }
 
 .modal {
-  @include modal-container(600px);
-  animation: slideUp 200ms ease;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: $color-pure-white;
+  border-radius: 12px;
+  width: 600px;
+  max-width: 90vw;
+  max-height: 90vh;
+  z-index: 1001;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+  animation: modalFadeIn 200ms ease;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 @keyframes fadeIn {
@@ -232,20 +226,25 @@ $module-color: $color-l1-sage;
   }
 }
 
-@keyframes slideUp {
+@keyframes modalFadeIn {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translate(-50%, -50%) scale(0.95);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translate(-50%, -50%) scale(1);
   }
 }
 
 .modal__header {
-  @include modal-header;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 25px;
+  border-bottom: 1px solid $color-soft-gray;
+  flex-shrink: 0;
 }
 
 .modal__title {
@@ -264,13 +263,20 @@ $module-color: $color-l1-sage;
 }
 
 .modal__body {
-  @include modal-body;
+  flex: 1;
+  overflow-y: auto;
+  padding: 25px;
+  @include custom-scrollbar;
 }
 
 .modal__footer {
-  @include modal-footer;
+  display: flex;
   justify-content: flex-end;
   gap: $spacing-sm;
+  padding: 20px 25px;
+  border-top: 1px solid $color-soft-gray;
+  background: $color-cloud-gray;
+  flex-shrink: 0;
 }
 
 // ---------------------------------------------------------------

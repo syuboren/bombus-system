@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, signal, OnInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, OnInit, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -56,8 +56,12 @@ export class JobCandidatesPageComponent implements OnInit {
     { id: 'INT-003', name: '王主管', department: '人資部', title: '招募主管' },
     { id: 'INT-004', name: '陳總監', department: '人資部', title: '人資總監' },
     { id: 'INT-005', name: '林經理', department: '業務部', title: '業務經理' },
+    { id: 'INT-005', name: '林經理', department: '業務部', title: '業務經理' },
     { id: 'INT-006', name: '黃經理', department: '技術部', title: '技術經理' }
   ];
+
+  // 熱門標籤
+  readonly popularTags = ['React', 'Angular', 'Python', 'Java', 'AWS', 'Node.js', 'Spring Boot', 'Docker'];
 
   // Filter signals
   searchQuery = signal<string>('');
@@ -128,7 +132,7 @@ export class JobCandidatesPageComponent implements OnInit {
   // 批量 AI 評分
   batchAIScoring(): void {
     const pendingCandidates = this.candidates().filter(c => c.aiScoringStatus === 'pending');
-    
+
     if (pendingCandidates.length === 0) {
       this.notificationService.info('所有候選人都已完成評分');
       return;
@@ -154,14 +158,14 @@ export class JobCandidatesPageComponent implements OnInit {
       currentStep++;
       const progress = Math.min((currentStep / totalSteps) * 100, 100);
       this.aiScoringProgress.set(progress);
-      
+
       if (currentStep < messages.length) {
         this.aiScoringMessage.set(messages[currentStep]);
       }
 
       if (currentStep >= totalSteps) {
         clearInterval(interval);
-        
+
         // 更新候選人狀態為已評分
         const updatedCandidates = this.candidates().map(c => {
           if (c.aiScoringStatus === 'pending') {
@@ -175,7 +179,7 @@ export class JobCandidatesPageComponent implements OnInit {
         setTimeout(() => {
           this.isAIScoring.set(false);
           this.notificationService.success(`已完成 ${pendingCandidates.length} 位候選人的 AI 評分`);
-          
+
           // 啟動分數動畫
           this.animateScores();
         }, 500);
@@ -192,7 +196,7 @@ export class JobCandidatesPageComponent implements OnInit {
     const animate = (currentTime: number) => {
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      
+
       // 使用 easeOutExpo 緩動函數
       const easeProgress = 1 - Math.pow(1 - progress, 3);
 
@@ -205,7 +209,7 @@ export class JobCandidatesPageComponent implements OnInit {
         }
         return c;
       });
-      
+
       this.candidates.set(updatedCandidates);
 
       if (progress < 1) {
@@ -350,7 +354,7 @@ export class JobCandidatesPageComponent implements OnInit {
   // 婉拒候選人
   rejectCandidate(candidate: CandidateWithUI, event: Event): void {
     event.stopPropagation();
-    
+
     // 更新狀態
     const updatedCandidates = this.candidates().map(c => {
       if (c.id === candidate.id) {
@@ -359,7 +363,7 @@ export class JobCandidatesPageComponent implements OnInit {
       return c;
     });
     this.candidates.set(updatedCandidates);
-    
+
     this.notificationService.info(`已婉拒 ${candidate.name}，將發送感謝信`);
   }
 }

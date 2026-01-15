@@ -1,51 +1,27 @@
-<app-header
-  pageTitle="職缺管理"
-  [breadcrumbs]="['員工管理']" />
+<app-header pageTitle="職缺管理" [breadcrumbs]="['員工管理']" />
 
 <main class="main-content">
   <div class="content-container">
     <!-- Stats Cards -->
     @if (stats(); as s) {
-      <div class="stats-grid">
-        <app-stat-card
-          icon="ri-briefcase-line"
-          label="進行中職缺"
-          [value]="s.activeJobs"
-          moduleType="l1" />
-        <app-stat-card
-          icon="ri-user-search-line"
-          label="本週新進履歷"
-          [value]="s.newResumes"
-          moduleType="l1" />
-        <app-stat-card
-          icon="ri-file-list-3-line"
-          label="待審核履歷"
-          [value]="s.pendingReview"
-          moduleType="l1" />
-        <app-stat-card
-          icon="ri-calendar-check-line"
-          label="已安排面試"
-          [value]="s.scheduledInterviews"
-          moduleType="l1" />
-      </div>
+    <div class="stats-grid">
+      <app-stat-card icon="ri-briefcase-line" label="進行中職缺" [value]="s.activeJobs" moduleType="l1" />
+      <app-stat-card icon="ri-user-search-line" label="本週新進履歷" [value]="s.newResumes" moduleType="l1" />
+      <app-stat-card icon="ri-file-list-3-line" label="待審核履歷" [value]="s.pendingReview" moduleType="l1" />
+      <app-stat-card icon="ri-calendar-check-line" label="已安排面試" [value]="s.scheduledInterviews" moduleType="l1" />
+    </div>
     }
 
-    <!-- Filter Bar -->
+    <!-- Filter Bar (參考 project-list 風格) -->
     <div class="filter-bar">
-      <div class="filter-item">
-        <label class="filter-label">關鍵字搜尋</label>
-        <input
-          type="text"
-          class="filter-input"
-          placeholder="職稱 / 部門"
-          [value]="searchQuery()"
+      <div class="filter-item filter-item--search">
+        <i class="ri-search-line"></i>
+        <input type="text" placeholder="搜尋職稱、部門..." [value]="searchQuery()"
           (input)="searchQuery.set($any($event.target).value)">
       </div>
+      <div class="filter-divider"></div>
       <div class="filter-item">
-        <label class="filter-label">部門篩選</label>
-        <select
-          class="filter-select"
-          [value]="departmentFilter()"
+        <select class="filter-select" [value]="departmentFilter()"
           (change)="departmentFilter.set($any($event.target).value)">
           <option value="">所有部門</option>
           <option value="資訊部">資訊部</option>
@@ -57,23 +33,17 @@
         </select>
       </div>
       <div class="filter-item">
-        <label class="filter-label">狀態</label>
-        <select
-          class="filter-select"
-          [value]="statusFilter()"
-          (change)="statusFilter.set($any($event.target).value)">
+        <select class="filter-select" [value]="statusFilter()" (change)="statusFilter.set($any($event.target).value)">
           <option value="">所有狀態</option>
           <option value="published">刊登中</option>
           <option value="draft">草稿</option>
           <option value="review">審核中</option>
         </select>
       </div>
-      <div class="filter-item filter-item--action">
-        <button class="btn btn-primary" (click)="openModal()" type="button">
-          <i class="ri-add-line"></i>
-          發布職缺
-        </button>
-      </div>
+      <button class="btn btn-primary" (click)="openModal()" type="button">
+        <i class="ri-add-line"></i>
+        發布職缺
+      </button>
     </div>
 
     <!-- Job Table -->
@@ -92,90 +62,69 @@
         </thead>
         <tbody>
           @for (job of filteredJobs(); track job.id) {
-            <tr>
-              <td>
-                <div class="job-title">{{ job.title }}</div>
-                <div class="job-id">ID: {{ job.id }}</div>
-              </td>
-              <td>{{ job.department }}</td>
-              <td>{{ job.publishDate || '--' }}</td>
-              <td>
-                @if (job.status === 'published') {
-                  <div class="candidate-count">
-                    @if (job.newCandidates > 0) {
-                      <span class="count-badge count-badge--new">New {{ job.newCandidates }}</span>
-                    }
-                    <span class="count-total">/ {{ job.totalCandidates }} 人</span>
-                  </div>
-                } @else {
-                  <span class="text-muted">-</span>
+          <tr>
+            <td>
+              <div class="job-title">{{ job.title }}</div>
+              <div class="job-id">ID: {{ job.id }}</div>
+            </td>
+            <td>{{ job.department }}</td>
+            <td>{{ job.publishDate || '--' }}</td>
+            <td>
+              @if (job.status === 'published') {
+              <div class="candidate-count">
+                @if (job.newCandidates > 0) {
+                <span class="count-badge count-badge--new">New {{ job.newCandidates }}</span>
                 }
-              </td>
-              <td>
-                <span class="status-badge {{ getStatusClass(job.status) }}">
-                  <i [class]="getStatusIcon(job.status)"></i>
-                  {{ getStatusLabel(job.status) }}
-                </span>
-              </td>
-              <td>{{ job.recruiter }}</td>
-              <td>
-                <div class="action-group">
-                  @if (job.status === 'published') {
-                    <button
-                      class="icon-btn"
-                      title="匯入履歷"
-                      (click)="openImportModal(job)"
-                      type="button">
-                      <i class="ri-upload-cloud-line"></i>
-                    </button>
-                    <button
-                      class="icon-btn"
-                      title="查看候選人"
-                      (click)="viewCandidates(job)"
-                      type="button">
-                      <i class="ri-user-search-line"></i>
-                    </button>
-                  }
-                  @if (job.status === 'review') {
-                    <button
-                      class="icon-btn"
-                      title="審核"
-                      type="button">
-                      <i class="ri-check-double-line"></i>
-                    </button>
-                  }
-                  <button
-                    class="icon-btn"
-                    title="編輯職缺"
-                    (click)="editJob(job)"
-                    type="button">
-                    <i class="ri-edit-line"></i>
-                  </button>
-                  @if (job.status === 'draft') {
-                    <button
-                      class="icon-btn icon-btn--danger"
-                      title="刪除"
-                      type="button">
-                      <i class="ri-delete-bin-line"></i>
-                    </button>
-                  } @else {
-                    <button
-                      class="icon-btn"
-                      title="更多"
-                      type="button">
-                      <i class="ri-more-2-fill"></i>
-                    </button>
-                  }
-                </div>
-              </td>
-            </tr>
+                <span class="count-total">/ {{ job.totalCandidates }} 人</span>
+              </div>
+              } @else {
+              <span class="text-muted">-</span>
+              }
+            </td>
+            <td>
+              <span class="status-badge {{ getStatusClass(job.status) }}">
+                <i [class]="getStatusIcon(job.status)"></i>
+                {{ getStatusLabel(job.status) }}
+              </span>
+            </td>
+            <td>{{ job.recruiter }}</td>
+            <td>
+              <div class="action-group">
+                @if (job.status === 'published') {
+                <button class="icon-btn" title="匯入履歷" (click)="openImportModal(job)" type="button">
+                  <i class="ri-upload-cloud-line"></i>
+                </button>
+                <button class="icon-btn" title="查看候選人" (click)="viewCandidates(job)" type="button">
+                  <i class="ri-user-search-line"></i>
+                </button>
+                }
+                @if (job.status === 'review') {
+                <button class="icon-btn" title="審核" type="button">
+                  <i class="ri-check-double-line"></i>
+                </button>
+                }
+                <button class="icon-btn" title="編輯職缺" (click)="editJob(job)" type="button">
+                  <i class="ri-edit-line"></i>
+                </button>
+                @if (job.status === 'draft') {
+                <button class="icon-btn icon-btn--danger" title="刪除" type="button">
+                  <i class="ri-delete-bin-line"></i>
+                </button>
+                } @else {
+                <button class="icon-btn" title="更多" type="button">
+                  <i class="ri-more-2-fill"></i>
+                </button>
+                }
+              </div>
+            </td>
+          </tr>
           } @empty {
-            <tr>
-              <td colspan="7" class="empty-row">
-                <i class="ri-folder-open-line"></i>
-                <p>目前沒有職缺資料</p>
-              </td>
-            </tr>
+          <tr>
+            <td colspan="7" class="empty-row">
+              <i class="ri-folder-open-line"></i>
+              <p>目前沒有職缺資料</p>
+            </td>
+          </tr>
           }
         </tbody>
       </table>
@@ -185,156 +134,141 @@
 
 <!-- Create Job Modal -->
 @if (showModal()) {
-  <div class="modal-backdrop" (click)="closeModal()"></div>
-  <div class="modal">
-    <div class="modal__header">
-      <h3 class="modal__title">發布新職缺</h3>
-      <button class="modal__close" (click)="closeModal()" type="button">
-        <i class="ri-close-line"></i>
-      </button>
-    </div>
-    <div class="modal__body">
-      <!-- 選擇職務說明書 (JD) -->
-      <div class="form-group">
-        <label class="form-label">
-          <i class="ri-file-text-line"></i>
-          選擇職務說明書 (JD) <span class="required">*</span>
-        </label>
-        <select
-          class="form-select form-select--highlight"
-          [value]="newJob().jdId"
-          (change)="updateJobField('jdId', $any($event.target).value)">
-          <option value="">請選擇 JD（選擇後自動帶入職缺資訊）</option>
-          @for (jd of jobDescriptions(); track jd.id) {
-            <option [value]="jd.id">{{ jd.positionCode }} - {{ jd.positionName }} ({{ jd.department }})</option>
-          }
-        </select>
-        @if (selectedJD(); as jd) {
-          <div class="jd-preview">
-            <div class="jd-preview__header">
-              <i class="ri-checkbox-circle-fill"></i>
-              已選擇：{{ jd.positionName }}
-            </div>
-            <div class="jd-preview__content">
-              <p><strong>部門：</strong>{{ jd.department }}</p>
-              <p><strong>職等：</strong>{{ jd.gradeLevel }}</p>
-              <p><strong>摘要：</strong>{{ jd.summary }}</p>
-              <p><strong>職能要求：</strong>{{ jd.requiredCompetencies.length }} 項</p>
-            </div>
-          </div>
+<div class="modal-backdrop" (click)="closeModal()"></div>
+<div class="modal">
+  <div class="modal__header">
+    <h3 class="modal__title">發布新職缺</h3>
+    <button class="modal__close" (click)="closeModal()" type="button">
+      <i class="ri-close-line"></i>
+    </button>
+  </div>
+  <div class="modal__body">
+    <!-- 選擇職務說明書 (JD) -->
+    <div class="form-group">
+      <label class="form-label">
+        <i class="ri-file-text-line"></i>
+        選擇職務說明書 (JD) <span class="required">*</span>
+      </label>
+      <select class="form-select form-select--highlight" [value]="newJob().jdId"
+        (change)="updateJobField('jdId', $any($event.target).value)">
+        <option value="">請選擇 JD（選擇後自動帶入職缺資訊）</option>
+        @for (jd of jobDescriptions(); track jd.id) {
+        <option [value]="jd.id">{{ jd.positionCode }} - {{ jd.positionName }} ({{ jd.department }})</option>
         }
+      </select>
+      @if (selectedJD(); as jd) {
+      <div class="jd-preview">
+        <div class="jd-preview__header">
+          <i class="ri-checkbox-circle-fill"></i>
+          已選擇：{{ jd.positionName }}
+        </div>
+        <div class="jd-preview__content">
+          <p><strong>部門：</strong>{{ jd.department }}</p>
+          <p><strong>職等：</strong>{{ jd.gradeLevel }}</p>
+          <p><strong>摘要：</strong>{{ jd.summary }}</p>
+          <p><strong>職能要求：</strong>{{ jd.requiredCompetencies.length }} 項</p>
+        </div>
       </div>
-
-      <div class="form-group">
-        <label class="form-label">職缺名稱 <span class="required">*</span></label>
-        <input
-          type="text"
-          class="form-input"
-          placeholder="例如：資深前端工程師"
-          [value]="newJob().title"
-          (input)="updateJobField('title', $any($event.target).value)">
-      </div>
-      <div class="form-group">
-        <label class="form-label">所屬部門 <span class="required">*</span></label>
-        <select
-          class="form-select"
-          [value]="newJob().department"
-          (change)="updateJobField('department', $any($event.target).value)">
-          <option value="">請選擇部門</option>
-          <option value="財務部">財務部</option>
-          <option value="人資部">人資部</option>
-          <option value="專案部">專案部</option>
-          <option value="資訊部">資訊部</option>
-          <option value="業務部">業務部</option>
-          <option value="產品部">產品部</option>
-          <option value="設計部">設計部</option>
-          <option value="行銷部">行銷部</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">招募負責人</label>
-        <input
-          type="text"
-          class="form-input"
-          [value]="newJob().recruiter"
-          readonly>
-      </div>
-      <div class="form-group">
-        <label class="form-label">職務說明</label>
-        <textarea
-          class="form-textarea"
-          placeholder="請輸入職務內容與需求..."
-          [value]="newJob().description"
-          (input)="updateJobField('description', $any($event.target).value)">
-        </textarea>
-      </div>
+      }
     </div>
-    <div class="modal__footer">
-      <button class="btn btn-secondary" (click)="closeModal()" type="button">取消</button>
-      <button class="btn btn-primary" (click)="saveJob()" type="button">確認發布</button>
+
+    <div class="form-group">
+      <label class="form-label">職缺名稱 <span class="required">*</span></label>
+      <input type="text" class="form-input" placeholder="例如：資深前端工程師" [value]="newJob().title"
+        (input)="updateJobField('title', $any($event.target).value)">
+    </div>
+    <div class="form-group">
+      <label class="form-label">所屬部門 <span class="required">*</span></label>
+      <select class="form-select" [value]="newJob().department"
+        (change)="updateJobField('department', $any($event.target).value)">
+        <option value="">請選擇部門</option>
+        <option value="財務部">財務部</option>
+        <option value="人資部">人資部</option>
+        <option value="專案部">專案部</option>
+        <option value="資訊部">資訊部</option>
+        <option value="業務部">業務部</option>
+        <option value="產品部">產品部</option>
+        <option value="設計部">設計部</option>
+        <option value="行銷部">行銷部</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">招募負責人</label>
+      <input type="text" class="form-input" [value]="newJob().recruiter" readonly>
+    </div>
+    <div class="form-group">
+      <label class="form-label">職務說明</label>
+      <textarea class="form-textarea" placeholder="請輸入職務內容與需求..." [value]="newJob().description"
+        (input)="updateJobField('description', $any($event.target).value)">
+        </textarea>
     </div>
   </div>
+  <div class="modal__footer">
+    <button class="btn btn-secondary" (click)="closeModal()" type="button">取消</button>
+    <button class="btn btn-primary" (click)="saveJob()" type="button">確認發布</button>
+  </div>
+</div>
 }
 
 <!-- Import Resume Modal -->
 @if (showImportModal()) {
-  <div class="modal-backdrop" (click)="closeImportModal()"></div>
-  <div class="modal">
-    <div class="modal__header">
-      <h3 class="modal__title">
-        <i class="ri-upload-cloud-line"></i>
-        匯入履歷
-      </h3>
-      <button class="modal__close" (click)="closeImportModal()" type="button">
-        <i class="ri-close-line"></i>
-      </button>
+<div class="modal-backdrop" (click)="closeImportModal()"></div>
+<div class="modal">
+  <div class="modal__header">
+    <h3 class="modal__title">
+      <i class="ri-upload-cloud-line"></i>
+      匯入履歷
+    </h3>
+    <button class="modal__close" (click)="closeImportModal()" type="button">
+      <i class="ri-close-line"></i>
+    </button>
+  </div>
+  <div class="modal__body">
+    @if (selectedJobForImport(); as job) {
+    <div class="import-info">
+      <p><strong>目標職缺：</strong>{{ job.title }}</p>
+      <p><strong>部門：</strong>{{ job.department }}</p>
     </div>
-    <div class="modal__body">
-      @if (selectedJobForImport(); as job) {
-        <div class="import-info">
-          <p><strong>目標職缺：</strong>{{ job.title }}</p>
-          <p><strong>部門：</strong>{{ job.department }}</p>
+    }
+    <div class="import-options">
+      <div class="import-option">
+        <div class="import-option__icon">
+          <i class="ri-file-upload-line"></i>
         </div>
-      }
-      <div class="import-options">
-        <div class="import-option">
-          <div class="import-option__icon">
-            <i class="ri-file-upload-line"></i>
-          </div>
-          <div class="import-option__content">
-            <h4>上傳履歷檔案</h4>
-            <p>支援 PDF、Word 格式，可一次上傳多份</p>
-            <button class="btn btn-outline" type="button">
-              <i class="ri-upload-2-line"></i>
-              選擇檔案
-            </button>
-          </div>
-        </div>
-        <div class="import-option">
-          <div class="import-option__icon">
-            <i class="ri-global-line"></i>
-          </div>
-          <div class="import-option__content">
-            <h4>從人力銀行匯入</h4>
-            <p>連接 104、1111 等人力銀行自動匯入</p>
-            <button class="btn btn-outline" type="button">
-              <i class="ri-link"></i>
-              連接 104 人力銀行
-            </button>
-          </div>
+        <div class="import-option__content">
+          <h4>上傳履歷檔案</h4>
+          <p>支援 PDF、Word 格式，可一次上傳多份</p>
+          <button class="btn btn-outline" type="button">
+            <i class="ri-upload-2-line"></i>
+            選擇檔案
+          </button>
         </div>
       </div>
-      <div class="import-note">
-        <i class="ri-information-line"></i>
-        <span>匯入後將自動進行 AI 履歷評分，依據 JD 職能需求計算匹配分數</span>
+      <div class="import-option">
+        <div class="import-option__icon">
+          <i class="ri-global-line"></i>
+        </div>
+        <div class="import-option__content">
+          <h4>從人力銀行匯入</h4>
+          <p>連接 104、1111 等人力銀行自動匯入</p>
+          <button class="btn btn-outline" type="button">
+            <i class="ri-link"></i>
+            連接 104 人力銀行
+          </button>
+        </div>
       </div>
     </div>
-    <div class="modal__footer">
-      <button class="btn btn-secondary" (click)="closeImportModal()" type="button">取消</button>
-      <button class="btn btn-primary" (click)="importResumes()" type="button">
-        <i class="ri-magic-line"></i>
-        確認匯入並評分
-      </button>
+    <div class="import-note">
+      <i class="ri-information-line"></i>
+      <span>匯入後將自動進行 AI 履歷評分，依據 JD 職能需求計算匹配分數</span>
     </div>
   </div>
+  <div class="modal__footer">
+    <button class="btn btn-secondary" (click)="closeImportModal()" type="button">取消</button>
+    <button class="btn btn-primary" (click)="importResumes()" type="button">
+      <i class="ri-magic-line"></i>
+      確認匯入並評分
+    </button>
+  </div>
+</div>
 }

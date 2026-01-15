@@ -11,38 +11,32 @@
 
   <!-- Filters -->
   <div class="filters">
-    <div class="filter-group">
-      <label for="viewLevel">視圖層級:</label>
-      <select
-        id="viewLevel"
-        [value]="filter().viewLevel"
+    <div class="filter-item">
+      <label class="filter-label" for="viewLevel">視圖層級:</label>
+      <select id="viewLevel" class="filter-select" [value]="filter().viewLevel"
         (change)="updateFilter('viewLevel', $any($event.target).value)">
         @for (opt of viewLevelOptions; track opt.value) {
-          <option [value]="opt.value">{{ opt.label }}</option>
+        <option [value]="opt.value">{{ opt.label }}</option>
         }
       </select>
     </div>
 
-    <div class="filter-group">
-      <label for="deptFilter">選擇部門:</label>
-      <select
-        id="deptFilter"
-        [value]="filter().department"
+    <div class="filter-item">
+      <label class="filter-label" for="deptFilter">選擇部門:</label>
+      <select id="deptFilter" class="filter-select" [value]="filter().department"
         (change)="updateFilter('department', $any($event.target).value)">
         @for (opt of departmentOptions; track opt.value) {
-          <option [value]="opt.value">{{ opt.label }}</option>
+        <option [value]="opt.value">{{ opt.label }}</option>
         }
       </select>
     </div>
 
-    <div class="filter-group">
-      <label for="competencyType">職能類型:</label>
-      <select
-        id="competencyType"
-        [value]="filter().competencyType"
+    <div class="filter-item">
+      <label class="filter-label" for="competencyType">職能類型:</label>
+      <select id="competencyType" class="filter-select" [value]="filter().competencyType"
         (change)="updateFilter('competencyType', $any($event.target).value)">
         @for (opt of competencyTypeOptions; track opt.value) {
-          <option [value]="opt.value">{{ opt.label }}</option>
+        <option [value]="opt.value">{{ opt.label }}</option>
         }
       </select>
     </div>
@@ -67,10 +61,10 @@
   <!-- Chart -->
   <div class="chart-wrapper">
     @if (loading()) {
-      <div class="chart-loading">
-        <i class="ri-loader-4-line"></i>
-        <span>載入中...</span>
-      </div>
+    <div class="chart-loading">
+      <i class="ri-loader-4-line"></i>
+      <span>載入中...</span>
+    </div>
     }
     <div #heatmapChart class="chart-container"></div>
   </div>
@@ -84,68 +78,68 @@
 
 <!-- Detail Modal -->
 @if (showDetailModal()) {
-  <div class="modal-overlay" (click)="closeDetailModal()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <button class="modal-close" (click)="closeDetailModal()" type="button">&times;</button>
-      
-      @if (selectedDetail(); as detail) {
-        <h3 class="modal-title">{{ detail.competency }} - {{ detail.department }}</h3>
-        <p class="modal-subtitle">職能狀態：{{ detail.level.label }}</p>
+<div class="modal-overlay" (click)="closeDetailModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <button class="modal-close" (click)="closeDetailModal()" type="button">&times;</button>
 
-        <!-- Score Grid -->
-        <div class="score-grid">
-          <div class="score-item">
-            <span class="score-item__label">當前分數</span>
-            <span class="score-item__value" [style.color]="detail.level.color">
-              {{ detail.score }} 分
-            </span>
-          </div>
-          <div class="score-item">
-            <span class="score-item__label">要求分數</span>
-            <span class="score-item__value score-item__value--muted">
-              {{ detail.requiredScore }} 分
-            </span>
-          </div>
-          <div class="score-item">
-            <span class="score-item__label">落差</span>
-            <span class="score-item__value" [class.positive]="detail.gap >= 0" [class.negative]="detail.gap < 0">
-              {{ detail.gap >= 0 ? '+' : '' }}{{ detail.gap }} 分
-            </span>
-          </div>
-          <div class="score-item">
-            <span class="score-item__label">部門排名</span>
-            <span class="score-item__value">{{ detail.rank }}</span>
-          </div>
-        </div>
+    @if (selectedDetail(); as detail) {
+    <h3 class="modal-title">{{ detail.competency }} - {{ detail.department }}</h3>
+    <p class="modal-subtitle">職能狀態：{{ detail.level.label }}</p>
 
-        <!-- Recommended Courses -->
-        <div class="courses-section">
-          <h4 class="courses-title">
-            <span>💡</span> AI 推薦課程
-          </h4>
-          <ul class="courses-list">
-            @for (course of detail.courses; track course.name) {
-              <li class="course-item">
-                <span class="course-icon">📚</span>
-                <span class="course-name">{{ course.name }}</span>
-                <span class="course-improvement">(預估提升 +{{ course.improvement }} 分)</span>
-              </li>
-            }
-          </ul>
-        </div>
-
-        <!-- Actions -->
-        <div class="modal-actions">
-          <button class="btn-secondary" (click)="viewHistory()" type="button">
-            <i class="ri-history-line"></i>
-            查看歷史紀錄
-          </button>
-          <button class="btn-primary" (click)="assignTraining()" type="button">
-            <i class="ri-graduation-cap-line"></i>
-            指派培訓課程
-          </button>
-        </div>
-      }
+    <!-- Score Grid -->
+    <div class="score-grid">
+      <div class="score-item">
+        <span class="score-item__label">當前分數</span>
+        <span class="score-item__value" [style.color]="detail.level.color">
+          {{ detail.score }} 分
+        </span>
+      </div>
+      <div class="score-item">
+        <span class="score-item__label">要求分數</span>
+        <span class="score-item__value score-item__value--muted">
+          {{ detail.requiredScore }} 分
+        </span>
+      </div>
+      <div class="score-item">
+        <span class="score-item__label">落差</span>
+        <span class="score-item__value" [class.positive]="detail.gap >= 0" [class.negative]="detail.gap < 0">
+          {{ detail.gap >= 0 ? '+' : '' }}{{ detail.gap }} 分
+        </span>
+      </div>
+      <div class="score-item">
+        <span class="score-item__label">部門排名</span>
+        <span class="score-item__value">{{ detail.rank }}</span>
+      </div>
     </div>
+
+    <!-- Recommended Courses -->
+    <div class="courses-section">
+      <h4 class="courses-title">
+        <span>💡</span> AI 推薦課程
+      </h4>
+      <ul class="courses-list">
+        @for (course of detail.courses; track course.name) {
+        <li class="course-item">
+          <span class="course-icon">📚</span>
+          <span class="course-name">{{ course.name }}</span>
+          <span class="course-improvement">(預估提升 +{{ course.improvement }} 分)</span>
+        </li>
+        }
+      </ul>
+    </div>
+
+    <!-- Actions -->
+    <div class="modal-actions">
+      <button class="btn-secondary" (click)="viewHistory()" type="button">
+        <i class="ri-history-line"></i>
+        查看歷史紀錄
+      </button>
+      <button class="btn-primary" (click)="assignTraining()" type="button">
+        <i class="ri-graduation-cap-line"></i>
+        指派培訓課程
+      </button>
+    </div>
+    }
   </div>
+</div>
 }

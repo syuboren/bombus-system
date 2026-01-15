@@ -1,29 +1,13 @@
-// Variables
-$color-border: #E2E4E8;
-$color-bg-base: #F5F5F7;
-$color-brand-main: #64748B;
-$color-brand-dark: #475569;
-$color-l1-sage: #8DA399;
-$color-l2-clay: #C9A88C;
-$color-l3-petrol: #7F9CA0;
-$color-l4-mauve: #A89BB5;
-$color-text-primary: #1F2937;
-$color-text-secondary: #6B7280;
-$radius-lg: 12px;
-$radius-md: 8px;
-$radius-sm: 6px;
-$shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
-$shadow-md: 0 4px 15px rgba(0, 0, 0, 0.1);
-$spacing-xs: 4px;
-$spacing-sm: 8px;
-$spacing-md: 16px;
-$spacing-lg: 24px;
-$spacing-xl: 32px;
+@import '../../../../../assets/styles/variables';
+@import '../../../../../assets/styles/mixins';
+
+// 模組色變數
+$module-color: $color-l3-petrol;
 
 .map-card {
   background: white;
   border-radius: $radius-lg;
-  border: 1px solid $color-border;
+  border: 1px solid $color-soft-gray;
   padding: 30px;
 
   &__header {
@@ -40,7 +24,7 @@ $spacing-xl: 32px;
     gap: 10px;
 
     i {
-      color: $color-l3-petrol;
+      color: $module-color;
     }
   }
 
@@ -51,51 +35,12 @@ $spacing-xl: 32px;
   }
 }
 
+// 使用標準化 filter-bar mixin
 .filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 15px;
-  align-items: center;
-  margin-bottom: 30px;
-  padding: 20px;
-  background: $color-bg-base;
-  border-radius: 10px;
+  @include filter-bar($module-color);
 }
 
-.filter-group {
-  display: flex;
-  align-items: center;
-  gap: 8px;
 
-  label {
-    font-size: 14px;
-    font-weight: 600;
-    color: $color-text-primary;
-    white-space: nowrap;
-  }
-
-  select {
-    padding: 10px 15px;
-    border: 1px solid $color-border;
-    border-radius: $radius-md;
-    background: white;
-    color: $color-text-primary;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    min-width: 180px;
-
-    &:hover {
-      border-color: $color-brand-main;
-    }
-
-    &:focus {
-      outline: none;
-      border-color: $color-brand-main;
-      box-shadow: 0 0 0 3px rgba(100, 116, 139, 0.1);
-    }
-  }
-}
 
 .progress-overview {
   display: grid;
@@ -108,7 +53,7 @@ $spacing-xl: 32px;
   background: white;
   border-radius: $radius-lg;
   padding: 20px;
-  border: 1px solid $color-border;
+  border: 1px solid $color-soft-gray;
   border-top: 4px solid;
   position: relative;
   overflow: hidden;
@@ -134,7 +79,7 @@ $spacing-xl: 32px;
   &__bar {
     width: 100%;
     height: 8px;
-    background: $color-bg-base;
+    background: $color-cloud-gray;
     border-radius: 4px;
     overflow: hidden;
   }
@@ -149,7 +94,7 @@ $spacing-xl: 32px;
 .employee-selector {
   margin-bottom: 20px;
   padding: 20px;
-  background: $color-bg-base;
+  background: $color-cloud-gray;
   border-radius: 10px;
 }
 
@@ -220,7 +165,7 @@ $spacing-xl: 32px;
   background: white;
   border-radius: $radius-lg;
   padding: 20px;
-  border: 1px solid $color-border;
+  border: 1px solid $color-soft-gray;
 }
 
 .chart-container {
@@ -244,7 +189,7 @@ $spacing-xl: 32px;
   gap: 8px;
 
   &:hover {
-    background: $color-brand-dark;
+    background: darken($color-brand-main, 8%);
     transform: translateY(-2px);
     box-shadow: $shadow-md;
   }
@@ -274,7 +219,7 @@ $spacing-xl: 32px;
   background: white;
   border-radius: $radius-lg;
   padding: 20px;
-  border: 1px solid $color-border;
+  border: 1px solid $color-soft-gray;
   transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
@@ -321,7 +266,7 @@ $spacing-xl: 32px;
 
   &__footer {
     padding-top: 12px;
-    border-top: 1px solid $color-border;
+    border-top: 1px solid $color-soft-gray;
   }
 }
 
@@ -337,7 +282,7 @@ $spacing-xl: 32px;
   }
 
   &--advanced {
-    background: $color-l2-clay;
+    background: $color-l2-terracotta;
   }
 
   &--expert {
@@ -361,7 +306,7 @@ $spacing-xl: 32px;
 .mini-progress-bar {
   flex: 1;
   height: 6px;
-  background: $color-bg-base;
+  background: $color-cloud-gray;
   border-radius: 3px;
   overflow: hidden;
 }
