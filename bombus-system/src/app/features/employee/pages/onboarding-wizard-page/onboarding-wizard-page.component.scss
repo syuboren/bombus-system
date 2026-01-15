@@ -1,0 +1,296 @@
+@import '../../../../../assets/styles/variables';
+@import '../../../../../assets/styles/mixins';
+
+$module-color: $color-l1-sage;
+
+.wizard-container {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: $spacing-xl;
+    min-height: 100vh;
+    background: $color-cloud-gray;
+}
+
+.loading-container,
+.error-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: $spacing-2xl;
+    text-align: center;
+    color: $color-text-secondary;
+
+    i {
+        font-size: 48px;
+        margin-bottom: $spacing-lg;
+    }
+
+    .spinner {
+        animation: spin 1s linear infinite;
+    }
+
+    h2 {
+        font-size: $font-size-xl;
+        color: $color-text-dark;
+        margin: 0 0 $spacing-sm;
+    }
+
+    p {
+        margin: 0;
+    }
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.error-container i {
+    color: $color-error;
+}
+
+.success-container {
+    @include card;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: $spacing-2xl;
+    text-align: center;
+    margin-top: $spacing-xl;
+
+    .success-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: rgba($color-success, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: $spacing-lg;
+
+        i {
+            font-size: 48px;
+            color: $color-success;
+        }
+    }
+
+    h2 {
+        font-size: $font-size-xl;
+        font-weight: $font-weight-semibold;
+        color: $color-text-dark;
+        margin: 0 0 $spacing-sm;
+    }
+
+    p {
+        color: $color-text-secondary;
+        margin: 0;
+    }
+
+    .success-hint {
+        margin-top: $spacing-lg;
+        font-size: $font-size-sm;
+    }
+}
+
+.wizard-header {
+    text-align: center;
+    margin-bottom: $spacing-xl;
+}
+
+.wizard-title {
+    font-size: $font-size-2xl;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+    margin: 0 0 $spacing-xs;
+}
+
+.wizard-subtitle {
+    color: $color-text-secondary;
+    margin: 0;
+}
+
+.wizard-steps {
+    display: flex;
+    justify-content: center;
+    gap: $spacing-xl;
+    margin-bottom: $spacing-xl;
+}
+
+.wizard-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: $spacing-xs;
+
+    .wizard-step-circle {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: $color-soft-gray;
+        color: $color-text-secondary;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: $font-weight-semibold;
+        transition: all 0.3s;
+    }
+
+    .wizard-step-label {
+        font-size: $font-size-sm;
+        color: $color-text-secondary;
+    }
+
+    &.active {
+        .wizard-step-circle {
+            background: $module-color;
+            color: $color-pure-white;
+        }
+
+        .wizard-step-label {
+            color: $module-color;
+            font-weight: $font-weight-medium;
+        }
+    }
+
+    &.completed {
+        .wizard-step-circle {
+            background: rgba($module-color, 0.2);
+            color: $module-color;
+        }
+    }
+}
+
+.wizard-content {
+    @include card;
+    padding: $spacing-xl;
+    margin-bottom: $spacing-lg;
+}
+
+.step-title {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+    margin: 0 0 $spacing-lg;
+    padding-bottom: $spacing-md;
+    border-bottom: 1px solid $color-soft-gray;
+}
+
+.terms-section {
+    margin-bottom: $spacing-lg;
+}
+
+.terms-content {
+    padding: $spacing-lg;
+    background: $color-cloud-gray;
+    border-radius: $radius-md;
+    max-height: 200px;
+    overflow-y: auto;
+
+    h3 {
+        font-size: $font-size-base;
+        font-weight: $font-weight-semibold;
+        color: $color-text-dark;
+        margin: 0 0 $spacing-md;
+    }
+
+    p {
+        font-size: $font-size-sm;
+        color: $color-text-secondary;
+        line-height: 1.6;
+        margin: 0 0 $spacing-md;
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    margin-bottom: $spacing-lg;
+
+    input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        accent-color: $module-color;
+    }
+
+    label {
+        font-size: $font-size-sm;
+        color: $color-text-dark;
+        cursor: pointer;
+    }
+}
+
+.field-group {
+    margin-bottom: $spacing-lg;
+
+    &:last-child {
+        margin-bottom: 0;
+    }
+}
+
+.field-label {
+    display: block;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: $color-text-dark;
+    margin-bottom: $spacing-xs;
+
+    .required {
+        color: $color-error;
+        margin-left: 2px;
+    }
+}
+
+.field-input {
+    @include input-base;
+    width: 100%;
+    padding: $spacing-md;
+}
+
+.signature-section {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-md;
+}
+
+.signature-pad-container {
+    width: 100%;
+    height: 200px;
+}
+
+.wizard-navigation {
+    display: flex;
+    justify-content: space-between;
+    gap: $spacing-md;
+}
+
+.btn {
+    @include button-base;
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+
+    &--primary {
+        @include button-module($module-color);
+    }
+
+    &--secondary {
+        background: $color-soft-gray;
+        color: $color-text-dark;
+
+        &:hover {
+            background: darken($color-soft-gray, 5%);
+        }
+    }
+}

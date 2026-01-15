@@ -1,0 +1,103 @@
+<app-header pageTitle="入職文件模板" [breadcrumbs]="['首頁', '員工管理', '入職簽署', '模板管理']">
+</app-header>
+
+<div class="templates-page">
+    <!-- 篩選區塊 -->
+    <section class="filter-bar">
+        <div class="filter-item">
+            <label class="filter-label">搜尋</label>
+            <input type="text" class="filter-input" placeholder="搜尋模板名稱...">
+        </div>
+        <div class="filter-item">
+            <label class="filter-label">狀態</label>
+            <select class="filter-select">
+                <option value="">全部</option>
+                <option value="active">已啟用</option>
+                <option value="inactive">已停用</option>
+            </select>
+        </div>
+        <div class="filter-actions">
+            <a routerLink="new" class="btn btn--primary">
+                <i class="ri-add-line"></i>
+                新增模板
+            </a>
+        </div>
+    </section>
+
+    <!-- 模板列表 -->
+    <section class="templates-section">
+        <div class="section-header">
+            <h2 class="section-title">
+                <i class="ri-file-list-3-line"></i>
+                模板列表
+                <span class="count-badge">{{ templates().length }}</span>
+            </h2>
+        </div>
+
+        @if (loading()) {
+        <div class="loading-container">
+            <i class="ri-loader-4-line spinner"></i>
+            <span>載入中...</span>
+        </div>
+        } @else if (templates().length === 0) {
+        <div class="empty-state">
+            <i class="ri-file-add-line"></i>
+            <h3>尚無模板</h3>
+            <p>點擊「新增模板」開始建立您的第一個入職文件模板</p>
+            <a routerLink="new" class="btn btn--primary">
+                <i class="ri-add-line"></i>
+                新增模板
+            </a>
+        </div>
+        } @else {
+        <div class="table-wrapper">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>模板名稱</th>
+                        <th>版本</th>
+                        <th>狀態</th>
+                        <th>建立日期</th>
+                        <th>更新日期</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (template of templates(); track template.id) {
+                    <tr class="table-row" (click)="navigateToTemplate(template.id)">
+                        <td>
+                            <div class="template-name-cell">
+                                <i class="ri-file-pdf-line template-icon"></i>
+                                <span class="template-name">{{ template.name }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="version-badge">v{{ template.version }}</span>
+                        </td>
+                        <td>
+                            <span class="status-badge" [class.active]="template.is_active">
+                                {{ template.is_active ? '已啟用' : '已停用' }}
+                            </span>
+                        </td>
+                        <td>{{ formatDate(template.created_at) }}</td>
+                        <td>{{ template.updated_at ? formatDate(template.updated_at) : '-' }}</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-btn" title="編輯"
+                                    (click)="navigateToTemplate(template.id); $event.stopPropagation()">
+                                    <i class="ri-edit-line"></i>
+                                </button>
+                                <button class="action-btn action-btn--danger" title="刪除"
+                                    (click)="deleteTemplate(template.id, $event)">
+                                    <i class="ri-delete-bin-line"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        }
+    </section>
+</div>

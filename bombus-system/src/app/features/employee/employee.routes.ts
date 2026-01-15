@@ -40,5 +40,26 @@ export const EMPLOYEE_ROUTES: Routes = [
     path: 'meeting',
     loadComponent: () => import('./pages/meeting-page/meeting-page.component')
       .then(m => m.MeetingPageComponent)
+  },
+  // 入職簽署功能
+  {
+    path: 'onboarding/templates',
+    loadComponent: () => import('./pages/onboarding-templates-page/onboarding-templates-page.component')
+      .then(m => m.OnboardingTemplatesPageComponent)
+  },
+  {
+    path: 'onboarding/templates/new',
+    loadComponent: () => import('./pages/template-designer-page/template-designer-page.component')
+      .then(m => m.TemplateDesignerPageComponent)
+  },
+  {
+    path: 'onboarding/templates/:id',
+    loadComponent: () => import('./pages/template-designer-page/template-designer-page.component')
+      .then(m => m.TemplateDesignerPageComponent)
+  },
+  {
+    path: 'onboarding/sign/:token',
+    loadComponent: () => import('./pages/onboarding-wizard-page/onboarding-wizard-page.component')
+      .then(m => m.OnboardingWizardPageComponent)
   }
 ];

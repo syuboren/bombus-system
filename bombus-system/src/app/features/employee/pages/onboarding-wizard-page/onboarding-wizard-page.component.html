@@ -1,0 +1,113 @@
+<div class="wizard-container">
+    @if (loading()) {
+    <div class="loading-container">
+        <i class="ri-loader-4-line spinner"></i>
+        <span>載入中...</span>
+    </div>
+    } @else if (error()) {
+    <div class="error-container">
+        <i class="ri-error-warning-line"></i>
+        <h2>無法載入</h2>
+        <p>{{ error() }}</p>
+    </div>
+    } @else if (completed()) {
+    <div class="success-container">
+        <div class="success-icon">
+            <i class="ri-checkbox-circle-line"></i>
+        </div>
+        <h2>簽署完成！</h2>
+        <p>您的入職文件已成功提交並簽署。</p>
+        <p class="success-hint">感謝您的配合！</p>
+    </div>
+    } @else {
+    <!-- 標題區 -->
+    <div class="wizard-header">
+        <h1 class="wizard-title">{{ schema()?.template_name || '入職文件簽署' }}</h1>
+        <p class="wizard-subtitle">請仔細填寫以下資訊並完成簽署</p>
+    </div>
+
+    <!-- 步驟指示器 -->
+    <div class="wizard-steps">
+        @for (step of steps(); track step.title; let i = $index) {
+        <div class="wizard-step" [class.active]="i === currentStep()" [class.completed]="i < currentStep()">
+            <div class="wizard-step-circle">{{ i + 1 }}</div>
+            <div class="wizard-step-label">{{ step.title }}</div>
+        </div>
+        }
+    </div>
+
+    <!-- 步驟內容 -->
+    <div class="wizard-content">
+        @if (currentStepData()) {
+        <h2 class="step-title">{{ currentStepData()!.title }}</h2>
+
+        <!-- 條款內容 -->
+        @if (currentStepData()!.title === '條款簽署') {
+        <div class="terms-section">
+            <div class="terms-content">
+                <h3>勞動契約條款</h3>
+                <p>本人同意遵守公司相關規章制度，並確認所填寫資料屬實。本人了解並同意本契約內容，願意接受本契約所規範之權利與義務。</p>
+                <p>本契約自簽署日起生效，雙方應嚴格遵守本契約各項條款。如有違反，應承擔相應法律責任。</p>
+            </div>
+        </div>
+        <div class="checkbox-group">
+            <input type="checkbox" id="agreed_terms" [ngModel]="agreedTerms()"
+                (ngModelChange)="agreedTerms.set($event)">
+            <label for="agreed_terms">我已詳細閱讀並同意上述條款</label>
+        </div>
+        }
+
+        <!-- 欄位表單 -->
+        @for (field of currentStepData()!.fields; track field.key) {
+        <div class="field-group">
+            @if (field.type !== 'signature') {
+            <label class="field-label">
+                {{ field.label }}
+                @if (field.required) { <span class="required">*</span> }
+            </label>
+            <input [type]="field.type === 'date' ? 'date' : 'text'" class="field-input"
+                [value]="formData()[field.key] || ''" (input)="updateField(field.key, $any($event.target).value)"
+                [required]="field.required">
+            } @else {
+            <!-- 簽名欄位 -->
+            <label class="field-label">
+                {{ field.label }}
+                @if (field.required) { <span class="required">*</span> }
+            </label>
+            <div class="signature-section">
+                <div class="signature-pad-container">
+                    <app-signature-pad></app-signature-pad>
+                </div>
+                <button type="button" class="btn btn--secondary" (click)="clearSignature()">
+                    清除簽名
+                </button>
+            </div>
+            }
+        </div>
+        }
+        }
+    </div>
+
+    <!-- 導航按鈕 -->
+    <div class="wizard-navigation">
+        @if (!isFirstStep()) {
+        <button class="btn btn--secondary" (click)="prevStep()">
+            <i class="ri-arrow-left-line"></i>
+            上一步
+        </button>
+        } @else {
+        <div></div>
+        }
+
+        <button class="btn btn--primary" (click)="nextStep()" [disabled]="submitting()">
+            @if (isLastStep()) {
+            <i class="ri-check-line"></i>
+            {{ submitting() ? '提交中...' : '提交簽署' }}
+            } @else {
+            下一步
+            <i class="ri-arrow-right-line"></i>
+            }
+        </button>
+    </div>
+    }
+</div>
