@@ -69,12 +69,16 @@ export class OnboardingService {
     }
 
     /**
-     * 發布新版本
+     * 發布新版本 (上傳新 PDF + 可選繼承設定)
      */
-    publishTemplate(id: string): Observable<{ message: string; version: number }> {
-        return this.http.post<{ message: string; version: number }>(
-            `${this.baseUrl}/templates/${id}/publish`,
-            {}
+    createNewVersion(id: string, data: {
+        pdf_base64: string;
+        inherit_fields: boolean;
+        mapping_config?: any;
+    }): Observable<{ message: string; version: number; template: Template }> {
+        return this.http.post<{ message: string; version: number; template: Template }>(
+            `${this.baseUrl}/templates/${id}/new-version`,
+            data
         );
     }
 
@@ -120,6 +124,54 @@ export class OnboardingService {
     getSubmissions(templateId: string): Observable<Submission[]> {
         return this.http.get<Submission[]>(
             `${this.baseUrl}/sign/submissions/${templateId}`
+        );
+    }
+
+    // ==================== Draft API ====================
+
+    /**
+     * 建立或更新草稿
+     */
+    saveDraft(id: string, data: {
+        pdf_base64?: string;
+        mapping_config?: any;
+        inherit_fields?: boolean;
+    }): Observable<{ message: string; has_draft: boolean }> {
+        return this.http.post<{ message: string; has_draft: boolean }>(
+            `${this.baseUrl}/templates/${id}/draft`,
+            data
+        );
+    }
+
+    /**
+     * 取得草稿內容
+     */
+    getDraft(id: string): Observable<{
+        id: string;
+        name: string;
+        current_version: number;
+        draft_pdf_base64: string | null;
+        draft_mapping_config: any;
+    }> {
+        return this.http.get<any>(`${this.baseUrl}/templates/${id}/draft`);
+    }
+
+    /**
+     * 發布草稿為正式版本
+     */
+    publishDraft(id: string): Observable<{ message: string; version: number }> {
+        return this.http.post<{ message: string; version: number }>(
+            `${this.baseUrl}/templates/${id}/publish-draft`,
+            {}
+        );
+    }
+
+    /**
+     * 刪除草稿
+     */
+    deleteDraft(id: string): Observable<{ message: string }> {
+        return this.http.delete<{ message: string }>(
+            `${this.baseUrl}/templates/${id}/draft`
         );
     }
 }

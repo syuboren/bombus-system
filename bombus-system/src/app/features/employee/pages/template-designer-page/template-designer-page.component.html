@@ -9,14 +9,46 @@
                 <i class="ri-arrow-left-line"></i>
                 返回
             </button>
-            <input type="text" class="template-name-input" [ngModel]="templateName()"
-                (ngModelChange)="templateName.set($event)" placeholder="模板名稱">
+            <div class="template-name-wrapper">
+                <input type="text" class="template-name-input" [ngModel]="templateName()"
+                    (ngModelChange)="updateTemplateName($event)" placeholder="模板名稱">
+                <i class="ri-edit-line edit-icon"></i>
+            </div>
+            <div class="version-badge">v{{ version() }}</div>
+            @if (isDraftMode()) {
+            <span class="draft-badge">📝 草稿</span>
+            }
         </div>
         <div class="header-right">
-            <button class="btn btn--primary" (click)="saveTemplate()" [disabled]="saving()">
-                <i class="ri-save-line"></i>
-                {{ saving() ? '儲存中...' : '儲存模板' }}
+            @if (isDraftMode()) {
+            <!-- 草稿模式按鈕 -->
+            <button class="btn btn--secondary btn--danger" (click)="deleteDraft()" [disabled]="deletingDraft()">
+                <i class="ri-delete-bin-line"></i>
+                {{ deletingDraft() ? '刪除中...' : '刪除草稿' }}
             </button>
+            <button class="btn btn--secondary" (click)="saveDraftChanges()"
+                [disabled]="saving() || !hasUnsavedChanges()">
+                <i class="ri-save-line"></i>
+                {{ saving() ? '儲存中...' : '儲存草稿' }}
+                @if (hasUnsavedChanges()) {
+                <span class="unsaved-text">(已變更)</span>
+                }
+            </button>
+            <button class="btn btn--primary" (click)="publishDraft()"
+                [disabled]="publishingDraft() || hasUnsavedChanges()">
+                <i class="ri-rocket-line"></i>
+                {{ publishingDraft() ? '發布中...' : '發布正式版本' }}
+            </button>
+            } @else {
+            <!-- 一般模式按鈕 -->
+            <button class="btn btn--primary" (click)="saveTemplate()" [disabled]="saving() || !hasUnsavedChanges()">
+                <i class="ri-save-line"></i>
+                {{ saving() ? '儲存中...' : '儲存' }}
+                @if (hasUnsavedChanges()) {
+                <span class="unsaved-text">(已變更)</span>
+                }
+            </button>
+            }
         </div>
     </div>
 
@@ -29,7 +61,8 @@
             <div class="field-category">
                 <div class="category-title">{{ category.category }}</div>
                 @for (item of category.items; track item.key) {
-                <div class="field-item" (click)="addFieldToCanvas(item)">
+                <div class="field-item" draggable="true" (dragstart)="onLibraryDragStart($event, item)"
+                    (click)="addFieldToCanvas(item)">
                     <i [class]="item.icon"></i>
                     <span>{{ item.label }}</span>
                 </div>
@@ -41,7 +74,8 @@
         <!-- 中間工作區 - 畫布 -->
         <div class="designer-canvas-area">
             @if (!pdfLoaded()) {
-            <div class="canvas-wrapper">
+            <!-- 預設 A4 寬度 (scale 1.5) 約為 892px -->
+            <div class="canvas-wrapper empty-state" style="width: 892px;">
                 <div class="upload-area" (click)="fileInput.click()">
                     <input #fileInput type="file" accept=".pdf" (change)="onFileSelected($event)"
                         style="display: none;">
@@ -54,16 +88,18 @@
             @for (page of pages(); track page.pageNumber) {
             <div class="canvas-wrapper">
                 <div class="canvas-background" [style.width.px]="page.width" [style.height.px]="page.height"
-                    (click)="deselectField()">
+                    (click)="deselectField()" (dragover)="$event.preventDefault()"
+                    (drop)="onFieldDrop($event, page.pageNumber)">
                     <canvas #pdfCanvas class="pdf-canvas"></canvas>
                     @for (field of getFieldsForPage(page.pageNumber); track field.id) {
                     <div class="canvas-field" [class.selected]="field.selected"
                         [class.signature]="field.type === 'signature'" [style.left.px]="field.placements?.[0]?.x || 0"
                         [style.top.px]="field.placements?.[0]?.y || 0"
                         [style.width.px]="field.placements?.[0]?.width || 100"
-                        [style.height.px]="field.placements?.[0]?.height || 24" draggable="true"
+                        [style.height.px]="field.placements?.[0]?.height || 24"
+                        [style.font-size.px]="field.font_size || 14" draggable="true"
                         (click)="selectField(field); $event.stopPropagation()"
-                        (dragend)="onFieldDragEnd(field, $event, page.pageNumber)">
+                        (dragstart)="onFieldDragStart($event, field)" (mouseup)="onFieldResize($event, field)">
                         <span class="field-label">{{ field.label }}</span>
                     </div>
                     }
@@ -79,23 +115,28 @@
             @if (selectedField()) {
             <div class="properties-panel">
                 <div class="property-group">
-                    <label class="property-label">變數名稱 (Key)</label>
-                    <input type="text" class="property-input" [value]="selectedField()!.key" readonly>
+                    <label class="property-label">變數代號 (系統自動生成)</label>
+                    <input type="text" class="property-input readonly" [value]="selectedField()!.key" readonly disabled>
                 </div>
                 <div class="property-group">
                     <label class="property-label">顯示名稱 (Label)</label>
                     <input type="text" class="property-input" [ngModel]="selectedField()!.label"
-                        (ngModelChange)="selectedField()!.label = $event">
+                        (ngModelChange)="updateFieldProperty('label', $event)">
                 </div>
                 <div class="property-group">
                     <label class="property-label">字體大小</label>
                     <input type="number" class="property-input" [ngModel]="selectedField()!.font_size"
-                        (ngModelChange)="selectedField()!.font_size = $event" min="8" max="72">
+                        (ngModelChange)="updateFieldProperty('font_size', $event)" min="8" max="72">
+                </div>
+                <div class="property-group" *ngIf="selectedField()!.type === 'checkbox'">
+                    <label class="property-label">群組名稱 (多選一互斥用)</label>
+                    <input type="text" class="property-input" [ngModel]="selectedField()!.group"
+                        (ngModelChange)="updateFieldProperty('group', $event)" placeholder="例如: license">
                 </div>
                 <div class="property-group">
                     <label class="checkbox-label">
                         <input type="checkbox" [ngModel]="selectedField()!.is_required"
-                            (ngModelChange)="selectedField()!.is_required = $event">
+                            (ngModelChange)="updateFieldProperty('is_required', $event)">
                         必填欄位
                     </label>
                 </div>

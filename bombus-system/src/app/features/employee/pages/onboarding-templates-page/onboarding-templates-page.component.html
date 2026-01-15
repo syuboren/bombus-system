@@ -3,25 +3,26 @@
 
 <div class="templates-page">
     <!-- 篩選區塊 -->
-    <section class="filter-bar">
-        <div class="filter-item">
-            <label class="filter-label">搜尋</label>
-            <input type="text" class="filter-input" placeholder="搜尋模板名稱...">
-        </div>
-        <div class="filter-item">
-            <label class="filter-label">狀態</label>
-            <select class="filter-select">
-                <option value="">全部</option>
-                <option value="active">已啟用</option>
-                <option value="inactive">已停用</option>
-            </select>
-        </div>
-        <div class="filter-actions">
-            <a routerLink="new" class="btn btn--primary">
-                <i class="ri-add-line"></i>
-                新增模板
-            </a>
-        </div>
+    <!-- 篩選區塊 -->
+    <div class="filter-item filter-item--search">
+        <i class="ri-search-line"></i>
+        <input type="text" placeholder="搜尋模板名稱..." [value]="searchQuery()"
+            (input)="searchQuery.set($any($event.target).value)">
+    </div>
+    <div class="filter-divider"></div>
+    <div class="filter-item">
+        <select class="filter-select" [value]="statusFilter()" (change)="statusFilter.set($any($event.target).value)">
+            <option value="">所有狀態</option>
+            <option value="active">已啟用</option>
+            <option value="inactive">已停用</option>
+        </select>
+    </div>
+    <div class="filter-actions">
+        <a routerLink="new" class="btn btn--primary">
+            <i class="ri-add-line"></i>
+            新增模板
+        </a>
+    </div>
     </section>
 
     <!-- 模板列表 -->
@@ -30,7 +31,7 @@
             <h2 class="section-title">
                 <i class="ri-file-list-3-line"></i>
                 模板列表
-                <span class="count-badge">{{ templates().length }}</span>
+                <span class="count-badge">{{ filteredTemplates().length }}</span>
             </h2>
         </div>
 
@@ -63,7 +64,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @for (template of templates(); track template.id) {
+                    @for (template of filteredTemplates(); track template.id) {
                     <tr class="table-row" (click)="navigateToTemplate(template.id)">
                         <td>
                             <div class="template-name-cell">
@@ -73,6 +74,9 @@
                         </td>
                         <td>
                             <span class="version-badge">v{{ template.version }}</span>
+                            @if (template.has_draft) {
+                            <span class="draft-badge">📝 草稿</span>
+                            }
                         </td>
                         <td>
                             <span class="status-badge" [class.active]="template.is_active">
@@ -83,6 +87,17 @@
                         <td>{{ template.updated_at ? formatDate(template.updated_at) : '-' }}</td>
                         <td>
                             <div class="action-buttons">
+                                <button class="action-btn" title="產生簽署連結" (click)="openLinkDialog(template.id, $event)">
+                                    <i class="ri-link"></i>
+                                </button>
+                                <button class="action-btn" title="查看提交記錄"
+                                    (click)="openSubmissionsDialog(template, $event)">
+                                    <i class="ri-file-list-line"></i>
+                                </button>
+                                <button class="action-btn" title="發布新版"
+                                    (click)="openNewVersionDialog(template, $event)">
+                                    <i class="ri-rocket-line"></i>
+                                </button>
                                 <button class="action-btn" title="編輯"
                                     (click)="navigateToTemplate(template.id); $event.stopPropagation()">
                                     <i class="ri-edit-line"></i>
@@ -94,6 +109,15 @@
                             </div>
                         </td>
                     </tr>
+                    } @empty {
+                    <tr>
+                        <td colspan="6" class="empty-cell">
+                            <div class="empty-state empty-state--small">
+                                <i class="ri-search-line"></i>
+                                <p>沒有找到符合條件的模板</p>
+                            </div>
+                        </td>
+                    </tr>
                     }
                 </tbody>
             </table>
@@ -101,3 +125,190 @@
         }
     </section>
 </div>
+
+<!-- 簽署連結對話框 -->
+@if (showLinkDialog()) {
+<div class="dialog-overlay" (click)="closeLinkDialog()">
+    <div class="dialog" (click)="$event.stopPropagation()">
+        <div class="dialog-header">
+            <h3 class="dialog-title">
+                <i class="ri-link"></i>
+                產生簽署連結
+            </h3>
+            <button class="dialog-close" (click)="closeLinkDialog()">
+                <i class="ri-close-line"></i>
+            </button>
+        </div>
+        <div class="dialog-body">
+            @if (!generatedLink()) {
+            <div class="form-group">
+                <label class="form-label">員工姓名（選填）</label>
+                <input type="text" class="form-input" placeholder="請輸入員工姓名" [ngModel]="newLinkEmployeeName()"
+                    (ngModelChange)="newLinkEmployeeName.set($event)">
+            </div>
+            <div class="form-group">
+                <label class="form-label">員工信箱（選填）</label>
+                <input type="email" class="form-input" placeholder="請輸入員工信箱" [ngModel]="newLinkEmployeeEmail()"
+                    (ngModelChange)="newLinkEmployeeEmail.set($event)">
+            </div>
+            } @else {
+            <div class="link-success">
+                <div class="success-icon">
+                    <i class="ri-checkbox-circle-line"></i>
+                </div>
+                <p class="success-text">連結已產生成功！</p>
+                <div class="link-display">
+                    <input type="text" class="link-input" [value]="generatedLink()!.sign_url" readonly>
+                    <button class="btn btn--primary" (click)="copyToClipboard()">
+                        <i [class]="linkCopied() ? 'ri-check-line' : 'ri-file-copy-line'"></i>
+                        {{ linkCopied() ? '已複製' : '複製' }}
+                    </button>
+                </div>
+                <p class="link-hint">請將此連結傳送給員工，員工可透過此連結填寫入職文件並簽署。</p>
+            </div>
+            }
+        </div>
+        <div class="dialog-footer">
+            @if (!generatedLink()) {
+            <button class="btn btn--secondary" (click)="closeLinkDialog()">取消</button>
+            <button class="btn btn--primary" (click)="generateSignLink()" [disabled]="linkDialogLoading()">
+                <i class="ri-link"></i>
+                {{ linkDialogLoading() ? '產生中...' : '產生連結' }}
+            </button>
+            } @else {
+            <button class="btn btn--primary" (click)="closeLinkDialog()">完成</button>
+            }
+        </div>
+    </div>
+</div>
+}
+
+<!-- 提交記錄對話框 -->
+@if (showSubmissionsDialog()) {
+<div class="dialog-overlay" (click)="closeSubmissionsDialog()">
+    <div class="dialog dialog--wide" (click)="$event.stopPropagation()">
+        <div class="dialog-header">
+            <h3 class="dialog-title">
+                <i class="ri-file-list-line"></i>
+                提交記錄 - {{ selectedTemplateName() }}
+            </h3>
+            <button class="dialog-close" (click)="closeSubmissionsDialog()">
+                <i class="ri-close-line"></i>
+            </button>
+        </div>
+        <div class="dialog-body">
+            @if (submissionsLoading()) {
+            <div class="loading-container">
+                <i class="ri-loader-4-line spinner"></i>
+                <span>載入中...</span>
+            </div>
+            } @else if (submissions().length === 0) {
+            <div class="empty-state empty-state--small">
+                <i class="ri-inbox-line"></i>
+                <p>尚無提交記錄</p>
+            </div>
+            } @else {
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>員工姓名</th>
+                            <th>員工信箱</th>
+                            <th>版本</th>
+                            <th>狀態</th>
+                            <th>簽署時間</th>
+                            <th>建立時間</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (sub of submissions(); track sub.id) {
+                        <tr>
+                            <td>{{ sub.employee_name || '-' }}</td>
+                            <td>{{ sub.employee_email || '-' }}</td>
+                            <td>
+                                <span class="version-badge">v{{ sub.template_version || 1 }}</span>
+                            </td>
+                            <td>
+                                <span class="submission-status" [class]="getStatusClass(sub.status)">
+                                    {{ getStatusText(sub.status) }}
+                                </span>
+                            </td>
+                            <td>{{ sub.signed_at ? formatDateTime(sub.signed_at) : '-' }}</td>
+                            <td>{{ formatDateTime(sub.created_at) }}</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="action-btn" title="複製連結" (click)="copySubmissionLink(sub.token)">
+                                        <i class="ri-link"></i>
+                                    </button>
+                                    @if (sub.status === 'SIGNED' || sub.status === 'COMPLETED') {
+                                    <button class="action-btn" title="查看內容" (click)="viewSubmission(sub.token)">
+                                        <i class="ri-eye-line"></i>
+                                    </button>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            }
+        </div>
+        <div class="dialog-footer">
+            <button class="btn btn--primary" (click)="closeSubmissionsDialog()">關閉</button>
+        </div>
+    </div>
+</div>
+}
+
+<!-- 發布新版對話框 -->
+@if (showNewVersionDialog()) {
+<div class="dialog-overlay" (click)="closeNewVersionDialog()">
+    <div class="dialog" (click)="$event.stopPropagation()">
+        <div class="dialog-header">
+            <h3 class="dialog-title">
+                <i class="ri-rocket-line"></i>
+                發布新版本 - {{ selectedTemplateName() }}
+            </h3>
+            <button class="dialog-close" (click)="closeNewVersionDialog()">
+                <i class="ri-close-line"></i>
+            </button>
+        </div>
+        <div class="dialog-body">
+            <div class="form-group">
+                <label class="form-label">上傳新版 PDF 檔案 <span class="required">*</span></label>
+                <div class="upload-zone" (click)="newVersionFileInput.click()">
+                    <input #newVersionFileInput type="file" accept=".pdf" (change)="onNewVersionFileSelected($event)"
+                        style="display: none;">
+                    @if (newVersionPdfName()) {
+                    <div class="upload-success">
+                        <i class="ri-checkbox-circle-line"></i>
+                        <span>{{ newVersionPdfName() }}</span>
+                    </div>
+                    } @else {
+                    <i class="ri-file-upload-line"></i>
+                    <span>點擊上傳 PDF</span>
+                    }
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" [checked]="newVersionInheritFields()"
+                        (change)="newVersionInheritFields.set($any($event.target).checked)">
+                    繼承前一版本的欄位設定
+                </label>
+                <p class="form-hint">勾選後，新版本將自動載入現有欄位配置，您可在設計器中微調。</p>
+            </div>
+        </div>
+        <div class="dialog-footer">
+            <button class="btn btn--secondary" (click)="closeNewVersionDialog()">取消</button>
+            <button class="btn btn--primary" (click)="createDraftAndNavigate()"
+                [disabled]="newVersionLoading() || !newVersionPdfBase64()">
+                <i class="ri-edit-line"></i>
+                {{ newVersionLoading() ? '建立中...' : '開始編輯' }}
+            </button>
+        </div>
+    </div>
+</div>
+}

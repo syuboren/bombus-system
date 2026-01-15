@@ -41,6 +41,7 @@ export interface TemplateListItem {
     name: string;
     version: number;
     is_active: boolean;
+    has_draft?: boolean;
     created_at: string;
     updated_at?: string;
 }
@@ -52,6 +53,7 @@ export interface Submission {
     employee_name?: string;
     employee_email?: string;
     status: 'DRAFT' | 'SIGNED' | 'COMPLETED';
+    template_version?: number;
     form_data?: Record<string, any>;
     signature_base64?: string;
     signed_at?: string;

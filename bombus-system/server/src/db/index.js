@@ -124,11 +124,17 @@ function prepare(sql) {
         },
         run: (...params) => {
             try {
-                db.run(sql, params);
+                // sql.js 使用 stmt.bind 和 stmt.step 執行
+                const stmt = db.prepare(sql);
+                if (params.length > 0) {
+                    stmt.bind(params);
+                }
+                stmt.step();
+                stmt.free();
                 saveDatabase();
                 return { changes: db.getRowsModified() };
             } catch (e) {
-                console.error('SQL Error:', e.message, 'SQL:', sql);
+                console.error('SQL Error:', e?.message || e, 'SQL:', sql);
                 return { changes: 0 };
             }
         }

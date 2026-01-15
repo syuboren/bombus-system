@@ -60,18 +60,79 @@ $module-color: $color-l1-sage;
     gap: $spacing-md;
 }
 
-.template-name-input {
-    @include input-base;
-    font-size: $font-size-lg;
-    font-weight: $font-weight-semibold;
-    border: none;
-    background: transparent;
-    min-width: 200px;
+.template-name-wrapper {
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+    padding: $spacing-xs $spacing-sm;
+    border-radius: $radius-md;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+    cursor: text;
 
-    &:focus {
-        outline: none;
-        border-bottom: 2px solid $module-color;
+    &:hover {
+        background-color: $color-cloud-gray;
+        border-color: $color-soft-gray;
+
+        .edit-icon {
+            opacity: 1;
+        }
     }
+
+    &:focus-within {
+        background-color: $color-pure-white;
+        border-color: $module-color;
+        box-shadow: 0 0 0 3px rgba($module-color, 0.1);
+
+        .edit-icon {
+            opacity: 1;
+            color: $module-color;
+        }
+    }
+
+    .template-name-input {
+        @include input-base;
+        font-size: $font-size-lg;
+        font-weight: $font-weight-semibold;
+        border: none;
+        background: transparent;
+        min-width: 200px;
+        padding: 0;
+
+        &:focus {
+            outline: none;
+            box-shadow: none;
+            border: none;
+        }
+    }
+
+    .edit-icon {
+        font-size: $font-size-lg;
+        color: $color-text-secondary;
+        opacity: 0;
+        transition: all 0.2s;
+    }
+}
+
+.version-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: $radius-full;
+    background: rgba($module-color, 0.15);
+    color: $module-color;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+}
+
+.draft-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    margin-left: $spacing-xs;
+    border-radius: $radius-full;
+    background: rgba($color-warning, 0.15);
+    color: $color-warning;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
 }
 
 .btn {
@@ -270,12 +331,30 @@ $module-color: $color-l1-sage;
         color: #f59e0b;
     }
 
+    // 支援 CSS 原生縮放
+    resize: both;
+    overflow: hidden;
+    min-width: 50px;
+    min-height: 20px;
+
     .field-label {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         padding: 0 $spacing-xs;
+        pointer-events: none; // 避免文字干擾拖曳與縮放操作
+        user-select: none;
     }
+}
+
+.unsaved-text {
+    font-size: $font-size-xs;
+    color: #ef4444; // Red for warning
+    margin-left: $spacing-xs;
+    font-weight: $font-weight-medium;
+    background-color: rgba(#ef4444, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
 }
 
 .properties-panel {
@@ -300,6 +379,13 @@ $module-color: $color-l1-sage;
     @include input-base;
     padding: $spacing-sm;
     font-size: $font-size-sm;
+
+    &.readonly {
+        background-color: $color-soft-gray;
+        color: $color-text-secondary;
+        cursor: not-allowed;
+        border-color: transparent;
+    }
 }
 
 .checkbox-label {

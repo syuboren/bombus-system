@@ -12,6 +12,7 @@ import * as pdfjsLib from 'pdfjs-dist';
 
 interface CanvasField extends TemplateField {
     selected?: boolean;
+    group?: string; // Checkbox 群組名稱
 }
 
 interface PdfPage {
@@ -43,29 +44,36 @@ export class TemplateDesignerPageComponent implements OnInit {
     pages = signal<PdfPage[]>([]);
     selectedField = signal<CanvasField | null>(null);
     saving = signal(false);
+    hasUnsavedChanges = signal(false);
+    version = signal(1);
+
+    // 草稿模式狀態
+    isDraftMode = signal(false);
+    publishingDraft = signal(false);
+    deletingDraft = signal(false);
 
     // 欄位庫
     fieldLibrary = [
         {
-            category: '標準資訊', items: [
-                { type: 'text', key: 'user_name', label: '員工姓名', icon: 'ri-user-line' },
-                { type: 'text', key: 'user_id', label: '身分證字號', icon: 'ri-id-card-line' },
-                { type: 'text', key: 'user_phone', label: '手機號碼', icon: 'ri-phone-line' },
-                { type: 'text', key: 'user_email', label: '電子信箱', icon: 'ri-mail-line' },
-                { type: 'text', key: 'user_address', label: '地址', icon: 'ri-map-pin-line' }
+            category: '標準資訊 (系統自動帶入)', items: [
+                { type: 'text', key: 'user_name', label: '員工姓名', icon: 'ri-user-line', isSystem: true },
+                { type: 'text', key: 'user_id', label: '身分證字號', icon: 'ri-id-card-line', isSystem: true },
+                { type: 'text', key: 'user_phone', label: '手機號碼', icon: 'ri-phone-line', isSystem: true },
+                { type: 'text', key: 'user_email', label: '電子信箱', icon: 'ri-mail-line', isSystem: true },
+                { type: 'text', key: 'user_address', label: '地址', icon: 'ri-map-pin-line', isSystem: true }
             ]
         },
         {
-            category: '合約變數', items: [
-                { type: 'date', key: 'start_date', label: '到職日期', icon: 'ri-calendar-line' },
-                { type: 'text', key: 'position', label: '職位', icon: 'ri-briefcase-line' },
-                { type: 'text', key: 'department', label: '部門', icon: 'ri-building-line' }
+            category: '自定義欄位 (合約變數)', items: [
+                { type: 'text', key: 'custom_text', label: '單行文字', icon: 'ri-text', isSystem: false },
+                { type: 'date', key: 'custom_date', label: '日期欄位', icon: 'ri-calendar-line', isSystem: false },
+                { type: 'checkbox', key: 'custom_check', label: '勾選框', icon: 'ri-checkbox-line', isSystem: false }
             ]
         },
         {
             category: '簽署元件', items: [
-                { type: 'signature', key: 'signature_main', label: '員工簽名', icon: 'ri-edit-line' },
-                { type: 'date', key: 'sign_date', label: '簽署日期', icon: 'ri-calendar-check-line' }
+                { type: 'signature', key: 'signature_main', label: '員工簽名', icon: 'ri-edit-line', isSystem: true },
+                { type: 'date', key: 'sign_date', label: '簽署日期', icon: 'ri-calendar-check-line', isSystem: true }
             ]
         }
     ];
@@ -74,26 +82,71 @@ export class TemplateDesignerPageComponent implements OnInit {
 
     ngOnInit(): void {
         const id = this.route.snapshot.paramMap.get('id');
+        const mode = this.route.snapshot.queryParamMap.get('mode');
+
         if (id && id !== 'new') {
             this.templateId.set(id);
-            this.loadTemplate(id);
+
+            if (mode === 'draft') {
+                this.isDraftMode.set(true);
+                this.loadDraft(id);
+            } else {
+                this.loadTemplate(id);
+            }
         }
+    }
+
+    loadDraft(id: string): void {
+        this.onboardingService.getDraft(id).subscribe({
+            next: (draft) => {
+                this.templateName.set(draft.name + ' (草稿)');
+                this.version.set(draft.current_version);
+                this.pdfBase64.set(draft.draft_pdf_base64 || null);
+                if (draft.draft_mapping_config?.fields) {
+                    this.fields.set(draft.draft_mapping_config.fields);
+                    this.fieldCounter = draft.draft_mapping_config.fields.length;
+                    const maxId = draft.draft_mapping_config.fields.reduce((max: number, f: any) => {
+                        const num = parseInt(f.id.split('_')[1] || '0');
+                        return num > max ? num : max;
+                    }, 0);
+                    this.fieldCounter = Math.max(this.fieldCounter, maxId);
+                }
+                if (this.pdfBase64()) {
+                    this.pdfLoaded.set(true);
+                    setTimeout(() => this.renderPdf(this.pdfBase64()!), 100);
+                }
+            },
+            error: (err) => {
+                console.error('Failed to load draft:', err);
+                alert('載入草稿失敗');
+                this.router.navigate(['/employee/onboarding/templates']);
+            }
+        });
     }
 
     loadTemplate(id: string): void {
         this.onboardingService.getTemplate(id).subscribe({
             next: (template) => {
                 this.templateName.set(template.name);
+                this.version.set(template.version || 1);
                 this.pdfBase64.set(template.pdf_base64 || null);
                 if (template.mapping_config?.fields) {
                     this.fields.set(template.mapping_config.fields);
                     this.fieldCounter = template.mapping_config.fields.length;
+
+                    // 若有自定義欄位，更新 counter 以避免 ID 衝突
+                    const maxId = template.mapping_config.fields.reduce((max, f) => {
+                        const num = parseInt(f.id.split('_')[1] || '0');
+                        return num > max ? num : max;
+                    }, 0);
+                    this.fieldCounter = Math.max(this.fieldCounter, maxId);
                 }
                 if (template.pdf_base64) {
                     this.pdfLoaded.set(true);
                     // 等待視圖更新後渲染 PDF
                     setTimeout(() => this.renderPdf(template.pdf_base64!), 100);
                 }
+                this.hasUnsavedChanges.set(false);
             },
             error: (err) => {
                 console.error('Failed to load template:', err);
@@ -188,42 +241,24 @@ export class TemplateDesignerPageComponent implements OnInit {
     }
 
     addFieldToCanvas(item: any, pageNumber: number = 1): void {
-        const fieldId = `field_${++this.fieldCounter}`;
         // 預設放在頁面中間
         const targetPage = this.pages().find(p => p.pageNumber === pageNumber) || this.pages()[0];
         const centerX = (targetPage?.width || 800) / 2 - 50;
         const centerY = (targetPage?.height || 600) / 2 - 12;
         const targetPageNum = targetPage?.pageNumber || 1;
 
-        const newField: CanvasField = {
-            id: fieldId,
-            key: `${item.key}_${this.fieldCounter}`,
-            label: item.label,
-            type: item.type,
-            is_required: true,
-            font_size: 14,
-            placements: [
-                {
-                    page_number: targetPageNum,
-                    x: centerX,
-                    y: centerY,
-                    width: 100,
-                    height: 24
-                }
-            ],
-            selected: true
-        };
-
-        this.deselectField();
-        this.fields.update(fs => [...fs, newField]);
-        this.selectedField.set(newField);
+        this.createFieldOnCanvas(item, targetPageNum, centerX, centerY);
     }
 
     selectField(field: CanvasField): void {
-        this.fields.update(fields =>
-            fields.map(f => ({ ...f, selected: f.id === field.id }))
-        );
-        this.selectedField.set(field);
+        const currentFields = this.fields();
+        // 1. 更新選取狀態 (immutable update)
+        const updatedFields = currentFields.map(f => ({ ...f, selected: f.id === field.id }));
+        this.fields.set(updatedFields);
+
+        // 2. 設定選取物件為新陣列中的對應物件，確保引用一致
+        const newSelected = updatedFields.find(f => f.id === field.id) || null;
+        this.selectedField.set(newSelected);
     }
 
     deselectField(): void {
@@ -231,6 +266,26 @@ export class TemplateDesignerPageComponent implements OnInit {
             fields.map(f => ({ ...f, selected: false }))
         );
         this.selectedField.set(null);
+    }
+
+    // 新增：統一處理屬性變更，解決狀態不同步問題
+    updateFieldProperty(key: keyof CanvasField, value: any): void {
+        const selected = this.selectedField();
+        if (!selected) return;
+
+        this.fields.update(fields => fields.map(f => {
+            if (f.id === selected.id) {
+                return { ...f, [key]: value };
+            }
+            return f;
+        }));
+
+        // 更新 selectedField 引用
+        const updatedFields = this.fields();
+        const newSelected = updatedFields.find(f => f.id === selected.id) || null;
+        this.selectedField.set(newSelected);
+
+        this.hasUnsavedChanges.set(true);
     }
 
     deleteField(): void {
@@ -241,60 +296,175 @@ export class TemplateDesignerPageComponent implements OnInit {
             this.fields.update(fields => fields.filter(f => f.id !== field.id));
             this.deselectField();
         }
+        this.hasUnsavedChanges.set(true);
     }
 
-    onFieldDragEnd(field: CanvasField, event: DragEvent, pageNumber: number): void {
-        // 更新欄位位置
-        // 注意：Container 現在是每頁的 .canvas-background
-        // 我們需要找到對應頁面的 container
+    // ... (drag handlers unchanged) ...
+    // 拖放相關狀態
+    private dragOffsetX = 0;
+    private dragOffsetY = 0;
+    onLibraryDragStart(event: DragEvent, item: any): void {
+        event.dataTransfer?.setData('libraryItem', JSON.stringify(item));
+        event.dataTransfer!.effectAllowed = 'copy';
+    }
 
-        // 這裡需要透過 event 來找相對座標
-        // 簡單解法：因為是在該容器內拖拉，offsetX/Y 可能可以用，但 DragEvent 的 offset 參考點比較複雜
-
+    // 處理畫布上欄位拖曳開始
+    onFieldDragStart(event: DragEvent, field: CanvasField): void {
         const target = event.target as HTMLElement;
         const rect = target.getBoundingClientRect();
+        this.dragOffsetX = event.clientX - rect.left;
+        this.dragOffsetY = event.clientY - rect.top;
 
-        // 假設 .canvas-background 是 target 的 offsetParent
-        // 但 drag ghost 不一定在 DOM 樹中正確位置
+        event.dataTransfer?.setData('fieldId', field.id);
+        event.dataTransfer!.effectAllowed = 'move';
 
-        // 更好的方式：計算滑鼠位置相對於容器的位置
-        // event.clientX - container.left
-
-        // 我們在此簡單假設使用者精確放開
-        // 但因為 ViewChildren 難以反查特定 DOM
-        // 暫時保留原邏輯，但需要獲取正確的 container
-        // 這需要 HTML 傳入 container 引用
+        // 使用重構後的 selectField
+        this.selectField(field);
     }
 
-    // 改良版 Drop Handler (需要在 HTML 實作 drop zone)
+    // ... (onFieldDrop uses createFieldOnCanvas, logic holds) ...
+
     onFieldDrop(event: DragEvent, pageNumber: number): void {
         event.preventDefault();
-        const fieldId = event.dataTransfer?.getData('fieldId');
-        if (!fieldId) return;
 
-        const field = this.fields().find(f => f.id === fieldId);
-        if (!field) return;
-
-        // 計算相對座標
         const container = (event.currentTarget as HTMLElement).getBoundingClientRect();
-        const x = event.clientX - container.left;
-        const y = event.clientY - container.top;
 
-        this.fields.update(fields => fields.map(f => {
-            if (f.id === fieldId) {
-                const placement = f.placements[0];
-                return {
-                    ...f,
-                    placements: [{
-                        ...placement,
-                        page_number: pageNumber,
-                        x: x, // 需要校正滑鼠在元素的偏移
-                        y: y
-                    }]
-                };
+        // 情況 1: 從欄位庫新增 (Copy)
+        const libraryItemJson = event.dataTransfer?.getData('libraryItem');
+        if (libraryItemJson) {
+            const item = JSON.parse(libraryItemJson);
+
+            // 計算放置位置 (置中於滑鼠指標)
+            const x = event.clientX - container.left - 50;
+            const y = event.clientY - container.top - 12;
+
+            // 確保不超出邊界
+            const targetPage = this.pages().find(p => p.pageNumber === pageNumber);
+            const maxX = (targetPage?.width || 800) - 100;
+            const maxY = (targetPage?.height || 600) - 24;
+
+            const clampedX = Math.max(0, Math.min(x, maxX));
+            const clampedY = Math.max(0, Math.min(y, maxY));
+
+            this.createFieldOnCanvas(item, pageNumber, clampedX, clampedY);
+            // createFieldOnCanvas sets unsaved changes
+            return;
+        }
+
+        // 情況 2: 移動現有欄位 (Move)
+        const fieldId = event.dataTransfer?.getData('fieldId');
+        if (fieldId) {
+            const field = this.fields().find(f => f.id === fieldId);
+            if (!field) return;
+
+            const x = event.clientX - container.left - this.dragOffsetX;
+            const y = event.clientY - container.top - this.dragOffsetY;
+
+            const maxX = container.width - (field.placements[0]?.width || 100);
+            const maxY = container.height - (field.placements[0]?.height || 24);
+            const clampedX = Math.max(0, Math.min(x, maxX));
+            const clampedY = Math.max(0, Math.min(y, maxY));
+
+            this.fields.update(fields => fields.map(f => {
+                if (f.id === fieldId) {
+                    const placement = f.placements[0];
+                    return {
+                        ...f,
+                        placements: [{
+                            ...placement,
+                            page_number: pageNumber,
+                            x: clampedX,
+                            y: clampedY
+                        }]
+                    };
+                }
+                return f;
+            }));
+
+            // 更新選取狀態的引用
+            this.selectField(field);
+            this.hasUnsavedChanges.set(true);
+        }
+    }
+
+    createFieldOnCanvas(item: any, pageNumber: number, x: number, y: number): void {
+        this.fieldCounter++;
+        const fieldId = `field_${this.fieldCounter}`;
+
+        // 如果是自定義欄位，生成唯一 Key
+        let key = item.key;
+        let label = item.label;
+
+        if (!item.isSystem) {
+            key = `${item.key}_${this.fieldCounter}`;
+            label = `${item.label}_${this.fieldCounter}`;
+        }
+
+        // 預設尺寸：如果是勾選框則為方形
+        const defaultWidth = item.type === 'checkbox' ? 24 : 100;
+        const defaultHeight = item.type === 'checkbox' ? 24 : 24;
+
+        const newField: CanvasField = {
+            id: fieldId,
+            key: key,
+            label: label,
+            type: item.type,
+            is_required: true,
+            font_size: 14,
+            placements: [
+                {
+                    page_number: pageNumber,
+                    x: x,
+                    y: y,
+                    width: defaultWidth,
+                    height: defaultHeight
+                }
+            ],
+            selected: true
+        };
+
+        this.deselectField();
+        this.fields.update(fs => [...fs, newField]);
+        this.selectedField.set(newField);
+        this.hasUnsavedChanges.set(true);
+    }
+
+    // 處理欄位縮放 (透過 CSS resize 觸發)
+    onFieldResize(event: MouseEvent, field: CanvasField): void {
+        const target = event.target as HTMLElement;
+        // 只有當目標是欄位本身時才處理（避免子元素觸發）
+        if (target.classList.contains('canvas-field')) {
+            const newWidth = target.offsetWidth;
+            const newHeight = target.offsetHeight;
+
+            // 如果尺寸有變更
+            if (field.placements[0].width !== newWidth || field.placements[0].height !== newHeight) {
+                this.fields.update(fields => fields.map(f => {
+                    if (f.id === field.id) {
+                        const placement = f.placements[0];
+                        return {
+                            ...f,
+                            placements: [{
+                                ...placement,
+                                width: newWidth,
+                                height: newHeight
+                            }]
+                        };
+                    }
+                    return f;
+                }));
+
+                // 更新選取狀態的引用
+                const selected = this.selectedField();
+                if (selected && selected.id === field.id) {
+                    const currentFields = this.fields();
+                    const newSelected = currentFields.find(f => f.id === field.id) || null;
+                    this.selectedField.set(newSelected);
+                }
+
+                this.hasUnsavedChanges.set(true);
             }
-            return f;
-        }));
+        }
     }
 
     saveTemplate(): void {
@@ -319,6 +489,7 @@ export class TemplateDesignerPageComponent implements OnInit {
         request.subscribe({
             next: (template) => {
                 this.saving.set(false);
+                this.hasUnsavedChanges.set(false); // 修正：儲存成功後重置 dirty 狀態
                 alert('模板已儲存');
                 if (!this.templateId()) {
                     this.router.navigate(['/employee/onboarding/templates', template.id]);
@@ -332,9 +503,94 @@ export class TemplateDesignerPageComponent implements OnInit {
         });
     }
 
+
+    updateTemplateName(name: string): void {
+        this.templateName.set(name);
+        this.hasUnsavedChanges.set(true);
+    }
+
     goBack(): void {
-        if (confirm('確定要返回嗎？未儲存的變更將遺失。')) {
+        if (this.hasUnsavedChanges()) {
+            if (confirm('確定要返回嗎？未儲存的變更將遺失。')) {
+                this.router.navigate(['/employee/onboarding/templates']);
+            }
+        } else {
             this.router.navigate(['/employee/onboarding/templates']);
         }
+    }
+
+    // ==================== 草稿操作 ====================
+
+    saveDraftChanges(): void {
+        const id = this.templateId();
+        if (!id) return;
+
+        this.saving.set(true);
+        this.onboardingService.saveDraft(id, {
+            pdf_base64: this.pdfBase64() || undefined,
+            mapping_config: { fields: this.fields() }
+        }).subscribe({
+            next: () => {
+                this.saving.set(false);
+                this.hasUnsavedChanges.set(false);
+                alert('草稿已儲存');
+            },
+            error: (err) => {
+                this.saving.set(false);
+                console.error('Failed to save draft:', err);
+                alert('儲存草稿失敗');
+            }
+        });
+    }
+
+    publishDraft(): void {
+        const id = this.templateId();
+        if (!id) return;
+
+        if (this.hasUnsavedChanges()) {
+            alert('請先儲存草稿後再發布');
+            return;
+        }
+
+        if (!confirm('確定要發布此草稿為正式版本嗎？')) {
+            return;
+        }
+
+        this.publishingDraft.set(true);
+        this.onboardingService.publishDraft(id).subscribe({
+            next: (response) => {
+                this.publishingDraft.set(false);
+                alert(`發布成功！目前版本為 v${response.version}`);
+                this.router.navigate(['/employee/onboarding/templates']);
+            },
+            error: (err) => {
+                this.publishingDraft.set(false);
+                console.error('Failed to publish draft:', err);
+                alert('發布失敗：' + (err.error?.error || '未知錯誤'));
+            }
+        });
+    }
+
+    deleteDraft(): void {
+        const id = this.templateId();
+        if (!id) return;
+
+        if (!confirm('確定要刪除此草稿嗎？所有變更將遺失。')) {
+            return;
+        }
+
+        this.deletingDraft.set(true);
+        this.onboardingService.deleteDraft(id).subscribe({
+            next: () => {
+                this.deletingDraft.set(false);
+                alert('草稿已刪除');
+                this.router.navigate(['/employee/onboarding/templates']);
+            },
+            error: (err) => {
+                this.deletingDraft.set(false);
+                console.error('Failed to delete draft:', err);
+                alert('刪除草稿失敗');
+            }
+        });
     }
 }

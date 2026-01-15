@@ -1,113 +1,274 @@
 <div class="wizard-container">
+    <!-- 載入中 -->
     @if (loading()) {
     <div class="loading-container">
         <i class="ri-loader-4-line spinner"></i>
-        <span>載入中...</span>
+        <p>載入中...</p>
     </div>
-    } @else if (error()) {
+    }
+
+    <!-- 錯誤狀態 -->
+    @else if (error()) {
     <div class="error-container">
         <i class="ri-error-warning-line"></i>
         <h2>無法載入</h2>
         <p>{{ error() }}</p>
     </div>
-    } @else if (completed()) {
+    }
+
+    <!-- 完成狀態 -->
+    @else if (completed()) {
     <div class="success-container">
         <div class="success-icon">
             <i class="ri-checkbox-circle-line"></i>
         </div>
         <h2>簽署完成！</h2>
-        <p>您的入職文件已成功提交並簽署。</p>
-        <p class="success-hint">感謝您的配合！</p>
+        <p>感謝您完成文件簽署。</p>
+        <p class="success-hint">您可以關閉此頁面。</p>
     </div>
-    } @else {
-    <!-- 標題區 -->
+    }
+
+    <!-- 階段 1：填寫資料 -->
+    @else if (currentPhase() === 'form') {
     <div class="wizard-header">
-        <h1 class="wizard-title">{{ schema()?.template_name || '入職文件簽署' }}</h1>
-        <p class="wizard-subtitle">請仔細填寫以下資訊並完成簽署</p>
+        <h1 class="wizard-title">{{ templateName() }}</h1>
+        <p class="wizard-subtitle">請閱讀左側文件並填寫右側資料，填入的內容會即時顯示在文件中</p>
     </div>
 
-    <!-- 步驟指示器 -->
-    <div class="wizard-steps">
-        @for (step of steps(); track step.title; let i = $index) {
-        <div class="wizard-step" [class.active]="i === currentStep()" [class.completed]="i < currentStep()">
-            <div class="wizard-step-circle">{{ i + 1 }}</div>
-            <div class="wizard-step-label">{{ step.title }}</div>
-        </div>
-        }
-    </div>
-
-    <!-- 步驟內容 -->
-    <div class="wizard-content">
-        @if (currentStepData()) {
-        <h2 class="step-title">{{ currentStepData()!.title }}</h2>
-
-        <!-- 條款內容 -->
-        @if (currentStepData()!.title === '條款簽署') {
-        <div class="terms-section">
-            <div class="terms-content">
-                <h3>勞動契約條款</h3>
-                <p>本人同意遵守公司相關規章制度，並確認所填寫資料屬實。本人了解並同意本契約內容，願意接受本契約所規範之權利與義務。</p>
-                <p>本契約自簽署日起生效，雙方應嚴格遵守本契約各項條款。如有違反，應承擔相應法律責任。</p>
+    <div class="split-layout">
+        <!-- 左側：PDF 預覽（即時顯示填入資料）-->
+        <div class="pdf-panel">
+            <div class="panel-header">
+                <i class="ri-file-pdf-line"></i>
+                <span>文件預覽（即時更新）</span>
+            </div>
+            <div class="pdf-scroll-area">
+                @if (pdfLoaded()) {
+                @for (page of pages(); track page.pageNumber) {
+                <div class="pdf-page-wrapper" [style.width.px]="page.width" [style.height.px]="page.height">
+                    <canvas #pdfCanvas [width]="page.width" [height]="page.height"></canvas>
+                    <!-- 即時顯示填入的資料 overlay -->
+                    @for (field of getFieldsForPage(page.pageNumber); track field.key; let idx = $index) {
+                    @if (getPlacementForPage(field, page.pageNumber); as placement) {
+                    <div class="field-overlay" [id]="'overlay-' + field.key" [class.has-value]="getFieldValue(field)"
+                        [class.highlighted]="highlightedField() === field.key" [style.left.px]="placement.x"
+                        [style.top.px]="placement.y" [style.width.px]="placement.width"
+                        [style.height.px]="placement.height" [style.font-size.px]="field.font_size || 14"
+                        (click)="focusField(field.key)">
+                        <span class="field-number">{{ getFieldIndex(field) + 1 }}</span>
+                        <!-- 使用 flex 垂直置中，並確保文字不會溢出 -->
+                        @if (field.type === 'checkbox') {
+                        @if (getFieldValue(field)) {
+                        <i class="ri-check-line" style="font-size: 100%; font-weight: bold;"></i>
+                        }
+                        } @else {
+                        <span class="field-value">{{ getFieldValue(field) || field.label }}</span>
+                        }
+                    </div>
+                    }
+                    }
+                </div>
+                }
+                } @else {
+                <div class="pdf-loading">
+                    <i class="ri-loader-4-line spinner"></i>
+                    <p>載入文件中...</p>
+                </div>
+                }
             </div>
         </div>
-        <div class="checkbox-group">
-            <input type="checkbox" id="agreed_terms" [ngModel]="agreedTerms()"
-                (ngModelChange)="agreedTerms.set($event)">
-            <label for="agreed_terms">我已詳細閱讀並同意上述條款</label>
-        </div>
-        }
 
-        <!-- 欄位表單 -->
-        @for (field of currentStepData()!.fields; track field.key) {
-        <div class="field-group">
-            @if (field.type !== 'signature') {
-            <label class="field-label">
-                {{ field.label }}
-                @if (field.required) { <span class="required">*</span> }
-            </label>
-            <input [type]="field.type === 'date' ? 'date' : 'text'" class="field-input"
-                [value]="formData()[field.key] || ''" (input)="updateField(field.key, $any($event.target).value)"
-                [required]="field.required">
-            } @else {
-            <!-- 簽名欄位 -->
-            <label class="field-label">
-                {{ field.label }}
-                @if (field.required) { <span class="required">*</span> }
-            </label>
+        <!-- 右側：表單（帶編號）-->
+        <div class="form-panel">
+            <div class="panel-header">
+                <i class="ri-edit-line"></i>
+                <span>填寫資料</span>
+            </div>
+            <div class="form-scroll-area">
+                @for (field of formFields(); track field.key; let idx = $index) {
+                <div class="field-group" [class.highlighted]="highlightedField() === field.key">
+                    <label class="field-label">
+                        <span class="field-number-badge">{{ idx + 1 }}</span>
+                        {{ field.label }}
+                        @if (field.required) {
+                        <span class="required">*</span>
+                        }
+                    </label>
+                    @if (field.type === 'date') {
+                    <input type="date" class="field-input" [id]="'field-' + field.key"
+                        [value]="formData()[field.key] || ''"
+                        (focus)="scrollToPdfField(field.key); highlightField(field.key)" (blur)="highlightField(null)"
+                        (input)="updateField(field.key, $any($event.target).value)">
+                    } @else if (field.type === 'checkbox') {
+                    <div class="checkbox-wrapper">
+                        <input type="checkbox" [id]="'field-' + field.key" [checked]="formData()[field.key] || false"
+                            (focus)="scrollToPdfField(field.key); highlightField(field.key)"
+                            (blur)="highlightField(null)"
+                            (change)="updateField(field.key, $any($event.target).checked)">
+                        <span class="checkbox-hint">勾選此項目</span>
+                    </div>
+                    } @else {
+                    <input type="text" class="field-input" [id]="'field-' + field.key"
+                        [value]="formData()[field.key] || ''"
+                        (focus)="scrollToPdfField(field.key); highlightField(field.key)" (blur)="highlightField(null)"
+                        (input)="updateField(field.key, $any($event.target).value)" placeholder="請輸入{{ field.label }}">
+                    }
+                </div>
+                }
+
+                @if (formFields().length === 0) {
+                <div class="empty-hint">
+                    <i class="ri-information-line"></i>
+                    <p>此文件無需填寫資料</p>
+                </div>
+                }
+            </div>
+
+            <div class="form-actions">
+                <button class="btn btn--primary" (click)="goToPreview()">
+                    下一步：預覽確認
+                    <i class="ri-arrow-right-line"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    }
+
+    <!-- 階段 2：預覽最終成果 -->
+    @else if (currentPhase() === 'preview') {
+    <div class="wizard-header">
+        <h1 class="wizard-title">確認填寫內容</h1>
+        <p class="wizard-subtitle">請確認您填寫的資料正確無誤</p>
+    </div>
+
+    <div class="split-layout">
+        <!-- 左側：PDF 預覽 (純文字模式) -->
+        <div class="pdf-panel">
+            <div class="panel-header">
+                <i class="ri-file-pdf-line"></i>
+                <span>文件預覽</span>
+            </div>
+            <div class="pdf-scroll-area">
+                <div class="pdf-preview-area"
+                    style="background: transparent; padding: 0; border: none; max-height: none; display: flex; flex-direction: column; align-items: center; gap: 24px;">
+                    @for (page of pages(); track page.pageNumber) {
+                    <div class="preview-page" [style.width.px]="page.width" [style.height.px]="page.height">
+                        <canvas #pdfCanvas [width]="page.width" [height]="page.height"></canvas>
+                        <!-- 顯示填入的資料 (Preview Style) -->
+                        @for (field of getFieldsForPage(page.pageNumber); track field.key) {
+                        @if (getPlacementForPage(field, page.pageNumber); as placement) {
+                        <div class="preview-mode-overlay" [class.is-checkbox]="field.type === 'checkbox'"
+                            [style.left.px]="placement.x" [style.top.px]="placement.y"
+                            [style.width.px]="placement.width" [style.height.px]="placement.height"
+                            [style.font-size.px]="field.font_size || 14">
+
+                            @if (field.type === 'checkbox') {
+                            @if (getFieldValue(field)) {
+                            <i class="ri-check-line" style="font-size: 100%; font-weight: bold;"></i>
+                            }
+                            } @else {
+                            {{ getFieldValue(field) }}
+                            }
+                        </div>
+                        }
+                        }
+                    </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- 右側：資料確認 (唯讀) -->
+        <div class="form-panel">
+            <div class="panel-header">
+                <i class="ri-file-list-line"></i>
+                <span>已填寫資料</span>
+            </div>
+            <div class="form-scroll-area">
+                <div class="data-summary">
+                    @for (field of formFields(); track field.key) {
+                    <div class="data-row">
+                        <span class="data-label">{{ field.label }}</span>
+                        <span class="data-value">{{ getFieldValue(field) || '(未填寫)' }}</span>
+                    </div>
+                    }
+                </div>
+            </div>
+
+            <div class="form-actions" style="justify-content: space-between; display: flex;">
+                @if (status() === 'DRAFT') {
+                <button class="btn btn--secondary" (click)="backToForm()">
+                    <i class="ri-arrow-left-line"></i>
+                    返回修改
+                </button>
+                <button class="btn btn--primary" (click)="goToSign()">
+                    確認無誤，進行簽署
+                    <i class="ri-arrow-right-line"></i>
+                </button>
+                } @else {
+                <div class="readonly-hint" style="text-align: center; width: 100%; color: #666; font-size: 14px;">
+                    <i class="ri-lock-line"></i>
+                    此文件已完成簽署，目前為閱覽模式
+                </div>
+                }
+            </div>
+        </div>
+    </div>
+    }
+
+    <!-- 階段 3：電子簽署 -->
+    @else if (currentPhase() === 'sign') {
+    <div class="wizard-header">
+        <h1 class="wizard-title">電子簽署</h1>
+        <p class="wizard-subtitle">請在下方簽名區域簽署您的姓名</p>
+    </div>
+
+    <div class="sign-layout">
+        <div class="sign-content">
+            <!-- 條款確認 -->
+            <div class="terms-section">
+                <div class="terms-content">
+                    <h3>簽署聲明</h3>
+                    <p>本人已詳閱上述文件內容，確認所填寫資料正確無誤，並同意以電子方式簽署本文件。</p>
+                    <p>電子簽署與親筆簽名具有同等法律效力。</p>
+                </div>
+                <label class="checkbox-group">
+                    <input type="checkbox" [checked]="agreedTerms()"
+                        (change)="agreedTerms.set($any($event.target).checked)">
+                    <span>我已閱讀並同意上述聲明</span>
+                </label>
+            </div>
+
+            <!-- 簽名區塊 -->
             <div class="signature-section">
+                <div class="signature-header">
+                    <span>簽名區</span>
+                    <button class="clear-btn" (click)="clearSignature()">
+                        <i class="ri-delete-bin-line"></i>
+                        清除
+                    </button>
+                </div>
                 <div class="signature-pad-container">
                     <app-signature-pad></app-signature-pad>
                 </div>
-                <button type="button" class="btn btn--secondary" (click)="clearSignature()">
-                    清除簽名
-                </button>
             </div>
-            }
         </div>
-        }
-        }
-    </div>
 
-    <!-- 導航按鈕 -->
-    <div class="wizard-navigation">
-        @if (!isFirstStep()) {
-        <button class="btn btn--secondary" (click)="prevStep()">
-            <i class="ri-arrow-left-line"></i>
-            上一步
-        </button>
-        } @else {
-        <div></div>
-        }
-
-        <button class="btn btn--primary" (click)="nextStep()" [disabled]="submitting()">
-            @if (isLastStep()) {
-            <i class="ri-check-line"></i>
-            {{ submitting() ? '提交中...' : '提交簽署' }}
-            } @else {
-            下一步
-            <i class="ri-arrow-right-line"></i>
-            }
-        </button>
+        <div class="sign-actions">
+            <button class="btn btn--secondary" (click)="backToPreview()">
+                <i class="ri-arrow-left-line"></i>
+                返回預覽
+            </button>
+            <button class="btn btn--primary" (click)="submit()" [disabled]="submitting()">
+                @if (submitting()) {
+                <i class="ri-loader-4-line spinner"></i>
+                提交中...
+                } @else {
+                <i class="ri-check-line"></i>
+                提交簽署
+                }
+            </button>
+        </div>
     </div>
     }
 </div>
