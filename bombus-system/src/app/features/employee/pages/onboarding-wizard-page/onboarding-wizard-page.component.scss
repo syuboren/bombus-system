@@ -100,6 +100,60 @@ $module-color: $color-l1-sage;
     }
 }
 
+.alert {
+    display: flex;
+    gap: 16px;
+    padding: 16px;
+    border-radius: 8px;
+    margin: 20px auto;
+    max-width: 1200px;
+    border: 1px solid transparent;
+
+    .alert-icon {
+        font-size: 24px;
+        display: flex;
+        align-items: flex-start;
+        padding-top: 2px;
+    }
+
+    .alert-content {
+        flex: 1;
+
+        .alert-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0 0 4px 0;
+        }
+
+        .alert-message {
+            font-size: 14px;
+            margin: 0 0 4px 0;
+            line-height: 1.5;
+        }
+
+        .alert-hint {
+            font-size: 13px;
+            margin: 0;
+            opacity: 0.8;
+        }
+    }
+
+    &--danger {
+        background-color: var(--color-red-50);
+        border-color: var(--color-red-200);
+
+        .alert-icon {
+            color: var(--color-red-600);
+        }
+
+        .alert-title,
+        .alert-message,
+        .alert-hint {
+            color: var(--color-red-900);
+        }
+    }
+}
+
 // ==================== 階段 1：左右分割佈局 ====================
 
 .wizard-header {
@@ -114,6 +168,23 @@ $module-color: $color-l1-sage;
     font-weight: $font-weight-semibold;
     color: $color-text-dark;
     margin: 0 0 $spacing-xs;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: $spacing-sm;
+
+    .version-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: $radius-full;
+        background: rgba($module-color, 0.1);
+        color: $module-color;
+        font-size: $font-size-xs;
+        font-weight: $font-weight-medium;
+        vertical-align: middle;
+        height: 24px;
+    }
 }
 
 .wizard-subtitle {

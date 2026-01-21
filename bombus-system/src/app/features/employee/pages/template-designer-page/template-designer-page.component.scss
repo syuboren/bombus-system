@@ -90,6 +90,58 @@ $module-color: $color-l1-sage;
         }
     }
 
+    .property-input,
+    .property-select,
+    .property-textarea {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid var(--color-gray-300);
+        border-radius: 6px;
+        font-size: 14px;
+        transition: all 0.2s;
+        resize: vertical;
+
+        &:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
+        }
+
+        &.readonly {
+            background-color: var(--color-gray-100);
+            color: var(--color-gray-500);
+            cursor: not-allowed;
+        }
+    }
+
+    .property-hint {
+        font-size: 12px;
+        color: var(--color-gray-500);
+        margin-top: 4px;
+        line-height: 1.4;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+        margin-left: 6px;
+
+        &--public {
+            background-color: var(--color-blue-50);
+            color: var(--color-blue-600);
+            border: 1px solid var(--color-blue-200);
+        }
+
+        &--required {
+            background-color: var(--color-red-50);
+            color: var(--color-red-600);
+            border: 1px solid var(--color-red-200);
+        }
+    }
+
     .template-name-input {
         @include input-base;
         font-size: $font-size-lg;
@@ -388,18 +440,63 @@ $module-color: $color-l1-sage;
     }
 }
 
-.checkbox-label {
+.checkbox-label,
+.switch-label {
     display: flex;
     align-items: center;
     gap: $spacing-sm;
     font-size: $font-size-sm;
     color: $color-text-dark;
     cursor: pointer;
+    user-select: none;
 
+    /* Checkbox fallback */
     input[type="checkbox"] {
         width: 16px;
         height: 16px;
         accent-color: $module-color;
+    }
+
+    /* Switch Style */
+    &.switch-mode {
+        input[type="checkbox"] {
+            display: none;
+        }
+
+        .switch-track {
+            position: relative;
+            width: 40px;
+            height: 22px;
+            background-color: #cbd5e1; // Slate-300
+            border-radius: 999px;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+
+            &::after {
+                content: '';
+                position: absolute;
+                top: 2px;
+                left: 2px;
+                width: 18px;
+                height: 18px;
+                background-color: #ffffff;
+                border-radius: 50%;
+                transition: all 0.3s ease;
+                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            }
+        }
+
+        input:checked+.switch-track {
+            background-color: $module-color;
+
+            &::after {
+                transform: translateX(18px);
+            }
+        }
+
+        input:focus+.switch-track {
+            box-shadow: 0 0 0 2px rgba($module-color, 0.2);
+        }
     }
 }
 

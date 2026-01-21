@@ -12,20 +12,11 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { OnboardingService } from '../../services/onboarding.service';
 import { SignaturePadComponent } from '../../components/signature-pad/signature-pad.component';
+import { FormField } from '../../models/onboarding.model';
 import * as pdfjsLib from 'pdfjs-dist';
 
 // 設定 Worker Src
 (pdfjsLib as any).GlobalWorkerOptions.workerSrc = '/assets/pdf.worker.min.mjs';
-
-interface FormField {
-    key: string;
-    label: string;
-    type: string;
-    required: boolean;
-    font_size?: number; // 新增字體大小
-    group?: string; // Checkbox 群組名稱
-    placements: Array<{ page_number: number; x: number; y: number; width: number; height: number }>;
-}
 
 interface PdfPage {
     pageNumber: number;
@@ -51,9 +42,11 @@ export class OnboardingWizardPageComponent implements OnInit {
     // 狀態
     token = signal<string>('');
     templateName = signal('');
+    templateVersion = signal<number>(1);
     pdfBase64 = signal<string | null>(null);
     formFields = signal<FormField[]>([]);
     signatureFields = signal<FormField[]>([]);
+    signatureBase64 = signal<string | null>(null);
     pages = signal<PdfPage[]>([]);
 
     loading = signal(true);
@@ -65,6 +58,8 @@ export class OnboardingWizardPageComponent implements OnInit {
     agreedTerms = signal(false);
     highlightedField = signal<string | null>(null);
     status = signal<'DRAFT' | 'SIGNED' | 'COMPLETED'>('DRAFT');
+    approvalStatus = signal<'PENDING' | 'APPROVED' | 'REJECTED' | 'NONE'>('NONE');
+    approvalNote = signal<string | null>(null);
 
     // 計算屬性
     pdfLoaded = computed(() => this.pages().length > 0);
@@ -84,12 +79,19 @@ export class OnboardingWizardPageComponent implements OnInit {
         this.onboardingService.getSignSchema(token).subscribe({
             next: (data: any) => {
                 this.templateName.set(data.template_name);
+                this.templateVersion.set(data.template_version || 1);
                 this.formFields.set(data.form_fields || []);
                 this.signatureFields.set(data.signature_fields || []);
                 this.status.set(data.status || 'DRAFT');
+                this.approvalStatus.set(data.approval_status || 'NONE');
+                this.approvalNote.set(data.approval_note || null);
 
                 if (data.form_data) {
                     this.formData.set(data.form_data);
+                }
+
+                if (data.signature_base64) {
+                    this.signatureBase64.set(data.signature_base64);
                 }
 
                 if (data.pdf_base64) {
@@ -98,8 +100,9 @@ export class OnboardingWizardPageComponent implements OnInit {
                     setTimeout(() => this.renderPdf(data.pdf_base64), 100);
                 }
 
-                // 如果已簽署，直接進入預覽模式 (Read Only)
-                if (data.status === 'SIGNED' || data.status === 'COMPLETED') {
+                // 如果已簽署且已核准，或等待審核中，進入預覽模式 (Read Only)
+                // 如果是被退回 (REJECTED)，則保留在 form 模式讓使用者修改
+                if ((data.status === 'SIGNED' || data.status === 'COMPLETED') && data.approval_status !== 'REJECTED') {
                     this.currentPhase.set('preview');
                 }
 
@@ -334,5 +337,9 @@ export class OnboardingWizardPageComponent implements OnInit {
     // 取得欄位的索引（用於顯示編號）
     getFieldIndex(field: FormField): number {
         return this.formFields().findIndex(f => f.key === field.key);
+    }
+
+    backToDocuments(): void {
+        this.router.navigate(['/employee/onboarding/my-documents']);
     }
 }

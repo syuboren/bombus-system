@@ -134,10 +134,11 @@
                         (ngModelChange)="updateFieldProperty('group', $event)" placeholder="例如: license">
                 </div>
                 <div class="property-group">
-                    <label class="checkbox-label">
+                    <label class="switch-label switch-mode">
                         <input type="checkbox" [ngModel]="selectedField()!.is_required"
                             (ngModelChange)="updateFieldProperty('is_required', $event)">
-                        必填欄位
+                        <span class="switch-track"></span>
+                        <span class="label-text">必填欄位</span>
                     </label>
                 </div>
                 <div class="property-actions">
@@ -148,9 +149,38 @@
                 </div>
             </div>
             } @else {
-            <div class="properties-empty">
-                <i class="ri-cursor-line"></i>
-                <p>請選擇畫布上的欄位以編輯屬性</p>
+            <!-- 當未選擇欄位時顯示模版設定 -->
+            <div class="properties-panel">
+                <div class="property-group">
+                    <label class="switch-label switch-mode">
+                        <input type="checkbox" [ngModel]="isPublic()"
+                            (ngModelChange)="isPublic.set($event); hasUnsavedChanges.set(true)">
+                        <span class="switch-track"></span>
+                        <div class="label-content">
+                            <span class="label-text">公開模版</span>
+                            <span class="badge badge--public" *ngIf="isPublic()">已開啟</span>
+                        </div>
+                    </label>
+                    <p class="property-hint">開啟後，所有員工皆可在「我的文件」中看到此模版。</p>
+                </div>
+                <div class="property-group">
+                    <label class="switch-label switch-mode">
+                        <input type="checkbox" [ngModel]="isRequired()"
+                            (ngModelChange)="isRequired.set($event); hasUnsavedChanges.set(true)">
+                        <span class="switch-track"></span>
+                        <div class="label-content">
+                            <span class="label-text">必填項目</span>
+                            <span class="badge badge--required" *ngIf="isRequired()">已開啟</span>
+                        </div>
+                    </label>
+                    <p class="property-hint">開啟後，此模版將被標記為員工入職必須完成的項目。</p>
+                </div>
+                <div class="property-group">
+                    <label class="property-label">填寫說明</label>
+                    <textarea class="property-textarea" rows="4" [ngModel]="description()"
+                        (ngModelChange)="description.set($event); hasUnsavedChanges.set(true)"
+                        placeholder="請輸入給員工的填寫說明..."></textarea>
+                </div>
             </div>
             }
         </div>

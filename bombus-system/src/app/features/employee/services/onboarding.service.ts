@@ -111,6 +111,7 @@ export class OnboardingService {
         template_id: string;
         employee_name?: string;
         employee_email?: string;
+        employee_id?: string;
     }): Observable<CreateSignLinkResponse> {
         return this.http.post<CreateSignLinkResponse>(
             `${this.baseUrl}/sign/create`,
@@ -173,5 +174,71 @@ export class OnboardingService {
         return this.http.delete<{ message: string }>(
             `${this.baseUrl}/templates/${id}/draft`
         );
+    }
+
+    // ==================== Employee API ====================
+
+    /**
+     * 取得員工可見的模版
+     */
+    getEmployeeTemplates(): Observable<any[]> {
+        return this.http.get<any[]>(`http://localhost:3001/api/employee/templates`);
+    }
+
+    /**
+     * 取得員工進度摘要
+     */
+    getEmployeeProgress(employeeId: string): Observable<any> {
+        return this.http.get<any>(`http://localhost:3001/api/employee/progress`, {
+            params: { employee_id: employeeId }
+        });
+    }
+
+    /**
+     * 取得員工提交歷史
+     */
+    getEmployeeSubmissions(employeeId: string): Observable<Submission[]> {
+        return this.http.get<Submission[]>(`http://localhost:3001/api/employee/submissions`, {
+            params: { employee_id: employeeId }
+        });
+    }
+
+    // ==================== Manager API ====================
+
+    /**
+     * 取得待審核列表
+     */
+    getPendingApprovals(status?: string): Observable<Submission[]> {
+        const params: any = {};
+        if (status) params.status = status;
+        return this.http.get<Submission[]>(`http://localhost:3001/api/manager/approvals`, { params });
+    }
+
+    /**
+     * 取得單一提交詳情 (含 PDF 與 Mapping 用於預覽)
+     */
+    getSubmissionDetail(id: string): Observable<any> {
+        return this.http.get<any>(`http://localhost:3001/api/manager/approvals/${id}`);
+    }
+
+    /**
+     * 核准提交
+     */
+    approveSubmission(id: string, data: { approver_id: string; approval_note?: string }): Observable<any> {
+        return this.http.post(`http://localhost:3001/api/manager/approvals/${id}/approve`, data);
+    }
+
+    /**
+     * 退回提交
+     */
+    rejectSubmission(id: string, data: { approver_id: string; approval_note: string }): Observable<any> {
+        return this.http.post(`http://localhost:3001/api/manager/approvals/${id}/reject`, data);
+    }
+
+    /**
+     * 取得簽核統計
+     */
+    getApprovalStats(): Observable<any> {
+        return this.http.get<any>(`http://localhost:3001/api/manager/approvals/stats/summary`);
     }
 }

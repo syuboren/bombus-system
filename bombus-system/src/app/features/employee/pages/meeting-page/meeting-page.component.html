@@ -70,7 +70,8 @@
             <div class="day-events">
               @for (event of day.events.slice(0, 3); track event.id) {
               <div class="event-dot" [style.background-color]="event.color" [title]="event.title"
-                (click)="openMeetingDetail(event.meeting)">
+                (click)="openMeetingDetail(event.meeting)" tabindex="0" role="button"
+                (keydown.enter)="openMeetingDetail(event.meeting)">
                 <span class="event-title">{{ event.title }}</span>
               </div>
               }
@@ -97,7 +98,8 @@
         } @else {
         <div class="today-meetings">
           @for (event of todayMeetings(); track event.id) {
-          <div class="today-meeting-card" (click)="openMeetingDetail(event.meeting)">
+          <div class="today-meeting-card" (click)="openMeetingDetail(event.meeting)" tabindex="0" role="button"
+            (keydown.enter)="openMeetingDetail(event.meeting)">
             <div class="meeting-time">
               <span>{{ formatTime(event.start) }}</span>
               <span class="time-separator">-</span>
@@ -123,7 +125,8 @@
             即將到來
           </h3>
           @for (meeting of upcomingMeetings(); track meeting.id) {
-          <div class="upcoming-card" (click)="openMeetingDetail(meeting)">
+          <div class="upcoming-card" (click)="openMeetingDetail(meeting)" tabindex="0" role="button"
+            (keydown.enter)="openMeetingDetail(meeting)">
             <div class="upcoming-date">
               <span class="date-day">{{ formatDate(meeting.startTime) }}</span>
               <span class="date-time">{{ formatTime(meeting.startTime) }}</span>
@@ -166,7 +169,8 @@
 
       <div class="meeting-list">
         @for (meeting of meetings(); track meeting.id) {
-        <div class="meeting-card" (click)="openMeetingDetail(meeting)">
+        <div class="meeting-card" (click)="openMeetingDetail(meeting)" tabindex="0" role="button"
+          (keydown.enter)="openMeetingDetail(meeting)">
           <div class="meeting-card__indicator" [style.background-color]="getMeetingTypeColor(meeting.type)"></div>
           <div class="meeting-card__content">
             <div class="meeting-card__header">
@@ -543,7 +547,7 @@
           @if (newMeeting().isOnline) {
           <div class="form-group">
             <label class="form-label">會議連結</label>
-            <input type="url" class="form-input" placeholder="輸入線上會議連結 (如: https://meet.google.com/...)"
+            <input type="url" class="form-input" placeholder="輸入線上會議連結 (如: https://meet.google.com/…)"
               [value]="newMeeting().meetingLink || ''"
               (input)="updateNewMeeting('meetingLink', $any($event.target).value)" />
           </div>

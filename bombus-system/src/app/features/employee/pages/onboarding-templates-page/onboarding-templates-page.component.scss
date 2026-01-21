@@ -400,6 +400,46 @@ $module-color: $color-l1-sage;
         color: $color-warning;
     }
 
+    .status-badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+        background-color: var(--color-gray-100);
+        color: var(--color-gray-600);
+
+        &.active {
+            background-color: var(--color-green-100);
+            color: var(--color-green-700);
+        }
+    }
+
+    .badges-row {
+        display: flex;
+        gap: 4px;
+        flex-wrap: wrap;
+    }
+
+    .badge {
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 500;
+        border: 1px solid transparent;
+
+        &--public {
+            background-color: var(--color-blue-50);
+            color: var(--color-blue-600);
+            border-color: var(--color-blue-200);
+        }
+
+        &--required {
+            background-color: var(--color-red-50);
+            color: var(--color-red-600);
+            border-color: var(--color-red-200);
+        }
+    }
+
     &.status--signed {
         background: rgba($color-success, 0.15);
         color: $color-success;

@@ -1,0 +1,145 @@
+<app-header pageTitle="文件審核詳情" [breadcrumbs]="['首頁', '員工管理', '簽核管理', '審核詳情']">
+    <!-- Header Action: Back to List -->
+    <button class="btn btn--secondary" routerLink="/employee/onboarding/approval">
+        <i class="ri-arrow-left-line"></i>
+        返回列表
+    </button>
+</app-header>
+
+<!-- 全頁容器 -->
+<div class="approval-page-container">
+    @if (loading()) {
+    <div class="loading-state">
+        <i class="ri-loader-4-line spinner"></i>
+        <span>載入資料中...</span>
+    </div>
+    } @else {
+    <!-- 左右分割佈局 (Split Layout) -->
+    <div class="split-layout">
+
+        <!-- 左側：PDF 預覽 (PDF Panel) -->
+        <div class="pdf-panel">
+            <div class="panel-header">
+                <i class="ri-file-pdf-line"></i>
+                <span>文件預覽內容</span>
+            </div>
+
+            <div class="pdf-scroll-area">
+                @for (page of pages(); track page.pageNumber) {
+                <div class="preview-page" [style.width.px]="page.width" [style.height.px]="page.height">
+                    <canvas #pdfCanvas [width]="page.width" [height]="page.height"></canvas>
+
+                    <!-- 欄位 Overlay -->
+                    @for (field of getFieldsForPage(page.pageNumber); track field.key) {
+                    @if (getPlacementForPage(field, page.pageNumber); as placement) {
+                    <div class="field-overlay" [class.is-checkbox]="field.type === 'checkbox'"
+                        [style.left.px]="placement.x" [style.top.px]="placement.y" [style.width.px]="placement.width"
+                        [style.height.px]="placement.height" [style.font-size.px]="field.font_size || 14">
+
+                        @if (field.type === 'checkbox') {
+                        @if (getFieldValue(field)) {
+                        <i class="ri-check-line" style="font-size: 100%; font-weight: bold;"></i>
+                        }
+                        } @else {
+                        {{ getFieldValue(field) }}
+                        }
+                    </div>
+                    }
+                    }
+                </div>
+                }
+            </div>
+        </div>
+
+        <!-- 右側：審核操作 (Form Panel) -->
+        <div class="form-panel">
+            <div class="panel-header">
+                <i class="ri-check-double-line"></i>
+                <span>審核資訊</span>
+            </div>
+
+            <div class="form-scroll-area">
+                <!-- 基本資訊 -->
+                <div class="info-section">
+                    <h3>基本資訊</h3>
+                    <div class="info-group">
+                        <label>文件名稱</label>
+                        <div class="info-value">{{ submission()?.template_name }}</div>
+                        <div class="info-sub">版本 v{{ submission()?.template_version }}</div>
+                    </div>
+                    <div class="info-group">
+                        <label>提交員工</label>
+                        <div class="info-value">{{ submission()?.employee_name }}</div>
+                        <div class="info-sub">{{ submission()?.employee_email }}</div>
+                    </div>
+                    <div class="info-group">
+                        <label>提交時間</label>
+                        <div class="info-value">{{ formatDate(submission()?.signed_at) }}</div>
+                    </div>
+                </div>
+
+                <!-- 電子簽名 -->
+                @if (submission()?.signature_base64) {
+                <div class="info-section">
+                    <h3>員工簽署</h3>
+                    <div class="signature-box">
+                        <img [src]="submission()?.signature_base64" class="signature-preview" alt="Signature">
+                    </div>
+                </div>
+                }
+            </div>
+
+            <!-- 底部操作區 (Action Footer) -->
+            <div class="action-footer">
+                @if (submission()?.status === 'SIGNED' && submission()?.approval_status === 'PENDING') {
+                <div class="buttons">
+                    <button class="btn btn--danger outline" (click)="openRejectDialog()">
+                        <i class="ri-close-circle-line"></i> 退回
+                    </button>
+                    <button class="btn btn--primary" (click)="approve()" [disabled]="processingAction()">
+                        @if (processingAction()) {
+                        <i class="ri-loader-4-line spinner"></i> 處理中...
+                        } @else {
+                        <i class="ri-checkbox-circle-line"></i> 核准
+                        }
+                    </button>
+                </div>
+                } @else {
+                <div class="result-status">
+                    <div class="result-badge" [class.approved]="submission()?.approval_status === 'APPROVED'"
+                        [class.rejected]="submission()?.approval_status === 'REJECTED'">
+                        {{ submission()?.approval_status === 'APPROVED' ? '已核准' : (submission()?.approval_status ===
+                        'REJECTED' ? '已退回' : '處理中') }}
+                    </div>
+                    @if (submission()?.approval_note) {
+                    <div class="result-note">
+                        <strong>備註：</strong> {{ submission()?.approval_note }}
+                    </div>
+                    }
+                    <div class="result-time" *ngIf="submission()?.approved_at">
+                        審核時間：{{ formatDate(submission()?.approved_at) }}
+                    </div>
+                </div>
+                }
+            </div>
+        </div>
+    </div>
+    }
+</div>
+
+<!-- 退回確認 Dialog (保留原樣) -->
+@if (showRejectDialog()) {
+<div class="modal-overlay">
+    <div class="modal-container dialog-modal">
+        <h3>確認退回</h3>
+        <p>請輸入退回原因，員工將會收到通知並需重新提交。</p>
+        <textarea [(ngModel)]="actionNote" placeholder="退回原因 (必填)" rows="4" class="reject-reason"></textarea>
+        <div class="modal-actions">
+            <button class="btn btn--secondary" (click)="showRejectDialog.set(false)">取消</button>
+            <button class="btn btn--danger" (click)="confirmReject()" [disabled]="processingAction()">
+                {{ processingAction() ? '處理中...' : '確認退回' }}
+            </button>
+        </div>
+    </div>
+</div>
+}

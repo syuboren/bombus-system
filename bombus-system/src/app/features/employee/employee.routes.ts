@@ -61,5 +61,21 @@ export const EMPLOYEE_ROUTES: Routes = [
     path: 'onboarding/sign/:token',
     loadComponent: () => import('./pages/onboarding-wizard-page/onboarding-wizard-page.component')
       .then(m => m.OnboardingWizardPageComponent)
+  },
+  {
+    path: 'onboarding/my-documents',
+    loadComponent: () => import('./pages/onboarding-documents-page/onboarding-documents-page.component')
+      .then(m => m.OnboardingDocumentsPageComponent)
+  },
+  // 主管簽核功能
+  {
+    path: 'onboarding/approval',
+    loadComponent: () => import('./pages/onboarding-approval-page/onboarding-approval-page.component')
+      .then(m => m.OnboardingApprovalPageComponent)
+  },
+  {
+    path: 'onboarding/approval/:id',
+    loadComponent: () => import('./pages/onboarding-approval-detail-page/onboarding-approval-detail-page.component')
+      .then(m => m.OnboardingApprovalDetailPageComponent)
   }
 ];

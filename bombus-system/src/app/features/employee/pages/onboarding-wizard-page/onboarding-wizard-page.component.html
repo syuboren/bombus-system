@@ -24,16 +24,36 @@
         </div>
         <h2>簽署完成！</h2>
         <p>感謝您完成文件簽署。</p>
-        <p class="success-hint">您可以關閉此頁面。</p>
+        <p class="success-hint">您可以關閉此頁面，或點擊下方按鈕返回列表。</p>
+        <button class="btn btn--primary" (click)="backToDocuments()">
+            <i class="ri-file-list-line"></i>
+            返回我的文件
+        </button>
     </div>
     }
 
     <!-- 階段 1：填寫資料 -->
     @else if (currentPhase() === 'form') {
     <div class="wizard-header">
-        <h1 class="wizard-title">{{ templateName() }}</h1>
+        <h1 class="wizard-title">
+            {{ templateName() }}
+            <span class="version-badge">v{{ templateVersion() || 1 }}</span>
+        </h1>
         <p class="wizard-subtitle">請閱讀左側文件並填寫右側資料，填入的內容會即時顯示在文件中</p>
     </div>
+
+    @if (approvalStatus() === 'REJECTED') {
+    <div class="alert alert--danger">
+        <div class="alert-icon">
+            <i class="ri-error-warning-line"></i>
+        </div>
+        <div class="alert-content">
+            <h4 class="alert-title">文件被退回</h4>
+            <p class="alert-message">退回原因：{{ approvalNote() || '無詳細說明' }}</p>
+            <p class="alert-hint">請依據退回原因修改資料後重新提交。</p>
+        </div>
+    </div>
+    }
 
     <div class="split-layout">
         <!-- 左側：PDF 預覽（即時顯示填入資料）-->
@@ -111,7 +131,7 @@
                     <input type="text" class="field-input" [id]="'field-' + field.key"
                         [value]="formData()[field.key] || ''"
                         (focus)="scrollToPdfField(field.key); highlightField(field.key)" (blur)="highlightField(null)"
-                        (input)="updateField(field.key, $any($event.target).value)" placeholder="請輸入{{ field.label }}">
+                        (input)="updateField(field.key, $any($event.target).value)" placeholder="請輸入{{ field.label }}…">
                     }
                 </div>
                 }
@@ -193,6 +213,15 @@
                     </div>
                     }
                 </div>
+
+                <!-- Show Signature Image if available -->
+                @if (signatureBase64()) {
+                <div class="signature-display"
+                    style="margin-top: 24px; padding: 16px; border: 1px dashed #ccc; border-radius: 8px; text-align: center; background: #fafafa;">
+                    <p style="margin: 0 0 8px; color: #666; font-size: 14px; font-weight: 500;">電子簽署</p>
+                    <img [src]="signatureBase64()" alt="Signature" style="max-height: 80px; max-width: 100%;">
+                </div>
+                }
             </div>
 
             <div class="form-actions" style="justify-content: space-between; display: flex;">
@@ -205,10 +234,25 @@
                     確認無誤，進行簽署
                     <i class="ri-arrow-right-line"></i>
                 </button>
+                } @else if (approvalStatus() === 'REJECTED') {
+                <button class="btn btn--secondary" (click)="backToForm()">
+                    <i class="ri-arrow-left-line"></i>
+                    返回修改
+                </button>
+                <button class="btn btn--primary" (click)="goToSign()">
+                    修改完成，重新簽署
+                    <i class="ri-arrow-right-line"></i>
+                </button>
                 } @else {
-                <div class="readonly-hint" style="text-align: center; width: 100%; color: #666; font-size: 14px;">
-                    <i class="ri-lock-line"></i>
-                    此文件已完成簽署，目前為閱覽模式
+                <div class="readonly-actions" style="width: 100%; display: flex; flex-direction: column; gap: 12px;">
+                    <button class="btn btn--secondary btn--block" (click)="backToDocuments()">
+                        <i class="ri-arrow-left-line"></i>
+                        返回我的文件列表
+                    </button>
+                    <div class="readonly-hint" style="text-align: center; color: #666; font-size: 14px;">
+                        <i class="ri-lock-line"></i>
+                        此文件已完成簽署，目前為閱覽模式
+                    </div>
                 </div>
                 }
             </div>

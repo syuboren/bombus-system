@@ -47,6 +47,11 @@ export class TemplateDesignerPageComponent implements OnInit {
     hasUnsavedChanges = signal(false);
     version = signal(1);
 
+    // 新增模版屬性
+    isPublic = signal(false);
+    isRequired = signal(false);
+    description = signal('');
+
     // 草稿模式狀態
     isDraftMode = signal(false);
     publishingDraft = signal(false);
@@ -129,6 +134,9 @@ export class TemplateDesignerPageComponent implements OnInit {
             next: (template) => {
                 this.templateName.set(template.name);
                 this.version.set(template.version || 1);
+                this.isPublic.set(template.is_public || false);
+                this.isRequired.set(template.is_required || false);
+                this.description.set(template.description || '');
                 this.pdfBase64.set(template.pdf_base64 || null);
                 if (template.mapping_config?.fields) {
                     this.fields.set(template.mapping_config.fields);
@@ -478,6 +486,9 @@ export class TemplateDesignerPageComponent implements OnInit {
 
         const data = {
             name,
+            is_public: this.isPublic(),
+            is_required: this.isRequired(),
+            description: this.description(),
             pdf_base64: this.pdfBase64() || undefined,
             mapping_config: { fields: this.fields() }
         };

@@ -1,11 +1,11 @@
 ---
-name: bombus-devkit
-description: Comprehensive development kit for Bombus project, including Angular Signals generators, Express/SQLite patterns, and UI/UX checklists.
+name: team-standard-devkit
+description: Comprehensive development kit for Angular/SQLite projects, including Angular Signals generators, Express/SQLite patterns, and UI/UX checklists.
 ---
 
-# Bombus Development Kit (Bombus DevKit)
+# Team Standard Development Kit
 
-This skill provides standardized templates and guidelines for developing within the Bombus System ecosystem. It integrates best practices from Angular Signals, Node.js backend patterns, and High-End UI/UX standards.
+This skill provides standardized templates and guidelines for developing within the team's ecosystem. It integrates best practices from Angular Signals, Node.js backend patterns, and High-End UI/UX standards.
 
 ## 1. Frontend: Angular Component Generator (Signals Optimized)
 

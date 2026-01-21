@@ -109,59 +109,9 @@ export class OnboardingTemplatesPageComponent implements OnInit {
         this.router.navigate(['/employee/onboarding/templates', id]);
     }
 
-    // ==================== 簽署連結功能 ====================
-
-    openLinkDialog(templateId: string, event: Event): void {
-        event.stopPropagation();
-        this.selectedTemplateId.set(templateId);
-        this.generatedLink.set(null);
-        this.linkCopied.set(false);
-        this.newLinkEmployeeName.set('');
-        this.newLinkEmployeeEmail.set('');
-        this.showLinkDialog.set(true);
-    }
-
-    closeLinkDialog(): void {
-        this.showLinkDialog.set(false);
-        this.generatedLink.set(null);
-    }
-
-    generateSignLink(): void {
-        const templateId = this.selectedTemplateId();
-        if (!templateId) return;
-
-        this.linkDialogLoading.set(true);
-        this.onboardingService.createSignLink({
-            template_id: templateId,
-            employee_name: this.newLinkEmployeeName() || undefined,
-            employee_email: this.newLinkEmployeeEmail() || undefined
-        }).subscribe({
-            next: (response) => {
-                // 轉換為完整 URL
-                const fullUrl = `${window.location.origin}${response.sign_url}`;
-                this.generatedLink.set({ ...response, sign_url: fullUrl });
-                this.linkDialogLoading.set(false);
-            },
-            error: (err) => {
-                console.error('Failed to generate sign link:', err);
-                alert('產生連結失敗');
-                this.linkDialogLoading.set(false);
-            }
-        });
-    }
-
-    copyToClipboard(): void {
-        const link = this.generatedLink();
-        if (!link) return;
-
-        navigator.clipboard.writeText(link.sign_url).then(() => {
-            this.linkCopied.set(true);
-            setTimeout(() => this.linkCopied.set(false), 2000);
-        }).catch(err => {
-            console.error('Failed to copy:', err);
-            alert('複製失敗，請手動複製');
-        });
-    }
+    // ==================== 簽署連結功能 (已移除) ====================
+    // Future: 員工登入後自動看到待辦事項，無需 HR 手動產生連結
+    // 連結生成相關程式碼已移除
 
     // ==================== 提交記錄功能 ====================
 

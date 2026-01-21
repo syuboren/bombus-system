@@ -60,7 +60,7 @@
         <div class="filter-bar">
           <div class="filter-item filter-item--search">
             <i class="ri-search-line"></i>
-            <input type="text" placeholder="搜尋姓名、員工編號、職位..." [value]="searchQuery()"
+            <input type="text" placeholder="搜尋姓名、員工編號、職位…" [value]="searchQuery()"
               (input)="searchQuery.set($any($event.target).value)">
           </div>
           <div class="filter-divider"></div>
@@ -106,7 +106,8 @@
               </thead>
               <tbody>
                 @for (employee of filteredEmployees(); track employee.id) {
-                <tr [class.selected]="selectedEmployee()?.id === employee.id">
+                <tr [class.selected]="selectedEmployee()?.id === employee.id" (click)="selectEmployee(employee)"
+                  (keydown.enter)="selectEmployee(employee)" tabindex="0" role="button">
                   <td>
                     <div class="employee-cell">
                       <div class="employee-avatar">{{ employee.name.charAt(0) }}</div>

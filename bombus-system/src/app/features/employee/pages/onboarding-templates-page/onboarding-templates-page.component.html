@@ -4,26 +4,28 @@
 <div class="templates-page">
     <!-- 篩選區塊 -->
     <!-- 篩選區塊 -->
-    <div class="filter-item filter-item--search">
-        <i class="ri-search-line"></i>
-        <input type="text" placeholder="搜尋模板名稱..." [value]="searchQuery()"
-            (input)="searchQuery.set($any($event.target).value)">
+    <div class="filter-bar">
+        <div class="filter-item filter-item--search">
+            <i class="ri-search-line"></i>
+            <input type="text" placeholder="搜尋模板名稱…" [value]="searchQuery()"
+                (input)="searchQuery.set($any($event.target).value)">
+        </div>
+        <div class="filter-divider"></div>
+        <div class="filter-item">
+            <select class="filter-select" [value]="statusFilter()"
+                (change)="statusFilter.set($any($event.target).value)">
+                <option value="">所有狀態</option>
+                <option value="active">已啟用</option>
+                <option value="inactive">已停用</option>
+            </select>
+        </div>
+        <div class="filter-actions">
+            <a routerLink="new" class="btn btn--primary">
+                <i class="ri-add-line"></i>
+                新增模板
+            </a>
+        </div>
     </div>
-    <div class="filter-divider"></div>
-    <div class="filter-item">
-        <select class="filter-select" [value]="statusFilter()" (change)="statusFilter.set($any($event.target).value)">
-            <option value="">所有狀態</option>
-            <option value="active">已啟用</option>
-            <option value="inactive">已停用</option>
-        </select>
-    </div>
-    <div class="filter-actions">
-        <a routerLink="new" class="btn btn--primary">
-            <i class="ri-add-line"></i>
-            新增模板
-        </a>
-    </div>
-    </section>
 
     <!-- 模板列表 -->
     <section class="templates-section">
@@ -55,21 +57,41 @@
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>模板名稱</th>
-                        <th>版本</th>
-                        <th>狀態</th>
-                        <th>建立日期</th>
-                        <th>更新日期</th>
-                        <th>操作</th>
+                        <th style="width: 40%">模板名稱</th>
+                        <th style="width: 15%">狀態</th> <!-- Merged Column -->
+                        <th style="width: 10%">版本</th>
+                        <th style="width: 15%">建立日期</th>
+                        <th style="width: 15%">更新日期</th>
+                        <th style="width: 5%">操作</th>
                     </tr>
                 </thead>
                 <tbody>
                     @for (template of filteredTemplates(); track template.id) {
-                    <tr class="table-row" (click)="navigateToTemplate(template.id)">
+                    <tr class="table-row" (click)="navigateToTemplate(template.id)"
+                        (keydown.enter)="navigateToTemplate(template.id)" tabindex="0" role="button">
                         <td>
                             <div class="template-name-cell">
                                 <i class="ri-file-pdf-line template-icon"></i>
                                 <span class="template-name">{{ template.name }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="badges-row">
+                                <!-- Main Status based on is_public -->
+                                @if (template.is_public) {
+                                <span class="badge badge--success">
+                                    <i class="ri-checkbox-circle-fill"></i> 已上架
+                                </span>
+                                } @else {
+                                <span class="badge badge--neutral">
+                                    <i class="ri-eye-off-line"></i> 未上架
+                                </span>
+                                }
+
+                                <!-- Required Tag -->
+                                @if (template.is_required) {
+                                <span class="badge badge--required">必填</span>
+                                }
                             </div>
                         </td>
                         <td>
@@ -78,18 +100,12 @@
                             <span class="draft-badge">📝 草稿</span>
                             }
                         </td>
-                        <td>
-                            <span class="status-badge" [class.active]="template.is_active">
-                                {{ template.is_active ? '已啟用' : '已停用' }}
-                            </span>
-                        </td>
+                        <!-- Removed separate Status column -->
                         <td>{{ formatDate(template.created_at) }}</td>
                         <td>{{ template.updated_at ? formatDate(template.updated_at) : '-' }}</td>
                         <td>
                             <div class="action-buttons">
-                                <button class="action-btn" title="產生簽署連結" (click)="openLinkDialog(template.id, $event)">
-                                    <i class="ri-link"></i>
-                                </button>
+                                <!-- Removed Generate Link Button -->
                                 <button class="action-btn" title="查看提交記錄"
                                     (click)="openSubmissionsDialog(template, $event)">
                                     <i class="ri-file-list-line"></i>
@@ -111,7 +127,7 @@
                     </tr>
                     } @empty {
                     <tr>
-                        <td colspan="6" class="empty-cell">
+                        <td colspan="7" class="empty-cell">
                             <div class="empty-state empty-state--small">
                                 <i class="ri-search-line"></i>
                                 <p>沒有找到符合條件的模板</p>
@@ -126,62 +142,7 @@
     </section>
 </div>
 
-<!-- 簽署連結對話框 -->
-@if (showLinkDialog()) {
-<div class="dialog-overlay" (click)="closeLinkDialog()">
-    <div class="dialog" (click)="$event.stopPropagation()">
-        <div class="dialog-header">
-            <h3 class="dialog-title">
-                <i class="ri-link"></i>
-                產生簽署連結
-            </h3>
-            <button class="dialog-close" (click)="closeLinkDialog()">
-                <i class="ri-close-line"></i>
-            </button>
-        </div>
-        <div class="dialog-body">
-            @if (!generatedLink()) {
-            <div class="form-group">
-                <label class="form-label">員工姓名（選填）</label>
-                <input type="text" class="form-input" placeholder="請輸入員工姓名" [ngModel]="newLinkEmployeeName()"
-                    (ngModelChange)="newLinkEmployeeName.set($event)">
-            </div>
-            <div class="form-group">
-                <label class="form-label">員工信箱（選填）</label>
-                <input type="email" class="form-input" placeholder="請輸入員工信箱" [ngModel]="newLinkEmployeeEmail()"
-                    (ngModelChange)="newLinkEmployeeEmail.set($event)">
-            </div>
-            } @else {
-            <div class="link-success">
-                <div class="success-icon">
-                    <i class="ri-checkbox-circle-line"></i>
-                </div>
-                <p class="success-text">連結已產生成功！</p>
-                <div class="link-display">
-                    <input type="text" class="link-input" [value]="generatedLink()!.sign_url" readonly>
-                    <button class="btn btn--primary" (click)="copyToClipboard()">
-                        <i [class]="linkCopied() ? 'ri-check-line' : 'ri-file-copy-line'"></i>
-                        {{ linkCopied() ? '已複製' : '複製' }}
-                    </button>
-                </div>
-                <p class="link-hint">請將此連結傳送給員工，員工可透過此連結填寫入職文件並簽署。</p>
-            </div>
-            }
-        </div>
-        <div class="dialog-footer">
-            @if (!generatedLink()) {
-            <button class="btn btn--secondary" (click)="closeLinkDialog()">取消</button>
-            <button class="btn btn--primary" (click)="generateSignLink()" [disabled]="linkDialogLoading()">
-                <i class="ri-link"></i>
-                {{ linkDialogLoading() ? '產生中...' : '產生連結' }}
-            </button>
-            } @else {
-            <button class="btn btn--primary" (click)="closeLinkDialog()">完成</button>
-            }
-        </div>
-    </div>
-</div>
-}
+<!-- Dialog Removed -->
 
 <!-- 提交記錄對話框 -->
 @if (showSubmissionsDialog()) {

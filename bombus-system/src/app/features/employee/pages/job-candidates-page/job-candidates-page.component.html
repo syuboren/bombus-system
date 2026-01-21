@@ -24,7 +24,7 @@
     <div class="filter-bar">
       <div class="filter-item filter-item--search">
         <i class="ri-search-line"></i>
-        <input type="text" placeholder="搜尋姓名、職位、公司、技能..." [value]="searchQuery()"
+        <input type="text" placeholder="搜尋姓名、職位、公司、技能…" [value]="searchQuery()"
           (input)="searchQuery.set($any($event.target).value)">
       </div>
       <div class="filter-divider"></div>
@@ -62,7 +62,7 @@
     <!-- Candidate Grid -->
     <div class="candidate-grid">
       @for (candidate of filteredCandidates(); track candidate.id) {
-      <article class="candidate-card">
+      <article class="candidate-card" tabindex="0" (keydown.enter)="viewProfile(candidate)">
         <div class="card__header">
           <div class="candidate-info">
             <div class="candidate-avatar" [style.background-color]="candidate.avatarColor">
@@ -283,7 +283,7 @@
 
     <div class="form-group">
       <label class="form-label">備註說明</label>
-      <textarea class="form-textarea" rows="3" placeholder="輸入面試相關備註..." [value]="interviewNotes()"
+      <textarea class="form-textarea" rows="3" placeholder="輸入面試相關備註…" [value]="interviewNotes()"
         (input)="interviewNotes.set($any($event.target).value)"></textarea>
     </div>
   </div>

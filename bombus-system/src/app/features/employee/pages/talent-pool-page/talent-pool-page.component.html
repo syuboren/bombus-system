@@ -62,7 +62,7 @@
           <div class="filter-row-top">
             <div class="filter-item filter-item--search">
               <i class="ri-search-line"></i>
-              <input type="text" placeholder="搜尋姓名、職位、公司、技能..." [value]="searchQuery()"
+              <input type="text" placeholder="搜尋姓名、職位、公司、技能…" [value]="searchQuery()"
                 (input)="searchQuery.set($any($event.target).value)">
             </div>
             <div class="filter-divider"></div>
@@ -112,7 +112,8 @@
           <div class="candidate-grid">
             @for (candidate of filteredCandidates(); track candidate.id) {
             <article class="candidate-card" [class.selected]="selectedCandidate()?.id === candidate.id"
-              (click)="selectCandidate(candidate)">
+              (click)="selectCandidate(candidate)" tabindex="0" role="button"
+              (keydown.enter)="selectCandidate(candidate)">
               <div class="candidate-header">
                 <div class="candidate-avatar">
                   {{ candidate.name.charAt(0) }}

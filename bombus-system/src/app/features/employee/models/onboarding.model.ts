@@ -30,6 +30,9 @@ export interface Template {
     name: string;
     version: number;
     is_active: boolean;
+    is_public: boolean;
+    is_required: boolean;
+    description?: string;
     pdf_base64?: string;
     mapping_config?: MappingConfig;
     created_at: string;
@@ -41,6 +44,9 @@ export interface TemplateListItem {
     name: string;
     version: number;
     is_active: boolean;
+    is_public?: boolean;
+    is_required?: boolean;
+    description?: string;
     has_draft?: boolean;
     created_at: string;
     updated_at?: string;
@@ -58,12 +64,20 @@ export interface Submission {
     signature_base64?: string;
     signed_at?: string;
     ip_address?: string;
+    // Expanded fields
+    template_name?: string;
+    approval_status?: string;
+    approver_id?: string;
+    approval_note?: string;
+    approved_at?: string;
     created_at: string;
 }
 
 export interface SignSchema {
     template_name: string;
     status: string;
+    approval_status?: string;
+    approval_note?: string;
     steps: SignStep[];
 }
 
@@ -77,6 +91,16 @@ export interface SignField {
     label: string;
     type: 'text' | 'date' | 'signature' | 'checkbox';
     required: boolean;
+}
+
+export interface FormField {
+    key: string;
+    label: string;
+    type: 'text' | 'date' | 'signature' | 'checkbox' | string;
+    required: boolean;
+    font_size?: number;
+    group?: string;
+    placements: FieldPlacement[];
 }
 
 export interface CreateSignLinkResponse {

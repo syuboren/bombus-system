@@ -19,26 +19,34 @@ const { v4: uuidv4 } = require('uuid');
  */
 router.post('/create', (req, res) => {
     try {
-        const { template_id, employee_name, employee_email } = req.body;
+        const { template_id, employee_name, employee_email, employee_id } = req.body;
+
+        console.log(`[CREATE_LINK] Request for template_id: ${template_id}, employee_id: ${employee_id}`);
 
         // 驗證模板存在並取得當前版本
         const template = prepare('SELECT id, version FROM templates WHERE id = ?').get(template_id);
         if (!template) {
+            console.error('[CREATE_LINK] Template not found');
             return res.status(404).json({ error: 'Template not found' });
         }
 
         const id = uuidv4();
         const token = uuidv4().replace(/-/g, '').substring(0, 16);
 
+        console.log(`[CREATE_LINK] Generated token: ${token}`);
+
         // sql.js 無法處理 undefined，需轉為 null
         const safeName = employee_name || null;
         const safeEmail = employee_email || null;
+        const safeEmployeeId = employee_id || null;
         const version = template.version;
 
         prepare(`
-            INSERT INTO submissions (id, template_id, token, employee_name, employee_email, status, template_version) 
-            VALUES (?, ?, ?, ?, ?, 'DRAFT', ?)
-        `).run(id, template_id, token, safeName, safeEmail, version);
+            INSERT INTO submissions (id, template_id, token, employee_name, employee_email, status, template_version, employee_id) 
+            VALUES (?, ?, ?, ?, ?, 'DRAFT', ?, ?)
+        `).run(id, template_id, token, safeName, safeEmail, version, safeEmployeeId);
+
+        console.log(`[CREATE_LINK] Submission saved to DB`);
 
         res.status(201).json({
             id,
@@ -97,32 +105,55 @@ router.get('/:token', (req, res) => {
         let pdfBase64 = null;
 
         // 2. 決定要從哪裡讀取模板內容 (Snapshot or Live)
-        if (submission.template_version) {
-            // 從歷史版本讀取
-            const versionData = prepare(`
-                SELECT mapping_config, pdf_base64
-                FROM template_versions
-                WHERE template_id = ? AND version = ?
-            `).get(submission.template_id, submission.template_version);
+        // 2. 決定要從哪裡讀取模板內容 (Snapshot or Live)
+        // 如果是 DRAFT 或 REJECTED 狀態，總是讀取「最新版」並更新 submission 記錄
+        // 如果是 SIGNED 或 COMPLETED，則讀取「歷史版」
+        const isEditable = submission.status === 'DRAFT' || submission.status === 'REJECTED' || submission.approval_status === 'REJECTED';
 
-            if (versionData) {
-                mappingConfigRaw = versionData.mapping_config;
-                pdfBase64 = versionData.pdf_base64;
+        if (isEditable) {
+            // --- 讀取最新版 ---
+            const latest = prepare('SELECT version, mapping_config, pdf_base64 FROM templates WHERE id = ?').get(submission.template_id);
+            if (latest) {
+                // 如果版本不同，更新 submission 的版本號，確保簽署時記錄的是當下版本
+                if (latest.version !== submission.template_version) {
+                    prepare('UPDATE submissions SET template_version = ? WHERE token = ?').run(latest.version, token);
+                    submission.template_version = latest.version; // Update local variable for response
+                }
+
+                mappingConfigRaw = latest.mapping_config;
+                pdfBase64 = latest.pdf_base64;
             } else {
-                // 若找不到對應版本 (可能被刪除?)，Fallback 到最新版
-                console.warn(`Version ${submission.template_version} not found for template ${submission.template_id}, falling back to latest.`);
+                // Should not happen, but fallback
+                console.error('Template not found for id:', submission.template_id);
+            }
+        } else {
+            // --- 讀取歷史版 (已簽署) ---
+            if (submission.template_version) {
+                const versionData = prepare(`
+                    SELECT mapping_config, pdf_base64
+                    FROM template_versions
+                    WHERE template_id = ? AND version = ?
+                `).get(submission.template_id, submission.template_version);
+
+                if (versionData) {
+                    mappingConfigRaw = versionData.mapping_config;
+                    pdfBase64 = versionData.pdf_base64;
+                } else {
+                    // Fallback (e.g. version record missing)
+                    console.warn(`Version ${submission.template_version} not found, falling back to latest.`);
+                    const latest = prepare('SELECT mapping_config, pdf_base64 FROM templates WHERE id = ?').get(submission.template_id);
+                    if (latest) {
+                        mappingConfigRaw = latest.mapping_config;
+                        pdfBase64 = latest.pdf_base64;
+                    }
+                }
+            } else {
+                // No version recorded (legacy data), load latest
                 const latest = prepare('SELECT mapping_config, pdf_base64 FROM templates WHERE id = ?').get(submission.template_id);
                 if (latest) {
                     mappingConfigRaw = latest.mapping_config;
                     pdfBase64 = latest.pdf_base64;
                 }
-            }
-        } else {
-            // 舊資料 (無 version)，讀取最新版
-            const latest = prepare('SELECT mapping_config, pdf_base64 FROM templates WHERE id = ?').get(submission.template_id);
-            if (latest) {
-                mappingConfigRaw = latest.mapping_config;
-                pdfBase64 = latest.pdf_base64;
             }
         }
 
@@ -147,6 +178,8 @@ router.get('/:token', (req, res) => {
         res.json({
             template_name: submission.template_name,
             status: submission.status,
+            approval_status: submission.approval_status, // 新增
+            approval_note: submission.approval_note,     // 新增
             template_version: submission.template_version, // 回傳版本號
             pdf_base64: pdfBase64 || null,
             form_data: formData, // 回傳已填寫資料
@@ -198,13 +231,14 @@ router.post('/:token/submit', (req, res) => {
         // 更新 submission
         prepare(`
       UPDATE submissions 
-      SET form_data = ?, signature_base64 = ?, status = 'SIGNED', signed_at = datetime('now'), ip_address = ?
+      SET form_data = ?, signature_base64 = ?, status = 'SIGNED', signed_at = datetime('now'), ip_address = ?, approval_status = 'PENDING'
       WHERE token = ?
     `).run(JSON.stringify(form_data), signature_base64, ip_address, token);
 
         res.json({
             message: 'Document signed successfully',
-            status: 'SIGNED'
+            status: 'SIGNED',
+            approval_status: 'PENDING'
         });
     } catch (error) {
         console.error('Error submitting signature:', error);

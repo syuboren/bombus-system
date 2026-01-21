@@ -26,9 +26,13 @@ async function start() {
         // Routes (loaded after DB init)
         const templatesRouter = require('./routes/templates');
         const submissionsRouter = require('./routes/submissions');
+        const employeeRouter = require('./routes/employee');
+        const approvalsRouter = require('./routes/approvals');
 
         app.use('/api/onboarding/templates', templatesRouter);
         app.use('/api/onboarding/sign', submissionsRouter);
+        app.use('/api/employee', employeeRouter);
+        app.use('/api/manager/approvals', approvalsRouter);
 
         app.listen(PORT, () => {
             console.log(`🚀 Onboarding API Server running on http://localhost:${PORT}`);

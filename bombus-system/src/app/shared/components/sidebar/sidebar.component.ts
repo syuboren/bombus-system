@@ -64,7 +64,9 @@ export class SidebarComponent {
             { label: '員工檔案管理', icon: '', route: '/employee/profile' },
             { label: '人才庫管理', icon: '', route: '/employee/talent-pool' },
             { label: '會議管理', icon: '', route: '/employee/meeting' },
-            { label: '入職簽署', icon: '', route: '/employee/onboarding/templates' }
+            { label: '入職文件管理', icon: '', route: '/employee/onboarding/templates' },
+            { label: '我的入職文件', icon: '', route: '/employee/onboarding/my-documents' },
+            { label: '入職簽核管理', icon: '', route: '/employee/onboarding/approval' }
           ]
         },
         {

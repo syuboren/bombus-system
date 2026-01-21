@@ -14,7 +14,7 @@ const { v4: uuidv4 } = require('uuid');
 router.get('/', (req, res) => {
     try {
         const templates = prepare(`
-      SELECT id, name, version, is_active, has_draft, created_at, updated_at
+      SELECT id, name, version, is_active, is_public, is_required, description, has_draft, created_at, updated_at
       FROM templates
       ORDER BY created_at DESC
     `).all();
@@ -62,7 +62,7 @@ router.get('/:id', (req, res) => {
  */
 router.post('/', (req, res) => {
     try {
-        const { name, pdf_base64, mapping_config } = req.body;
+        const { name, pdf_base64, mapping_config, is_public, is_required, description } = req.body;
 
         const id = uuidv4();
         const mappingJson = mapping_config ? JSON.stringify(mapping_config) : null;
@@ -70,9 +70,9 @@ router.post('/', (req, res) => {
 
         // 1. 建立模板 (Version 1)
         prepare(`
-      INSERT INTO templates (id, name, pdf_base64, mapping_config, version)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(id, name, pdf_base64, mappingJson, initialVersion);
+      INSERT INTO templates (id, name, pdf_base64, mapping_config, version, is_public, is_required, description)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, name, pdf_base64, mappingJson, initialVersion, is_public ? 1 : 0, is_required ? 1 : 0, description || null);
 
         // 2. 立即建立 V1 快照
         const versionId = uuidv4();
@@ -96,7 +96,7 @@ router.post('/', (req, res) => {
  */
 router.put('/:id', (req, res) => {
     try {
-        const { name, pdf_base64, mapping_config, is_active } = req.body;
+        const { name, pdf_base64, mapping_config, is_active, is_public, is_required, description } = req.body;
         const { id } = req.params;
 
         const existing = prepare('SELECT * FROM templates WHERE id = ?').get(id);
@@ -108,13 +108,16 @@ router.put('/:id', (req, res) => {
 
         prepare(`
       UPDATE templates 
-      SET name = ?, pdf_base64 = ?, mapping_config = ?, is_active = ?, updated_at = datetime('now')
+      SET name = ?, pdf_base64 = ?, mapping_config = ?, is_active = ?, is_public = ?, is_required = ?, description = ?, updated_at = datetime('now')
       WHERE id = ?
     `).run(
             name ?? existing.name,
             pdf_base64 ?? existing.pdf_base64,
             mappingJson,
             is_active ?? existing.is_active,
+            is_public !== undefined ? (is_public ? 1 : 0) : existing.is_public,
+            is_required !== undefined ? (is_required ? 1 : 0) : existing.is_required,
+            description !== undefined ? description : existing.description,
             id
         );
 
@@ -137,6 +140,10 @@ router.put('/:id', (req, res) => {
 router.delete('/:id', (req, res) => {
     try {
         const { id } = req.params;
+
+        // 手動級聯刪除 (Manual Cascade Delete)
+        prepare('DELETE FROM submissions WHERE template_id = ?').run(id);
+        prepare('DELETE FROM template_versions WHERE template_id = ?').run(id);
 
         const result = prepare('DELETE FROM templates WHERE id = ?').run(id);
 
