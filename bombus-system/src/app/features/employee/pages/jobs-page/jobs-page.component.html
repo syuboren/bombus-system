@@ -14,6 +14,19 @@
 
     <!-- Filter Bar (參考 project-list 風格) -->
     <div class="filter-bar">
+      <!-- 資料來源切換 -->
+      <div class="tab-group">
+        <button class="tab-btn" [class.active]="dataSource() === 'internal'" (click)="switchDataSource('internal')"
+          type="button">
+          <i class="ri-home-office-line"></i>
+          內部職缺
+        </button>
+        <button class="tab-btn" [class.active]="dataSource() === '104'" (click)="switchDataSource('104')" type="button">
+          <i class="ri-global-line"></i>
+          104 職缺 (Sandbox)
+        </button>
+      </div>
+      <div class="filter-divider"></div>
       <div class="filter-item filter-item--search">
         <i class="ri-search-line"></i>
         <input type="text" placeholder="搜尋職稱、部門…" [value]="searchQuery()"
@@ -38,6 +51,7 @@
           <option value="published">刊登中</option>
           <option value="draft">草稿</option>
           <option value="review">審核中</option>
+          <option value="closed">已關閉</option>
         </select>
       </div>
       <button class="btn btn-primary" (click)="openModal()" type="button">
@@ -48,10 +62,17 @@
 
     <!-- Job Table -->
     <div class="table-card">
+      @if (dataSource() === '104' && loading104()) {
+      <div class="loading-overlay">
+        <i class="ri-loader-4-line spin"></i>
+        <span>載入 104 職缺中...</span>
+      </div>
+      }
       <table class="job-table">
         <thead>
           <tr>
             <th>職缺名稱</th>
+            <th>來源</th>
             <th>部門</th>
             <th>發布日期</th>
             <th>應徵狀況</th>
@@ -65,7 +86,16 @@
           <tr>
             <td>
               <div class="job-title">{{ job.title }}</div>
-              <div class="job-id">ID: {{ job.id }}</div>
+              <div class="job-id">ID: {{ job.id }}@if (job.job104No) { (104: {{ job.job104No }}) }</div>
+            </td>
+            <td>
+              <span class="source-badge" [class.source-badge--104]="job.source === '104'">
+                @if (job.source === '104') {
+                <i class="ri-global-line"></i> 104
+                } @else {
+                <i class="ri-home-office-line"></i> 內部
+                }
+              </span>
             </td>
             <td>{{ job.department }}</td>
             <td>{{ job.publishDate || '--' }}</td>
@@ -90,6 +120,24 @@
             <td>{{ job.recruiter }}</td>
             <td>
               <div class="action-group">
+                @if (job.status === 'draft') {
+                <button class="icon-btn icon-btn--success" title="送出審核" (click)="updateJobStatus(job, 'review')"
+                  type="button">
+                  <i class="ri-send-plane-fill"></i>
+                </button>
+                }
+
+                @if (job.status === 'review') {
+                <button class="icon-btn icon-btn--success" title="核准發布" (click)="updateJobStatus(job, 'published')"
+                  type="button">
+                  <i class="ri-checkbox-circle-line"></i>
+                </button>
+                <button class="icon-btn icon-btn--warning" title="退回草稿" (click)="updateJobStatus(job, 'draft')"
+                  type="button">
+                  <i class="ri-arrow-go-back-line"></i>
+                </button>
+                }
+
                 @if (job.status === 'published') {
                 <button class="icon-btn" title="匯入履歷" (click)="openImportModal(job)" type="button">
                   <i class="ri-upload-cloud-line"></i>
@@ -97,22 +145,25 @@
                 <button class="icon-btn" title="查看候選人" (click)="viewCandidates(job)" type="button">
                   <i class="ri-user-search-line"></i>
                 </button>
-                }
-                @if (job.status === 'review') {
-                <button class="icon-btn" title="審核" type="button">
-                  <i class="ri-check-double-line"></i>
+                <button class="icon-btn icon-btn--danger" title="關閉職缺" (click)="updateJobStatus(job, 'closed')"
+                  type="button">
+                  <i class="ri-stop-circle-line"></i>
                 </button>
                 }
-                <button class="icon-btn" title="編輯職缺" (click)="editJob(job)" type="button">
+
+                @if (job.status === 'closed') {
+                <button class="icon-btn" title="重新開啟" (click)="updateJobStatus(job, 'draft')" type="button">
+                  <i class="ri-refresh-line"></i>
+                </button>
+                }
+
+                <button class="icon-btn" title="編輯職缺" (click)="openEditModal(job)" type="button">
                   <i class="ri-edit-line"></i>
                 </button>
+
                 @if (job.status === 'draft') {
-                <button class="icon-btn icon-btn--danger" title="刪除" type="button">
+                <button class="icon-btn icon-btn--danger" title="刪除" (click)="confirmDeleteJob(job)" type="button">
                   <i class="ri-delete-bin-line"></i>
-                </button>
-                } @else {
-                <button class="icon-btn" title="更多" type="button">
-                  <i class="ri-more-2-fill"></i>
                 </button>
                 }
               </div>
@@ -120,9 +171,13 @@
           </tr>
           } @empty {
           <tr>
-            <td colspan="7" class="empty-row">
+            <td colspan="8" class="empty-row">
               <i class="ri-folder-open-line"></i>
+              @if (dataSource() === '104') {
+              <p>104 Sandbox 無職缺資料，請確認 API 連線狀態</p>
+              } @else {
               <p>目前沒有職缺資料</p>
+              }
             </td>
           </tr>
           }
@@ -202,10 +257,219 @@
         (input)="updateJobField('description', $any($event.target).value)">
         </textarea>
     </div>
+    <!-- 同步至 104 選項 -->
+    <div class="sync-option">
+      <label class="sync-checkbox">
+        <input type="checkbox" [checked]="newJob().syncTo104" (change)="toggleSyncTo104($any($event.target).checked)">
+        <span class="sync-checkbox__mark"></span>
+        <span class="sync-checkbox__label">
+          <i class="ri-global-line"></i>
+          填寫 104 (Sandbox) 設定
+        </span>
+      </label>
+      <p class="sync-option__hint">勾選後請填寫下方 104 詳細設定，職缺將在核准發布時自動同步</p>
+    </div>
+
+    <!-- 104 詳細設定 (勾選同步時展開) -->
+    @if (newJob().syncTo104) {
+    <div class="job104-settings">
+      <div class="job104-settings__header">
+        <i class="ri-settings-3-line"></i>
+        <span>104 職缺詳細設定</span>
+      </div>
+
+      <div class="job104-settings__body">
+        <!-- 職缺類型 -->
+        <div class="form-row">
+          <div class="form-group form-group--half">
+            <label class="form-label">職缺類型 <span class="required">*</span></label>
+            <select class="form-select" [value]="newJob().job104.role"
+              (change)="updateJob104Field('role', +$any($event.target).value)">
+              <option [value]="1">全職</option>
+              <option [value]="2">兼職</option>
+              <option [value]="3">高階主管</option>
+            </select>
+          </div>
+          <div class="form-group form-group--half">
+            <label class="form-label">工作地區 <span class="required">*</span></label>
+            <select class="form-select" [value]="newJob().job104.addrNo"
+              (change)="updateJob104Field('addrNo', +$any($event.target).value)">
+              <option [value]="6001001001">台北市</option>
+              <option [value]="6001002001">新北市</option>
+              <option [value]="6001005001">桃園市</option>
+              <option [value]="6001008001">台中市</option>
+              <option [value]="6001014001">台南市</option>
+              <option [value]="6001015001">高雄市</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 職務類別 (根據職缺類型動態切換) -->
+        <div class="form-group">
+          <label class="form-label">職務類別 <span class="required">*</span></label>
+          @if (newJob().job104.role === 3) {
+          <!-- 高階主管類別 (9xxx 系列) -->
+          <select class="form-select" [value]="newJob().job104.jobCatSet[0]"
+            (change)="updateJob104Field('jobCatSet', [+$any($event.target).value])">
+            <option [value]="9001001000">總經理/副總 (General Manager)</option>
+            <option [value]="9001002000">經營管理高階主管</option>
+            <option [value]="9001003000">特別助理 (Special Assistant)</option>
+            <option [value]="9002001000">財務或會計高階主管</option>
+            <option [value]="9002002000">金融高階主管</option>
+            <option [value]="9003001000">法務部門高階主管</option>
+          </select>
+          } @else {
+          <!-- 全職/兼職類別 (2xxx 系列) -->
+          <select class="form-select" [value]="newJob().job104.jobCatSet[0]"
+            (change)="updateJob104Field('jobCatSet', [+$any($event.target).value])">
+            <option [value]="2001001001">經營管理主管</option>
+            <option [value]="2001002001">人力資源主管</option>
+            <option [value]="2001002002">人力資源人員</option>
+            <option [value]="2001002003">教育訓練人員</option>
+          </select>
+          }
+          <small class="form-hint">註：職務類別需與職缺類型匹配 (高階主管需選高階類別)</small>
+        </div>
+
+        <!-- 薪資 -->
+        <div class="form-row">
+          <div class="form-group form-group--third">
+            <label class="form-label">薪資類型 <span class="required">*</span></label>
+            <select class="form-select" [value]="newJob().job104.salaryType"
+              (change)="updateJob104Field('salaryType', +$any($event.target).value)">
+              <option [value]="10">面議</option>
+              <option [value]="50">月薪</option>
+              <option [value]="60">年薪</option>
+            </select>
+          </div>
+          @if (newJob().job104.salaryType !== 10) {
+          <div class="form-group form-group--third">
+            <label class="form-label">最低薪資</label>
+            <input type="number" class="form-input" placeholder="0" [value]="newJob().job104.salaryLow"
+              (input)="updateJob104Field('salaryLow', +$any($event.target).value)">
+          </div>
+          <div class="form-group form-group--third">
+            <label class="form-label">最高薪資</label>
+            <input type="number" class="form-input" placeholder="0" [value]="newJob().job104.salaryHigh"
+              (input)="updateJob104Field('salaryHigh', +$any($event.target).value)">
+          </div>
+          }
+        </div>
+
+        <!-- 學歷要求 -->
+        <div class="form-group">
+          <label class="form-label">學歷要求 <span class="required">*</span></label>
+          <select class="form-select" [value]="newJob().job104.edu[0]"
+            (change)="updateJob104Field('edu', [+$any($event.target).value])">
+            <option [value]="1">高中以下</option>
+            <option [value]="2">高中職</option>
+            <option [value]="4">專科</option>
+            <option [value]="8">大學</option>
+            <option [value]="16">碩士</option>
+            <option [value]="32">博士</option>
+          </select>
+        </div>
+
+        <!-- 聯絡資訊 -->
+        <div class="form-row">
+          <div class="form-group form-group--half">
+            <label class="form-label">聯絡人 <span class="required">*</span></label>
+            <input type="text" class="form-input" placeholder="HR" [value]="newJob().job104.contact"
+              (input)="updateJob104Field('contact', $any($event.target).value)">
+          </div>
+          <div class="form-group form-group--half">
+            <label class="form-label">聯絡 Email <span class="required">*</span></label>
+            <input type="email" class="form-input" placeholder="hr@company.com" [value]="newJob().job104.email"
+              (input)="updateJob104Field('email', $any($event.target).value)">
+          </div>
+        </div>
+
+        <!-- 上班時段 (新增) -->
+        <div class="form-group">
+          <label class="form-label">上班時段 <span class="required">*</span></label>
+          <div class="work-shift-config">
+            <select class="form-select mb-2" [value]="newJob().job104.workShifts[0].type" (change)="updateJob104Field('workShifts', [{
+                type: +$any($event.target).value,
+                periods: newJob().job104.workShifts[0].periods || [{startHour: 9, startMinute: 0, endHour: 18, endMinute: 0}]
+              }])">
+              <option [value]="1">日班</option>
+              <option [value]="2">夜班</option>
+              <option [value]="4">大夜班</option>
+              <option [value]="8">假日班</option>
+              <option [value]="16">中班</option>
+            </select>
+            <div class="time-range-group">
+              <div class="time-input-group">
+                <input type="number" class="form-input time-input" min="0" max="23" placeholder="9"
+                  [value]="newJob().job104.workShifts[0].periods[0].startHour" (change)="updateJob104Field('workShifts', [{
+                    type: newJob().job104.workShifts[0].type || 1,
+                    periods: [{
+                      startHour: +$any($event.target).value,
+                      startMinute: newJob().job104.workShifts[0].periods[0].startMinute || 0,
+                      endHour: newJob().job104.workShifts[0].periods[0].endHour || 18,
+                      endMinute: newJob().job104.workShifts[0].periods[0].endMinute || 0
+                    }]
+                  }])">
+                <span>:</span>
+                <input type="number" class="form-input time-input" min="0" max="59" step="5" placeholder="00"
+                  [value]="newJob().job104.workShifts[0].periods[0].startMinute" (change)="updateJob104Field('workShifts', [{
+                    type: newJob().job104.workShifts[0].type || 1,
+                    periods: [{
+                      startHour: newJob().job104.workShifts[0].periods[0].startHour || 9,
+                      startMinute: +$any($event.target).value,
+                      endHour: newJob().job104.workShifts[0].periods[0].endHour || 18,
+                      endMinute: newJob().job104.workShifts[0].periods[0].endMinute || 0
+                    }]
+                  }])">
+              </div>
+              <span class="time-separator">至</span>
+              <div class="time-input-group">
+                <input type="number" class="form-input time-input" min="0" max="23" placeholder="18"
+                  [value]="newJob().job104.workShifts[0].periods[0].endHour" (change)="updateJob104Field('workShifts', [{
+                    type: newJob().job104.workShifts[0].type || 1,
+                    periods: [{
+                      startHour: newJob().job104.workShifts[0].periods[0].startHour || 9,
+                      startMinute: newJob().job104.workShifts[0].periods[0].startMinute || 0,
+                      endHour: +$any($event.target).value,
+                      endMinute: newJob().job104.workShifts[0].periods[0].endMinute || 0
+                    }]
+                  }])">
+                <span>:</span>
+                <input type="number" class="form-input time-input" min="0" max="59" step="5" placeholder="00"
+                  [value]="newJob().job104.workShifts[0].periods[0].endMinute" (change)="updateJob104Field('workShifts', [{
+                    type: newJob().job104.workShifts[0].type || 1,
+                    periods: [{
+                      startHour: newJob().job104.workShifts[0].periods[0].startHour || 9,
+                      startMinute: newJob().job104.workShifts[0].periods[0].startMinute || 0,
+                      endHour: newJob().job104.workShifts[0].periods[0].endHour || 18,
+                      endMinute: +$any($event.target).value
+                    }]
+                  }])">
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- 回覆天數 -->
+        <div class="form-group">
+          <label class="form-label">預計回覆天數</label>
+          <select class="form-select" [value]="newJob().job104.replyDay"
+            (change)="updateJob104Field('replyDay', +$any($event.target).value)">
+            <option [value]="0">不限</option>
+            <option [value]="3">3 天內</option>
+            <option [value]="7">7 天內</option>
+            <option [value]="14">14 天內</option>
+            <option [value]="30">30 天內</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    }
   </div>
   <div class="modal__footer">
     <button class="btn btn-secondary" (click)="closeModal()" type="button">取消</button>
-    <button class="btn btn-primary" (click)="saveJob()" type="button">確認發布</button>
+    <button class="btn btn-primary" (click)="saveJob()" type="button">儲存草稿</button>
   </div>
 </div>
 }
@@ -268,6 +532,292 @@
     <button class="btn btn-primary" (click)="importResumes()" type="button">
       <i class="ri-magic-line"></i>
       確認匯入並評分
+    </button>
+  </div>
+</div>
+}
+
+<!-- 編輯職缺 Modal -->
+@if (showEditModal()) {
+<div class="modal-backdrop" (click)="closeEditModal()"></div>
+<div class="modal">
+  <div class="modal__header">
+    <h3 class="modal__title">
+      <i class="ri-edit-line"></i>
+      編輯職缺
+    </h3>
+    <button class="modal__close" (click)="closeEditModal()" type="button">
+      <i class="ri-close-line"></i>
+    </button>
+  </div>
+  <div class="modal__body">
+    <div class="form-group">
+      <label class="form-label">職缺名稱 <span class="required">*</span></label>
+      <input type="text" class="form-input" [value]="newJob().title"
+        (input)="updateJobField('title', $any($event.target).value)" placeholder="例如：資深軟體工程師">
+    </div>
+    <div class="form-group">
+      <label class="form-label">部門 <span class="required">*</span></label>
+      <select class="form-select" [value]="newJob().department"
+        (change)="updateJobField('department', $any($event.target).value)">
+        <option value="">請選擇部門</option>
+        <option value="資訊部">資訊部</option>
+        <option value="人資部">人資部</option>
+        <option value="財務部">財務部</option>
+        <option value="業務部">業務部</option>
+        <option value="行銷部">行銷部</option>
+        <option value="專案部">專案部</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">職缺說明</label>
+      <textarea class="form-textarea" rows="4" [value]="newJob().description"
+        (input)="updateJobField('description', $any($event.target).value)" placeholder="輸入職缺說明..."></textarea>
+    </div>
+
+    @if (editingJob()?.job104No) {
+    <!-- 104 職缺設定區塊 -->
+    <div class="job104-settings">
+      <div class="job104-settings__header">
+        <div class="job104-settings__title">
+          <i class="ri-settings-3-line"></i>
+          <span>104 職缺詳細設定</span>
+        </div>
+        <button class="btn btn-sm btn-outline-info" (click)="syncFrom104()" [disabled]="syncingFrom104()" type="button">
+          @if (syncingFrom104()) {
+          <i class="ri-loader-4-line spin"></i>
+          同步中…
+          } @else {
+          <i class="ri-refresh-line"></i>
+          從 104 同步
+          }
+        </button>
+      </div>
+
+      <div class="job104-settings__body">
+        <!-- 職缺類型 + 工作地區 -->
+        <div class="form-row">
+          <div class="form-group form-group--half">
+            <label class="form-label">職缺類型 <span class="readonly-hint">(無法修改)</span></label>
+            <select class="form-select" [ngModel]="newJob().job104.role" disabled>
+              <option [ngValue]="1">全職</option>
+              <option [ngValue]="2">兼職</option>
+              <option [ngValue]="3">高階主管</option>
+            </select>
+            <small class="form-hint form-hint--warning">* 104 規定職缺類型於建立後無法變更</small>
+          </div>
+
+          <div class="form-group form-group--half">
+            <label class="form-label">工作地區 <span class="required">*</span></label>
+            <select class="form-select" [ngModel]="newJob().job104.addrNo"
+              (ngModelChange)="updateJob104Field('addrNo', $event)">
+              <option [ngValue]="6001001001">台北市</option>
+              <option [ngValue]="6001002001">新北市</option>
+              <option [ngValue]="6001005001">桃園市</option>
+              <option [ngValue]="6001008001">台中市</option>
+              <option [ngValue]="6001014001">台南市</option>
+              <option [ngValue]="6001015001">高雄市</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 職務類別 -->
+        <div class="form-group">
+          <label class="form-label">職務類別 <span class="required">*</span></label>
+          @if (newJob().job104.role === 3) {
+          <select class="form-select" [ngModel]="newJob().job104.jobCatSet[0]"
+            (ngModelChange)="updateJob104Field('jobCatSet', [$event])">
+            <option [ngValue]="9001001000">總經理/副總 (General Manager)</option>
+            <option [ngValue]="9001002000">經營管理高階主管</option>
+            <option [ngValue]="9001003000">特別助理 (Special Assistant)</option>
+            <option [ngValue]="9002001000">財務或會計高階主管</option>
+            <option [ngValue]="9002002000">金融高階主管</option>
+            <option [ngValue]="9003001000">法務部門高階主管</option>
+          </select>
+          } @else {
+          <select class="form-select" [ngModel]="newJob().job104.jobCatSet[0]"
+            (ngModelChange)="updateJob104Field('jobCatSet', [$event])">
+            <option [ngValue]="2001001001">經營管理主管</option>
+            <option [ngValue]="2001002001">人力資源主管</option>
+            <option [ngValue]="2001002002">人力資源人員</option>
+            <option [ngValue]="2001002003">教育訓練人員</option>
+          </select>
+          }
+          <small class="form-hint">註：職務類別需與職缺類型匹配 (高階主管需選高階類別)</small>
+        </div>
+
+        <!-- 薪資類型 -->
+        <div class="form-row">
+          <div class="form-group form-group--third">
+            <label class="form-label">薪資類型 <span class="required">*</span></label>
+            <select class="form-select" [ngModel]="newJob().job104.salaryType"
+              (ngModelChange)="updateJob104Field('salaryType', $event)">
+              <option [ngValue]="10">面議</option>
+              <option [ngValue]="50">月薪</option>
+              <option [ngValue]="60">年薪</option>
+            </select>
+          </div>
+          @if (newJob().job104.salaryType !== 10) {
+          <div class="form-group form-group--third">
+            <label class="form-label">最低薪資</label>
+            <input type="number" class="form-input" placeholder="0" [value]="newJob().job104.salaryLow"
+              (input)="updateJob104Field('salaryLow', +$any($event.target).value)">
+          </div>
+          <div class="form-group form-group--third">
+            <label class="form-label">最高薪資</label>
+            <input type="number" class="form-input" placeholder="0" [value]="newJob().job104.salaryHigh"
+              (input)="updateJob104Field('salaryHigh', +$any($event.target).value)">
+          </div>
+          }
+        </div>
+
+        <!-- 學歷要求 -->
+        <div class="form-group">
+          <label class="form-label">學歷要求 <span class="required">*</span></label>
+          <select class="form-select" [ngModel]="newJob().job104.edu[0]"
+            (ngModelChange)="updateJob104Field('edu', [$event])">
+            <option [ngValue]="1">高中以下</option>
+            <option [ngValue]="2">高中職</option>
+            <option [ngValue]="4">專科</option>
+            <option [ngValue]="8">大學</option>
+            <option [ngValue]="16">碩士</option>
+            <option [ngValue]="32">博士</option>
+          </select>
+        </div>
+
+        <!-- 聯絡資訊 -->
+        <div class="form-row">
+          <div class="form-group form-group--half">
+            <label class="form-label">聯絡人 <span class="required">*</span></label>
+            <input type="text" class="form-input" placeholder="HR" [value]="newJob().job104.contact"
+              (input)="updateJob104Field('contact', $any($event.target).value)">
+          </div>
+          <div class="form-group form-group--half">
+            <label class="form-label">聯絡 Email <span class="required">*</span></label>
+            <input type="email" class="form-input" placeholder="hr@company.com" [value]="newJob().job104.email"
+              (input)="updateJob104Field('email', $any($event.target).value)">
+          </div>
+        </div>
+
+        <!-- 上班時段 -->
+        <div class="form-group">
+          <label class="form-label">上班時段 <span class="required">*</span></label>
+          <div class="work-shift-config">
+            <select class="form-select mb-2" [ngModel]="newJob().job104.workShifts[0].type" (ngModelChange)="updateJob104Field('workShifts', [{
+                  type: $event,
+                  periods: newJob().job104.workShifts[0].periods || [{startHour: 9, startMinute: 0, endHour: 18, endMinute: 0}]
+                }])">
+              <option [ngValue]="1">日班</option>
+              <option [ngValue]="2">夜班</option>
+              <option [ngValue]="4">大夜班</option>
+              <option [ngValue]="8">假日班</option>
+              <option [ngValue]="16">中班</option>
+            </select>
+            <div class="time-range-group">
+              <div class="time-input-group">
+                <input type="number" class="form-input time-input" min="0" max="23" placeholder="9"
+                  [value]="newJob().job104.workShifts[0].periods[0].startHour" (change)="updateJob104Field('workShifts', [{
+                    type: newJob().job104.workShifts[0].type || 1,
+                    periods: [{
+                      startHour: +$any($event.target).value,
+                      startMinute: newJob().job104.workShifts[0].periods[0].startMinute || 0,
+                      endHour: newJob().job104.workShifts[0].periods[0].endHour || 18,
+                      endMinute: newJob().job104.workShifts[0].periods[0].endMinute || 0
+                    }]
+                  }])">
+                <span>:</span>
+                <input type="number" class="form-input time-input" min="0" max="59" step="5" placeholder="00"
+                  [value]="newJob().job104.workShifts[0].periods[0].startMinute" (change)="updateJob104Field('workShifts', [{
+                    type: newJob().job104.workShifts[0].type || 1,
+                    periods: [{
+                      startHour: newJob().job104.workShifts[0].periods[0].startHour || 9,
+                      startMinute: +$any($event.target).value,
+                      endHour: newJob().job104.workShifts[0].periods[0].endHour || 18,
+                      endMinute: newJob().job104.workShifts[0].periods[0].endMinute || 0
+                    }]
+                  }])">
+              </div>
+              <span class="time-separator">至</span>
+              <div class="time-input-group">
+                <input type="number" class="form-input time-input" min="0" max="23" placeholder="18"
+                  [value]="newJob().job104.workShifts[0].periods[0].endHour" (change)="updateJob104Field('workShifts', [{
+                    type: newJob().job104.workShifts[0].type || 1,
+                    periods: [{
+                      startHour: newJob().job104.workShifts[0].periods[0].startHour || 9,
+                      startMinute: newJob().job104.workShifts[0].periods[0].startMinute || 0,
+                      endHour: +$any($event.target).value,
+                      endMinute: newJob().job104.workShifts[0].periods[0].endMinute || 0
+                    }]
+                  }])">
+                <span>:</span>
+                <input type="number" class="form-input time-input" min="0" max="59" step="5" placeholder="00"
+                  [value]="newJob().job104.workShifts[0].periods[0].endMinute" (change)="updateJob104Field('workShifts', [{
+                    type: newJob().job104.workShifts[0].type || 1,
+                    periods: [{
+                      startHour: newJob().job104.workShifts[0].periods[0].startHour || 9,
+                      startMinute: newJob().job104.workShifts[0].periods[0].startMinute || 0,
+                      endHour: newJob().job104.workShifts[0].periods[0].endHour || 18,
+                      endMinute: +$any($event.target).value
+                    }]
+                  }])">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 回覆天數 -->
+        <div class="form-group">
+          <label class="form-label">預計回覆天數</label>
+          <select class="form-select" [value]="newJob().job104.replyDay"
+            (change)="updateJob104Field('replyDay', +$any($event.target).value)">
+            <option [value]="0">不限</option>
+            <option [value]="3">3 天內</option>
+            <option [value]="7">7 天內</option>
+            <option [value]="14">14 天內</option>
+            <option [value]="30">30 天內</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="sync-info-box">
+      <i class="ri-link"></i>
+      <span>已同步至 104 (jobNo: {{ editingJob()?.job104No }})</span>
+    </div>
+    }
+
+
+
+  </div>
+  <div class="modal__footer">
+    <button class="btn btn-secondary" (click)="closeEditModal()" type="button">取消</button>
+    <button class="btn btn-primary" (click)="saveEditedJob()" type="button">
+      <i class="ri-save-line"></i>
+      儲存變更
+    </button>
+  </div>
+</div>
+}
+
+<!-- 刪除確認對話框 -->
+@if (showDeleteConfirm()) {
+<div class="modal-backdrop" (click)="cancelDelete()"></div>
+<div class="modal modal--small">
+  <div class="modal__header modal__header--danger">
+    <h3 class="modal__title">
+      <i class="ri-error-warning-line"></i>
+      確認刪除
+    </h3>
+  </div>
+  <div class="modal__body">
+    <p class="confirm-text">確定要刪除職缺「<strong>{{ jobToDelete()?.title }}</strong>」嗎？</p>
+    <p class="confirm-warning">此操作無法復原</p>
+  </div>
+  <div class="modal__footer">
+    <button class="btn btn-secondary" (click)="cancelDelete()" type="button">取消</button>
+    <button class="btn btn-danger" (click)="executeDelete()" type="button">
+      <i class="ri-delete-bin-line"></i>
+      確認刪除
     </button>
   </div>
 </div>

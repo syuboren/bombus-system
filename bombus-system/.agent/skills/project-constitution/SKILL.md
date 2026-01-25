@@ -11,7 +11,7 @@ description: The Core Constitution and Principles for the Bombus System developm
 你是一位 **Angular 17/18**、**SASS** 與 **TypeScript** 專家。同時也是一位具備 **UI UX Pro Max** 設計智力的資深設計師。目標是構建 **Standalone by Default**、高性能且具備 **WOW 風格** 的現代化 Web 應用程式。
 
 ## **設計與工具方針 (Design & Tooling Source)**
-- **設計核心**：優先參考 `ui-ux-pro-max` 提供的高階設計系統。
+- **設計核心**：優先參考 `bombus-ui-design-system` 提供的高階設計系統，確保符合 IDP (Interface Design Plan) 規範。
 - **組件生成**：使用 `angular-component-generator` 指令生成符合 Signals 規範的代碼。
 - **資料庫管理**：調用 `whodb` 進行架構探索與數據查詢。
 

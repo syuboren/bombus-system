@@ -453,3 +453,395 @@ $module-color: $color-l1-sage;
     flex-shrink: 0;
   }
 }
+
+// ---------------------------------------------------------------
+// 分頁切換（104 資料來源）
+// ---------------------------------------------------------------
+.tab-group {
+  @include flex-start;
+  gap: 2px;
+  background: $color-cloud-gray;
+  padding: 4px;
+  border-radius: $radius-md;
+}
+
+.tab-btn {
+  @include flex-center;
+  gap: $spacing-xs;
+  padding: $spacing-xs $spacing-md;
+  border: none;
+  background: transparent;
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  border-radius: $radius-sm;
+  cursor: pointer;
+  transition: all $transition-normal;
+
+  i {
+    font-size: 16px;
+  }
+
+  &:hover {
+    color: $color-text-dark;
+    background: rgba(white, 0.5);
+  }
+
+  &.active {
+    background: white;
+    color: $module-color;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+}
+
+// ---------------------------------------------------------------
+// 來源標籤
+// ---------------------------------------------------------------
+.source-badge {
+  @include flex-center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  background: rgba($color-text-secondary, 0.1);
+  color: $color-text-secondary;
+
+  i {
+    font-size: 12px;
+  }
+
+  &--104 {
+    background: rgba($color-info, 0.12);
+    color: $color-info;
+  }
+}
+
+// ---------------------------------------------------------------
+// 同步至 104 選項
+// ---------------------------------------------------------------
+.sync-option {
+  margin-top: $spacing-md;
+  padding: $spacing-md;
+  background: linear-gradient(135deg, rgba($color-info, 0.08), rgba($color-info, 0.03));
+  border: 1px solid rgba($color-info, 0.2);
+  border-radius: $radius-md;
+
+  &__hint {
+    margin: $spacing-xs 0 0 28px;
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+  }
+}
+
+.sync-checkbox {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  cursor: pointer;
+
+  input {
+    display: none;
+  }
+
+  &__mark {
+    width: 18px;
+    height: 18px;
+    border: 2px solid $color-soft-gray;
+    border-radius: 4px;
+    position: relative;
+    transition: all $transition-normal;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 5px;
+      width: 5px;
+      height: 9px;
+      border: solid white;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+      opacity: 0;
+      transition: opacity $transition-normal;
+    }
+  }
+
+  input:checked+&__mark {
+    background: $color-info;
+    border-color: $color-info;
+
+    &::after {
+      opacity: 1;
+    }
+  }
+
+  &__label {
+    @include flex-center;
+    gap: $spacing-xs;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: $color-text-dark;
+
+    i {
+      color: $color-info;
+    }
+  }
+}
+
+// ---------------------------------------------------------------
+// 載入中覆蓋層
+// ---------------------------------------------------------------
+.loading-overlay {
+  @include flex-center;
+  gap: $spacing-sm;
+  padding: $spacing-xl;
+  background: rgba(white, 0.9);
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+
+  .spin {
+    animation: spin 1s linear infinite;
+    font-size: 20px;
+    color: $module-color;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// ---------------------------------------------------------------
+// 表單提示與唯讀標籤
+// ---------------------------------------------------------------
+.readonly-hint {
+  font-size: $font-size-xs;
+  font-weight: normal;
+  color: $color-text-secondary;
+}
+
+.form-hint {
+  display: block;
+  margin-top: $spacing-xs;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+
+  &--warning {
+    color: $color-warning;
+  }
+}
+
+
+// ---------------------------------------------------------------
+// 104 詳細設定區塊
+// ---------------------------------------------------------------
+.job104-settings {
+  margin-top: $spacing-lg;
+  border: 1px solid rgba($color-info, 0.3);
+  border-radius: $radius-lg;
+  overflow: hidden;
+  animation: slideDown 0.3s ease-out;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: $spacing-md $spacing-lg;
+    background: linear-gradient(135deg, rgba($color-info, 0.12), rgba($color-info, 0.06));
+    border-bottom: 1px solid rgba($color-info, 0.2);
+  }
+
+  &__title {
+    @include flex-start;
+    gap: $spacing-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-info;
+
+    i {
+      font-size: 18px;
+    }
+  }
+
+  &__body {
+    padding: $spacing-lg;
+    background: rgba($color-info, 0.02);
+  }
+}
+
+// 小型按鈕
+.btn-sm {
+  padding: $spacing-xs $spacing-sm;
+  font-size: $font-size-xs;
+  border-radius: $radius-sm;
+}
+
+// Outline Info 按鈕
+.btn-outline-info {
+  @include flex-center;
+  gap: 4px;
+  background: transparent;
+  border: 1px solid $color-info;
+  color: $color-info;
+  cursor: pointer;
+  transition: all $transition-normal;
+
+  &:hover:not(:disabled) {
+    background: rgba($color-info, 0.1);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .spin {
+    animation: spin 1s linear infinite;
+  }
+}
+
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// ---------------------------------------------------------------
+// 表單網格佈局
+// ---------------------------------------------------------------
+.form-row {
+  display: flex;
+  gap: $spacing-md;
+  margin-bottom: $spacing-md;
+
+  @include media-max-md {
+    flex-direction: column;
+  }
+}
+
+.form-group--half {
+  flex: 1;
+  min-width: 0;
+}
+
+.form-group--third {
+  flex: 1;
+  min-width: 0;
+}
+
+// ---------------------------------------------------------------
+// 上班時段設定
+// ---------------------------------------------------------------
+.work-shift-config {
+  background: white;
+  padding: $spacing-md;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+
+  .mb-2 {
+    margin-bottom: $spacing-sm;
+  }
+}
+
+.time-range-group {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  margin-top: $spacing-sm;
+}
+
+.time-input-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  span {
+    font-weight: bold;
+    color: $color-text-secondary;
+  }
+}
+
+.time-input {
+  width: 60px;
+  text-align: center;
+  padding: $spacing-xs;
+}
+
+.time-separator {
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+}
+
+// 小型 Modal (用於確認對話框)
+.modal--small {
+  max-width: 400px;
+}
+
+.modal__header--danger {
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+  color: white;
+
+  .modal__title {
+    color: white;
+  }
+}
+
+// 確認對話框文字
+.confirm-text {
+  font-size: 1rem;
+  color: $color-text-primary;
+  margin-bottom: $spacing-sm;
+
+  strong {
+    color: $color-brand-main;
+  }
+}
+
+.confirm-warning {
+  font-size: $font-size-sm;
+  color: #dc3545;
+  margin: 0;
+}
+
+// 危險按鈕
+.btn-danger {
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+  color: white;
+  border: none;
+
+  &:hover {
+    background: linear-gradient(135deg, #c82333 0%, #a71d2a 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(#dc3545, 0.3);
+  }
+}
+
+// 同步資訊提示框
+.sync-info-box {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  background: rgba($color-brand-main, 0.1);
+  border-left: 3px solid $color-brand-main;
+  border-radius: $radius-md;
+  margin-top: $spacing-md;
+  font-size: $font-size-sm;
+  color: $color-brand-main;
+
+  i {
+    font-size: 1.1rem;
+  }
+}

@@ -34,6 +34,18 @@ async function start() {
         app.use('/api/employee', employeeRouter);
         app.use('/api/manager/approvals', approvalsRouter);
 
+        // Jobs Routes
+        const jobsRouter = require('./routes/jobs');
+        app.use('/api/jobs', jobsRouter);
+
+        // Recruitment Routes
+        const recruitmentRouter = require('./routes/recruitment');
+        app.use('/api/recruitment', recruitmentRouter);
+
+        // Integration Routes
+        const integration104Router = require('./routes/integration/104');
+        app.use('/api/integration/104', integration104Router);
+
         app.listen(PORT, () => {
             console.log(`🚀 Onboarding API Server running on http://localhost:${PORT}`);
         });

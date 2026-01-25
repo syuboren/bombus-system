@@ -428,6 +428,38 @@
 .action-buttons {
   @include flex-start;
   gap: $spacing-sm;
+
+  .btn {
+    @include button-base;
+    gap: $spacing-xs;
+  }
+
+  .btn-secondary {
+    background: $color-cloud-gray;
+    color: $color-text-primary;
+
+    &:hover {
+      background: darken($color-cloud-gray, 5%);
+    }
+  }
+
+  .btn-primary {
+    background: $color-l1-sage;
+    color: white;
+
+    &:hover {
+      background: darken($color-l1-sage, 8%);
+    }
+  }
+
+  .btn-warning {
+    background: #F59E0B;
+    color: white;
+
+    &:hover {
+      background: darken(#F59E0B, 8%);
+    }
+  }
 }
 
 // ---------------------------------------------------------------

@@ -16,12 +16,14 @@ import { HeaderComponent } from '../../../../shared/components/header/header.com
 import { NotificationService } from '../../../../core/services/notification.service';
 import { InterviewService } from '../../services/interview.service';
 import { Candidate, CandidateDetail } from '../../models/candidate.model';
+import { InterviewScoringModalComponent } from '../../components/interview-scoring-modal/interview-scoring-modal.component';
+import { HiringDecisionModalComponent } from '../../components/hiring-decision-modal/hiring-decision-modal.component';
 import * as echarts from 'echarts';
 
 @Component({
   selector: 'app-recruitment-page',
   standalone: true,
-  imports: [FormsModule, HeaderComponent],
+  imports: [FormsModule, HeaderComponent, InterviewScoringModalComponent, HiringDecisionModalComponent],
   templateUrl: './recruitment-page.component.html',
   styleUrl: './recruitment-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -47,6 +49,10 @@ export class RecruitmentPageComponent implements OnInit, OnDestroy {
   selectedCandidate = signal<CandidateDetail | null>(null);
   loading = signal<boolean>(false);
 
+  // Modal Visibility
+  showScoringModal = signal<boolean>(false);
+  showDecisionModal = signal<boolean>(false);
+
   // Computed
   filteredCandidates = computed(() => {
     const query = this.searchQuery().toLowerCase();
@@ -59,7 +65,7 @@ export class RecruitmentPageComponent implements OnInit, OnDestroy {
   hireRecommendation = computed(() => {
     const candidate = this.selectedCandidate();
     if (!candidate) return null;
-    return this.interviewService.getHireRecommendation(candidate.aiScores.overall);
+    return this.interviewService.getHireRecommendation(candidate.aiScores?.overall || 0);
   });
 
   // Positive keywords for highlighting
@@ -144,6 +150,35 @@ export class RecruitmentPageComponent implements OnInit, OnDestroy {
     this.notificationService.success('評估報告已匯出');
   }
 
+  // Modal Actions
+  openScoringModal(): void {
+    if (!this.selectedCandidate()) {
+      this.notificationService.warning('請先選擇候選人');
+      return;
+    }
+    this.showScoringModal.set(true);
+  }
+
+  openDecisionModal(): void {
+    if (!this.selectedCandidate()) {
+      this.notificationService.warning('請先選擇候選人');
+      return;
+    }
+    this.showDecisionModal.set(true);
+  }
+
+  onScored(): void {
+    this.showScoringModal.set(false);
+    this.notificationService.success('面試評分已提交');
+    this.loadCandidates();
+  }
+
+  onDecided(): void {
+    this.showDecisionModal.set(false);
+    this.notificationService.success('錄用決策已提交');
+    this.loadCandidates();
+  }
+
   private initAndUpdateCharts(candidate: CandidateDetail): void {
     // Initialize emotion chart if not already initialized
     if (!this.emotionChart && this.emotionChartRef?.nativeElement) {
@@ -181,7 +216,7 @@ export class RecruitmentPageComponent implements OnInit, OnDestroy {
       xAxis: {
         type: 'category',
         boundaryGap: false,
-        data: candidate.emotions.map(e => `${e.time} 分鐘`),
+        data: (candidate.emotions || []).map(e => `${e.time} 分鐘`),
         axisLine: { lineStyle: { color: '#E8E8EA' } },
         axisLabel: { color: '#6B7280' }
       },
@@ -197,7 +232,7 @@ export class RecruitmentPageComponent implements OnInit, OnDestroy {
           name: '自信度',
           type: 'line',
           smooth: true,
-          data: candidate.emotions.map(e => e.confidence),
+          data: (candidate.emotions || []).map(e => e.confidence),
           lineStyle: { color: '#8DA399' },
           itemStyle: { color: '#8DA399' },
           areaStyle: {
@@ -211,7 +246,7 @@ export class RecruitmentPageComponent implements OnInit, OnDestroy {
           name: '焦慮度',
           type: 'line',
           smooth: true,
-          data: candidate.emotions.map(e => e.anxiety),
+          data: (candidate.emotions || []).map(e => e.anxiety),
           lineStyle: { color: '#C77F7F' },
           itemStyle: { color: '#C77F7F' },
           areaStyle: {
@@ -225,7 +260,7 @@ export class RecruitmentPageComponent implements OnInit, OnDestroy {
           name: '熱情度',
           type: 'line',
           smooth: true,
-          data: candidate.emotions.map(e => e.enthusiasm),
+          data: (candidate.emotions || []).map(e => e.enthusiasm),
           lineStyle: { color: '#7F9CA0' },
           itemStyle: { color: '#7F9CA0' },
           areaStyle: {
@@ -247,7 +282,7 @@ export class RecruitmentPageComponent implements OnInit, OnDestroy {
     const option: echarts.EChartsOption = {
       tooltip: {},
       radar: {
-        indicator: candidate.skills.map(s => ({
+        indicator: (candidate.skills || []).map(s => ({
           name: s.name,
           max: 100
         })),
@@ -277,7 +312,7 @@ export class RecruitmentPageComponent implements OnInit, OnDestroy {
           type: 'radar',
           data: [
             {
-              value: candidate.skills.map(s => s.score),
+              value: (candidate.skills || []).map(s => s.score),
               name: candidate.name,
               areaStyle: {
                 color: 'rgba(141, 163, 153, 0.4)'

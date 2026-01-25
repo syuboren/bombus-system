@@ -1,0 +1,457 @@
+@import '../../../../../../assets/styles/variables';
+@import '../../../../../../assets/styles/mixins';
+
+$module-color: $color-l1-sage;
+
+.approval-page-container {
+    padding-top: calc(#{$header-height} + 1rem); // Prevent header overlap
+    height: 100vh; // Force full viewport height
+    overflow: hidden; // Prevent body scroll
+    background: $color-cloud-gray;
+    display: flex;
+    flex-direction: column;
+}
+
+// ==================== 佈局結構 (完全參考 Wizard) ====================
+
+.split-layout {
+    display: grid;
+    grid-template-columns: 1fr 400px; // Left 1fr, Right 400px
+    flex: 1; // Fill remaining vertical space
+    overflow: hidden; // Contain inner elements
+    height: 100%; // Ensure it takes available space
+}
+
+.pdf-panel {
+    background: #e5e5e5;
+    border-right: 1px solid $color-soft-gray;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.form-panel {
+    background: $color-pure-white;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 10;
+    box-shadow: -4px 0 12px rgba(0, 0, 0, 0.05);
+}
+
+.panel-header {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    padding: $spacing-md $spacing-lg;
+    background: $color-pure-white;
+    border-bottom: 1px solid $color-soft-gray;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+    min-height: 60px; // 確保高度一致
+
+    i {
+        color: $module-color;
+        font-size: 20px;
+    }
+}
+
+// ==================== PDF 區域樣式 ====================
+
+.pdf-scroll-area {
+    flex: 1;
+    overflow-y: auto; // 讓 PDF 區域獨立捲動
+    padding: $spacing-lg;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: $spacing-lg;
+}
+
+.preview-page {
+    position: relative;
+    background: $color-pure-white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+    canvas {
+        display: block; // 消除底部白邊
+    }
+}
+
+.field-overlay {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    background: rgba($module-color, 0.15);
+    border: 1px dashed $module-color;
+    padding: 0 4px;
+    pointer-events: none;
+    color: $module-color;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    font-size: 14px; // 預設
+
+    &.is-checkbox {
+        justify-content: center;
+    }
+}
+
+// ==================== 右側資訊區域樣式 ====================
+
+.form-scroll-area {
+    flex: 1;
+    overflow-y: auto; // 讓資訊區域獨立捲動
+    padding: $spacing-lg;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+.info-section {
+    h3 {
+        font-size: 16px;
+        font-weight: 600;
+        color: $color-text-dark;
+        margin-bottom: 16px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid $color-soft-gray;
+    }
+
+    .info-group {
+        margin-bottom: 16px;
+
+        label {
+            display: block;
+            font-size: 13px;
+            color: $color-text-secondary;
+            margin-bottom: 4px;
+        }
+
+        .info-value {
+            font-size: 15px;
+            font-weight: 500;
+            color: $color-text-primary;
+        }
+
+        .info-sub {
+            font-size: 13px;
+            color: $color-muted-gray;
+            margin-top: 2px;
+        }
+    }
+}
+
+.signature-box {
+    border: 1px solid $color-soft-gray;
+    border-radius: $radius-md;
+    padding: 12px;
+    background: $color-cloud-gray;
+    text-align: center;
+
+    .signature-preview {
+        max-width: 100%;
+        max-height: 120px;
+        display: block;
+        margin: 0 auto;
+    }
+}
+
+// ==================== 底部操作區對齊 ====================
+
+.action-footer {
+    padding: 24px;
+    background: $color-pure-white;
+    border-top: 1px solid $color-soft-gray;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
+    z-index: 20;
+}
+
+.note-input {
+    margin-bottom: 16px;
+
+    label {
+        font-size: 14px;
+        color: $color-text-primary;
+        margin-bottom: 8px;
+        display: block;
+    }
+
+    textarea {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid $color-soft-gray;
+        border-radius: 6px;
+        height: 80px;
+        resize: vertical;
+        font-family: inherit;
+
+        &:focus {
+            outline: none;
+            border-color: $color-brand-main;
+            box-shadow: 0 0 0 2px rgba($color-brand-main, 0.1);
+        }
+    }
+}
+
+.buttons {
+    display: flex;
+    gap: 16px;
+    margin-top: 16px;
+
+    button {
+        flex: 1;
+        justify-content: center;
+    }
+}
+
+// ==================== 按鈕樣式 (IDP 標準) ====================
+
+.btn {
+    @include button-base;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 40px;
+    padding: 0 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+
+    &.btn--block {
+        width: 100%;
+        display: flex;
+    }
+
+    &--primary {
+        background: $color-brand-main;
+        color: white;
+
+        &:hover {
+            background: darken($color-brand-main, 5%);
+        }
+
+        &:disabled {
+            background: lighten($color-brand-main, 20%);
+        }
+    }
+
+    &--secondary {
+        background: $color-soft-gray; // 使用 $color-soft-gray 或 #f3f4f6
+        color: $color-text-dark;
+
+        &:hover {
+            background: darken($color-soft-gray, 5%);
+        }
+    }
+
+    &--danger {
+        background: #fee2e2;
+        color: #b91c1c;
+
+        &:hover {
+            background: #fecaca;
+        }
+
+        &.outline {
+            background: transparent;
+            border: 1px solid #ef4444;
+            color: #ef4444;
+
+            &:hover {
+                background: #fef2f2;
+            }
+        }
+    }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    i {
+        font-size: 16px;
+    }
+}
+
+// 審核結果狀態
+.result-status {
+    text-align: center;
+
+    .result-badge {
+        display: inline-block;
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 14px;
+        margin-bottom: 12px;
+
+        &.approved {
+            background: var(--color-green-100);
+            color: var(--color-green-700);
+        }
+
+        &.rejected {
+            background: var(--color-red-100);
+            color: var(--color-red-700);
+        }
+    }
+
+    .result-note {
+        font-size: 14px;
+        color: $color-text-secondary;
+        background: $color-cloud-gray;
+        padding: 12px;
+        border-radius: 6px;
+        margin-bottom: 8px;
+        text-align: left;
+    }
+
+    .result-time {
+        font-size: 12px;
+        color: $color-muted-gray;
+    }
+}
+
+// ==================== 載入與錯誤狀態 ====================
+
+.loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    color: $color-text-secondary;
+    gap: 12px;
+    padding-top: $header-height; // 因為是 absolute 或 fixed overlay 類型的概念，或佔滿版面
+
+    .spinner {
+        font-size: 32px;
+        animation: spin 1s linear infinite;
+    }
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+// ==================== RWD 回應式 (參考 Wizard) ====================
+
+@media (max-width: 1024px) {
+    .split-layout {
+        grid-template-columns: 1fr 340px;
+    }
+}
+
+@media (max-width: 768px) {
+    .approval-page-container {
+        height: auto;
+        min-height: auto;
+        overflow: auto;
+    }
+
+    .split-layout {
+        display: flex;
+        flex-direction: column;
+        height: auto;
+        overflow: visible;
+    }
+
+    .pdf-panel {
+        height: 500px;
+        border-right: none;
+        border-bottom: 1px solid $color-soft-gray;
+    }
+
+    .form-panel {
+        width: 100%;
+        height: auto;
+        box-shadow: none;
+        overflow: visible;
+    }
+
+    .form-scroll-area {
+        overflow: visible;
+    }
+}
+
+// ==================== Modal 樣式 (補回) ====================
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+}
+
+.modal-container {
+    background: white;
+    border-radius: $radius-lg;
+    padding: 24px;
+    width: 480px;
+    box-shadow: $shadow-lg;
+    animation: slideIn 0.2s ease-out;
+
+    h3 {
+        margin: 0 0 12px;
+        color: $color-text-dark;
+        font-size: 18px;
+        font-weight: 600;
+    }
+
+    p {
+        color: $color-text-secondary;
+        margin-bottom: 16px;
+    }
+}
+
+.reject-reason {
+    width: 100%;
+    border: 1px solid $color-soft-gray;
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 24px;
+    font-family: inherit;
+    min-height: 100px;
+    resize: vertical;
+
+    &:focus {
+        outline: none;
+        border-color: $color-brand-main;
+    }
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

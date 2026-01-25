@@ -44,38 +44,38 @@ export const EMPLOYEE_ROUTES: Routes = [
   // 入職簽署功能
   {
     path: 'onboarding/templates',
-    loadComponent: () => import('./pages/onboarding-templates-page/onboarding-templates-page.component')
+    loadComponent: () => import('./pages/onboarding/onboarding-templates-page/onboarding-templates-page.component')
       .then(m => m.OnboardingTemplatesPageComponent)
   },
   {
     path: 'onboarding/templates/new',
-    loadComponent: () => import('./pages/template-designer-page/template-designer-page.component')
+    loadComponent: () => import('./pages/onboarding/template-designer-page/template-designer-page.component')
       .then(m => m.TemplateDesignerPageComponent)
   },
   {
     path: 'onboarding/templates/:id',
-    loadComponent: () => import('./pages/template-designer-page/template-designer-page.component')
+    loadComponent: () => import('./pages/onboarding/template-designer-page/template-designer-page.component')
       .then(m => m.TemplateDesignerPageComponent)
   },
   {
     path: 'onboarding/sign/:token',
-    loadComponent: () => import('./pages/onboarding-wizard-page/onboarding-wizard-page.component')
+    loadComponent: () => import('./pages/onboarding/onboarding-wizard-page/onboarding-wizard-page.component')
       .then(m => m.OnboardingWizardPageComponent)
   },
   {
     path: 'onboarding/my-documents',
-    loadComponent: () => import('./pages/onboarding-documents-page/onboarding-documents-page.component')
+    loadComponent: () => import('./pages/onboarding/onboarding-documents-page/onboarding-documents-page.component')
       .then(m => m.OnboardingDocumentsPageComponent)
   },
   // 主管簽核功能
   {
     path: 'onboarding/approval',
-    loadComponent: () => import('./pages/onboarding-approval-page/onboarding-approval-page.component')
+    loadComponent: () => import('./pages/onboarding/onboarding-approval-page/onboarding-approval-page.component')
       .then(m => m.OnboardingApprovalPageComponent)
   },
   {
     path: 'onboarding/approval/:id',
-    loadComponent: () => import('./pages/onboarding-approval-detail-page/onboarding-approval-detail-page.component')
+    loadComponent: () => import('./pages/onboarding/onboarding-approval-detail-page/onboarding-approval-detail-page.component')
       .then(m => m.OnboardingApprovalDetailPageComponent)
   }
 ];

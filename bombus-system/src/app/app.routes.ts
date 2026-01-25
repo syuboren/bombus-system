@@ -52,6 +52,12 @@ export const routes: Routes = [
       .then(m => m.CULTURE_ROUTES)
   },
   {
+    // Public routes (no auth required) - 候選人回覆面試邀約
+    path: 'public',
+    loadChildren: () => import('./features/public/public.routes')
+      .then(m => m.publicRoutes)
+  },
+  {
     path: '**',
     redirectTo: 'login'
   }

@@ -31,7 +31,7 @@ export class AppComponent {
   // 計算是否顯示側邊欄（登入頁面不顯示）
   readonly showSidebar = computed(() => {
     const url = this.currentUrl();
-    return !url?.includes('/login');
+    return !url?.includes('/login') && !url?.includes('/public');
   });
 
   readonly isMinimized = this.sidebarService.isMinimized;

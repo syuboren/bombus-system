@@ -1,0 +1,73 @@
+@if (isVisible()) {
+<div class="modal-backdrop" (click)="close.emit()"></div>
+<div class="modal large-modal">
+    <div class="modal-header">
+        <h3 class="modal-title">
+            <i class="ri-file-list-3-line"></i>
+            面試評分表
+        </h3>
+        <button class="btn-close" (click)="close.emit()" type="button">
+            <i class="ri-close-line"></i>
+        </button>
+    </div>
+
+    <div class="modal-body">
+        <div class="candidate-preview">
+            <h4>{{ candidate().name }}</h4>
+            <div class="score-badge">平均分數: {{ averageScore() }} / 5.0</div>
+        </div>
+
+        <div class="dimensions-grid">
+            @for (dim of dimensions(); track $index) {
+            <div class="dimension-card">
+                <div class="dim-header">
+                    <span class="dim-name">{{ dim.name }}</span>
+                    <div class="rating">
+                        @for (star of [1,2,3,4,5]; track star) {
+                        <i class="ri-star-fill" [class.active]="dim.score >= star" (click)="dim.score = star"></i>
+                        }
+                    </div>
+                </div>
+                <input type="text" class="form-input-sm" placeholder="評語 (選填)" [(ngModel)]="dim.comment">
+            </div>
+            }
+        </div>
+
+        <div class="form-group overall-comment">
+            <label class="form-label">總體評價與建議</label>
+            <textarea class="form-textarea" rows="3" [(ngModel)]="overallComment"></textarea>
+        </div>
+
+        <div class="decision-selector">
+            <label class="decision-option option-pass" [class.selected]="result() === 'Pass'">
+                <input type="radio" name="result" value="Pass" [ngModel]="result()"
+                    (ngModelChange)="result.set($event)">
+                <i class="ri-thumb-up-line"></i>
+                <span class="title">通過 (Pass)</span>
+            </label>
+
+            <label class="decision-option option-hold" [class.selected]="result() === 'Hold'">
+                <input type="radio" name="result" value="Hold" [ngModel]="result()"
+                    (ngModelChange)="result.set($event)">
+                <i class="ri-question-line"></i>
+                <span class="title">保留 (Hold)</span>
+            </label>
+
+            <label class="decision-option option-fail" [class.selected]="result() === 'Fail'">
+                <input type="radio" name="result" value="Fail" [ngModel]="result()"
+                    (ngModelChange)="result.set($event)">
+                <i class="ri-thumb-down-line"></i>
+                <span class="title">未通過 (Fail)</span>
+            </label>
+        </div>
+
+    </div>
+
+    <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="close.emit()" type="button" [disabled]="loading()">取消</button>
+        <button class="btn btn-primary" (click)="submit()" type="button" [disabled]="loading()">
+            {{ loading() ? '保存中...' : '提交評分' }}
+        </button>
+    </div>
+</div>
+}

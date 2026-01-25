@@ -1,0 +1,56 @@
+@if (isVisible()) {
+<div class="modal-backdrop" (click)="close.emit()"></div>
+<div class="modal">
+    <div class="modal-header">
+        <h3 class="modal-title">
+            <i class="ri-scales-3-line"></i>
+            錄用決策
+        </h3>
+        <button class="btn-close" (click)="close.emit()" type="button">
+            <i class="ri-close-line"></i>
+        </button>
+    </div>
+
+    <div class="modal-body">
+        <div class="candidate-preview">
+            <h4>{{ candidate().name }}</h4>
+            <span class="position-badge">{{ candidate().position }}</span>
+            <div class="score-badge" *ngIf="candidate().aiScores?.overall">
+                總分: {{ candidate().aiScores?.overall }}
+            </div>
+        </div>
+
+        <div class="decision-selector">
+            <label class="decision-option option-reject" [class.selected]="decision() === 'Rejected'">
+                <input type="radio" name="decision" value="Rejected" [ngModel]="decision()"
+                    (ngModelChange)="decision.set($event)">
+                <i class="ri-close-circle-line"></i>
+                <span class="title">婉拒錄用</span>
+                <span class="desc">發送感謝信並結束流程</span>
+            </label>
+
+            <label class="decision-option option-offer" [class.selected]="decision() === 'Offered'">
+                <input type="radio" name="decision" value="Offered" [ngModel]="decision()"
+                    (ngModelChange)="decision.set($event)">
+                <i class="ri-checkbox-circle-line"></i>
+                <span class="title">正式錄用</span>
+                <span class="desc">發送 Offer 並開始報到流程</span>
+            </label>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">決策理由 / 備註</label>
+            <textarea class="form-textarea" rows="3" placeholder="請輸入本次決策的主要考量..." [value]="reason()"
+                (input)="reason.set($any($event.target).value)"></textarea>
+        </div>
+
+    </div>
+
+    <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="close.emit()" type="button" [disabled]="loading()">取消</button>
+        <button class="btn btn-primary" (click)="submit()" type="button" [disabled]="loading()">
+            {{ loading() ? '提交中...' : '確認決策' }}
+        </button>
+    </div>
+</div>
+}

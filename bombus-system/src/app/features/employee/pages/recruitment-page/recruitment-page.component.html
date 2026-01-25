@@ -121,22 +121,22 @@
               <div class="score-grid">
                 <div class="score-card">
                   <div class="score-label">關鍵字匹配</div>
-                  <div class="score-value">{{ candidate.aiScores.keywordMatch }}</div>
+                  <div class="score-value">{{ candidate.aiScores?.keywordMatch }}</div>
                   <div class="score-weight">權重 40%</div>
                 </div>
                 <div class="score-card">
                   <div class="score-label">語意分析</div>
-                  <div class="score-value">{{ candidate.aiScores.semanticAnalysis }}</div>
+                  <div class="score-value">{{ candidate.aiScores?.semanticAnalysis }}</div>
                   <div class="score-weight">權重 30%</div>
                 </div>
                 <div class="score-card">
                   <div class="score-label">JD 適配度</div>
-                  <div class="score-value">{{ candidate.aiScores.jdMatch }}</div>
+                  <div class="score-value">{{ candidate.aiScores?.jdMatch }}</div>
                   <div class="score-weight">權重 30%</div>
                 </div>
                 <div class="score-card score-card--primary">
                   <div class="score-label">綜合評分</div>
-                  <div class="score-value score-value--large">{{ candidate.aiScores.overall }}</div>
+                  <div class="score-value score-value--large">{{ candidate.aiScores?.overall }}</div>
                   <div class="score-weight">總分 100</div>
                 </div>
               </div>
@@ -173,6 +173,14 @@
                 <i class="ri-download-line"></i>
                 匯出報告
               </button>
+              <button class="btn btn-warning" (click)="openScoringModal()" type="button">
+                <i class="ri-file-list-3-line"></i>
+                面試評分
+              </button>
+              <button class="btn btn-primary" (click)="openDecisionModal()" type="button">
+                <i class="ri-scales-3-line"></i>
+                錄用決策
+              </button>
             </div>
           </div>
         </section>
@@ -188,3 +196,14 @@
     </div>
   </div>
 </main>
+
+<!-- Modal Components -->
+@if (selectedCandidate()) {
+<app-interview-scoring-modal [isVisible]="showScoringModal()" [candidate]="selectedCandidate()!"
+  (close)="showScoringModal.set(false)" (scored)="onScored()">
+</app-interview-scoring-modal>
+
+<app-hiring-decision-modal [isVisible]="showDecisionModal()" [candidate]="selectedCandidate()!"
+  (close)="showDecisionModal.set(false)" (decided)="onDecided()">
+</app-hiring-decision-modal>
+}

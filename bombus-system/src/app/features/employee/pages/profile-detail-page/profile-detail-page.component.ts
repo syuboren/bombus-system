@@ -23,6 +23,7 @@ export class ProfileDetailPageComponent implements OnInit {
   candidate = signal<CandidateDetail | null>(null);
   loading = signal<boolean>(false);
   candidateId = signal<string>('');
+  jobId = signal<string>('');
 
   ngOnInit(): void {
     this.route.queryParams.subscribe(params => {
@@ -32,6 +33,10 @@ export class ProfileDetailPageComponent implements OnInit {
       } else {
         // 預設載入第一個候選人
         this.loadCandidate('C001');
+      }
+      // 保存 jobId 以便返回時使用
+      if (params['jobId']) {
+        this.jobId.set(params['jobId']);
       }
     });
   }
@@ -51,7 +56,11 @@ export class ProfileDetailPageComponent implements OnInit {
   }
 
   goBack(): void {
-    this.router.navigate(['/employee/job-candidates']);
+    const params: any = {};
+    if (this.jobId()) {
+      params.jobId = this.jobId();
+    }
+    this.router.navigate(['/employee/job-candidates'], { queryParams: params });
   }
 
   goToInterview(): void {

@@ -7,7 +7,7 @@ description: Standardize UI components for a specific module
 Use this workflow to refactor a module's UI pages to match the system-wide design system.
 
 ## Usage
-When asking the AI to standardize a module, provide the **Module Name** and **Module Color Variable**.
+When asking the AI to standardize a module, provide the **Module Name** and **Module Color Variable**. The AI will follow the guidelines defined in the `bombus-ui-design-system` skill.
 
 **Example Prompt:**
 > "Run the UI Standardization workflow for the **L4 Project Management module**. The module color is **$color-l4-mauve**."

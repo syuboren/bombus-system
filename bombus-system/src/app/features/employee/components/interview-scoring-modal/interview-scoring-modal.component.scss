@@ -1,0 +1,268 @@
+@import '../../../../../assets/styles/variables';
+@import '../../../../../assets/styles/mixins';
+
+// Scoped to prevent style bleeding with ViewEncapsulation.None
+app-interview-scoring-modal {
+    .modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        backdrop-filter: blur(2px);
+    }
+
+    .modal {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        width: 90%;
+        max-width: 600px;
+        border-radius: $radius-lg;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        z-index: 1001;
+        display: flex;
+        flex-direction: column;
+        max-height: 90vh;
+        animation: scoringModalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+
+        &.large-modal {
+            max-width: 800px;
+        }
+    }
+
+    @keyframes scoringModalSlideUp {
+        from {
+            transform: translate(-50%, -40%);
+            opacity: 0;
+        }
+
+        to {
+            transform: translate(-50%, -50%);
+            opacity: 1;
+        }
+    }
+
+    .modal-header {
+        @include flex-between;
+        padding: $spacing-lg;
+        border-bottom: 1px solid $color-soft-gray;
+
+        .modal-title {
+            @include flex-center;
+            gap: $spacing-sm;
+            font-size: $font-size-lg;
+            font-weight: $font-weight-bold;
+
+            i {
+                color: $color-l1-sage;
+            }
+        }
+    }
+
+    .modal-body {
+        padding: $spacing-lg;
+        overflow-y: auto;
+    }
+
+    .candidate-preview {
+        margin-bottom: $spacing-lg;
+        padding: $spacing-md;
+        background: $color-cloud-gray;
+        border-radius: $radius-md;
+        @include flex-between;
+        align-items: center;
+
+        h4 {
+            margin: 0;
+            font-size: $font-size-md;
+        }
+
+        .score-badge {
+            font-size: $font-size-md;
+            font-weight: bold;
+            color: $color-l1-sage;
+        }
+    }
+
+    .dimensions-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: $spacing-md;
+        margin-bottom: $spacing-lg;
+
+        @include media-max-md {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .dimension-card {
+        border: 1px solid $color-soft-gray;
+        padding: $spacing-md;
+        border-radius: $radius-md;
+
+        .dim-header {
+            @include flex-between;
+            margin-bottom: $spacing-xs;
+        }
+
+        .dim-name {
+            font-weight: bold;
+        }
+
+        .rating {
+            color: $color-muted-gray;
+            cursor: pointer;
+
+            i {
+                font-size: 1.2rem;
+                transition: color 0.1s;
+                margin-left: 2px;
+            }
+
+            i.active {
+                color: #FFC107;
+            }
+
+            // Star Color
+            &:hover i {
+                color: lighten(#FFC107, 20%);
+            }
+        }
+    }
+
+    .form-input-sm {
+        width: 100%;
+        padding: 4px 8px;
+        border: 1px solid $color-soft-gray;
+        border-radius: $radius-sm;
+        font-size: $font-size-sm;
+
+        &:focus {
+            outline: none;
+            border-color: $color-l1-sage;
+        }
+    }
+
+    .form-group {
+        margin-bottom: $spacing-lg;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: $spacing-xs;
+        font-weight: $font-weight-semibold;
+    }
+
+    .form-textarea {
+        width: 100%;
+        padding: $spacing-sm;
+        border: 1px solid $color-soft-gray;
+        border-radius: $radius-md;
+        resize: vertical;
+
+        &:focus {
+            border-color: $color-l1-sage;
+            outline: none;
+        }
+    }
+
+    .decision-selector {
+        display: flex;
+        gap: $spacing-md;
+    }
+
+    .decision-option {
+        flex: 1;
+        border: 2px solid $color-soft-gray;
+        border-radius: $radius-md;
+        padding: $spacing-md;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        transition: all 0.2s;
+
+        input {
+            display: none;
+        }
+
+        i {
+            font-size: 1.8rem;
+            margin-bottom: 4px;
+            color: $color-muted-gray;
+        }
+
+        .title {
+            font-weight: bold;
+        }
+
+        &.option-pass.selected {
+            border-color: $color-success;
+            background: rgba($color-success, 0.05);
+
+            i {
+                color: $color-success;
+            }
+        }
+
+        &.option-hold.selected {
+            border-color: $color-warning;
+            background: rgba($color-warning, 0.05);
+
+            i {
+                color: $color-warning;
+            }
+        }
+
+        &.option-fail.selected {
+            border-color: $color-error;
+            background: rgba($color-error, 0.05);
+
+            i {
+                color: $color-error;
+            }
+        }
+    }
+
+    .modal-footer {
+        padding: $spacing-lg;
+        border-top: 1px solid $color-soft-gray;
+        display: flex;
+        justify-content: flex-end;
+        gap: $spacing-md;
+    }
+
+    .btn {
+        @include button-base;
+        gap: $spacing-xs;
+    }
+
+    .btn-primary {
+        background: $color-l1-sage;
+        color: white;
+
+        &:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+    }
+
+    .btn-secondary {
+        background: $color-cloud-gray;
+        color: $color-text-primary;
+    }
+
+    .btn-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: $color-text-secondary;
+    }
+}
