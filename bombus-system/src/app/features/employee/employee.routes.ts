@@ -16,6 +16,12 @@ export const EMPLOYEE_ROUTES: Routes = [
     loadComponent: () => import('./pages/job-candidates-page/job-candidates-page.component')
       .then(m => m.JobCandidatesPageComponent)
   },
+  // 職缺關鍵字管理
+  {
+    path: 'job-keywords/:jobId',
+    loadComponent: () => import('./pages/job-keywords-page/job-keywords-page.component')
+      .then(m => m.JobKeywordsPageComponent)
+  },
   {
     path: 'profile-detail',
     loadComponent: () => import('./pages/profile-detail-page/profile-detail-page.component')

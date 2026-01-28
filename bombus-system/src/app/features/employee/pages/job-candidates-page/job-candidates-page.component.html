@@ -169,7 +169,28 @@
               @if (candidate.status === 'interview') {
               <div class="scheduled-badge" title="已安排面試">
                 <i class="ri-calendar-check-line"></i>
-                <span>已安排</span>
+              </div>
+              }
+
+              <!-- Offered: 待回覆 Offer - 顯示複製連結按鈕 -->
+              @if (candidate.status === 'offered') {
+              <button class="decision-btn decision-btn--offer-link" title="複製 Offer 回覆連結"
+                (click)="copyOfferResponseLink(candidate, $event)" type="button">
+                <i class="ri-link"></i>
+              </button>
+              }
+
+              <!-- Offer Accepted: 已錄取同意 -->
+              @if (candidate.status === 'offer_accepted') {
+              <div class="scheduled-badge scheduled-badge--success" title="已錄取同意">
+                <i class="ri-trophy-line"></i>
+              </div>
+              }
+
+              <!-- Offer Declined: 已錄取拒絕 -->
+              @if (candidate.status === 'offer_declined') {
+              <div class="scheduled-badge scheduled-badge--declined" title="已錄取拒絕">
+                <i class="ri-user-unfollow-line"></i>
               </div>
               }
             </div>
@@ -238,7 +259,7 @@
 
 <!-- 面試邀約 Modal (Modified) -->
 @if (showInterviewModal()) {
-<div class="modal-backdrop" (click)="closeInterviewModal()"></div>
+<div class="modal-backdrop"></div>
 <div class="modal interview-modal">
   <div class="modal-header">
     <h3 class="modal-title">

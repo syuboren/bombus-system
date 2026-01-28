@@ -191,7 +191,7 @@
 
 <!-- 預約 Modal -->
 @if (showBookingModal() && selectedService()) {
-  <div class="modal-overlay" (click)="closeBookingModal()">
+  <div class="modal-overlay">
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3>

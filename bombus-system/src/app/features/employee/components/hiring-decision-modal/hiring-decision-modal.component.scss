@@ -225,4 +225,184 @@ app-hiring-decision-modal {
         cursor: pointer;
         color: $color-text-secondary;
     }
+
+    // ---------------------------------------------------------------
+    // AI 分析摘要樣式
+    // ---------------------------------------------------------------
+
+    .ai-summary-panel {
+        margin-bottom: $spacing-lg;
+        padding: $spacing-md;
+        background: $color-cloud-gray;
+        border-radius: $radius-md;
+    }
+
+    .ai-summary-header {
+        margin-bottom: $spacing-md;
+    }
+
+    .ai-recommendation {
+        display: flex;
+        align-items: center;
+        gap: $spacing-md;
+        padding: $spacing-md;
+        background: white;
+        border-radius: $radius-md;
+        border-left: 4px solid;
+
+        >i {
+            font-size: 28px;
+            flex-shrink: 0;
+        }
+
+        .rec-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+
+            .rec-label {
+                font-size: $font-size-xs;
+                color: $color-text-secondary;
+            }
+
+            .rec-value {
+                font-size: $font-size-md;
+                font-weight: $font-weight-bold;
+            }
+        }
+
+        .rec-score {
+            text-align: center;
+            padding: $spacing-xs $spacing-md;
+            background: $color-cloud-gray;
+            border-radius: $radius-md;
+
+            .score-value {
+                display: block;
+                font-size: $font-size-xl;
+                font-weight: $font-weight-bold;
+                color: $color-text-dark;
+            }
+
+            .score-label {
+                font-size: $font-size-xs;
+                color: $color-text-secondary;
+            }
+        }
+    }
+
+    .ai-score-breakdown {
+        display: flex;
+        flex-direction: column;
+        gap: $spacing-sm;
+        margin-bottom: $spacing-md;
+    }
+
+    .score-item {
+        display: flex;
+        align-items: center;
+        gap: $spacing-sm;
+
+        .item-label {
+            width: 80px;
+            font-size: $font-size-xs;
+            color: $color-text-secondary;
+        }
+
+        .progress-bar {
+            flex: 1;
+            height: 6px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: $color-l1-sage;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        .item-value {
+            width: 30px;
+            text-align: right;
+            font-size: $font-size-xs;
+            font-weight: $font-weight-semibold;
+            color: $color-text-dark;
+        }
+    }
+
+    .ai-insights {
+        margin-bottom: $spacing-sm;
+
+        h5 {
+            font-size: $font-size-xs;
+            color: $color-text-secondary;
+            margin: 0 0 $spacing-xs 0;
+        }
+    }
+
+    .insight-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 10px;
+        margin-right: $spacing-xs;
+        margin-bottom: $spacing-xs;
+        font-size: $font-size-xs;
+        border-radius: $radius-full;
+        background: rgba(0, 0, 0, 0.05);
+
+        i {
+            font-size: 12px;
+        }
+
+        &.strength {
+            background: rgba($color-success, 0.1);
+            color: $color-success;
+        }
+
+        &.concern {
+            background: rgba($color-warning, 0.1);
+            color: darken($color-warning, 15%);
+        }
+    }
+
+    .ai-missing-skills {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: $spacing-xs;
+
+        .label {
+            font-size: $font-size-xs;
+            color: $color-text-secondary;
+        }
+
+        .skill-chip {
+            padding: 2px 8px;
+            font-size: $font-size-xs;
+            background: rgba($color-error, 0.1);
+            color: $color-error;
+            border-radius: $radius-sm;
+        }
+    }
+
+    .no-ai-analysis {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: $spacing-sm;
+        padding: $spacing-md;
+        margin-bottom: $spacing-lg;
+        background: $color-cloud-gray;
+        border-radius: $radius-md;
+        color: $color-muted-gray;
+        font-size: $font-size-sm;
+
+        i {
+            font-size: 20px;
+        }
+    }
 }

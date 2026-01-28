@@ -303,7 +303,7 @@
 
 <!-- Employee Detail Modal -->
 @if (showEmployeeModal() && selectedEmployee(); as emp) {
-  <div class="modal-overlay" (click)="closeEmployeeModal()">
+  <div class="modal-overlay">
     <div class="modal-container modal-container--lg" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <div class="modal-title-group">

@@ -67,33 +67,181 @@ app-interview-scoring-modal {
     .modal-body {
         padding: $spacing-lg;
         overflow-y: auto;
+        @include custom-scrollbar;
     }
 
+    // ============================================================
+    // Candidate Preview & Score Summary
+    // ============================================================
     .candidate-preview {
         margin-bottom: $spacing-lg;
         padding: $spacing-md;
         background: $color-cloud-gray;
         border-radius: $radius-md;
-        @include flex-between;
+        display: flex;
+        justify-content: space-between;
         align-items: center;
+        flex-wrap: wrap;
+        gap: $spacing-md;
 
-        h4 {
-            margin: 0;
-            font-size: $font-size-md;
+        .candidate-info {
+            display: flex;
+            align-items: center;
+            gap: $spacing-md;
+
+            h4 {
+                margin: 0;
+                font-size: $font-size-md;
+            }
+
+            .position-badge {
+                padding: 2px 8px;
+                background: rgba($color-l1-sage, 0.1);
+                color: $color-l1-sage;
+                border-radius: $radius-full;
+                font-size: $font-size-xs;
+            }
         }
 
-        .score-badge {
-            font-size: $font-size-md;
-            font-weight: bold;
-            color: $color-l1-sage;
+        .score-summary {
+            display: flex;
+            align-items: center;
+            gap: $spacing-md;
+
+            .score-divider {
+                width: 1px;
+                height: 24px;
+                background: $color-soft-gray;
+            }
+
+            .score-item {
+                text-align: center;
+
+                .score-label {
+                    display: block;
+                    font-size: $font-size-xs;
+                    color: $color-text-secondary;
+                }
+
+                .score-value {
+                    font-size: $font-size-lg;
+                    font-weight: $font-weight-bold;
+                    color: $color-text-primary;
+
+                    &.excellent {
+                        color: $color-success;
+                    }
+
+                    &.good {
+                        color: $color-l1-sage;
+                    }
+                }
+
+                &.total .score-value {
+                    font-size: $font-size-xl;
+                }
+            }
         }
     }
 
+    // ============================================================
+    // Section Card
+    // ============================================================
+    .section-card {
+        background: $color-pure-white;
+        border: 1px solid $color-soft-gray;
+        border-radius: $radius-md;
+        padding: $spacing-md;
+        margin-bottom: $spacing-lg;
+
+        .section-header {
+            margin-bottom: $spacing-md;
+
+            h5 {
+                margin: 0 0 4px 0;
+                font-size: $font-size-md;
+                font-weight: $font-weight-semibold;
+                display: flex;
+                align-items: center;
+                gap: $spacing-xs;
+
+                i {
+                    color: $color-l1-sage;
+                }
+            }
+
+            .section-hint {
+                font-size: $font-size-xs;
+                color: $color-text-secondary;
+            }
+        }
+    }
+
+    // ============================================================
+    // Performance Description
+    // ============================================================
+    .description-input {
+        width: 100%;
+        padding: $spacing-md;
+        border: 1px solid $color-soft-gray;
+        border-radius: $radius-md;
+        font-size: $font-size-sm;
+        line-height: 1.6;
+        resize: vertical;
+        transition: border-color 0.2s;
+
+        &:focus {
+            outline: none;
+            border-color: $color-l1-sage;
+        }
+    }
+
+    .keyword-matches {
+        margin-top: $spacing-md;
+        padding-top: $spacing-md;
+        border-top: 1px dashed $color-soft-gray;
+        display: flex;
+        flex-wrap: wrap;
+        gap: $spacing-sm;
+        align-items: center;
+
+        .matches-label {
+            font-size: $font-size-xs;
+            color: $color-text-secondary;
+        }
+
+        .keyword-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: $radius-full;
+            font-size: $font-size-xs;
+            font-weight: $font-weight-medium;
+
+            &.positive {
+                background: rgba($color-success, 0.1);
+                color: $color-success;
+            }
+
+            &.negative {
+                background: rgba($color-error, 0.1);
+                color: $color-error;
+            }
+
+            i {
+                font-size: 12px;
+            }
+        }
+    }
+
+    // ============================================================
+    // Dimensions Grid
+    // ============================================================
     .dimensions-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: $spacing-md;
-        margin-bottom: $spacing-lg;
 
         @include media-max-md {
             grid-template-columns: 1fr;
@@ -104,6 +252,11 @@ app-interview-scoring-modal {
         border: 1px solid $color-soft-gray;
         padding: $spacing-md;
         border-radius: $radius-md;
+        transition: border-color 0.2s;
+
+        &:hover {
+            border-color: $color-muted-gray;
+        }
 
         .dim-header {
             @include flex-between;
@@ -111,7 +264,7 @@ app-interview-scoring-modal {
         }
 
         .dim-name {
-            font-weight: bold;
+            font-weight: $font-weight-semibold;
         }
 
         .rating {
@@ -128,7 +281,6 @@ app-interview-scoring-modal {
                 color: #FFC107;
             }
 
-            // Star Color
             &:hover i {
                 color: lighten(#FFC107, 20%);
             }
@@ -137,7 +289,7 @@ app-interview-scoring-modal {
 
     .form-input-sm {
         width: 100%;
-        padding: 4px 8px;
+        padding: 6px 10px;
         border: 1px solid $color-soft-gray;
         border-radius: $radius-sm;
         font-size: $font-size-sm;
@@ -148,6 +300,165 @@ app-interview-scoring-modal {
         }
     }
 
+    // ============================================================
+    // Media Upload Zone
+    // ============================================================
+    .upload-zone {
+        border: 2px dashed $color-soft-gray;
+        border-radius: $radius-md;
+        padding: $spacing-xl;
+        text-align: center;
+        transition: all 0.2s;
+        cursor: pointer;
+
+        &:hover,
+        &.dragging {
+            border-color: $color-l1-sage;
+            background: rgba($color-l1-sage, 0.03);
+        }
+
+        i {
+            font-size: 48px;
+            color: $color-muted-gray;
+            margin-bottom: $spacing-sm;
+        }
+
+        p {
+            margin: 0 0 $spacing-sm 0;
+            color: $color-text-secondary;
+        }
+
+        .upload-hint {
+            display: block;
+            margin-top: $spacing-sm;
+            font-size: $font-size-xs;
+            color: $color-muted-gray;
+        }
+    }
+
+    .btn-outline-sm {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border: 1px solid $color-l1-sage;
+        background: transparent;
+        color: $color-l1-sage;
+        border-radius: $radius-md;
+        font-size: $font-size-sm;
+        cursor: pointer;
+        transition: all 0.2s;
+
+        &:hover {
+            background: rgba($color-l1-sage, 0.1);
+        }
+    }
+
+    .uploaded-files {
+        margin-top: $spacing-md;
+        display: flex;
+        flex-direction: column;
+        gap: $spacing-sm;
+    }
+
+    .file-item {
+        display: flex;
+        align-items: center;
+        gap: $spacing-md;
+        padding: $spacing-sm $spacing-md;
+        background: $color-cloud-gray;
+        border-radius: $radius-md;
+
+        .file-icon {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba($color-l1-sage, 0.1);
+            border-radius: $radius-md;
+
+            i {
+                font-size: 18px;
+                color: $color-l1-sage;
+            }
+        }
+
+        .file-info {
+            flex: 1;
+
+            .file-name {
+                display: block;
+                font-size: $font-size-sm;
+                font-weight: $font-weight-medium;
+                color: $color-text-primary;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 200px;
+            }
+
+            .file-size {
+                font-size: $font-size-xs;
+                color: $color-text-secondary;
+            }
+        }
+
+        .file-progress {
+            display: flex;
+            align-items: center;
+            gap: $spacing-sm;
+            min-width: 100px;
+
+            .progress-bar {
+                flex: 1;
+                height: 4px;
+                background: $color-soft-gray;
+                border-radius: $radius-full;
+                overflow: hidden;
+
+                .progress-fill {
+                    height: 100%;
+                    background: $color-l1-sage;
+                    transition: width 0.3s;
+                }
+            }
+
+            .progress-text {
+                font-size: $font-size-xs;
+                color: $color-text-secondary;
+                min-width: 32px;
+            }
+        }
+
+        .file-status.success {
+            color: $color-success;
+            font-size: 18px;
+        }
+    }
+
+    .btn-icon-sm {
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: none;
+        border-radius: $radius-sm;
+        color: $color-text-secondary;
+        cursor: pointer;
+        transition: all 0.2s;
+
+        &:hover {
+            background: rgba($color-error, 0.1);
+            color: $color-error;
+        }
+    }
+
+    // ============================================================
+    // Form Elements
+    // ============================================================
     .form-group {
         margin-bottom: $spacing-lg;
     }
@@ -171,6 +482,9 @@ app-interview-scoring-modal {
         }
     }
 
+    // ============================================================
+    // Decision Selector
+    // ============================================================
     .decision-selector {
         display: flex;
         gap: $spacing-md;
@@ -199,7 +513,7 @@ app-interview-scoring-modal {
         }
 
         .title {
-            font-weight: bold;
+            font-weight: $font-weight-semibold;
         }
 
         &.option-pass.selected {
@@ -230,6 +544,9 @@ app-interview-scoring-modal {
         }
     }
 
+    // ============================================================
+    // Modal Footer
+    // ============================================================
     .modal-footer {
         padding: $spacing-lg;
         border-top: 1px solid $color-soft-gray;

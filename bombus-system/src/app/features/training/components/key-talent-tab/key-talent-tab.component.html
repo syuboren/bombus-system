@@ -121,7 +121,7 @@
 
 <!-- Retention Plan Modal -->
 @if (showRetentionModal()) {
-<div class="modal-overlay" (click)="closeRetentionModal()">
+<div class="modal-overlay">
   <div class="modal-content" (click)="$event.stopPropagation()">
     @if (selectedAlert(); as alert) {
     <h3 class="modal-title">啟動留才計畫 - {{ alert.name }}</h3>

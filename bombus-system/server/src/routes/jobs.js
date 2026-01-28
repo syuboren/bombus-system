@@ -244,6 +244,38 @@ router.patch('/:id/status', async (req, res) => {
                 try {
                     console.log('📤 Syncing new job to 104...');
                     const job104Data = JSON.parse(job.job104_data);
+                    
+                    // 【修正】驗證並正規化薪資資料，確保符合 104 API 規則
+                    // 規則 1: 高階主管 (role=3) 只能使用面議 (salaryType=10)
+                    if (job104Data.role === 3 && job104Data.salaryType !== 10) {
+                        console.log('⚠️ 高階主管職缺強制使用面議');
+                        job104Data.salaryType = 10;
+                        job104Data.salaryLow = 0;
+                        job104Data.salaryHigh = 0;
+                    }
+                    
+                    // 規則 2: salaryType 驗證
+                    // salaryType: 10=面議(薪資需為0), 50=月薪, 60=年薪(薪資需>0)
+                    const salaryType = job104Data.salaryType;
+                    if (salaryType === 10) {
+                        // 面議：薪資必須為 0
+                        job104Data.salaryLow = 0;
+                        job104Data.salaryHigh = 0;
+                    } else if (salaryType === 50 || salaryType === 60) {
+                        // 月薪/年薪：薪資必須大於 0
+                        if (!job104Data.salaryLow || job104Data.salaryLow <= 0) {
+                            job104Data.salaryLow = salaryType === 50 ? 30000 : 500000; // 預設月薪 3 萬或年薪 50 萬
+                        }
+                        if (!job104Data.salaryHigh || job104Data.salaryHigh <= 0) {
+                            job104Data.salaryHigh = job104Data.salaryLow;
+                        }
+                        // 確保 salaryHigh >= salaryLow
+                        if (job104Data.salaryHigh < job104Data.salaryLow) {
+                            job104Data.salaryHigh = job104Data.salaryLow;
+                        }
+                    }
+                    console.log('📊 Validated job data:', { role: job104Data.role, salaryType: job104Data.salaryType, salaryLow: job104Data.salaryLow, salaryHigh: job104Data.salaryHigh });
+                    
                     const result = await job104Service.postJob(job104Data);
 
                     if (result?.data?.jobNo) {
@@ -253,8 +285,19 @@ router.patch('/:id/status', async (req, res) => {
                         sync104Result = { success: true, action: 'create', jobNo: result.data.jobNo };
                     }
                 } catch (error) {
-                    console.error('⚠️ Failed to sync to 104, continuing with local update:', error.message);
-                    sync104Result = { success: false, action: 'create', error: error.message };
+                    // 【修正】同步 104 失敗時，停止並返回錯誤，不繼續建立內部職缺
+                    const errorDetails = error.response?.data?.error?.details || [];
+                    const errorMessage = errorDetails.map(d => `${d.code}: ${d.message}`).join('; ') || error.message;
+                    console.error('❌ Failed to sync to 104:', errorMessage);
+                    
+                    return res.status(400).json({
+                        status: 'error',
+                        message: '同步 104 失敗，職缺未發布',
+                        sync104Error: {
+                            message: errorMessage,
+                            details: errorDetails
+                        }
+                    });
                 }
             }
 
@@ -553,6 +596,35 @@ router.post('/:id/sync-104', async (req, res) => {
         if (!job104Data) {
             return res.status(400).json({ status: 'error', message: '缺少 104 職缺資料' });
         }
+
+        // 【修正】驗證並正規化薪資資料，確保符合 104 API 規則
+        // 規則 1: 高階主管 (role=3) 只能使用面議 (salaryType=10)
+        if (job104Data.role === 3 && job104Data.salaryType !== 10) {
+            console.log('⚠️ 高階主管職缺強制使用面議');
+            job104Data.salaryType = 10;
+            job104Data.salaryLow = 0;
+            job104Data.salaryHigh = 0;
+        }
+        
+        // 規則 2: salaryType 驗證
+        const salaryType = job104Data.salaryType;
+        if (salaryType === 10) {
+            // 面議：薪資必須為 0
+            job104Data.salaryLow = 0;
+            job104Data.salaryHigh = 0;
+        } else if (salaryType === 50 || salaryType === 60) {
+            // 月薪/年薪：薪資必須大於 0
+            if (!job104Data.salaryLow || job104Data.salaryLow <= 0) {
+                job104Data.salaryLow = salaryType === 50 ? 30000 : 500000;
+            }
+            if (!job104Data.salaryHigh || job104Data.salaryHigh <= 0) {
+                job104Data.salaryHigh = job104Data.salaryLow;
+            }
+            if (job104Data.salaryHigh < job104Data.salaryLow) {
+                job104Data.salaryHigh = job104Data.salaryLow;
+            }
+        }
+        console.log('📊 Validated job data for sync:', { role: job104Data.role, salaryType: job104Data.salaryType, salaryLow: job104Data.salaryLow, salaryHigh: job104Data.salaryHigh });
 
         // 同步至 104
         const result = await job104Service.postJob(job104Data);

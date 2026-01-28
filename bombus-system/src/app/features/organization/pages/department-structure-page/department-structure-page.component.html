@@ -425,7 +425,7 @@
 
 <!-- Department Detail Modal -->
 @if (showDepartmentModal() && selectedDepartment(); as dept) {
-  <div class="modal-overlay" (click)="closeDepartmentModal()">
+  <div class="modal-overlay">
     <div class="modal-container" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <div class="modal-title-group">
@@ -556,7 +556,7 @@
 
 <!-- Create/Edit Department Modal -->
 @if (showDepartmentForm()) {
-  <div class="modal-overlay" (click)="closeDepartmentForm()">
+  <div class="modal-overlay">
     <div class="modal-container modal-form" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2 class="modal-title">

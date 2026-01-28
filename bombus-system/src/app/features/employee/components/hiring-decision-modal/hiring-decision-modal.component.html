@@ -1,5 +1,5 @@
 @if (isVisible()) {
-<div class="modal-backdrop" (click)="close.emit()"></div>
+<div class="modal-backdrop"></div>
 <div class="modal">
     <div class="modal-header">
         <h3 class="modal-title">
@@ -15,10 +15,77 @@
         <div class="candidate-preview">
             <h4>{{ candidate().name }}</h4>
             <span class="position-badge">{{ candidate().position }}</span>
-            <div class="score-badge" *ngIf="candidate().aiScores?.overall">
-                總分: {{ candidate().aiScores?.overall }}
-            </div>
         </div>
+
+        <!-- AI 分析摘要區塊 -->
+        @if (aiRecommendation(); as ai) {
+        <div class="ai-summary-panel">
+            <div class="ai-summary-header">
+                <div class="ai-recommendation" [style.border-color]="ai.color">
+                    <i [class]="ai.icon" [style.color]="ai.color"></i>
+                    <div class="rec-info">
+                        <span class="rec-label">AI 建議</span>
+                        <span class="rec-value" [style.color]="ai.color">{{ ai.label }}</span>
+                    </div>
+                    <div class="rec-score">
+                        <span class="score-value">{{ ai.score }}</span>
+                        <span class="score-label">綜合評分</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ai-score-breakdown">
+                <div class="score-item">
+                    <span class="item-label">關鍵字匹配</span>
+                    <div class="progress-bar">
+                        <div class="progress-fill" [style.width.%]="ai.keywordScore"></div>
+                    </div>
+                    <span class="item-value">{{ ai.keywordScore }}</span>
+                </div>
+                <div class="score-item">
+                    <span class="item-label">語意分析</span>
+                    <div class="progress-bar">
+                        <div class="progress-fill" [style.width.%]="ai.semanticScore"></div>
+                    </div>
+                    <span class="item-value">{{ ai.semanticScore }}</span>
+                </div>
+                <div class="score-item">
+                    <span class="item-label">JD 適配度</span>
+                    <div class="progress-bar">
+                        <div class="progress-fill" [style.width.%]="ai.jdMatchScore"></div>
+                    </div>
+                    <span class="item-value">{{ ai.jdMatchScore }}</span>
+                </div>
+            </div>
+
+            @if (ai.insights.length > 0) {
+            <div class="ai-insights">
+                <h5>關鍵洞察</h5>
+                @for (insight of ai.insights; track insight.category) {
+                <div class="insight-chip" [class.strength]="insight.type === 'strength'"
+                    [class.concern]="insight.type === 'concern'">
+                    <i [class]="insight.type === 'strength' ? 'ri-checkbox-circle-fill' : 'ri-alert-fill'"></i>
+                    {{ insight.category }}
+                </div>
+                }
+            </div>
+            }
+
+            @if (ai.missingSkills.length > 0) {
+            <div class="ai-missing-skills">
+                <span class="label">待加強:</span>
+                @for (skill of ai.missingSkills; track skill) {
+                <span class="skill-chip">{{ skill }}</span>
+                }
+            </div>
+            }
+        </div>
+        } @else {
+        <div class="no-ai-analysis">
+            <i class="ri-robot-line"></i>
+            <span>尚未進行 AI 分析</span>
+        </div>
+        }
 
         <div class="decision-selector">
             <label class="decision-option option-reject" [class.selected]="decision() === 'Rejected'">

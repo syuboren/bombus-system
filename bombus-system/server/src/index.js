@@ -40,7 +40,21 @@ async function start() {
 
         // Recruitment Routes
         const recruitmentRouter = require('./routes/recruitment');
+        // Recruitment Routes
+
         app.use('/api/recruitment', recruitmentRouter);
+
+        // Meeting Management Routes
+        const meetingsRouter = require('./routes/meetings');
+        app.use('/api/meetings', meetingsRouter);
+
+        // Upload Route
+        const uploadRouter = require('./routes/upload.js');
+        app.use('/api/upload', uploadRouter);
+
+        // Serve Static Uploads
+        const path = require('path');
+        app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
         // Integration Routes
         const integration104Router = require('./routes/integration/104');

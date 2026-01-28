@@ -303,6 +303,15 @@ $module-color: $color-l1-sage;
   @include input-base;
 }
 
+// 唯讀樣式（用於固定值顯示）
+.form-input--readonly {
+  @include input-base;
+  background-color: $color-cloud-gray;
+  color: $color-text-secondary;
+  cursor: not-allowed;
+  border-color: $color-soft-gray;
+}
+
 .form-textarea {
   @include input-base;
   min-height: 100px;

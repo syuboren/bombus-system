@@ -1,5 +1,5 @@
 export type JobStatus = 'published' | 'draft' | 'review' | 'closed';
-export type CandidateStatus = 'new' | 'interview' | 'rejected' | 'hired' | 'completed' | 'pending' | 'invited' | 'reschedule';
+export type CandidateStatus = 'new' | 'interview' | 'rejected' | 'hired' | 'completed' | 'pending' | 'invited' | 'reschedule' | 'offered' | 'offer_accepted' | 'offer_declined';
 export type ScoreLevel = 'high' | 'medium' | 'low';
 
 export interface Job {

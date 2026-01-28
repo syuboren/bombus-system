@@ -145,4 +145,145 @@ router.get('/progress', (req, res) => {
     }
 });
 
+
+/**
+ * GET /api/employee/list
+ * 取得所有員工列表 (用於會議出席人員選擇)
+ * Query params:
+ *   - dept: 依部門過濾
+ *   - status: 依狀態過濾 (active, probation, resigned)
+ *   - all: 設為 true 時包含非在職員工
+ */
+router.get('/list', (req, res) => {
+    try {
+        const { dept, status, all } = req.query;
+
+        let query = `
+            SELECT id, employee_no, name, email, phone, department, position,
+                   level, grade, manager_id, hire_date, contract_type,
+                   work_location, avatar, status
+            FROM employees
+            WHERE 1=1
+        `;
+        let params = [];
+
+        // 預設只顯示在職員工
+        if (all !== 'true') {
+            query += ` AND status IN ('active', 'probation')`;
+        }
+
+        if (dept) {
+            query += ` AND department = ?`;
+            params.push(dept);
+        }
+
+        if (status) {
+            query += ` AND status = ?`;
+            params.push(status);
+        }
+
+        query += ` ORDER BY department, name`;
+
+        const employees = prepare(query).all(...params);
+
+        // 取得主管名稱
+        const managerIds = employees.map(e => e.manager_id).filter(Boolean);
+        const managersMap = new Map();
+        if (managerIds.length > 0) {
+            const managers = prepare(`
+                SELECT id, name FROM employees WHERE id IN (${managerIds.map(() => '?').join(',')})
+            `).all(...managerIds);
+            managers.forEach(m => managersMap.set(m.id, m.name));
+        }
+
+        // 組合資料
+        const result = employees.map(emp => ({
+            ...emp,
+            managerName: managersMap.get(emp.manager_id) || null
+        }));
+
+        res.json(result);
+    } catch (error) {
+        console.error('Error fetching employee list:', error);
+        res.status(500).json({ error: 'Failed to fetch employee list' });
+    }
+});
+
+/**
+ * GET /api/employee/departments
+ * 取得所有部門清單
+ */
+router.get('/departments', (req, res) => {
+    try {
+        const departments = prepare(`
+            SELECT DISTINCT department
+            FROM employees
+            WHERE department IS NOT NULL
+            ORDER BY department
+        `).all();
+        res.json(departments.map(d => d.department));
+    } catch (error) {
+        console.error('Error fetching departments:', error);
+        res.status(500).json({ error: 'Failed to fetch departments' });
+    }
+});
+
+/**
+ * GET /api/employee/:id
+ * 取得單一員工完整資料 (含學歷、技能、證照)
+ */
+router.get('/:id', (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // 取得員工主資料
+        const employee = prepare(`
+            SELECT * FROM employees WHERE id = ?
+        `).get(id);
+
+        if (!employee) {
+            return res.status(404).json({ error: 'Employee not found' });
+        }
+
+        // 取得主管名稱
+        if (employee.manager_id) {
+            const manager = prepare(`
+                SELECT name FROM employees WHERE id = ?
+            `).get(employee.manager_id);
+            employee.managerName = manager ? manager.name : null;
+        }
+
+        // 取得學歷
+        const education = prepare(`
+            SELECT id, degree, school, major, graduation_year
+            FROM employee_education
+            WHERE employee_id = ?
+            ORDER BY graduation_year DESC
+        `).all(id);
+
+        // 取得技能
+        const skills = prepare(`
+            SELECT skill_name FROM employee_skills WHERE employee_id = ?
+        `).all(id);
+
+        // 取得證照
+        const certifications = prepare(`
+            SELECT id, cert_name, issued_date, expiry_date
+            FROM employee_certifications
+            WHERE employee_id = ?
+            ORDER BY issued_date DESC
+        `).all(id);
+
+        res.json({
+            ...employee,
+            education,
+            skills: skills.map(s => s.skill_name),
+            certifications
+        });
+    } catch (error) {
+        console.error('Error fetching employee detail:', error);
+        res.status(500).json({ error: 'Failed to fetch employee' });
+    }
+});
+
 module.exports = router;

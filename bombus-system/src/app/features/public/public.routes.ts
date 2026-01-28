@@ -7,5 +7,19 @@ export const publicRoutes: Routes = [
             import('./pages/interview-response-page/interview-response-page.component')
                 .then(m => m.InterviewResponsePageComponent),
         title: '面試邀約回覆'
+    },
+    {
+        path: 'offer-response/:token',
+        loadComponent: () =>
+            import('./pages/offer-response-page/offer-response-page.component')
+                .then(m => m.OfferResponsePageComponent),
+        title: '錄用通知回覆'
+    },
+    {
+        path: 'meeting-sign-in/:meetingId',
+        loadComponent: () =>
+            import('./pages/meeting-sign-in-page/meeting-sign-in-page.component')
+                .then(m => m.MeetingSignInPageComponent),
+        title: '會議簽到'
     }
 ];

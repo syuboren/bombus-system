@@ -61,8 +61,8 @@ export class SidebarComponent {
           children: [
             { label: '招募職缺管理', icon: '', route: '/employee/jobs' },
             { label: 'AI智能面試', icon: '', route: '/employee/recruitment' },
-            { label: '員工檔案管理', icon: '', route: '/employee/profile' },
-            { label: '人才庫管理', icon: '', route: '/employee/talent-pool' },
+            { label: '人才庫與再接觸管理', icon: '', route: '/employee/talent-pool' },
+            { label: '員工檔案與歷程管理', icon: '', route: '/employee/profile' },
             { label: '會議管理', icon: '', route: '/employee/meeting' },
             { label: '入職文件管理', icon: '', route: '/employee/onboarding/templates' },
             { label: '我的入職文件', icon: '', route: '/employee/onboarding/my-documents' },

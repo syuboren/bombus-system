@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of, delay, map, catchError, forkJoin } from 'rxjs';
 import { Candidate, CandidateDetail, Interview, InterviewInvitation, InvitationDecision } from '../models/candidate.model';
+import { DEFAULT_DIMENSIONS } from '../models/job-keywords.model';
 
 @Injectable({
   providedIn: 'root'
@@ -79,7 +80,91 @@ export class InterviewService {
         overall: 82
       }
     },
-    // ... Simplified for other mocks to save space, but logically they would exist
+    '2': {
+      ...this.mockCandidates[1],
+      transcript: [
+        { time: '00:30', text: '請介紹一下您的後端開發經驗。', speaker: 'interviewer' },
+        { time: '00:50', text: '我是李小華，有四年的後端開發經驗，主要使用 Java 和 Node.js。我在團隊合作和系統架構設計方面有豐富的經驗，曾經帶領團隊完成多個高並發系統的優化。', speaker: 'candidate' },
+        { time: '02:00', text: '您如何處理系統效能問題？', speaker: 'interviewer' },
+        { time: '02:20', text: '我會先透過監控工具定位瓶頸，然後針對性地優化。例如使用快取策略、資料庫索引優化、或是進行程式碼層面的改進。', speaker: 'candidate' }
+      ],
+      emotions: [
+        { time: '1', confidence: 82, anxiety: 18, enthusiasm: 75 },
+        { time: '2', confidence: 85, anxiety: 15, enthusiasm: 78 },
+        { time: '3', confidence: 88, anxiety: 12, enthusiasm: 80 }
+      ],
+      skills: [
+        { name: '邏輯思考', score: 90 },
+        { name: '溝通能力', score: 78 },
+        { name: '技術能力', score: 92 }
+      ],
+      aiScores: {
+        keywordMatch: 88,
+        semanticAnalysis: 82,
+        jdMatch: 85,
+        overall: 85
+      }
+    },
+    '3': {
+      ...this.mockCandidates[2],
+      transcript: [
+        { time: '00:30', text: '可以分享您的設計理念嗎？', speaker: 'interviewer' },
+        { time: '00:45', text: '我是張大同，我相信好的設計應該以使用者為中心。我會進行使用者研究，了解他們的痛點，然後透過原型測試來驗證設計方案。', speaker: 'candidate' }
+      ],
+      emotions: [
+        { time: '1', confidence: 78, anxiety: 22, enthusiasm: 85 },
+        { time: '2', confidence: 82, anxiety: 18, enthusiasm: 88 }
+      ],
+      skills: [
+        { name: '邏輯思考', score: 80 },
+        { name: '溝通能力', score: 85 },
+        { name: '技術能力', score: 75 }
+      ],
+      aiScores: {
+        keywordMatch: 78,
+        semanticAnalysis: 82,
+        jdMatch: 80,
+        overall: 80
+      }
+    },
+    '4': {
+      ...this.mockCandidates[3],
+      transcript: [],
+      emotions: [],
+      skills: [
+        { name: '邏輯思考', score: 0 },
+        { name: '溝通能力', score: 0 },
+        { name: '技術能力', score: 0 }
+      ],
+      aiScores: {
+        keywordMatch: 0,
+        semanticAnalysis: 0,
+        jdMatch: 0,
+        overall: 0
+      }
+    },
+    '5': {
+      ...this.mockCandidates[4],
+      transcript: [
+        { time: '00:30', text: '請談談您的資料分析經驗。', speaker: 'interviewer' },
+        { time: '00:50', text: '我是林志明，擅長使用 Python 和 SQL 進行資料分析。我能夠從大量數據中發現洞察，並用視覺化方式呈現給團隊。', speaker: 'candidate' }
+      ],
+      emotions: [
+        { time: '1', confidence: 72, anxiety: 28, enthusiasm: 70 },
+        { time: '2', confidence: 78, anxiety: 22, enthusiasm: 75 }
+      ],
+      skills: [
+        { name: '邏輯思考', score: 88 },
+        { name: '溝通能力', score: 72 },
+        { name: '技術能力', score: 85 }
+      ],
+      aiScores: {
+        keywordMatch: 80,
+        semanticAnalysis: 75,
+        jdMatch: 78,
+        overall: 78
+      }
+    }
   };
 
   // --- API METHODS ---
@@ -87,28 +172,69 @@ export class InterviewService {
   /**
    * Get all candidates (Mix of API and Mock for filtering)
    */
+  /**
+   * Get all candidates (API only)
+   */
   getCandidates(): Observable<Candidate[]> {
     return this.http.get<any[]>('/api/recruitment/candidates').pipe(
       map(apiCandidates => {
         // Map API format to frontend model
-        const mapped = apiCandidates.map(c => ({
-          id: c.id,
-          name: c.name,
-          position: c.job_title || 'Unknown Position', // Ensure backend sends job_title or we map it
-          interviewDate: c.apply_date,
-          status: c.scoring_status === 'Scored' ? 'completed' : 'pending',
-          stage: c.stage,
-          scoringStatus: c.scoring_status
-        }));
-        // Merge with mock
-        const mockIds = new Set(this.mockCandidates.map(m => m.id));
-        const nonDuplicateApi = mapped.filter(c => !mockIds.has(c.id));
-        return [...this.mockCandidates, ...nonDuplicateApi];
+        return apiCandidates.map(c => {
+          // 狀態判斷邏輯（優先級：資料庫狀態 > stage > 待決策 > 待AI分析 > 待面試）
+          let statusDisplay = 'pending'; // 待面試
+          
+          // 檢查是否有有效的 AI 分析結果（排除 "null" 字串和空值）
+          const hasValidAiResult = c.ai_analysis_result && 
+            c.ai_analysis_result !== 'null' && 
+            c.ai_analysis_result.length > 10; // 有效的 JSON 結果至少會超過 10 字元
+
+          // 優先使用資料庫中的 status 欄位（包含 offer_accepted, offer_declined, offered, rejected 等）
+          const validDbStatuses = ['offered', 'offer_accepted', 'offer_declined', 'rejected', 'hired'];
+          if (c.status && validDbStatuses.includes(c.status)) {
+            statusDisplay = c.status; // 使用資料庫的狀態
+          } else if (c.stage === 'Rejected' || c.stage === 'Hired' || c.stage === 'Offered') {
+            statusDisplay = c.stage.toLowerCase(); // 已決策（舊邏輯兼容）
+          } else if (hasValidAiResult) {
+            // 必須有有效的 AI 分析結果才顯示「待決策」
+            statusDisplay = 'pending_decision'; // 待決策
+          } else if (c.scoring_status === 'Scored') {
+            // 已評分但沒有 AI 分析結果 → 待 AI 分析
+            statusDisplay = 'pending_ai'; // 待 AI 分析
+          }
+
+          return {
+            id: c.id,
+            name: c.name,
+            position: c.job_title || 'Unknown Position',
+            interviewDate: c.apply_date ? c.apply_date.split('T')[0] : '', // 暫時使用申請日期
+            status: statusDisplay,
+            stage: c.stage,
+            scoringStatus: c.scoring_status
+          };
+        });
       }),
       catchError(err => {
-        console.warn('Failed to fetch API candidates, returning mocks', err);
-        return of(this.mockCandidates);
+        console.warn('Failed to fetch API candidates', err);
+        return of([]);
       })
+    );
+  }
+
+  /**
+   * Get only candidates who have scheduled interviews
+   * Filter: stage is 'Interview'/'Invited' or scoring_status is 'Scored'
+   */
+  getScheduledCandidates(): Observable<Candidate[]> {
+    return this.getCandidates().pipe(
+      map(candidates => candidates.filter(c => {
+        // 從招募管理過來的候選人，狀態應該是 'Interview'(已安排) 或 'Invited'(已邀請)
+        // 或是已經評分完成 ('Scored')
+        // 寬鬆過濾：只要有進入面試階段的都顯示
+        const validStages = ['Invited', 'Interview', 'Hired', 'Offer', 'Rejected'];
+        return validStages.includes(c.stage || '') ||
+          c.scoringStatus === 'Scored' ||
+          c.status === 'completed';
+      }))
     );
   }
 
@@ -128,7 +254,7 @@ export class InterviewService {
         return {
           id: data.id,
           name: data.name,
-          position: 'Candidate', // Data might not have joined job title
+          position: data.job_title || 'Unknown Position', // Correctly map from joined title
           jobId: data.job_id,
           status: data.scoring_status === 'Scored' ? 'completed' : 'pending',
           stage: data.stage,
@@ -148,7 +274,38 @@ export class InterviewService {
             semanticAnalysis: 0,
             jdMatch: 0,
             overall: data.score || 0
-          }
+          },
+          // Map Evaluation Data
+          evaluation: data.evaluation ? {
+            performanceDescription: data.evaluation.performance_description,
+            scores: (() => {
+              const rawScores = data.evaluation.dimension_scores ? JSON.parse(data.evaluation.dimension_scores) : [];
+              // Repair logic for missing dimensionId (from legacy/buggy saves)
+              return rawScores.map((s: any) => {
+                if (!s.dimensionId && s.name) {
+                  // Try to find ID by name from default dimensions
+                  const found = DEFAULT_DIMENSIONS.find(d => d.name === s.name);
+                  return {
+                    dimensionId: found?.id || 'unknown',
+                    dimensionName: s.name,
+                    score: s.score,
+                    remark: s.comment || s.remark
+                  };
+                }
+                return s;
+              });
+            })(),
+            overallComment: data.evaluation.overall_comment,
+            keywordsFound: [], // backend data table might not have this column detached yet
+            totalScore: data.evaluation.total_score,
+            evaluatedAt: data.evaluation.updated_at,
+            transcriptText: data.evaluation.transcript_text,
+            mediaUrl: data.evaluation.media_url,   // 媒體 URL
+            mediaSize: data.evaluation.media_size, // 媒體檔案大小
+            attachments: [] // attachments are separate if any
+          } : undefined,
+          // Map AI Analysis Result if exists in evaluation
+          aiAnalysisResult: data.evaluation?.ai_analysis_result ? (typeof data.evaluation.ai_analysis_result === 'string' ? JSON.parse(data.evaluation.ai_analysis_result) : data.evaluation.ai_analysis_result) : undefined
         } as CandidateDetail;
       }),
       catchError(() => of(null))
@@ -170,6 +327,20 @@ export class InterviewService {
     return this.http.get(`${this.apiUrl}/candidates/${candidateId}/response-link`);
   }
 
+  getOfferResponseLink(candidateId: string): Observable<{
+    responseToken: string;
+    responseLink: string;
+    replyDeadline: string;
+    candidateResponse: string | null;
+  }> {
+    return this.http.get<{
+      responseToken: string;
+      responseLink: string;
+      replyDeadline: string;
+      candidateResponse: string | null;
+    }>(`${this.apiUrl}/candidates/${candidateId}/offer-response-link`);
+  }
+
   scheduleInterview(data: {
     candidateId: string,
     jobId: string,
@@ -186,13 +357,52 @@ export class InterviewService {
     return this.http.patch(`${this.apiUrl}/interviews/${interviewId}/evaluation`, data);
   }
 
-  makeDecision(candidateId: string, decision: 'Offered' | 'Rejected', reason?: string): Observable<any> {
+  /**
+   * 儲存完整面試評分 (新 API)
+   */
+  saveEvaluation(candidateId: string, data: {
+    performanceDescription: string;
+    dimensionScores: any[];
+    overallComment: string;
+    totalScore: number;
+    transcriptText?: string;
+    aiAnalysisResult?: any;
+  }): Observable<any> {
+    return this.http.post(`${this.apiUrl}/candidates/${candidateId}/evaluation`, data);
+  }
+
+  /**
+   * 取得候選人面試評分
+   */
+  getEvaluation(candidateId: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/candidates/${candidateId}/evaluation`);
+  }
+
+  makeDecision(candidateId: string, decision: 'Offered' | 'Rejected', reason?: string): Observable<{
+    success: boolean;
+    message: string;
+    responseToken?: string;
+    responseLink?: string;
+    replyDeadline?: string;
+  }> {
     // We assume the user is "HR Admin" for now
-    return this.http.post(`${this.apiUrl}/candidates/${candidateId}/decision`, {
+    return this.http.post<{
+      success: boolean;
+      message: string;
+      responseToken?: string;
+      responseLink?: string;
+      replyDeadline?: string;
+    }>(`${this.apiUrl}/candidates/${candidateId}/decision`, {
       decision,
       decidedBy: 'USER-CURRENT',
       reason
     });
+  }
+
+  uploadMedia(file: File): Observable<{ success: boolean; url: string; filename: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<{ success: boolean; url: string; filename: string }>('/api/upload', formData);
   }
 
   // --- HELPER ---

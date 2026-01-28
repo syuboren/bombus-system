@@ -49,4 +49,39 @@ export class InterviewResponseService {
             rescheduleNote
         });
     }
+
+    // ============================================================
+    // Offer Response APIs (錄用通知回覆)
+    // ============================================================
+
+    /**
+     * 取得錄用通知詳情（公開 API）
+     * @param token 專屬回覆連結 Token
+     */
+    getOffer(token: string): Observable<{
+        offerId: string;
+        candidateName: string;
+        jobTitle: string;
+        reason: string;
+        replyDeadline: string;
+        decidedAt: string;
+    }> {
+        return this.http.get<any>(`${this.apiUrl}/offers/${token}`);
+    }
+
+    /**
+     * 候選人回覆錄用通知（公開 API）
+     * @param token 專屬回覆連結 Token
+     * @param response 回覆結果 'accepted' | 'declined'
+     */
+    respondToOffer(token: string, response: 'accepted' | 'declined'): Observable<{
+        success: boolean;
+        message: string;
+        response: string;
+        respondedAt: string;
+    }> {
+        return this.http.post<any>(`${this.apiUrl}/offers/${token}/respond`, {
+            response
+        });
+    }
 }

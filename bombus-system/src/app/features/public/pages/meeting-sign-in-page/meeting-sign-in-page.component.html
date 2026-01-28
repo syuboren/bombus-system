@@ -1,0 +1,83 @@
+<div class="sign-in-container">
+  <div class="sign-in-card">
+    @if (error() && !meeting()) {
+    <div class="error-state">
+      <i class="ri-error-warning-line"></i>
+      <h2>{{ error() }}</h2>
+      <p>請確認連結是否正確</p>
+    </div>
+    } @else if (success()) {
+    <div class="success-state">
+      <i class="ri-checkbox-circle-line"></i>
+      <h2>簽到成功！</h2>
+      <p class="success-time">簽到時間：{{ signedInTime() }}</p>
+      <div class="meeting-info-success">
+        <h3>{{ meeting()?.title }}</h3>
+        <p>{{ formatDateTime(meeting()!.startTime) }}</p>
+      </div>
+    </div>
+    } @else if (meeting()) {
+    <div class="sign-in-form">
+      <div class="meeting-header">
+        <i class="ri-calendar-check-line"></i>
+        <h1>會議簽到</h1>
+      </div>
+      
+      <div class="meeting-info">
+        <h2>{{ meeting()?.title }}</h2>
+        <div class="info-row">
+          <i class="ri-time-line"></i>
+          <span>{{ formatDateTime(meeting()!.startTime) }}</span>
+        </div>
+        @if (meeting()?.location) {
+        <div class="info-row">
+          <i class="ri-map-pin-line"></i>
+          <span>{{ meeting()?.location }}</span>
+        </div>
+        }
+      </div>
+      
+      <div class="form-section">
+        <label class="form-label">請輸入您的姓名</label>
+        <input 
+          type="text" 
+          class="form-input" 
+          placeholder="例如：王小明"
+          [value]="employeeName()"
+          (input)="updateName($event)"
+          (keydown.enter)="signIn()"
+        />
+        
+        @if (error()) {
+        <div class="error-message">
+          <i class="ri-error-warning-line"></i>
+          {{ error() }}
+        </div>
+        }
+        
+        <button 
+          class="btn-primary btn-full" 
+          (click)="signIn()" 
+          [disabled]="loading() || !employeeName()">
+          @if (loading()) {
+          <i class="ri-loader-4-line spinning"></i>
+          簽到中...
+          } @else {
+          <i class="ri-checkbox-circle-line"></i>
+          確認簽到
+          }
+        </button>
+      </div>
+    </div>
+    } @else {
+    <div class="loading-state">
+      <i class="ri-loader-4-line spinning"></i>
+      <p>載入中...</p>
+    </div>
+    }
+  </div>
+  
+  <footer class="sign-in-footer">
+    <p>Bombus 會議管理系統</p>
+  </footer>
+</div>

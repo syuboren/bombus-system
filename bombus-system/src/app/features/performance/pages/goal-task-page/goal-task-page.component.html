@@ -223,7 +223,7 @@
 
 <!-- Goal Detail Modal -->
 @if (showGoalModal() && selectedGoal(); as goal) {
-  <div class="modal-overlay" (click)="closeGoalModal()">
+  <div class="modal-overlay">
     <div class="modal-content modal-content--large" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <div class="modal-title-group">

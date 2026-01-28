@@ -1,0 +1,228 @@
+@import '../../../../../assets/styles/variables';
+@import '../../../../../assets/styles/mixins';
+
+.sign-in-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, $color-cloud-gray 0%, $color-pure-white 100%);
+  padding: $spacing-lg;
+}
+
+.sign-in-card {
+  background: $color-pure-white;
+  border-radius: $radius-xl;
+  box-shadow: $shadow-lg;
+  padding: $spacing-xl;
+  max-width: 420px;
+  width: 100%;
+}
+
+.meeting-header {
+  text-align: center;
+  margin-bottom: $spacing-lg;
+
+  i {
+    font-size: 48px;
+    color: $color-brand-main;
+    margin-bottom: $spacing-sm;
+  }
+
+  h1 {
+    font-size: $font-size-xl;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+    margin: 0;
+  }
+}
+
+.meeting-info {
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  margin-bottom: $spacing-lg;
+
+  h2 {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+    margin: 0 0 $spacing-sm 0;
+  }
+}
+
+.info-row {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+
+  i {
+    font-size: 16px;
+    color: $color-brand-main;
+  }
+
+  & + .info-row {
+    margin-top: $spacing-xs;
+  }
+}
+
+.form-section {
+  .form-label {
+    display: block;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: $color-text-secondary;
+    margin-bottom: $spacing-xs;
+  }
+
+  .form-input {
+    width: 100%;
+    padding: $spacing-sm $spacing-md;
+    border: 2px solid $color-soft-gray;
+    border-radius: $radius-md;
+    font-size: $font-size-md;
+    color: $color-text-dark;
+    transition: border-color $transition-fast;
+
+    &:focus {
+      outline: none;
+      border-color: $color-brand-main;
+    }
+
+    &::placeholder {
+      color: $color-muted-gray;
+    }
+  }
+}
+
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  margin-top: $spacing-sm;
+  padding: $spacing-sm;
+  background: $color-error-light;
+  border-radius: $radius-sm;
+  font-size: $font-size-sm;
+  color: $color-error;
+
+  i {
+    font-size: 16px;
+  }
+}
+
+.btn-primary {
+  @include button-base;
+  background: $color-brand-main;
+  color: $color-pure-white;
+  margin-top: $spacing-md;
+
+  &:hover:not(:disabled) {
+    background: $color-brand-dark;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.btn-full {
+  width: 100%;
+  justify-content: center;
+}
+
+.success-state,
+.error-state,
+.loading-state {
+  text-align: center;
+  padding: $spacing-xl 0;
+
+  i {
+    font-size: 64px;
+    margin-bottom: $spacing-md;
+  }
+
+  h2 {
+    font-size: $font-size-xl;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+    margin: 0 0 $spacing-sm 0;
+  }
+
+  p {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    margin: 0;
+  }
+}
+
+.success-state {
+  i {
+    color: $color-success;
+  }
+
+  .success-time {
+    font-size: $font-size-md;
+    color: $color-success;
+    font-weight: $font-weight-medium;
+    margin-bottom: $spacing-lg;
+  }
+
+  .meeting-info-success {
+    background: $color-cloud-gray;
+    border-radius: $radius-md;
+    padding: $spacing-md;
+
+    h3 {
+      font-size: $font-size-md;
+      font-weight: $font-weight-semibold;
+      color: $color-text-dark;
+      margin: 0 0 $spacing-xs 0;
+    }
+
+    p {
+      font-size: $font-size-sm;
+      color: $color-text-secondary;
+    }
+  }
+}
+
+.error-state {
+  i {
+    color: $color-error;
+  }
+}
+
+.loading-state {
+  i {
+    color: $color-brand-main;
+  }
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.sign-in-footer {
+  margin-top: $spacing-lg;
+  text-align: center;
+
+  p {
+    font-size: $font-size-xs;
+    color: $color-muted-gray;
+    margin: 0;
+  }
+}

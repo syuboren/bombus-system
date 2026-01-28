@@ -1,5 +1,5 @@
 @if (isVisible()) {
-<div class="modal-backdrop" (click)="close.emit()"></div>
+<div class="modal-backdrop"></div>
 <div class="modal large-modal">
     <div class="modal-header">
         <h3 class="modal-title">
@@ -12,62 +12,166 @@
     </div>
 
     <div class="modal-body">
+        <!-- Candidate Info & Score Summary -->
         <div class="candidate-preview">
-            <h4>{{ candidate().name }}</h4>
-            <div class="score-badge">平均分數: {{ averageScore() }} / 5.0</div>
+            <div class="candidate-info">
+                <h4>{{ candidate().name }}</h4>
+                <span class="position-badge">{{ candidate().position }}</span>
+            </div>
+            <div class="score-summary">
+                <div class="score-item">
+                    <span class="score-label">維度平均</span>
+                    <span class="score-value">{{ averageScore() }}/5</span>
+                </div>
+                <div class="score-divider"></div>
+                <div class="score-item">
+                    <span class="score-label">關鍵字分數</span>
+                    <span class="score-value">{{ keywordScore() }}</span>
+                </div>
+                <div class="score-divider"></div>
+                <div class="score-item total">
+                    <span class="score-label">綜合評分</span>
+                    <span class="score-value" [class.excellent]="totalScore() >= 80"
+                        [class.good]="totalScore() >= 60 && totalScore() < 80">{{ totalScore() }}</span>
+                </div>
+            </div>
         </div>
 
-        <div class="dimensions-grid">
-            @for (dim of dimensions(); track $index) {
-            <div class="dimension-card">
-                <div class="dim-header">
-                    <span class="dim-name">{{ dim.name }}</span>
-                    <div class="rating">
-                        @for (star of [1,2,3,4,5]; track star) {
-                        <i class="ri-star-fill" [class.active]="dim.score >= star" (click)="dim.score = star"></i>
-                        }
-                    </div>
-                </div>
-                <input type="text" class="form-input-sm" placeholder="評語 (選填)" [(ngModel)]="dim.comment">
+        <!-- NEW: Performance Description Section -->
+        <div class="section-card">
+            <div class="section-header">
+                <h5><i class="ri-quill-pen-line"></i> 候選人表現描述</h5>
+                <span class="section-hint">請描述候選人在面試中的表現，系統會自動標記關鍵字</span>
+            </div>
+            <textarea class="form-textarea description-input" rows="4"
+                placeholder="例如：候選人在回答技術問題時表現出色，具備良好的團隊協作意識，但對於壓力情境的處理略顯緊張..." [ngModel]="performanceDescription()"
+                (ngModelChange)="onDescriptionChange($event)">
+            </textarea>
+
+            <!-- Matched Keywords Display -->
+            @if (matchedKeywords().length > 0) {
+            <div class="keyword-matches">
+                <span class="matches-label">偵測到關鍵字:</span>
+                @for (kw of matchedKeywords(); track kw.keyword) {
+                <span class="keyword-tag" [class.positive]="kw.type === 'positive'"
+                    [class.negative]="kw.type === 'negative'">
+                    <i [class]="kw.type === 'positive' ? 'ri-add-line' : 'ri-subtract-line'"></i>
+                    {{ kw.keyword }} ({{ kw.type === 'positive' ? '+' : '-' }}{{ kw.weight }})
+                </span>
+                }
             </div>
             }
         </div>
 
-        <div class="form-group overall-comment">
-            <label class="form-label">總體評價與建議</label>
-            <textarea class="form-textarea" rows="3" [(ngModel)]="overallComment"></textarea>
+        <!-- Dimensions Grid -->
+        <div class="section-card">
+            <div class="section-header">
+                <h5><i class="ri-bar-chart-horizontal-line"></i> 評分維度</h5>
+            </div>
+            <div class="dimensions-grid">
+                @for (dim of dimensions(); track $index) {
+                <div class="dimension-card">
+                    <div class="dim-header">
+                        <span class="dim-name">{{ dim.name }}</span>
+                        <div class="rating">
+                            @for (star of [1,2,3,4,5]; track star) {
+                            <i class="ri-star-fill" [class.active]="dim.score >= star" (click)="dim.score = star"></i>
+                            }
+                        </div>
+                    </div>
+                    <input type="text" class="form-input-sm" placeholder="評語 (選填)" [(ngModel)]="dim.comment">
+                </div>
+                }
+            </div>
         </div>
 
-        <div class="decision-selector">
-            <label class="decision-option option-pass" [class.selected]="result() === 'Pass'">
-                <input type="radio" name="result" value="Pass" [ngModel]="result()"
-                    (ngModelChange)="result.set($event)">
-                <i class="ri-thumb-up-line"></i>
-                <span class="title">通過 (Pass)</span>
-            </label>
+        <!-- NEW: Media Upload Section -->
+        <div class="section-card">
+            <div class="section-header">
+                <h5><i class="ri-vidicon-line"></i> 面試錄音/錄影</h5>
+                <span class="section-hint">上傳面試錄音或錄影檔案作為評估參考</span>
+            </div>
 
-            <label class="decision-option option-hold" [class.selected]="result() === 'Hold'">
-                <input type="radio" name="result" value="Hold" [ngModel]="result()"
-                    (ngModelChange)="result.set($event)">
-                <i class="ri-question-line"></i>
-                <span class="title">保留 (Hold)</span>
-            </label>
+            <!-- Drag & Drop Zone -->
+            <div class="upload-zone" [class.dragging]="isDraggingOver()" (dragover)="onDragOver($event)"
+                (dragleave)="onDragLeave($event)" (drop)="onDrop($event)">
+                <i class="ri-upload-cloud-2-line"></i>
+                <p>拖放檔案至此或</p>
+                <label class="btn btn-outline-sm">
+                    <i class="ri-folder-open-line"></i>
+                    選擇檔案
+                    <input type="file" accept="audio/*,video/*" multiple (change)="onFileSelect($event)" hidden>
+                </label>
+                <span class="upload-hint">支援 MP3、MP4、WAV、WebM 等格式</span>
+            </div>
 
-            <label class="decision-option option-fail" [class.selected]="result() === 'Fail'">
-                <input type="radio" name="result" value="Fail" [ngModel]="result()"
-                    (ngModelChange)="result.set($event)">
-                <i class="ri-thumb-down-line"></i>
-                <span class="title">未通過 (Fail)</span>
-            </label>
+            <!-- Uploaded Files List -->
+            @if (mediaAttachments().length > 0) {
+            <div class="uploaded-files">
+                @for (file of mediaAttachments(); track file.id) {
+                <div class="file-item">
+                    <div class="file-icon">
+                        <i [class]="file.type === 'audio' ? 'ri-music-2-line' : 'ri-movie-line'"></i>
+                    </div>
+                    <div class="file-info">
+                        <span class="file-name">{{ file.filename }}</span>
+                        <span class="file-size">{{ formatFileSize(file.size) }}</span>
+                    </div>
+                    @if (file.uploadProgress && file.uploadProgress < 100) { <div class="file-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill" [style.width.%]="file.uploadProgress"></div>
+                        </div>
+                        <span class="progress-text">{{ file.uploadProgress }}%</span>
+                </div>
+                } @else {
+                <span class="file-status success">
+                    <i class="ri-checkbox-circle-fill"></i>
+                </span>
+                }
+                <button class="btn-icon-sm" (click)="removeAttachment(file.id)" type="button" title="移除">
+                    <i class="ri-close-line"></i>
+                </button>
+            </div>
+            }
         </div>
-
+        }
     </div>
 
-    <div class="modal-footer">
-        <button class="btn btn-secondary" (click)="close.emit()" type="button" [disabled]="loading()">取消</button>
-        <button class="btn btn-primary" (click)="submit()" type="button" [disabled]="loading()">
-            {{ loading() ? '保存中...' : '提交評分' }}
-        </button>
+    <!-- Overall Comment -->
+    <div class="form-group overall-comment">
+        <label class="form-label">總體評價與建議</label>
+        <textarea class="form-textarea" rows="3" [(ngModel)]="overallComment"
+            placeholder="請輸入對候選人的整體評價與後續建議..."></textarea>
     </div>
+
+    <!-- Decision Selector -->
+    <div class="decision-selector">
+        <label class="decision-option option-pass" [class.selected]="result() === 'Pass'">
+            <input type="radio" name="result" value="Pass" [ngModel]="result()" (ngModelChange)="result.set($event)">
+            <i class="ri-thumb-up-line"></i>
+            <span class="title">通過 (Pass)</span>
+        </label>
+
+        <label class="decision-option option-hold" [class.selected]="result() === 'Hold'">
+            <input type="radio" name="result" value="Hold" [ngModel]="result()" (ngModelChange)="result.set($event)">
+            <i class="ri-question-line"></i>
+            <span class="title">保留 (Hold)</span>
+        </label>
+
+        <label class="decision-option option-fail" [class.selected]="result() === 'Fail'">
+            <input type="radio" name="result" value="Fail" [ngModel]="result()" (ngModelChange)="result.set($event)">
+            <i class="ri-thumb-down-line"></i>
+            <span class="title">未通過 (Fail)</span>
+        </label>
+    </div>
+
+</div>
+
+<div class="modal-footer">
+    <button class="btn btn-secondary" (click)="close.emit()" type="button" [disabled]="loading()">取消</button>
+    <button class="btn btn-primary" (click)="submit()" type="button" [disabled]="loading()">
+        {{ loading() ? '保存中...' : '提交評分' }}
+    </button>
+</div>
 </div>
 }

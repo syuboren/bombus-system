@@ -58,8 +58,8 @@ export class JobsPageComponent implements OnInit {
       role: 1 as number,          // 1=全職, 2=兼職, 3=高階
       jobCatSet: [2001002002] as number[], // 預設: 測試類別 (API Example: 2001002002)
       salaryType: 10 as number,   // 10=面議, 50=月薪, 60=年薪
-      salaryLow: 0,
-      salaryHigh: 0,
+      salaryLow: null as number | null,  // 初始為空，讓用戶看到 placeholder 提示
+      salaryHigh: null as number | null, // 初始為空，讓用戶看到 placeholder 提示
       addrNo: 6001001001,         // 台北市
       edu: [8] as number[],       // 8=大學 (API: 1, 2, 4, 8, 16, 32)
       contact: 'HR',
@@ -198,6 +198,13 @@ export class JobsPageComponent implements OnInit {
     });
   }
 
+  /**
+   * 導航至關鍵字管理頁面
+   */
+  navigateToKeywords(job: Job): void {
+    this.router.navigate(['/employee/job-keywords', job.id]);
+  }
+
   editJob(job: Job): void {
     this.notificationService.info(`編輯職缺: ${job.title}`);
   }
@@ -331,8 +338,11 @@ export class JobsPageComponent implements OnInit {
       // 當 role 改變時，自動更新 jobCatSet 為對應的預設值
       if (field === 'role') {
         if (value === 3) {
-          // 高階主管 -> 使用高階類別
+          // 高階主管 -> 使用高階類別 + 強制面議（104 API 規定）
           updated.job104.jobCatSet = [9001001000];
+          updated.job104.salaryType = 10; // 面議
+          updated.job104.salaryLow = null;
+          updated.job104.salaryHigh = null;
         } else {
           // 全職/兼職 -> 使用一般類別
           updated.job104.jobCatSet = [2001002002];
@@ -372,8 +382,8 @@ export class JobsPageComponent implements OnInit {
         role: 1,
         jobCatSet: [2001002002],
         salaryType: 10,
-        salaryLow: 0,
-        salaryHigh: 0,
+        salaryLow: null as number | null,  // 初始為空，讓用戶看到 placeholder 提示
+        salaryHigh: null as number | null, // 初始為空，讓用戶看到 placeholder 提示
         addrNo: 6001001001,
         edu: [8],
         contact: 'HR',
@@ -407,8 +417,8 @@ export class JobsPageComponent implements OnInit {
       role: 1,
       jobCatSet: [2001002002],
       salaryType: 10,
-      salaryLow: 0,
-      salaryHigh: 0,
+      salaryLow: null as number | null,  // 初始為空，讓用戶看到 placeholder 提示
+      salaryHigh: null as number | null, // 初始為空，讓用戶看到 placeholder 提示
       addrNo: 6001001001,
       edu: [8],
       contact: 'HR',
@@ -495,8 +505,8 @@ export class JobsPageComponent implements OnInit {
               role: job104Data.role || 1,
               jobCatSet: job104Data.jobCatSet || [2001002002],
               salaryType: job104Data.salaryType || 10,
-              salaryLow: job104Data.salaryLow || 0,
-              salaryHigh: job104Data.salaryHigh || 0,
+              salaryLow: job104Data.salaryLow ?? null,  // 使用 nullish coalescing，保留 0 值但預設為 null
+              salaryHigh: job104Data.salaryHigh ?? null, // 使用 nullish coalescing，保留 0 值但預設為 null
               addrNo: job104Data.addrNo || 6001001001,
               edu: job104Data.edu || [8],
               contact: job104Data.contact || 'HR',

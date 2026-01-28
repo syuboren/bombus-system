@@ -65,6 +65,71 @@ $module-color: $color-l1-sage;
   padding: $spacing-lg;
 }
 
+// 日曆層級切換
+.calendar-scope-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: $spacing-md;
+  margin-bottom: $spacing-md;
+  border-bottom: 1px solid $color-soft-gray;
+}
+
+.scope-toggle {
+  display: flex;
+  gap: $spacing-xs;
+  background: $color-soft-gray;
+  padding: 4px;
+  border-radius: $radius-md;
+}
+
+.scope-btn {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: $spacing-xs $spacing-md;
+  border: none;
+  background: transparent;
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+  border-radius: $radius-sm;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  i {
+    font-size: 1rem;
+  }
+
+  &:hover {
+    color: $color-text-primary;
+  }
+
+  &.active {
+    background: $color-pure-white;
+    color: $color-brand-main;
+    box-shadow: $shadow-sm;
+  }
+}
+
+.department-select,
+.employee-select {
+  select {
+    padding: $spacing-xs $spacing-md;
+    border: 1px solid $color-soft-gray;
+    border-radius: $radius-sm;
+    font-size: $font-size-sm;
+    color: $color-text-primary;
+    background: $color-pure-white;
+    cursor: pointer;
+    min-width: 180px;
+
+    &:focus {
+      outline: none;
+      border-color: $color-brand-main;
+    }
+  }
+}
+
 .calendar-header {
   display: flex;
   justify-content: space-between;
@@ -144,9 +209,14 @@ $module-color: $color-l1-sage;
   padding: $spacing-xs;
   cursor: pointer;
   transition: background $transition-fast;
+  position: relative;
 
   &:hover {
     background: rgba($color-brand-main, 0.03);
+
+    .add-meeting-hint {
+      opacity: 1;
+    }
   }
 
   &.other-month {
@@ -168,6 +238,27 @@ $module-color: $color-l1-sage;
       align-items: center;
       justify-content: center;
     }
+  }
+}
+
+// 點擊新增會議提示
+.add-meeting-hint {
+  position: absolute;
+  bottom: $spacing-xs;
+  right: $spacing-xs;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba($color-brand-main, 0.1);
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity $transition-fast;
+
+  i {
+    font-size: 14px;
+    color: $color-brand-main;
   }
 }
 
@@ -273,6 +364,21 @@ $module-color: $color-l1-sage;
     box-shadow: $shadow-md;
     transform: translateY(-2px);
   }
+
+  &.cancelled {
+    opacity: 0.6;
+    background: $color-cloud-gray;
+    
+    .meeting-title {
+      text-decoration: line-through;
+      color: $color-text-secondary;
+    }
+  }
+
+  &.completed {
+    opacity: 0.8;
+    background: rgba($color-success, 0.05);
+  }
 }
 
 .meeting-time {
@@ -336,6 +442,51 @@ $module-color: $color-l1-sage;
 
   &:hover {
     background: $color-cloud-gray;
+  }
+
+  &.cancelled {
+    opacity: 0.6;
+    
+    h4 {
+      text-decoration: line-through;
+      color: $color-text-secondary;
+    }
+  }
+
+  &.completed {
+    opacity: 0.8;
+  }
+}
+
+.upcoming-meta {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  flex-wrap: wrap;
+}
+
+// 狀態標籤
+.status-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: $radius-full;
+  font-size: 10px;
+  font-weight: $font-weight-medium;
+
+  &.status-cancelled {
+    background: rgba($color-error, 0.1);
+    color: $color-error;
+  }
+
+  &.status-completed {
+    background: rgba($color-success, 0.1);
+    color: $color-success;
+  }
+
+  &.status-in-progress {
+    background: rgba($color-info, 0.1);
+    color: $color-info;
   }
 }
 
@@ -1141,7 +1292,54 @@ $module-color: $color-l1-sage;
   gap: $spacing-md;
   padding: $spacing-md $spacing-lg;
   border-top: 1px solid $color-soft-gray;
+  flex-wrap: wrap;
+
+  .footer-left {
+    display: flex;
+    gap: $spacing-sm;
+    margin-right: auto;
+  }
+
+  .footer-right {
+    display: flex;
+    gap: $spacing-md;
+  }
 }
+
+// 危險操作按鈕
+.btn-danger-outline {
+  @include button-base;
+  background: transparent;
+  border: 1px solid $color-error;
+  color: $color-error;
+
+  &:hover {
+    background: rgba($color-error, 0.1);
+  }
+}
+
+.btn-warning-outline {
+  @include button-base;
+  background: transparent;
+  border: 1px solid $color-warning;
+  color: darken($color-warning, 20%);
+
+  &:hover {
+    background: rgba($color-warning, 0.1);
+  }
+}
+
+// 成功操作按鈕
+.btn-success {
+  @include button-base;
+  background: $color-success;
+  color: $color-pure-white;
+
+  &:hover {
+    background: darken($color-success, 10%);
+  }
+}
+
 
 // 表單樣式
 .form-grid {
@@ -1189,6 +1387,103 @@ $module-color: $color-l1-sage;
   gap: $spacing-md;
 }
 
+// Google 風格時間選擇器
+.time-picker-section {
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  margin-bottom: $spacing-md;
+}
+
+.time-picker-header {
+  margin-bottom: $spacing-sm;
+}
+
+.all-day-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-xs;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  cursor: pointer;
+
+  input {
+    width: 16px;
+    height: 16px;
+    accent-color: $color-brand-main;
+  }
+}
+
+.time-picker-row {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  flex-wrap: wrap;
+}
+
+.date-picker {
+  .date-input {
+    padding: $spacing-xs $spacing-sm;
+    border: 1px solid $color-soft-gray;
+    border-radius: $radius-sm;
+    font-size: $font-size-sm;
+    color: $color-text-primary;
+    background: $color-pure-white;
+    cursor: pointer;
+    min-width: 140px;
+
+    &:focus {
+      outline: none;
+      border-color: $color-brand-main;
+    }
+
+    &:hover {
+      background: rgba($color-brand-main, 0.05);
+    }
+  }
+}
+
+.time-select {
+  .time-input {
+    padding: $spacing-xs $spacing-sm;
+    border: 1px solid $color-soft-gray;
+    border-radius: $radius-sm;
+    font-size: $font-size-sm;
+    color: $color-text-primary;
+    background: $color-pure-white;
+    cursor: pointer;
+    min-width: 110px;
+
+    &:focus {
+      outline: none;
+      border-color: $color-brand-main;
+    }
+
+    &:hover {
+      background: rgba($color-brand-main, 0.05);
+    }
+  }
+}
+
+.time-separator {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  padding: 0 $spacing-xs;
+}
+
+.timezone-info {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  margin-top: $spacing-sm;
+  font-size: $font-size-xs;
+  color: $color-muted-gray;
+
+  i {
+    font-size: 14px;
+  }
+}
+
 .form-label {
   font-size: $font-size-sm;
   font-weight: $font-weight-medium;
@@ -1198,6 +1493,32 @@ $module-color: $color-l1-sage;
     content: ' *';
     color: $color-error;
   }
+}
+
+// 表單驗證錯誤樣式
+.form-group.has-error,
+.form-section.has-error {
+  .form-input,
+  .form-select,
+  .form-textarea {
+    border-color: $color-error;
+  }
+}
+
+.error-message {
+  display: block;
+  font-size: $font-size-xs;
+  color: $color-error;
+  margin-top: 4px;
+
+  &.section-error {
+    margin-bottom: $spacing-sm;
+  }
+}
+
+.form-section-title.required::after {
+  content: ' *';
+  color: $color-error;
 }
 
 .form-input,
@@ -1292,6 +1613,57 @@ $module-color: $color-l1-sage;
     .attendee-avatar {
       background: $color-brand-main;
     }
+  }
+
+  &.is-organizer {
+    border-color: $color-warning;
+    background: rgba($color-warning, 0.08);
+
+    .attendee-avatar {
+      background: $color-warning;
+    }
+  }
+
+  &.selected.is-organizer {
+    border-color: $color-warning;
+    background: rgba($color-warning, 0.12);
+  }
+}
+
+// 召集人徽章
+.organizer-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  margin-left: 4px;
+  background: $color-warning;
+  color: $color-pure-white;
+  font-size: 10px;
+  font-weight: $font-weight-medium;
+  border-radius: $radius-full;
+}
+
+// 召集人選擇區域
+.organizer-select {
+  margin-bottom: $spacing-md;
+  padding-bottom: $spacing-md;
+  border-bottom: 1px solid $color-soft-gray;
+
+  .form-label {
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+    
+    i {
+      color: $color-warning;
+    }
+  }
+
+  .form-hint {
+    display: block;
+    margin-top: $spacing-xs;
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
   }
 }
 
@@ -1388,6 +1760,79 @@ $module-color: $color-l1-sage;
   padding: $spacing-sm $spacing-md;
   background: $color-cloud-gray;
   border-radius: $radius-md;
+
+  .agenda-actions {
+    display: flex;
+    gap: $spacing-xs;
+    flex-shrink: 0;
+  }
+}
+
+// 討論要點樣式
+.discussion-points-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-sm;
+
+  .form-label {
+    margin-bottom: 0;
+  }
+}
+
+.empty-discussion-points {
+  padding: $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+  border: 1px dashed $color-soft-gray;
+  text-align: center;
+
+  p {
+    margin: 0;
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+  }
+}
+
+.discussion-points-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.discussion-point-item {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+
+  .point-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: $color-brand-main;
+    color: $color-pure-white;
+    border-radius: $radius-full;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    flex-shrink: 0;
+  }
+
+  .form-input {
+    flex: 1;
+  }
+
+  .btn-icon-sm {
+    flex-shrink: 0;
+  }
+}
+
+// 覆蓋上面的重複定義
+.agenda-item .agenda-actions {
+  display: flex;
+  gap: $spacing-xs;
+  flex-shrink: 0;
 }
 
 .agenda-order {
@@ -1448,6 +1893,126 @@ $module-color: $color-l1-sage;
     border-color: $color-brand-main;
     color: $color-brand-main;
     background: transparent;
+  }
+}
+
+// 附件上傳區塊樣式
+.file-upload-area {
+  border: 2px dashed $color-soft-gray;
+  border-radius: $radius-md;
+  padding: $spacing-xl;
+  text-align: center;
+  cursor: pointer;
+  transition: all $transition-fast;
+  background: $color-cloud-gray;
+
+  &:hover {
+    border-color: $color-brand-main;
+    background: rgba($color-brand-main, 0.05);
+  }
+
+  &.dragging {
+    border-color: $color-brand-main;
+    background: rgba($color-brand-main, 0.1);
+    border-style: solid;
+  }
+
+  .file-input-hidden {
+    display: none;
+  }
+}
+
+.upload-content {
+  i {
+    font-size: 48px;
+    color: $color-brand-main;
+    opacity: 0.6;
+    margin-bottom: $spacing-sm;
+  }
+}
+
+.upload-text {
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  margin-bottom: $spacing-xs;
+}
+
+.upload-hint {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.uploaded-files {
+  margin-top: $spacing-md;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.uploaded-file-item {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  background: $color-pure-white;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  transition: all $transition-fast;
+
+  &:hover {
+    border-color: $color-brand-main;
+  }
+
+  > i {
+    font-size: 24px;
+    color: $color-brand-main;
+    flex-shrink: 0;
+  }
+}
+
+.file-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.file-name {
+  display: block;
+  font-size: $font-size-sm;
+  color: $color-text-dark;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-size {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.upload-progress {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  min-width: 100px;
+
+  .progress-bar {
+    flex: 1;
+    height: 4px;
+    background: $color-soft-gray;
+    border-radius: $radius-full;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: $color-brand-main;
+    transition: width 0.2s ease;
+  }
+
+  span {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    min-width: 35px;
   }
 }
 
@@ -1545,6 +2110,30 @@ $module-color: $color-l1-sage;
   margin-left: $spacing-sm;
 }
 
+.meeting-link {
+  color: $color-brand-main;
+  text-decoration: none;
+  word-break: break-all;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.reminder-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  background: rgba($color-brand-main, 0.1);
+  color: $color-brand-main;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  margin-left: $spacing-xs;
+
+  &:first-of-type {
+    margin-left: $spacing-xs;
+  }
+}
+
 .attendee-list {
   display: flex;
   flex-direction: column;
@@ -1599,8 +2188,8 @@ $module-color: $color-l1-sage;
 
 .agenda-detail-item {
   display: flex;
-  align-items: flex-start;
-  gap: $spacing-md;
+  flex-direction: column;
+  gap: $spacing-sm;
   padding: $spacing-md;
   background: $color-cloud-gray;
   border-radius: $radius-md;
@@ -1611,6 +2200,13 @@ $module-color: $color-l1-sage;
     .agenda-title {
       text-decoration: line-through;
     }
+  }
+
+  .agenda-detail-header {
+    display: flex;
+    align-items: flex-start;
+    gap: $spacing-md;
+    width: 100%;
   }
 }
 
@@ -1626,6 +2222,47 @@ $module-color: $color-l1-sage;
   font-size: $font-size-xs;
   font-weight: $font-weight-medium;
   margin-left: auto;
+  flex-shrink: 0;
+}
+
+// 討論要點詳細顯示
+.discussion-points-detail {
+  margin-left: calc(24px + $spacing-md); // 對齊議程標題
+  padding: $spacing-sm $spacing-md;
+  background: rgba($color-brand-main, 0.05);
+  border-radius: $radius-md;
+
+  .discussion-points-label {
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-brand-main;
+    margin-bottom: $spacing-xs;
+
+    i {
+      font-size: 14px;
+    }
+  }
+
+  .discussion-points-ol {
+    margin: 0;
+    padding-left: $spacing-lg;
+    list-style-type: decimal;
+    
+    li {
+      font-size: $font-size-sm;
+      color: $color-text-dark;
+      line-height: 1.6;
+      margin-bottom: 4px;
+      padding-left: 4px;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
 }
 
 .conclusion-list {
@@ -1706,4 +2343,822 @@ $module-color: $color-l1-sage;
 .attachment-size {
   font-size: $font-size-xs;
   color: $color-text-secondary;
+}
+
+// ===== 簽到功能樣式 =====
+.section-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-md;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+}
+
+.sign-in-actions {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+}
+
+.sign-in-stats {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+
+  i {
+    color: $color-success;
+    margin-right: 4px;
+  }
+}
+
+.attendee-item {
+  &.signed-in {
+    background: rgba($color-success, 0.05);
+  }
+}
+
+.avatar-signed {
+  background: $color-success !important;
+  color: $color-pure-white !important;
+}
+
+.attendee-status {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.sign-in-time {
+  font-size: 10px;
+  color: $color-muted-gray;
+}
+
+.pending-badge {
+  font-size: $font-size-xs;
+  color: $color-muted-gray;
+  padding: 2px 8px;
+  background: $color-soft-gray;
+  border-radius: $radius-full;
+}
+
+.btn-xs {
+  padding: 4px 8px;
+  font-size: $font-size-xs;
+  border-radius: $radius-sm;
+}
+
+.self-sign-in-bar {
+  margin-top: $spacing-md;
+  padding-top: $spacing-md;
+  border-top: 1px solid $color-soft-gray;
+}
+
+.btn-full {
+  width: 100%;
+  justify-content: center;
+}
+
+// 簽到 QR Code Modal
+.sign-in-qr-section {
+  text-align: center;
+}
+
+.qr-code-container {
+  margin-bottom: $spacing-lg;
+}
+
+.qr-code-placeholder {
+  width: 200px;
+  height: 200px;
+  margin: 0 auto;
+  background: $color-cloud-gray;
+  border-radius: $radius-lg;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed $color-soft-gray;
+
+  i {
+    font-size: 64px;
+    color: $color-brand-main;
+    opacity: 0.6;
+    margin-bottom: $spacing-sm;
+  }
+
+  p {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+  }
+}
+
+.sign-in-info {
+  margin-bottom: $spacing-lg;
+
+  h4 {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+    margin-bottom: $spacing-xs;
+  }
+
+  .sign-in-meeting-time {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+
+    i {
+      margin-right: 4px;
+    }
+  }
+}
+
+.sign-in-link-section {
+  margin-bottom: $spacing-lg;
+  text-align: left;
+
+  .link-copy-row {
+    display: flex;
+    gap: $spacing-sm;
+
+    .form-input {
+      flex: 1;
+      font-size: $font-size-xs;
+      background: $color-cloud-gray;
+    }
+  }
+}
+
+.btn-icon {
+  @include button-icon;
+  border: 1px solid $color-soft-gray;
+
+  &:hover {
+    border-color: $color-brand-main;
+    color: $color-brand-main;
+  }
+}
+
+.real-time-sign-in {
+  text-align: left;
+  padding: $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+
+  h4 {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: $color-text-dark;
+    margin-bottom: $spacing-md;
+  }
+}
+
+.sign-in-progress {
+  margin-bottom: $spacing-md;
+
+  .progress-bar {
+    height: 8px;
+    background: $color-soft-gray;
+    border-radius: $radius-full;
+    overflow: hidden;
+    margin-bottom: $spacing-xs;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: $color-success;
+    border-radius: $radius-full;
+    transition: width 0.3s ease;
+  }
+
+  .progress-text {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+  }
+}
+
+.recent-sign-ins {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.recent-sign-in-item {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-xs;
+  background: $color-pure-white;
+  border-radius: $radius-sm;
+
+  .attendee-avatar {
+    width: 24px;
+    height: 24px;
+    font-size: 10px;
+  }
+
+  .attendee-name {
+    flex: 1;
+    font-size: $font-size-sm;
+    color: $color-text-dark;
+  }
+
+  .sign-in-time {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+  }
+}
+
+// ==================== 完成會議 Modal ====================
+.complete-meeting-modal {
+  .meeting-summary {
+    background: $color-cloud-gray;
+    border-radius: $radius-md;
+    padding: $spacing-md;
+    margin-bottom: $spacing-lg;
+
+    h3 {
+      font-size: $font-size-lg;
+      font-weight: $font-weight-semibold;
+      color: $color-text-dark;
+      margin: 0 0 $spacing-xs 0;
+    }
+
+    .meeting-meta {
+      display: flex;
+      align-items: center;
+      gap: $spacing-xs;
+      font-size: $font-size-sm;
+      color: $color-text-secondary;
+      margin: 0;
+
+      i {
+        font-size: 14px;
+      }
+
+      .separator {
+        margin: 0 $spacing-xs;
+        color: $color-soft-gray;
+      }
+    }
+  }
+
+  .conclusions-section {
+    margin-top: $spacing-xl; // 增加與會議記錄的間距
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: $spacing-md;
+      padding-bottom: $spacing-sm;
+      border-bottom: 1px solid $color-soft-gray;
+
+      .form-label {
+        margin-bottom: 0;
+        font-size: $font-size-md;
+        font-weight: $font-weight-semibold;
+        color: $color-text-dark;
+      }
+    }
+  }
+
+  // 依議程分組的結論列表
+  .agenda-conclusions-list {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-lg;
+  }
+
+  .agenda-conclusion-block {
+    background: $color-pure-white;
+    border: 1px solid $color-soft-gray;
+    border-radius: $radius-md;
+    overflow: hidden;
+  }
+
+  .agenda-block-header {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    padding: $spacing-sm $spacing-md;
+    background: $color-brand-main;
+    color: $color-pure-white;
+
+    .agenda-block-number {
+      font-size: $font-size-sm;
+      font-weight: $font-weight-semibold;
+      padding: 2px 8px;
+      background: rgba($color-pure-white, 0.2);
+      border-radius: $radius-sm;
+    }
+
+    .agenda-block-title {
+      font-size: $font-size-md;
+      font-weight: $font-weight-medium;
+    }
+  }
+
+  .discussion-points-readonly {
+    padding: $spacing-md;
+  }
+
+  .discussion-point-row {
+    padding: $spacing-md 0;
+    border-bottom: 1px solid $color-soft-gray;
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  .point-content {
+    display: flex;
+    align-items: flex-start;
+    gap: $spacing-sm;
+    margin-bottom: $spacing-sm;
+
+    .point-number {
+      flex-shrink: 0;
+      font-size: $font-size-sm;
+      font-weight: $font-weight-semibold;
+      color: $color-brand-main;
+      min-width: 32px;
+    }
+
+    .point-text {
+      font-size: $font-size-sm;
+      color: $color-text-dark;
+      line-height: 1.6;
+    }
+  }
+
+  .point-conclusion-form {
+    margin-left: 40px; // 對齊討論要點文字
+  }
+
+  .add-conclusion-btn {
+    font-size: $font-size-xs;
+    padding: 4px 12px;
+    color: $color-text-secondary;
+    border-color: $color-soft-gray;
+
+    &:hover {
+      color: $color-brand-main;
+      border-color: $color-brand-main;
+    }
+  }
+
+  .conclusion-input-group {
+    background: rgba($color-warning, 0.08);
+    border-radius: $radius-md;
+    padding: $spacing-sm $spacing-md;
+  }
+
+  .conclusion-row {
+    display: flex;
+    align-items: flex-start;
+    gap: $spacing-sm;
+    margin-bottom: $spacing-sm;
+
+    .conclusion-label {
+      flex-shrink: 0;
+      font-size: $font-size-sm;
+      font-weight: $font-weight-semibold;
+      color: $color-warning;
+      padding-top: 6px;
+    }
+
+    .conclusion-textarea {
+      flex: 1;
+      font-size: $font-size-sm;
+      min-height: 60px;
+    }
+  }
+
+  .conclusion-meta-row {
+    display: flex;
+    align-items: center;
+    gap: $spacing-md;
+    flex-wrap: wrap;
+
+    .meta-label {
+      font-size: $font-size-xs;
+      color: $color-text-secondary;
+      white-space: nowrap;
+    }
+
+    .responsible-select {
+      display: flex;
+      align-items: center;
+      gap: $spacing-xs;
+      flex: 1;
+    }
+
+    .due-date-select {
+      display: flex;
+      align-items: center;
+      gap: $spacing-xs;
+
+      .form-input--sm {
+        width: 140px;
+        padding: 4px 8px;
+        font-size: $font-size-xs;
+      }
+    }
+  }
+
+  .multi-select-inline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .select-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    background: $color-pure-white;
+    border: 1px solid $color-soft-gray;
+    border-radius: $radius-full;
+    font-size: $font-size-xs;
+    cursor: pointer;
+    transition: all $transition-fast;
+
+    input[type='checkbox'] {
+      display: none;
+    }
+
+    &:hover {
+      border-color: $color-brand-main;
+    }
+
+    &.selected {
+      background: $color-brand-main;
+      border-color: $color-brand-main;
+      color: $color-pure-white;
+    }
+  }
+
+  .no-discussion-points {
+    padding: $spacing-md;
+    text-align: center;
+    color: $color-text-secondary;
+    font-size: $font-size-sm;
+  }
+
+  // 額外結論區塊
+  .extra-conclusions-section {
+    padding: $spacing-md;
+    border-top: 1px dashed $color-soft-gray;
+    background: rgba($color-cloud-gray, 0.5);
+  }
+
+  .extra-conclusion-item {
+    margin-bottom: $spacing-md;
+  }
+
+  .extra-badge {
+    display: inline-block;
+    padding: 1px 6px;
+    margin-right: 4px;
+    background: $color-info;
+    color: $color-pure-white;
+    font-size: 10px;
+    font-weight: $font-weight-medium;
+    border-radius: $radius-sm;
+    vertical-align: middle;
+  }
+
+  .add-extra-btn {
+    width: 100%;
+    justify-content: center;
+    border-style: dashed;
+    color: $color-text-secondary;
+
+    &:hover {
+      color: $color-brand-main;
+      border-color: $color-brand-main;
+      background: rgba($color-brand-main, 0.05);
+    }
+  }
+
+  .empty-conclusions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: $spacing-xl $spacing-lg;
+    background: $color-cloud-gray;
+    border-radius: $radius-md;
+    border: 2px dashed $color-soft-gray;
+    min-height: 160px;
+
+    i {
+      font-size: 40px;
+      color: $color-muted-gray;
+      margin-bottom: $spacing-md;
+    }
+
+    p {
+      color: $color-text-secondary;
+      margin: 0 0 $spacing-lg 0;
+      font-size: $font-size-sm;
+    }
+
+    .btn-sm {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: $spacing-xs;
+      padding: $spacing-sm $spacing-md;
+      
+      i {
+        font-size: 16px;
+        margin: 0;
+        color: inherit;
+      }
+    }
+  }
+
+  .conclusions-list {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-md;
+  }
+
+  .conclusion-item {
+    background: $color-cloud-gray;
+    border-radius: $radius-md;
+    padding: $spacing-md;
+    border-left: 4px solid $color-brand-main;
+
+    .conclusion-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: $spacing-sm;
+
+      .conclusion-number {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        background: $color-brand-main;
+        color: $color-pure-white;
+        border-radius: $radius-full;
+        font-size: $font-size-sm;
+        font-weight: $font-weight-semibold;
+      }
+    }
+
+    .conclusion-form {
+      .form-row {
+        display: flex;
+        gap: $spacing-md;
+
+        &--3 {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+
+      .form-group {
+        margin-bottom: $spacing-sm;
+
+        &--full {
+          flex: 1;
+        }
+
+        .form-label {
+          display: block;
+          font-size: $font-size-xs;
+          color: $color-text-secondary;
+          margin-bottom: 4px;
+
+          .required {
+            color: $color-error;
+          }
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+          width: 100%;
+          padding: $spacing-xs $spacing-sm;
+          border: 1px solid $color-soft-gray;
+          border-radius: $radius-sm;
+          font-size: $font-size-sm;
+          color: $color-text-dark;
+          background: $color-pure-white;
+
+          &:focus {
+            outline: none;
+            border-color: $color-brand-main;
+          }
+
+          &[readonly] {
+            background: $color-cloud-gray;
+            color: $color-text-secondary;
+          }
+        }
+
+        .form-textarea {
+          resize: vertical;
+          min-height: 60px;
+        }
+      }
+    }
+  }
+}
+
+.btn-icon-sm {
+  @include button-icon;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+
+  i {
+    font-size: 14px;
+  }
+
+  &.btn-danger {
+    color: $color-error;
+
+    &:hover {
+      background: rgba($color-error, 0.1);
+    }
+  }
+}
+
+// ==================== 結論追蹤表格增強 ====================
+.tracking-table {
+  .meeting-cell {
+    .meeting-info {
+      cursor: pointer;
+      padding: $spacing-xs;
+      border-radius: $radius-sm;
+      transition: background $transition-fast;
+
+      &:hover {
+        background: $color-cloud-gray;
+      }
+
+      .meeting-title {
+        display: block;
+        font-weight: $font-weight-medium;
+        color: $color-text-dark;
+        font-size: $font-size-sm;
+      }
+
+      .meeting-date {
+        display: block;
+        font-size: $font-size-xs;
+        color: $color-text-secondary;
+        margin-top: 2px;
+      }
+    }
+  }
+
+  .empty-row {
+    .empty-state {
+      text-align: center;
+      padding: $spacing-xl;
+      color: $color-text-secondary;
+
+      i {
+        font-size: 48px;
+        color: $color-muted-gray;
+        margin-bottom: $spacing-sm;
+      }
+
+      p {
+        font-size: $font-size-md;
+        margin: 0 0 $spacing-xs 0;
+      }
+
+      span {
+        font-size: $font-size-sm;
+        color: $color-muted-gray;
+      }
+    }
+  }
+}
+
+// ==================== 更新進度 Modal ====================
+.update-progress-modal {
+  .conclusion-preview {
+    background: $color-cloud-gray;
+    border-radius: $radius-md;
+    padding: $spacing-md;
+    margin-bottom: $spacing-lg;
+    border-left: 4px solid $color-brand-main;
+
+    .conclusion-content {
+      font-size: $font-size-sm;
+      color: $color-text-dark;
+      margin: 0 0 $spacing-sm 0;
+      line-height: 1.5;
+    }
+
+    .conclusion-meta {
+      display: flex;
+      gap: $spacing-md;
+      font-size: $font-size-xs;
+      color: $color-text-secondary;
+
+      span {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+
+        i {
+          font-size: 12px;
+        }
+      }
+    }
+  }
+
+  .form-range {
+    width: 100%;
+    height: 8px;
+    appearance: none;
+    background: $color-soft-gray;
+    border-radius: $radius-full;
+    outline: none;
+    cursor: pointer;
+
+    &::-webkit-slider-thumb {
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: $color-brand-main;
+      cursor: pointer;
+      border: 2px solid $color-pure-white;
+      box-shadow: $shadow-sm;
+    }
+
+    &::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: $color-brand-main;
+      cursor: pointer;
+      border: 2px solid $color-pure-white;
+      box-shadow: $shadow-sm;
+    }
+  }
+
+  .progress-preview {
+    margin-top: $spacing-sm;
+
+    .progress-bar {
+      height: 8px;
+      background: $color-soft-gray;
+      border-radius: $radius-full;
+      overflow: hidden;
+
+      .progress-fill {
+        height: 100%;
+        background: $color-brand-main;
+        border-radius: $radius-full;
+        transition: width $transition-fast;
+      }
+    }
+  }
+
+  .form-select {
+    width: 100%;
+    padding: $spacing-sm $spacing-md;
+    border: 1px solid $color-soft-gray;
+    border-radius: $radius-sm;
+    font-size: $font-size-sm;
+    color: $color-text-dark;
+    background: $color-pure-white;
+    cursor: pointer;
+
+    &:focus {
+      outline: none;
+      border-color: $color-brand-main;
+    }
+  }
+
+  .form-textarea {
+    width: 100%;
+    padding: $spacing-sm $spacing-md;
+    border: 1px solid $color-soft-gray;
+    border-radius: $radius-sm;
+    font-size: $font-size-sm;
+    color: $color-text-dark;
+    resize: vertical;
+
+    &:focus {
+      outline: none;
+      border-color: $color-brand-main;
+    }
+  }
 }

@@ -1,0 +1,351 @@
+<app-header pageTitle="關鍵字管理" [breadcrumbs]="['員工管理', '招募職缺', jobTitle()]" />
+
+<main class="main-content">
+    <div class="content-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="header-left">
+                <button class="btn-back" (click)="goBack()" type="button">
+                    <i class="ri-arrow-left-line"></i>
+                </button>
+                <div class="header-info">
+                    <h1 class="page-title">{{ jobTitle() }} - 關鍵字設定</h1>
+                    <p class="page-description">定義面試評估維度與關鍵字，用於即時標記與 AI 分析</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary" (click)="openTemplateModal()" type="button">
+                    <i class="ri-file-copy-line"></i>
+                    套用範本
+                </button>
+                <button class="btn btn-primary" (click)="saveConfig()" [disabled]="saving()" type="button">
+                    <i class="ri-save-line"></i>
+                    {{ saving() ? '儲存中...' : '儲存設定' }}
+                </button>
+            </div>
+        </div>
+
+        @if (loading()) {
+        <div class="loading-state">
+            <i class="ri-loader-4-line spin"></i>
+            <p>載入中...</p>
+        </div>
+        } @else {
+        <div class="config-layout">
+            <!-- Left: Dimensions Panel -->
+            <aside class="dimensions-panel">
+                <div class="panel-header">
+                    <h3>評估維度</h3>
+                    <button class="btn-icon" (click)="openDimensionModal()" type="button" title="新增維度">
+                        <i class="ri-add-line"></i>
+                    </button>
+                </div>
+
+                <div class="dimensions-list">
+                    @for (dim of dimensions(); track dim.id) {
+                    <div class="dimension-card">
+                        <div class="dim-info">
+                            <span class="dim-name">{{ dim.name }}</span>
+                            <span class="dim-weight">{{ dim.weight }}%</span>
+                        </div>
+                        <div class="dim-stats">
+                            <span class="keyword-count">{{ getKeywordCountByDimension(dim.id) }} 個關鍵字</span>
+                        </div>
+                        <div class="dim-actions">
+                            <button class="btn-icon-sm" (click)="openDimensionModal(dim)" type="button" title="編輯">
+                                <i class="ri-edit-line"></i>
+                            </button>
+                            <button class="btn-icon-sm danger" (click)="deleteDimension(dim.id)" type="button"
+                                title="刪除">
+                                <i class="ri-delete-bin-line"></i>
+                            </button>
+                        </div>
+                    </div>
+                    }
+                </div>
+
+                <div class="weight-summary" [class.warning]="totalWeight() !== 100">
+                    <span>總權重:</span>
+                    <strong>{{ totalWeight() }}%</strong>
+                    @if (totalWeight() !== 100) {
+                    <i class="ri-alert-line"></i>
+                    }
+                </div>
+            </aside>
+
+            <!-- Right: Keywords Panel -->
+            <section class="keywords-panel">
+                <!-- Tab Bar -->
+                <div class="tab-bar">
+                    <button class="tab-btn" [class.active]="activeTab() === 'positive'" (click)="switchTab('positive')"
+                        type="button">
+                        <i class="ri-add-circle-line"></i>
+                        正向關鍵字
+                        <span class="badge positive">{{ positiveCount() }}</span>
+                    </button>
+                    <button class="tab-btn" [class.active]="activeTab() === 'negative'" (click)="switchTab('negative')"
+                        type="button">
+                        <i class="ri-indeterminate-circle-line"></i>
+                        負向關鍵字
+                        <span class="badge negative">{{ negativeCount() }}</span>
+                    </button>
+                </div>
+
+                <!-- Filter & Actions -->
+                <div class="keywords-toolbar">
+                    <div class="filter-group">
+                        <label>篩選維度:</label>
+                        <select class="form-select" [ngModel]="selectedDimensionId()"
+                            (ngModelChange)="filterByDimension($event)">
+                            <option value="all">全部維度</option>
+                            @for (dim of dimensions(); track dim.id) {
+                            <option [value]="dim.id">{{ dim.name }}</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="action-group">
+                        <button class="btn btn-sm btn-outline" (click)="openBatchAddModal()" type="button">
+                            <i class="ri-file-list-3-line"></i>
+                            批量新增
+                        </button>
+                        <button class="btn btn-sm btn-primary" (click)="openAddKeywordModal()" type="button">
+                            <i class="ri-add-line"></i>
+                            新增關鍵字
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Keywords List -->
+                <div class="keywords-list">
+                    @if (filteredKeywords().length === 0) {
+                    <div class="empty-state">
+                        <i class="ri-key-line"></i>
+                        <p>尚無{{ activeTab() === 'positive' ? '正向' : '負向' }}關鍵字</p>
+                        <button class="btn btn-primary" (click)="openAddKeywordModal()" type="button">
+                            新增第一個關鍵字
+                        </button>
+                    </div>
+                    } @else {
+                    @for (kw of filteredKeywords(); track kw.id) {
+                    <div class="keyword-item" [class.positive]="kw.type === 'positive'"
+                        [class.negative]="kw.type === 'negative'">
+                        <div class="kw-content">
+                            <span class="kw-text">{{ kw.keyword }}</span>
+                            <span class="kw-dimension">{{ getDimensionName(kw.dimensionId) }}</span>
+                        </div>
+                        <div class="kw-weight">
+                            <label>權重:</label>
+                            <input type="number" class="weight-input" [ngModel]="kw.weight"
+                                (ngModelChange)="updateKeywordWeight(kw.id, $event)" min="1" max="10">
+                        </div>
+                        <button class="btn-icon-sm danger" (click)="deleteKeyword(kw.id)" type="button" title="刪除">
+                            <i class="ri-close-line"></i>
+                        </button>
+                    </div>
+                    }
+                    }
+                </div>
+            </section>
+        </div>
+        }
+    </div>
+</main>
+
+<!-- Add Keyword Modal -->
+@if (showAddKeywordModal()) {
+<div class="modal-backdrop"></div>
+<div class="modal">
+    <div class="modal-header">
+        <h3 class="modal-title">
+            <i class="ri-key-line"></i>
+            新增關鍵字
+        </h3>
+        <button class="btn-close" (click)="closeAddKeywordModal()" type="button">
+            <i class="ri-close-line"></i>
+        </button>
+    </div>
+    <div class="modal-body">
+        <div class="form-group">
+            <label class="form-label">關鍵字 <span class="required">*</span></label>
+            <input type="text" class="form-input" placeholder="輸入關鍵字" [ngModel]="newKeyword().keyword"
+                (ngModelChange)="updateNewKeywordField('keyword', $event)">
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">評估維度</label>
+                <select class="form-select" [ngModel]="newKeyword().dimensionId"
+                    (ngModelChange)="updateNewKeywordField('dimensionId', $event)">
+                    @for (dim of dimensions(); track dim.id) {
+                    <option [value]="dim.id">{{ dim.name }}</option>
+                    }
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">類型</label>
+                <select class="form-select" [ngModel]="newKeyword().type"
+                    (ngModelChange)="updateNewKeywordField('type', $event)">
+                    <option value="positive">正向 (加分)</option>
+                    <option value="negative">負向 (扣分)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">權重 (1-10)</label>
+            <input type="range" class="form-range" min="1" max="10" [ngModel]="newKeyword().weight"
+                (ngModelChange)="updateNewKeywordField('weight', $event)">
+            <span class="weight-value">{{ newKeyword().weight }}</span>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeAddKeywordModal()" type="button">取消</button>
+        <button class="btn btn-primary" (click)="saveNewKeyword()" type="button">新增</button>
+    </div>
+</div>
+}
+
+<!-- Batch Add Modal -->
+@if (showBatchAddModal()) {
+<div class="modal-backdrop"></div>
+<div class="modal">
+    <div class="modal-header">
+        <h3 class="modal-title">
+            <i class="ri-file-list-3-line"></i>
+            批量新增關鍵字
+        </h3>
+        <button class="btn-close" (click)="closeBatchAddModal()" type="button">
+            <i class="ri-close-line"></i>
+        </button>
+    </div>
+    <div class="modal-body">
+        <div class="form-group">
+            <label class="form-label">關鍵字列表 <span class="required">*</span></label>
+            <textarea class="form-textarea" rows="6" placeholder="每行輸入一個關鍵字" [ngModel]="batchForm().keywords"
+                (ngModelChange)="updateBatchFormField('keywords', $event)"></textarea>
+            <p class="form-hint">每行輸入一個關鍵字，會自動分割</p>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">評估維度</label>
+                <select class="form-select" [ngModel]="batchForm().dimensionId"
+                    (ngModelChange)="updateBatchFormField('dimensionId', $event)">
+                    @for (dim of dimensions(); track dim.id) {
+                    <option [value]="dim.id">{{ dim.name }}</option>
+                    }
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">預設權重</label>
+                <input type="number" class="form-input" min="1" max="10" [ngModel]="batchForm().defaultWeight"
+                    (ngModelChange)="updateBatchFormField('defaultWeight', $event)">
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeBatchAddModal()" type="button">取消</button>
+        <button class="btn btn-primary" (click)="saveBatchKeywords()" type="button">批量新增</button>
+    </div>
+</div>
+}
+
+<!-- Template Modal -->
+@if (showTemplateModal()) {
+<div class="modal-backdrop" (click)="closeTemplateModal()"></div>
+<div class="modal large-modal">
+    <div class="modal-header">
+        <h3 class="modal-title">
+            <i class="ri-file-copy-line"></i>
+            套用評估範本
+        </h3>
+        <button class="btn-close" (click)="closeTemplateModal()" type="button">
+            <i class="ri-close-line"></i>
+        </button>
+    </div>
+    <div class="modal-body">
+        <div class="template-list">
+            @for (tpl of templates(); track tpl.id) {
+            <div class="template-card">
+                <div class="tpl-info">
+                    <h4 class="tpl-name">{{ tpl.name }}</h4>
+                    <p class="tpl-desc">{{ tpl.description }}</p>
+                    <div class="tpl-meta">
+                        <span class="meta-item">
+                            <i class="ri-dashboard-line"></i>
+                            {{ tpl.dimensions.length }} 個維度
+                        </span>
+                        <span class="meta-item">
+                            <i class="ri-key-line"></i>
+                            {{ tpl.keywords.length }} 個關鍵字
+                        </span>
+                        @if (tpl.source === 'imported') {
+                        <span class="meta-item imported">
+                            <i class="ri-user-star-line"></i>
+                            匯入自: {{ tpl.sourceEmployeeName }}
+                        </span>
+                        }
+                    </div>
+                </div>
+                <button class="btn btn-primary" (click)="applyTemplate(tpl)" type="button">
+                    套用
+                </button>
+            </div>
+            }
+        </div>
+
+        <div class="import-section">
+            <h4>從高績效員工匯入</h4>
+            <p>根據歷史高績效員工的面試記錄，自動萃取關鍵字</p>
+            <button class="btn btn-outline" (click)="importFromEmployee()" type="button">
+                <i class="ri-user-star-line"></i>
+                匯入關鍵字
+            </button>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeTemplateModal()" type="button">關閉</button>
+    </div>
+</div>
+}
+
+<!-- Dimension Modal -->
+@if (showDimensionModal()) {
+<div class="modal-backdrop"></div>
+<div class="modal">
+    <div class="modal-header">
+        <h3 class="modal-title">
+            <i class="ri-dashboard-line"></i>
+            {{ editingDimension()?.name ? '編輯維度' : '新增維度' }}
+        </h3>
+        <button class="btn-close" (click)="closeDimensionModal()" type="button">
+            <i class="ri-close-line"></i>
+        </button>
+    </div>
+    <div class="modal-body">
+        <div class="form-group">
+            <label class="form-label">維度名稱 <span class="required">*</span></label>
+            <input type="text" class="form-input" placeholder="如：專業能力、溝通表達" [ngModel]="editingDimension()?.name"
+                (ngModelChange)="updateEditingDimensionField('name', $event)">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">權重 (%)</label>
+            <input type="number" class="form-input" min="0" max="100" [ngModel]="editingDimension()?.weight"
+                (ngModelChange)="updateEditingDimensionField('weight', $event)">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">說明 (選填)</label>
+            <textarea class="form-textarea" rows="2" placeholder="維度說明" [ngModel]="editingDimension()?.description"
+                (ngModelChange)="updateEditingDimensionField('description', $event)"></textarea>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeDimensionModal()" type="button">取消</button>
+        <button class="btn btn-primary" (click)="saveDimension()" type="button">儲存</button>
+    </div>
+</div>
+}

@@ -3,11 +3,25 @@
 <main class="main-content">
   <div class="content-container">
     <div class="interview-layout">
-      <!-- Candidate List Sidebar -->
+      <!-- 候選人列表 Sidebar -->
       <aside class="candidate-sidebar">
         <div class="sidebar-header">
           <h3>候選人列表</h3>
           <span class="candidate-count">{{ filteredCandidates().length }} 人</span>
+        </div>
+
+        <!-- 狀態篩選 -->
+        <div class="filter-tabs">
+          <button class="filter-tab" [class.active]="statusFilter() === 'all'" (click)="statusFilter.set('all')">
+            全部
+          </button>
+          <button class="filter-tab" [class.active]="statusFilter() === 'pending'"
+            (click)="statusFilter.set('pending')">
+            待面試
+          </button>
+          <button class="filter-tab" [class.active]="statusFilter() === 'scored'" (click)="statusFilter.set('scored')">
+            面試後
+          </button>
         </div>
 
         <div class="search-section">
@@ -21,7 +35,7 @@
         <div class="candidate-list">
           @for (candidate of filteredCandidates(); track candidate.id) {
           <button class="candidate-card" [class.active]="selectedCandidate()?.id === candidate.id"
-            [class.pending]="candidate.status === 'pending'" (click)="selectCandidate(candidate)" type="button">
+            (click)="selectCandidate(candidate)" type="button">
             <div class="candidate-avatar">
               {{ candidate.name.charAt(0) }}
             </div>
@@ -31,10 +45,34 @@
               <div class="candidate-date">{{ candidate.interviewDate }}</div>
             </div>
             <div class="candidate-status">
-              @if (candidate.status === 'completed') {
-              <span class="status-badge status-badge--completed">已完成</span>
-              } @else {
+              @switch (candidate.status) {
+              @case ('pending') {
               <span class="status-badge status-badge--pending">待面試</span>
+              }
+              @case ('pending_ai') {
+              <span class="status-badge status-badge--ai">待 AI 分析</span>
+              }
+              @case ('pending_decision') {
+              <span class="status-badge status-badge--scored">待決策</span>
+              }
+              @case ('offered') {
+              <span class="status-badge status-badge--offered">待回覆 Offer</span>
+              }
+              @case ('offer_accepted') {
+              <span class="status-badge status-badge--hired">已錄取同意</span>
+              }
+              @case ('offer_declined') {
+              <span class="status-badge status-badge--rejected">已錄取拒絕</span>
+              }
+              @case ('hired') {
+              <span class="status-badge status-badge--hired">已錄用</span>
+              }
+              @case ('rejected') {
+              <span class="status-badge status-badge--rejected">已婉拒</span>
+              }
+              @default {
+              <span class="status-badge status-badge--pending">待面試</span>
+              }
               }
             </div>
           </button>
@@ -42,154 +80,522 @@
         </div>
       </aside>
 
-      <!-- Main Content Area -->
+      <!-- 主內容區 -->
       <div class="interview-content">
         @if (selectedCandidate(); as candidate) {
-        <!-- Interview Player -->
-        <section class="card player-section">
-          <div class="card-header">
-            <h4 class="card-title">
-              <i class="ri-mic-line"></i>
-              面試錄音
-            </h4>
-            <div class="player-info">
-              <span>{{ candidate.name }}</span>
-              <span class="divider">|</span>
-              <span>{{ candidate.position }}</span>
-              <span class="divider">|</span>
-              <span>{{ candidate.duration }}</span>
+
+        <!-- 面試者基本資料 -->
+        <section class="card profile-section">
+          <div class="profile-header">
+            <div class="profile-avatar">{{ candidate.name.charAt(0) }}</div>
+            <div class="profile-info">
+              <h2 class="profile-name">{{ candidate.name }}</h2>
+              <div class="profile-meta">
+                <span class="meta-item">
+                  <i class="ri-briefcase-line"></i>
+                  {{ candidate.position }}
+                </span>
+                <span class="meta-item">
+                  <i class="ri-calendar-line"></i>
+                  {{ candidate.interviewDate }}
+                </span>
+                @if (candidate.duration) {
+                <span class="meta-item">
+                  <i class="ri-time-line"></i>
+                  {{ candidate.duration }}
+                </span>
+                }
+              </div>
             </div>
-          </div>
-          <div class="card-body">
-            <div class="audio-player">
-              <audio controls class="audio-element">
-                <source src="" type="audio/mpeg">
-                您的瀏覽器不支援音訊播放
-              </audio>
-            </div>
+            <button class="btn btn-outline" (click)="exportReport()" type="button">
+              <i class="ri-download-line"></i>
+              匯出報告
+            </button>
           </div>
         </section>
 
-        <!-- Transcript & Emotion Row -->
-        <div class="content-row">
-          <!-- Transcript Panel -->
-          <section class="card transcript-section">
-            <div class="card-header">
-              <h4 class="card-title">
-                <i class="ri-file-text-line"></i>
-                即時逐字稿
-              </h4>
-            </div>
-            <div class="card-body">
-              <div class="transcript-list">
-                @for (segment of candidate.transcript; track segment.time) {
-                <div class="transcript-item" [class.interviewer]="segment.speaker === 'interviewer'">
-                  <div class="transcript-time">{{ segment.time }}</div>
-                  <div class="transcript-text" [innerHTML]="highlightKeywords(segment.text)">
+        <!-- 面試評分與紀錄區塊 (包含錄音與評分) -->
+        <section class="card scoring-section" [class.locked]="isDecisionSubmitted()">
+          <div class="card-header">
+            <h4 class="card-title">
+              <i class="ri-file-list-3-line"></i>
+              面試評分與紀錄
+              @if (isDecisionSubmitted()) {
+              <span class="locked-badge">
+                <i class="ri-lock-line"></i>
+                已鎖定
+              </span>
+              }
+            </h4>
+          </div>
+          <div class="card-body">
+
+            <!-- 1. 媒體上傳/播放區 (Integrated) -->
+            <div class="media-integration-area"
+              style="margin-bottom: 2rem; border-bottom: 1px solid #f0f0f0; padding-bottom: 1.5rem;">
+              <h5
+                style="margin-bottom: 1rem; font-size: 1rem; color: #4B5563; display: flex; align-items: center; gap: 8px;">
+                <i class="ri-mic-line"></i> 面試錄音/錄影
+              </h5>
+
+              @if (!uploadedMedia()) {
+              <!-- 上傳區域 (決策已提交時隱藏) -->
+              @if (!isDecisionSubmitted()) {
+              <div class="upload-zone" [class.drag-over]="isDragOver()" (dragover)="onDragOver($event)"
+                (dragleave)="onDragLeave($event)" (drop)="onDrop($event)">
+                <i class="ri-upload-cloud-line upload-icon"></i>
+                <p class="upload-text">拖放檔案至此處或</p>
+                <label class="upload-btn">
+                  <input type="file" accept="audio/*,video/*" hidden (change)="onFileSelect($event)">
+                  選擇檔案
+                </label>
+                <p class="upload-hint">支援 MP3, WAV, MP4, WebM 格式</p>
+              </div>
+              } @else {
+              <div class="no-media-locked">
+                <i class="ri-file-lock-line"></i>
+                <span>無錄音/錄影檔案</span>
+              </div>
+              }
+              } @else {
+              <!-- 媒體播放區域 -->
+              <div class="media-player">
+                <div class="media-info">
+                  <i [class]="uploadedMedia()!.type === 'video' ? 'ri-film-line' : 'ri-music-line'"></i>
+                  <span class="media-filename">{{ uploadedMedia()!.filename }}</span>
+                  <span class="media-size">{{ formatFileSize(uploadedMedia()!.size) }}</span>
+                  <!-- 刪除按鈕 (決策已提交時隱藏) -->
+                  @if (!isDecisionSubmitted()) {
+                  <button class="btn-remove" (click)="removeMedia()" type="button">
+                    <i class="ri-close-line"></i>
+                  </button>
+                  }
+                </div>
+
+                @if (uploadedMedia()!.type === 'audio') {
+                <audio controls class="audio-player">
+                  <source [src]="uploadedMedia()!.url">
+                  您的瀏覽器不支援音訊播放
+                </audio>
+                } @else {
+                <video controls class="video-player">
+                  <source [src]="uploadedMedia()!.url">
+                  您的瀏覽器不支援影片播放
+                </video>
+                }
+
+                <!-- 產生逐字稿按鈕 (決策已提交時隱藏) -->
+                @if (!isDecisionSubmitted()) {
+                <button class="btn btn-secondary transcript-btn" (click)="generateTranscript()"
+                  [disabled]="isTranscribing()" type="button">
+                  @if (isTranscribing()) {
+                  <i class="ri-loader-4-line spin"></i>
+                  產生中...
+                  } @else {
+                  <i class="ri-file-text-line"></i>
+                  產生即時逐字稿
+                  }
+                </button>
+                }
+              </div>
+              }
+
+              <!-- 逐字稿顯示 -->
+              @if (parsedTranscript().length > 0) {
+              <div class="transcript-panel">
+                <h5 class="transcript-title">
+                  <i class="ri-file-text-line"></i>
+                  即時逐字稿
+                </h5>
+                <div class="transcript-content">
+                  @for (segment of parsedTranscript(); track $index) {
+                  <div class="transcript-bubble" [class.interviewer]="segment.speaker === 'interviewer'"
+                    [class.candidate]="segment.speaker === 'candidate'">
+                    <div class="transcript-time">{{ segment.time }}</div>
+                    <div class="transcript-text">{{ segment.text }}</div>
                   </div>
+                  }
+                </div>
+              </div>
+              }
+            </div>
+
+            <!-- 2. 面試評分表單 -->
+            <h5
+              style="margin-bottom: 1rem; font-size: 1rem; color: #4B5563; display: flex; align-items: center; gap: 8px;">
+              <i class="ri-edit-line"></i> 評分填寫
+            </h5>
+
+            <!-- 候選人表現描述 -->
+            <div class="form-group">
+              <label class="form-label">候選人表現描述</label>
+              <textarea class="form-textarea" rows="4" placeholder="請描述候選人在面試中的整體表現，包含溝通方式、專業能力展現、態度等..."
+                [value]="performanceDescription()"
+                (input)="performanceDescription.set($any($event.target).value)"
+                [disabled]="isDecisionSubmitted()"></textarea>
+            </div>
+
+            <!-- 評分維度 -->
+            <div class="form-group">
+              <label class="form-label">評分維度（1-10分）</label>
+              <div class="dimension-grid">
+                @for (score of dimensionScores(); track score.dimensionId) {
+                <div class="dimension-item">
+                  <div class="dimension-header">
+                    <span class="dimension-name">{{ score.dimensionName }}</span>
+                    <span class="dimension-value">{{ score.score || '-' }}</span>
+                  </div>
+                  <input type="range" class="dimension-slider" min="0" max="10" step="1" [value]="score.score"
+                    (input)="updateDimensionScore(score.dimensionId, +$any($event.target).value)"
+                    [disabled]="isDecisionSubmitted()">
+                  <input type="text" class="dimension-comment" placeholder="評分說明（如：技術能力符合需求）"
+                    [value]="score.remark || ''"
+                    (input)="updateDimensionComment(score.dimensionId, $any($event.target).value)"
+                    [disabled]="isDecisionSubmitted()">
                 </div>
                 }
               </div>
             </div>
-          </section>
 
-          <!-- Emotion Chart -->
-          <section class="card emotion-section">
-            <div class="card-header">
-              <h4 class="card-title">
-                <i class="ri-emotion-line"></i>
-                情緒時間軸
-              </h4>
+            <!-- 總體評價與建議 -->
+            <div class="form-group">
+              <label class="form-label">總體評價與建議</label>
+              <textarea class="form-textarea" rows="3" placeholder="請提供您對此候選人的綜合評價及錄用建議..." [value]="overallComment()"
+                (input)="overallComment.set($any($event.target).value)"
+                [disabled]="isDecisionSubmitted()"></textarea>
             </div>
-            <div class="card-body">
-              <div #emotionChart class="chart-container"></div>
-            </div>
-          </section>
-        </div>
 
-        <!-- AI Scores & Radar Row -->
-        <div class="content-row">
-          <!-- AI Scores -->
-          <section class="card scores-section">
-            <div class="card-header">
-              <h4 class="card-title">
-                <i class="ri-robot-line"></i>
-                AI 綜合評分
-              </h4>
+            <!-- 總分顯示 -->
+            <div class="total-score-display">
+              <span class="total-label">維度平均分數</span>
+              <span class="total-value">{{ totalScore() }}</span>
+              <span class="total-max">/ 10</span>
             </div>
-            <div class="card-body">
-              <div class="score-grid">
-                <div class="score-card">
-                  <div class="score-label">關鍵字匹配</div>
-                  <div class="score-value">{{ candidate.aiScores?.keywordMatch }}</div>
-                  <div class="score-weight">權重 40%</div>
-                </div>
-                <div class="score-card">
-                  <div class="score-label">語意分析</div>
-                  <div class="score-value">{{ candidate.aiScores?.semanticAnalysis }}</div>
-                  <div class="score-weight">權重 30%</div>
-                </div>
-                <div class="score-card">
-                  <div class="score-label">JD 適配度</div>
-                  <div class="score-value">{{ candidate.aiScores?.jdMatch }}</div>
-                  <div class="score-weight">權重 30%</div>
-                </div>
-                <div class="score-card score-card--primary">
-                  <div class="score-label">綜合評分</div>
-                  <div class="score-value score-value--large">{{ candidate.aiScores?.overall }}</div>
-                  <div class="score-weight">總分 100</div>
-                </div>
-              </div>
-            </div>
-          </section>
 
-          <!-- Radar Chart -->
-          <section class="card radar-section">
-            <div class="card-header">
-              <h4 class="card-title">
-                <i class="ri-radar-line"></i>
-                能力雷達圖
-              </h4>
-            </div>
-            <div class="card-body">
-              <div #radarChart class="chart-container"></div>
-            </div>
-          </section>
-        </div>
-
-        <!-- Action Bar -->
-        <section class="card action-section">
-          <div class="action-bar">
-            <div class="recommendation">
-              @if (hireRecommendation(); as rec) {
-              <div class="recommendation-badge recommendation-badge--{{ rec.level }}">
-                <i [class]="rec.icon"></i>
-                <span>{{ rec.text }}</span>
-              </div>
-              }
-            </div>
-            <div class="action-buttons">
-              <button class="btn btn-secondary" (click)="exportReport()" type="button">
-                <i class="ri-download-line"></i>
-                匯出報告
-              </button>
-              <button class="btn btn-warning" (click)="openScoringModal()" type="button">
-                <i class="ri-file-list-3-line"></i>
-                面試評分
-              </button>
-              <button class="btn btn-primary" (click)="openDecisionModal()" type="button">
-                <i class="ri-scales-3-line"></i>
-                錄用決策
+            <!-- 儲存按鈕 (決策已提交時隱藏) -->
+            @if (!isDecisionSubmitted()) {
+            <div class="section-actions" style="margin-top: 24px; display: flex; justify-content: flex-end;">
+              <button class="btn btn-primary" (click)="submitScoring()"
+                [disabled]="!isScoringComplete() || scoringSubmitting()">
+                @if (scoringSubmitting()) {
+                <i class="ri-loader-4-line spin"></i>
+                儲存中...
+                } @else {
+                <i class="ri-save-line"></i>
+                儲存面試記錄
+                }
               </button>
             </div>
+            }
           </div>
         </section>
+
+        <!-- AI 量化分析區塊 (評分儲存後顯示) -->
+        @if (isEvaluationSaved()) {
+        <section class="card ai-section" [class.locked]="isDecisionSubmitted()">
+          <div class="card-header">
+            <h4 class="card-title">
+              <i class="ri-brain-line"></i>
+              AI 量化分析
+              @if (isDecisionSubmitted()) {
+              <span class="locked-badge">
+                <i class="ri-lock-line"></i>
+                已鎖定
+              </span>
+              }
+            </h4>
+            <!-- 按鈕區域 (決策已提交時隱藏) -->
+            @if (!isDecisionSubmitted()) {
+            <div class="header-actions">
+              <button class="btn btn-outline" (click)="saveAIAnalysis()"
+                [disabled]="!aiAnalysisResult() || aiAnalysisLoading()" type="button" style="margin-right: 8px;">
+                <i class="ri-save-3-line"></i>
+                儲存分析結果
+              </button>
+              <button class="btn btn-ai" (click)="triggerAIAnalysis()" [disabled]="aiAnalysisLoading()" type="button">
+                @if (aiAnalysisLoading()) {
+                <i class="ri-loader-4-line spin"></i>
+                分析中...
+                } @else if (isAIAnalysisDone()) {
+                <i class="ri-robot-line"></i>
+                重新分析
+                } @else {
+                <i class="ri-robot-line"></i>
+                開始 AI 分析
+                }
+              </button>
+            </div>
+            }
+          </div>
+          <div class="card-body">
+            @if (aiAnalysisResult(); as result) {
+            <div class="ai-result-grid-v2">
+              <!-- 1. 關鍵字分析區塊 -->
+              <div class="keyword-analysis-panel">
+                <h5 class="panel-title">
+                  <i class="ri-search-eye-line"></i>
+                  關鍵字分析
+                </h5>
+                <div class="keyword-summary">
+                  <div class="keyword-stat positive">
+                    <span class="stat-icon"><i class="ri-add-circle-fill"></i></span>
+                    <span class="stat-value">+{{ result.keywordAnalysis.positiveCount }}</span>
+                    <span class="stat-label">正向關鍵字</span>
+                  </div>
+                  <div class="keyword-stat negative">
+                    <span class="stat-icon"><i class="ri-indeterminate-circle-fill"></i></span>
+                    <span class="stat-value">-{{ result.keywordAnalysis.negativeCount }}</span>
+                    <span class="stat-label">負向關鍵字</span>
+                  </div>
+                  <div class="keyword-stat total">
+                    <span class="stat-icon"><i class="ri-bar-chart-fill"></i></span>
+                    <span class="stat-value">{{ result.keywordAnalysis.score }}</span>
+                    <span class="stat-label">關鍵字得分</span>
+                  </div>
+                </div>
+                @if (result.keywordAnalysis.matches.length > 0) {
+                <div class="keyword-matches">
+                  @for (match of result.keywordAnalysis.matches; track match.keywordId) {
+                  <div class="keyword-match-item" [class.positive]="match.type === 'positive'"
+                    [class.negative]="match.type === 'negative'">
+                    <span class="match-keyword">{{ match.keyword }}</span>
+                    <span class="match-dimension">{{ match.dimensionName }}</span>
+                    <span class="match-score">{{ match.type === 'positive' ? '+' : '-' }}{{ match.weight * match.matchCount }}</span>
+                    <span class="match-count">×{{ match.matchCount }}</span>
+                  </div>
+                  }
+                </div>
+                } @else {
+                <div class="keyword-empty">
+                  <p>未偵測到預設關鍵字</p>
+                </div>
+                }
+              </div>
+
+              <!-- 2. 語意分析區塊（原分析詳情） -->
+              <div class="semantic-analysis-panel">
+                <h5 class="panel-title">
+                  <i class="ri-mind-map"></i>
+                  語意分析
+                </h5>
+                <div class="insights-list">
+                  @for (insight of result.semanticAnalysis.insights; track insight.category) {
+                  <div class="insight-item" [class.strength]="insight.type === 'strength'"
+                    [class.concern]="insight.type === 'concern'">
+                    <i [class]="insight.type === 'strength' ? 'ri-checkbox-circle-fill' : 'ri-alert-fill'"></i>
+                    <div class="insight-content">
+                      <strong>{{ insight.category }}:</strong> {{ insight.description }}
+                    </div>
+                  </div>
+                  }
+                </div>
+                <div class="communication-style">
+                  <span class="label">溝通風格:</span>
+                  <span class="value">{{ result.semanticAnalysis.communicationStyle }}</span>
+                </div>
+              </div>
+
+              <!-- 3. 能力雷達圖 -->
+              <div class="radar-panel">
+                <h5 class="panel-title">
+                  <i class="ri-radar-line"></i>
+                  能力雷達圖
+                </h5>
+                <div #radarChart class="radar-chart"></div>
+              </div>
+
+              <!-- 4. AI 綜合評分（含錄用建議） -->
+              <div class="score-panel-v2">
+                <h5 class="panel-title">
+                  <i class="ri-trophy-line"></i>
+                  AI 綜合評分
+                </h5>
+                <!-- 四項分數水平排列 -->
+                <div class="score-row-4">
+                  <div class="score-card">
+                    <div class="score-card-label">關鍵字匹配</div>
+                    <div class="score-card-value">{{ aiScoresDisplay()?.keywordMatch }}</div>
+                    <div class="score-card-weight">權重 40%</div>
+                  </div>
+                  <div class="score-card">
+                    <div class="score-card-label">語意分析</div>
+                    <div class="score-card-value">{{ aiScoresDisplay()?.semanticAnalysis }}</div>
+                    <div class="score-card-weight">權重 30%</div>
+                  </div>
+                  <div class="score-card">
+                    <div class="score-card-label">JD 適配度</div>
+                    <div class="score-card-value">{{ aiScoresDisplay()?.jdMatch }}</div>
+                    <div class="score-card-weight">權重 30%</div>
+                  </div>
+                  <div class="score-card score-card--primary">
+                    <div class="score-card-label">綜合評分</div>
+                    <div class="score-card-value">{{ aiScoresDisplay()?.overall }}</div>
+                    <div class="score-card-weight">總分 100</div>
+                  </div>
+                </div>
+                <!-- 錄用建議 -->
+                @if (hireRecommendation(); as rec) {
+                <div class="recommendation-card">
+                  <i [class]="rec.icon" [style.color]="rec.color"></i>
+                  <div class="rec-text">
+                    <span class="rec-label">建議結果</span>
+                    <span class="rec-value" [style.color]="rec.color">{{ rec.text }}</span>
+                  </div>
+                </div>
+                }
+                <!-- 缺少技能 -->
+                @if (result.jdMatchResult.missingSkills.length > 0) {
+                <div class="missing-skills">
+                  <span class="label">缺少技能:</span>
+                  @for (skill of result.jdMatchResult.missingSkills; track skill) {
+                  <span class="skill-tag">{{ skill }}</span>
+                  }
+                </div>
+                }
+              </div>
+            </div>
+            } @else {
+            <!-- 未分析前的空狀態 -->
+            <div class="ai-empty">
+              <i class="ri-robot-2-line"></i>
+              <p>尚未進行 AI 分析</p>
+              <p class="hint">請點擊上方按鈕開始分析面試資料</p>
+            </div>
+            }
+          </div>
+        </section>
+        }
+
+        <!-- 錄用決策 (AI 分析完成後顯示) -->
+        @if (isAIAnalysisDone()) {
+        <section class="card decision-section" [class.locked]="isDecisionSubmitted()">
+          <div class="card-header">
+            <h4 class="card-title">
+              <i class="ri-group-line"></i>
+              錄用決策
+              @if (isDecisionSubmitted()) {
+              <span class="locked-badge">
+                <i class="ri-lock-line"></i>
+                已鎖定
+              </span>
+              }
+            </h4>
+          </div>
+          <div class="card-body">
+            <!-- 已提交決策：顯示鎖定狀態 -->
+            @if (isDecisionSubmitted()) {
+            <div class="decision-submitted">
+              <!-- 決策結果顯示 (從 decision signal 或 candidate.status 推斷) -->
+              @if (selectedCandidate(); as candidate) {
+                @if (decision() === 'Offered' || candidate.status === 'offered' || candidate.status === 'offer_accepted' || candidate.status === 'offer_declined') {
+                <div class="decision-result decision-offered">
+                  <i class="ri-trophy-line"></i>
+                  <span class="result-text">正式錄用</span>
+                </div>
+                } @else {
+                <div class="decision-result decision-rejected">
+                  <i class="ri-close-circle-line"></i>
+                  <span class="result-text">婉拒錄用</span>
+                </div>
+                }
+              }
+              
+              <!-- 決策理由 -->
+              @if (decisionReason()) {
+              <div class="decision-reason-display">
+                <label class="form-label">決策理由</label>
+                <p>{{ decisionReason() }}</p>
+              </div>
+              }
+              
+              <!-- Offer 回覆連結（Offer 相關狀態顯示） -->
+              @if (selectedCandidate(); as candidate) {
+                @if ((decision() === 'Offered' || candidate.status === 'offered' || candidate.status === 'offer_accepted' || candidate.status === 'offer_declined') && offerResponseLink()) {
+                <div class="offer-link-section">
+                  <label class="form-label">
+                    <i class="ri-link"></i>
+                    Offer 回覆連結
+                  </label>
+                  <p class="link-hint">請將以下連結分享給候選人，讓他們回覆是否接受錄用：</p>
+                  <div class="link-box">
+                    <input type="text" readonly [value]="offerResponseLink()" class="link-input">
+                    <button class="btn btn-primary btn-copy" (click)="copyOfferLink()">
+                      <i class="ri-file-copy-line"></i>
+                      複製
+                    </button>
+                  </div>
+                  
+                  <!-- 候選人回覆狀態 -->
+                  @if (candidate.status === 'offer_accepted') {
+                  <div class="response-status response-accepted">
+                    <i class="ri-checkbox-circle-fill"></i>
+                    候選人已接受錄用
+                  </div>
+                  } @else if (candidate.status === 'offer_declined') {
+                  <div class="response-status response-declined">
+                    <i class="ri-close-circle-fill"></i>
+                    候選人已婉拒錄用
+                  </div>
+                  } @else {
+                  <div class="response-status response-pending">
+                    <i class="ri-time-line"></i>
+                    等待候選人回覆中...
+                  </div>
+                  }
+                </div>
+                }
+              }
+            </div>
+            } @else {
+            <!-- 未提交決策：顯示選擇表單 -->
+            <div class="decision-options">
+              <label class="decision-option option-reject" [class.selected]="decision() === 'Rejected'">
+                <input type="radio" name="decision" value="Rejected" [ngModel]="decision()"
+                  (ngModelChange)="decision.set($event)">
+                <i class="ri-close-circle-line"></i>
+                <span class="title">婉拒錄用</span>
+                <span class="desc">候選人不符合目前的職缺需求</span>
+              </label>
+
+              <label class="decision-option option-offer" [class.selected]="decision() === 'Offered'">
+                <input type="radio" name="decision" value="Offered" [ngModel]="decision()"
+                  (ngModelChange)="decision.set($event)">
+                <i class="ri-checkbox-circle-line"></i>
+                <span class="title">正式錄用</span>
+                <span class="desc">候選人表現優異，建議錄用</span>
+              </label>
+            </div>
+
+            @if (decision()) {
+            <div class="form-group slide-in">
+              <label class="form-label">決策理由</label>
+              <textarea class="form-textarea" rows="3" placeholder="請說明做出此決策的原因..." [value]="decisionReason()"
+                (input)="decisionReason.set($any($event.target).value)"></textarea>
+
+              <div class="decision-actions">
+                <button class="btn btn-lg btn-primary" (click)="submitDecision()"
+                  [disabled]="!decisionReason() || decisionSubmitting()">
+                  @if (decisionSubmitting()) {
+                  <i class="ri-loader-4-line spin"></i>
+                  提交中...
+                  } @else {
+                  <i class="ri-send-plane-fill"></i>
+                  提交決策
+                  }
+                </button>
+              </div>
+            </div>
+            }
+            }
+          </div>
+        </section>
+        }
         } @else {
-        <!-- Empty State -->
+        <!-- 空狀態 -->
         <div class="empty-state">
           <i class="ri-user-search-line"></i>
           <h3>請選擇候選人</h3>
-          <p>從左側列表選擇一位候選人以查看面試分析結果</p>
+          <p>從左側列表選擇一位候選人開始進行面試評估</p>
         </div>
         }
       </div>
@@ -197,13 +603,5 @@
   </div>
 </main>
 
-<!-- Modal Components -->
-@if (selectedCandidate()) {
-<app-interview-scoring-modal [isVisible]="showScoringModal()" [candidate]="selectedCandidate()!"
-  (close)="showScoringModal.set(false)" (scored)="onScored()">
-</app-interview-scoring-modal>
-
-<app-hiring-decision-modal [isVisible]="showDecisionModal()" [candidate]="selectedCandidate()!"
-  (close)="showDecisionModal.set(false)" (decided)="onDecided()">
-</app-hiring-decision-modal>
-}
+<app-ai-scoring-overlay *ngIf="aiAnalysisLoading()" [message]="'正在進行 AI 智能分析...'" [progress]="aiAnalysisProgress()">
+</app-ai-scoring-overlay>

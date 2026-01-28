@@ -368,6 +368,33 @@ $module-color: $color-l1-sage;
   color: $color-l1-sage;
 }
 
+// 待處理狀態
+.status--pending-ai {
+  background: rgba(#6366F1, 0.15); // Indigo
+  color: #4F46E5;
+}
+
+.status--pending-decision {
+  background: rgba(#F59E0B, 0.15); // Amber
+  color: #D97706;
+}
+
+// Offer 相關狀態
+.status--offered {
+  background: rgba(#D4A03E, 0.15);
+  color: #B8860B;
+}
+
+.status--offer-accepted {
+  background: rgba($color-success, 0.15);
+  color: $color-success;
+}
+
+.status--offer-declined {
+  background: rgba($color-error, 0.15);
+  color: $color-error;
+}
+
 .btn-action {
   @include flex-center;
   gap: $spacing-xs;
@@ -631,6 +658,29 @@ $module-color: $color-l1-sage;
 
   i {
     font-size: 16px;
+  }
+
+  &--success {
+    background: rgba($color-success, 0.1);
+    color: $color-success;
+    border-color: rgba($color-success, 0.2);
+  }
+
+  &--declined {
+    background: rgba($color-error, 0.1);
+    color: $color-error;
+    border-color: rgba($color-error, 0.2);
+  }
+}
+
+.decision-btn--offer-link {
+  background: linear-gradient(135deg, #FFF4D4 0%, #FFE9A8 100%);
+  color: #B8860B;
+  border: 1px solid rgba(#D4A03E, 0.3);
+
+  &:hover {
+    background: linear-gradient(135deg, #FFE9A8 0%, #FFD966 100%);
+    transform: scale(1.1);
   }
 }
 
@@ -1260,4 +1310,55 @@ $module-color: $color-l1-sage;
   display: flex;
   align-items: center;
   gap: $spacing-xs;
+}
+// ===============================================================
+// FIX: Force Horizontal Alignment for Card Footer
+// ===============================================================
+.card__footer {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+.footer-actions {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.decision-buttons {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.btn-action {
+  width: auto !important;
+  margin: 0 !important;
+}
+
+.scheduled-badge {
+  display: inline-flex !important;
+  align-items: center !important; 
+  white-space: nowrap !important;
+}
+
+// ===============================================================
+// FIX: Icon-only Scheduled Badge
+// ===============================================================
+.scheduled-badge {
+  padding: 0 !important;
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 50% !important;
+  justify-content: center !important;
+  
+  i {
+    margin: 0 !important;
+    font-size: 18px !important;
+  }
 }

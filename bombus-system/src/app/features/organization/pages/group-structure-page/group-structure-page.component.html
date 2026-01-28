@@ -377,7 +377,7 @@
 
 <!-- Company Detail Modal -->
 @if (showCompanyModal() && selectedCompany(); as company) {
-  <div class="modal-overlay" (click)="closeCompanyModal()">
+  <div class="modal-overlay">
     <div class="modal-container" (click)="$event.stopPropagation()">
       <div class="modal-header">
         @if (canGoBackCompany()) {
@@ -494,7 +494,7 @@
 
 <!-- Create/Edit Company Modal -->
 @if (showCompanyForm()) {
-  <div class="modal-overlay" (click)="closeCompanyForm()">
+  <div class="modal-overlay">
     <div class="modal-container modal-form" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2 class="modal-title">

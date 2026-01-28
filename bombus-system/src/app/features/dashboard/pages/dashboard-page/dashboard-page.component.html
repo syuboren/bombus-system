@@ -1,5 +1,5 @@
 <!-- Header with View Switcher -->
-<app-header pageTitle="企業管理儀表板" [breadcrumbs]="currentView() === 'ceo' ? ['首頁', 'CEO 經營儀表板'] : ['首頁', '營運儀表板']">
+<app-header pageTitle="企業管理儀表板" [breadcrumbs]="currentView() === 'ceo' ? ['首頁', 'CEO 經營儀表板'] : currentView() === 'ai-marketing' ? ['首頁', 'AI 行銷決策'] : ['首頁', '營運儀表板']">
   <div class="view-switcher">
     <button class="view-btn" [class.active]="currentView() === 'ceo'" (click)="switchView('ceo')">
       <i class="ri-eye-line"></i>
@@ -8,6 +8,10 @@
     <button class="view-btn" [class.active]="currentView() === 'operational'" (click)="switchView('operational')">
       <i class="ri-settings-3-line"></i>
       營運視角
+    </button>
+    <button class="view-btn view-btn--ai-marketing" [class.active]="currentView() === 'ai-marketing'" (click)="switchView('ai-marketing')">
+      <i class="ri-sparkling-2-line"></i>
+      AI 行銷決策
     </button>
   </div>
 </app-header>
@@ -1648,6 +1652,556 @@
       </section>
       <!-- ============ 決策事項區塊結束 ============ -->
 
+    </div>
+    }
+
+    <!-- ========== AI 行銷決策視角 ========== -->
+    @if (currentView() === 'ai-marketing') {
+    <div class="ai-marketing-bento-layout">
+
+      <!-- 快速導航 (質感隱藏式) -->
+      <nav class="quick-nav" [class.quick-nav--collapsed]="!showQuickNav()">
+        <button class="quick-nav__toggle" (click)="toggleQuickNav()" [title]="showQuickNav() ? '收合導航' : '展開導航'">
+          <i [class]="showQuickNav() ? 'ri-arrow-right-s-line' : 'ri-compass-3-line'"></i>
+        </button>
+        <div class="quick-nav__list">
+          <a (click)="scrollToSection('ai-section-summary')" class="quick-nav__item"
+            [class.active]="activeSection() === 'ai-section-summary'">
+            <div class="quick-nav__icon"><i class="ri-dashboard-line"></i></div>
+            <span class="quick-nav__label">摘要</span>
+          </a>
+          <a (click)="scrollToSection('ai-section-ads')" class="quick-nav__item"
+            [class.active]="activeSection() === 'ai-section-ads'">
+            <div class="quick-nav__icon"><i class="ri-advertisement-line"></i></div>
+            <span class="quick-nav__label">廣告</span>
+          </a>
+          <a (click)="scrollToSection('ai-section-products')" class="quick-nav__item"
+            [class.active]="activeSection() === 'ai-section-products'">
+            <div class="quick-nav__icon"><i class="ri-shopping-bag-line"></i></div>
+            <span class="quick-nav__label">選品</span>
+          </a>
+          <a (click)="scrollToSection('ai-section-customers')" class="quick-nav__item"
+            [class.active]="activeSection() === 'ai-section-customers'">
+            <div class="quick-nav__icon"><i class="ri-user-heart-line"></i></div>
+            <span class="quick-nav__label">顧客</span>
+          </a>
+          <a (click)="scrollToSection('ai-section-cross')" class="quick-nav__item"
+            [class.active]="activeSection() === 'ai-section-cross'">
+            <div class="quick-nav__icon"><i class="ri-links-line"></i></div>
+            <span class="quick-nav__label">交叉</span>
+          </a>
+        </div>
+      </nav>
+
+      <!-- 工具列 -->
+      <div class="ai-marketing-toolbar">
+        @if (aiMarketingData(); as data) {
+        <span class="ai-marketing-toolbar__date">
+          <i class="ri-calendar-line"></i>
+          資料時間：{{ formatAiMarketingDate(data.lastUpdated) }}
+        </span>
+        }
+        <button class="view-btn view-btn--refresh" (click)="refreshAiMarketing()" [disabled]="aiMarketingLoading()">
+          <i class="ri-refresh-line" [class.spinning]="aiMarketingLoading()"></i>
+          重新分析
+        </button>
+      </div>
+
+      <!-- Loading 狀態 -->
+      @if (aiMarketingLoading() && !aiMarketingData()) {
+      <div class="ai-marketing-loading">
+        <div class="loading-spinner-lg">
+          <i class="ri-loader-4-line"></i>
+        </div>
+        <p>正在載入 AI 行銷洞察資料...</p>
+      </div>
+      }
+
+      <!-- Error 狀態 -->
+      @if (aiMarketingError()) {
+      <div class="ai-marketing-error">
+        <i class="ri-error-warning-line"></i>
+        <p>{{ aiMarketingError() }}</p>
+        <button class="view-btn" (click)="refreshAiMarketing()">重試</button>
+      </div>
+      }
+
+      <!-- 主要內容 -->
+      @if (aiMarketingData(); as data) {
+
+      <!-- ============ 摘要指標區塊 (Summary KPIs) ============ -->
+      <section id="ai-section-summary" class="bento-row bento-row--summary">
+        <div class="summary-cards-grid">
+          <!-- 緊急 -->
+          <div class="summary-card summary-card--urgent">
+            <div class="summary-card__icon">
+              <i class="ri-alarm-warning-line"></i>
+            </div>
+            <div class="summary-card__content">
+              <span class="summary-card__value">{{ data.summary.urgent }}</span>
+              <span class="summary-card__label">緊急處理</span>
+            </div>
+          </div>
+          <!-- 關注 -->
+          <div class="summary-card summary-card--warning">
+            <div class="summary-card__icon">
+              <i class="ri-eye-line"></i>
+            </div>
+            <div class="summary-card__content">
+              <span class="summary-card__value">{{ data.summary.warning }}</span>
+              <span class="summary-card__label">本週關注</span>
+            </div>
+          </div>
+          <!-- 機會 -->
+          <div class="summary-card summary-card--success">
+            <div class="summary-card__icon">
+              <i class="ri-lightbulb-line"></i>
+            </div>
+            <div class="summary-card__content">
+              <span class="summary-card__value">{{ data.summary.success }}</span>
+              <span class="summary-card__label">機會把握</span>
+            </div>
+          </div>
+          <!-- 總數 -->
+          <div class="summary-card summary-card--info">
+            <div class="summary-card__icon">
+              <i class="ri-bar-chart-box-line"></i>
+            </div>
+            <div class="summary-card__content">
+              <span class="summary-card__value">{{ data.summary.total }}</span>
+              <span class="summary-card__label">總洞察數</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 廣告洞察師 (獨立列) ============ -->
+      <section id="ai-section-ads" class="specialist-row specialist-row--ads">
+        <div class="specialist-header specialist-header--ads">
+          <div class="specialist-header__left">
+            <div class="specialist-header__icon">
+              <i class="ri-advertisement-line"></i>
+            </div>
+            <div class="specialist-header__info">
+              <h3 class="specialist-header__title">廣告洞察師</h3>
+              <span class="specialist-header__subtitle">廣告投放效益分析</span>
+            </div>
+          </div>
+          <div class="specialist-header__actions">
+            @if (hasSectionExpanded('ads')) {
+            <button class="specialist-header__toggle-btn" (click)="collapseSectionInsights('ads')">
+              <i class="ri-arrow-up-s-line"></i>
+              收合
+            </button>
+            } @else {
+            <button class="specialist-header__toggle-btn" (click)="expandSectionInsights('ads')">
+              <i class="ri-arrow-down-s-line"></i>
+              展開
+            </button>
+            }
+          </div>
+        </div>
+
+        <div class="specialist-content">
+          <!-- KPI 區塊 -->
+          <div class="specialist-kpis">
+            <div class="kpi-card kpi-card--ads">
+              <span class="kpi-card__label">ROAS</span>
+              <div class="kpi-card__value-row">
+                <span class="kpi-card__value">{{ data.ads.roas }}</span>
+                <span class="kpi-card__trend" [class.negative]="data.ads.roasTrend < 0" [class.positive]="data.ads.roasTrend > 0">
+                  @if (data.ads.roasTrend > 0) {
+                  <i class="ri-arrow-up-s-fill"></i>+{{ data.ads.roasTrend }}
+                  } @else if (data.ads.roasTrend < 0) {
+                  <i class="ri-arrow-down-s-fill"></i>{{ data.ads.roasTrend }}
+                  }
+                </span>
+              </div>
+            </div>
+            <div class="kpi-card kpi-card--ads">
+              <span class="kpi-card__label">廣告花費</span>
+              <div class="kpi-card__value-row">
+                <span class="kpi-card__value">$12,500</span>
+                <span class="kpi-card__trend negative">
+                  <i class="ri-arrow-up-s-fill"></i>+8%
+                </span>
+              </div>
+            </div>
+            <div class="kpi-card kpi-card--ads">
+              <span class="kpi-card__label">轉換數</span>
+              <div class="kpi-card__value-row">
+                <span class="kpi-card__value">156</span>
+                <span class="kpi-card__trend positive">
+                  <i class="ri-arrow-up-s-fill"></i>+12%
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 洞察卡片 -->
+          <div class="specialist-insights">
+            @for (insight of sortInsightsByPriority(data.ads.insights); track insight.id) {
+            <div class="insight-card" [class]="'insight-card--' + insight.priority">
+              <div class="insight-card__header">
+                <span class="priority-pill" [class]="'priority-pill--' + insight.priority">
+                  {{ getInsightPriorityLabel(insight.priority) }}
+                </span>
+              </div>
+              <h4 class="insight-card__title">{{ insight.title }}</h4>
+              <p class="insight-card__desc">{{ insight.description }}</p>
+              @if (insight.metric) {
+              <div class="insight-card__metric">
+                <span class="insight-card__metric-label">{{ insight.metric.label }}:</span>
+                <span class="insight-card__metric-value">{{ insight.metric.value }}</span>
+                @if (insight.metric.trend) {
+                <span class="insight-card__metric-trend" [class.negative]="insight.metric.trend < 0" [class.positive]="insight.metric.trend > 0">
+                  {{ insight.metric.trend > 0 ? '+' : '' }}{{ insight.metric.trend }}%
+                </span>
+                }
+              </div>
+              }
+              <div class="insight-card__footer">
+                @if (insight.reason) {
+                <button class="insight-card__expand-btn" (click)="toggleInsightExpand(insight.id)">
+                  <i [class]="isInsightExpanded(insight.id) ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'"></i>
+                  {{ isInsightExpanded(insight.id) ? '收合' : '為什麼？' }}
+                </button>
+                <div class="insight-card__reason" [class.insight-card__reason--expanded]="isInsightExpanded(insight.id)">
+                  <p>{{ insight.reason }}</p>
+                  @if (insight.impact) {
+                  <span class="insight-card__impact">
+                    <i class="ri-flashlight-line"></i>
+                    {{ insight.impact }}
+                  </span>
+                  }
+                </div>
+                }
+                @if (insight.actionLabel) {
+                <button class="insight-card__action-btn">
+                  {{ insight.actionLabel }}
+                  <i class="ri-arrow-right-line"></i>
+                </button>
+                }
+              </div>
+            </div>
+            }
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 選品洞察師 (獨立列) ============ -->
+      <section id="ai-section-products" class="specialist-row specialist-row--product">
+        <div class="specialist-header specialist-header--product">
+          <div class="specialist-header__left">
+            <div class="specialist-header__icon">
+              <i class="ri-shopping-bag-line"></i>
+            </div>
+            <div class="specialist-header__info">
+              <h3 class="specialist-header__title">選品洞察師</h3>
+              <span class="specialist-header__subtitle">商品與庫存優化建議</span>
+            </div>
+          </div>
+          <div class="specialist-header__actions">
+            @if (hasSectionExpanded('products')) {
+            <button class="specialist-header__toggle-btn" (click)="collapseSectionInsights('products')">
+              <i class="ri-arrow-up-s-line"></i>
+              收合
+            </button>
+            } @else {
+            <button class="specialist-header__toggle-btn" (click)="expandSectionInsights('products')">
+              <i class="ri-arrow-down-s-line"></i>
+              展開
+            </button>
+            }
+          </div>
+        </div>
+
+        <div class="specialist-content">
+          <!-- KPI 區塊 -->
+          <div class="specialist-kpis">
+            <div class="kpi-card kpi-card--product">
+              <span class="kpi-card__label">熱銷屬性</span>
+              <div class="kpi-card__value-row">
+                <span class="kpi-card__value kpi-card__value--text">{{ data.products.topAttribute }}</span>
+              </div>
+            </div>
+            @if (data.products.inventoryHealth) {
+            <div class="kpi-card kpi-card--product">
+              <span class="kpi-card__label">庫存健康度</span>
+              <div class="kpi-card__value-row">
+                <span class="kpi-card__value">{{ data.products.inventoryHealth }}%</span>
+              </div>
+            </div>
+            }
+            <div class="kpi-card kpi-card--product">
+              <span class="kpi-card__label">滯銷品數</span>
+              <div class="kpi-card__value-row">
+                <span class="kpi-card__value">12</span>
+                <span class="kpi-card__trend negative">
+                  <i class="ri-arrow-up-s-fill"></i>+3
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 洞察卡片 -->
+          <div class="specialist-insights">
+            @for (insight of sortInsightsByPriority(data.products.insights); track insight.id) {
+            <div class="insight-card" [class]="'insight-card--' + insight.priority">
+              <div class="insight-card__header">
+                <span class="priority-pill" [class]="'priority-pill--' + insight.priority">
+                  {{ getInsightPriorityLabel(insight.priority) }}
+                </span>
+              </div>
+              <h4 class="insight-card__title">{{ insight.title }}</h4>
+              <p class="insight-card__desc">{{ insight.description }}</p>
+              @if (insight.metric) {
+              <div class="insight-card__metric">
+                <span class="insight-card__metric-label">{{ insight.metric.label }}:</span>
+                <span class="insight-card__metric-value">{{ insight.metric.value }}</span>
+                @if (insight.metric.trend) {
+                <span class="insight-card__metric-trend" [class.negative]="insight.metric.trend < 0" [class.positive]="insight.metric.trend > 0">
+                  {{ insight.metric.trend > 0 ? '+' : '' }}{{ insight.metric.trend }}%
+                </span>
+                }
+              </div>
+              }
+              <div class="insight-card__footer">
+                @if (insight.reason) {
+                <button class="insight-card__expand-btn" (click)="toggleInsightExpand(insight.id)">
+                  <i [class]="isInsightExpanded(insight.id) ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'"></i>
+                  {{ isInsightExpanded(insight.id) ? '收合' : '為什麼？' }}
+                </button>
+                <div class="insight-card__reason" [class.insight-card__reason--expanded]="isInsightExpanded(insight.id)">
+                  <p>{{ insight.reason }}</p>
+                  @if (insight.impact) {
+                  <span class="insight-card__impact">
+                    <i class="ri-flashlight-line"></i>
+                    {{ insight.impact }}
+                  </span>
+                  }
+                </div>
+                }
+                @if (insight.actionLabel) {
+                <button class="insight-card__action-btn">
+                  {{ insight.actionLabel }}
+                  <i class="ri-arrow-right-line"></i>
+                </button>
+                }
+              </div>
+            </div>
+            }
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 顧客洞察師 (獨立列) ============ -->
+      <section id="ai-section-customers" class="specialist-row specialist-row--customer">
+        <div class="specialist-header specialist-header--customer">
+          <div class="specialist-header__left">
+            <div class="specialist-header__icon">
+              <i class="ri-user-heart-line"></i>
+            </div>
+            <div class="specialist-header__info">
+              <h3 class="specialist-header__title">顧客洞察師</h3>
+              <span class="specialist-header__subtitle">顧客行為與價值分析</span>
+            </div>
+          </div>
+          <div class="specialist-header__actions">
+            @if (hasSectionExpanded('customers')) {
+            <button class="specialist-header__toggle-btn" (click)="collapseSectionInsights('customers')">
+              <i class="ri-arrow-up-s-line"></i>
+              收合
+            </button>
+            } @else {
+            <button class="specialist-header__toggle-btn" (click)="expandSectionInsights('customers')">
+              <i class="ri-arrow-down-s-line"></i>
+              展開
+            </button>
+            }
+          </div>
+        </div>
+
+        <div class="specialist-content">
+          <!-- KPI 區塊 -->
+          <div class="specialist-kpis">
+            <div class="kpi-card kpi-card--customer">
+              <span class="kpi-card__label">回購率</span>
+              <div class="kpi-card__value-row">
+                <span class="kpi-card__value">{{ (data.customers.retentionRate * 100).toFixed(0) }}%</span>
+                @if (data.customers.retentionTrend) {
+                <span class="kpi-card__trend" [class.negative]="data.customers.retentionTrend < 0" [class.positive]="data.customers.retentionTrend > 0">
+                  @if (data.customers.retentionTrend > 0) {
+                  <i class="ri-arrow-up-s-fill"></i>+{{ (data.customers.retentionTrend * 100).toFixed(0) }}%
+                  } @else if (data.customers.retentionTrend < 0) {
+                  <i class="ri-arrow-down-s-fill"></i>{{ (data.customers.retentionTrend * 100).toFixed(0) }}%
+                  }
+                </span>
+                }
+              </div>
+            </div>
+            @if (data.customers.avgOrderValue) {
+            <div class="kpi-card kpi-card--customer">
+              <span class="kpi-card__label">平均客單價</span>
+              <div class="kpi-card__value-row">
+                <span class="kpi-card__value">${{ data.customers.avgOrderValue.toLocaleString() }}</span>
+              </div>
+            </div>
+            }
+            <div class="kpi-card kpi-card--customer">
+              <span class="kpi-card__label">VIP 客戶數</span>
+              <div class="kpi-card__value-row">
+                <span class="kpi-card__value">89</span>
+                <span class="kpi-card__trend positive">
+                  <i class="ri-arrow-up-s-fill"></i>+5
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 客戶比例分析 -->
+          @if (data.customers.segments && data.customers.segments.length > 0) {
+          <div class="customer-segments">
+            <h4 class="customer-segments__title">客戶比例分析</h4>
+            <div class="customer-segments__grid">
+              @for (segment of data.customers.segments; track segment.id) {
+              <div class="customer-segment-card">
+                <div class="customer-segment-card__header">
+                  <span class="customer-segment-card__name">{{ segment.name }}</span>
+                  <span class="customer-segment-card__percentage">{{ segment.percentage }}%</span>
+                </div>
+                <div class="customer-segment-card__progress">
+                  <div class="customer-segment-card__progress-bar" 
+                       [class]="'customer-segment-card__progress-bar--' + (segment.color || 'default')"
+                       [style.width.%]="segment.percentage">
+                  </div>
+                </div>
+                <p class="customer-segment-card__desc">{{ segment.description }}</p>
+                @if (segment.revenueContribution) {
+                <div class="customer-segment-card__revenue">
+                  <i class="ri-money-dollar-circle-line"></i>
+                  <span>貢獻 {{ segment.revenueContribution }}% 營收</span>
+                </div>
+                }
+              </div>
+              }
+            </div>
+          </div>
+          }
+
+          <!-- 洞察卡片 -->
+          <div class="specialist-insights">
+            @for (insight of sortInsightsByPriority(data.customers.insights); track insight.id) {
+            <div class="insight-card" [class]="'insight-card--' + insight.priority">
+              <div class="insight-card__header">
+                <span class="priority-pill" [class]="'priority-pill--' + insight.priority">
+                  {{ getInsightPriorityLabel(insight.priority) }}
+                </span>
+              </div>
+              <h4 class="insight-card__title">{{ insight.title }}</h4>
+              <p class="insight-card__desc">{{ insight.description }}</p>
+              @if (insight.metric) {
+              <div class="insight-card__metric">
+                <span class="insight-card__metric-label">{{ insight.metric.label }}:</span>
+                <span class="insight-card__metric-value">{{ insight.metric.value }}</span>
+                @if (insight.metric.trend) {
+                <span class="insight-card__metric-trend" [class.negative]="insight.metric.trend < 0" [class.positive]="insight.metric.trend > 0">
+                  {{ insight.metric.trend > 0 ? '+' : '' }}{{ insight.metric.trend }}%
+                </span>
+                }
+              </div>
+              }
+              <div class="insight-card__footer">
+                @if (insight.reason) {
+                <button class="insight-card__expand-btn" (click)="toggleInsightExpand(insight.id)">
+                  <i [class]="isInsightExpanded(insight.id) ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'"></i>
+                  {{ isInsightExpanded(insight.id) ? '收合' : '為什麼？' }}
+                </button>
+                <div class="insight-card__reason" [class.insight-card__reason--expanded]="isInsightExpanded(insight.id)">
+                  <p>{{ insight.reason }}</p>
+                  @if (insight.impact) {
+                  <span class="insight-card__impact">
+                    <i class="ri-flashlight-line"></i>
+                    {{ insight.impact }}
+                  </span>
+                  }
+                </div>
+                }
+                @if (insight.actionLabel) {
+                <button class="insight-card__action-btn">
+                  {{ insight.actionLabel }}
+                  <i class="ri-arrow-right-line"></i>
+                </button>
+                }
+              </div>
+            </div>
+            }
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 交叉洞察區塊 (全寬) ============ -->
+      @if (data.crossInsights) {
+      <div id="ai-section-cross" class="bento-box-row bento-box-row--single">
+        <section class="bento-box bento-box--cross-insight">
+          <div class="bento-header">
+            <i class="ri-links-line"></i>
+            <span>交叉洞察分析</span>
+          </div>
+          <div class="cross-insight-container">
+            <!-- 交叉洞察卡片 -->
+            <div class="cross-insight-cards">
+              @for (item of data.crossInsights.items; track item.id) {
+              <div class="cross-insight-card" [class]="'cross-insight-card--' + item.priority">
+                <div class="cross-insight-card__sources">
+                  @for (source of item.sources; track source) {
+                  <span class="source-tag" [class]="'source-tag--' + source">
+                    @if (source === 'ads') { <i class="ri-advertisement-line"></i> }
+                    @if (source === 'product') { <i class="ri-shopping-bag-line"></i> }
+                    @if (source === 'customer') { <i class="ri-user-heart-line"></i> }
+                  </span>
+                  }
+                </div>
+                <h4 class="cross-insight-card__title">{{ item.title }}</h4>
+                <p class="cross-insight-card__desc">{{ item.description }}</p>
+                @if (item.actionLabel) {
+                <button class="cross-insight-card__action">
+                  {{ item.actionLabel }}
+                  <i class="ri-arrow-right-line"></i>
+                </button>
+                }
+              </div>
+              }
+            </div>
+
+            <!-- 流程圖 (可選) -->
+            @if (data.crossInsights.flowSteps) {
+            <div class="cross-insight-flow">
+              <h5 class="cross-insight-flow__title">行銷漏斗優化流程</h5>
+              <div class="flow-steps">
+                @for (step of data.crossInsights.flowSteps; track step.step; let last = $last) {
+                <div class="flow-step">
+                  <div class="flow-step__number">{{ step.step }}</div>
+                  <div class="flow-step__content">
+                    <span class="flow-step__label">{{ step.label }}</span>
+                    <span class="flow-step__desc">{{ step.description }}</span>
+                  </div>
+                </div>
+                @if (!last) {
+                <div class="flow-arrow">
+                  <i class="ri-arrow-right-line"></i>
+                </div>
+                }
+                }
+              </div>
+            </div>
+            }
+          </div>
+        </section>
+      </div>
+      }
+
+      }
     </div>
     }
 

@@ -157,6 +157,10 @@
                 </button>
                 }
 
+                <button class="icon-btn" title="設定關鍵字" (click)="navigateToKeywords(job)" type="button">
+                  <i class="ri-key-line"></i>
+                </button>
+
                 <button class="icon-btn" title="編輯職缺" (click)="openEditModal(job)" type="button">
                   <i class="ri-edit-line"></i>
                 </button>
@@ -189,7 +193,7 @@
 
 <!-- Create Job Modal -->
 @if (showModal()) {
-<div class="modal-backdrop" (click)="closeModal()"></div>
+<div class="modal-backdrop"></div>
 <div class="modal">
   <div class="modal__header">
     <h3 class="modal__title">發布新職缺</h3>
@@ -338,23 +342,36 @@
             <select class="form-select" [value]="newJob().job104.salaryType"
               (change)="updateJob104Field('salaryType', +$any($event.target).value)">
               <option [value]="10">面議</option>
-              <option [value]="50">月薪</option>
-              <option [value]="60">年薪</option>
+              @if (newJob().job104.role !== 3) {
+                <option [value]="50">月薪</option>
+                <option [value]="60">年薪</option>
+              }
             </select>
           </div>
-          @if (newJob().job104.salaryType !== 10) {
+          @if (newJob().job104.salaryType !== 10 && newJob().job104.role !== 3) {
           <div class="form-group form-group--third">
-            <label class="form-label">最低薪資</label>
-            <input type="number" class="form-input" placeholder="0" [value]="newJob().job104.salaryLow"
-              (input)="updateJob104Field('salaryLow', +$any($event.target).value)">
+            <label class="form-label">最低薪資 <span class="required">*</span></label>
+            <input type="number" class="form-input" [placeholder]="newJob().job104.salaryType === 50 ? '例：30000' : '例：500000'" 
+              [value]="newJob().job104.salaryLow ?? ''"
+              (input)="updateJob104Field('salaryLow', $any($event.target).value === '' ? null : +$any($event.target).value)">
           </div>
           <div class="form-group form-group--third">
-            <label class="form-label">最高薪資</label>
-            <input type="number" class="form-input" placeholder="0" [value]="newJob().job104.salaryHigh"
-              (input)="updateJob104Field('salaryHigh', +$any($event.target).value)">
+            <label class="form-label">最高薪資 <span class="required">*</span></label>
+            <input type="number" class="form-input" [placeholder]="newJob().job104.salaryType === 50 ? '例：50000' : '例：800000'" 
+              [value]="newJob().job104.salaryHigh ?? ''"
+              (input)="updateJob104Field('salaryHigh', $any($event.target).value === '' ? null : +$any($event.target).value)">
           </div>
           }
         </div>
+        <small class="form-hint">
+          @if (newJob().job104.role === 3) {
+            <span style="color: #dc2626;">⚠️ 高階主管職缺只能使用「面議」（104 API 規定）</span>
+          } @else if (newJob().job104.salaryType === 10) {
+            註：選擇「面議」時不需填寫薪資金額
+          } @else {
+            註：選擇「{{ newJob().job104.salaryType === 50 ? '月薪' : '年薪' }}」時必須填寫薪資範圍，否則 104 同步會失敗
+          }
+        </small>
 
         <!-- 學歷要求 -->
         <div class="form-group">
@@ -476,7 +493,7 @@
 
 <!-- Import Resume Modal -->
 @if (showImportModal()) {
-<div class="modal-backdrop" (click)="closeImportModal()"></div>
+<div class="modal-backdrop"></div>
 <div class="modal">
   <div class="modal__header">
     <h3 class="modal__title">
@@ -539,7 +556,7 @@
 
 <!-- 編輯職缺 Modal -->
 @if (showEditModal()) {
-<div class="modal-backdrop" (click)="closeEditModal()"></div>
+<div class="modal-backdrop"></div>
 <div class="modal">
   <div class="modal__header">
     <h3 class="modal__title">
@@ -653,23 +670,36 @@
             <select class="form-select" [ngModel]="newJob().job104.salaryType"
               (ngModelChange)="updateJob104Field('salaryType', $event)">
               <option [ngValue]="10">面議</option>
-              <option [ngValue]="50">月薪</option>
-              <option [ngValue]="60">年薪</option>
+              @if (newJob().job104.role !== 3) {
+                <option [ngValue]="50">月薪</option>
+                <option [ngValue]="60">年薪</option>
+              }
             </select>
           </div>
-          @if (newJob().job104.salaryType !== 10) {
+          @if (newJob().job104.salaryType !== 10 && newJob().job104.role !== 3) {
           <div class="form-group form-group--third">
-            <label class="form-label">最低薪資</label>
-            <input type="number" class="form-input" placeholder="0" [value]="newJob().job104.salaryLow"
-              (input)="updateJob104Field('salaryLow', +$any($event.target).value)">
+            <label class="form-label">最低薪資 <span class="required">*</span></label>
+            <input type="number" class="form-input" [placeholder]="newJob().job104.salaryType === 50 ? '例：30000' : '例：500000'" 
+              [value]="newJob().job104.salaryLow ?? ''"
+              (input)="updateJob104Field('salaryLow', $any($event.target).value === '' ? null : +$any($event.target).value)">
           </div>
           <div class="form-group form-group--third">
-            <label class="form-label">最高薪資</label>
-            <input type="number" class="form-input" placeholder="0" [value]="newJob().job104.salaryHigh"
-              (input)="updateJob104Field('salaryHigh', +$any($event.target).value)">
+            <label class="form-label">最高薪資 <span class="required">*</span></label>
+            <input type="number" class="form-input" [placeholder]="newJob().job104.salaryType === 50 ? '例：50000' : '例：800000'" 
+              [value]="newJob().job104.salaryHigh ?? ''"
+              (input)="updateJob104Field('salaryHigh', $any($event.target).value === '' ? null : +$any($event.target).value)">
           </div>
           }
         </div>
+        <small class="form-hint">
+          @if (newJob().job104.role === 3) {
+            <span style="color: #dc2626;">⚠️ 高階主管職缺只能使用「面議」（104 API 規定）</span>
+          } @else if (newJob().job104.salaryType === 10) {
+            註：選擇「面議」時不需填寫薪資金額
+          } @else {
+            註：選擇「{{ newJob().job104.salaryType === 50 ? '月薪' : '年薪' }}」時必須填寫薪資範圍，否則 104 同步會失敗
+          }
+        </small>
 
         <!-- 學歷要求 -->
         <div class="form-group">

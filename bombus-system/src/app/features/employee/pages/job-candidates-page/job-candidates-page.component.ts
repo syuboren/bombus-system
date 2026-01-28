@@ -98,8 +98,14 @@ export class JobCandidatesPageComponent implements OnInit {
     { key: 'reschedule', label: '待改期', icon: 'ri-calendar-todo-line' },
     { key: 'interview', label: '已安排面試', icon: 'ri-calendar-check-line' },
     { key: 'rejected', label: '已婉拒', icon: 'ri-close-circle-line' },
-    { key: 'hired', label: '已錄用', icon: 'ri-trophy-line' }
+    { key: 'offered', label: '待回覆 Offer', icon: 'ri-mail-star-line' },
+    { key: 'offer_accepted', label: '已錄取同意', icon: 'ri-trophy-line' },
+    { key: 'offer_declined', label: '已錄取拒絕', icon: 'ri-user-unfollow-line' }
   ];
+
+  // Offer 回覆連結 Modal
+  showOfferLinkModal = signal<boolean>(false);
+  offerResponseLink = signal<string>('');
 
   // Filter signals
   searchQuery = signal<string>('');
@@ -365,7 +371,7 @@ export class JobCandidatesPageComponent implements OnInit {
   }
 
   /**
-   * 複製候選人的回覆連結到剪貼簿
+   * 複製候選人的面試回覆連結到剪貼簿
    */
   copyResponseLink(candidate: CandidateWithUI, event: Event): void {
     event.stopPropagation();
@@ -382,6 +388,28 @@ export class JobCandidatesPageComponent implements OnInit {
       },
       error: () => {
         this.notificationService.error('尚無回覆連結，請先發送面試邀約');
+      }
+    });
+  }
+
+  /**
+   * 複製候選人的 Offer 回覆連結到剪貼簿
+   */
+  copyOfferResponseLink(candidate: CandidateWithUI, event: Event): void {
+    event.stopPropagation();
+
+    this.interviewService.getOfferResponseLink(candidate.id).subscribe({
+      next: (data) => {
+        const fullLink = `${window.location.origin}${data.responseLink}`;
+        navigator.clipboard.writeText(fullLink).then(() => {
+          this.notificationService.success('錄用通知回覆連結已複製到剪貼簿');
+        }).catch(() => {
+          // Fallback for older browsers
+          prompt('請複製以下連結發送給候選人：', fullLink);
+        });
+      },
+      error: () => {
+        this.notificationService.error('尚無錄用通知回覆連結');
       }
     });
   }
@@ -477,7 +505,17 @@ export class JobCandidatesPageComponent implements OnInit {
     }
 
     const classes: Record<string, string> = {
-      new: 'status--new', invited: 'status--invited', reschedule: 'status--reschedule', interview: 'status--interview', rejected: 'status--rejected', hired: 'status--hired'
+      new: 'status--new',
+      invited: 'status--invited',
+      reschedule: 'status--reschedule',
+      interview: 'status--interview',
+      pending_ai: 'status--pending-ai',
+      pending_decision: 'status--pending-decision',
+      rejected: 'status--rejected',
+      hired: 'status--hired',
+      offered: 'status--offered',
+      offer_accepted: 'status--offer-accepted',
+      offer_declined: 'status--offer-declined'
     };
     return classes[status] || '';
   }
@@ -491,7 +529,17 @@ export class JobCandidatesPageComponent implements OnInit {
     }
 
     const labels: Record<string, string> = {
-      new: '新進履歷', invited: '已邀請', reschedule: '待改期', interview: '已安排面試', rejected: '已婉拒', hired: '已錄用'
+      new: '新進履歷',
+      invited: '已邀請',
+      reschedule: '待改期',
+      interview: '已安排面試',
+      pending_ai: '待 AI 分析',
+      pending_decision: '待決策',
+      rejected: '已婉拒',
+      hired: '已錄用',
+      offered: '待回覆 Offer',
+      offer_accepted: '已錄取同意',
+      offer_declined: '已錄取拒絕'
     };
     return labels[status] || status;
   }
