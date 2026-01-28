@@ -98,35 +98,490 @@ async function initDatabase() {
     )
   `);
 
-  // 應徵者資料表
+  // =====================================================
+  // 應徵者資料表 (對應 104 Resume API 所有欄位)
+  // =====================================================
   db.run(`
     CREATE TABLE IF NOT EXISTS candidates (
       id TEXT PRIMARY KEY,
       job_id TEXT NOT NULL,
-      name TEXT NOT NULL,
-      name_en TEXT,
-      email TEXT,
-      phone TEXT,
+      
+      -- 系統欄位
       status TEXT DEFAULT 'new',
       stage TEXT DEFAULT 'Collected', -- Collected, Invited, Offered, Rejected
       scoring_status TEXT DEFAULT 'Pending', -- Pending, Scoring, Scored
       score INTEGER DEFAULT 0,
       apply_date TEXT,
-      
-      -- 詳細履歷欄位
-      education TEXT,
-      experience TEXT,
-      experience_years INTEGER DEFAULT 0,
-      skills TEXT,           -- JSON string or comma-separated
       resume_url TEXT,
       ai_summary TEXT,
       thank_you_sent_at TEXT,
+      
+      -- 104 基本資料 (Basic Info)
+      resume_104_id TEXT,           -- resumeId: 會員編號 (Max: 40)
+      name TEXT NOT NULL,           -- fullName: 求職者姓名 (Max: 60)
+      name_en TEXT,                 -- englishName: 英文名字 (Max: 40)
+      gender TEXT,                  -- gender: 性別 (Max: 4)
+      email TEXT,                   -- email: E-mail (Max: 400)
+      phone TEXT,                   -- cellPhone: 手機號碼 (Max: 15)
+      sub_phone TEXT,               -- subCellPhone: 次要手機 (Max: 15)
+      tel TEXT,                     -- tel: 市內電話 (Max: 20)
+      contact_info TEXT,            -- contactInfo: 聯絡方式 (Max: 50)
+      address TEXT,                 -- address: 聯絡地址 (Max: 110)
+      birthday TEXT,                -- birthday: 生日 (yyyy-MM-dd HH:mm:ss)
+      reg_source TEXT,              -- regSource: 履歷來源 (Max: 10)
+      employment_status TEXT,       -- employmentStatus: 就業狀態 (Max: 10)
+      military_status TEXT,         -- militaryStatus: 兵役狀況 (Max: 5)
+      military_retire_date TEXT,    -- militaryRetireDate: 退伍日期 (yyyy-mm)
+      introduction TEXT,            -- introduction: 個人簡介 (Max: 1000)
+      motto TEXT,                   -- motto: 個人格言 (Max: 100)
+      characteristic TEXT,          -- characteristic: 個人特色 (Max: 120)
+      personal_page TEXT,           -- personalPage: 個人作品頁面 (JSON array)
+      driving_licenses TEXT,        -- drivingLicenses: 駕照 (Max: 40)
+      transports TEXT,              -- transports: 交通工具 (Max: 40)
+      special_identities TEXT,      -- specialIdentities: 特殊身份 (Max: 30)
+      nationality TEXT,             -- nationality: 國籍 (Max: 20)
+      disabled_types TEXT,          -- disabledTypes: 身障類別與程度 (Max: 30)
+      disability_card INTEGER DEFAULT 0, -- disabilityCard: 身障證明 (0:無, 1:有)
+      assistive_devices TEXT,       -- assistiveDevices: 身障輔具 (Max: 20)
+      avatar TEXT,                  -- headshotUrl: 大頭照連結 (Max: 200)
+      seniority TEXT,               -- seniority: 總年資 (e.g., "3年以上")
+      
+      -- 104 求職條件 (Job Requirement)
+      job_characteristic TEXT,      -- jobCharacteristic: 希望性質 (Max: 30)
+      work_interval TEXT,           -- workInterval: 上班時段 (Max: 30)
+      other_work_interval TEXT,     -- otherWorkInterval: 其他時段 (Max: 60)
+      shift_work INTEGER DEFAULT 0, -- shiftWork: 輪班制度 (boolean)
+      start_date_opt TEXT,          -- startDateOpt: 可上班日 (Max: 40)
+      expected_salary TEXT,         -- wage: 希望待遇 (Max: 20)
+      preferred_location TEXT,      -- workPlace: 希望地點 (Max: 20)
+      remote_work TEXT,             -- remoteWork: 遠端工作 (Max: 10)
+      preferred_job_name TEXT,      -- jobName: 希望職稱 (Max: 120)
+      preferred_job_category TEXT,  -- jobCategory: 希望職類 (Max: 120)
+      preferred_industry TEXT,      -- industryCategory: 希望產業 (Max: 120)
+      work_desc TEXT,               -- workDesc: 工作內容描述 (Max: 2000)
+      
+      -- 104 自傳 (Biography)
+      biography TEXT,               -- bio: 中文自傳 (Max: 4000)
+      biography_en TEXT,            -- engBio: 英文自傳 (Max: 8000)
+      
+      -- 104 證照 (Certificates)
+      certificates TEXT,            -- certificates: 證照名稱 (Max: 2000)
+      other_certificates TEXT,      -- otherCertificates: 其他證照 (Max: 500)
+      
+      -- 系統計算欄位 (從關聯表彙總)
+      current_position TEXT,        -- 最近工作職位 (from experiences[0])
+      current_company TEXT,         -- 最近工作公司 (from experiences[0])
+      location TEXT,                -- 所在地區 (優先用 address)
+      education TEXT,               -- 最高學歷摘要 (from education[0])
+      experience TEXT,              -- 最近工作經歷摘要
+      experience_years INTEGER DEFAULT 0, -- 年資數字
+      skills TEXT,                  -- 技能摘要 (JSON)
       
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT,
       FOREIGN KEY (job_id) REFERENCES jobs(id)
     )
   `);
+  
+  // =====================================================
+  // 候選人學歷資料表 (對應 104 education[])
+  // =====================================================
+  db.run(`
+    CREATE TABLE IF NOT EXISTS candidate_education (
+      id TEXT PRIMARY KEY,
+      candidate_id TEXT NOT NULL,
+      school_name TEXT,             -- schoolName: 學校名稱 (Max: 40)
+      degree_level TEXT,            -- degreeLevel: 學歷等級 (博士/碩士/大學/etc)
+      major TEXT,                   -- major: 科系名稱 (Max: 100)
+      major_category TEXT,          -- majorCategory: 科系類別 (Max: 50)
+      degree_status TEXT,           -- degreeStatus: 就學狀態 (畢業/肄業/就學中)
+      school_country TEXT,          -- schoolCountry: 學校地區 (Max: 20)
+      start_date TEXT,              -- startDate: 就學期間起始
+      end_date TEXT,                -- endDate: 就學期間結束
+      sort_order INTEGER DEFAULT 0, -- 排序 (0=最高學歷)
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (candidate_id) REFERENCES candidates(id) ON DELETE CASCADE
+    )
+  `);
+  
+  // =====================================================
+  // 候選人工作經歷資料表 (對應 104 experiences[])
+  // =====================================================
+  db.run(`
+    CREATE TABLE IF NOT EXISTS candidate_experiences (
+      id TEXT PRIMARY KEY,
+      candidate_id TEXT NOT NULL,
+      firm_name TEXT,               -- firmName: 公司名稱 (Max: 120)
+      industry_category TEXT,       -- industryCategory: 產業類別 (Max: 20)
+      company_size TEXT,            -- companySize: 公司規模 (Max: 10)
+      work_place TEXT,              -- workPlace: 工作地點 (Max: 10)
+      job_name TEXT,                -- jobName: 職務名稱 (Max: 120)
+      job_role TEXT,                -- jobRole: 職務類型 (全職/兼職)
+      job_category TEXT,            -- jobCategory: 職務類別 (Max: 50)
+      start_date TEXT,              -- startDate: 任職起始
+      end_date TEXT,                -- endDate: 任職結束
+      job_desc TEXT,                -- jobDesc: 工作內容 (Max: 2000)
+      skills TEXT,                  -- skills: 工作技能 (Max: 50)
+      management TEXT,              -- management: 管理責任 (Max: 20)
+      wage_type_desc TEXT,          -- wageTypeDesc: 計薪方式 (Max: 10)
+      wage INTEGER,                 -- wage: 薪資數字
+      wage_year INTEGER,            -- wageYear: 年薪數字
+      sort_order INTEGER DEFAULT 0, -- 排序 (0=最近工作)
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (candidate_id) REFERENCES candidates(id) ON DELETE CASCADE
+    )
+  `);
+  
+  // =====================================================
+  // 候選人技能專長資料表 (對應 104 speciality[])
+  // =====================================================
+  db.run(`
+    CREATE TABLE IF NOT EXISTS candidate_specialities (
+      id TEXT PRIMARY KEY,
+      candidate_id TEXT NOT NULL,
+      skill TEXT,                   -- skill: 專長名稱 (Max: 120)
+      description TEXT,             -- desc: 專長描述 (Max: 1000)
+      tags TEXT,                    -- tag: 專長特色標籤 (Max: 200)
+      sort_order INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (candidate_id) REFERENCES candidates(id) ON DELETE CASCADE
+    )
+  `);
+  
+  // =====================================================
+  // 候選人語言能力資料表 (對應 104 foreignLanguage[] + localLanguage[])
+  // =====================================================
+  db.run(`
+    CREATE TABLE IF NOT EXISTS candidate_languages (
+      id TEXT PRIMARY KEY,
+      candidate_id TEXT NOT NULL,
+      lang_type TEXT,               -- langType: 語言類型
+      language_category TEXT,       -- 'foreign' or 'local'
+      listen_degree TEXT,           -- listenDegree: 聽力程度
+      speak_degree TEXT,            -- speakDegree: 口說程度
+      read_degree TEXT,             -- readDegree: 閱讀程度
+      write_degree TEXT,            -- writeDegree: 寫作程度
+      degree TEXT,                  -- degree: 精通程度 (for local language)
+      certificates TEXT,            -- certificates: 語文證照
+      sort_order INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (candidate_id) REFERENCES candidates(id) ON DELETE CASCADE
+    )
+  `);
+  
+  // =====================================================
+  // 候選人附件資料表 (對應 104 attachFiles[])
+  // =====================================================
+  db.run(`
+    CREATE TABLE IF NOT EXISTS candidate_attachments (
+      id TEXT PRIMARY KEY,
+      candidate_id TEXT NOT NULL,
+      type INTEGER,                 -- type: 類型 (1:檔案, 2:連結)
+      title TEXT,                   -- title: 附件名稱 (Max: 120)
+      file_name TEXT,               -- fileName: 檔案名稱 (Max: 120)
+      resource_link TEXT,           -- resourceLink: 下載連結 (Max: 300)
+      website TEXT,                 -- website: 網站連結 (Max: 200)
+      sort_order INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (candidate_id) REFERENCES candidates(id) ON DELETE CASCADE
+    )
+  `);
+  
+  // =====================================================
+  // 候選人專案作品資料表 (對應 104 projectDatas[])
+  // =====================================================
+  db.run(`
+    CREATE TABLE IF NOT EXISTS candidate_projects (
+      id TEXT PRIMARY KEY,
+      candidate_id TEXT NOT NULL,
+      title TEXT,                   -- title: 專案標題 (Max: 120)
+      start_date TEXT,              -- startDate: 開始日期
+      end_date TEXT,                -- endDate: 結束日期
+      description TEXT,             -- description: 描述 (Max: 2000)
+      type INTEGER,                 -- type: 素材類型 (0:無, 1:檔, 2:影, 3:網)
+      resource_link TEXT,           -- resourceLink: 素材連結 (Max: 300)
+      website TEXT,                 -- website: 網站連結 (Max: 200)
+      sort_order INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (candidate_id) REFERENCES candidates(id) ON DELETE CASCADE
+    )
+  `);
+  
+  // =====================================================
+  // 候選人自訂內容資料表 (對應 104 customContentDatas[])
+  // =====================================================
+  db.run(`
+    CREATE TABLE IF NOT EXISTS candidate_custom_contents (
+      id TEXT PRIMARY KEY,
+      candidate_id TEXT NOT NULL,
+      title TEXT,                   -- title: 標題 (Max: 120)
+      content TEXT,                 -- content: 內容 (JSON array)
+      sort_order INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (candidate_id) REFERENCES candidates(id) ON DELETE CASCADE
+    )
+  `);
+  
+  // =====================================================
+  // 候選人推薦人資料表 (對應 104 recommenders[])
+  // =====================================================
+  db.run(`
+    CREATE TABLE IF NOT EXISTS candidate_recommenders (
+      id TEXT PRIMARY KEY,
+      candidate_id TEXT NOT NULL,
+      name TEXT,                    -- name: 推薦人姓名 (Max: 30)
+      corp TEXT,                    -- corp: 單位 (Max: 35)
+      job_title TEXT,               -- jobTitle: 職稱 (Max: 20)
+      email TEXT,                   -- email: 電子郵件
+      tel TEXT,                     -- tel: 電話
+      sort_order INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (candidate_id) REFERENCES candidates(id) ON DELETE CASCADE
+    )
+  `);
+  
+  // =====================================================
+  // 候選人應徵紀錄資料表 (對應 104 applyJob[])
+  // =====================================================
+  db.run(`
+    CREATE TABLE IF NOT EXISTS candidate_apply_records (
+      id TEXT PRIMARY KEY,
+      candidate_id TEXT NOT NULL,
+      apply_date TEXT,              -- applyDate: 應徵日期 (Max: 10)
+      job_name TEXT,                -- name: 職務名稱 (Max: 120)
+      job_no TEXT,                  -- jobNo: 職務代碼 (Max: 40)
+      apply_source TEXT,            -- applySource: 應徵來源 (Max: 10)
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (candidate_id) REFERENCES candidates(id) ON DELETE CASCADE
+    )
+  `);
+  
+  // =====================================================
+  // 候選人應徵問答資料表 (對應 104 applyQuestion[])
+  // =====================================================
+  db.run(`
+    CREATE TABLE IF NOT EXISTS candidate_apply_questions (
+      id TEXT PRIMARY KEY,
+      candidate_id TEXT NOT NULL,
+      type TEXT,                    -- type: 類型 (1:是非, 2:選擇, 3:填充)
+      question TEXT,                -- question: 題目 (Max: 100)
+      answer TEXT,                  -- answer: 答覆 (Max: 250)
+      sort_order INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (candidate_id) REFERENCES candidates(id) ON DELETE CASCADE
+    )
+  `);
+  
+  // =====================================================
+  // 擴充既有資料表的欄位 (用於現有資料庫的 migration)
+  // =====================================================
+  const candidateColumns = [
+    // 基本資料欄位
+    { name: 'resume_104_id', type: 'TEXT' },
+    { name: 'sub_phone', type: 'TEXT' },
+    { name: 'tel', type: 'TEXT' },
+    { name: 'contact_info', type: 'TEXT' },
+    { name: 'address', type: 'TEXT' },
+    { name: 'birthday', type: 'TEXT' },
+    { name: 'reg_source', type: 'TEXT' },
+    { name: 'employment_status', type: 'TEXT' },
+    { name: 'military_status', type: 'TEXT' },
+    { name: 'military_retire_date', type: 'TEXT' },
+    { name: 'introduction', type: 'TEXT' },
+    { name: 'motto', type: 'TEXT' },
+    { name: 'characteristic', type: 'TEXT' },
+    { name: 'personal_page', type: 'TEXT' },
+    { name: 'driving_licenses', type: 'TEXT' },
+    { name: 'transports', type: 'TEXT' },
+    { name: 'special_identities', type: 'TEXT' },
+    { name: 'nationality', type: 'TEXT' },
+    { name: 'disabled_types', type: 'TEXT' },
+    { name: 'disability_card', type: 'INTEGER' },
+    { name: 'assistive_devices', type: 'TEXT' },
+    { name: 'avatar', type: 'TEXT' },
+    { name: 'seniority', type: 'TEXT' },
+    { name: 'gender', type: 'TEXT' },
+    // 求職條件欄位
+    { name: 'job_characteristic', type: 'TEXT' },
+    { name: 'work_interval', type: 'TEXT' },
+    { name: 'other_work_interval', type: 'TEXT' },
+    { name: 'shift_work', type: 'INTEGER' },
+    { name: 'start_date_opt', type: 'TEXT' },
+    { name: 'expected_salary', type: 'TEXT' },
+    { name: 'preferred_location', type: 'TEXT' },
+    { name: 'remote_work', type: 'TEXT' },
+    { name: 'preferred_job_name', type: 'TEXT' },
+    { name: 'preferred_job_category', type: 'TEXT' },
+    { name: 'preferred_industry', type: 'TEXT' },
+    { name: 'work_desc', type: 'TEXT' },
+    // 自傳欄位
+    { name: 'biography', type: 'TEXT' },
+    { name: 'biography_en', type: 'TEXT' },
+    // 證照欄位
+    { name: 'certificates', type: 'TEXT' },
+    { name: 'other_certificates', type: 'TEXT' },
+    // 計算欄位
+    { name: 'current_position', type: 'TEXT' },
+    { name: 'current_company', type: 'TEXT' },
+    { name: 'location', type: 'TEXT' }
+  ];
+  
+  candidateColumns.forEach(col => {
+    try {
+      db.run(`ALTER TABLE candidates ADD COLUMN ${col.name} ${col.type}`);
+    } catch (e) {
+      // 欄位已存在，忽略錯誤
+    }
+  });
+
+  // =====================================================
+  // 人才庫與再接觸管理 (Talent Pool)
+  // =====================================================
+
+  // 人才庫主表 - 關聯到 candidates 表
+  db.run(`
+    CREATE TABLE IF NOT EXISTS talent_pool (
+      id TEXT PRIMARY KEY,
+      candidate_id TEXT,                -- 關聯到 candidates 表 (可為空，支援手動新增)
+      
+      -- 基本資料 (若無關聯候選人則直接儲存)
+      name TEXT NOT NULL,
+      email TEXT,
+      phone TEXT,
+      avatar TEXT,
+      current_position TEXT,            -- 目前職位
+      current_company TEXT,             -- 目前公司
+      experience_years INTEGER DEFAULT 0, -- 年資
+      education TEXT,                   -- 學歷摘要
+      expected_salary TEXT,             -- 期望薪資
+      skills TEXT,                      -- 技能 (JSON array)
+      resume_url TEXT,                  -- 履歷連結
+      
+      -- 人才庫專屬欄位
+      source TEXT DEFAULT 'other',      -- 來源: '104', 'linkedin', 'referral', 'website', 'headhunter', 'other'
+      status TEXT DEFAULT 'active',     -- 狀態: 'active', 'contacted', 'scheduled', 'hired', 'declined', 'expired'
+      match_score INTEGER DEFAULT 0,    -- AI 媒合分數 0-100
+      contact_priority TEXT DEFAULT 'medium', -- 聯繫優先級: 'high', 'medium', 'low'
+      
+      -- 加入人才庫的原因/來源追蹤
+      decline_stage TEXT,               -- 婉拒階段: 'invited', 'interview', 'offer'
+      decline_reason TEXT,              -- 婉拒原因
+      original_job_id TEXT,             -- 原始應徵職缺 ID
+      original_job_title TEXT,          -- 原始應徵職缺名稱
+      
+      -- 聯繫追蹤
+      added_date TEXT DEFAULT (datetime('now')), -- 加入日期
+      last_contact_date TEXT,           -- 最後聯繫日期
+      next_contact_date TEXT,           -- 下次預計聯繫日期
+      contact_count INTEGER DEFAULT 0,  -- 聯繫次數
+      
+      -- 備註
+      notes TEXT,
+      
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT,
+      FOREIGN KEY (candidate_id) REFERENCES candidates(id) ON DELETE SET NULL,
+      FOREIGN KEY (original_job_id) REFERENCES jobs(id) ON DELETE SET NULL
+    )
+  `);
+
+  // 人才庫聯繫紀錄表
+  db.run(`
+    CREATE TABLE IF NOT EXISTS talent_contact_history (
+      id TEXT PRIMARY KEY,
+      talent_id TEXT NOT NULL,          -- 關聯到 talent_pool
+      
+      contact_date TEXT NOT NULL,       -- 聯繫日期
+      contact_method TEXT,              -- 聯繫方式: 'phone', 'email', 'interview', 'meeting'
+      contact_by TEXT,                  -- 聯繫人
+      summary TEXT,                     -- 聯繫摘要
+      outcome TEXT,                     -- 結果: 'positive', 'neutral', 'negative', 'no-response'
+      
+      next_action TEXT,                 -- 下一步行動
+      next_action_date TEXT,            -- 下一步行動日期
+      
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (talent_id) REFERENCES talent_pool(id) ON DELETE CASCADE
+    )
+  `);
+
+  // 人才庫提醒事項表
+  db.run(`
+    CREATE TABLE IF NOT EXISTS talent_reminders (
+      id TEXT PRIMARY KEY,
+      talent_id TEXT NOT NULL,          -- 關聯到 talent_pool
+      
+      reminder_date TEXT NOT NULL,      -- 提醒日期
+      reminder_type TEXT,               -- 提醒類型: 'contact', 'follow-up', 'interview', 'offer'
+      message TEXT,                     -- 提醒內容
+      
+      is_completed INTEGER DEFAULT 0,   -- 是否已完成
+      completed_at TEXT,                -- 完成時間
+      assigned_to TEXT,                 -- 指派給
+      
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT,
+      FOREIGN KEY (talent_id) REFERENCES talent_pool(id) ON DELETE CASCADE
+    )
+  `);
+
+  // 人才標籤定義表
+  db.run(`
+    CREATE TABLE IF NOT EXISTS talent_tags (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL UNIQUE,        -- 標籤名稱
+      color TEXT DEFAULT '#3B82F6',     -- 標籤顏色
+      category TEXT DEFAULT 'custom',   -- 類別: 'skill', 'experience', 'education', 'personality', 'custom'
+      description TEXT,                 -- 標籤說明
+      usage_count INTEGER DEFAULT 0,    -- 使用次數
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT
+    )
+  `);
+
+  // 人才與標籤多對多關聯表
+  db.run(`
+    CREATE TABLE IF NOT EXISTS talent_tag_mapping (
+      id TEXT PRIMARY KEY,
+      talent_id TEXT NOT NULL,
+      tag_id TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (talent_id) REFERENCES talent_pool(id) ON DELETE CASCADE,
+      FOREIGN KEY (tag_id) REFERENCES talent_tags(id) ON DELETE CASCADE,
+      UNIQUE(talent_id, tag_id)
+    )
+  `);
+
+  // 建立人才庫相關索引
+  db.run(`CREATE INDEX IF NOT EXISTS idx_talent_pool_status ON talent_pool(status)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_talent_pool_source ON talent_pool(source)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_talent_pool_candidate ON talent_pool(candidate_id)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_talent_contact_talent ON talent_contact_history(talent_id)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_talent_reminders_talent ON talent_reminders(talent_id)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_talent_reminders_date ON talent_reminders(reminder_date)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_talent_tag_mapping_talent ON talent_tag_mapping(talent_id)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_talent_tag_mapping_tag ON talent_tag_mapping(tag_id)`);
+
+  // 插入預設標籤
+  const defaultTags = [
+    { id: 'tag-tech-lead', name: '技術主管', color: '#EF4444', category: 'experience' },
+    { id: 'tag-senior', name: '資深工程師', color: '#F97316', category: 'experience' },
+    { id: 'tag-full-stack', name: '全端開發', color: '#8B5CF6', category: 'skill' },
+    { id: 'tag-frontend', name: '前端專長', color: '#3B82F6', category: 'skill' },
+    { id: 'tag-backend', name: '後端專長', color: '#10B981', category: 'skill' },
+    { id: 'tag-ai-ml', name: 'AI/ML', color: '#EC4899', category: 'skill' },
+    { id: 'tag-cloud', name: '雲端架構', color: '#06B6D4', category: 'skill' },
+    { id: 'tag-management', name: '管理經驗', color: '#F59E0B', category: 'experience' },
+    { id: 'tag-high-potential', name: '高潛力', color: '#84CC16', category: 'personality' },
+    { id: 'tag-referred', name: '內部推薦', color: '#6366F1', category: 'custom' }
+  ];
+  
+  defaultTags.forEach(tag => {
+    db.run(`
+      INSERT OR IGNORE INTO talent_tags (id, name, color, category)
+      VALUES (?, ?, ?, ?)
+    `, [tag.id, tag.name, tag.color, tag.category]);
+  });
 
   // 面試邀約資料表
   db.run(`
@@ -166,14 +621,26 @@ async function initDatabase() {
       location TEXT,
       meeting_link TEXT, -- 線上會議連結 (僅線上面試需要)
       evaluation_json TEXT, -- detailed scores and comments
-      result TEXT DEFAULT 'Pending', -- Pending, Pass, Hold, Fail
+      result TEXT DEFAULT 'Pending', -- Pending, Pass, Hold, Fail, Cancelled
       remark TEXT,
+      cancel_token TEXT UNIQUE, -- 候選人取消面試連結 Token
+      cancelled_at TEXT, -- 取消時間
+      cancel_reason TEXT, -- 取消原因
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT,
       FOREIGN KEY (candidate_id) REFERENCES candidates(id),
       FOREIGN KEY (job_id) REFERENCES jobs(id)
     )
   `);
+
+  // 為既有 interviews 表格添加 cancel_token 欄位 (migration)
+  try {
+    db.run(`ALTER TABLE interviews ADD COLUMN cancel_token TEXT UNIQUE`);
+    db.run(`ALTER TABLE interviews ADD COLUMN cancelled_at TEXT`);
+    db.run(`ALTER TABLE interviews ADD COLUMN cancel_reason TEXT`);
+  } catch (e) {
+    // 欄位已存在，忽略錯誤
+  }
 
   // 錄取/邀約決策資料表
   db.run(`

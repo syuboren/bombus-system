@@ -170,14 +170,24 @@ router.patch('/jobs/:id', async (req, res) => {
 });
 
 // GET /api/integration/104/resumes
-// Proxy to fetch resume list (IDs) from 104 Sandbox
+// 取得履歷數量與 ID 清單 (queryList)
+// Query params: date (yyyy-mm-dd), startTime (0-24), endTime (0-24), flag?, jobNo?
 router.get('/resumes', async (req, res) => {
     try {
         const resumeService = require('../../services/104/resume.service');
-        // Default to today if no date provided
-        const date = req.query.date || new Date().toISOString().split('T')[0];
+        const { date, startTime = 0, endTime = 24, flag, jobNo } = req.query;
+        
+        // 預設為今天
+        const queryDate = date || new Date().toISOString().split('T')[0];
 
-        const data = await resumeService.queryResumeList(date);
+        const data = await resumeService.queryResumeList({
+            date: queryDate,
+            startTime: parseInt(startTime, 10),
+            endTime: parseInt(endTime, 10),
+            flag: flag !== undefined ? parseInt(flag, 10) : undefined,
+            jobNo: jobNo !== undefined ? parseInt(jobNo, 10) : undefined
+        });
+        
         res.json({
             status: 'success',
             data: data
@@ -186,29 +196,49 @@ router.get('/resumes', async (req, res) => {
         res.status(500).json({
             status: 'error',
             message: 'Failed to fetch resume list from 104 API',
-            error: error.message
+            error: error.response?.data || error.message
         });
     }
 });
 
-// POST /api/integration/104/resumes/batch
-// Proxy to fetch batch resume details
-router.post('/resumes/batch', async (req, res) => {
+// GET /api/integration/104/resumes/batch
+// 批量取得履歷內容 (queryBatch)
+// Query params: date, startTime, endTime, idnos (逗號分隔, 最多10個), flag?, jobNo?
+router.get('/resumes/batch', async (req, res) => {
     try {
         const resumeService = require('../../services/104/resume.service');
-        const { idList, date } = req.body;
-
-        // Default to today if no date provided
-        const queryDate = date || new Date().toISOString().split('T')[0];
-
-        if (!idList || !Array.isArray(idList) || idList.length === 0) {
+        const { date, startTime = 0, endTime = 24, idnos, flag, jobNo, mapped } = req.query;
+        
+        if (!idnos) {
             return res.status(400).json({
                 status: 'error',
-                message: 'idList array is required'
+                message: 'idnos parameter is required (comma-separated, max 10)'
             });
         }
 
-        const data = await resumeService.getResumeDetails(idList, queryDate);
+        const queryDate = date || new Date().toISOString().split('T')[0];
+
+        const data = await resumeService.queryBatch({
+            date: queryDate,
+            startTime: parseInt(startTime, 10),
+            endTime: parseInt(endTime, 10),
+            idnos,
+            flag: flag !== undefined ? parseInt(flag, 10) : undefined,
+            jobNo: jobNo !== undefined ? parseInt(jobNo, 10) : undefined
+        });
+        
+        // 如果 mapped=true，則將資料映射為系統候選人格式
+        if (mapped === 'true' && data?.data?.list) {
+            const mappedCandidates = resumeService.mapResumesToCandidates(data.data.list);
+            return res.json({
+                status: 'success',
+                data: {
+                    raw: data.data,
+                    candidates: mappedCandidates
+                }
+            });
+        }
+        
         res.json({
             status: 'success',
             data: data
@@ -217,21 +247,43 @@ router.post('/resumes/batch', async (req, res) => {
         res.status(500).json({
             status: 'error',
             message: 'Failed to fetch batch resume details from 104 API',
-            error: error.message
+            error: error.response?.data || error.message
         });
     }
 });
 
-// GET /api/integration/104/resumes/:id
-// Proxy to fetch single resume detail
-router.get('/resumes/:id', async (req, res) => {
+// GET /api/integration/104/resumes/:idno
+// 取得單筆履歷內容 (query)
+// Query params: date, startTime, endTime, flag?, jobNo?, mapped?
+router.get('/resumes/:idno', async (req, res) => {
     try {
         const resumeService = require('../../services/104/resume.service');
-        const { id } = req.params;
-        // Default to today if no date provided
-        const date = req.query.date || new Date().toISOString().split('T')[0];
+        const { idno } = req.params;
+        const { date, startTime = 0, endTime = 24, flag, jobNo, mapped } = req.query;
+        
+        const queryDate = date || new Date().toISOString().split('T')[0];
 
-        const data = await resumeService.getResumeDetails([id], date);
+        const data = await resumeService.queryResume({
+            date: queryDate,
+            startTime: parseInt(startTime, 10),
+            endTime: parseInt(endTime, 10),
+            idno,
+            flag: flag !== undefined ? parseInt(flag, 10) : undefined,
+            jobNo: jobNo !== undefined ? parseInt(jobNo, 10) : undefined
+        });
+        
+        // 如果 mapped=true，則將資料映射為系統候選人格式
+        if (mapped === 'true' && data?.data?.list?.[0]) {
+            const mappedCandidate = resumeService.mapResumeToCandidate(data.data.list[0]);
+            return res.json({
+                status: 'success',
+                data: {
+                    raw: data.data.list[0],
+                    candidate: mappedCandidate
+                }
+            });
+        }
+        
         res.json({
             status: 'success',
             data: data
@@ -239,8 +291,8 @@ router.get('/resumes/:id', async (req, res) => {
     } catch (error) {
         res.status(500).json({
             status: 'error',
-            message: `Failed to fetch resume detail (${req.params.id}) from 104 API`,
-            error: error.message
+            message: `Failed to fetch resume detail (${req.params.idno}) from 104 API`,
+            error: error.response?.data || error.message
         });
     }
 });

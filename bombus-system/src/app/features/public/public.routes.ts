@@ -9,6 +9,13 @@ export const publicRoutes: Routes = [
         title: '面試邀約回覆'
     },
     {
+        path: 'interview-cancel/:token',
+        loadComponent: () =>
+            import('./pages/interview-cancel-page/interview-cancel-page.component')
+                .then(m => m.InterviewCancelPageComponent),
+        title: '取消面試'
+    },
+    {
         path: 'offer-response/:token',
         loadComponent: () =>
             import('./pages/offer-response-page/offer-response-page.component')

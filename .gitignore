@@ -13,3 +13,8 @@ bombus-system/.agent/skills/pdf
 bombus-system/.agent/skills/playwright-cli
 ANTIGRAVITY_TO_CURSOR_MIGRATION.md
 ai-marketing-dashboard-v4.html
+
+# Environment files
+.env
+*.env
+.env.*

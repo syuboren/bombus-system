@@ -9,6 +9,90 @@ const { v4: uuidv4 } = require('uuid');
  * ------------------------------------------------------------------
  */
 
+/**
+ * 輔助函數: 自動將婉拒的候選人加入人才庫
+ * @param {string} candidateId - 候選人 ID
+ * @param {string} declineStage - 婉拒階段: 'invited', 'interview', 'offer'
+ * @param {string} declineReason - 婉拒原因 (可選)
+ */
+function importToTalentPool(candidateId, declineStage, declineReason = null) {
+    try {
+        // 取得候選人資料
+        const candidate = prepare(`
+            SELECT c.*, j.title as job_title
+            FROM candidates c
+            LEFT JOIN jobs j ON c.job_id = j.id
+            WHERE c.id = ?
+        `).get(candidateId);
+
+        if (!candidate) {
+            console.log(`[TalentPool] Candidate ${candidateId} not found, skipping import`);
+            return;
+        }
+
+        // 檢查是否已在人才庫中
+        const existing = prepare(`SELECT id FROM talent_pool WHERE candidate_id = ?`).get(candidateId);
+        if (existing) {
+            console.log(`[TalentPool] Candidate ${candidateId} already in talent pool`);
+            return;
+        }
+
+        const id = uuidv4();
+        const now = new Date().toISOString();
+
+        // 解析技能
+        let skills = [];
+        if (candidate.skills) {
+            try {
+                skills = JSON.parse(candidate.skills);
+            } catch {
+                skills = candidate.skills.split(',').map(s => s.trim());
+            }
+        }
+
+        // 判斷來源
+        const source = candidate.reg_source?.includes('104') ? '104' : 'website';
+
+        prepare(`
+            INSERT INTO talent_pool (
+                id, candidate_id, name, email, phone, avatar,
+                current_position, current_company, experience_years, education,
+                expected_salary, skills, resume_url, source, status,
+                match_score, contact_priority, decline_stage, decline_reason,
+                original_job_id, original_job_title, added_date, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+            id,
+            candidateId,
+            candidate.name,
+            candidate.email,
+            candidate.phone,
+            candidate.avatar,
+            candidate.current_position,
+            candidate.current_company,
+            candidate.experience_years || 0,
+            candidate.education,
+            candidate.expected_salary,
+            JSON.stringify(skills),
+            candidate.resume_url,
+            source,
+            'active',
+            candidate.score || 0,
+            'medium',
+            declineStage,
+            declineReason,
+            candidate.job_id,
+            candidate.job_title,
+            now,
+            now
+        );
+
+        console.log(`[TalentPool] ✅ Imported candidate ${candidate.name} (${candidateId}) - decline stage: ${declineStage}`);
+    } catch (error) {
+        console.error(`[TalentPool] ❌ Error importing candidate ${candidateId}:`, error.message);
+    }
+}
+
 // --- 初始化面試評分表格 (如果不存在) ---
 try {
     prepare(`
@@ -322,15 +406,16 @@ router.post('/interviews', (req, res) => {
         }
 
         const interviewId = uuidv4();
+        const cancelToken = uuidv4(); // 產生取消連結 Token
         const now = new Date().toISOString();
 
-        // 1. Create Interview Record with meeting_link
+        // 1. Create Interview Record with meeting_link and cancel_token
         const stmt = prepare(`
             INSERT INTO interviews (
-                id, candidate_id, job_id, interviewer_id, round, interview_at, location, meeting_link, result, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pending', ?, ?)
+                id, candidate_id, job_id, interviewer_id, round, interview_at, location, meeting_link, cancel_token, result, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending', ?, ?)
         `);
-        stmt.run(interviewId, candidateId, jobId, interviewerId, round || 1, interviewAt, location, meetingLink || null, now, now);
+        stmt.run(interviewId, candidateId, jobId, interviewerId, round || 1, interviewAt, location, meetingLink || null, cancelToken, now, now);
 
         // 2. Update Candidate Status to interview
         const updateCand = prepare(`
@@ -343,6 +428,8 @@ router.post('/interviews', (req, res) => {
         res.status(201).json({
             success: true,
             interviewId,
+            cancelToken,
+            cancelLink: `/public/interview-cancel/${cancelToken}`,
             message: 'Interview scheduled successfully'
         });
 
@@ -626,6 +713,11 @@ router.post('/invitations/:token/respond', (req, res) => {
             `);
             const stage = response === 'declined' ? 'Rejected' : 'Invited';
             updateCand.run(stage, candidateStatus, now, invitation.candidate_id);
+
+            // 自動將婉拒的候選人加入人才庫
+            if (response === 'declined') {
+                importToTalentPool(invitation.candidate_id, 'invited', '面試邀請婉拒');
+            }
         }
 
         // Response messages
@@ -756,6 +848,11 @@ router.post('/offers/:token/respond', (req, res) => {
         `);
         updateCandidate.run(newStatus, newStage, now, offer.candidate_id);
 
+        // 自動將婉拒 Offer 的候選人加入人才庫
+        if (response === 'declined') {
+            importToTalentPool(offer.candidate_id, 'offer', '錄取通知婉拒');
+        }
+
         // 回覆訊息
         const messages = {
             accepted: '恭喜您！感謝您接受我們的錄用通知，HR 將會盡快與您聯繫後續入職事宜。',
@@ -775,7 +872,115 @@ router.post('/offers/:token/respond', (req, res) => {
     }
 });
 
-// 10. Get Response Link for HR (Interview)
+// ============================================================
+// 面試取消 APIs (已安排面試但婉拒)
+// ============================================================
+
+// 10. Get Interview Info by Cancel Token (Public - 候選人用)
+// GET /api/recruitment/interviews/cancel/:token
+router.get('/interviews/cancel/:token', (req, res) => {
+    try {
+        const { token } = req.params;
+
+        const interview = prepare(`
+            SELECT i.*, c.name as candidate_name, j.title as job_title
+            FROM interviews i
+            JOIN candidates c ON i.candidate_id = c.id
+            JOIN jobs j ON i.job_id = j.id
+            WHERE i.cancel_token = ?
+        `).get(token);
+
+        if (!interview) {
+            return res.status(404).json({ error: 'Interview not found or invalid token' });
+        }
+
+        // 檢查是否已取消
+        if (interview.result === 'Cancelled') {
+            return res.status(400).json({
+                error: 'Interview already cancelled',
+                cancelledAt: interview.cancelled_at
+            });
+        }
+
+        // 檢查面試是否已過
+        if (new Date(interview.interview_at) < new Date()) {
+            return res.status(410).json({ error: 'Interview has already passed' });
+        }
+
+        res.json({
+            interviewId: interview.id,
+            candidateName: interview.candidate_name,
+            jobTitle: interview.job_title,
+            interviewAt: interview.interview_at,
+            location: interview.location,
+            meetingLink: interview.meeting_link,
+            round: interview.round
+        });
+
+    } catch (error) {
+        console.error('Error fetching interview for cancel:', error);
+        res.status(500).json({ error: 'Failed to fetch interview' });
+    }
+});
+
+// 11. Candidate Cancel Interview (Public)
+// POST /api/recruitment/interviews/cancel/:token
+router.post('/interviews/cancel/:token', (req, res) => {
+    try {
+        const { token } = req.params;
+        const { reason } = req.body; // 取消原因 (可選)
+
+        // 取得面試資訊
+        const interview = prepare(`
+            SELECT i.*, c.name as candidate_name
+            FROM interviews i
+            JOIN candidates c ON i.candidate_id = c.id
+            WHERE i.cancel_token = ?
+        `).get(token);
+
+        if (!interview) {
+            return res.status(404).json({ error: 'Interview not found' });
+        }
+
+        // 檢查是否已取消
+        if (interview.result === 'Cancelled') {
+            return res.status(400).json({ error: 'Interview already cancelled' });
+        }
+
+        const now = new Date().toISOString();
+
+        // 1. 更新面試狀態為 Cancelled
+        const updateInterview = prepare(`
+            UPDATE interviews 
+            SET result = 'Cancelled', cancelled_at = ?, cancel_reason = ?, updated_at = ?
+            WHERE id = ?
+        `);
+        updateInterview.run(now, reason || '候選人婉拒', now, interview.id);
+
+        // 2. 更新候選人狀態
+        const updateCandidate = prepare(`
+            UPDATE candidates 
+            SET status = 'interview_declined', stage = 'Rejected', updated_at = ?
+            WHERE id = ?
+        `);
+        updateCandidate.run(now, interview.candidate_id);
+
+        // 3. 自動將婉拒的候選人加入人才庫
+        importToTalentPool(interview.candidate_id, 'interview', reason || '已安排面試但婉拒');
+
+        res.json({
+            success: true,
+            message: '感謝您的通知，我們已收到您的取消請求。祝您一切順利！',
+            cancelledAt: now
+        });
+
+    } catch (error) {
+        console.error('Error cancelling interview:', error);
+        res.status(500).json({ error: 'Failed to cancel interview' });
+    }
+});
+
+// 12. Get Response Link for HR (Interview)
 // GET /api/recruitment/candidates/:candidateId/response-link
 router.get('/candidates/:candidateId/response-link', (req, res) => {
     try {

@@ -182,7 +182,8 @@ router.get('/:id/candidates', (req, res) => {
             ii.selected_slots, 
             ii.status as invitation_status,
             ii.reschedule_note,
-            ii.responded_at
+            ii.responded_at,
+            (SELECT COUNT(*) FROM interviews WHERE candidate_id = c.id) as interview_count
             FROM candidates c
             LEFT JOIN interview_invitations ii ON ii.id = (
                 SELECT id FROM interview_invitations 

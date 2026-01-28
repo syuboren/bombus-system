@@ -49,6 +49,9 @@
               @case ('pending') {
               <span class="status-badge status-badge--pending">待面試</span>
               }
+              @case ('interview') {
+              <span class="status-badge status-badge--pending">已安排面試</span>
+              }
               @case ('pending_ai') {
               <span class="status-badge status-badge--ai">待 AI 分析</span>
               }
@@ -61,14 +64,29 @@
               @case ('offer_accepted') {
               <span class="status-badge status-badge--hired">已錄取同意</span>
               }
-              @case ('offer_declined') {
-              <span class="status-badge status-badge--rejected">已錄取拒絕</span>
+              @case ('onboarded') {
+              <span class="status-badge status-badge--hired">已報到</span>
               }
               @case ('hired') {
-              <span class="status-badge status-badge--hired">已錄用</span>
+              <span class="status-badge status-badge--hired">已報到</span>
+              }
+              @case ('not_invited') {
+              <span class="status-badge status-badge--not-continued">不邀請</span>
+              }
+              @case ('not_hired') {
+              <span class="status-badge status-badge--not-continued">未錄取</span>
+              }
+              @case ('invite_declined') {
+              <span class="status-badge status-badge--declined">邀請婉拒</span>
+              }
+              @case ('interview_declined') {
+              <span class="status-badge status-badge--declined">面試婉拒</span>
+              }
+              @case ('offer_declined') {
+              <span class="status-badge status-badge--declined">Offer 婉拒</span>
               }
               @case ('rejected') {
-              <span class="status-badge status-badge--rejected">已婉拒</span>
+              <span class="status-badge status-badge--declined">已婉拒</span>
               }
               @default {
               <span class="status-badge status-badge--pending">待面試</span>

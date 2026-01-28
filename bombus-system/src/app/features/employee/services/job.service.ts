@@ -448,12 +448,14 @@ export class JobService {
       scoreLevel: (dbCandidate.score >= 80 ? 'high' : dbCandidate.score >= 60 ? 'medium' : 'low'),
       status: (dbCandidate.status === 'offer' ? 'hired' : dbCandidate.status as any) || 'new',
       avatarColor: this.getRandomColor(),
+      stage: dbCandidate.stage,
       // Invitation Data
       invitationStatus: dbCandidate.invitation_status,
       candidateResponse: dbCandidate.candidate_response,
       selectedSlots: selectedSlots,
       responseToken: dbCandidate.response_token,
-      rescheduleNote: dbCandidate.reschedule_note
+      rescheduleNote: dbCandidate.reschedule_note,
+      interviewCount: dbCandidate.interview_count || 0
     };
   }
 

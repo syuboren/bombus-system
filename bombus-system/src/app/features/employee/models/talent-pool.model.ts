@@ -4,6 +4,15 @@ export type TalentStatus = 'active' | 'contacted' | 'scheduled' | 'hired' | 'dec
 export type TalentSource = '104' | 'linkedin' | 'referral' | 'website' | 'headhunter' | 'other';
 export type ContactPriority = 'high' | 'medium' | 'low';
 
+/**
+ * 進入人才庫的原因（婉拒階段）
+ * - invite_declined: 邀請婉拒（候選人婉拒面試邀請）
+ * - interview_declined: 面試婉拒（候選人面試後婉拒）
+ * - offer_declined: Offer 婉拒（候選人婉拒錄取通知）
+ * - not_hired: 未錄取（面試後未錄用）
+ */
+export type DeclineStage = 'invite_declined' | 'interview_declined' | 'offer_declined' | 'not_hired';
+
 export interface TalentTag {
   id: string;
   name: string;
@@ -24,6 +33,8 @@ export interface TalentCandidate {
   expectedSalary?: string;
   source: TalentSource;
   status: TalentStatus;
+  declineStage?: DeclineStage; // 進入人才庫的原因
+  declineReason?: string;      // 婉拒原因說明
   tags: TalentTag[];
   skills: string[];
   matchScore: number; // AI 媒合分數 0-100

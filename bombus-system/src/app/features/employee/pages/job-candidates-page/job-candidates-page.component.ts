@@ -89,7 +89,7 @@ export class JobCandidatesPageComponent implements OnInit {
   // 熱門標籤
   readonly popularTags = ['React', 'Angular', 'Python', 'Java', 'AWS', 'Node.js', 'Spring Boot', 'Docker'];
 
-  // Tab 配置
+  // Tab 配置（統一狀態標籤）
   readonly statusTabs = [
     { key: '', label: '全部', icon: 'ri-list-check' },
     { key: 'new', label: '新進履歷', icon: 'ri-file-user-line' },
@@ -97,10 +97,10 @@ export class JobCandidatesPageComponent implements OnInit {
     { key: 'pending-schedule', label: '待安排', icon: 'ri-calendar-2-line' },
     { key: 'reschedule', label: '待改期', icon: 'ri-calendar-todo-line' },
     { key: 'interview', label: '已安排面試', icon: 'ri-calendar-check-line' },
-    { key: 'rejected', label: '已婉拒', icon: 'ri-close-circle-line' },
+    { key: 'declined', label: '已婉拒', icon: 'ri-close-circle-line' },  // 候選人婉拒（合併顯示）
     { key: 'offered', label: '待回覆 Offer', icon: 'ri-mail-star-line' },
     { key: 'offer_accepted', label: '已錄取同意', icon: 'ri-trophy-line' },
-    { key: 'offer_declined', label: '已錄取拒絕', icon: 'ri-user-unfollow-line' }
+    { key: 'not_continued', label: '已結束', icon: 'ri-user-unfollow-line' }  // 不邀請 + 未錄取 + Offer 婉拒
   ];
 
   // Offer 回覆連結 Modal
@@ -181,6 +181,21 @@ export class JobCandidatesPageComponent implements OnInit {
         result = result.filter(c => c.status === 'invited' && c.candidateResponse === 'accepted');
       } else if (status === 'invited') {
         result = result.filter(c => c.status === 'invited' && c.candidateResponse !== 'accepted');
+      } else if (status === 'declined') {
+        // 候選人婉拒：邀請婉拒、面試婉拒、舊 rejected 狀態
+        result = result.filter(c => 
+          c.status === 'invite_declined' || 
+          c.status === 'interview_declined' || 
+          (c.status === 'rejected' && c.stage !== 'OfferDeclined')
+        );
+      } else if (status === 'not_continued') {
+        // 已結束：不邀請、未錄取、Offer 婉拒
+        result = result.filter(c => 
+          c.status === 'not_invited' || 
+          c.status === 'not_hired' || 
+          c.status === 'offer_declined' ||
+          c.stage === 'OfferDeclined'
+        );
       } else {
         result = result.filter(c => c.status === status);
       }
@@ -202,6 +217,25 @@ export class JobCandidatesPageComponent implements OnInit {
 
     if (statusKey === 'invited') {
       return all.filter(c => c.status === 'invited' && c.candidateResponse !== 'accepted').length;
+    }
+
+    if (statusKey === 'declined') {
+      // 候選人婉拒
+      return all.filter(c => 
+        c.status === 'invite_declined' || 
+        c.status === 'interview_declined' || 
+        (c.status === 'rejected' && c.stage !== 'OfferDeclined')
+      ).length;
+    }
+
+    if (statusKey === 'not_continued') {
+      // 已結束：不邀請、未錄取、Offer 婉拒
+      return all.filter(c => 
+        c.status === 'not_invited' || 
+        c.status === 'not_hired' || 
+        c.status === 'offer_declined' ||
+        c.stage === 'OfferDeclined'
+      ).length;
     }
 
     return all.filter(c => c.status === statusKey).length;
@@ -511,23 +545,54 @@ export class JobCandidatesPageComponent implements OnInit {
       interview: 'status--interview',
       pending_ai: 'status--pending-ai',
       pending_decision: 'status--pending-decision',
-      rejected: 'status--rejected',
-      hired: 'status--hired',
       offered: 'status--offered',
       offer_accepted: 'status--offer-accepted',
-      offer_declined: 'status--offer-declined'
+      onboarded: 'status--hired',
+      // 流程未繼續
+      not_invited: 'status--not-continued',
+      not_hired: 'status--not-continued',
+      // 候選人婉拒
+      invite_declined: 'status--declined',
+      interview_declined: 'status--declined',
+      offer_declined: 'status--declined',
+      // 舊狀態相容
+      rejected: 'status--declined',
+      hired: 'status--hired',
+      completed: 'status--hired',
+      pending: 'status--pending'
     };
     return classes[status] || '';
   }
 
   getStatusLabel(candidate: JobCandidate): string {
     const status = candidate.status;
+    const stage = candidate.stage;
+    const hasInterview = (candidate.interviewCount ?? 0) > 0;
 
     // Check if invited but accepted (pending schedule)
     if (status === 'invited' && candidate.candidateResponse === 'accepted') {
       return '待安排';
     }
 
+    // 新狀態：候選人婉拒
+    if (status === 'invite_declined') return '邀請婉拒';
+    if (status === 'interview_declined') return '面試婉拒';
+    if (status === 'offer_declined' || stage === 'OfferDeclined') return 'Offer 婉拒';
+
+    // 新狀態：流程未繼續
+    if (status === 'not_invited') return '不邀請';
+    if (status === 'not_hired') return '未錄取';
+
+    // 舊狀態相容：rejected 根據階段判斷
+    if (status === 'rejected' || stage === 'Rejected') {
+      // 有面試記錄 → 面試婉拒
+      if (hasInterview) return '面試婉拒';
+      // 邀請被拒 → 邀請婉拒
+      if (candidate.invitationStatus === 'Declined') return '邀請婉拒';
+      return '已婉拒';
+    }
+
+    // 統一狀態標籤
     const labels: Record<string, string> = {
       new: '新進履歷',
       invited: '已邀請',
@@ -535,11 +600,13 @@ export class JobCandidatesPageComponent implements OnInit {
       interview: '已安排面試',
       pending_ai: '待 AI 分析',
       pending_decision: '待決策',
-      rejected: '已婉拒',
-      hired: '已錄用',
       offered: '待回覆 Offer',
       offer_accepted: '已錄取同意',
-      offer_declined: '已錄取拒絕'
+      onboarded: '已報到',
+      // 舊狀態相容
+      hired: '已報到',
+      completed: '已完成',
+      pending: '待處理'
     };
     return labels[status] || status;
   }

@@ -84,4 +84,39 @@ export class InterviewResponseService {
             response
         });
     }
+
+    // ============================================================
+    // Interview Cancel APIs (已安排面試但婉拒)
+    // ============================================================
+
+    /**
+     * 取得已安排面試的詳情（公開 API）
+     * @param token 取消連結 Token
+     */
+    getInterviewForCancel(token: string): Observable<{
+        interviewId: string;
+        candidateName: string;
+        jobTitle: string;
+        interviewAt: string;
+        location: string;
+        meetingLink: string;
+        round: number;
+    }> {
+        return this.http.get<any>(`${this.apiUrl}/interviews/cancel/${token}`);
+    }
+
+    /**
+     * 候選人取消已安排的面試（公開 API）
+     * @param token 取消連結 Token
+     * @param reason 取消原因（可選）
+     */
+    cancelInterview(token: string, reason?: string): Observable<{
+        success: boolean;
+        message: string;
+        cancelledAt: string;
+    }> {
+        return this.http.post<any>(`${this.apiUrl}/interviews/cancel/${token}`, {
+            reason
+        });
+    }
 }

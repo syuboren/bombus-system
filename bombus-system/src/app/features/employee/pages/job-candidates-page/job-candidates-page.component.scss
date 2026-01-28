@@ -395,6 +395,18 @@ $module-color: $color-l1-sage;
   color: $color-error;
 }
 
+// 候選人婉拒（統一樣式）
+.status--declined {
+  background: rgba(#F97316, 0.15); // Orange
+  color: #EA580C;
+}
+
+// 流程未繼續（不邀請、未錄取）
+.status--not-continued {
+  background: rgba($color-text-secondary, 0.15);
+  color: $color-text-secondary;
+}
+
 .btn-action {
   @include flex-center;
   gap: $spacing-xs;

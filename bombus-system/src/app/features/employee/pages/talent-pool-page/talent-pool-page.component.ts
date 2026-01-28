@@ -99,8 +99,8 @@ export class TalentPoolPageComponent implements OnInit {
       this.stats.set(stats);
     });
 
-    this.talentPoolService.getCandidates().subscribe(candidates => {
-      this.candidates.set(candidates);
+    this.talentPoolService.getCandidates().subscribe(result => {
+      this.candidates.set(result.talents);
       this.loading.set(false);
     });
 
@@ -200,6 +200,17 @@ export class TalentPoolPageComponent implements OnInit {
       'expired': '已過期'
     };
     return labels[status] || status;
+  }
+
+  getDeclineStageLabel(stage: string | undefined): string {
+    if (!stage) return '';
+    const labels: Record<string, string> = {
+      'invite_declined': '邀請婉拒',
+      'interview_declined': '面試婉拒',
+      'offer_declined': 'Offer 婉拒',
+      'not_hired': '未錄取'
+    };
+    return labels[stage] || stage;
   }
 
   getSourceLabel(source: string): string {

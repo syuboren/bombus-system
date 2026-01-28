@@ -197,6 +197,16 @@
   &--offered {
     @include status-badge-color(#D4A03E); // 金色 - 待回覆 Offer
   }
+
+  // 候選人婉拒（統一樣式）
+  &--declined {
+    @include status-badge-color(#F97316); // Orange
+  }
+
+  // 流程未繼續（不邀請、未錄取）
+  &--not-continued {
+    @include status-badge-color($color-text-secondary);
+  }
 }
 
 // ---------------------------------------------------------------

@@ -43,13 +43,38 @@ interface TranscriptSegment {
 }
 
 /**
- * 候選人狀態
- * pending: 待面試 (初始)
- * pending_ai: 待 AI 分析 (已評分)
- * pending_decision: 待決策 (已 AI 分析)
- * completed: 已決策 (錄用/婉拒)
+ * 候選人狀態（統一定義）
+ * 
+ * 流程狀態：
+ * - interview: 已安排面試
+ * - pending_ai: 待 AI 分析
+ * - pending_decision: 待決策
+ * - offered: 待回覆 Offer
+ * - offer_accepted: 已錄取同意
+ * - onboarded: 已報到
+ * 
+ * 終止狀態（流程未繼續）：
+ * - not_invited: 不邀請
+ * - not_hired: 未錄取
+ * 
+ * 終止狀態（候選人婉拒）：
+ * - invite_declined: 邀請婉拒
+ * - interview_declined: 面試婉拒
+ * - offer_declined: Offer 婉拒
+ * 
+ * 舊狀態（向下相容）：
+ * - pending: 待面試（舊）
+ * - scored: 已評分（舊）
+ * - completed: 已完成（舊）
+ * - hired: 已錄用（舊）
+ * - rejected: 已拒絕（舊）
  */
-type CandidateStatus = 'pending' | 'pending_ai' | 'pending_decision' | 'completed' | 'scored';
+type CandidateStatus = 
+  | 'interview' | 'pending_ai' | 'pending_decision' 
+  | 'offered' | 'offer_accepted' | 'onboarded'
+  | 'not_invited' | 'not_hired'
+  | 'invite_declined' | 'interview_declined' | 'offer_declined'
+  | 'pending' | 'scored' | 'completed' | 'hired' | 'rejected';
 
 import { AiScoringOverlayComponent } from '../../components/ai-scoring-overlay/ai-scoring-overlay.component';
 

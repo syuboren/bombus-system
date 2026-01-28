@@ -56,6 +56,10 @@ async function start() {
         const path = require('path');
         app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
+        // Talent Pool Routes
+        const talentPoolRouter = require('./routes/talent-pool');
+        app.use('/api/talent-pool', talentPoolRouter);
+
         // Integration Routes
         const integration104Router = require('./routes/integration/104');
         app.use('/api/integration/104', integration104Router);
