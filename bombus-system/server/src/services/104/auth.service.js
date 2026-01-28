@@ -22,14 +22,14 @@ class Auth104Service {
 
             const payload = new URLSearchParams();
             payload.append('grant_type', 'client_credentials');
-            payload.append('scope', 'job'); // Default scope for now
+            payload.append('scope', 'job'); // Revert to default scope
 
             // 3. Exchange for new token
             console.log(`Sending auth request to: ${this.baseUrl}/oauth2/token`);
             const response = await axios.post(`${this.baseUrl}/oauth2/token`, payload, {
                 headers: {
                     'Authorization': `Basic ${authString}`,
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
                 }
             });
 

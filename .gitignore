@@ -2,3 +2,4 @@ metronic/
 規劃文件/
 *.png
 .DS_Store
+bombus-system/server/uploads/
