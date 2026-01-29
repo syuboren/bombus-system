@@ -15,6 +15,11 @@ import { RouterLink } from '@angular/router';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { StatCardComponent, ModuleType, ChangeType } from '../../../../shared/components/stat-card/stat-card.component';
 import { CEODashboardService } from '../../services/ceo-dashboard.service';
+import { AiMarketingService } from '../../services/ai-marketing.service';
+import {
+  AiMarketingDashboard,
+  InsightItem
+} from '../../models/ai-marketing.model';
 import {
   HealthAxis,
   RiskAlert,
@@ -66,7 +71,7 @@ interface HealthTrendData {
   culture: number;
 }
 
-type DashboardView = 'ceo' | 'operational';
+type DashboardView = 'ceo' | 'operational' | 'ai-marketing';
 
 interface StatData {
   icon: string;
@@ -115,6 +120,7 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
 
   private ceoService = inject(CEODashboardService);
   private trainingService = inject(TrainingService);
+  private aiMarketingService = inject(AiMarketingService);
   private cdr = inject(ChangeDetectorRef);
 
   // Charts
@@ -285,6 +291,12 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
 
   // Forecast Pipeline
   forecastPipeline = signal<ForecastPipeline | null>(null);
+
+  // AI 行銷決策
+  aiMarketingData = signal<AiMarketingDashboard | null>(null);
+  aiMarketingLoading = signal<boolean>(false);
+  aiMarketingError = signal<string | null>(null);
+  expandedInsights = signal<Set<string>>(new Set());
 
   // 專案甘特圖統計圖表
   private projectStatusDonutChart: echarts.ECharts | null = null;
@@ -541,6 +553,7 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
   ngOnDestroy(): void {
     window.removeEventListener('resize', this.resizeHandler);
     window.removeEventListener('scroll', this.handleScroll);
+    window.removeEventListener('scroll', this.handleAiMarketingScroll);
     this.storyBoardObserver?.disconnect();
     this.disposeCharts();
   }
@@ -554,14 +567,146 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
     this.cdr.detectChanges();
 
     if (view === 'ceo') {
+      window.removeEventListener('scroll', this.handleAiMarketingScroll);
+      this.activeSection.set('section-overview');
       // 延遲初始化圖表，確保 DOM 已經渲染
       setTimeout(() => {
         this.initTrendChart();
         this.initScrollListener();
       }, 200);
+    } else if (view === 'ai-marketing') {
+      window.removeEventListener('scroll', this.handleScroll);
+      this.activeSection.set('ai-section-summary');
+      // 載入 AI 行銷資料
+      this.loadAiMarketingData();
+      // 延遲初始化滾動監聽器
+      setTimeout(() => {
+        this.initAiMarketingScrollListener();
+      }, 200);
     } else {
       window.removeEventListener('scroll', this.handleScroll);
+      window.removeEventListener('scroll', this.handleAiMarketingScroll);
     }
+  }
+
+  // AI 行銷決策相關方法
+  loadAiMarketingData(): void {
+    // 如果已有資料且非重新整理，則不重新載入
+    if (this.aiMarketingData() && !this.aiMarketingLoading()) {
+      return;
+    }
+
+    this.aiMarketingLoading.set(true);
+    this.aiMarketingError.set(null);
+
+    this.aiMarketingService.getAiMarketingData().subscribe({
+      next: (data) => {
+        this.aiMarketingData.set(data);
+        this.aiMarketingLoading.set(false);
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Failed to load AI marketing data:', err);
+        this.aiMarketingError.set('載入資料失敗，請稍後再試');
+        this.aiMarketingLoading.set(false);
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  refreshAiMarketing(): void {
+    this.aiMarketingData.set(null);
+    this.loadAiMarketingData();
+  }
+
+  toggleInsightExpand(insightId: string): void {
+    this.expandedInsights.update(set => {
+      const newSet = new Set(set);
+      if (newSet.has(insightId)) {
+        newSet.delete(insightId);
+      } else {
+        newSet.add(insightId);
+      }
+      return newSet;
+    });
+  }
+
+  isInsightExpanded(insightId: string): boolean {
+    return this.expandedInsights().has(insightId);
+  }
+
+  formatAiMarketingDate(isoDate: string): string {
+    const date = new Date(isoDate);
+    return `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}`;
+  }
+
+  getInsightPriorityLabel(priority: string): string {
+    const labels: Record<string, string> = {
+      urgent: '緊急',
+      warning: '關注',
+      success: '機會',
+      info: '資訊'
+    };
+    return labels[priority] || priority;
+  }
+
+  // 依優先級排序洞察項目 (緊急 > 關注 > 機會 > 資訊)
+  sortInsightsByPriority<T extends { priority: string }>(insights: T[]): T[] {
+    const priorityOrder: Record<string, number> = {
+      urgent: 0,
+      warning: 1,
+      success: 2,
+      info: 3
+    };
+    return [...insights].sort((a, b) => {
+      return (priorityOrder[a.priority] ?? 99) - (priorityOrder[b.priority] ?? 99);
+    });
+  }
+
+  // 展開指定區塊的所有洞察
+  expandSectionInsights(section: 'ads' | 'products' | 'customers'): void {
+    const data = this.aiMarketingData();
+    if (!data) return;
+
+    const newSet = new Set(this.expandedInsights());
+    const insights = section === 'ads' 
+      ? data.ads.insights 
+      : section === 'products' 
+        ? data.products.insights 
+        : data.customers.insights;
+    
+    insights.forEach(i => newSet.add(i.id));
+    this.expandedInsights.set(newSet);
+  }
+
+  // 收合指定區塊的所有洞察
+  collapseSectionInsights(section: 'ads' | 'products' | 'customers'): void {
+    const data = this.aiMarketingData();
+    if (!data) return;
+
+    const newSet = new Set(this.expandedInsights());
+    const insights = section === 'ads' 
+      ? data.ads.insights 
+      : section === 'products' 
+        ? data.products.insights 
+        : data.customers.insights;
+    
+    insights.forEach(i => newSet.delete(i.id));
+    this.expandedInsights.set(newSet);
+  }
+
+  // 檢查指定區塊是否有任何展開的項目
+  hasSectionExpanded(section: 'ads' | 'products' | 'customers'): boolean {
+    const data = this.aiMarketingData();
+    if (!data) return false;
+
+    const insights = section === 'ads' 
+      ? data.ads.insights 
+      : section === 'products' 
+        ? data.products.insights 
+        : data.customers.insights;
+    
+    return insights.some(i => this.expandedInsights().has(i.id));
   }
 
   // 快速導航邏輯
@@ -618,6 +763,48 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
     ];
 
     const currentScrollPos = window.pageYOffset + 150;
+
+    for (const sectionId of sections) {
+      const element = document.getElementById(sectionId);
+      if (element) {
+        const { top, bottom } = element.getBoundingClientRect();
+        const elementTop = top + window.pageYOffset;
+        const elementBottom = bottom + window.pageYOffset;
+
+        if (currentScrollPos >= elementTop && currentScrollPos < elementBottom) {
+          this.activeSection.set(sectionId);
+          break;
+        }
+      }
+    }
+  };
+
+  // AI 行銷決策頁面滾動監聽
+  private initAiMarketingScrollListener(): void {
+    window.addEventListener('scroll', this.handleAiMarketingScroll);
+  }
+
+  private handleAiMarketingScroll = () => {
+    if (this.currentView() !== 'ai-marketing') return;
+
+    const sections = [
+      'ai-section-summary',
+      'ai-section-ads',
+      'ai-section-products',
+      'ai-section-customers',
+      'ai-section-cross'
+    ];
+
+    const currentScrollPos = window.pageYOffset + 150;
+    
+    // 檢查是否滾動到頁面底部（容許 50px 誤差）
+    const isAtBottom = (window.innerHeight + window.pageYOffset) >= (document.body.scrollHeight - 50);
+    
+    // 如果在頁面底部，直接設為最後一個區塊
+    if (isAtBottom) {
+      this.activeSection.set(sections[sections.length - 1]);
+      return;
+    }
 
     for (const sectionId of sections) {
       const element = document.getElementById(sectionId);
