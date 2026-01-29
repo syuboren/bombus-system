@@ -6927,3 +6927,1406 @@
     font-weight: $font-weight-semibold;
   }
 }
+// ===============================================================
+// AI 行銷決策儀表板樣式
+// ===============================================================
+
+// AI Marketing View Button
+.view-btn--ai-marketing {
+  &.active {
+    background: white;
+    color: $color-l3-petrol;
+  }
+}
+
+.view-btn--refresh {
+  i.spinning {
+    animation: spin 1s linear infinite;
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+// ---------------------------------------------------------------
+// AI Marketing Bento Layout
+// ---------------------------------------------------------------
+.ai-marketing-bento-layout {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+  animation: fadeInUp 0.4s ease-out;
+}
+
+// ---------------------------------------------------------------
+// AI Marketing Toolbar
+// ---------------------------------------------------------------
+.ai-marketing-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: $spacing-lg;
+  padding: $spacing-sm 0;
+
+  &__date {
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+
+    i {
+      font-size: 16px;
+    }
+  }
+}
+
+// ---------------------------------------------------------------
+// Loading & Error States
+// ---------------------------------------------------------------
+.ai-marketing-loading {
+  @include flex-center;
+  flex-direction: column;
+  gap: $spacing-lg;
+  padding: $spacing-2xl;
+  min-height: 300px;
+
+  p {
+    font-size: $font-size-base;
+    color: $color-text-secondary;
+  }
+}
+
+.loading-spinner-lg {
+  @include flex-center;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: rgba($color-l3-petrol, 0.1);
+
+  i {
+    font-size: 28px;
+    color: $color-l3-petrol;
+    animation: spin 1s linear infinite;
+  }
+}
+
+.ai-marketing-error {
+  @include flex-center;
+  flex-direction: column;
+  gap: $spacing-md;
+  padding: $spacing-2xl;
+  min-height: 200px;
+  text-align: center;
+
+  i {
+    font-size: 48px;
+    color: $color-error;
+  }
+
+  p {
+    font-size: $font-size-base;
+    color: $color-text-secondary;
+  }
+}
+
+// ---------------------------------------------------------------
+// Summary Cards (摘要指標)
+// ---------------------------------------------------------------
+.bento-row--summary {
+  animation: fadeInUp 0.5s ease-out both;
+}
+
+.summary-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: $spacing-lg;
+
+  @include media-max-lg {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include media-max-sm {
+    grid-template-columns: 1fr;
+  }
+}
+
+.summary-card {
+  @include card;
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-lg;
+  border-radius: $radius-xl;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: $shadow-lg;
+  }
+
+  &__icon {
+    @include flex-center;
+    width: 48px;
+    height: 48px;
+    border-radius: $radius-lg;
+    flex-shrink: 0;
+
+    i {
+      font-size: 24px;
+    }
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__value {
+    font-size: 32px;
+    font-weight: $font-weight-bold;
+    @include stylish-number;
+    line-height: 1;
+  }
+
+  &__label {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+  }
+
+  // 緊急 - 紅色
+  &--urgent {
+    .summary-card__icon {
+      background: rgba($color-l5-brick, 0.12);
+
+      i {
+        color: $color-l5-brick;
+      }
+    }
+
+    .summary-card__value {
+      color: $color-l5-brick;
+    }
+  }
+
+  // 關注 - 黃橙色
+  &--warning {
+    .summary-card__icon {
+      background: rgba($color-l2-terracotta, 0.12);
+
+      i {
+        color: $color-l2-terracotta;
+      }
+    }
+
+    .summary-card__value {
+      color: $color-l2-terracotta;
+    }
+  }
+
+  // 機會 - 綠色
+  &--success {
+    .summary-card__icon {
+      background: rgba($color-l1-sage, 0.12);
+
+      i {
+        color: $color-l1-sage;
+      }
+    }
+
+    .summary-card__value {
+      color: $color-l1-sage;
+    }
+  }
+
+  // 總數 - 藍綠色
+  &--info {
+    .summary-card__icon {
+      background: rgba($color-l3-petrol, 0.12);
+
+      i {
+        color: $color-l3-petrol;
+      }
+    }
+
+    .summary-card__value {
+      color: $color-l3-petrol;
+    }
+  }
+}
+
+// ---------------------------------------------------------------
+// Bento Header 專家色系
+// ---------------------------------------------------------------
+.bento-header--ads i {
+  color: $color-l2-terracotta;
+}
+
+.bento-header--product i {
+  color: $color-l3-petrol;
+}
+
+.bento-header--customer i {
+  color: $color-l1-sage;
+}
+
+// ---------------------------------------------------------------
+// Insight KPI Card (專家區塊內的指標卡片)
+// ---------------------------------------------------------------
+.insight-kpi-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-md;
+  margin-bottom: $spacing-md;
+  background: rgba($color-l2-terracotta, 0.06);
+  border-radius: $radius-lg;
+
+  &__main {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__label {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  &__value {
+    font-size: 28px;
+    font-weight: $font-weight-bold;
+    @include stylish-number;
+    color: $color-l2-terracotta;
+
+    &--text {
+      font-size: $font-size-lg;
+      font-style: normal;
+      font-family: inherit;
+    }
+  }
+
+  &__trend {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 4px 10px;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    border-radius: $radius-full;
+
+    &.positive {
+      color: darken($color-l1-sage, 15%);
+      background: rgba($color-l1-sage, 0.15);
+    }
+
+    &.negative {
+      color: darken($color-l5-brick, 10%);
+      background: rgba($color-l5-brick, 0.15);
+    }
+
+    i {
+      font-size: 14px;
+    }
+  }
+
+  &__sub {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+  }
+
+  &__sub-label {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+  }
+
+  &__sub-value {
+    font-size: $font-size-base;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+  }
+
+  // 選品洞察師
+  &--product {
+    background: rgba($color-l3-petrol, 0.06);
+
+    .insight-kpi-card__value {
+      color: $color-l3-petrol;
+    }
+  }
+
+  // 顧客洞察師
+  &--customer {
+    background: rgba($color-l1-sage, 0.06);
+
+    .insight-kpi-card__value {
+      color: $color-l1-sage;
+    }
+  }
+}
+
+// ---------------------------------------------------------------
+// Insight List (洞察列表)
+// ---------------------------------------------------------------
+.insight-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.insight-item {
+  padding: $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: darken($color-cloud-gray, 2%);
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    margin-bottom: $spacing-xs;
+  }
+
+  &__title {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+    margin: 0;
+  }
+
+  &__desc {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    margin: 0 0 $spacing-sm;
+    line-height: 1.5;
+  }
+
+  &__metric {
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+    margin-bottom: $spacing-sm;
+    font-size: $font-size-xs;
+  }
+
+  &__metric-label {
+    color: $color-text-secondary;
+  }
+
+  &__metric-value {
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+  }
+
+  &__metric-trend {
+    padding: 2px 6px;
+    font-size: 11px;
+    font-weight: $font-weight-semibold;
+    border-radius: $radius-sm;
+
+    &.positive {
+      color: darken($color-l1-sage, 15%);
+      background: rgba($color-l1-sage, 0.15);
+    }
+
+    &.negative {
+      color: darken($color-l5-brick, 10%);
+      background: rgba($color-l5-brick, 0.15);
+    }
+  }
+
+  &__expand-btn {
+    @include flex-center;
+    gap: 4px;
+    padding: 4px 8px;
+    font-size: $font-size-xs;
+    color: $color-brand-main;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: rgba($color-brand-main, 0.08);
+      border-radius: $radius-sm;
+    }
+
+    i {
+      font-size: 14px;
+    }
+  }
+
+  &__action-btn {
+    @include flex-center;
+    gap: 4px;
+    margin-top: $spacing-sm;
+    padding: $spacing-xs $spacing-sm;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-medium;
+    color: white;
+    background: $color-brand-main;
+    border: none;
+    border-radius: $radius-sm;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: darken($color-brand-main, 8%);
+    }
+
+    i {
+      font-size: 12px;
+    }
+  }
+}
+
+// ---------------------------------------------------------------
+// Priority Pill (優先級標籤)
+// ---------------------------------------------------------------
+.priority-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: $font-weight-semibold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-radius: $radius-full;
+  flex-shrink: 0;
+
+  &--urgent {
+    color: white;
+    background: $color-l5-brick;
+  }
+
+  &--warning {
+    color: white;
+    background: $color-l2-terracotta;
+  }
+
+  &--success {
+    color: white;
+    background: $color-l1-sage;
+  }
+
+  &--info {
+    color: white;
+    background: $color-l3-petrol;
+  }
+}
+
+// ---------------------------------------------------------------
+// Insight Reason (展開原因區塊)
+// ---------------------------------------------------------------
+.insight-reason {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: all 0.3s ease;
+
+  &--expanded {
+    max-height: 200px;
+    opacity: 1;
+    padding-top: $spacing-sm;
+    margin-top: $spacing-xs;
+    border-top: 1px dashed $color-soft-gray;
+  }
+
+  p {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    line-height: 1.6;
+    margin: 0 0 $spacing-xs;
+  }
+
+  &__impact {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: $font-weight-medium;
+    color: $color-l5-brick;
+    background: rgba($color-l5-brick, 0.08);
+    border-radius: $radius-sm;
+
+    i {
+      font-size: 12px;
+    }
+  }
+}
+
+// ---------------------------------------------------------------
+// Cross Insight (交叉洞察)
+// ---------------------------------------------------------------
+.bento-box--cross-insight {
+  .bento-header i {
+    color: $color-l4-mauve;
+  }
+}
+
+.cross-insight-container {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xl;
+}
+
+.cross-insight-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $spacing-md;
+
+  @include media-max-lg {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include media-max-md {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cross-insight-card {
+  @include card;
+  padding: $spacing-md;
+  border-radius: $radius-lg;
+  transition: all 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: $shadow-lg;
+  }
+
+  &__sources {
+    display: flex;
+    gap: $spacing-xs;
+    margin-bottom: $spacing-sm;
+  }
+
+  &__title {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+    margin: 0 0 $spacing-xs;
+  }
+
+  &__desc {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    line-height: 1.5;
+    margin: 0 0 $spacing-sm;
+  }
+
+  &__action {
+    @include flex-center;
+    gap: 4px;
+    padding: $spacing-xs $spacing-sm;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-medium;
+    color: $color-brand-main;
+    background: rgba($color-brand-main, 0.08);
+    border: none;
+    border-radius: $radius-sm;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: rgba($color-brand-main, 0.15);
+    }
+
+    i {
+      font-size: 12px;
+    }
+  }
+}
+
+.source-tag {
+  @include flex-center;
+  width: 24px;
+  height: 24px;
+  border-radius: $radius-sm;
+
+  i {
+    font-size: 14px;
+  }
+
+  &--ads {
+    background: rgba($color-l2-terracotta, 0.12);
+
+    i {
+      color: $color-l2-terracotta;
+    }
+  }
+
+  &--product {
+    background: rgba($color-l3-petrol, 0.12);
+
+    i {
+      color: $color-l3-petrol;
+    }
+  }
+
+  &--customer {
+    background: rgba($color-l1-sage, 0.12);
+
+    i {
+      color: $color-l1-sage;
+    }
+  }
+}
+
+// ---------------------------------------------------------------
+// Cross Insight Flow (流程圖)
+// ---------------------------------------------------------------
+.cross-insight-flow {
+  padding: $spacing-lg;
+  background: $color-cloud-gray;
+  border-radius: $radius-lg;
+
+  &__title {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+    margin: 0 0 $spacing-md;
+    text-align: center;
+  }
+}
+
+.flow-steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-sm;
+
+  @include media-max-md {
+    flex-direction: column;
+  }
+}
+
+.flow-step {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-md;
+  background: white;
+  border-radius: $radius-md;
+  box-shadow: $shadow-sm;
+  min-width: 160px;
+
+  @include media-max-md {
+    width: 100%;
+  }
+
+  &__number {
+    @include flex-center;
+    width: 28px;
+    height: 28px;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-bold;
+    color: white;
+    background: $color-l3-petrol;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__label {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+  }
+
+  &__desc {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+  }
+}
+
+.flow-arrow {
+  @include flex-center;
+  color: $color-muted-gray;
+
+  i {
+    font-size: 20px;
+  }
+
+  @include media-max-md {
+    transform: rotate(90deg);
+  }
+}
+
+// ---------------------------------------------------------------
+// Responsive Adjustments for AI Marketing
+// ---------------------------------------------------------------
+@include media-max-lg {
+  .ai-marketing-toolbar {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: $spacing-md;
+  }
+
+  .insight-kpi-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: $spacing-sm;
+
+    &__trend {
+      margin-top: $spacing-xs;
+    }
+  }
+}
+
+@include media-max-md {
+  .bento-box-row--triple {
+    .bento-box--ads-insight,
+    .bento-box--product-insight,
+    .bento-box--customer-insight {
+      animation-delay: 0s;
+    }
+  }
+}
+
+@include media-max-sm {
+  .summary-card {
+    padding: $spacing-md;
+
+    &__value {
+      font-size: 24px;
+    }
+
+    &__icon {
+      width: 40px;
+      height: 40px;
+
+      i {
+        font-size: 20px;
+      }
+    }
+  }
+
+  .insight-kpi-card__value {
+    font-size: 24px;
+  }
+}
+
+// ---------------------------------------------------------------
+// Specialist Row (專家獨立列)
+// ---------------------------------------------------------------
+.specialist-row {
+  @include card;
+  padding: $spacing-xl;
+  border-radius: $radius-xl;
+  animation: fadeInUp 0.5s ease-out both;
+
+  &--ads {
+    animation-delay: 0.1s;
+  }
+
+  &--product {
+    animation-delay: 0.2s;
+  }
+
+  &--customer {
+    animation-delay: 0.3s;
+  }
+}
+
+.specialist-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-md;
+  margin-bottom: $spacing-lg;
+  padding-bottom: $spacing-md;
+  border-bottom: 1px solid $color-soft-gray;
+
+  &__left {
+    display: flex;
+    align-items: center;
+    gap: $spacing-md;
+    flex: 1;
+  }
+
+  &__icon {
+    @include flex-center;
+    width: 48px;
+    height: 48px;
+    border-radius: $radius-lg;
+    flex-shrink: 0;
+
+    i {
+      font-size: 24px;
+    }
+  }
+
+  &__info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__title {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-bold;
+    color: $color-text-dark;
+    margin: 0;
+  }
+
+  &__subtitle {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+  }
+
+  &__toggle-btn {
+    @include flex-center;
+    gap: 4px;
+    padding: $spacing-xs $spacing-sm;
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    background: white;
+    border: 1px solid $color-soft-gray;
+    border-radius: $radius-md;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: $color-cloud-gray;
+      color: $color-text-dark;
+      border-color: $color-muted-gray;
+    }
+
+    i {
+      font-size: 16px;
+    }
+  }
+
+  // 廣告洞察師 - 陶土橙
+  &--ads {
+    .specialist-header__icon {
+      background: rgba($color-l2-terracotta, 0.12);
+
+      i {
+        color: $color-l2-terracotta;
+      }
+    }
+  }
+
+  // 選品洞察師 - 復古藍綠
+  &--product {
+    .specialist-header__icon {
+      background: rgba($color-l3-petrol, 0.12);
+
+      i {
+        color: $color-l3-petrol;
+      }
+    }
+  }
+
+  // 顧客洞察師 - 鼠尾草綠
+  &--customer {
+    .specialist-header__icon {
+      background: rgba($color-l1-sage, 0.12);
+
+      i {
+        color: $color-l1-sage;
+      }
+    }
+  }
+}
+
+.specialist-content {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
+
+// ---------------------------------------------------------------
+// Specialist KPIs (專家 KPI 區塊)
+// ---------------------------------------------------------------
+.specialist-kpis {
+  display: flex;
+  gap: $spacing-md;
+  flex-wrap: wrap;
+
+  @include media-max-md {
+    flex-direction: column;
+  }
+}
+
+.kpi-card {
+  flex: 1;
+  min-width: 0;
+  padding: $spacing-md $spacing-lg;
+  background: $color-cloud-gray;
+  border-radius: $radius-lg;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: darken($color-cloud-gray, 2%);
+  }
+
+  &__label {
+    display: block;
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: $spacing-xs;
+  }
+
+  &__value-row {
+    display: flex;
+    align-items: baseline;
+    gap: $spacing-sm;
+  }
+
+  &__value {
+    font-size: 28px;
+    font-weight: $font-weight-bold;
+    @include stylish-number;
+    line-height: 1;
+
+    &--text {
+      font-size: $font-size-lg;
+      font-style: normal;
+      font-family: inherit;
+    }
+  }
+
+  &__trend {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 2px 8px;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    border-radius: $radius-full;
+
+    &.positive {
+      color: darken($color-l1-sage, 15%);
+      background: rgba($color-l1-sage, 0.15);
+    }
+
+    &.negative {
+      color: darken($color-l5-brick, 10%);
+      background: rgba($color-l5-brick, 0.15);
+    }
+
+    i {
+      font-size: 12px;
+    }
+  }
+
+  // 廣告洞察師
+  &--ads {
+    .kpi-card__value {
+      color: $color-l2-terracotta;
+    }
+  }
+
+  // 選品洞察師
+  &--product {
+    .kpi-card__value {
+      color: $color-l3-petrol;
+    }
+  }
+
+  // 顧客洞察師
+  &--customer {
+    .kpi-card__value {
+      color: $color-l1-sage;
+    }
+  }
+}
+
+// ---------------------------------------------------------------
+// Specialist Insights (洞察卡片網格)
+// ---------------------------------------------------------------
+.specialist-insights {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $spacing-md;
+  align-items: stretch;
+
+  @include media-max-lg {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include media-max-sm {
+    grid-template-columns: 1fr;
+  }
+}
+
+.insight-card {
+  @include card;
+  padding: $spacing-lg;
+  border-radius: $radius-lg;
+  transition: box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  &:hover {
+    box-shadow: $shadow-md;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    margin-bottom: $spacing-sm;
+  }
+
+  &__title {
+    font-size: $font-size-base;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+    margin: 0 0 $spacing-xs;
+    line-height: 1.4;
+  }
+
+  &__desc {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    margin: 0 0 $spacing-sm;
+    line-height: 1.6;
+  }
+
+  &__metric {
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+    margin-bottom: $spacing-sm;
+    padding: $spacing-xs $spacing-sm;
+    background: $color-cloud-gray;
+    border-radius: $radius-sm;
+    font-size: $font-size-sm;
+  }
+
+  &__metric-label {
+    color: $color-text-secondary;
+  }
+
+  &__metric-value {
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+  }
+
+  &__metric-trend {
+    margin-left: auto;
+    padding: 2px 6px;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    border-radius: $radius-sm;
+
+    &.positive {
+      color: darken($color-l1-sage, 15%);
+      background: rgba($color-l1-sage, 0.15);
+    }
+
+    &.negative {
+      color: darken($color-l5-brick, 10%);
+      background: rgba($color-l5-brick, 0.15);
+    }
+  }
+
+  &__expand-btn {
+    @include flex-center;
+    gap: 4px;
+    padding: $spacing-xs $spacing-sm;
+    font-size: $font-size-xs;
+    color: $color-brand-main;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    align-self: flex-start;
+    margin: 0;
+
+    &:hover {
+      background: rgba($color-brand-main, 0.08);
+      border-radius: $radius-sm;
+    }
+
+    i {
+      font-size: 14px;
+    }
+  }
+
+  &__reason {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height 0.3s ease, opacity 0.2s ease, padding 0.3s ease, margin 0.3s ease;
+    margin: 0;
+
+    &--expanded {
+      max-height: 300px;
+      overflow-y: auto;
+      opacity: 1;
+      padding: $spacing-sm;
+      margin-top: $spacing-xs;
+      margin-bottom: $spacing-md;
+      background: $color-cloud-gray;
+      border-radius: $radius-md;
+    }
+
+    p {
+      font-size: $font-size-sm;
+      color: $color-text-secondary;
+      line-height: 1.6;
+      margin: 0 0 $spacing-xs;
+    }
+  }
+
+  &__impact {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-medium;
+    color: $color-l5-brick;
+    background: rgba($color-l5-brick, 0.08);
+    border-radius: $radius-sm;
+    margin-top: $spacing-xs;
+
+    i {
+      font-size: 12px;
+    }
+  }
+
+  &__action-btn {
+    @include flex-center;
+    gap: 4px;
+    padding: $spacing-sm $spacing-md;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: white;
+    background: $color-brand-main;
+    border: none;
+    border-radius: $radius-md;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    align-self: flex-start;
+    margin: 0;
+
+    &:hover {
+      background: darken($color-brand-main, 8%);
+    }
+
+    i {
+      font-size: 14px;
+    }
+  }
+
+  // 卡片底部區域 - 確保按鈕對齊底部
+  &__footer {
+    margin-top: auto;
+    padding-top: $spacing-xs;
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-xs;
+  }
+}
+
+// ---------------------------------------------------------------
+// Customer Segments (客戶比例分析)
+// ---------------------------------------------------------------
+.customer-segments {
+  margin: $spacing-lg 0;
+
+  &__title {
+    font-size: $font-size-base;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+    margin: 0 0 $spacing-md;
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: $spacing-md;
+
+    @include media-max-lg {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @include media-max-sm {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+.customer-segment-card {
+  @include card;
+  padding: $spacing-md;
+  border-radius: $radius-lg;
+  transition: all 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: $shadow-md;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: $spacing-sm;
+  }
+
+  &__name {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+  }
+
+  &__percentage {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-bold;
+    @include stylish-number;
+    color: $color-text-dark;
+  }
+
+  &__progress {
+    height: 6px;
+    background: $color-cloud-gray;
+    border-radius: $radius-full;
+    overflow: hidden;
+    margin-bottom: $spacing-sm;
+  }
+
+  &__progress-bar {
+    height: 100%;
+    border-radius: $radius-full;
+    transition: width 0.6s ease;
+
+    &--l1-sage {
+      background: $color-l1-sage;
+    }
+
+    &--l2-terracotta {
+      background: $color-l2-terracotta;
+    }
+
+    &--l3-petrol {
+      background: $color-l3-petrol;
+    }
+
+    &--l4-mauve {
+      background: $color-l4-mauve;
+    }
+
+    &--default {
+      background: $color-muted-gray;
+    }
+  }
+
+  &__desc {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    margin: 0 0 $spacing-xs;
+    line-height: 1.5;
+  }
+
+  &__revenue {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: $spacing-xs $spacing-sm;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-medium;
+    color: $color-l1-sage;
+    background: rgba($color-l1-sage, 0.1);
+    border-radius: $radius-sm;
+    margin-top: $spacing-xs;
+
+    i {
+      font-size: 14px;
+    }
+  }
+}
+
+// ---------------------------------------------------------------
+// Responsive Adjustments for Specialist Row
+// ---------------------------------------------------------------
+@include media-max-lg {
+  .specialist-row {
+    padding: $spacing-lg;
+  }
+
+  .specialist-header {
+    &__icon {
+      width: 40px;
+      height: 40px;
+
+      i {
+        font-size: 20px;
+      }
+    }
+
+    &__title {
+      font-size: $font-size-base;
+    }
+  }
+
+  .kpi-card {
+    &__value {
+      font-size: 24px;
+    }
+  }
+}
+
+@include media-max-md {
+  .specialist-kpis {
+    gap: $spacing-sm;
+  }
+
+  .kpi-card {
+    padding: $spacing-md;
+  }
+}
+
+@include media-max-sm {
+  .specialist-row {
+    padding: $spacing-md;
+  }
+
+  .specialist-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: $spacing-sm;
+  }
+
+  .insight-card {
+    padding: $spacing-md;
+
+    &__title {
+      font-size: $font-size-sm;
+    }
+
+    &__desc {
+      font-size: $font-size-xs;
+    }
+  }
+}
