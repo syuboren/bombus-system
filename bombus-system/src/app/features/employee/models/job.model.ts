@@ -14,7 +14,7 @@ export type JobStatus = 'published' | 'draft' | 'review' | 'closed';
  * - offer_accepted: 已錄取同意
  * - onboarded: 已報到
  * 
- * 終止狀態（流程未繼續）：
+ * 終止狀態（公司決定）：
  * - not_invited: 不邀請（履歷階段）
  * - not_hired: 未錄取（面試後）
  * 
@@ -22,24 +22,16 @@ export type JobStatus = 'published' | 'draft' | 'review' | 'closed';
  * - invite_declined: 邀請婉拒
  * - interview_declined: 面試婉拒
  * - offer_declined: Offer 婉拒
- * 
- * 舊狀態（向下相容）：
- * - rejected: 已拒絕（舊）
- * - hired: 已錄用（舊）
- * - completed: 已完成（舊）
- * - pending: 待處理（舊）
  */
 export type CandidateStatus = 
   // 流程狀態
   | 'new' | 'invited' | 'reschedule' | 'interview' 
   | 'pending_ai' | 'pending_decision' 
   | 'offered' | 'offer_accepted' | 'onboarded'
-  // 終止狀態（流程未繼續）
+  // 終止狀態（公司決定）
   | 'not_invited' | 'not_hired'
   // 終止狀態（候選人婉拒）
-  | 'invite_declined' | 'interview_declined' | 'offer_declined'
-  // 舊狀態（向下相容）
-  | 'rejected' | 'hired' | 'completed' | 'pending';
+  | 'invite_declined' | 'interview_declined' | 'offer_declined';
 
 export type ScoreLevel = 'high' | 'medium' | 'low';
 
@@ -133,6 +125,7 @@ export interface JobCandidate {
   status: CandidateStatus;
   stage?: CandidateStage;  // 新增：候選人階段
   avatarColor?: string;
+  jobTitle?: string;        // 應徵職缺標題
   // Invitation Data
   invitationStatus?: string;
   candidateResponse?: string;
@@ -140,6 +133,14 @@ export interface JobCandidate {
   responseToken?: string;
   rescheduleNote?: string;
   interviewCount?: number;  // 面試記錄數量
+  // 面試資訊
+  interviewId?: string;           // 面試 ID
+  interviewAt?: string;           // 面試時間
+  interviewLocation?: string;     // 面試方式 (onsite/online)
+  interviewAddress?: string;      // 現場面試地址
+  meetingLink?: string;           // 線上面試連結
+  interviewCancelToken?: string;  // 面試取消連結 Token
+  interviewResult?: string;       // 面試結果
   // 擴充欄位 (來自 104 Resume API)
   currentPosition?: string;    // 目前職位
   currentCompany?: string;     // 目前公司
@@ -422,5 +423,97 @@ export interface CandidateStats {
   pending: number;
   aiRecommended: number;
   scheduled: number;
+}
+
+// =====================================================
+// 候選人履歷 AI 解析報告
+// =====================================================
+
+/**
+ * JD 需求條件匹配項目
+ */
+export interface JDRequirementMatch {
+  requirement: string;
+  evidence: string;
+}
+
+/**
+ * JD 未匹配條件
+ */
+export interface JDRequirementUnmatched {
+  requirement: string;
+  note: string;
+}
+
+/**
+ * 經歷相關性分析項目
+ */
+export interface ExperienceRelevance {
+  firm: string;
+  job: string;
+  duration: string;
+  relevance_level: number; // 1-5
+  relevance_reasons: string[];
+}
+
+/**
+ * 履歷內容特點
+ */
+export interface ContentFeature {
+  type: string;
+  description: string;
+}
+
+/**
+ * 候選人履歷 AI 解析報告
+ */
+export interface CandidateResumeAnalysis {
+  id: string;
+  candidateId: string;
+  jobId: string;
+  
+  // 整體吻合度
+  overallMatchScore: number; // 0-100
+  
+  // 三維分析分數
+  requirementMatchScore: number;  // 需求條件匹配 (40%)
+  keywordMatchScore: number;      // 技能關鍵字 (35%)
+  experienceRelevanceScore: number; // 經歷相關性 (25%)
+  
+  // JD 需求條件對照
+  matchedRequirements: JDRequirementMatch[];    // 符合的條件
+  unmatchedRequirements: JDRequirementUnmatched[];  // 未提及的條件
+  bonusSkills: string[];            // 額外具備的技能
+  
+  // 技能關鍵字提取
+  extractedTechSkills: string[];   // 技術技能
+  extractedSoftSkills: string[];   // 軟性技能
+  jdRequiredMatchCount: number;    // 必備技能匹配數
+  jdRequiredTotalCount: number;    // 必備技能總數
+  jdBonusMatchCount: number;       // 加分技能匹配數
+  jdBonusTotalCount: number;       // 加分技能總數
+  
+  // 經歷相關性分析
+  experienceAnalysis: ExperienceRelevance[];
+  totalRelevantYears: number;      // 總相關年資
+  jdRequiredYears: number;         // JD 要求年資
+  
+  // 履歷內容品質評估
+  writingStyle: string;            // 書寫風格描述
+  analysisConfidence: number;      // 分析信心度 0-100
+  contentFeatures: ContentFeature[]; // 內容特點
+  areasToClarify: string[];        // 需進一步了解的部分
+  
+  // 面試關注點建議
+  techVerificationPoints: string[];  // 技術驗證
+  experienceSupplementPoints: string[]; // 經歷補充
+  
+  // 分析元資料
+  analyzedAt: string;              // 分析時間
+  analysisEngineVersion: string;   // 分析引擎版本
+  resumeWordCount: number;         // 履歷字數
+  
+  createdAt?: string;
+  updatedAt?: string;
 }
 

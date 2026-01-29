@@ -1,0 +1,126 @@
+@if (isVisible()) {
+<div class="modal-backdrop" (click)="close.emit()"></div>
+<div class="modal interview-modal">
+  <div class="modal-header">
+    <h3 class="modal-title">
+      <i class="ri-calendar-event-line"></i>
+      安排面試時段
+    </h3>
+    <button class="btn-close" (click)="close.emit()" type="button">
+      <i class="ri-close-line"></i>
+    </button>
+  </div>
+  <div class="modal-body">
+    <div class="candidate-preview">
+      <div class="candidate-avatar" [style.background-color]="candidate().avatarColor">
+        {{ getInitial(candidate().name) }}
+      </div>
+      <div class="candidate-info">
+        <h4>{{ candidate().name }}</h4>
+        <p>{{ candidate().email }}</p>
+      </div>
+      @if (candidate().jobTitle) {
+        <span class="position-badge">{{ candidate().jobTitle }}</span>
+      }
+    </div>
+
+    <!-- 候選人選擇時段 -->
+    @if (candidate().selectedSlots && candidate().selectedSlots!.length > 0) {
+    <div class="selected-slots-section">
+      <label class="form-label">候選人可面試時段 (點擊選擇)：</label>
+      <div class="slots-grid">
+        @for (slot of candidate().selectedSlots; track slot) {
+        <button class="slot-badge" type="button" (click)="selectSlot(slot)">
+          <i class="ri-time-line"></i>
+          {{ slot }}
+        </button>
+        }
+      </div>
+    </div>
+    }
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">面試日期 <span class="required">*</span></label>
+        <input type="date" class="form-input" [min]="getTodayDate()" [value]="interviewDate()"
+          (input)="interviewDate.set($any($event.target).value)">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">面試時間 <span class="required">*</span></label>
+        <input type="time" class="form-input" [value]="interviewTime()"
+          (input)="interviewTime.set($any($event.target).value)">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">面試官 <span class="required">*</span></label>
+      <select class="form-select" [value]="selectedInterviewer()"
+        (change)="selectedInterviewer.set($any($event.target).value)">
+        <option value="">請選擇面試官</option>
+        @for (interviewer of interviewerOptions; track interviewer.id) {
+        <option [value]="interviewer.id">
+          {{ interviewer.name }} - {{ interviewer.title }} ({{ interviewer.department }})
+        </option>
+        }
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">面試方式</label>
+      <div class="radio-group">
+        <label class="radio-item">
+          <input type="radio" name="interviewType" value="onsite" [checked]="interviewType() === 'onsite'"
+            (change)="interviewType.set('onsite')">
+          <span class="radio-label">
+            <i class="ri-building-line"></i>
+            現場面試
+          </span>
+        </label>
+        <label class="radio-item">
+          <input type="radio" name="interviewType" value="online" [checked]="interviewType() === 'online'"
+            (change)="interviewType.set('online')">
+          <span class="radio-label">
+            <i class="ri-video-chat-line"></i>
+            線上面試
+          </span>
+        </label>
+      </div>
+    </div>
+
+    @if (interviewType() === 'onsite') {
+    <div class="form-group slide-down">
+      <label class="form-label">面試地點 <span class="required">*</span></label>
+      <div class="input-with-icon">
+        <i class="ri-map-pin-line icon"></i>
+        <input type="text" class="form-input" placeholder="請輸入面試地址（如：台北市信義區松仁路 100 號 5F）" [value]="interviewAddress()"
+          (input)="interviewAddress.set($any($event.target).value)">
+      </div>
+    </div>
+    }
+
+    @if (interviewType() === 'online') {
+    <div class="form-group slide-down">
+      <label class="form-label">線上會議連結 <span class="required">*</span></label>
+      <div class="input-with-icon">
+        <i class="ri-link icon"></i>
+        <input type="text" class="form-input" placeholder="請輸入 Google Meet 或其他會議連結" [value]="meetingLink()"
+          (input)="meetingLink.set($any($event.target).value)">
+      </div>
+    </div>
+    }
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-secondary" (click)="close.emit()" type="button" [disabled]="loading()">取消</button>
+    <button class="btn btn-primary" (click)="submit()" type="button" [disabled]="loading()">
+      @if (loading()) {
+        <i class="ri-loader-4-line spin"></i>
+        處理中...
+      } @else {
+        <i class="ri-calendar-check-line"></i>
+        確認排程
+      }
+    </button>
+  </div>
+</div>
+}

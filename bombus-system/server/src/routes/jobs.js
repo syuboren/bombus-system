@@ -176,18 +176,32 @@ router.get('/:id/candidates', (req, res) => {
         const { id } = req.params;
 
         const candidates = prepare(`
-            SELECT c.*, 
+            SELECT c.*,
+            j.title as job_title,
             ii.response_token, 
             ii.candidate_response, 
             ii.selected_slots, 
             ii.status as invitation_status,
             ii.reschedule_note,
             ii.responded_at,
-            (SELECT COUNT(*) FROM interviews WHERE candidate_id = c.id) as interview_count
+            (SELECT COUNT(*) FROM interviews WHERE candidate_id = c.id) as interview_count,
+            i.id as interview_id,
+            i.interview_at,
+            i.location as interview_location,
+            i.meeting_link,
+            i.address as interview_address,
+            i.cancel_token as interview_cancel_token,
+            i.result as interview_result
             FROM candidates c
+            LEFT JOIN jobs j ON c.job_id = j.id
             LEFT JOIN interview_invitations ii ON ii.id = (
                 SELECT id FROM interview_invitations 
                 WHERE candidate_id = c.id 
+                ORDER BY created_at DESC LIMIT 1
+            )
+            LEFT JOIN interviews i ON i.id = (
+                SELECT id FROM interviews 
+                WHERE candidate_id = c.id AND result != 'Cancelled'
                 ORDER BY created_at DESC LIMIT 1
             )
             WHERE c.job_id = ? 
@@ -784,6 +798,163 @@ router.post('/debug/reset-candidates', (req, res) => {
 });
 
 
+
+/**
+ * GET /api/jobs/:jobId/candidates/:candidateId/full
+ * 取得候選人完整履歷資料與 AI 解析報告
+ */
+router.get('/:jobId/candidates/:candidateId/full', (req, res) => {
+  try {
+    const { jobId, candidateId } = req.params;
+
+    // 1. 取得候選人主資料（含職缺標題、面試邀請資訊）
+    const candidate = prepare(`
+      SELECT 
+        c.*,
+        j.title as job_title,
+        ii.response_token,
+        ii.candidate_response,
+        ii.selected_slots,
+        ii.status as invitation_status,
+        ii.reschedule_note,
+        ii.responded_at,
+        (SELECT COUNT(*) FROM interviews WHERE candidate_id = c.id) as interview_count,
+        i.id as interview_id,
+        i.interview_at,
+        i.location as interview_location,
+        i.address as interview_address,
+        i.meeting_link,
+        i.cancel_token as interview_cancel_token,
+        i.result as interview_result
+      FROM candidates c
+      LEFT JOIN jobs j ON c.job_id = j.id
+      LEFT JOIN interview_invitations ii ON ii.id = (
+        SELECT id FROM interview_invitations 
+        WHERE candidate_id = c.id 
+        ORDER BY created_at DESC LIMIT 1
+      )
+      LEFT JOIN interviews i ON i.id = (
+        SELECT id FROM interviews 
+        WHERE candidate_id = c.id AND result != 'Cancelled'
+        ORDER BY created_at DESC LIMIT 1
+      )
+      WHERE c.id = ?
+    `).get(candidateId);
+
+    if (!candidate) {
+      return res.status(404).json({ error: 'Candidate not found' });
+    }
+
+    // 2. 取得學歷資料
+    const educationList = prepare(`
+      SELECT * FROM candidate_education 
+      WHERE candidate_id = ? 
+      ORDER BY sort_order ASC
+    `).all(candidateId);
+
+    // 3. 取得工作經歷
+    const experienceList = prepare(`
+      SELECT * FROM candidate_experiences 
+      WHERE candidate_id = ? 
+      ORDER BY sort_order ASC
+    `).all(candidateId);
+
+    // 4. 取得技能專長
+    const specialityList = prepare(`
+      SELECT * FROM candidate_specialities 
+      WHERE candidate_id = ? 
+      ORDER BY sort_order ASC
+    `).all(candidateId);
+
+    // 5. 取得語言能力
+    const languageList = prepare(`
+      SELECT * FROM candidate_languages 
+      WHERE candidate_id = ? 
+      ORDER BY sort_order ASC
+    `).all(candidateId);
+
+    // 6. 取得專案作品
+    const projectList = prepare(`
+      SELECT * FROM candidate_projects 
+      WHERE candidate_id = ? 
+      ORDER BY sort_order ASC
+    `).all(candidateId);
+
+    // 7. 取得附件
+    const attachmentList = prepare(`
+      SELECT * FROM candidate_attachments 
+      WHERE candidate_id = ? 
+      ORDER BY sort_order ASC
+    `).all(candidateId);
+
+    // 8. 取得推薦人
+    const recommenderList = prepare(`
+      SELECT * FROM candidate_recommenders 
+      WHERE candidate_id = ? 
+      ORDER BY sort_order ASC
+    `).all(candidateId);
+
+    // 9. 取得應徵紀錄
+    const applyRecordList = prepare(`
+      SELECT * FROM candidate_apply_records 
+      WHERE candidate_id = ? 
+      ORDER BY apply_date DESC
+    `).all(candidateId);
+
+    // 10. 取得應徵問答
+    const applyQuestionList = prepare(`
+      SELECT * FROM candidate_apply_questions 
+      WHERE candidate_id = ? 
+      ORDER BY sort_order ASC
+    `).all(candidateId);
+
+    // 11. 取得 AI 履歷解析報告
+    const resumeAnalysis = prepare(`
+      SELECT * FROM candidate_resume_analysis 
+      WHERE candidate_id = ? AND job_id = ?
+    `).get(candidateId, candidate.job_id);
+
+    // Parse JSON fields in resume analysis
+    let parsedAnalysis = null;
+    if (resumeAnalysis) {
+      parsedAnalysis = {
+        ...resumeAnalysis,
+        matchedRequirements: resumeAnalysis.matched_requirements ? JSON.parse(resumeAnalysis.matched_requirements) : [],
+        unmatchedRequirements: resumeAnalysis.unmatched_requirements ? JSON.parse(resumeAnalysis.unmatched_requirements) : [],
+        bonusSkills: resumeAnalysis.bonus_skills ? JSON.parse(resumeAnalysis.bonus_skills) : [],
+        extractedTechSkills: resumeAnalysis.extracted_tech_skills ? JSON.parse(resumeAnalysis.extracted_tech_skills) : [],
+        extractedSoftSkills: resumeAnalysis.extracted_soft_skills ? JSON.parse(resumeAnalysis.extracted_soft_skills) : [],
+        experienceAnalysis: resumeAnalysis.experience_analysis ? JSON.parse(resumeAnalysis.experience_analysis) : [],
+        contentFeatures: resumeAnalysis.content_features ? JSON.parse(resumeAnalysis.content_features) : [],
+        areasToClarify: resumeAnalysis.areas_to_clarify ? JSON.parse(resumeAnalysis.areas_to_clarify) : [],
+        techVerificationPoints: resumeAnalysis.tech_verification_points ? JSON.parse(resumeAnalysis.tech_verification_points) : [],
+        experienceSupplementPoints: resumeAnalysis.experience_supplement_points ? JSON.parse(resumeAnalysis.experience_supplement_points) : []
+      };
+    }
+
+    // 組合完整資料
+    const fullData = {
+      ...candidate,
+      // 子資料
+      educationList: educationList || [],
+      experienceList: experienceList || [],
+      specialityList: specialityList || [],
+      languageList: languageList || [],
+      projectList: projectList || [],
+      attachmentList: attachmentList || [],
+      recommenderList: recommenderList || [],
+      applyRecordList: applyRecordList || [],
+      applyQuestionList: applyQuestionList || [],
+      // AI 解析報告
+      resumeAnalysis: parsedAnalysis
+    };
+
+    res.json(fullData);
+  } catch (error) {
+    console.error('Error fetching candidate full data:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 module.exports = router;
 

@@ -19,16 +19,16 @@ $module-color: $color-l1-sage;
 // ===== KPI Section =====
 .kpi-section {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: $spacing-md;
   margin-bottom: $spacing-lg;
 
-  @media (max-width: $breakpoint-xl) {
-    grid-template-columns: repeat(3, 1fr);
+  @media (max-width: $breakpoint-lg) {
+    grid-template-columns: repeat(2, 1fr);
   }
 
-  @media (max-width: $breakpoint-md) {
-    grid-template-columns: repeat(2, 1fr);
+  @media (max-width: $breakpoint-sm) {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -153,9 +153,272 @@ $module-color: $color-l1-sage;
 // ===== Filter Bar (使用參數化 mixin) =====
 .filter-bar {
   @include filter-bar($module-color);
+  flex-direction: column;
+  gap: 0;
 }
 
+.filter-row-top {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-md $spacing-lg;
+  flex-wrap: wrap;
+  width: 100%;
 
+  .filter-item--search {
+    flex: 1;
+    min-width: 200px;
+  }
+}
+
+// 標籤篩選按鈕
+.btn-tag-filter {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: $spacing-sm $spacing-md;
+  background: $color-pure-white;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: $module-color;
+    color: $module-color;
+  }
+
+  &.active {
+    border-color: $module-color;
+    background: rgba($module-color, 0.05);
+    color: $module-color;
+  }
+
+  .ri-arrow-down-s-line {
+    transition: transform 0.2s ease;
+
+    &.rotated {
+      transform: rotate(180deg);
+    }
+  }
+}
+
+.tag-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 6px;
+  background: $module-color;
+  color: $color-pure-white;
+  border-radius: $radius-full;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+// 已選標籤列
+.selected-tags-bar {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-lg;
+  background: rgba($module-color, 0.05);
+  border-top: 1px solid rgba($module-color, 0.1);
+  flex-wrap: wrap;
+}
+
+.selected-label {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  white-space: nowrap;
+}
+
+.selected-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px 4px 10px;
+  background: rgba(var(--tag-color), 0.15);
+  border: 1px solid var(--tag-color);
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  color: var(--tag-color);
+
+  .btn-remove-tag {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    background: none;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    color: inherit;
+    opacity: 0.7;
+    transition: all 0.15s ease;
+
+    &:hover {
+      opacity: 1;
+      background: rgba(0, 0, 0, 0.1);
+    }
+
+    i {
+      font-size: 12px;
+    }
+  }
+}
+
+.btn-clear-tags {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: none;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-left: auto;
+
+  &:hover {
+    border-color: $color-error;
+    color: $color-error;
+    background: rgba($color-error, 0.05);
+  }
+
+  i {
+    font-size: 12px;
+  }
+}
+
+// 標籤篩選面板
+.tag-filter-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+  padding: $spacing-md $spacing-lg;
+  background: $color-cloud-gray;
+  border-top: 1px solid $color-soft-gray;
+}
+
+.tag-category {
+  background: $color-pure-white;
+  border-radius: $radius-md;
+  overflow: hidden;
+  border: 1px solid $color-soft-gray;
+  flex-shrink: 0;
+  transition: flex 0.2s ease;
+
+  // 收合狀態：只顯示標題列，水平排列
+  &:not(.expanded) {
+    flex: 0 0 auto;
+  }
+
+  // 展開狀態：自動擴展填滿
+  &.expanded {
+    flex: 1 1 280px;
+    min-width: 280px;
+
+    .expand-icon {
+      transform: rotate(180deg);
+    }
+  }
+}
+
+.category-header {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  width: 100%;
+  padding: $spacing-sm $spacing-md;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: rgba($module-color, 0.05);
+  }
+
+  > i:first-child {
+    font-size: 1rem;
+    color: $module-color;
+  }
+
+  .category-label {
+    flex: 1;
+    text-align: left;
+    font-size: $font-size-sm;
+    font-weight: 600;
+    color: $color-text-dark;
+  }
+
+  .category-count {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    background: $color-cloud-gray;
+    padding: 2px 8px;
+    border-radius: $radius-full;
+  }
+
+  .expand-icon {
+    font-size: 1rem;
+    color: $color-text-secondary;
+    transition: transform 0.2s ease;
+  }
+}
+
+.category-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-xs;
+  padding: $spacing-sm $spacing-md $spacing-md;
+  border-top: 1px solid $color-soft-gray;
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tag-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  background: $color-pure-white;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  color: $color-text-primary;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    border-color: var(--tag-color, $module-color);
+    color: var(--tag-color, $module-color);
+    background: rgba(var(--tag-color, $module-color), 0.05);
+  }
+
+  &.active {
+    background: var(--tag-color, $module-color);
+    border-color: var(--tag-color, $module-color);
+    color: $color-pure-white;
+  }
+}
 
 // ===== Candidate List =====
 .section-header {
@@ -375,6 +638,17 @@ $module-color: $color-l1-sage;
     background: rgba($color-error, 0.1);
     color: $color-error;
   }
+
+  // 聯繫狀態 (動態計算)
+  &.contact-status--contacted {
+    background: rgba($color-success, 0.1);
+    color: $color-success;
+  }
+
+  &.contact-status--pending {
+    background: rgba($color-warning, 0.1);
+    color: $color-warning;
+  }
 }
 
 .next-contact {
@@ -479,6 +753,76 @@ $module-color: $color-l1-sage;
     border-color: $color-success;
     color: $color-pure-white;
   }
+}
+
+// ===== 待聯繫人才列表 =====
+.pending-contact-item {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm;
+  border-radius: $radius-md;
+  margin-bottom: $spacing-xs;
+  background: $color-pure-white;
+  border: 1px solid $color-soft-gray;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba($color-l3-petrol, 0.05);
+    border-color: $color-l3-petrol;
+
+    .pending-arrow {
+      color: $color-l3-petrol;
+      transform: translateX(2px);
+    }
+  }
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.pending-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, $color-l3-petrol, lighten($color-l3-petrol, 15%));
+  color: $color-pure-white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: $font-size-sm;
+  flex-shrink: 0;
+}
+
+.pending-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pending-name {
+  font-size: $font-size-sm;
+  font-weight: 600;
+  color: $color-text-dark;
+}
+
+.pending-position {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pending-arrow {
+  color: $color-text-secondary;
+  font-size: 1.25rem;
+  transition: all 0.2s ease;
 }
 
 // Source Section
@@ -953,6 +1297,283 @@ $module-color: $color-l1-sage;
   }
 }
 
+// ===== 職缺媒合功能 =====
+.job-match-section {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.job-match-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-sm;
+}
+
+.btn-analyze {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: $spacing-sm $spacing-md;
+  background: linear-gradient(135deg, $color-l3-petrol, lighten($color-l3-petrol, 10%));
+  color: $color-pure-white;
+  border: none;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba($color-l3-petrol, 0.3);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+
+  .spinning {
+    animation: spin 1s linear infinite;
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.job-count {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.job-match-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.job-match-card {
+  padding: $spacing-md;
+  background: $color-pure-white;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-lg;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: $color-l3-petrol;
+    box-shadow: 0 2px 8px rgba($color-text-dark, 0.08);
+  }
+
+  // 移除側邊顏色框線
+  // &.score-high {
+  //   border-left: 4px solid $color-success;
+  // }
+
+  // &.score-medium {
+  //   border-left: 4px solid $color-l3-petrol;
+  // }
+
+  // &.score-low {
+  //   border-left: 4px solid $color-warning;
+  // }
+
+  // &.score-very-low {
+  //   border-left: 4px solid $color-text-secondary;
+  // }
+
+  // &.score-none {
+  //   border-left: 4px solid $color-soft-gray;
+  // }
+}
+
+.job-match-info {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $spacing-md;
+  margin-bottom: $spacing-sm;
+}
+
+.job-match-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.job-title {
+  font-size: $font-size-base;
+  font-weight: 600;
+  color: $color-text-dark;
+  margin: 0 0 4px;
+}
+
+.job-department {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.job-match-score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.score-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-style: italic;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: $color-pure-white;
+
+  &.score-high {
+    background: $color-success;
+  }
+
+  &.score-medium {
+    background: $color-l3-petrol;
+  }
+
+  &.score-low {
+    background: $color-warning;
+  }
+
+  &.score-very-low {
+    background: $color-text-secondary;
+  }
+}
+
+.score-label {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.score-pending {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  padding: $spacing-xs $spacing-sm;
+  background: $color-cloud-gray;
+  border-radius: $radius-sm;
+}
+
+.job-match-summary {
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-xs;
+  padding: $spacing-sm;
+  background: rgba($color-l3-petrol, 0.05);
+  border-radius: $radius-sm;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  margin-bottom: $spacing-sm;
+
+  i {
+    color: $color-l3-petrol;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+}
+
+.job-match-skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: $spacing-md;
+}
+
+.matched-skill {
+  padding: 2px $spacing-xs;
+  background: rgba($color-success, 0.1);
+  color: $color-success;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  font-weight: 500;
+}
+
+.more-skills {
+  padding: 2px $spacing-xs;
+  background: $color-cloud-gray;
+  color: $color-text-secondary;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+}
+
+.job-match-actions {
+  display: flex;
+  gap: $spacing-sm;
+  margin-top: $spacing-sm;
+  padding-top: $spacing-sm;
+  border-top: 1px solid $color-soft-gray;
+}
+
+.btn-action {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: $spacing-xs $spacing-sm;
+  border: none;
+  border-radius: $radius-md;
+  font-size: $font-size-xs;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &.btn-add-only {
+    background: $color-cloud-gray;
+    color: $color-text-primary;
+
+    &:hover {
+      background: darken($color-cloud-gray, 5%);
+    }
+  }
+
+  &.btn-add-invite {
+    background: $color-l3-petrol;
+    color: $color-pure-white;
+
+    &:hover {
+      background: darken($color-l3-petrol, 5%);
+    }
+  }
+}
+
+.empty-job-match {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-xl * 2;
+  text-align: center;
+  color: $color-text-secondary;
+
+  i {
+    font-size: 3rem;
+    margin-bottom: $spacing-md;
+    opacity: 0.5;
+  }
+
+  p {
+    margin: 0 0 $spacing-xs;
+    font-weight: 500;
+    color: $color-text-primary;
+  }
+
+  span {
+    font-size: $font-size-sm;
+  }
+}
+
 // Modal Footer
 .modal-footer {
   padding: $spacing-lg;
@@ -1018,4 +1639,512 @@ $module-color: $color-l1-sage;
   color: $color-text-secondary;
   text-align: center;
   padding: $spacing-lg;
+}
+
+// ===== 聯繫狀態 =====
+.contact-status-row {
+  margin-top: $spacing-sm;
+}
+
+.contact-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  font-weight: 500;
+
+  i {
+    font-size: 0.75rem;
+  }
+}
+
+.contact-status--contacted {
+  background: rgba($color-success, 0.1);
+  color: $color-success;
+}
+
+.contact-status--pending {
+  background: rgba($color-warning, 0.1);
+  color: $color-warning;
+}
+
+// ===== 待聯繫提醒開關 =====
+.contact-reminder-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+  margin-bottom: $spacing-md;
+}
+
+.toggle-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.toggle-text {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  font-size: $font-size-sm;
+  font-weight: 500;
+  color: $color-text-primary;
+
+  i {
+    color: $color-l1-sage;
+  }
+}
+
+.toggle-desc {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.toggle-switch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: $color-soft-gray;
+  border: none;
+  border-radius: $radius-full;
+  cursor: pointer;
+  transition: background 0.2s ease;
+
+  &.active {
+    background: $color-l1-sage;
+  }
+}
+
+.toggle-slider {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: $color-pure-white;
+  border-radius: 50%;
+  transition: transform 0.2s ease;
+  box-shadow: $shadow-sm;
+
+  .toggle-switch.active & {
+    transform: translateX(20px);
+  }
+}
+
+// ===== Modal Footer 更新 =====
+.btn-status--primary {
+  background: $color-l1-sage;
+  border-color: $color-l1-sage;
+  color: $color-pure-white;
+
+  &:hover {
+    background: darken($color-l1-sage, 10%);
+    border-color: darken($color-l1-sage, 10%);
+    color: $color-pure-white;
+  }
+}
+
+.btn-status--secondary {
+  &.active {
+    background: rgba($color-warning, 0.1);
+    border-color: $color-warning;
+    color: $color-warning;
+  }
+}
+
+// ===== 新增聯繫紀錄 Modal =====
+.contact-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  animation: fadeIn 0.2s ease;
+}
+
+.contact-modal {
+  width: 90%;
+  max-width: 500px;
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-xl;
+  animation: slideUp 0.3s ease;
+}
+
+.contact-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-lg;
+  border-bottom: 1px solid $color-soft-gray;
+
+  h3 {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    font-size: $font-size-lg;
+    font-weight: 600;
+    margin: 0;
+    color: $color-text-primary;
+
+    i {
+      color: $color-l1-sage;
+    }
+  }
+}
+
+.contact-modal-body {
+  padding: $spacing-lg;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+
+  label {
+    font-size: $font-size-sm;
+    font-weight: 500;
+    color: $color-text-primary;
+  }
+
+  .required {
+    color: $color-error;
+  }
+
+  input,
+  textarea {
+    padding: $spacing-sm $spacing-md;
+    border: 1px solid $color-soft-gray;
+    border-radius: $radius-md;
+    font-size: $font-size-sm;
+    transition: border-color 0.2s ease;
+
+    &:focus {
+      outline: none;
+      border-color: $color-l1-sage;
+    }
+
+    &::placeholder {
+      color: $color-text-secondary;
+    }
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 80px;
+  }
+}
+
+.contact-method-options {
+  display: flex;
+  gap: $spacing-sm;
+}
+
+.method-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: $spacing-sm;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  background: transparent;
+  color: $color-text-secondary;
+  font-size: $font-size-xs;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  i {
+    font-size: 1.25rem;
+  }
+
+  &:hover {
+    border-color: $color-l1-sage;
+    color: $color-l1-sage;
+  }
+
+  &.active {
+    border-color: $color-l1-sage;
+    background: rgba($color-l1-sage, 0.1);
+    color: $color-l1-sage;
+  }
+}
+
+.outcome-options {
+  display: flex;
+  gap: $spacing-sm;
+}
+
+.outcome-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: $spacing-sm;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  background: transparent;
+  font-size: $font-size-xs;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  i {
+    font-size: 1rem;
+  }
+
+  &.outcome-positive {
+    color: $color-text-secondary;
+
+    &:hover,
+    &.active {
+      border-color: $color-success;
+      background: rgba($color-success, 0.1);
+      color: $color-success;
+    }
+  }
+
+  &.outcome-neutral {
+    color: $color-text-secondary;
+
+    &:hover,
+    &.active {
+      border-color: $color-l3-petrol;
+      background: rgba($color-l3-petrol, 0.1);
+      color: $color-l3-petrol;
+    }
+  }
+
+  &.outcome-negative {
+    color: $color-text-secondary;
+
+    &:hover,
+    &.active {
+      border-color: $color-error;
+      background: rgba($color-error, 0.1);
+      color: $color-error;
+    }
+  }
+
+  &.outcome-no-response {
+    color: $color-text-secondary;
+
+    &:hover,
+    &.active {
+      border-color: $color-warning;
+      background: rgba($color-warning, 0.1);
+      color: $color-warning;
+    }
+  }
+}
+
+.contact-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: $spacing-sm;
+  padding: $spacing-lg;
+  border-top: 1px solid $color-soft-gray;
+}
+
+.btn-cancel {
+  padding: $spacing-sm $spacing-lg;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  background: transparent;
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: $color-text-secondary;
+    color: $color-text-primary;
+  }
+}
+
+.btn-submit {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: $spacing-sm $spacing-lg;
+  border: none;
+  border-radius: $radius-md;
+  background: $color-l1-sage;
+  color: $color-pure-white;
+  font-size: $font-size-sm;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: darken($color-l1-sage, 10%);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// =====================================================
+// 面試邀約 Modal
+// =====================================================
+.invite-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  animation: fadeIn 0.2s ease;
+}
+
+.invite-modal {
+  width: 90%;
+  max-width: 520px;
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-xl;
+  animation: slideUp 0.3s ease;
+}
+
+.invite-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-lg;
+  border-bottom: 1px solid $color-soft-gray;
+
+  h3 {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    font-size: $font-size-lg;
+    font-weight: 600;
+    margin: 0;
+    color: $color-text-primary;
+
+    i {
+      color: $color-l1-sage;
+    }
+  }
+}
+
+.invite-modal-body {
+  padding: $spacing-lg;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
+
+.invite-candidate-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+
+  .candidate-name {
+    font-weight: 600;
+    color: $color-text-primary;
+  }
+
+  .job-title {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    padding: 4px 12px;
+    background: $color-pure-white;
+    border-radius: $radius-full;
+    border: 1px solid $color-soft-gray;
+  }
+}
+
+.slot-row {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-sm;
+
+  input[type="datetime-local"] {
+    flex: 1;
+    padding: $spacing-sm $spacing-md;
+    border: 1px solid $color-soft-gray;
+    border-radius: $radius-md;
+    font-size: $font-size-sm;
+
+    &:focus {
+      outline: none;
+      border-color: $color-l1-sage;
+    }
+  }
+}
+
+.btn-remove-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  background: transparent;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: $color-error;
+    color: $color-error;
+    background: rgba($color-error, 0.05);
+  }
+}
+
+.btn-add-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-xs;
+  width: 100%;
+  padding: $spacing-sm;
+  border: 1px dashed $color-soft-gray;
+  border-radius: $radius-md;
+  background: transparent;
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: $color-l1-sage;
+    color: $color-l1-sage;
+    background: rgba($color-l1-sage, 0.05);
+  }
+}
+
+.invite-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: $spacing-sm;
+  padding: $spacing-lg;
+  border-top: 1px solid $color-soft-gray;
 }

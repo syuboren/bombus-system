@@ -10,7 +10,9 @@ import {
   TalentTag,
   TalentSource,
   TalentStatus,
-  ContactPriority
+  ContactPriority,
+  JobMatch,
+  ApplyToJobResult
 } from '../models/talent-pool.model';
 
 // API 回應介面
@@ -59,6 +61,12 @@ interface ApiTalent {
   contact_count?: number;
   notes?: string;
   tags?: { id: string; name: string; color: string; category?: string }[];
+  // 聯繫追蹤欄位
+  contact_reminder_enabled?: number;
+  contact_reminder_date?: string;
+  contactStatus?: string | null;
+  latestContactDate?: string;
+  recentContactCount?: number;
 }
 
 interface ApiContact {
@@ -253,6 +261,20 @@ export class TalentPoolService {
     );
   }
 
+  /**
+   * 設定待聯繫提醒
+   * 開啟後，如果 1 個月內沒有新增聯繫紀錄，狀態會顯示為「待聯繫」
+   */
+  setContactReminder(candidateId: string, enabled: boolean): Observable<boolean> {
+    return this.http.put<ApiResponse<void>>(`${this.baseUrl}/${candidateId}/contact-reminder`, { enabled }).pipe(
+      map(() => true),
+      catchError(error => {
+        console.error('Error setting contact reminder:', error);
+        return of(false);
+      })
+    );
+  }
+
   // =====================================================
   // 提醒事項
   // =====================================================
@@ -439,7 +461,12 @@ export class TalentPoolService {
       nextContactDate: api.next_contact_date ? new Date(api.next_contact_date) : undefined,
       contactPriority: (api.contact_priority || 'medium') as ContactPriority,
       notes: api.notes || '',
-      resumeUrl: api.resume_url
+      resumeUrl: api.resume_url,
+      // 聯繫追蹤欄位
+      contactReminderEnabled: api.contact_reminder_enabled === 1,
+      contactStatus: api.contactStatus as 'contacted' | 'pending' | null,
+      latestContactDate: api.latestContactDate ? new Date(api.latestContactDate) : undefined,
+      recentContactCount: api.recentContactCount || 0
     };
   }
 
@@ -505,4 +532,99 @@ export class TalentPoolService {
       category: (api.category || 'custom') as 'skill' | 'experience' | 'education' | 'personality' | 'custom'
     };
   }
+
+  // =====================================================
+  // 職缺媒合功能
+  // =====================================================
+
+  /**
+   * 取得人才的所有職缺媒合度
+   */
+  getJobMatches(talentId: string): Observable<JobMatch[]> {
+    return this.http.get<ApiResponse<ApiJobMatch[]>>(`${this.baseUrl}/${talentId}/job-matches`).pipe(
+      map(response => response.data.map(m => this.mapApiJobMatchToJobMatch(m))),
+      catchError(() => of([]))
+    );
+  }
+
+  /**
+   * AI 分析人才與所有職缺的媒合度
+   */
+  analyzeJobs(talentId: string): Observable<JobMatch[]> {
+    return this.http.post<ApiResponse<ApiJobMatch[]>>(`${this.baseUrl}/${talentId}/analyze-jobs`, {}).pipe(
+      map(response => response.data.map(m => this.mapApiJobMatchToJobMatch(m))),
+      catchError(() => of([]))
+    );
+  }
+
+  /**
+   * 將人才加入職缺候選人
+   * @param talentId 人才 ID
+   * @param jobId 職缺 ID
+   * @param sendInvitation 是否同時發送面試邀請
+   */
+  applyToJob(talentId: string, jobId: string, sendInvitation: boolean = false): Observable<ApplyToJobResult | null> {
+    return this.http.post<ApiResponse<ApplyToJobResult>>(`${this.baseUrl}/${talentId}/apply-to-job`, {
+      jobId,
+      sendInvitation
+    }).pipe(
+      map(response => response.data),
+      catchError(() => of(null))
+    );
+  }
+
+  /**
+   * 將人才加入職缺候選人並發送面試邀請（含邀約資訊）
+   * @param talentId 人才 ID
+   * @param jobId 職缺 ID
+   * @param message 邀約訊息
+   * @param proposedSlots 建議面試時段
+   */
+  applyToJobWithInvitation(
+    talentId: string,
+    jobId: string,
+    message: string,
+    proposedSlots: string[]
+  ): Observable<ApplyToJobResult | null> {
+    return this.http.post<ApiResponse<ApplyToJobResult>>(`${this.baseUrl}/${talentId}/apply-to-job`, {
+      jobId,
+      sendInvitation: true,
+      message,
+      proposedSlots
+    }).pipe(
+      map(response => response.data),
+      catchError(() => of(null))
+    );
+  }
+
+  private mapApiJobMatchToJobMatch(api: ApiJobMatch): JobMatch {
+    return {
+      jobId: api.jobId,
+      title: api.title,
+      department: api.department,
+      status: api.status,
+      description: api.description,
+      matchScore: api.matchScore,
+      matchDetails: api.matchDetails,
+      analysisSummary: api.analysisSummary,
+      analyzedAt: api.analyzedAt ? new Date(api.analyzedAt) : undefined
+    };
+  }
+}
+
+// API 回傳的職缺媒合資料格式
+interface ApiJobMatch {
+  jobId: string;
+  title: string;
+  department?: string;
+  status: string;
+  description?: string;
+  matchScore: number | null;
+  matchDetails?: {
+    talentSkills: string[];
+    jobKeywords: string[];
+    matchedSkills: string[];
+  };
+  analysisSummary?: string;
+  analyzedAt?: string;
 }

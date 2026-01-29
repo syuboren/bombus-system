@@ -28,5 +28,19 @@ export const publicRoutes: Routes = [
             import('./pages/meeting-sign-in-page/meeting-sign-in-page.component')
                 .then(m => m.MeetingSignInPageComponent),
         title: '會議簽到'
+    },
+    {
+        path: 'interview-form/:token',
+        loadComponent: () =>
+            import('./pages/interview-form-page/interview-form-page.component')
+                .then(m => m.InterviewFormPageComponent),
+        title: '面試記錄表'
+    },
+    {
+        path: 'interview-form-success',
+        loadComponent: () =>
+            import('./pages/interview-form-page/interview-form-page.component')
+                .then(m => m.InterviewFormPageComponent),
+        title: '表單提交成功'
     }
 ];

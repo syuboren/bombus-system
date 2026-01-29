@@ -129,9 +129,9 @@
           </div>
           <div class="footer-actions">
             <div class="decision-buttons">
-              <!-- New / Pending: Invite or Reject -->
-              @if (candidate.status === 'new' || candidate.status === 'pending') {
-              <button class="decision-btn decision-btn--reject" title="婉拒" (click)="rejectCandidate(candidate, $event)"
+              <!-- New: Invite or Reject -->
+              @if (candidate.status === 'new') {
+              <button class="decision-btn decision-btn--reject" title="不邀請" (click)="rejectCandidate(candidate, $event)"
                 type="button">
                 <i class="ri-close-line"></i>
               </button>
@@ -141,20 +141,20 @@
               </button>
               }
 
-              <!-- Invited: Copy link and Schedule (等待候選人回覆) -->
-              @if (candidate.status === 'invited') {
+              <!-- Invited: Copy link (等待候選人回覆，尚未接受) -->
+              @if (candidate.status === 'invited' && candidate.candidateResponse !== 'accepted') {
               <button class="decision-btn decision-btn--link" title="複製回覆連結"
                 (click)="copyResponseLink(candidate, $event)" type="button">
                 <i class="ri-link"></i>
               </button>
+              }
 
-              <!-- Only show schedule button if candidate accepted invitation -->
-              @if (candidate.candidateResponse === 'accepted') {
+              <!-- Pending Schedule: 候選人已接受邀請，待安排面試 -->
+              @if (candidate.status === 'invited' && candidate.candidateResponse === 'accepted') {
               <button class="decision-btn decision-btn--schedule" title="安排面試"
                 (click)="openInterviewModal(candidate, $event)" type="button">
                 <i class="ri-calendar-event-line"></i>
               </button>
-              }
               }
 
               <!-- Reschedule: Show resend invitation option -->
@@ -165,11 +165,16 @@
               </button>
               }
 
-              <!-- Interview: Already Scheduled (Show Badge instead of button) -->
+              <!-- Interview: Already Scheduled (Show Info and Cancel Link buttons) -->
               @if (candidate.status === 'interview') {
-              <div class="scheduled-badge" title="已安排面試">
+              <button class="decision-btn decision-btn--info" title="查看面試資訊"
+                (click)="showInterviewInfo(candidate, $event)" type="button">
                 <i class="ri-calendar-check-line"></i>
-              </div>
+              </button>
+              <button class="decision-btn decision-btn--link" title="複製取消面試連結"
+                (click)="copyInterviewCancelLink(candidate, $event)" type="button">
+                <i class="ri-link"></i>
+              </button>
               }
 
               <!-- Offered: 待回覆 Offer - 顯示複製連結按鈕 -->
@@ -257,115 +262,15 @@
 </div>
 }
 
-<!-- 面試邀約 Modal (Modified) -->
-@if (showInterviewModal()) {
-<div class="modal-backdrop"></div>
-<div class="modal interview-modal">
-  <div class="modal-header">
-    <h3 class="modal-title">
-      <i class="ri-calendar-event-line"></i>
-      安排面試時段
-    </h3>
-    <button class="btn-close" (click)="closeInterviewModal()" type="button">
-      <i class="ri-close-line"></i>
-    </button>
-  </div>
-  <div class="modal-body">
-    @if (selectedCandidateForInterview(); as candidate) {
-    <div class="candidate-preview">
-      <div class="candidate-avatar" [style.background-color]="candidate.avatarColor">
-        {{ getInitial(candidate.name) }}
-      </div>
-      <div class="candidate-info">
-        <h4>{{ candidate.name }}</h4>
-        <p>{{ candidate.email }}</p>
-      </div>
-    </div>
-
-    <!-- 候選人選擇時段 -->
-    @if (candidate.selectedSlots && candidate.selectedSlots.length > 0) {
-    <div class="selected-slots-section">
-      <label class="form-label">候選人可面試時段 (點擊選擇)：</label>
-      <div class="slots-grid">
-        @for (slot of candidate.selectedSlots; track slot) {
-        <button class="slot-badge" type="button" (click)="selectSlot(slot)">
-          <i class="ri-time-line"></i>
-          {{ slot }}
-        </button>
-        }
-      </div>
-    </div>
-    }
-    }
-
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">面試日期 <span class="required">*</span></label>
-        <input type="date" class="form-input" [min]="getTodayDate()" [value]="interviewDate()"
-          (input)="interviewDate.set($any($event.target).value)">
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">面試時間 <span class="required">*</span></label>
-        <input type="time" class="form-input" [value]="interviewTime()"
-          (input)="interviewTime.set($any($event.target).value)">
-      </div>
-    </div>
-
-    <div class="form-group">
-      <label class="form-label">面試官 <span class="required">*</span></label>
-      <select class="form-select" [value]="selectedInterviewer()"
-        (change)="selectedInterviewer.set($any($event.target).value)">
-        <option value="">請選擇面試官</option>
-        @for (interviewer of interviewerOptions; track interviewer.id) {
-        <option [value]="interviewer.id">
-          {{ interviewer.name }} - {{ interviewer.title }} ({{ interviewer.department }})
-        </option>
-        }
-      </select>
-    </div>
-
-    <div class="form-group">
-      <label class="form-label">面試方式</label>
-      <div class="radio-group">
-        <label class="radio-item">
-          <input type="radio" name="interviewType" value="onsite" [checked]="interviewType() === 'onsite'"
-            (change)="interviewType.set('onsite')">
-          <span class="radio-label">
-            <i class="ri-building-line"></i>
-            現場面試
-          </span>
-        </label>
-        <label class="radio-item">
-          <input type="radio" name="interviewType" value="online" [checked]="interviewType() === 'online'"
-            (change)="interviewType.set('online')">
-          <span class="radio-label">
-            <i class="ri-video-chat-line"></i>
-            線上面試
-          </span>
-        </label>
-      </div>
-    </div>
-
-    @if (interviewType() === 'online') {
-    <div class="form-group slide-down">
-      <label class="form-label">線上會議連結 <span class="required">*</span></label>
-      <div class="input-with-icon">
-        <i class="ri-link icon"></i>
-        <input type="text" class="form-input" placeholder="請輸入 Google Meet 或其他會議連結" [value]="meetingLink()"
-          (input)="meetingLink.set($any($event.target).value)">
-      </div>
-    </div>
-    }
-  </div>
-  <div class="modal-footer">
-    <button class="btn btn-secondary" (click)="closeInterviewModal()" type="button">取消</button>
-    <button class="btn btn-primary" (click)="confirmInterview()" type="button">
-      <i class="ri-calendar-check-line"></i>
-      確認排程
-    </button>
-  </div>
-</div>
+<!-- 安排面試 Modal -->
+@if (selectedCandidateForInterview()) {
+  <app-schedule-interview-modal
+    [candidate]="selectedCandidateForInterview()!"
+    [isVisible]="showInterviewModal()"
+    [jobId]="jobId()"
+    (close)="showInterviewModal.set(false); selectedCandidateForInterview.set(null)"
+    (scheduled)="onInterviewScheduled()"
+  />
 }
 
 <!-- NEW MODALS -->
@@ -381,4 +286,13 @@
 <app-interview-scoring-modal [isVisible]="showScoringModal()" [candidate]="selectedCandidate()!"
   (close)="showScoringModal.set(false)" (scored)="onScored()">
 </app-interview-scoring-modal>
+}
+
+<!-- 面試資訊 Modal -->
+@if (interviewInfoCandidate()) {
+  <app-interview-info-modal
+    [candidate]="interviewInfoCandidate()!"
+    [isVisible]="showInterviewInfoModal()"
+    (close)="closeInterviewInfoModal()"
+  />
 }

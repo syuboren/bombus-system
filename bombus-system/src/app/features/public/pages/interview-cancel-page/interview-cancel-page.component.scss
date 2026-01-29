@@ -176,6 +176,16 @@
             color: #1F2937;
             font-weight: 500;
         }
+
+        .meeting-link {
+            color: #8DA8BE;
+            text-decoration: none;
+            word-break: break-all;
+
+            &:hover {
+                text-decoration: underline;
+            }
+        }
     }
 }
 

@@ -27,7 +27,8 @@ export class InterviewCancelPageComponent implements OnInit {
     candidateName = signal<string>('');
     jobTitle = signal<string>('');
     interviewAt = signal<string>('');
-    location = signal<string>('');
+    location = signal<string>('');      // 面試方式: onsite/online
+    address = signal<string>('');       // 現場面試地址
     meetingLink = signal<string>('');
 
     // User input
@@ -52,6 +53,7 @@ export class InterviewCancelPageComponent implements OnInit {
                 this.jobTitle.set(data.jobTitle);
                 this.interviewAt.set(data.interviewAt);
                 this.location.set(data.location || '');
+                this.address.set(data.address || '');
                 this.meetingLink.set(data.meetingLink || '');
                 this.loading.set(false);
             },
@@ -82,6 +84,15 @@ export class InterviewCancelPageComponent implements OnInit {
         } catch {
             return dateStr;
         }
+    }
+
+    getLocationLabel(location: string): string {
+        const labels: Record<string, string> = {
+            'onsite': '現場面試',
+            'online': '線上面試',
+            'phone': '電話面試'
+        };
+        return labels[location] || location;
     }
 
     confirmCancel(): void {

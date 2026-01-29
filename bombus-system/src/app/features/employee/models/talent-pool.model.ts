@@ -20,6 +20,14 @@ export interface TalentTag {
   category: 'skill' | 'experience' | 'education' | 'personality' | 'custom';
 }
 
+/**
+ * 聯繫狀態 (動態計算)
+ * - contacted: 近 1 個月有聯繫紀錄
+ * - pending: 開啟待聯繫提醒但近 1 個月沒有聯繫
+ * - null: 無狀態 (未開啟提醒且沒有近期聯繫)
+ */
+export type ContactStatus = 'contacted' | 'pending' | null;
+
 export interface TalentCandidate {
   id: string;
   name: string;
@@ -44,6 +52,12 @@ export interface TalentCandidate {
   contactPriority: ContactPriority;
   notes: string;
   resumeUrl?: string;
+  
+  // 聯繫追蹤欄位
+  contactReminderEnabled?: boolean; // 是否開啟待聯繫提醒
+  contactStatus?: ContactStatus;    // 聯繫狀態 (動態計算)
+  latestContactDate?: Date;         // 最新聯繫日期
+  recentContactCount?: number;      // 近 1 個月聯繫次數
 }
 
 export interface TalentContactHistory {
@@ -77,6 +91,38 @@ export interface TalentMatchResult {
   matchReasons: string[];
   gaps: string[];
   recommendation: 'highly-recommended' | 'recommended' | 'consider' | 'not-recommended';
+}
+
+/**
+ * 職缺媒合度資料
+ */
+export interface JobMatch {
+  jobId: string;
+  title: string;
+  department?: string;
+  status: string;
+  description?: string;
+  matchScore: number | null;  // null 表示尚未分析
+  matchDetails?: {
+    talentSkills: string[];
+    jobKeywords: string[];
+    matchedSkills: string[];
+  };
+  analysisSummary?: string;
+  analyzedAt?: Date;
+}
+
+/**
+ * 加入職缺候選人的結果
+ */
+export interface ApplyToJobResult {
+  candidateId: string;
+  jobId: string;
+  jobTitle: string;
+  talentName: string;
+  invitationSent: boolean;
+  invitationToken?: string;
+  isNewCandidate: boolean;
 }
 
 export interface TalentPoolStats {

@@ -1,0 +1,325 @@
+@import '../../../../../assets/styles/variables';
+@import '../../../../../assets/styles/mixins';
+
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+
+.interview-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  max-width: 500px;
+  background: white;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-lg;
+  z-index: 1001;
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -45%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-lg;
+  border-bottom: 1px solid $color-soft-gray;
+}
+
+.modal-title {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-text-dark;
+  margin: 0;
+
+  i {
+    color: $color-l1-sage;
+    font-size: 24px;
+  }
+}
+
+.btn-close {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  border-radius: $radius-md;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+
+  &:hover {
+    background: $color-cloud-gray;
+  }
+
+  i {
+    font-size: 20px;
+    color: $color-muted-gray;
+  }
+}
+
+.modal-body {
+  padding: $spacing-lg;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.candidate-preview {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+  margin-bottom: $spacing-lg;
+
+  .candidate-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: $font-size-lg;
+    font-weight: $font-weight-bold;
+  }
+
+  .candidate-info {
+    flex: 1;
+
+    h4 {
+      margin: 0 0 4px;
+      font-size: $font-size-base;
+      font-weight: $font-weight-semibold;
+      color: $color-text-dark;
+    }
+
+    p {
+      margin: 0;
+      font-size: $font-size-sm;
+      color: $color-text-secondary;
+    }
+  }
+
+  .position-badge {
+    padding: $spacing-xs $spacing-sm;
+    background: rgba($color-l1-sage, 0.1);
+    color: $color-l1-sage;
+    border-radius: $radius-sm;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-medium;
+  }
+}
+
+.form-group {
+  margin-bottom: $spacing-md;
+}
+
+.form-label {
+  display: block;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  margin-bottom: $spacing-xs;
+
+  .required {
+    color: $color-error;
+  }
+}
+
+.form-row {
+  display: flex;
+  gap: $spacing-md;
+
+  .form-group {
+    flex: 1;
+  }
+}
+
+.form-input,
+.form-textarea,
+.form-select {
+  @include input-base;
+  width: 100%;
+}
+
+.form-select {
+  cursor: pointer;
+}
+
+.radio-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+}
+
+.radio-item {
+  flex: 1;
+  min-width: 120px;
+
+  input {
+    display: none;
+
+    &:checked + .radio-label {
+      background: rgba($color-l1-sage, 0.1);
+      border-color: $color-l1-sage;
+      color: $color-l1-sage;
+    }
+  }
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-xs;
+  padding: $spacing-sm $spacing-md;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: $font-size-sm;
+
+  &:hover {
+    border-color: $color-l1-sage;
+  }
+
+  i {
+    font-size: 18px;
+  }
+}
+
+.selected-slots-section {
+  margin-bottom: $spacing-md;
+
+  .slots-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $spacing-xs;
+    margin-top: $spacing-xs;
+  }
+
+  .slot-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    border: 1px solid $color-soft-gray;
+    color: $color-text-primary;
+    font-size: $font-size-sm;
+    padding: 6px 12px;
+    border-radius: $radius-md;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      background: rgba($color-l1-sage, 0.05);
+      border-color: $color-l1-sage;
+      color: $color-l1-sage;
+    }
+
+    i {
+      color: $color-muted-gray;
+    }
+  }
+}
+
+.slide-down {
+  animation: slideDown 0.3s ease-out forwards;
+  transform-origin: top;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.input-with-icon {
+  position: relative;
+
+  .icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: $color-muted-gray;
+    pointer-events: none;
+  }
+
+  input {
+    padding-left: 36px;
+    width: 100%;
+  }
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: $spacing-sm;
+  padding: $spacing-md $spacing-lg;
+  border-top: 1px solid $color-soft-gray;
+}
+
+.btn {
+  @include button-base;
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-xs;
+
+  &-secondary {
+    @include button-secondary;
+  }
+
+  &-primary {
+    @include button-primary;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

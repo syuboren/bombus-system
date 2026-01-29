@@ -58,22 +58,34 @@
           </div>
         </div>
 
-        @if (location()) {
+        <div class="detail-item">
+          <i class="ri-building-line"></i>
+          <div class="detail-content">
+            <span class="label">面試方式</span>
+            <span class="value">{{ getLocationLabel(location()) }}</span>
+          </div>
+        </div>
+
+        @if (location() === 'onsite') {
         <div class="detail-item">
           <i class="ri-map-pin-line"></i>
           <div class="detail-content">
             <span class="label">面試地點</span>
-            <span class="value">{{ location() }}</span>
+            <span class="value">{{ address() || '待確認' }}</span>
           </div>
         </div>
         }
 
-        @if (meetingLink()) {
+        @if (location() === 'online') {
         <div class="detail-item">
           <i class="ri-video-chat-line"></i>
           <div class="detail-content">
-            <span class="label">線上面試</span>
-            <span class="value">視訊會議</span>
+            <span class="label">線上會議連結</span>
+            @if (meetingLink()) {
+            <a class="value meeting-link" [href]="meetingLink()" target="_blank">{{ meetingLink() }}</a>
+            } @else {
+            <span class="value">待確認</span>
+            }
           </div>
         </div>
         }

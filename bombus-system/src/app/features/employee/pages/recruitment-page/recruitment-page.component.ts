@@ -53,7 +53,7 @@ interface TranscriptSegment {
  * - offer_accepted: 已錄取同意
  * - onboarded: 已報到
  * 
- * 終止狀態（流程未繼續）：
+ * 終止狀態（公司決定）：
  * - not_invited: 不邀請
  * - not_hired: 未錄取
  * 
@@ -61,20 +61,12 @@ interface TranscriptSegment {
  * - invite_declined: 邀請婉拒
  * - interview_declined: 面試婉拒
  * - offer_declined: Offer 婉拒
- * 
- * 舊狀態（向下相容）：
- * - pending: 待面試（舊）
- * - scored: 已評分（舊）
- * - completed: 已完成（舊）
- * - hired: 已錄用（舊）
- * - rejected: 已拒絕（舊）
  */
 type CandidateStatus = 
   | 'interview' | 'pending_ai' | 'pending_decision' 
   | 'offered' | 'offer_accepted' | 'onboarded'
   | 'not_invited' | 'not_hired'
-  | 'invite_declined' | 'interview_declined' | 'offer_declined'
-  | 'pending' | 'scored' | 'completed' | 'hired' | 'rejected';
+  | 'invite_declined' | 'interview_declined' | 'offer_declined';
 
 import { AiScoringOverlayComponent } from '../../components/ai-scoring-overlay/ai-scoring-overlay.component';
 
@@ -104,7 +96,7 @@ export class RecruitmentPageComponent implements OnInit, OnDestroy {
   // ============================================================
   candidates = signal<Candidate[]>([]);
   searchQuery = signal<string>('');
-  statusFilter = signal<'all' | 'pending' | 'scored'>('all');
+  statusFilter = signal<'all' | 'waiting' | 'scored'>('all');
   selectedCandidate = signal<CandidateDetail | null>(null);
   loading = signal<boolean>(false);
 
@@ -151,7 +143,7 @@ export class RecruitmentPageComponent implements OnInit, OnDestroy {
     const candidate = this.selectedCandidate();
     if (!candidate) return false;
     // 檢查候選人狀態是否為已決策狀態
-    return ['offered', 'offer_accepted', 'offer_declined', 'rejected', 'hired'].includes(candidate.status);
+    return ['offered', 'offer_accepted', 'offer_declined', 'not_hired', 'onboarded'].includes(candidate.status);
   });
   
   // 判斷候選人是否為 Offered 狀態（可顯示 Offer 連結）
@@ -172,18 +164,17 @@ export class RecruitmentPageComponent implements OnInit, OnDestroy {
         c.position.toLowerCase().includes(query);
 
       if (filter === 'all') return matchesQuery;
-      if (filter === 'pending') return matchesQuery && c.status === 'pending';
+      if (filter === 'waiting') return matchesQuery && c.status === 'interview';
       if (filter === 'scored') {
-        // 'scored' tab now covers all post-interview states:
-        // pending_ai, pending_decision, offered, offer_accepted, offer_declined, hired, rejected
+        // 'scored' tab now covers all post-interview states
         return matchesQuery && (
           c.status === 'pending_ai' ||
           c.status === 'pending_decision' ||
           c.status === 'offered' ||
           c.status === 'offer_accepted' ||
           c.status === 'offer_declined' ||
-          c.status === 'hired' ||
-          c.status === 'rejected'
+          c.status === 'onboarded' ||
+          c.status === 'not_hired'
         );
       }
       return matchesQuery;
@@ -866,7 +857,7 @@ export class RecruitmentPageComponent implements OnInit, OnDestroy {
           
           // 【關鍵修正】立即更新 selectedCandidate 的狀態，觸發畫面鎖定
           // 根據決策類型設定對應的狀態
-          const newStatus = this.decision() === 'Offered' ? 'offered' : 'rejected';
+          const newStatus = this.decision() === 'Offered' ? 'offered' : 'not_hired';
           const candidateId = candidate.id;
           
           // 使用 NgZone.run 確保在 Angular zone 內執行，觸發變更檢測

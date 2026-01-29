@@ -1,0 +1,90 @@
+<div class="modal-backdrop" (click)="onBackdropClick($event)">
+  <div class="modal-container">
+    <!-- Header -->
+    <div class="modal-header">
+      <h2 class="modal-title">面試表單 QR Code</h2>
+      <button class="btn-close" (click)="onClose()">
+        <span>×</span>
+      </button>
+    </div>
+
+    <!-- Content -->
+    <div class="modal-content">
+      <!-- Candidate Info -->
+      <div class="candidate-info">
+        <div class="info-row">
+          <span class="info-label">候選人</span>
+          <span class="info-value">{{ candidateName() }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">應徵職位</span>
+          <span class="info-value">{{ jobTitle() }}</span>
+        </div>
+        @if (interviewAt()) {
+          <div class="info-row">
+            <span class="info-label">面試時間</span>
+            <span class="info-value">{{ interviewAt() | date:'yyyy/MM/dd HH:mm' }}</span>
+          </div>
+        }
+      </div>
+
+      <!-- Loading State -->
+      @if (isLoading()) {
+        <div class="loading-container">
+          <div class="spinner"></div>
+          <p>產生 QR Code 中...</p>
+        </div>
+      }
+
+      <!-- Error State -->
+      @if (error()) {
+        <div class="error-container">
+          <div class="error-icon">❌</div>
+          <p class="error-message">{{ error() }}</p>
+          <button class="btn-retry" (click)="generateQrCode()">重試</button>
+        </div>
+      }
+
+      <!-- QR Code Display -->
+      @if (!isLoading() && !error() && qrCodeDataUrl()) {
+        <div class="qr-section">
+          <div class="qr-code-wrapper">
+            <img [src]="qrCodeDataUrl()" alt="QR Code" class="qr-code-image" />
+          </div>
+          
+          <p class="qr-instruction">請掃描 QR Code 進入面試記錄表填寫頁面</p>
+
+          <!-- URL Display -->
+          <div class="url-section">
+            <label class="url-label">專屬連結</label>
+            <div class="url-input-group">
+              <input
+                type="text"
+                class="url-input"
+                [value]="formUrl()"
+                readonly
+              />
+              <button
+                class="btn-copy"
+                (click)="copyLink()"
+                [class.copied]="copied()"
+              >
+                {{ copied() ? '已複製' : '複製' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Footer -->
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="regenerateQrCode()" [disabled]="isLoading()">
+        重新產生
+      </button>
+      <button class="btn-primary" (click)="printQrCode()" [disabled]="isLoading() || !qrCodeDataUrl()">
+        列印 QR Code
+      </button>
+    </div>
+  </div>
+</div>

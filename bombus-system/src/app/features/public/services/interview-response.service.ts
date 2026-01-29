@@ -99,6 +99,7 @@ export class InterviewResponseService {
         jobTitle: string;
         interviewAt: string;
         location: string;
+        address: string;
         meetingLink: string;
         round: number;
     }> {

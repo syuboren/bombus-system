@@ -92,7 +92,7 @@
                 <input type="radio" name="decision" value="Rejected" [ngModel]="decision()"
                     (ngModelChange)="decision.set($event)">
                 <i class="ri-close-circle-line"></i>
-                <span class="title">婉拒錄用</span>
+                <span class="title">未錄取</span>
                 <span class="desc">發送感謝信並結束流程</span>
             </label>
 
@@ -100,7 +100,7 @@
                 <input type="radio" name="decision" value="Offered" [ngModel]="decision()"
                     (ngModelChange)="decision.set($event)">
                 <i class="ri-checkbox-circle-line"></i>
-                <span class="title">正式錄用</span>
+                <span class="title">已錄取</span>
                 <span class="desc">發送 Offer 並開始報到流程</span>
             </label>
         </div>

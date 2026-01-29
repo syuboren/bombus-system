@@ -86,7 +86,7 @@
         <div class="actions offer-actions">
             <button class="btn btn-secondary" (click)="declineOffer()" [disabled]="submitting()">
                 <i class="ri-close-line"></i>
-                婉拒錄用
+                婉拒 Offer
             </button>
             <button class="btn btn-primary btn-accept" (click)="acceptOffer()" [disabled]="submitting()">
                 @if (submitting()) {
@@ -94,7 +94,7 @@
                 處理中...
                 } @else {
                 <i class="ri-check-double-line"></i>
-                接受錄用
+                接受 Offer
                 }
             </button>
         </div>

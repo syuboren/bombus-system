@@ -1,7 +1,16 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of, delay, map, catchError, forkJoin } from 'rxjs';
-import { Candidate, CandidateDetail, Interview, InterviewInvitation, InvitationDecision } from '../models/candidate.model';
+import {
+  Candidate,
+  CandidateDetail,
+  Interview,
+  InterviewInvitation,
+  InvitationDecision,
+  GenerateFormResponse,
+  FormStatusResponse,
+  CandidateFormData
+} from '../models/candidate.model';
 import { DEFAULT_DIMENSIONS } from '../models/job-keywords.model';
 
 @Injectable({
@@ -18,7 +27,7 @@ export class InterviewService {
       name: '王小明',
       position: '前端工程師',
       interviewDate: '2025-11-20',
-      status: 'completed',
+      status: 'pending_decision',
       duration: '25:30'
     },
     {
@@ -26,7 +35,7 @@ export class InterviewService {
       name: '李小華',
       position: '後端工程師',
       interviewDate: '2025-11-21',
-      status: 'completed',
+      status: 'pending_decision',
       duration: '32:15'
     },
     {
@@ -34,7 +43,7 @@ export class InterviewService {
       name: '張大同',
       position: 'UI/UX 設計師',
       interviewDate: '2025-11-22',
-      status: 'completed',
+      status: 'pending_decision',
       duration: '28:45'
     },
     {
@@ -42,14 +51,14 @@ export class InterviewService {
       name: '陳美玲',
       position: '專案經理',
       interviewDate: '2025-11-25',
-      status: 'pending'
+      status: 'interview'
     },
     {
       id: '5',
       name: '林志明',
       position: '資料分析師',
       interviewDate: '2025-11-19',
-      status: 'completed',
+      status: 'pending_decision',
       duration: '30:00'
     }
   ];
@@ -188,11 +197,21 @@ export class InterviewService {
             c.ai_analysis_result !== 'null' && 
             c.ai_analysis_result.length > 10; // 有效的 JSON 結果至少會超過 10 字元
 
-          // 優先使用資料庫中的 status 欄位（包含 offer_accepted, offer_declined, offered, rejected 等）
-          const validDbStatuses = ['offered', 'offer_accepted', 'offer_declined', 'rejected', 'hired'];
+          // 優先使用資料庫中的 status 欄位（包含所有明確狀態）
+          const validDbStatuses = [
+            'interview',           // 已安排面試
+            'offered',             // 待回覆 Offer
+            'offer_accepted',      // 已錄取同意
+            'offer_declined',      // Offer 婉拒
+            'onboarded',           // 已報到
+            'not_invited',         // 不邀請
+            'not_hired',           // 未錄取
+            'invite_declined',     // 邀請婉拒
+            'interview_declined'   // 面試婉拒
+          ];
           if (c.status && validDbStatuses.includes(c.status)) {
             statusDisplay = c.status; // 使用資料庫的狀態
-          } else if (c.stage === 'Rejected' || c.stage === 'Hired' || c.stage === 'Offered') {
+          } else if (c.stage === 'Hired' || c.stage === 'Offered') {
             statusDisplay = c.stage.toLowerCase(); // 已決策（舊邏輯兼容）
           } else if (hasValidAiResult) {
             // 必須有有效的 AI 分析結果才顯示「待決策」
@@ -223,17 +242,22 @@ export class InterviewService {
   /**
    * Get only candidates who have scheduled interviews
    * Filter: stage is 'Interview'/'Invited' or scoring_status is 'Scored'
+   * Exclude: interview_declined (面試婉拒不應出現在面試列表)
    */
   getScheduledCandidates(): Observable<Candidate[]> {
     return this.getCandidates().pipe(
       map(candidates => candidates.filter(c => {
+        // 排除「面試婉拒」的候選人 - 他們不應該出現在面試列表
+        if (c.status === 'interview_declined') {
+          return false;
+        }
+        
         // 從招募管理過來的候選人，狀態應該是 'Interview'(已安排) 或 'Invited'(已邀請)
         // 或是已經評分完成 ('Scored')
         // 寬鬆過濾：只要有進入面試階段的都顯示
         const validStages = ['Invited', 'Interview', 'Hired', 'Offer', 'Rejected'];
         return validStages.includes(c.stage || '') ||
-          c.scoringStatus === 'Scored' ||
-          c.status === 'completed';
+          c.scoringStatus === 'Scored';
       }))
     );
   }
@@ -256,7 +280,7 @@ export class InterviewService {
           name: data.name,
           position: data.job_title || 'Unknown Position', // Correctly map from joined title
           jobId: data.job_id,
-          status: data.scoring_status === 'Scored' ? 'completed' : 'pending',
+          status: data.scoring_status === 'Scored' ? 'pending_decision' : 'interview',
           stage: data.stage,
           scoringStatus: data.scoring_status,
 
@@ -348,6 +372,7 @@ export class InterviewService {
     interviewAt: string,
     location: string,
     meetingLink?: string,
+    address?: string,  // 現場面試地址
     round: number
   }): Observable<any> {
     return this.http.post(`${this.apiUrl}/interviews`, data);
@@ -417,5 +442,63 @@ export class InterviewService {
     } else {
       return { level: 'poor', text: '不建議錄用', icon: 'ri-close-circle-fill' };
     }
+  }
+
+  // ============================================================
+  // 候選人面試表單相關 API
+  // ============================================================
+
+  /**
+   * 產生面試表單 Token 與 QR Code
+   */
+  generateFormToken(interviewId: string, timeLimitMinutes?: number): Observable<GenerateFormResponse> {
+    return this.http.post<GenerateFormResponse>(
+      `${this.apiUrl}/interviews/${interviewId}/generate-form`,
+      { timeLimitMinutes }
+    );
+  }
+
+  /**
+   * 取得面試表單狀態
+   */
+  getFormStatus(interviewId: string): Observable<FormStatusResponse> {
+    return this.http.get<FormStatusResponse>(
+      `${this.apiUrl}/interviews/${interviewId}/form-status`
+    );
+  }
+
+  /**
+   * 取得候選人已填寫的表單內容（供面試官查閱）
+   */
+  getCandidateFormData(interviewId: string): Observable<{
+    status: string;
+    submittedAt?: string;
+    lockedAt?: string;
+    candidateName: string;
+    email?: string;
+    phone?: string;
+    jobTitle: string;
+    department: string;
+    interviewAt: string;
+    location?: string;
+    round: number;
+    formData?: CandidateFormData;
+    message?: string;
+    currentStep?: number;
+    lastSavedAt?: string;
+  }> {
+    return this.http.get<any>(`${this.apiUrl}/interviews/${interviewId}/form-data`);
+  }
+
+  /**
+   * 重新產生 QR Code（不會重新產生 Token）
+   */
+  regenerateQrCode(interviewId: string): Observable<{
+    success: boolean;
+    formToken: string;
+    formUrl: string;
+    qrCodeDataUrl: string;
+  }> {
+    return this.http.post<any>(`${this.apiUrl}/interviews/${interviewId}/regenerate-qrcode`, {});
   }
 }

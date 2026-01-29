@@ -1,0 +1,139 @@
+@if (isVisible() && !showQrCodeModal()) {
+<div class="modal-backdrop" (click)="close.emit()"></div>
+<div class="modal interview-info-modal" (click)="$event.stopPropagation()">
+  <div class="modal-header">
+    <h3 class="modal-title">
+      <i class="ri-calendar-check-line"></i>
+      面試資訊
+    </h3>
+    <button class="btn-close" (click)="close.emit()" type="button">
+      <i class="ri-close-line"></i>
+    </button>
+  </div>
+  <div class="modal-body">
+    <div class="interview-info-content">
+      <div class="candidate-info">
+        <div class="avatar" [style.background-color]="candidate().avatarColor">
+          {{ getInitial(candidate().name) }}
+        </div>
+        <div class="info">
+          <h4>{{ candidate().name }}</h4>
+          <p>{{ candidate().email }}</p>
+        </div>
+        @if (candidate().jobTitle) {
+          <span class="position-badge">{{ candidate().jobTitle }}</span>
+        }
+      </div>
+
+      <div class="interview-details">
+        <div class="detail-item">
+          <i class="ri-time-line"></i>
+          <div class="detail-content">
+            <label>面試時間</label>
+            <span>{{ formatInterviewTime(candidate().interviewAt) }}</span>
+          </div>
+        </div>
+
+        <div class="detail-item">
+          <i class="ri-building-line"></i>
+          <div class="detail-content">
+            <label>面試方式</label>
+            <span>{{ getInterviewLocationLabel(candidate().interviewLocation) }}</span>
+          </div>
+        </div>
+
+        @if (candidate().interviewLocation === 'onsite') {
+        <div class="detail-item">
+          <i class="ri-map-pin-line"></i>
+          <div class="detail-content">
+            <label>面試地點</label>
+            <span>{{ candidate().interviewAddress || '待確認' }}</span>
+          </div>
+        </div>
+        }
+
+        @if (candidate().interviewLocation === 'online') {
+        <div class="detail-item">
+          <i class="ri-video-chat-line"></i>
+          <div class="detail-content">
+            <label>線上會議連結</label>
+            @if (candidate().meetingLink) {
+            <a [href]="candidate().meetingLink" target="_blank" class="meeting-link">
+              {{ candidate().meetingLink }}
+            </a>
+            } @else {
+            <span>待確認</span>
+            }
+          </div>
+        </div>
+        }
+      </div>
+
+      <!-- 面試表單狀態區塊 -->
+      @if (candidate().interviewId) {
+      <div class="form-status-section">
+        <label>面試記錄表</label>
+        <div class="form-status-content">
+          @if (loadingFormStatus()) {
+            <span class="loading-text">載入中...</span>
+          } @else if (formStatus()?.hasForm) {
+            <div class="status-row">
+              <span class="status-badge" [class]="'status-' + getFormStatusColor(formStatus()?.status)">
+                {{ getFormStatusLabel(formStatus()?.status) }}
+              </span>
+              @if (formStatus()?.lastSavedAt) {
+                <span class="last-saved">最後儲存：{{ formStatus()?.lastSavedAt | date:'MM/dd HH:mm' }}</span>
+              }
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-outline" (click)="showQrCode()" type="button">
+                <i class="ri-qr-code-line"></i>
+                顯示 QR Code
+              </button>
+            </div>
+          } @else {
+            <div class="no-form">
+              <span class="hint-text">尚未產生面試記錄表</span>
+              <button class="btn btn-outline" (click)="showQrCode()" type="button">
+                <i class="ri-qr-code-line"></i>
+                產生 QR Code
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+      }
+
+      <!-- 取消面試連結區塊 -->
+      @if (candidate().interviewCancelToken) {
+      <div class="cancel-link-section">
+        <label>取消面試連結</label>
+        <p class="hint-text">將此連結發送給候選人，讓其可以取消面試</p>
+        <div class="link-input-group">
+          <input type="text" class="form-input" readonly
+            [value]="'/public/interview-cancel/' + candidate().interviewCancelToken">
+          <button class="btn btn-secondary" (click)="copyInterviewCancelLink()" type="button">
+            <i class="ri-file-copy-line"></i>
+            複製
+          </button>
+        </div>
+      </div>
+      }
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-secondary" (click)="close.emit()" type="button">關閉</button>
+  </div>
+</div>
+}
+
+<!-- QR Code Modal -->
+@if (showQrCodeModal() && candidate().interviewId) {
+  <app-interview-qrcode-modal
+    [interviewId]="candidate().interviewId!"
+    [candidateName]="candidate().name"
+    [jobTitle]="candidate().jobTitle || ''"
+    [interviewAt]="candidate().interviewAt || ''"
+    (close)="onQrCodeModalClose()"
+  />
+}

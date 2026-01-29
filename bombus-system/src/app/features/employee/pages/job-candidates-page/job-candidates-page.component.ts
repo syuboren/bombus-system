@@ -13,6 +13,8 @@ import { JobCandidate, CandidateStats } from '../../models/job.model';
 import { InviteCandidateModalComponent } from '../../components/invite-candidate-modal/invite-candidate-modal.component';
 import { HiringDecisionModalComponent } from '../../components/hiring-decision-modal/hiring-decision-modal.component';
 import { InterviewScoringModalComponent } from '../../components/interview-scoring-modal/interview-scoring-modal.component';
+import { ScheduleInterviewModalComponent } from '../../components/schedule-interview-modal/schedule-interview-modal.component';
+import { InterviewInfoModalComponent } from '../../components/interview-info-modal/interview-info-modal.component';
 import { InterviewService } from '../../services/interview.service';
 import { CandidateDetail } from '../../models/candidate.model';
 
@@ -32,7 +34,9 @@ interface CandidateWithUI extends JobCandidate {
     CircularProgressComponent,
     InviteCandidateModalComponent,
     HiringDecisionModalComponent,
-    InterviewScoringModalComponent
+    InterviewScoringModalComponent,
+    ScheduleInterviewModalComponent,
+    InterviewInfoModalComponent
   ],
   templateUrl: './job-candidates-page.component.html',
   styleUrl: './job-candidates-page.component.scss',
@@ -50,7 +54,7 @@ export class JobCandidatesPageComponent implements OnInit {
   stats = signal<CandidateStats | null>(null);
   loading = signal<boolean>(false);
   jobId = signal<string>('');
-  jobTitle = signal<string>('資深前端工程師');
+  jobTitle = signal<string>('');  // 職缺標題（從 API 載入）
 
   // AI Scoring
   isAIScoring = signal<boolean>(false);
@@ -69,23 +73,6 @@ export class JobCandidatesPageComponent implements OnInit {
   selectedCandidate = signal<CandidateDetail | null>(null);
   selectedCandidateForInterview = signal<CandidateWithUI | null>(null);
 
-  interviewDate = signal<string>('');
-  interviewTime = signal<string>('');
-  interviewType = signal<string>('onsite');
-  interviewNotes = signal<string>('');
-  meetingLink = signal<string>('');
-  selectedInterviewer = signal<string>('');
-
-  // 面試官選項
-  readonly interviewerOptions = [
-    { id: 'INT-001', name: '張經理', department: '人資部', title: '人資經理' },
-    { id: 'INT-002', name: '李副理', department: '人資部', title: '人資副理' },
-    { id: 'INT-003', name: '王主管', department: '人資部', title: '招募主管' },
-    { id: 'INT-004', name: '陳總監', department: '人資部', title: '人資總監' },
-    { id: 'INT-005', name: '林經理', department: '業務部', title: '業務經理' },
-    { id: 'INT-006', name: '黃經理', department: '技術部', title: '技術經理' }
-  ];
-
   // 熱門標籤
   readonly popularTags = ['React', 'Angular', 'Python', 'Java', 'AWS', 'Node.js', 'Spring Boot', 'Docker'];
 
@@ -97,15 +84,19 @@ export class JobCandidatesPageComponent implements OnInit {
     { key: 'pending-schedule', label: '待安排', icon: 'ri-calendar-2-line' },
     { key: 'reschedule', label: '待改期', icon: 'ri-calendar-todo-line' },
     { key: 'interview', label: '已安排面試', icon: 'ri-calendar-check-line' },
-    { key: 'declined', label: '已婉拒', icon: 'ri-close-circle-line' },  // 候選人婉拒（合併顯示）
+    { key: 'declined', label: '候選人婉拒', icon: 'ri-close-circle-line' },  // 候選人婉拒（邀請/面試/Offer）
     { key: 'offered', label: '待回覆 Offer', icon: 'ri-mail-star-line' },
     { key: 'offer_accepted', label: '已錄取同意', icon: 'ri-trophy-line' },
-    { key: 'not_continued', label: '已結束', icon: 'ri-user-unfollow-line' }  // 不邀請 + 未錄取 + Offer 婉拒
+    { key: 'not_continued', label: '流程結束', icon: 'ri-user-unfollow-line' }  // 公司決定：不邀請 + 未錄取
   ];
 
   // Offer 回覆連結 Modal
   showOfferLinkModal = signal<boolean>(false);
   offerResponseLink = signal<string>('');
+
+  // 面試資訊 Modal
+  showInterviewInfoModal = signal<boolean>(false);
+  interviewInfoCandidate = signal<CandidateWithUI | null>(null);
 
   // Filter signals
   searchQuery = signal<string>('');
@@ -128,6 +119,17 @@ export class JobCandidatesPageComponent implements OnInit {
     this.jobService.getCandidateStats().subscribe({
       next: (stats) => this.stats.set(stats)
     });
+
+    // 載入職缺標題
+    if (this.jobId()) {
+      this.jobService.getJobById(this.jobId()).subscribe({
+        next: (job) => {
+          if (job?.title) {
+            this.jobTitle.set(job.title);
+          }
+        }
+      });
+    }
 
     this.jobService.getCandidates(this.jobId()).subscribe({
       next: (candidates) => {
@@ -182,19 +184,18 @@ export class JobCandidatesPageComponent implements OnInit {
       } else if (status === 'invited') {
         result = result.filter(c => c.status === 'invited' && c.candidateResponse !== 'accepted');
       } else if (status === 'declined') {
-        // 候選人婉拒：邀請婉拒、面試婉拒、舊 rejected 狀態
+        // 候選人婉拒：邀請婉拒、面試婉拒、Offer 婉拒
         result = result.filter(c => 
           c.status === 'invite_declined' || 
           c.status === 'interview_declined' || 
-          (c.status === 'rejected' && c.stage !== 'OfferDeclined')
-        );
-      } else if (status === 'not_continued') {
-        // 已結束：不邀請、未錄取、Offer 婉拒
-        result = result.filter(c => 
-          c.status === 'not_invited' || 
-          c.status === 'not_hired' || 
           c.status === 'offer_declined' ||
           c.stage === 'OfferDeclined'
+        );
+      } else if (status === 'not_continued') {
+        // 流程結束（公司決定）：不邀請、未錄取
+        result = result.filter(c => 
+          c.status === 'not_invited' || 
+          c.status === 'not_hired'
         );
       } else {
         result = result.filter(c => c.status === status);
@@ -220,21 +221,20 @@ export class JobCandidatesPageComponent implements OnInit {
     }
 
     if (statusKey === 'declined') {
-      // 候選人婉拒
+      // 候選人婉拒：邀請婉拒、面試婉拒、Offer 婉拒
       return all.filter(c => 
         c.status === 'invite_declined' || 
         c.status === 'interview_declined' || 
-        (c.status === 'rejected' && c.stage !== 'OfferDeclined')
+        c.status === 'offer_declined' ||
+        c.stage === 'OfferDeclined'
       ).length;
     }
 
     if (statusKey === 'not_continued') {
-      // 已結束：不邀請、未錄取、Offer 婉拒
+      // 流程結束（公司決定）：不邀請、未錄取
       return all.filter(c => 
         c.status === 'not_invited' || 
-        c.status === 'not_hired' || 
-        c.status === 'offer_declined' ||
-        c.stage === 'OfferDeclined'
+        c.status === 'not_hired'
       ).length;
     }
 
@@ -333,7 +333,7 @@ export class JobCandidatesPageComponent implements OnInit {
     return {
       id: c.id,
       name: c.name,
-      position: this.jobTitle(),
+      position: c.jobTitle || this.jobTitle(), // 優先使用候選人資料的職缺標題
       email: c.email,
       status: c.status,
       jobId: this.jobId(),
@@ -364,18 +364,18 @@ export class JobCandidatesPageComponent implements OnInit {
     event.stopPropagation();
 
     // Early-stage rejection: use simple confirmation
-    if (confirm(`確定要婉拒候選人「${candidate.name}」嗎？\n\n此操作將結束此候選人的招募流程。`)) {
+    if (confirm(`確定不邀請候選人「${candidate.name}」嗎？\n\n此操作將結束此候選人的招募流程。`)) {
       this.loading.set(true);
 
-      // Call the decision service with 'Rejected' status
-      this.interviewService.makeDecision(candidate.id, 'Rejected', '早期階段婉拒')
+      // Call the decision service with 'Rejected' status (backend will set to not_invited)
+      this.interviewService.makeDecision(candidate.id, 'Rejected', '不邀請')
         .subscribe({
           next: () => {
-            this.notificationService.success(`已婉拒候選人 ${candidate.name}`);
+            this.notificationService.success(`已將 ${candidate.name} 設為不邀請`);
             this.loadData();
           },
           error: () => {
-            this.notificationService.error('婉拒操作失敗，請稍後再試');
+            this.notificationService.error('操作失敗，請稍後再試');
             this.loading.set(false);
           }
         });
@@ -448,6 +448,81 @@ export class JobCandidatesPageComponent implements OnInit {
     });
   }
 
+  /**
+   * 顯示面試資訊 Modal
+   */
+  showInterviewInfo(candidate: CandidateWithUI, event: Event): void {
+    event.stopPropagation();
+    // 確保 candidate 有 jobTitle，若無則使用當前職缺標題
+    const candidateWithJobTitle = {
+      ...candidate,
+      jobTitle: candidate.jobTitle || this.jobTitle()
+    };
+    this.interviewInfoCandidate.set(candidateWithJobTitle);
+    this.showInterviewInfoModal.set(true);
+  }
+
+  /**
+   * 關閉面試資訊 Modal
+   */
+  closeInterviewInfoModal(): void {
+    this.showInterviewInfoModal.set(false);
+    this.interviewInfoCandidate.set(null);
+  }
+
+  /**
+   * 複製面試取消連結到剪貼簿
+   */
+  copyInterviewCancelLink(candidate: CandidateWithUI, event: Event): void {
+    event.stopPropagation();
+
+    if (!candidate.interviewCancelToken) {
+      this.notificationService.error('尚無面試取消連結');
+      return;
+    }
+
+    const fullLink = `${window.location.origin}/public/interview-cancel/${candidate.interviewCancelToken}`;
+    navigator.clipboard.writeText(fullLink).then(() => {
+      this.notificationService.success('面試取消連結已複製到剪貼簿');
+    }).catch(() => {
+      // Fallback for older browsers
+      prompt('請複製以下連結發送給候選人：', fullLink);
+    });
+  }
+
+  /**
+   * 格式化面試時間顯示
+   */
+  formatInterviewTime(isoString: string | undefined): string {
+    if (!isoString) return '未設定';
+    try {
+      const date = new Date(isoString);
+      return date.toLocaleString('zh-TW', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        weekday: 'short'
+      });
+    } catch {
+      return isoString;
+    }
+  }
+
+  /**
+   * 取得面試地點顯示文字
+   */
+  getInterviewLocationLabel(location: string | undefined): string {
+    if (!location) return '未設定';
+    const labels: Record<string, string> = {
+      'onsite': '現場面試',
+      'online': '線上面試',
+      'phone': '電話面試'
+    };
+    return labels[location] || location;
+  }
+
   // ============================================
   // Existing Scheduling Logic (Refined)
   // ============================================
@@ -461,49 +536,13 @@ export class JobCandidatesPageComponent implements OnInit {
   openInterviewModal(candidate: CandidateWithUI, event: Event): void {
     event.stopPropagation();
     this.selectedCandidateForInterview.set(candidate);
-    this.interviewDate.set('');
-    this.interviewTime.set('10:00');
-    this.interviewType.set('onsite');
-    this.meetingLink.set('');
-    this.interviewNotes.set('');
-    this.selectedInterviewer.set('');
     this.showInterviewModal.set(true);
   }
 
-  closeInterviewModal(): void {
+  onInterviewScheduled(): void {
     this.showInterviewModal.set(false);
     this.selectedCandidateForInterview.set(null);
-  }
-
-  confirmInterview(): void {
-    const candidate = this.selectedCandidateForInterview();
-    if (!candidate || !this.interviewDate()) {
-      this.notificationService.error('請選擇面試日期');
-      return;
-    }
-
-    this.interviewService.scheduleInterview({
-      candidateId: candidate.id,
-      jobId: this.jobId(),
-      interviewerId: this.selectedInterviewer(),
-      interviewAt: `${this.interviewDate()}T${this.interviewTime()}:00`,
-      location: this.interviewType(),
-      meetingLink: this.interviewType() === 'online' ? this.meetingLink() : undefined,
-      round: 1
-    }).subscribe({
-      next: () => {
-        this.notificationService.success(
-          `已發送面試邀請給 ${candidate.name}，面試時間：${this.interviewDate()} ${this.interviewTime()}`
-        );
-        this.closeInterviewModal();
-        this.loadData();
-      },
-      error: () => this.notificationService.error('安排面試失敗')
-    });
-  }
-
-  getTodayDate(): string {
-    return new Date().toISOString().split('T')[0];
+    this.loadData();
   }
 
   viewProfile(candidate: JobCandidate): void {
@@ -548,18 +587,13 @@ export class JobCandidatesPageComponent implements OnInit {
       offered: 'status--offered',
       offer_accepted: 'status--offer-accepted',
       onboarded: 'status--hired',
-      // 流程未繼續
+      // 流程結束（公司決定）
       not_invited: 'status--not-continued',
       not_hired: 'status--not-continued',
       // 候選人婉拒
       invite_declined: 'status--declined',
       interview_declined: 'status--declined',
-      offer_declined: 'status--declined',
-      // 舊狀態相容
-      rejected: 'status--declined',
-      hired: 'status--hired',
-      completed: 'status--hired',
-      pending: 'status--pending'
+      offer_declined: 'status--declined'
     };
     return classes[status] || '';
   }
@@ -579,19 +613,6 @@ export class JobCandidatesPageComponent implements OnInit {
     if (status === 'interview_declined') return '面試婉拒';
     if (status === 'offer_declined' || stage === 'OfferDeclined') return 'Offer 婉拒';
 
-    // 新狀態：流程未繼續
-    if (status === 'not_invited') return '不邀請';
-    if (status === 'not_hired') return '未錄取';
-
-    // 舊狀態相容：rejected 根據階段判斷
-    if (status === 'rejected' || stage === 'Rejected') {
-      // 有面試記錄 → 面試婉拒
-      if (hasInterview) return '面試婉拒';
-      // 邀請被拒 → 邀請婉拒
-      if (candidate.invitationStatus === 'Declined') return '邀請婉拒';
-      return '已婉拒';
-    }
-
     // 統一狀態標籤
     const labels: Record<string, string> = {
       new: '新進履歷',
@@ -603,10 +624,11 @@ export class JobCandidatesPageComponent implements OnInit {
       offered: '待回覆 Offer',
       offer_accepted: '已錄取同意',
       onboarded: '已報到',
-      // 舊狀態相容
-      hired: '已報到',
-      completed: '已完成',
-      pending: '待處理'
+      not_invited: '不邀請',
+      not_hired: '未錄取',
+      invite_declined: '邀請婉拒',
+      interview_declined: '面試婉拒',
+      offer_declined: 'Offer 婉拒'
     };
     return labels[status] || status;
   }
@@ -635,56 +657,5 @@ export class JobCandidatesPageComponent implements OnInit {
       this.notificationService.success(`${candidate.name} 的 AI 評分已完成！`);
       this.loadData();
     }, 2000);
-  }
-
-  selectSlot(slot: string): void {
-    if (!slot) return;
-
-    // Handle ISO format (e.g. 2026-01-25T17:09)
-    if (slot.includes('T')) {
-      const [datePart, timePart] = slot.split('T');
-      this.interviewDate.set(datePart);
-      // Take HH:mm
-      if (timePart) {
-        this.interviewTime.set(timePart.substring(0, 5));
-      }
-      return;
-    }
-
-    const parts = slot.split(' ');
-    // Handle format: 2026/01/28 (週三) 下午04:00
-    if (parts.length >= 1) {
-      // Date part: 2026/01/28 -> 2026-01-28
-      let dateStr = parts[0].replace(/\//g, '-');
-      if (!isNaN(Date.parse(dateStr))) {
-        this.interviewDate.set(dateStr);
-      }
-    }
-
-    // Time part
-    let timePart = parts.find(p => p.includes('上午') || p.includes('下午') || p.includes('中午') || p.includes(':'));
-    if (timePart) {
-      let formattedTime = '';
-      if (timePart.includes('下午')) {
-        const raw = timePart.replace('下午', '');
-        const [h, m] = raw.split(':').map(Number);
-        const hour = (h === 12) ? 12 : h + 12;
-        formattedTime = `${hour.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-      } else if (timePart.includes('上午')) {
-        const raw = timePart.replace('上午', '');
-        const [h, m] = raw.split(':').map(Number);
-        const hour = (h === 12) ? 0 : h;
-        formattedTime = `${hour.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-      } else if (timePart.includes('中午')) {
-        const raw = timePart.replace('中午', '');
-        formattedTime = raw;
-      } else {
-        formattedTime = timePart;
-      }
-
-      if (formattedTime) {
-        this.interviewTime.set(formattedTime);
-      }
-    }
   }
 }

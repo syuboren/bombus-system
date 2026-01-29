@@ -373,6 +373,64 @@ async function initDatabase() {
   `);
   
   // =====================================================
+  // 候選人履歷 AI 解析結果資料表
+  // =====================================================
+  db.run(`
+    CREATE TABLE IF NOT EXISTS candidate_resume_analysis (
+      id TEXT PRIMARY KEY,
+      candidate_id TEXT NOT NULL,
+      job_id TEXT NOT NULL,
+      
+      -- 整體吻合度
+      overall_match_score INTEGER DEFAULT 0,  -- 0-100
+      
+      -- 三維分析分數
+      requirement_match_score INTEGER DEFAULT 0,  -- 需求條件匹配 (40%)
+      keyword_match_score INTEGER DEFAULT 0,      -- 技能關鍵字 (35%)
+      experience_relevance_score INTEGER DEFAULT 0, -- 經歷相關性 (25%)
+      
+      -- JD 需求條件對照 (JSON)
+      matched_requirements TEXT,    -- 符合的條件 [{requirement, evidence}]
+      unmatched_requirements TEXT,  -- 未提及的條件 [{requirement, note}]
+      bonus_skills TEXT,            -- 額外具備的技能 [skill1, skill2]
+      
+      -- 技能關鍵字提取 (JSON)
+      extracted_tech_skills TEXT,   -- 技術技能 [skill1, skill2]
+      extracted_soft_skills TEXT,   -- 軟性技能 [skill1, skill2]
+      jd_required_match_count INTEGER DEFAULT 0,  -- 必備技能匹配數
+      jd_required_total_count INTEGER DEFAULT 0,  -- 必備技能總數
+      jd_bonus_match_count INTEGER DEFAULT 0,     -- 加分技能匹配數
+      jd_bonus_total_count INTEGER DEFAULT 0,     -- 加分技能總數
+      
+      -- 經歷相關性分析 (JSON)
+      experience_analysis TEXT,     -- [{firm, job, duration, relevance_level, relevance_reasons}]
+      total_relevant_years REAL DEFAULT 0,  -- 總相關年資
+      jd_required_years REAL DEFAULT 0,     -- JD 要求年資
+      
+      -- 履歷內容品質評估
+      writing_style TEXT,           -- 書寫風格描述
+      analysis_confidence INTEGER DEFAULT 0,  -- 分析信心度 0-100
+      content_features TEXT,        -- 內容特點 (JSON) [{type, description}]
+      areas_to_clarify TEXT,        -- 需進一步了解的部分 (JSON) [item1, item2]
+      
+      -- 面試關注點建議 (JSON)
+      tech_verification_points TEXT,  -- 技術驗證 [point1, point2]
+      experience_supplement_points TEXT, -- 經歷補充 [point1, point2]
+      
+      -- 分析元資料
+      analyzed_at TEXT,             -- 分析時間
+      analysis_engine_version TEXT, -- 分析引擎版本
+      resume_word_count INTEGER DEFAULT 0,  -- 履歷字數
+      
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT,
+      FOREIGN KEY (candidate_id) REFERENCES candidates(id) ON DELETE CASCADE,
+      FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE,
+      UNIQUE(candidate_id, job_id)  -- 每個候選人對每個職缺只有一筆分析
+    )
+  `);
+  
+  // =====================================================
   // 擴充既有資料表的欄位 (用於現有資料庫的 migration)
   // =====================================================
   const candidateColumns = [
@@ -475,6 +533,10 @@ async function initDatabase() {
       next_contact_date TEXT,           -- 下次預計聯繫日期
       contact_count INTEGER DEFAULT 0,  -- 聯繫次數
       
+      -- 待聯繫提醒設定
+      contact_reminder_enabled INTEGER DEFAULT 0, -- 是否開啟待聯繫提醒 (0: 關閉, 1: 開啟)
+      contact_reminder_date TEXT,       -- 開啟提醒的日期 (用於計算 1 個月期限)
+      
       -- 備註
       notes TEXT,
       
@@ -552,6 +614,33 @@ async function initDatabase() {
     )
   `);
 
+  // 人才與職缺媒合度關聯表
+  db.run(`
+    CREATE TABLE IF NOT EXISTS talent_job_matches (
+      id TEXT PRIMARY KEY,
+      talent_id TEXT NOT NULL,            -- 關聯到 talent_pool
+      job_id TEXT NOT NULL,               -- 關聯到 jobs
+      match_score INTEGER DEFAULT 0,      -- 媒合度分數 0-100
+      match_details TEXT,                 -- 媒合分析細節 (JSON)
+      analysis_summary TEXT,              -- AI 分析摘要
+      analyzed_at TEXT,                   -- 分析時間
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT,
+      FOREIGN KEY (talent_id) REFERENCES talent_pool(id) ON DELETE CASCADE,
+      FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE,
+      UNIQUE(talent_id, job_id)           -- 每個人才對每個職缺只有一筆
+    )
+  `);
+
+  // 為 talent_pool 表添加新欄位 (migration)
+  try {
+    db.run(`ALTER TABLE talent_pool ADD COLUMN contact_reminder_enabled INTEGER DEFAULT 0`);
+    db.run(`ALTER TABLE talent_pool ADD COLUMN contact_reminder_date TEXT`);
+    console.log('📝 Added contact_reminder columns to talent_pool table');
+  } catch (e) {
+    // 欄位已存在，忽略錯誤
+  }
+
   // 建立人才庫相關索引
   db.run(`CREATE INDEX IF NOT EXISTS idx_talent_pool_status ON talent_pool(status)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_talent_pool_source ON talent_pool(source)`);
@@ -561,6 +650,9 @@ async function initDatabase() {
   db.run(`CREATE INDEX IF NOT EXISTS idx_talent_reminders_date ON talent_reminders(reminder_date)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_talent_tag_mapping_talent ON talent_tag_mapping(talent_id)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_talent_tag_mapping_tag ON talent_tag_mapping(tag_id)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_talent_job_matches_talent ON talent_job_matches(talent_id)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_talent_job_matches_job ON talent_job_matches(job_id)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_talent_job_matches_score ON talent_job_matches(match_score DESC)`);
 
   // 插入預設標籤
   const defaultTags = [
@@ -641,6 +733,39 @@ async function initDatabase() {
   } catch (e) {
     // 欄位已存在，忽略錯誤
   }
+
+  // 為既有 interviews 表格添加 form_token 欄位 (migration)
+  try {
+    db.run(`ALTER TABLE interviews ADD COLUMN form_token TEXT UNIQUE`);
+  } catch (e) {
+    // 欄位已存在，忽略錯誤
+  }
+
+  // =====================================================
+  // 候選人面試記錄表單資料表
+  // =====================================================
+  db.run(`
+    CREATE TABLE IF NOT EXISTS candidate_interview_forms (
+      id TEXT PRIMARY KEY,
+      interview_id TEXT NOT NULL,
+      form_token TEXT UNIQUE NOT NULL,
+      form_data TEXT,                    -- JSON 格式儲存表單內容
+      status TEXT DEFAULT 'Pending',     -- Pending | InProgress | Submitted | Locked
+      time_limit_minutes INTEGER DEFAULT 60,
+      started_at TEXT,                   -- 開始填寫時間
+      submitted_at TEXT,                 -- 送出時間
+      locked_at TEXT,                    -- 鎖定時間
+      current_step INTEGER DEFAULT 1,    -- 當前步驟 (1-5)
+      last_saved_at TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (interview_id) REFERENCES interviews(id) ON DELETE CASCADE
+    )
+  `);
+  
+  // 建立 candidate_interview_forms 索引
+  db.run(`CREATE INDEX IF NOT EXISTS idx_interview_forms_token ON candidate_interview_forms(form_token)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_interview_forms_interview ON candidate_interview_forms(interview_id)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_interview_forms_status ON candidate_interview_forms(status)`);
 
   // 錄取/邀約決策資料表
   db.run(`

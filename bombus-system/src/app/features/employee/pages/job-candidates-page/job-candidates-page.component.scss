@@ -696,6 +696,18 @@ $module-color: $color-l1-sage;
   }
 }
 
+// 面試資訊按鈕
+.decision-btn--info {
+  background: linear-gradient(135deg, #E0F2FE 0%, #BAE6FD 100%);
+  color: #0369A1;
+  border: 1px solid rgba(#0EA5E9, 0.3);
+
+  &:hover {
+    background: linear-gradient(135deg, #BAE6FD 0%, #7DD3FC 100%);
+    transform: scale(1.1);
+  }
+}
+
 // Modal Styles
 .selected-slots-section {
   margin-bottom: 1rem;
@@ -1372,5 +1384,158 @@ $module-color: $color-l1-sage;
   i {
     margin: 0 !important;
     font-size: 18px !important;
+  }
+}
+
+// ===============================================================
+// 面試資訊 Modal 樣式
+// ===============================================================
+.interview-info-modal {
+  max-width: 480px !important;
+
+  .interview-info-content {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-lg;
+  }
+
+  .candidate-info {
+    display: flex;
+    align-items: center;
+    gap: $spacing-md;
+    padding-bottom: $spacing-md;
+    border-bottom: 1px solid $color-cloud-gray;
+
+    .avatar {
+      @include flex-center;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: $color-l1-sage;
+      color: white;
+      font-size: $font-size-lg;
+      font-weight: $font-weight-bold;
+    }
+
+    .info {
+      h4 {
+        margin: 0 0 4px;
+        font-size: $font-size-md;
+        font-weight: $font-weight-semibold;
+        color: $color-text-primary;
+      }
+
+      p {
+        margin: 0;
+        font-size: $font-size-sm;
+        color: $color-text-secondary;
+      }
+    }
+  }
+
+  .interview-details {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-md;
+  }
+
+  .detail-item {
+    display: flex;
+    align-items: flex-start;
+    gap: $spacing-md;
+
+    > i {
+      width: 24px;
+      height: 24px;
+      @include flex-center;
+      font-size: 18px;
+      color: $color-l1-sage;
+      flex-shrink: 0;
+    }
+
+    .detail-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+
+      label {
+        font-size: $font-size-xs;
+        color: $color-text-secondary;
+        font-weight: $font-weight-medium;
+      }
+
+      span, a {
+        font-size: $font-size-sm;
+        color: $color-text-primary;
+        font-weight: $font-weight-semibold;
+      }
+
+      .meeting-link {
+        color: $color-info;
+        text-decoration: none;
+        word-break: break-all;
+
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 8px;
+        border-radius: $radius-sm;
+        font-size: $font-size-xs;
+        font-weight: $font-weight-medium;
+        width: fit-content;
+
+        &--interview {
+          background: rgba($color-l1-sage, 0.1);
+          color: $color-l1-sage;
+        }
+      }
+    }
+  }
+
+  .cancel-link-section {
+    margin-top: $spacing-md;
+    padding: $spacing-md;
+    background: #FEF3C7;
+    border: 1px solid #FCD34D;
+    border-radius: $radius-md;
+
+    label {
+      display: block;
+      font-size: $font-size-sm;
+      font-weight: $font-weight-semibold;
+      color: #92400E;
+      margin-bottom: 4px;
+    }
+
+    .hint-text {
+      font-size: $font-size-xs;
+      color: #B45309;
+      margin: 0 0 $spacing-sm;
+    }
+
+    .link-input-group {
+      display: flex;
+      gap: $spacing-xs;
+
+      .form-input {
+        flex: 1;
+        font-size: $font-size-xs;
+        padding: $spacing-xs $spacing-sm;
+        background: white;
+        border: 1px solid #FCD34D;
+      }
+
+      .btn {
+        flex-shrink: 0;
+        padding: $spacing-xs $spacing-sm;
+        font-size: $font-size-xs;
+      }
+    }
   }
 }

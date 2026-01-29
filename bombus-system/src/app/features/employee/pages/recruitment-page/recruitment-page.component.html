@@ -15,8 +15,8 @@
           <button class="filter-tab" [class.active]="statusFilter() === 'all'" (click)="statusFilter.set('all')">
             全部
           </button>
-          <button class="filter-tab" [class.active]="statusFilter() === 'pending'"
-            (click)="statusFilter.set('pending')">
+          <button class="filter-tab" [class.active]="statusFilter() === 'waiting'"
+            (click)="statusFilter.set('waiting')">
             待面試
           </button>
           <button class="filter-tab" [class.active]="statusFilter() === 'scored'" (click)="statusFilter.set('scored')">
@@ -46,9 +46,6 @@
             </div>
             <div class="candidate-status">
               @switch (candidate.status) {
-              @case ('pending') {
-              <span class="status-badge status-badge--pending">待面試</span>
-              }
               @case ('interview') {
               <span class="status-badge status-badge--pending">已安排面試</span>
               }
@@ -67,9 +64,6 @@
               @case ('onboarded') {
               <span class="status-badge status-badge--hired">已報到</span>
               }
-              @case ('hired') {
-              <span class="status-badge status-badge--hired">已報到</span>
-              }
               @case ('not_invited') {
               <span class="status-badge status-badge--not-continued">不邀請</span>
               }
@@ -84,9 +78,6 @@
               }
               @case ('offer_declined') {
               <span class="status-badge status-badge--declined">Offer 婉拒</span>
-              }
-              @case ('rejected') {
-              <span class="status-badge status-badge--declined">已婉拒</span>
               }
               @default {
               <span class="status-badge status-badge--pending">待面試</span>
@@ -508,12 +499,12 @@
                 @if (decision() === 'Offered' || candidate.status === 'offered' || candidate.status === 'offer_accepted' || candidate.status === 'offer_declined') {
                 <div class="decision-result decision-offered">
                   <i class="ri-trophy-line"></i>
-                  <span class="result-text">正式錄用</span>
+                  <span class="result-text">已錄取</span>
                 </div>
                 } @else {
                 <div class="decision-result decision-rejected">
                   <i class="ri-close-circle-line"></i>
-                  <span class="result-text">婉拒錄用</span>
+                  <span class="result-text">未錄取</span>
                 </div>
                 }
               }
@@ -547,12 +538,12 @@
                   @if (candidate.status === 'offer_accepted') {
                   <div class="response-status response-accepted">
                     <i class="ri-checkbox-circle-fill"></i>
-                    候選人已接受錄用
+                    候選人已接受 Offer
                   </div>
                   } @else if (candidate.status === 'offer_declined') {
                   <div class="response-status response-declined">
                     <i class="ri-close-circle-fill"></i>
-                    候選人已婉拒錄用
+                    候選人婉拒 Offer
                   </div>
                   } @else {
                   <div class="response-status response-pending">
@@ -571,7 +562,7 @@
                 <input type="radio" name="decision" value="Rejected" [ngModel]="decision()"
                   (ngModelChange)="decision.set($event)">
                 <i class="ri-close-circle-line"></i>
-                <span class="title">婉拒錄用</span>
+                <span class="title">未錄取</span>
                 <span class="desc">候選人不符合目前的職缺需求</span>
               </label>
 
@@ -579,7 +570,7 @@
                 <input type="radio" name="decision" value="Offered" [ngModel]="decision()"
                   (ngModelChange)="decision.set($event)">
                 <i class="ri-checkbox-circle-line"></i>
-                <span class="title">正式錄用</span>
+                <span class="title">已錄取</span>
                 <span class="desc">候選人表現優異，建議錄用</span>
               </label>
             </div>

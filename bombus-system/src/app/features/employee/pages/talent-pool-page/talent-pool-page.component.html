@@ -16,10 +16,10 @@
       </div>
       <div class="kpi-card">
         <div class="kpi-icon active">
-          <i class="ri-user-follow-line"></i>
+          <i class="ri-notification-3-line"></i>
         </div>
         <div class="kpi-content">
-          <span class="kpi-value">{{ s.activeCount }}</span>
+          <span class="kpi-value">{{ s.upcomingReminders }}</span>
           <span class="kpi-label">待聯繫</span>
         </div>
       </div>
@@ -41,24 +41,15 @@
           <span class="kpi-label">平均媒合度</span>
         </div>
       </div>
-      <div class="kpi-card">
-        <div class="kpi-icon reminder">
-          <i class="ri-notification-3-line"></i>
-        </div>
-        <div class="kpi-content">
-          <span class="kpi-value">{{ s.upcomingReminders }}</span>
-          <span class="kpi-label">待處理提醒</span>
-        </div>
-      </div>
     </section>
     }
 
     <div class="page-layout">
       <!-- Main Content -->
       <div class="main-area">
-        <!-- Filter Bar (Stacked Layout for Tags) -->
-        <div class="filter-bar filter-bar--stacked">
-          <!-- Top Row: Search & Filters (Horizontal) -->
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+          <!-- Search & Basic Filters -->
           <div class="filter-row-top">
             <div class="filter-item filter-item--search">
               <i class="ri-search-line"></i>
@@ -70,11 +61,8 @@
               <select class="filter-select" [value]="selectedStatus()"
                 (change)="selectedStatus.set($any($event.target).value)">
                 <option value="all">所有狀態</option>
-                <option value="active">待聯繫</option>
+                <option value="pending">待聯繫</option>
                 <option value="contacted">已聯繫</option>
-                <option value="scheduled">已排程</option>
-                <option value="hired">已錄用</option>
-                <option value="declined">已婉拒</option>
               </select>
             </div>
             <div class="filter-item">
@@ -88,19 +76,62 @@
                 <option value="headhunter">獵頭推薦</option>
               </select>
             </div>
-          </div>
-          <!-- Bottom Row: Tag Filters -->
-          <div class="tag-filters">
-            <span class="tag-label">標籤篩選：</span>
-            @for (tag of tags(); track tag.id) {
-            <button type="button" class="tag-btn" [class.active]="selectedTags().includes(tag.id)"
-              [style.--tag-color]="tag.color" (click)="toggleTag(tag.id)">
-              {{ tag.name }}
+            <button type="button" class="btn-tag-filter" [class.active]="showTagFilter() || selectedTagCount() > 0"
+              (click)="toggleTagFilter()">
+              <i class="ri-price-tag-3-line"></i>
+              標籤篩選
+              @if (selectedTagCount() > 0) {
+              <span class="tag-count-badge">{{ selectedTagCount() }}</span>
+              }
+              <i class="ri-arrow-down-s-line" [class.rotated]="showTagFilter()"></i>
             </button>
+          </div>
+
+          <!-- Selected Tags Display -->
+          @if (selectedTagCount() > 0) {
+          <div class="selected-tags-bar">
+            <span class="selected-label">已選標籤：</span>
+            @for (tagId of selectedTags(); track tagId) {
+            <span class="selected-tag" [style.--tag-color]="getTagColorById(tagId)">
+              {{ getTagNameById(tagId) }}
+              <button type="button" class="btn-remove-tag" (click)="toggleTag(tagId)">
+                <i class="ri-close-line"></i>
+              </button>
+            </span>
+            }
+            <button type="button" class="btn-clear-tags" (click)="clearTagFilters()">
+              <i class="ri-delete-bin-line"></i>
+              清除全部
+            </button>
+          </div>
+          }
+
+          <!-- Tag Filter Panel (Collapsible) -->
+          @if (showTagFilter()) {
+          <div class="tag-filter-panel">
+            @for (group of groupedTags(); track group.category) {
+            <div class="tag-category" [class.expanded]="isCategoryExpanded(group.category)">
+              <button type="button" class="category-header" (click)="toggleCategory(group.category)">
+                <i [class]="group.icon"></i>
+                <span class="category-label">{{ group.label }}</span>
+                <span class="category-count">{{ group.tags.length }}</span>
+                <i class="ri-arrow-down-s-line expand-icon"></i>
+              </button>
+              @if (isCategoryExpanded(group.category)) {
+              <div class="category-tags">
+                @for (tag of group.tags; track tag.id) {
+                <button type="button" class="tag-btn" [class.active]="selectedTags().includes(tag.id)"
+                  [style.--tag-color]="tag.color" (click)="toggleTag(tag.id)">
+                  {{ tag.name }}
+                </button>
+                }
+              </div>
+              }
+            </div>
             }
           </div>
+          }
         </div>
-        <!-- Refactored Tag Filters -->
 
         <!-- Candidate List -->
         <section class="candidate-list-section">
@@ -152,9 +183,12 @@
               </div>
 
               <div class="candidate-footer">
-                <span class="status-badge status-{{ candidate.status }}">
-                  {{ getStatusLabel(candidate.status) }}
+                <!-- 只有當 contactStatus 有值時才顯示狀態標籤，無狀態時不顯示 -->
+                @if (candidate.contactStatus) {
+                <span class="status-badge" [class]="getContactStatusClass(candidate.contactStatus)">
+                  {{ getContactStatusLabel(candidate.contactStatus) }}
                 </span>
+                }
                 @if (candidate.nextContactDate) {
                 <span class="next-contact">
                   <i class="ri-calendar-line"></i>
@@ -175,31 +209,28 @@
 
       <!-- Side Panel -->
       <aside class="side-panel">
-        <!-- Upcoming Reminders -->
+        <!-- 待聯繫人才列表 -->
         <section class="card reminder-section">
           <div class="card-header">
             <h4 class="card-title">
               <i class="ri-notification-3-line"></i>
-              待處理提醒
+              待聯繫提醒
             </h4>
           </div>
           <div class="card-body">
-            @for (reminder of upcomingReminders(); track reminder.id) {
-            <div class="reminder-item" [attr.data-type]="reminder.reminderType">
-              <div class="reminder-date">
-                <span class="date-day">{{ reminder.reminderDate | date:'dd' }}</span>
-                <span class="date-month">{{ reminder.reminderDate | date:'MMM' }}</span>
+            @for (candidate of pendingContactCandidates(); track candidate.id) {
+            <div class="pending-contact-item" (click)="selectCandidate(candidate)">
+              <div class="pending-avatar">
+                {{ candidate.name.charAt(0) }}
               </div>
-              <div class="reminder-content">
-                <span class="reminder-name">{{ reminder.candidateName }}</span>
-                <span class="reminder-message">{{ reminder.message }}</span>
+              <div class="pending-content">
+                <span class="pending-name">{{ candidate.name }}</span>
+                <span class="pending-position">{{ candidate.currentPosition || '未填寫職位' }}</span>
               </div>
-              <button type="button" class="btn-complete" (click)="completeReminder(reminder); $event.stopPropagation()">
-                <i class="ri-check-line"></i>
-              </button>
+              <i class="ri-arrow-right-s-line pending-arrow"></i>
             </div>
             } @empty {
-            <p class="empty-text">沒有待處理的提醒</p>
+            <p class="empty-text">沒有待聯繫的人才</p>
             }
           </div>
         </section>
@@ -316,6 +347,21 @@
           }
 
           @if (activeTab() === 'history') {
+          <!-- 待聯繫設定 -->
+          <div class="contact-reminder-toggle">
+            <label class="toggle-label">
+              <span class="toggle-text">
+                <i class="ri-notification-line"></i>
+                待聯繫提醒
+              </span>
+              <span class="toggle-desc">開啟後，若 1 個月內未聯繫會顯示「待聯繫」狀態</span>
+            </label>
+            <button type="button" class="toggle-switch" [class.active]="candidate.contactReminderEnabled"
+              (click)="toggleContactReminder(candidate); $event.stopPropagation()">
+              <span class="toggle-slider"></span>
+            </button>
+          </div>
+
           <div class="history-list">
             @for (history of contactHistory(); track history.id) {
             <div class="history-item" [attr.data-outcome]="history.outcome">
@@ -352,58 +398,251 @@
           }
 
           @if (activeTab() === 'match') {
-          <div class="match-list">
-            @for (match of matchResults(); track match.jobId) {
-            <div class="match-card" [class]="getMatchClass(match.matchScore)">
-              <div class="match-header">
-                <h5>{{ match.jobTitle }}</h5>
-                <div class="match-score-badge">{{ match.matchScore }}%</div>
-              </div>
-              <div class="match-reasons">
-                <h6><i class="ri-check-line"></i> 符合條件</h6>
-                <ul>
-                  @for (reason of match.matchReasons; track reason) {
-                  <li>{{ reason }}</li>
+          <div class="job-match-section">
+            <!-- AI 分析按鈕 -->
+            <div class="job-match-header">
+              <button type="button" class="btn-analyze" (click)="analyzeJobMatches()" [disabled]="analyzingJobs()">
+                @if (analyzingJobs()) {
+                <i class="ri-loader-4-line spinning"></i> 分析中...
+                } @else {
+                <i class="ri-robot-line"></i> AI 媒合分析
+                }
+              </button>
+              <span class="job-count">共 {{ jobMatches().length }} 個職缺</span>
+            </div>
+
+            <!-- 職缺列表 -->
+            <div class="job-match-list">
+              @for (job of jobMatches(); track job.jobId) {
+              <div class="job-match-card" [class]="getJobMatchScoreClass(job.matchScore)">
+                <div class="job-match-info">
+                  <div class="job-match-main">
+                    <h5 class="job-title">{{ job.title }}</h5>
+                    @if (job.department) {
+                    <span class="job-department">{{ job.department }}</span>
+                    }
+                  </div>
+                  <div class="job-match-score">
+                    @if (job.matchScore !== null) {
+                    <div class="score-circle" [class]="getJobMatchScoreClass(job.matchScore)">
+                      {{ job.matchScore }}%
+                    </div>
+                    <span class="score-label">{{ getJobMatchScoreLabel(job.matchScore) }}</span>
+                    } @else {
+                    <span class="score-pending">尚未分析</span>
+                    }
+                  </div>
+                </div>
+                
+                @if (job.analysisSummary) {
+                <div class="job-match-summary">
+                  <i class="ri-lightbulb-line"></i>
+                  {{ job.analysisSummary }}
+                </div>
+                }
+
+                @if (job.matchDetails && job.matchDetails.matchedSkills.length > 0) {
+                <div class="job-match-skills">
+                  @for (skill of job.matchDetails.matchedSkills.slice(0, 5); track skill) {
+                  <span class="matched-skill">{{ skill }}</span>
                   }
-                </ul>
-              </div>
-              @if (match.gaps.length > 0) {
-              <div class="match-gaps">
-                <h6><i class="ri-error-warning-line"></i> 待補強</h6>
-                <ul>
-                  @for (gap of match.gaps; track gap) {
-                  <li>{{ gap }}</li>
+                  @if (job.matchDetails.matchedSkills.length > 5) {
+                  <span class="more-skills">+{{ job.matchDetails.matchedSkills.length - 5 }}</span>
                   }
-                </ul>
+                </div>
+                }
+
+                <div class="job-match-actions">
+                  <button type="button" class="btn-action btn-add-only" (click)="applyToJob(job, false)">
+                    <i class="ri-user-add-line"></i> 加入候選人
+                  </button>
+                  <button type="button" class="btn-action btn-add-invite" (click)="applyToJob(job, true)">
+                    <i class="ri-send-plane-line"></i> 加入並邀請面試
+                  </button>
+                </div>
+              </div>
+              } @empty {
+              <div class="empty-job-match">
+                <i class="ri-briefcase-line"></i>
+                <p>目前沒有已發布的職缺</p>
+                <span>請先在招募管理中發布職缺</span>
               </div>
               }
-              <div class="match-recommendation">
-                <span class="rec-badge rec-{{ match.recommendation }}">
-                  {{ getRecommendationLabel(match.recommendation) }}
-                </span>
-              </div>
             </div>
-            } @empty {
-            <p class="empty-text">尚無媒合職缺</p>
-            }
           </div>
           }
         </div>
 
         <div class="modal-footer">
           <div class="status-actions">
-            <span class="current-status status-{{ candidate.status }}">
-              {{ getStatusLabel(candidate.status) }}
+            @if (candidate.contactStatus) {
+            <span class="status-badge" [class]="getContactStatusClass(candidate.contactStatus)">
+              {{ getContactStatusLabel(candidate.contactStatus) }}
             </span>
+            }
             <div class="status-buttons">
-              <button type="button" class="btn-status" (click)="updateStatus('contacted')">
-                <i class="ri-phone-line"></i> 標記已聯繫
+              <button type="button" class="btn-status btn-status--secondary"
+                [class.active]="candidate.contactReminderEnabled"
+                (click)="toggleContactReminder(candidate)">
+                @if (candidate.contactReminderEnabled) {
+                <i class="ri-notification-off-line"></i> 關閉待聯繫
+                } @else {
+                <i class="ri-notification-line"></i> 待聯繫
+                }
               </button>
-              <button type="button" class="btn-status" (click)="updateStatus('scheduled')">
-                <i class="ri-calendar-line"></i> 安排面試
+              <button type="button" class="btn-status btn-status--primary" (click)="openContactModal()">
+                <i class="ri-phone-line"></i> 標記已聯繫
               </button>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+    }
+
+    <!-- 新增聯繫紀錄 Modal -->
+    @if (showContactModal()) {
+    <div class="contact-modal-overlay" (click)="closeContactModal()">
+      <div class="contact-modal" (click)="$event.stopPropagation()">
+        <div class="contact-modal-header">
+          <h3>
+            <i class="ri-phone-line"></i>
+            新增聯繫紀錄
+          </h3>
+          <button type="button" class="btn-close" (click)="closeContactModal()">
+            <i class="ri-close-line"></i>
+          </button>
+        </div>
+
+        <div class="contact-modal-body">
+          <div class="form-group">
+            <label>聯繫方式</label>
+            <div class="contact-method-options">
+              <button type="button" class="method-btn" [class.active]="contactForm().contactMethod === 'phone'"
+                (click)="updateContactForm('contactMethod', 'phone')">
+                <i class="ri-phone-line"></i> 電話
+              </button>
+              <button type="button" class="method-btn" [class.active]="contactForm().contactMethod === 'email'"
+                (click)="updateContactForm('contactMethod', 'email')">
+                <i class="ri-mail-line"></i> 信件
+              </button>
+              <button type="button" class="method-btn" [class.active]="contactForm().contactMethod === 'meeting'"
+                (click)="updateContactForm('contactMethod', 'meeting')">
+                <i class="ri-team-line"></i> 會面
+              </button>
+              <button type="button" class="method-btn" [class.active]="contactForm().contactMethod === 'interview'"
+                (click)="updateContactForm('contactMethod', 'interview')">
+                <i class="ri-user-voice-line"></i> 面試
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="contactSummary">聯繫摘要 <span class="required">*</span></label>
+            <textarea id="contactSummary" rows="3" placeholder="請輸入本次聯繫的內容摘要..."
+              [value]="contactForm().summary"
+              (input)="updateContactForm('summary', $any($event.target).value)"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>聯繫結果</label>
+            <div class="outcome-options">
+              <button type="button" class="outcome-btn outcome-positive"
+                [class.active]="contactForm().outcome === 'positive'"
+                (click)="updateContactForm('outcome', 'positive')">
+                <i class="ri-thumb-up-line"></i> 正面
+              </button>
+              <button type="button" class="outcome-btn outcome-neutral"
+                [class.active]="contactForm().outcome === 'neutral'"
+                (click)="updateContactForm('outcome', 'neutral')">
+                <i class="ri-subtract-line"></i> 中立
+              </button>
+              <button type="button" class="outcome-btn outcome-negative"
+                [class.active]="contactForm().outcome === 'negative'"
+                (click)="updateContactForm('outcome', 'negative')">
+                <i class="ri-thumb-down-line"></i> 負面
+              </button>
+              <button type="button" class="outcome-btn outcome-no-response"
+                [class.active]="contactForm().outcome === 'no-response'"
+                (click)="updateContactForm('outcome', 'no-response')">
+                <i class="ri-question-line"></i> 未回應
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="nextAction">下一步行動（選填）</label>
+            <input type="text" id="nextAction" placeholder="例：下週再聯繫、安排面試..."
+              [value]="contactForm().nextAction"
+              (input)="updateContactForm('nextAction', $any($event.target).value)">
+          </div>
+        </div>
+
+        <div class="contact-modal-footer">
+          <button type="button" class="btn-cancel" (click)="closeContactModal()">取消</button>
+          <button type="button" class="btn-submit" (click)="addContact()">
+            <i class="ri-check-line"></i> 儲存紀錄
+          </button>
+        </div>
+      </div>
+    </div>
+    }
+
+    <!-- 面試邀約 Modal -->
+    @if (showInviteModal() && inviteJob() && selectedCandidate()) {
+    <div class="invite-modal-overlay" (click)="closeInviteModal()">
+      <div class="invite-modal" (click)="$event.stopPropagation()">
+        <div class="invite-modal-header">
+          <h3>
+            <i class="ri-mail-send-line"></i>
+            發送面試邀約
+          </h3>
+          <button type="button" class="btn-close" (click)="closeInviteModal()">
+            <i class="ri-close-line"></i>
+          </button>
+        </div>
+
+        <div class="invite-modal-body">
+          <div class="invite-candidate-info">
+            <span class="candidate-name">{{ selectedCandidate()!.name }}</span>
+            <span class="job-title">{{ inviteJob()!.title }}</span>
+          </div>
+
+          <div class="form-group">
+            <label for="inviteMessage">邀約訊息</label>
+            <textarea id="inviteMessage" rows="4" placeholder="輸入邀約訊息..."
+              [value]="inviteMessage()"
+              (input)="inviteMessage.set($any($event.target).value)"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>建議面試時段 (候選人將從中選擇)</label>
+            @for (slot of inviteSlots(); track $index) {
+            <div class="slot-row">
+              <input type="datetime-local" [value]="slot"
+                (input)="updateInviteSlot($index, $any($event.target).value)">
+              @if (inviteSlots().length > 1) {
+              <button type="button" class="btn-remove-slot" (click)="removeInviteSlot($index)">
+                <i class="ri-delete-bin-line"></i>
+              </button>
+              }
+            </div>
+            }
+            <button type="button" class="btn-add-slot" (click)="addInviteSlot()">
+              <i class="ri-add-line"></i> 新增時段
+            </button>
+          </div>
+        </div>
+
+        <div class="invite-modal-footer">
+          <button type="button" class="btn-cancel" (click)="closeInviteModal()">取消</button>
+          <button type="button" class="btn-submit" [disabled]="inviteLoading()" (click)="confirmInvite()">
+            @if (inviteLoading()) {
+            <i class="ri-loader-4-line spinning"></i> 發送中...
+            } @else {
+            <i class="ri-send-plane-line"></i> 確認發送
+            }
+          </button>
         </div>
       </div>
     </div>

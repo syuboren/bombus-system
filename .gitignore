@@ -18,3 +18,4 @@ ai-marketing-dashboard-v4.html
 .env
 *.env
 .env.*
+bombus-system/server/.env

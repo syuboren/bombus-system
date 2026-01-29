@@ -1,0 +1,343 @@
+@import '../../../../../assets/styles/variables';
+@import '../../../../../assets/styles/mixins';
+
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+
+.interview-info-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  max-width: 480px;
+  background: white;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-lg;
+  z-index: 1001;
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -45%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-lg;
+  border-bottom: 1px solid $color-soft-gray;
+}
+
+.modal-title {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-text-dark;
+  margin: 0;
+
+  i {
+    color: $color-l1-sage;
+    font-size: 24px;
+  }
+}
+
+.btn-close {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  border-radius: $radius-md;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+
+  &:hover {
+    background: $color-cloud-gray;
+  }
+
+  i {
+    font-size: 20px;
+    color: $color-muted-gray;
+  }
+}
+
+.modal-body {
+  padding: $spacing-lg;
+}
+
+.interview-info-content {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
+
+.candidate-info {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding-bottom: $spacing-md;
+  border-bottom: 1px solid $color-cloud-gray;
+
+  .avatar {
+    @include flex-center;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: $color-l1-sage;
+    color: white;
+    font-size: $font-size-lg;
+    font-weight: $font-weight-bold;
+  }
+
+  .info {
+    flex: 1;
+
+    h4 {
+      margin: 0 0 4px;
+      font-size: $font-size-base;
+      font-weight: $font-weight-semibold;
+      color: $color-text-dark;
+    }
+
+    p {
+      margin: 0;
+      font-size: $font-size-sm;
+      color: $color-text-secondary;
+    }
+  }
+
+  .position-badge {
+    padding: $spacing-xs $spacing-sm;
+    background: rgba($color-l1-sage, 0.1);
+    color: $color-l1-sage;
+    border-radius: $radius-sm;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-medium;
+  }
+}
+
+.interview-details {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.detail-item {
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-md;
+
+  > i {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: $color-l1-sage;
+    font-size: 18px;
+    margin-top: 2px;
+  }
+
+  .detail-content {
+    flex: 1;
+
+    label {
+      display: block;
+      font-size: $font-size-xs;
+      color: $color-text-secondary;
+      margin-bottom: 4px;
+    }
+
+    span {
+      font-size: $font-size-sm;
+      color: $color-text-dark;
+      font-weight: $font-weight-medium;
+    }
+
+    .meeting-link {
+      color: $color-l1-sage;
+      text-decoration: none;
+      word-break: break-all;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+}
+
+// Form Status Section
+.form-status-section {
+  background: rgba($color-l1-sage, 0.05);
+  border: 1px solid rgba($color-l1-sage, 0.2);
+  border-radius: $radius-md;
+  padding: $spacing-md;
+
+  > label {
+    display: block;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+    margin-bottom: $spacing-sm;
+  }
+
+  .form-status-content {
+    .loading-text {
+      font-size: $font-size-sm;
+      color: $color-text-secondary;
+    }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      gap: $spacing-sm;
+      margin-bottom: $spacing-sm;
+
+      .status-badge {
+        padding: $spacing-xs $spacing-sm;
+        border-radius: $radius-sm;
+        font-size: $font-size-xs;
+        font-weight: $font-weight-medium;
+
+        &.status-gray {
+          background: #f3f4f6;
+          color: #6b7280;
+        }
+
+        &.status-yellow {
+          background: #fef3c7;
+          color: #d97706;
+        }
+
+        &.status-blue {
+          background: #dbeafe;
+          color: #2563eb;
+        }
+
+        &.status-green {
+          background: #d1fae5;
+          color: #059669;
+        }
+
+        &.status-red {
+          background: #fee2e2;
+          color: #dc2626;
+        }
+      }
+
+      .last-saved {
+        font-size: $font-size-xs;
+        color: $color-text-secondary;
+      }
+    }
+
+    .form-actions {
+      display: flex;
+      gap: $spacing-sm;
+    }
+
+    .no-form {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: $spacing-md;
+
+      .hint-text {
+        font-size: $font-size-sm;
+        color: $color-text-secondary;
+        margin: 0;
+      }
+    }
+  }
+}
+
+.btn-outline {
+  @include button-base;
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-xs;
+  background: white;
+  border: 1px solid $color-l1-sage;
+  color: $color-l1-sage;
+  font-size: $font-size-sm;
+
+  &:hover {
+    background: rgba($color-l1-sage, 0.05);
+  }
+
+  i {
+    font-size: 16px;
+  }
+}
+
+.cancel-link-section {
+  background: rgba($color-warning, 0.05);
+  border: 1px solid rgba($color-warning, 0.2);
+  border-radius: $radius-md;
+  padding: $spacing-md;
+
+  > label {
+    display: block;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+    margin-bottom: $spacing-xs;
+  }
+
+  .hint-text {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    margin: 0 0 $spacing-sm;
+  }
+
+  .link-input-group {
+    display: flex;
+    gap: $spacing-sm;
+
+    .form-input {
+      flex: 1;
+      @include input-base;
+      font-size: $font-size-xs;
+      background: white;
+    }
+  }
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: $spacing-sm;
+  padding: $spacing-md $spacing-lg;
+  border-top: 1px solid $color-soft-gray;
+}
+
+.btn {
+  @include button-base;
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-xs;
+
+  &-secondary {
+    @include button-secondary;
+  }
+}

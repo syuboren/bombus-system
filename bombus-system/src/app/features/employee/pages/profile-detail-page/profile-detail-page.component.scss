@@ -50,11 +50,21 @@
 }
 
 .candidate-info {
+  flex: 1;
+
+  .name-with-status {
+    @include flex-start;
+    gap: $spacing-sm;
+    align-items: center;
+    margin-bottom: $spacing-xs;
+    flex-wrap: wrap;
+  }
+
   h2 {
     font-size: $font-size-lg;
     font-weight: $font-weight-bold;
     color: $color-text-dark;
-    margin: 0 0 $spacing-xs;
+    margin: 0;
   }
 }
 
@@ -78,14 +88,61 @@
 .header-actions {
   @include flex-start;
   gap: $spacing-sm;
+  flex-wrap: wrap;
 
   @include media-max-lg {
     width: 100%;
     justify-content: flex-end;
   }
+}
 
-  @include media-max-md {
-    flex-wrap: wrap;
+.btn-l1 {
+  @include button-module($color-l1-sage);
+}
+
+.btn-success {
+  @include button-module($color-success);
+}
+
+.btn-outline-error {
+  padding: 8px 16px;
+  border: 1px solid $color-error;
+  background: white;
+  color: $color-error;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  border-radius: $radius-md;
+  cursor: pointer;
+  transition: all $transition-normal;
+  @include flex-center;
+  gap: 6px;
+
+  &:hover {
+    background: rgba($color-error, 0.05);
+    border-color: darken($color-error, 10%);
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+
+  i {
+    font-size: 16px;
+  }
+}
+
+.success-badge {
+  @include flex-center;
+  gap: $spacing-xs;
+  padding: 8px 16px;
+  background: rgba($color-success, 0.12);
+  color: $color-success;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  border-radius: $radius-md;
+
+  i {
+    font-size: 18px;
   }
 }
 
@@ -100,6 +157,13 @@
 
   @include media-max-lg {
     grid-template-columns: 1fr;
+    
+    .panel--ai {
+      order: 1;
+    }
+    .panel--resume {
+      order: 2;
+    }
   }
 }
 
@@ -133,9 +197,13 @@
   }
 }
 
-.file-name {
+.file-badge {
+  padding: 4px 10px;
+  background: rgba($color-l1-sage, 0.15);
+  color: $color-l1-sage;
   font-size: $font-size-xs;
-  color: $color-text-secondary;
+  font-weight: $font-weight-semibold;
+  border-radius: $radius-full;
 }
 
 .panel__content {
@@ -146,63 +214,66 @@
 }
 
 // ---------------------------------------------------------------
-// Resume Preview
-// ---------------------------------------------------------------
-.resume-preview {
-  background: #525659;
-  display: flex;
-  justify-content: center;
-  padding: $spacing-lg;
-}
-
-.resume-page {
-  background: white;
-  width: 100%;
-  max-width: 600px;
-  min-height: 600px;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
-  padding: $spacing-xl;
-  font-size: $font-size-sm;
-  line-height: 1.6;
-}
-
-.resume-name {
-  font-size: $font-size-xl;
-  border-bottom: 2px solid $color-text-dark;
-  padding-bottom: $spacing-sm;
-  margin-bottom: $spacing-md;
-}
-
-.resume-intro {
-  margin-bottom: $spacing-md;
-}
-
-.resume-section-title {
-  font-size: $font-size-base;
-  color: #444;
-  margin-top: $spacing-lg;
-  margin-bottom: $spacing-sm;
-}
-
-.resume-exp,
-.resume-edu {
-  margin-bottom: $spacing-md;
-
-  ul {
-    margin: $spacing-xs 0 0 $spacing-lg;
-    padding: 0;
-    list-style: disc;
-  }
-}
-
-// ---------------------------------------------------------------
-// Status Badge
+// Status Badge (複用 job-candidates-page 樣式)
 // ---------------------------------------------------------------
 .status-badge {
   padding: 4px 12px;
   border-radius: $radius-full;
   font-size: $font-size-xs;
   font-weight: $font-weight-semibold;
+  white-space: nowrap;
+}
+
+.status--new {
+  background: rgba($color-info, 0.12);
+  color: $color-info;
+}
+
+.status--invited {
+  background: rgba($color-l1-sage, 0.12);
+  color: darken($color-l1-sage, 10%);
+}
+
+.status--pending-schedule {
+  background: rgba($color-warning, 0.12);
+  color: darken($color-warning, 15%);
+}
+
+.status--reschedule {
+  background: rgba($color-warning, 0.15);
+  color: darken($color-warning, 15%);
+}
+
+.status--interview {
+  background: rgba(#9B8C98, 0.12);
+  color: darken(#9B8C98, 15%);
+}
+
+.status--pending-ai,
+.status--pending-decision {
+  background: rgba($color-info, 0.1);
+  color: darken($color-info, 10%);
+}
+
+.status--offered {
+  background: rgba(#D6A28C, 0.12);
+  color: darken(#D6A28C, 20%);
+}
+
+.status--offer-accepted,
+.status--hired {
+  background: rgba($color-success, 0.12);
+  color: $color-success;
+}
+
+.status--not-continued {
+  background: rgba($color-text-secondary, 0.1);
+  color: $color-text-secondary;
+}
+
+.status--declined {
+  background: rgba($color-error, 0.1);
+  color: darken($color-error, 10%);
 }
 
 .status--success {
@@ -210,142 +281,1169 @@
   color: $color-success;
 }
 
-// ---------------------------------------------------------------
-// Match Score Card
-// ---------------------------------------------------------------
-.match-score-card {
-  text-align: center;
-  padding: $spacing-lg;
-  background: linear-gradient(135deg, rgba($color-l1-sage, 0.1) 0%, rgba($color-l1-sage, 0.05) 100%);
-  border-radius: $radius-lg;
-  border: 1px solid rgba($color-l1-sage, 0.2);
-  margin-bottom: $spacing-lg;
-}
-
-.score-circle {
-  @include flex-center;
-  width: 80px;
-  height: 80px;
-  margin: 0 auto $spacing-sm;
-  background: white;
-  border: 4px solid $color-l1-sage;
-  border-radius: 50%;
-  font-size: $font-size-3xl;
-  font-weight: $font-weight-bold;
-  color: $color-l1-sage;
-}
-
-.score-label {
-  font-weight: $font-weight-semibold;
-  color: $color-text-dark;
-  margin-bottom: $spacing-xs;
-}
-
-.score-desc {
-  font-size: $font-size-xs;
-  color: $color-text-secondary;
+.status--pending {
+  background: rgba($color-warning, 0.15);
+  color: darken($color-warning, 15%);
 }
 
 // ---------------------------------------------------------------
-// Analysis Section
+// Left Panel: Resume Sections
 // ---------------------------------------------------------------
-.analysis-section {
-  margin-bottom: $spacing-lg;
-}
+.resume-section {
+  margin-bottom: $spacing-2xl; // 增加區塊間距 (48px)，保持視覺呼吸感
 
-.section-label {
-  @include flex-start;
-  gap: $spacing-sm;
-  font-size: $font-size-sm;
-  font-weight: $font-weight-bold;
-  color: $color-text-secondary;
-  margin-bottom: $spacing-sm;
-
-  i {
-    font-size: 16px;
+  &:last-child {
+    margin-bottom: 0;
   }
 }
 
-// Skill Tags
-.skill-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: $spacing-xs;
+.section-header {
+  @include flex-start;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-md;
+  padding-bottom: $spacing-sm;
+  border-bottom: 2px solid $color-soft-gray;
+
+  i {
+    color: $color-l1-sage;
+    font-size: 20px;
+  }
+
+  h3 {
+    font-size: $font-size-base;
+    font-weight: $font-weight-bold;
+    color: $color-text-dark;
+    margin: 0;
+  }
 }
 
-.skill-tag {
-  @include flex-center;
-  gap: 4px;
-  padding: 5px 12px;
+// 個人簡介
+.intro-content {
+  padding: $spacing-md;
+  background: $color-cloud-gray;
   border-radius: $radius-md;
+  font-size: $font-size-sm;
+  line-height: 1.8;
+  color: $color-text-primary;
+}
+
+.motto-block {
+  @include flex-start;
+  gap: $spacing-sm;
+  margin-top: $spacing-md;
+  padding: $spacing-md;
+  background: linear-gradient(135deg, rgba($color-l1-sage, 0.05), rgba($color-l1-sage, 0.01));
+  border-radius: $radius-md;
+  font-style: italic;
+  color: $color-text-secondary;
+
+  i {
+    color: $color-l1-sage;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+}
+
+.tags-group {
+  @include flex-start;
+  flex-wrap: wrap;
+  gap: $spacing-xs;
+  margin-top: $spacing-sm;
+}
+
+.tag-item {
+  padding: 4px 12px;
+  background: rgba($color-l1-sage, 0.1);
+  color: $color-l1-sage;
+  font-size: $font-size-xs;
+  border-radius: $radius-full;
+}
+
+// 學歷時間軸
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
+
+.timeline-item {
+  display: flex;
+  gap: $spacing-md;
+  position: relative;
+
+  &:not(:last-child) {
+    padding-bottom: $spacing-lg;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      left: 6px;
+      top: 24px;
+      bottom: 0;
+      width: 2px;
+      background: $color-soft-gray;
+    }
+  }
+}
+
+.timeline-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: white;
+  border: 3px solid $color-l1-sage;
+  flex-shrink: 0;
+  margin-top: 4px;
+  position: relative;
+  z-index: 1;
+}
+
+.timeline-content {
+  flex: 1;
+  background: $color-cloud-gray;
+  padding: $spacing-md;
+  border-radius: $radius-md;
+}
+
+.timeline-header {
+  @include flex-between;
+  margin-bottom: $spacing-xs;
+}
+
+.timeline-title {
+  font-weight: $font-weight-bold;
+  color: $color-text-dark;
+}
+
+.timeline-period {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.timeline-details {
+  @include flex-start;
+  gap: $spacing-xs;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+}
+
+.degree-badge {
+  padding: 2px 8px;
+  background: rgba($color-l1-sage, 0.15);
+  color: $color-l1-sage;
   font-size: $font-size-xs;
   font-weight: $font-weight-semibold;
-  border: 1px solid;
+  border-radius: $radius-sm;
+}
+
+.status-text {
+  color: $color-text-secondary;
+}
+
+.location-tag {
+  @include flex-start;
+  gap: 4px;
+  margin-top: $spacing-xs;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
 
   i {
     font-size: 12px;
   }
 }
 
-.skill--high {
-  background: rgba($color-success, 0.15);
-  color: $color-success;
-  border-color: rgba($color-success, 0.3);
+// 工作經歷
+.experience-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
 }
 
-.skill--medium {
-  background: rgba($color-warning, 0.15);
-  color: darken($color-warning, 15%);
-  border-color: rgba($color-warning, 0.3);
-}
-
-.skill--low {
-  background: rgba($color-text-secondary, 0.1);
-  color: $color-text-secondary;
-  border-color: rgba($color-text-secondary, 0.2);
-}
-
-// Info Card
-.info-card {
-  background: $color-cloud-gray;
+.experience-card {
   padding: $spacing-md;
+  background: linear-gradient(135deg, rgba($color-l1-sage, 0.03), rgba($color-l1-sage, 0.01));
   border-radius: $radius-md;
-  border-left: 3px solid $color-l1-sage;
-  margin-bottom: $spacing-sm;
+  border: 1px solid rgba($color-l1-sage, 0.1);
+  position: relative;
+  overflow: hidden;
+
+  // 頂部色條取代側邊框線
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, $color-l1-sage, lighten($color-l1-sage, 20%));
+  }
 }
 
-.info-card__header {
+.exp-header {
   @include flex-between;
   margin-bottom: $spacing-xs;
 }
 
-.company-name {
+.exp-company {
+  font-weight: $font-weight-bold;
+  color: $color-text-dark;
+  font-size: $font-size-base;
+}
+
+.exp-period {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.exp-title {
+  font-size: $font-size-sm;
+  color: $color-l1-sage;
+  font-weight: $font-weight-semibold;
+  margin-bottom: $spacing-xs;
+}
+
+.exp-meta {
+  @include flex-start;
+  flex-wrap: wrap;
+  gap: $spacing-md;
+  margin-bottom: $spacing-sm;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+
+  span {
+    @include flex-start;
+    gap: 4px;
+  }
+
+  i {
+    font-size: 12px;
+  }
+}
+
+.exp-desc {
+  font-size: $font-size-sm;
+  line-height: 1.7;
+  color: $color-text-primary;
+  margin-bottom: $spacing-sm;
+}
+
+.exp-skills {
+  @include flex-start;
+  flex-wrap: wrap;
+  gap: $spacing-xs;
+}
+
+.skill-tag-sm {
+  padding: 2px 8px;
+  background: white;
+  border: 1px solid $color-soft-gray;
+  color: $color-text-secondary;
+  font-size: 11px;
+  border-radius: $radius-sm;
+}
+
+// 技能專長網格
+.skills-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: $spacing-md;
+}
+
+.skill-card {
+  padding: $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, $color-l1-sage, lighten($color-l1-sage, 25%));
+  }
+}
+
+.skill-name {
+  font-weight: $font-weight-bold;
+  color: $color-text-dark;
+  margin-bottom: $spacing-xs;
+}
+
+.skill-desc {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  line-height: 1.6;
+  margin-bottom: $spacing-xs;
+}
+
+.skill-tags-row {
+  @include flex-start;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tag-mini {
+  padding: 2px 6px;
+  background: rgba($color-l1-sage, 0.1);
+  color: $color-l1-sage;
+  font-size: 10px;
+  border-radius: $radius-sm;
+}
+
+// 語言能力
+.language-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.language-card {
+  padding: $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+}
+
+.lang-header {
+  @include flex-between;
+  margin-bottom: $spacing-sm;
+}
+
+.lang-name {
   font-weight: $font-weight-bold;
   color: $color-text-dark;
 }
 
-.duration {
+.lang-cert {
   font-size: $font-size-xs;
-  color: $color-text-secondary;
+  color: $color-l1-sage;
+  font-weight: $font-weight-semibold;
 }
 
-.position {
-  font-size: $font-size-xs;
-  color: $color-text-secondary;
+.lang-levels {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: $spacing-sm;
 }
 
-.highlights {
-  margin-top: $spacing-xs;
+.lang-level-item {
+  text-align: center;
+}
+
+.level-label {
+  display: block;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  margin-bottom: 4px;
+}
+
+.level-value {
+  display: block;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+}
+
+.lang-proficiency {
   font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
 
-  span {
-    display: block;
+// 專案作品
+.project-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.project-card {
+  padding: $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, $color-l1-sage, lighten($color-l1-sage, 20%));
   }
 }
 
-.verified-icon {
+.proj-title {
+  font-weight: $font-weight-bold;
+  color: $color-text-dark;
+  margin-bottom: $spacing-xs;
+}
+
+.proj-period {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-sm;
+}
+
+.proj-desc {
+  font-size: $font-size-sm;
+  line-height: 1.7;
+  color: $color-text-primary;
+  margin-bottom: $spacing-sm;
+}
+
+.proj-links {
+  @include flex-start;
+  gap: $spacing-sm;
+}
+
+.link-btn {
+  @include flex-start;
+  gap: 4px;
+  padding: 4px 10px;
+  background: white;
+  border: 1px solid $color-soft-gray;
   color: $color-l1-sage;
-  font-size: 18px;
+  font-size: $font-size-xs;
+  border-radius: $radius-sm;
+  text-decoration: none;
+  transition: all $transition-normal;
+
+  &:hover {
+    background: rgba($color-l1-sage, 0.1);
+    border-color: $color-l1-sage;
+  }
+
+  i {
+    font-size: 12px;
+  }
+}
+
+// 求職條件
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: $spacing-md;
+}
+
+.info-item {
+  padding: $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+}
+
+.info-label {
+  display: block;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  margin-bottom: 4px;
+}
+
+.info-value {
+  display: block;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+}
+
+// 證照與附件
+.cert-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+  margin-bottom: $spacing-md;
+}
+
+.cert-item {
+  @include flex-start;
+  gap: $spacing-xs;
+  padding: $spacing-sm;
+  background: rgba($color-warning, 0.05);
+  border-radius: $radius-sm;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+
+  i {
+    color: $color-warning;
+    font-size: 16px;
+  }
+}
+
+.attachment-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.attachment-item {
+  @include flex-between;
+  padding: $spacing-sm;
+  background: white;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-sm;
+  font-size: $font-size-sm;
+
+  i {
+    color: $color-text-secondary;
+  }
+}
+
+.download-link {
+  @include flex-center;
+  width: 28px;
+  height: 28px;
+  background: rgba($color-l1-sage, 0.1);
+  border-radius: $radius-sm;
+  color: $color-l1-sage;
+  text-decoration: none;
+  transition: all $transition-normal;
+
+  &:hover {
+    background: $color-l1-sage;
+    color: white;
+  }
+}
+
+// ---------------------------------------------------------------
+// Right Panel: AI Analysis Sections
+// ---------------------------------------------------------------
+
+// AI 分析區塊統一間距
+.analysis-section {
+  margin-bottom: $spacing-2xl; // 增加區塊間距 (48px)，避免視覺疲勞
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+// 吻合度總覽
+.match-overview {
+  margin-bottom: $spacing-2xl;
+}
+
+.match-score-card {
+  padding: $spacing-lg;
+  background: linear-gradient(135deg, rgba($color-l1-sage, 0.08), rgba($color-l1-sage, 0.02));
+  border-radius: $radius-lg;
+  border: 1px solid rgba($color-l1-sage, 0.2);
+  margin-bottom: $spacing-lg;
+}
+
+.score-display {
+  @include flex-start;
+  gap: $spacing-lg;
+  align-items: center;
+
+  @include media-max-md {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+.score-circle {
+  @include flex-center;
+  width: 100px;
+  height: 100px;
+  background: white;
+  border: 5px solid $color-l1-sage;
+  border-radius: 50%;
+  font-size: 32px;
+  font-weight: $font-weight-bold;
+  color: $color-l1-sage;
+  flex-shrink: 0;
+}
+
+.score-info {
+  flex: 1;
+}
+
+.score-label {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-text-dark;
+  margin-bottom: $spacing-xs;
+}
+
+.score-desc {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.dimension-scores {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.dimension-item {
+  padding: $spacing-md;
+  background: white;
+  border-radius: $radius-md;
+}
+
+.dimension-header {
+  @include flex-between;
+  margin-bottom: $spacing-xs;
+}
+
+.dimension-name {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+}
+
+.dimension-weight {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.score-bar {
+  height: 8px;
+  background: $color-soft-gray;
+  border-radius: $radius-full;
+  overflow: hidden;
+  margin-bottom: $spacing-xs;
+}
+
+.score-bar__fill {
+  height: 100%;
+  background: linear-gradient(90deg, $color-l1-sage, lighten($color-l1-sage, 15%));
+  border-radius: $radius-full;
+  transition: width 0.6s ease;
+
+  &--bonus {
+    background: linear-gradient(90deg, lighten($color-l1-sage, 10%), lighten($color-l1-sage, 25%));
+  }
+}
+
+.dimension-value {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+  color: $color-l1-sage;
+  text-align: right;
+}
+
+// JD 需求條件對照
+.requirement-group {
+  margin-bottom: $spacing-lg;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.group-title {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-sm;
+}
+
+.requirement-item {
+  display: flex;
+  gap: $spacing-sm;
+  padding: $spacing-md;
+  border-radius: $radius-md;
+  margin-bottom: $spacing-xs;
+  position: relative;
+  overflow: hidden;
+
+  &--matched {
+    background: linear-gradient(135deg, rgba($color-success, 0.05), rgba($color-success, 0.01));
+    border: 1px solid rgba($color-success, 0.15);
+  }
+
+  &--unmatched {
+    background: linear-gradient(135deg, rgba($color-text-secondary, 0.03), rgba($color-text-secondary, 0.01));
+    border: 1px solid rgba($color-text-secondary, 0.1);
+  }
+}
+
+.req-icon {
+  @include flex-center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+
+  .requirement-item--matched & i {
+    color: $color-success;
+    font-size: 18px;
+  }
+
+  .requirement-item--unmatched & i {
+    color: $color-text-secondary;
+    font-size: 18px;
+  }
+}
+
+.req-content {
+  flex: 1;
+}
+
+.req-text {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+  margin-bottom: 4px;
+}
+
+.req-evidence {
+  @include flex-start;
+  gap: 4px;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+
+  i {
+    font-size: 12px;
+  }
+}
+
+.req-note {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.bonus-skills {
+  @include flex-start;
+  flex-wrap: wrap;
+  gap: $spacing-xs;
+}
+
+.skill-badge {
+  padding: 6px 12px;
+  border-radius: $radius-md;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+
+  &--bonus {
+    background: rgba($color-l1-sage, 0.15);
+    color: $color-l1-sage;
+    border: 1px solid rgba($color-l1-sage, 0.3);
+  }
+
+  &--tech {
+    background: rgba($color-l1-sage, 0.12);
+    color: $color-l1-sage;
+  }
+
+  &--soft {
+    background: rgba($color-info, 0.12);
+    color: $color-info;
+  }
+}
+
+// 技能關鍵字
+.skill-category {
+  margin-bottom: $spacing-md;
+}
+
+.category-label {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-xs;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.skill-tags {
+  @include flex-start;
+  flex-wrap: wrap;
+  gap: $spacing-xs;
+}
+
+.match-stats {
+  margin-top: $spacing-lg;
+  padding-top: $spacing-lg;
+  border-top: 2px solid $color-soft-gray;
+}
+
+.stat-row {
+  margin-bottom: $spacing-md;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.stat-label {
+  display: block;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-xs;
+}
+
+.stat-bar-wrapper {
+  @include flex-start;
+  gap: $spacing-sm;
+}
+
+.stat-bar {
+  flex: 1;
+  height: 6px;
+  background: $color-soft-gray;
+  border-radius: $radius-full;
+  overflow: hidden;
+}
+
+.stat-value {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+  color: $color-l1-sage;
+  white-space: nowrap;
+}
+
+// 經歷相關性
+.experience-relevance-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+  margin-bottom: $spacing-lg;
+}
+
+.relevance-card {
+  padding: $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, $color-l1-sage, lighten($color-l1-sage, 20%));
+  }
+}
+
+.rel-header {
+  @include flex-between;
+  margin-bottom: $spacing-xs;
+}
+
+.rel-firm {
+  font-weight: $font-weight-bold;
+  color: $color-text-dark;
+}
+
+.rel-duration {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.rel-job {
+  font-size: $font-size-sm;
+  color: $color-l1-sage;
+  margin-bottom: $spacing-sm;
+}
+
+.rel-level {
+  @include flex-start;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-sm;
+}
+
+.rel-level-label {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.rel-dots {
+  @include flex-start;
+  gap: 4px;
+}
+
+.rel-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: $color-soft-gray;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+
+  &--active {
+    background: $color-l1-sage;
+  }
+}
+
+.rel-level-text {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+}
+
+.rel-reasons {
+  margin: 0;
+  padding-left: $spacing-lg;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  line-height: 1.8;
+
+  li {
+    margin-bottom: 4px;
+  }
+}
+
+.years-summary {
+  @include flex-start;
+  gap: $spacing-md;
+  padding: $spacing-md;
+  background: white;
+  border-radius: $radius-md;
+  border: 1px solid $color-soft-gray;
+}
+
+.years-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.years-label {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.years-value {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-text-dark;
+
+  &--total {
+    color: $color-l1-sage;
+  }
+}
+
+.years-divider {
+  width: 1px;
+  background: $color-soft-gray;
+}
+
+.years-check {
+  @include flex-center;
+  margin-left: auto;
+
+  i {
+    font-size: 24px;
+  }
+
+  &--pass {
+    color: $color-success;
+  }
+
+  &--fail {
+    color: $color-error;
+  }
+}
+
+// 履歷內容品質評估
+.quality-section {
+  padding: $spacing-lg;
+  background: linear-gradient(135deg, rgba($color-l1-sage, 0.03), rgba(white, 0.5));
+  border-radius: $radius-lg;
+  border: 1px solid rgba($color-l1-sage, 0.15);
+  margin-bottom: $spacing-xl;
+}
+
+.quality-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: $spacing-md;
+  margin-bottom: $spacing-lg;
+}
+
+.quality-item {
+  padding: $spacing-md;
+  background: white;
+  border-radius: $radius-md;
+}
+
+.quality-label {
+  display: block;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  margin-bottom: 4px;
+}
+
+.quality-value {
+  display: block;
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+}
+
+.features-block {
+  margin-bottom: $spacing-lg;
+}
+
+.features-title {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-sm;
+}
+
+.feature-item {
+  display: flex;
+  gap: $spacing-sm;
+  padding: $spacing-md;
+  background: white;
+  border-radius: $radius-md;
+  margin-bottom: $spacing-xs;
+  border: 1px solid rgba($color-success, 0.15);
+}
+
+.feature-icon {
+  @include flex-center;
+  width: 28px;
+  height: 28px;
+  background: rgba($color-success, 0.1);
+  border-radius: 50%;
+  flex-shrink: 0;
+
+  i {
+    color: $color-success;
+    font-size: 14px;
+  }
+}
+
+.feature-content {
+  flex: 1;
+}
+
+.feature-type {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+  color: $color-text-dark;
+  margin-bottom: 4px;
+}
+
+.feature-desc {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  line-height: 1.6;
+}
+
+.clarify-block {
+  padding: $spacing-md;
+  background: rgba($color-warning, 0.05);
+  border-radius: $radius-md;
+  border: 1px solid rgba($color-warning, 0.2);
+}
+
+.clarify-title {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+  color: darken($color-warning, 15%);
+  margin-bottom: $spacing-sm;
+}
+
+.clarify-list {
+  margin: 0;
+  padding-left: $spacing-lg;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  line-height: 1.8;
+
+  li {
+    margin-bottom: 4px;
+  }
+}
+
+// 面試關注點
+.interview-focus-section {
+  padding: $spacing-lg;
+  background: linear-gradient(135deg, rgba($color-info, 0.03), rgba(white, 0.5));
+  border-radius: $radius-lg;
+  border: 1px solid rgba($color-info, 0.15);
+}
+
+.focus-intro {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-md;
+}
+
+.focus-block {
+  margin-bottom: $spacing-lg;
+
+  &:last-of-type {
+    margin-bottom: $spacing-lg;
+  }
+}
+
+.focus-header {
+  @include flex-start;
+  gap: $spacing-xs;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+  color: $color-text-dark;
+  margin-bottom: $spacing-sm;
+
+  i {
+    color: $color-info;
+    font-size: 16px;
+  }
+}
+
+.focus-list {
+  margin: 0;
+  padding-left: $spacing-lg;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  line-height: 1.8;
+
+  li {
+    margin-bottom: $spacing-xs;
+  }
+}
+
+.ai-meta {
+  @include flex-start;
+  flex-wrap: wrap;
+  gap: $spacing-md;
+  padding: $spacing-md;
+  background: rgba($color-text-secondary, 0.05);
+  border-radius: $radius-md;
+}
+
+.meta-item {
+  @include flex-start;
+  gap: $spacing-xs;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+
+  i {
+    color: $color-l1-sage;
+    font-size: 14px;
+  }
+}
+
+// No Analysis State
+.no-analysis {
+  @include flex-center;
+  flex-direction: column;
+  padding: $spacing-xl;
+  text-align: center;
+  color: $color-text-secondary;
+
+  i {
+    font-size: 48px;
+    color: $color-soft-gray;
+    margin-bottom: $spacing-md;
+  }
+
+  p {
+    margin-bottom: $spacing-md;
+  }
 }
 
 // ---------------------------------------------------------------
@@ -371,292 +1469,3 @@
     to { transform: rotate(360deg); }
   }
 }
-
-// ---------------------------------------------------------------
-// Competency Matching Section (NEW)
-// ---------------------------------------------------------------
-.competency-section {
-  background: linear-gradient(135deg, rgba($color-l1-sage, 0.05), rgba(#fff, 0.8));
-  padding: $spacing-lg;
-  border-radius: $radius-lg;
-  border: 1px solid rgba($color-l1-sage, 0.2);
-  margin-bottom: $spacing-lg;
-}
-
-.section-label--highlight {
-  font-size: $font-size-base;
-  font-weight: $font-weight-bold;
-  color: $color-l1-sage;
-  margin-bottom: $spacing-lg !important;
-
-  .badge-ai {
-    margin-left: $spacing-sm;
-    padding: 2px 8px;
-    background: linear-gradient(135deg, $color-l1-sage, darken($color-l1-sage, 10%));
-    color: white;
-    font-size: 10px;
-    font-weight: $font-weight-semibold;
-    border-radius: $radius-full;
-    vertical-align: middle;
-  }
-}
-
-.competency-matches {
-  display: flex;
-  flex-direction: column;
-  gap: $spacing-md;
-}
-
-.competency-match-item {
-  background: white;
-  padding: $spacing-md;
-  border-radius: $radius-md;
-  border: 1px solid $color-soft-gray;
-  transition: all $transition-normal;
-
-  &:hover {
-    border-color: $color-l1-sage;
-    box-shadow: 0 4px 12px rgba($color-l1-sage, 0.1);
-  }
-}
-
-.match-header {
-  @include flex-between;
-  margin-bottom: $spacing-sm;
-}
-
-.match-info {
-  @include flex-start;
-  gap: $spacing-sm;
-}
-
-.competency-type {
-  @include flex-center;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  font-size: 11px;
-  font-weight: $font-weight-bold;
-}
-
-.type--knowledge {
-  background: rgba(#5C6BC0, 0.15);
-  color: #5C6BC0;
-}
-
-.type--skill {
-  background: rgba($color-l1-sage, 0.15);
-  color: $color-l1-sage;
-}
-
-.type--attitude {
-  background: rgba(#FF7043, 0.15);
-  color: #FF7043;
-}
-
-.competency-name {
-  font-weight: $font-weight-semibold;
-  color: $color-text-dark;
-}
-
-.match-score {
-  padding: 4px 12px;
-  border-radius: $radius-full;
-  font-size: $font-size-sm;
-  font-weight: $font-weight-bold;
-}
-
-.score--excellent {
-  background: rgba($color-success, 0.15);
-  color: $color-success;
-}
-
-.score--good {
-  background: rgba($color-l1-sage, 0.15);
-  color: $color-l1-sage;
-}
-
-.score--fair {
-  background: rgba($color-warning, 0.15);
-  color: darken($color-warning, 15%);
-}
-
-.score--poor {
-  background: rgba($color-error, 0.15);
-  color: $color-error;
-}
-
-.match-levels {
-  display: flex;
-  flex-direction: column;
-  gap: $spacing-xs;
-  margin-bottom: $spacing-sm;
-}
-
-.level-info {
-  @include flex-start;
-  gap: $spacing-sm;
-}
-
-.level-label {
-  width: 60px;
-  font-size: 11px;
-  color: $color-text-secondary;
-}
-
-.level-dots {
-  @include flex-start;
-  gap: 4px;
-}
-
-.level-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: $color-soft-gray;
-  border: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-.level-dot--required {
-  background: #5C6BC0;
-}
-
-.level-dot--assessed {
-  background: $color-l1-sage;
-}
-
-.level-value {
-  font-size: 11px;
-  font-weight: $font-weight-semibold;
-  color: $color-text-primary;
-  margin-left: $spacing-xs;
-}
-
-.match-evidence {
-  @include flex-start;
-  gap: $spacing-xs;
-  font-size: $font-size-xs;
-  color: $color-text-secondary;
-  background: $color-cloud-gray;
-  padding: $spacing-sm;
-  border-radius: $radius-sm;
-  margin-bottom: $spacing-xs;
-
-  i {
-    color: $color-warning;
-    font-size: 14px;
-    flex-shrink: 0;
-  }
-}
-
-.match-weight {
-  font-size: 10px;
-  color: $color-muted-gray;
-  text-align: right;
-}
-
-// ---------------------------------------------------------------
-// AI Suggestions Section
-// ---------------------------------------------------------------
-.ai-suggestions-section {
-  margin-top: $spacing-lg;
-  padding-top: $spacing-lg;
-  border-top: 2px solid $color-soft-gray;
-}
-
-.section-label--ai {
-  color: $color-l1-sage;
-  
-  i {
-    color: $color-l1-sage;
-  }
-}
-
-.ai-suggestions-grid {
-  display: grid;
-  gap: $spacing-md;
-  margin-bottom: $spacing-lg;
-}
-
-.suggestion-card {
-  padding: $spacing-md;
-  border-radius: $radius-md;
-  border-left: 4px solid;
-
-  &--strength {
-    background: rgba($color-success, 0.05);
-    border-left-color: $color-success;
-
-    .suggestion-header {
-      color: $color-success;
-    }
-  }
-
-  &--weakness {
-    background: rgba($color-warning, 0.05);
-    border-left-color: $color-warning;
-
-    .suggestion-header {
-      color: darken($color-warning, 15%);
-    }
-  }
-
-  &--recommendation {
-    background: rgba($color-info, 0.05);
-    border-left-color: $color-info;
-
-    .suggestion-header {
-      color: $color-info;
-    }
-  }
-}
-
-.suggestion-header {
-  @include flex-start;
-  gap: $spacing-xs;
-  font-size: $font-size-sm;
-  font-weight: $font-weight-bold;
-  margin-bottom: $spacing-sm;
-
-  i {
-    font-size: 18px;
-  }
-}
-
-.suggestion-list {
-  margin: 0;
-  padding-left: $spacing-lg;
-
-  li {
-    font-size: $font-size-sm;
-    color: $color-text-primary;
-    margin-bottom: $spacing-xs;
-    line-height: 1.6;
-
-    &:last-child {
-      margin-bottom: 0;
-    }
-  }
-}
-
-.ai-scoring-info {
-  display: flex;
-  flex-wrap: wrap;
-  gap: $spacing-md;
-  padding: $spacing-md;
-  background: $color-cloud-gray;
-  border-radius: $radius-md;
-}
-
-.scoring-info-item {
-  @include flex-start;
-  gap: $spacing-xs;
-  font-size: $font-size-xs;
-  color: $color-text-secondary;
-
-  i {
-    color: $color-l1-sage;
-    font-size: 14px;
-  }
-}
-
