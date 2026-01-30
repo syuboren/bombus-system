@@ -1326,12 +1326,13 @@ function isFormExpired(form) {
 
 // 13. Generate Interview Form Token & QR Code
 // POST /api/recruitment/interviews/:id/generate-form
+// 如果表單已存在且有 token，返回現有的；只有新表單才產生新 token
 router.post('/interviews/:id/generate-form', async (req, res) => {
     try {
         const { id: interviewId } = req.params;
-        const { timeLimitMinutes } = req.body; // 可選：自訂時間限制（分鐘）
+        const { timeLimitMinutes, forceRegenerate } = req.body; // forceRegenerate: 強制重新產生 token
 
-        // 檢查面試是否存在且為 Confirmed 狀態
+        // 檢查面試是否存在
         const interview = prepare(`
             SELECT i.*, c.name as candidate_name, j.title as job_title, j.department
             FROM interviews i
@@ -1349,17 +1350,40 @@ router.post('/interviews/:id/generate-form', async (req, res) => {
             SELECT * FROM candidate_interview_forms WHERE interview_id = ?
         `).get(interviewId);
 
-        const formToken = uuidv4();
         const now = new Date().toISOString();
         const timeLimit = timeLimitMinutes || 60;
 
+        // 如果表單已存在且有 token，且不是強制重新產生，則返回現有 token
+        if (existingForm && existingForm.form_token && !forceRegenerate) {
+            // 產生 QR Code 圖片（使用現有 token）
+            const { url, qrDataUrl } = await generateQRCodeForForm(existingForm.form_token);
+
+            return res.status(200).json({
+                success: true,
+                formToken: existingForm.form_token,
+                formUrl: url,
+                qrCodeDataUrl: qrDataUrl,
+                timeLimitMinutes: existingForm.time_limit_minutes,
+                candidateName: interview.candidate_name,
+                jobTitle: interview.job_title,
+                department: interview.department,
+                interviewAt: interview.interview_at,
+                status: existingForm.status,
+                isExisting: true,
+                message: '返回現有表單 Token'
+            });
+        }
+
+        // 產生新 Token（新表單或強制重新產生）
+        const formToken = uuidv4();
+
         if (existingForm) {
-            // 更新現有表單（重新產生 Token）
+            // 強制重新產生：更新現有表單的 Token，重置狀態
             prepare(`
                 UPDATE candidate_interview_forms 
                 SET form_token = ?, time_limit_minutes = ?, status = 'Pending', 
                     started_at = NULL, submitted_at = NULL, locked_at = NULL, 
-                    current_step = 1, last_saved_at = NULL
+                    current_step = 1, last_saved_at = NULL, form_data = NULL
                 WHERE id = ?
             `).run(formToken, timeLimit, existingForm.id);
         } else {
@@ -1391,7 +1415,8 @@ router.post('/interviews/:id/generate-form', async (req, res) => {
             jobTitle: interview.job_title,
             department: interview.department,
             interviewAt: interview.interview_at,
-            message: existingForm ? '表單 Token 已重新產生' : '表單 Token 已建立'
+            isExisting: false,
+            message: existingForm ? '表單 Token 已重新產生（舊資料已清除）' : '表單 Token 已建立'
         });
 
     } catch (error) {

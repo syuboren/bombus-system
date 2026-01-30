@@ -516,4 +516,3 @@ export interface CandidateResumeAnalysis {
   createdAt?: string;
   updatedAt?: string;
 }
-

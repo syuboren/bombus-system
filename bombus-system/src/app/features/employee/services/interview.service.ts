@@ -450,11 +450,15 @@ export class InterviewService {
 
   /**
    * 產生面試表單 Token 與 QR Code
+   * 如果表單已存在且有 token，會返回現有的（除非 forceRegenerate = true）
+   * @param interviewId 面試 ID
+   * @param timeLimitMinutes 時間限制（分鐘）
+   * @param forceRegenerate 是否強制重新產生 token（舊連結將失效）
    */
-  generateFormToken(interviewId: string, timeLimitMinutes?: number): Observable<GenerateFormResponse> {
+  generateFormToken(interviewId: string, timeLimitMinutes?: number, forceRegenerate?: boolean): Observable<GenerateFormResponse> {
     return this.http.post<GenerateFormResponse>(
       `${this.apiUrl}/interviews/${interviewId}/generate-form`,
-      { timeLimitMinutes }
+      { timeLimitMinutes, forceRegenerate }
     );
   }
 

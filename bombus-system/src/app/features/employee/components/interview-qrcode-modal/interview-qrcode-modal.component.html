@@ -41,7 +41,7 @@
         <div class="error-container">
           <div class="error-icon">❌</div>
           <p class="error-message">{{ error() }}</p>
-          <button class="btn-retry" (click)="generateQrCode()">重試</button>
+          <button class="btn-retry" (click)="retryLoadQrCode()">重試</button>
         </div>
       }
 
@@ -79,7 +79,7 @@
 
     <!-- Footer -->
     <div class="modal-footer">
-      <button class="btn-secondary" (click)="regenerateQrCode()" [disabled]="isLoading()">
+      <button class="btn-secondary" (click)="showRegenerateConfirm()" [disabled]="isLoading()">
         重新產生
       </button>
       <button class="btn-primary" (click)="printQrCode()" [disabled]="isLoading() || !qrCodeDataUrl()">
@@ -87,4 +87,22 @@
       </button>
     </div>
   </div>
+
+  <!-- Confirmation Dialog -->
+  @if (showConfirmDialog()) {
+    <div class="confirm-dialog-overlay">
+      <div class="confirm-dialog">
+        <div class="confirm-icon">⚠️</div>
+        <h3 class="confirm-title">確定要重新產生連結？</h3>
+        <p class="confirm-message">
+          重新產生將使舊連結失效，<br>
+          候選人已填寫的資料將<strong>無法存取</strong>。
+        </p>
+        <div class="confirm-actions">
+          <button class="btn-cancel" (click)="cancelRegenerate()">取消</button>
+          <button class="btn-confirm" (click)="forceRegenerateToken()">確定重新產生</button>
+        </div>
+      </div>
+    </div>
+  }
 </div>

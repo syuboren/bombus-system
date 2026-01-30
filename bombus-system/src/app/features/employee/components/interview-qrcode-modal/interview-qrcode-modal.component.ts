@@ -46,23 +46,49 @@ export class InterviewQrcodeModalComponent {
   formUrl = signal<string | null>(null);
   formToken = signal<string | null>(null);
   copied = signal<boolean>(false);
+  showConfirmDialog = signal<boolean>(false);
 
   ngOnInit(): void {
-    // 如果已有 QR Code 資料，直接使用
+    // 如果已有完整的 QR Code 資料，直接使用
     if (this.existingQrCodeUrl() && this.existingFormUrl()) {
       this.qrCodeDataUrl.set(this.existingQrCodeUrl());
       this.formUrl.set(this.existingFormUrl());
       this.formToken.set(this.existingFormToken());
+    } else if (this.existingFormToken()) {
+      // 如果只有 token，呼叫 API 取得 QR Code 圖片（不會產生新 token）
+      this.loadExistingQrCode();
     } else {
-      // 否則產生新的
-      this.generateQrCode();
+      // 沒有現有 token，呼叫 generateFormToken（會返回現有或建立新的）
+      this.loadOrCreateQrCode();
     }
   }
 
   /**
-   * 產生 QR Code
+   * 載入現有 Token 的 QR Code 圖片
    */
-  generateQrCode(): void {
+  private loadExistingQrCode(): void {
+    this.isLoading.set(true);
+    this.error.set(null);
+
+    this.interviewService.regenerateQrCode(this.interviewId()).subscribe({
+      next: (response) => {
+        this.qrCodeDataUrl.set(response.qrCodeDataUrl);
+        this.formUrl.set(response.formUrl);
+        this.formToken.set(response.formToken);
+        this.isLoading.set(false);
+      },
+      error: (err) => {
+        console.error('Load existing QR code error:', err);
+        // 如果載入失敗，嘗試建立新的
+        this.loadOrCreateQrCode();
+      }
+    });
+  }
+
+  /**
+   * 載入或建立 QR Code（會返回現有 token 或建立新的）
+   */
+  private loadOrCreateQrCode(): void {
     this.isLoading.set(true);
     this.error.set(null);
 
@@ -88,10 +114,54 @@ export class InterviewQrcodeModalComponent {
   }
 
   /**
-   * 重新產生 QR Code
+   * 強制重新產生 Token（舊連結將失效）
+   * 需要使用者確認後才執行
    */
-  regenerateQrCode(): void {
-    this.generateQrCode();
+  forceRegenerateToken(): void {
+    this.isLoading.set(true);
+    this.error.set(null);
+    this.showConfirmDialog.set(false);
+
+    this.interviewService.generateFormToken(this.interviewId(), 60, true).subscribe({
+      next: (response) => {
+        this.qrCodeDataUrl.set(response.qrCodeDataUrl);
+        this.formUrl.set(response.formUrl);
+        this.formToken.set(response.formToken);
+        this.isLoading.set(false);
+        
+        this.generated.emit({
+          formToken: response.formToken,
+          qrCodeUrl: response.qrCodeDataUrl,
+          formUrl: response.formUrl
+        });
+      },
+      error: (err) => {
+        console.error('Force regenerate token error:', err);
+        this.error.set(err.error?.error || '重新產生 Token 失敗');
+        this.isLoading.set(false);
+      }
+    });
+  }
+
+  /**
+   * 顯示重新產生確認對話框
+   */
+  showRegenerateConfirm(): void {
+    this.showConfirmDialog.set(true);
+  }
+
+  /**
+   * 取消重新產生
+   */
+  cancelRegenerate(): void {
+    this.showConfirmDialog.set(false);
+  }
+
+  /**
+   * 重試載入 QR Code
+   */
+  retryLoadQrCode(): void {
+    this.loadOrCreateQrCode();
   }
 
   /**

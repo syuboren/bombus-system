@@ -134,6 +134,7 @@
     [candidateName]="candidate().name"
     [jobTitle]="candidate().jobTitle || ''"
     [interviewAt]="candidate().interviewAt || ''"
+    [existingFormToken]="formStatus()?.formToken || null"
     (close)="onQrCodeModalClose()"
   />
 }
