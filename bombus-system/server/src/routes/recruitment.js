@@ -1472,7 +1472,7 @@ router.get('/interviews/:id/form-status', (req, res) => {
 
     } catch (error) {
         console.error('Error fetching form status:', error);
-        res.status(500).json({ error: 'Failed to fetch form status' });
+        res.status(500).json({ error: '取得表單狀態失敗' });
     }
 });
 
@@ -1551,7 +1551,10 @@ router.get('/interview-form/:token', (req, res) => {
         `).get(token);
 
         if (!form) {
-            return res.status(404).json({ error: 'Form not found or invalid token' });
+            return res.status(404).json({ 
+                error: '找不到表單或連結無效',
+                errorType: 'NOT_FOUND'
+            });
         }
 
         // 檢查面試日期（僅限面試當天可填寫，這裡放寬為面試前後 24 小時）
@@ -1564,7 +1567,8 @@ router.get('/interview-form/:token', (req, res) => {
         const isDev = process.env.NODE_ENV !== 'production';
         if (!isDev && (now < dayBefore || now > dayAfter)) {
             return res.status(410).json({ 
-                error: 'Form is only available on interview day',
+                error: '此表單僅在面試當天開放填寫',
+                errorType: 'NOT_AVAILABLE',
                 interviewAt: form.interview_at
             });
         }
@@ -1572,7 +1576,8 @@ router.get('/interview-form/:token', (req, res) => {
         // 檢查是否已送出
         if (form.status === 'Submitted') {
             return res.status(400).json({
-                error: 'Form already submitted',
+                error: '此表單已經送出',
+                errorType: 'ALREADY_SUBMITTED',
                 submittedAt: form.submitted_at
             });
         }
@@ -1588,7 +1593,8 @@ router.get('/interview-form/:token', (req, res) => {
             `).run(now_ts, token);
 
             return res.status(400).json({
-                error: 'Form time limit exceeded',
+                error: '表單填寫時間已截止',
+                errorType: 'TIME_EXCEEDED',
                 status: 'Locked',
                 lockedAt: now_ts
             });
@@ -1635,7 +1641,7 @@ router.get('/interview-form/:token', (req, res) => {
 
     } catch (error) {
         console.error('Error fetching form:', error);
-        res.status(500).json({ error: 'Failed to fetch form' });
+        res.status(500).json({ error: '載入表單失敗，請稍後再試' });
     }
 });
 
@@ -1650,16 +1656,25 @@ router.post('/interview-form/:token/start', (req, res) => {
         `).get(token);
 
         if (!form) {
-            return res.status(404).json({ error: 'Form not found' });
+            return res.status(404).json({ 
+                error: '找不到表單',
+                errorType: 'NOT_FOUND'
+            });
         }
 
         // 檢查狀態
         if (form.status === 'Submitted') {
-            return res.status(400).json({ error: 'Form already submitted' });
+            return res.status(400).json({ 
+                error: '此表單已經送出',
+                errorType: 'ALREADY_SUBMITTED'
+            });
         }
 
         if (form.status === 'Locked') {
-            return res.status(400).json({ error: 'Form is locked' });
+            return res.status(400).json({ 
+                error: '此表單已鎖定',
+                errorType: 'LOCKED'
+            });
         }
 
         // 如果已經開始，返回現有資訊
@@ -1696,7 +1711,7 @@ router.post('/interview-form/:token/start', (req, res) => {
 
     } catch (error) {
         console.error('Error starting form:', error);
-        res.status(500).json({ error: 'Failed to start form' });
+        res.status(500).json({ error: '開始表單失敗，請稍後再試' });
     }
 });
 
@@ -1712,16 +1727,25 @@ router.patch('/interview-form/:token/save', (req, res) => {
         `).get(token);
 
         if (!form) {
-            return res.status(404).json({ error: 'Form not found' });
+            return res.status(404).json({ 
+                error: '找不到表單',
+                errorType: 'NOT_FOUND'
+            });
         }
 
         // 檢查狀態
         if (form.status === 'Submitted') {
-            return res.status(400).json({ error: 'Form already submitted, cannot save' });
+            return res.status(400).json({ 
+                error: '此表單已送出，無法儲存',
+                errorType: 'ALREADY_SUBMITTED'
+            });
         }
 
         if (form.status === 'Locked') {
-            return res.status(400).json({ error: 'Form is locked, cannot save' });
+            return res.status(400).json({ 
+                error: '此表單已鎖定，無法儲存',
+                errorType: 'LOCKED'
+            });
         }
 
         // 檢查是否超時
@@ -1734,7 +1758,8 @@ router.patch('/interview-form/:token/save', (req, res) => {
             `).run(now_ts, token);
 
             return res.status(400).json({
-                error: 'Form time limit exceeded',
+                error: '表單填寫時間已截止',
+                errorType: 'TIME_EXCEEDED',
                 status: 'Locked'
             });
         }
@@ -1757,7 +1782,7 @@ router.patch('/interview-form/:token/save', (req, res) => {
 
     } catch (error) {
         console.error('Error saving form:', error);
-        res.status(500).json({ error: 'Failed to save form' });
+        res.status(500).json({ error: '儲存表單失敗，請稍後再試' });
     }
 });
 
@@ -1776,13 +1801,17 @@ router.post('/interview-form/:token/submit', (req, res) => {
         `).get(token);
 
         if (!form) {
-            return res.status(404).json({ error: 'Form not found' });
+            return res.status(404).json({ 
+                error: '找不到表單',
+                errorType: 'NOT_FOUND'
+            });
         }
 
         // 檢查狀態
         if (form.status === 'Submitted') {
             return res.status(400).json({ 
-                error: 'Form already submitted',
+                error: '此表單已經送出',
+                errorType: 'ALREADY_SUBMITTED',
                 submittedAt: form.submitted_at
             });
         }
@@ -1820,7 +1849,7 @@ router.post('/interview-form/:token/submit', (req, res) => {
 
     } catch (error) {
         console.error('Error submitting form:', error);
-        res.status(500).json({ error: 'Failed to submit form' });
+        res.status(500).json({ error: '送出表單失敗，請稍後再試' });
     }
 });
 
@@ -1837,7 +1866,10 @@ router.get('/interview-form/:token/status', (req, res) => {
         `).get(token);
 
         if (!form) {
-            return res.status(404).json({ error: 'Form not found' });
+            return res.status(404).json({ 
+                error: '找不到表單',
+                errorType: 'NOT_FOUND'
+            });
         }
 
         // 計算剩餘時間
@@ -1876,7 +1908,7 @@ router.get('/interview-form/:token/status', (req, res) => {
 
     } catch (error) {
         console.error('Error fetching form status:', error);
-        res.status(500).json({ error: 'Failed to fetch form status' });
+        res.status(500).json({ error: '取得表單狀態失敗' });
     }
 });
 
@@ -1891,7 +1923,10 @@ router.post('/interviews/:id/regenerate-qrcode', async (req, res) => {
         `).get(interviewId);
 
         if (!form || !form.form_token) {
-            return res.status(404).json({ error: 'Form not found. Please generate form first.' });
+            return res.status(404).json({ 
+                error: '找不到表單，請先產生表單',
+                errorType: 'NOT_FOUND'
+            });
         }
 
         // 產生 QR Code
@@ -1906,7 +1941,7 @@ router.post('/interviews/:id/regenerate-qrcode', async (req, res) => {
 
     } catch (error) {
         console.error('Error regenerating QR code:', error);
-        res.status(500).json({ error: 'Failed to regenerate QR code' });
+        res.status(500).json({ error: '產生 QR Code 失敗' });
     }
 });
 

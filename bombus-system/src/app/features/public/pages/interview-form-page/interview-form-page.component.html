@@ -13,7 +13,7 @@
     <!-- Timer -->
     @if (isFormStarted()) {
       <div class="timer-container" [class.warning]="isTimeWarning()" [class.critical]="isTimeCritical()">
-        <span class="timer-icon">⏱️</span>
+        <i class="ri-timer-line timer-icon"></i>
         <span class="timer-value">{{ formattedTime() }}</span>
         @if (isLocked()) {
           <span class="locked-badge">已鎖定</span>
@@ -33,9 +33,66 @@
   <!-- Error State -->
   @if (error()) {
     <div class="error-container">
-      <div class="error-icon">❌</div>
-      <p class="error-message">{{ error() }}</p>
-      <button class="btn-retry" (click)="loadForm()">重新載入</button>
+      <div class="error-card" [class.submitted]="errorType() === 'ALREADY_SUBMITTED'" [class.not-found]="errorType() === 'NOT_FOUND'">
+        <!-- Submitted Icon -->
+        @if (errorType() === 'ALREADY_SUBMITTED') {
+          <div class="error-icon-wrapper submitted">
+            <i class="ri-checkbox-circle-line"></i>
+          </div>
+          <h2 class="error-title">表單已完成送出</h2>
+        }
+        <!-- Not Found / Invalid Token Icon -->
+        @else if (errorType() === 'NOT_FOUND') {
+          <div class="error-icon-wrapper not-found">
+            <i class="ri-file-unknow-line"></i>
+          </div>
+          <h2 class="error-title">找不到表單</h2>
+        }
+        <!-- Locked / Time Exceeded Icon -->
+        @else if (errorType() === 'LOCKED' || errorType() === 'TIME_EXCEEDED') {
+          <div class="error-icon-wrapper locked">
+            <i class="ri-lock-line"></i>
+          </div>
+          <h2 class="error-title">表單已鎖定</h2>
+        }
+        <!-- Not Available Icon -->
+        @else if (errorType() === 'NOT_AVAILABLE') {
+          <div class="error-icon-wrapper not-available">
+            <i class="ri-time-line"></i>
+          </div>
+          <h2 class="error-title">尚未開放填寫</h2>
+        }
+        <!-- Default Error Icon -->
+        @else {
+          <div class="error-icon-wrapper">
+            <i class="ri-error-warning-line"></i>
+          </div>
+          <h2 class="error-title">無法載入表單</h2>
+        }
+        
+        <p class="error-message">{{ error() }}</p>
+        
+        @if (errorType() !== 'ALREADY_SUBMITTED') {
+          <div class="error-actions">
+            <button class="btn-retry" (click)="loadForm()">
+              <i class="ri-refresh-line"></i>
+              重新載入
+            </button>
+          </div>
+        }
+        
+        <p class="error-hint">
+          @if (errorType() === 'ALREADY_SUBMITTED') {
+            感謝您完成面試表單填寫
+          } @else if (errorType() === 'NOT_FOUND') {
+            請確認連結是否正確，或聯繫人資部門
+          } @else if (errorType() === 'NOT_AVAILABLE') {
+            此表單僅在面試當天開放
+          } @else {
+            如果問題持續發生，請聯繫人資部門
+          }
+        </p>
+      </div>
     </div>
   }
 
@@ -43,7 +100,9 @@
   @if (!loading() && !error() && !isFormStarted()) {
     <div class="start-screen">
       <div class="start-card">
-        <div class="welcome-icon">📝</div>
+        <div class="welcome-icon">
+          <i class="ri-file-text-line"></i>
+        </div>
         <h2>歡迎，{{ formInfo()?.candidate?.name }}</h2>
         <p class="welcome-desc">
           感謝您參加我們的面試。請在開始前閱讀以下說明：

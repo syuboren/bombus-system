@@ -39,9 +39,14 @@
       <!-- Error State -->
       @if (error()) {
         <div class="error-container">
-          <div class="error-icon">❌</div>
+          <div class="error-icon">
+            <i class="ri-error-warning-line"></i>
+          </div>
           <p class="error-message">{{ error() }}</p>
-          <button class="btn-retry" (click)="retryLoadQrCode()">重試</button>
+          <button class="btn-retry" (click)="retryLoadQrCode()">
+            <i class="ri-refresh-line"></i>
+            重試
+          </button>
         </div>
       }
 
@@ -92,7 +97,9 @@
   @if (showConfirmDialog()) {
     <div class="confirm-dialog-overlay">
       <div class="confirm-dialog">
-        <div class="confirm-icon">⚠️</div>
+        <div class="confirm-icon">
+          <i class="ri-alert-line"></i>
+        </div>
         <h3 class="confirm-title">確定要重新產生連結？</h3>
         <p class="confirm-message">
           重新產生將使舊連結失效，<br>

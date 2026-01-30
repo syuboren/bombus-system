@@ -52,6 +52,7 @@ export class InterviewFormPageComponent implements OnInit, OnDestroy {
   token = signal<string>('');
   loading = signal<boolean>(true);
   error = signal<string | null>(null);
+  errorType = signal<string | null>(null);
   formInfo = signal<InterviewFormResponse | null>(null);
   
   // Form state
@@ -229,6 +230,7 @@ export class InterviewFormPageComponent implements OnInit, OnDestroy {
       error: (err) => {
         console.error('Load form error:', err);
         this.error.set(err.error?.error || '載入表單失敗');
+        this.errorType.set(err.error?.errorType || null);
         this.loading.set(false);
       }
     });
