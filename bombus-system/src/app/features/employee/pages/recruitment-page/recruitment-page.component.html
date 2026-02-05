@@ -229,73 +229,58 @@
               }
             </div>
 
-            <!-- 2. 面試評分表單 -->
-            <h5
-              style="margin-bottom: 1rem; font-size: 1rem; color: #4B5563; display: flex; align-items: center; gap: 8px;">
-              <i class="ri-edit-line"></i> 評分填寫
-            </h5>
-
-            <!-- 候選人表現描述 -->
-            <div class="form-group">
-              <label class="form-label">候選人表現描述</label>
-              <textarea class="form-textarea" rows="4" placeholder="請描述候選人在面試中的整體表現，包含溝通方式、專業能力展現、態度等..."
-                [value]="performanceDescription()"
-                (input)="performanceDescription.set($any($event.target).value)"
-                [disabled]="isDecisionSubmitted()"></textarea>
-            </div>
-
-            <!-- 評分維度 -->
-            <div class="form-group">
-              <label class="form-label">評分維度（1-10分）</label>
-              <div class="dimension-grid">
-                @for (score of dimensionScores(); track score.dimensionId) {
-                <div class="dimension-item">
-                  <div class="dimension-header">
-                    <span class="dimension-name">{{ score.dimensionName }}</span>
-                    <span class="dimension-value">{{ score.score || '-' }}</span>
-                  </div>
-                  <input type="range" class="dimension-slider" min="0" max="10" step="1" [value]="score.score"
-                    (input)="updateDimensionScore(score.dimensionId, +$any($event.target).value)"
-                    [disabled]="isDecisionSubmitted()">
-                  <input type="text" class="dimension-comment" placeholder="評分說明（如：技術能力符合需求）"
-                    [value]="score.remark || ''"
-                    (input)="updateDimensionComment(score.dimensionId, $any($event.target).value)"
-                    [disabled]="isDecisionSubmitted()">
+            <!-- 2. 面試官評分表（新版 17 題倒扣制） -->
+            <div class="scoring-entry-section">
+              <h5 class="section-subtitle">
+                <i class="ri-file-list-3-line"></i> 面試官評分表
+              </h5>
+              
+              <!-- 已評分狀態顯示 -->
+              @if (selectedCandidate()?.evaluation?.scoringItems) {
+              <div class="scoring-summary">
+                <div class="summary-item">
+                  <span class="summary-label">總分</span>
+                  <span class="summary-value" [class.low-score]="(selectedCandidate()?.evaluation?.totalScore || 0) < 65">
+                    {{ selectedCandidate()?.evaluation?.totalScore || 0 }}
+                  </span>
+                  <span class="summary-max">/ 100</span>
+                  <!-- 低分警告 -->
+                  @if ((selectedCandidate()?.evaluation?.totalScore || 0) < 65) {
+                  <span class="low-score-badge">
+                    <i class="ri-error-warning-line"></i>
+                    未達標準
+                  </span>
+                  }
                 </div>
-                }
+                <div class="summary-item">
+                  <span class="summary-label">錄取建議</span>
+                  <span class="summary-badge" [class]="'badge-' + (selectedCandidate()?.evaluation?.recommendation || 'pending')">
+                    @switch (selectedCandidate()?.evaluation?.recommendation) {
+                      @case ('Pass') { 建議錄取 }
+                      @case ('Hold') { 待觀察 }
+                      @case ('Reject') { 不予錄取 }
+                      @default { 未評分 }
+                    }
+                  </span>
+                </div>
               </div>
-            </div>
+              }
 
-            <!-- 總體評價與建議 -->
-            <div class="form-group">
-              <label class="form-label">總體評價與建議</label>
-              <textarea class="form-textarea" rows="3" placeholder="請提供您對此候選人的綜合評價及錄用建議..." [value]="overallComment()"
-                (input)="overallComment.set($any($event.target).value)"
-                [disabled]="isDecisionSubmitted()"></textarea>
-            </div>
-
-            <!-- 總分顯示 -->
-            <div class="total-score-display">
-              <span class="total-label">維度平均分數</span>
-              <span class="total-value">{{ totalScore() }}</span>
-              <span class="total-max">/ 10</span>
-            </div>
-
-            <!-- 儲存按鈕 (決策已提交時隱藏) -->
-            @if (!isDecisionSubmitted()) {
-            <div class="section-actions" style="margin-top: 24px; display: flex; justify-content: flex-end;">
-              <button class="btn btn-primary" (click)="submitScoring()"
-                [disabled]="!isScoringComplete() || scoringSubmitting()">
-                @if (scoringSubmitting()) {
-                <i class="ri-loader-4-line spin"></i>
-                儲存中...
+              <!-- 開始評分按鈕 -->
+              @if (!isDecisionSubmitted()) {
+              <button class="btn btn-primary btn-lg open-scoring-btn" (click)="openScoringModal()" type="button">
+                <i class="ri-edit-2-line"></i>
+                @if (selectedCandidate()?.evaluation?.scoringItems) {
+                  編輯面試評分
                 } @else {
-                <i class="ri-save-line"></i>
-                儲存面試記錄
+                  開始面試評分
                 }
               </button>
+              <p class="scoring-hint">
+                依據「面試官面試評分表」進行 17 項評核項目評分、面試流程檢核及綜合評估
+              </p>
+              }
             </div>
-            }
           </div>
         </section>
 
@@ -614,3 +599,17 @@
 
 <app-ai-scoring-overlay *ngIf="aiAnalysisLoading()" [message]="'正在進行 AI 智能分析...'" [progress]="aiAnalysisProgress()">
 </app-ai-scoring-overlay>
+
+<!-- 新版評分 Modal -->
+@if (selectedCandidate(); as candidate) {
+<app-interview-scoring-modal
+  [candidate]="candidate"
+  [candidateFull]="candidateFull()"
+  [isVisible]="isScoringModalVisible()"
+  [jobId]="candidate.jobId"
+  [resumeAnalysis]="resumeAnalysisData()"
+  [candidateFormData]="candidateFormData()"
+  (close)="closeScoringModal()"
+  (scored)="onScoringCompleted()">
+</app-interview-scoring-modal>
+}

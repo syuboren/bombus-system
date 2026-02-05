@@ -1,177 +1,307 @@
 @if (isVisible()) {
 <div class="modal-backdrop"></div>
-<div class="modal large-modal">
-    <div class="modal-header">
-        <h3 class="modal-title">
-            <i class="ri-file-list-3-line"></i>
-            面試評分表
-        </h3>
-        <button class="btn-close" (click)="close.emit()" type="button">
-            <i class="ri-close-line"></i>
-        </button>
+<div class="scoring-modal">
+  <!-- Modal Header -->
+  <div class="modal-header">
+    <h3 class="modal-title">
+      <i class="ri-file-list-3-line"></i>
+      面試官評分表
+    </h3>
+    <div class="header-actions">
+      <button class="btn-icon" (click)="toggleReferencePanel()" type="button" title="參考資料">
+        <i class="ri-layout-right-line"></i>
+      </button>
+      <button class="btn-close" (click)="close.emit()" type="button">
+        <i class="ri-close-line"></i>
+      </button>
     </div>
+  </div>
 
-    <div class="modal-body">
-        <!-- Candidate Info & Score Summary -->
-        <div class="candidate-preview">
-            <div class="candidate-info">
-                <h4>{{ candidate().name }}</h4>
-                <span class="position-badge">{{ candidate().position }}</span>
-            </div>
-            <div class="score-summary">
-                <div class="score-item">
-                    <span class="score-label">維度平均</span>
-                    <span class="score-value">{{ averageScore() }}/5</span>
-                </div>
-                <div class="score-divider"></div>
-                <div class="score-item">
-                    <span class="score-label">關鍵字分數</span>
-                    <span class="score-value">{{ keywordScore() }}</span>
-                </div>
-                <div class="score-divider"></div>
-                <div class="score-item total">
-                    <span class="score-label">綜合評分</span>
-                    <span class="score-value" [class.excellent]="totalScore() >= 80"
-                        [class.good]="totalScore() >= 60 && totalScore() < 80">{{ totalScore() }}</span>
-                </div>
-            </div>
+  <!-- Modal Body: 雙欄佈局 -->
+  <div class="modal-body-wrapper">
+    <!-- 左側：評分表單 -->
+    <div class="scoring-form">
+      <!-- 總分顯示 -->
+      <div class="score-summary-bar">
+        <div class="score-info">
+          <span class="score-label">總分</span>
+          <span class="score-value" [class.low-score]="isLowScore()">{{ totalScore() }}</span>
+          <span class="score-max">/ 100</span>
         </div>
-
-        <!-- NEW: Performance Description Section -->
-        <div class="section-card">
-            <div class="section-header">
-                <h5><i class="ri-quill-pen-line"></i> 候選人表現描述</h5>
-                <span class="section-hint">請描述候選人在面試中的表現，系統會自動標記關鍵字</span>
-            </div>
-            <textarea class="form-textarea description-input" rows="4"
-                placeholder="例如：候選人在回答技術問題時表現出色，具備良好的團隊協作意識，但對於壓力情境的處理略顯緊張..." [ngModel]="performanceDescription()"
-                (ngModelChange)="onDescriptionChange($event)">
-            </textarea>
-
-            <!-- Matched Keywords Display -->
-            @if (matchedKeywords().length > 0) {
-            <div class="keyword-matches">
-                <span class="matches-label">偵測到關鍵字:</span>
-                @for (kw of matchedKeywords(); track kw.keyword) {
-                <span class="keyword-tag" [class.positive]="kw.type === 'positive'"
-                    [class.negative]="kw.type === 'negative'">
-                    <i [class]="kw.type === 'positive' ? 'ri-add-line' : 'ri-subtract-line'"></i>
-                    {{ kw.keyword }} ({{ kw.type === 'positive' ? '+' : '-' }}{{ kw.weight }})
-                </span>
-                }
-            </div>
-            }
+        <div class="progress-info">
+          <span class="progress-text">已評分 {{ scoredItemsCount() }} / 17 題</span>
+          <div class="progress-bar">
+            <div class="progress-fill" [style.width.%]="(scoredItemsCount() / 17) * 100"></div>
+          </div>
         </div>
-
-        <!-- Dimensions Grid -->
-        <div class="section-card">
-            <div class="section-header">
-                <h5><i class="ri-bar-chart-horizontal-line"></i> 評分維度</h5>
-            </div>
-            <div class="dimensions-grid">
-                @for (dim of dimensions(); track $index) {
-                <div class="dimension-card">
-                    <div class="dim-header">
-                        <span class="dim-name">{{ dim.name }}</span>
-                        <div class="rating">
-                            @for (star of [1,2,3,4,5]; track star) {
-                            <i class="ri-star-fill" [class.active]="dim.score >= star" (click)="dim.score = star"></i>
-                            }
-                        </div>
-                    </div>
-                    <input type="text" class="form-input-sm" placeholder="評語 (選填)" [(ngModel)]="dim.comment">
-                </div>
-                }
-            </div>
-        </div>
-
-        <!-- NEW: Media Upload Section -->
-        <div class="section-card">
-            <div class="section-header">
-                <h5><i class="ri-vidicon-line"></i> 面試錄音/錄影</h5>
-                <span class="section-hint">上傳面試錄音或錄影檔案作為評估參考</span>
-            </div>
-
-            <!-- Drag & Drop Zone -->
-            <div class="upload-zone" [class.dragging]="isDraggingOver()" (dragover)="onDragOver($event)"
-                (dragleave)="onDragLeave($event)" (drop)="onDrop($event)">
-                <i class="ri-upload-cloud-2-line"></i>
-                <p>拖放檔案至此或</p>
-                <label class="btn btn-outline-sm">
-                    <i class="ri-folder-open-line"></i>
-                    選擇檔案
-                    <input type="file" accept="audio/*,video/*" multiple (change)="onFileSelect($event)" hidden>
-                </label>
-                <span class="upload-hint">支援 MP3、MP4、WAV、WebM 等格式</span>
-            </div>
-
-            <!-- Uploaded Files List -->
-            @if (mediaAttachments().length > 0) {
-            <div class="uploaded-files">
-                @for (file of mediaAttachments(); track file.id) {
-                <div class="file-item">
-                    <div class="file-icon">
-                        <i [class]="file.type === 'audio' ? 'ri-music-2-line' : 'ri-movie-line'"></i>
-                    </div>
-                    <div class="file-info">
-                        <span class="file-name">{{ file.filename }}</span>
-                        <span class="file-size">{{ formatFileSize(file.size) }}</span>
-                    </div>
-                    @if (file.uploadProgress && file.uploadProgress < 100) { <div class="file-progress">
-                        <div class="progress-bar">
-                            <div class="progress-fill" [style.width.%]="file.uploadProgress"></div>
-                        </div>
-                        <span class="progress-text">{{ file.uploadProgress }}%</span>
-                </div>
-                } @else {
-                <span class="file-status success">
-                    <i class="ri-checkbox-circle-fill"></i>
-                </span>
-                }
-                <button class="btn-icon-sm" (click)="removeAttachment(file.id)" type="button" title="移除">
-                    <i class="ri-close-line"></i>
-                </button>
-            </div>
-            }
+        @if (isLowScore()) {
+        <div class="low-score-warning">
+          <i class="ri-error-warning-line"></i>
+          未達錄取標準建議
         </div>
         }
+      </div>
+
+      <!-- Section Navigation -->
+      <div class="section-nav">
+        <button class="nav-btn" [class.active]="activeSection() === 'scoring'" 
+          (click)="setActiveSection('scoring')" type="button">
+          評核項目
+        </button>
+        <button class="nav-btn" [class.active]="activeSection() === 'checklist'" 
+          (click)="setActiveSection('checklist')" type="button">
+          流程檢核
+        </button>
+        <button class="nav-btn" [class.active]="activeSection() === 'assessment'" 
+          (click)="setActiveSection('assessment')" type="button">
+          綜合評估
+        </button>
+        <button class="nav-btn" [class.active]="activeSection() === 'result'" 
+          (click)="setActiveSection('result')" type="button">
+          結果總評
+        </button>
+      </div>
+
+      <!-- Scrollable Content -->
+      <div class="form-content">
+        <!-- 1. 基本資訊（自動帶入） -->
+        <section class="form-section basic-info">
+          <div class="info-row">
+            <div class="info-item">
+              <span class="info-label">填表日期</span>
+              <span class="info-value">{{ fillDate() }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">面試官</span>
+              <span class="info-value">{{ interviewerName() }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">候選人</span>
+              <span class="info-value">{{ candidate().name }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">應徵職務</span>
+              <span class="info-value">{{ candidate().position }}</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. 評核項目（17 題） -->
+        @if (activeSection() === 'scoring') {
+        <section class="form-section scoring-section">
+          <h4 class="section-title">
+            <i class="ri-star-line"></i>
+            評核項目
+            <span class="section-hint">共 17 題，採倒扣制，滿分 100 分</span>
+          </h4>
+
+          @for (group of groupedScoringItems(); track group.category) {
+          <div class="scoring-group">
+            <h5 class="group-title">{{ group.label }}</h5>
+            <div class="scoring-items">
+              @for (item of group.items; track item.code) {
+              <div class="scoring-item">
+                <span class="item-name">{{ item.name }}</span>
+                <div class="level-buttons">
+                  @for (level of scoringLevels; track level) {
+                  <button class="level-btn" 
+                    [class.selected]="item.score === level"
+                    [class]="'level-' + level"
+                    (click)="setScoringLevel(item.code, level)"
+                    type="button"
+                    [title]="scoringLevelMap[level].label + ' (' + scoringLevelMap[level].deduction + '分)'">
+                    {{ scoringLevelMap[level].label }}
+                  </button>
+                  }
+                </div>
+              </div>
+              }
+            </div>
+          </div>
+          }
+        </section>
+        }
+
+        <!-- 3. 面試流程檢核 -->
+        @if (activeSection() === 'checklist') {
+        <section class="form-section checklist-section">
+          <h4 class="section-title">
+            <i class="ri-checkbox-multiple-line"></i>
+            面試流程檢核
+            <span class="section-hint">請確認已執行的介紹流程</span>
+          </h4>
+
+          <div class="checklist-items">
+            @for (item of processChecklistItems; track item.code) {
+            <label class="checklist-item">
+              <input type="checkbox" 
+                [checked]="processChecklist()[item.code]"
+                (change)="toggleChecklist(item.code)">
+              <span class="checkmark"></span>
+              <span class="item-label">{{ item.label }}</span>
+            </label>
+            }
+          </div>
+        </section>
+        }
+
+        <!-- 4. 綜合評估（10 題） -->
+        @if (activeSection() === 'assessment') {
+        <section class="form-section assessment-section">
+          <h4 class="section-title">
+            <i class="ri-survey-line"></i>
+            綜合評估
+            <span class="section-hint">10 項評估指標</span>
+          </h4>
+
+          <div class="assessment-items">
+            @for (opt of assessmentOptions; track opt.code) {
+            <div class="assessment-item">
+              <label class="item-label">{{ opt.label }}</label>
+              <div class="option-group">
+                @for (option of opt.options; track option.value) {
+                <label class="radio-option">
+                  <input type="radio" 
+                    [name]="opt.code"
+                    [value]="option.value"
+                    [checked]="getAssessmentValue(opt.code) === option.value"
+                    (change)="setAssessmentValue(opt.code, option.value)">
+                  <span class="radio-mark"></span>
+                  <span class="option-label">{{ option.label }}</span>
+                </label>
+                }
+                @if (opt.hasOther) {
+                <label class="radio-option">
+                  <input type="radio" 
+                    [name]="opt.code"
+                    value="other"
+                    [checked]="getAssessmentValue(opt.code) === 'other'"
+                    (change)="setAssessmentValue(opt.code, 'other')">
+                  <span class="radio-mark"></span>
+                  <span class="option-label">其他</span>
+                </label>
+                @if (getAssessmentValue(opt.code) === 'other') {
+                <input type="text" class="other-input" 
+                  placeholder="請說明..."
+                  [value]="getAssessmentOther(opt.code)"
+                  (input)="setAssessmentOther(opt.code, $any($event.target).value)">
+                }
+                }
+              </div>
+            </div>
+            }
+          </div>
+        </section>
+        }
+
+        <!-- 5. 面試結果總評 -->
+        @if (activeSection() === 'result') {
+        <section class="form-section result-section">
+          <h4 class="section-title">
+            <i class="ri-draft-line"></i>
+            面試結果總評
+          </h4>
+
+          <div class="result-form">
+            <!-- 優點總評 -->
+            <div class="form-group">
+              <label class="form-label required">面試者優點總評</label>
+              <textarea class="form-textarea" rows="3"
+                placeholder="請描述候選人的優點..."
+                [ngModel]="prosComment()"
+                (ngModelChange)="prosComment.set($event)"></textarea>
+            </div>
+
+            <!-- 缺點總評 -->
+            <div class="form-group">
+              <label class="form-label required">面試者缺點總評</label>
+              <textarea class="form-textarea" rows="3"
+                placeholder="請描述候選人的缺點..."
+                [ngModel]="consComment()"
+                (ngModelChange)="consComment.set($event)"></textarea>
+            </div>
+
+            <!-- 錄取建議 -->
+            <div class="form-group">
+              <label class="form-label required">錄取建議</label>
+              <div class="recommendation-options">
+                @for (opt of recommendationOptions; track opt.value) {
+                <label class="recommendation-option" 
+                  [class.selected]="recommendation() === opt.value"
+                  [class]="'option-' + opt.value.toLowerCase()"
+                  (click)="setRecommendation(opt.value)">
+                  <input type="radio" 
+                    name="recommendation"
+                    [value]="opt.value"
+                    [checked]="recommendation() === opt.value">
+                  <span class="option-content">
+                    @switch (opt.value) {
+                    @case ('Pass') {
+                    <i class="ri-thumb-up-line"></i>
+                    }
+                    @case ('Hold') {
+                    <i class="ri-time-line"></i>
+                    }
+                    @case ('Reject') {
+                    <i class="ri-thumb-down-line"></i>
+                    }
+                    }
+                    <span>{{ opt.label }}</span>
+                  </span>
+                </label>
+                }
+              </div>
+            </div>
+
+            <!-- 備註 -->
+            <div class="form-group">
+              <label class="form-label">備註 <span class="optional">(選填)</span></label>
+              <textarea class="form-textarea" rows="2"
+                placeholder="其他補充說明..."
+                [ngModel]="remark()"
+                (ngModelChange)="remark.set($event)"></textarea>
+            </div>
+          </div>
+        </section>
+        }
+      </div>
     </div>
 
-    <!-- Overall Comment -->
-    <div class="form-group overall-comment">
-        <label class="form-label">總體評價與建議</label>
-        <textarea class="form-textarea" rows="3" [(ngModel)]="overallComment"
-            placeholder="請輸入對候選人的整體評價與後續建議..."></textarea>
+    <!-- 右側：參考資料面板 -->
+    <app-reference-panel
+      [candidate]="candidate()"
+      [candidateFull]="candidateFull()"
+      [resumeAnalysis]="resumeAnalysis()"
+      [candidateFormData]="candidateFormData()"
+      [isExpanded]="isReferencePanelExpanded()"
+      (toggleExpand)="toggleReferencePanel()">
+    </app-reference-panel>
+  </div>
+
+  <!-- Modal Footer -->
+  <div class="modal-footer">
+    <div class="footer-left">
+      @if (validationErrors().length > 0) {
+      <span class="validation-hint">
+        <i class="ri-error-warning-line"></i>
+        {{ validationErrors()[0] }}
+      </span>
+      }
     </div>
-
-    <!-- Decision Selector -->
-    <div class="decision-selector">
-        <label class="decision-option option-pass" [class.selected]="result() === 'Pass'">
-            <input type="radio" name="result" value="Pass" [ngModel]="result()" (ngModelChange)="result.set($event)">
-            <i class="ri-thumb-up-line"></i>
-            <span class="title">通過 (Pass)</span>
-        </label>
-
-        <label class="decision-option option-hold" [class.selected]="result() === 'Hold'">
-            <input type="radio" name="result" value="Hold" [ngModel]="result()" (ngModelChange)="result.set($event)">
-            <i class="ri-question-line"></i>
-            <span class="title">保留 (Hold)</span>
-        </label>
-
-        <label class="decision-option option-fail" [class.selected]="result() === 'Fail'">
-            <input type="radio" name="result" value="Fail" [ngModel]="result()" (ngModelChange)="result.set($event)">
-            <i class="ri-thumb-down-line"></i>
-            <span class="title">未通過 (Fail)</span>
-        </label>
+    <div class="footer-right">
+      <button class="btn btn-secondary" (click)="close.emit()" type="button" [disabled]="loading()">
+        取消
+      </button>
+      <button class="btn btn-primary" (click)="submit()" type="button" [disabled]="loading() || !isValid()">
+        @if (loading()) {
+        <i class="ri-loader-4-line spinning"></i>
+        保存中...
+        } @else {
+        <i class="ri-save-line"></i>
+        儲存評分
+        }
+      </button>
     </div>
-
-</div>
-
-<div class="modal-footer">
-    <button class="btn btn-secondary" (click)="close.emit()" type="button" [disabled]="loading()">取消</button>
-    <button class="btn btn-primary" (click)="submit()" type="button" [disabled]="loading()">
-        {{ loading() ? '保存中...' : '提交評分' }}
-    </button>
-</div>
+  </div>
 </div>
 }

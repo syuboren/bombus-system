@@ -98,36 +98,391 @@ export interface CandidateDetail extends Candidate {
 }
 
 // ============================================================
-// 面試評估 (Interview Evaluation)
+// 面試官評分表 (Interviewer Scoring) - 新版
+// ============================================================
+
+/**
+ * 評分等級（5 等級倒扣制）
+ * 優異(不扣分)、良好(-1分)、佳(-2分)、尚可(-3分)、差(-4分)
+ */
+export type ScoringLevel = 'excellent' | 'good' | 'fair' | 'acceptable' | 'poor';
+
+/**
+ * 評分對照表
+ */
+export const SCORING_LEVEL_MAP: Record<ScoringLevel, { label: string; deduction: number }> = {
+  excellent: { label: '優異', deduction: 0 },
+  good: { label: '良好', deduction: -1 },
+  fair: { label: '佳', deduction: -2 },
+  acceptable: { label: '尚可', deduction: -3 },
+  poor: { label: '差', deduction: -4 }
+};
+
+/**
+ * 評核項目分類
+ */
+export const SCORING_CATEGORIES = {
+  PERSONAL_CULTIVATION: '個人修養',
+  JOB_WILLINGNESS: '求職意願',
+  COMPREHENSIVE_QUALITY: '綜合素質',
+  PERSONALITY_TRAITS: '性格特質',
+  PROFESSIONAL_SKILLS: '專業技能'
+} as const;
+
+export type ScoringCategory = keyof typeof SCORING_CATEGORIES;
+
+/**
+ * 評核項目定義
+ */
+export interface ScoringItemDef {
+  code: string;
+  name: string;
+  category: ScoringCategory;
+  weight: number;
+}
+
+/**
+ * 17 題評核項目清單（對應規格文件）
+ */
+export const SCORING_ITEMS_DEF: ScoringItemDef[] = [
+  // 2-1. 個人修養 (3 題)
+  { code: 's1_punctuality', name: '是否守時', category: 'PERSONAL_CULTIVATION', weight: 1 },
+  { code: 's2_politeness', name: '禮貌禮節', category: 'PERSONAL_CULTIVATION', weight: 1 },
+  { code: 's3_appearance', name: '儀容儀表', category: 'PERSONAL_CULTIVATION', weight: 1 },
+  // 2-2. 求職意願 (3 題)
+  { code: 's4_careerGoal', name: '職業目標是否明確', category: 'JOB_WILLINGNESS', weight: 1 },
+  { code: 's5_jobUnderstanding', name: '對職位的瞭解程度', category: 'JOB_WILLINGNESS', weight: 1 },
+  { code: 's6_attitude', name: '求職態度是否積極', category: 'JOB_WILLINGNESS', weight: 1 },
+  // 2-3. 綜合素質 (6 題)
+  { code: 's7_execution', name: '執行力', category: 'COMPREHENSIVE_QUALITY', weight: 1 },
+  { code: 's8_responsibility', name: '責任感', category: 'COMPREHENSIVE_QUALITY', weight: 1 },
+  { code: 's9_reactivity', name: '快速反應能力', category: 'COMPREHENSIVE_QUALITY', weight: 1 },
+  { code: 's10_teamwork', name: '團隊意識', category: 'COMPREHENSIVE_QUALITY', weight: 1 },
+  { code: 's11_planning', name: '計畫性、條理性', category: 'COMPREHENSIVE_QUALITY', weight: 1 },
+  { code: 's12_communication', name: '表達、溝通能力', category: 'COMPREHENSIVE_QUALITY', weight: 1 },
+  // 2-4. 性格特質 (2 題)
+  { code: 's13_affinity', name: '外向、親和', category: 'PERSONALITY_TRAITS', weight: 1 },
+  { code: 's14_confidence', name: '自信心', category: 'PERSONALITY_TRAITS', weight: 1 },
+  // 2-5. 專業技能 (3 題)
+  { code: 's15_knowledge', name: '專業背景與知識水平', category: 'PROFESSIONAL_SKILLS', weight: 1 },
+  { code: 's16_experience', name: '相關工作經驗', category: 'PROFESSIONAL_SKILLS', weight: 1 },
+  { code: 's17_problemSolving', name: '解決問題能力', category: 'PROFESSIONAL_SKILLS', weight: 1 }
+];
+
+/**
+ * 評核項目（含分數）
+ */
+export interface ScoringItem {
+  code: string;
+  name: string;
+  category: ScoringCategory;
+  weight: number;
+  score: ScoringLevel | null;
+}
+
+/**
+ * 面試流程檢核
+ */
+export interface ProcessChecklist {
+  flow_introCompany: boolean;    // 介紹公司 (文化/願景/環境)
+  flow_introBusiness: boolean;   // 商業模式與品牌簡介
+  flow_introOrg: boolean;        // 組織架構與工作環境
+  flow_introJob: boolean;        // 職務內容與 JD 說明
+  flow_introSalary: boolean;     // 薪酬制度與福利
+  flow_introTools: boolean;      // 管理工具 (OKR/專案報表)
+}
+
+/**
+ * 面試流程檢核項目定義
+ */
+export const PROCESS_CHECKLIST_ITEMS = [
+  { code: 'flow_introCompany', label: '介紹公司 (文化/願景/環境)' },
+  { code: 'flow_introBusiness', label: '商業模式與品牌簡介' },
+  { code: 'flow_introOrg', label: '組織架構與工作環境' },
+  { code: 'flow_introJob', label: '職務內容與 JD 說明' },
+  { code: 'flow_introSalary', label: '薪酬制度與福利' },
+  { code: 'flow_introTools', label: '管理工具 (OKR/專案報表)' }
+] as const;
+
+/**
+ * 綜合評估選項定義
+ */
+export interface AssessmentOptionDef {
+  code: string;
+  label: string;
+  options: { value: string; label: string }[];
+  hasOther: boolean;
+}
+
+/**
+ * 10 題綜合評估選項（對應規格文件）
+ */
+export const ASSESSMENT_OPTIONS: AssessmentOptionDef[] = [
+  {
+    code: 'assess_appearance',
+    label: '整體儀態形象',
+    options: [
+      { value: 'neat', label: '乾淨整齊、儀態端正且談吐大方' },
+      { value: 'casual', label: '不修邊幅、坐姿及態度隨性' },
+      { value: 'nervous', label: '情緒緊張，態度表現羞澀' }
+    ],
+    hasOther: true
+  },
+  {
+    code: 'assess_understanding',
+    label: '對公司/職務了解程度',
+    options: [
+      { value: 'thorough', label: '充分閱讀公司網站及應徵職務之工作內容' },
+      { value: 'partial', label: '略為了解公司及應徵職務之相關資訊' },
+      { value: 'none', label: '被動接受面試通知對公司不了解' }
+    ],
+    hasOther: true
+  },
+  {
+    code: 'assess_passion',
+    label: '對應徵工作之熱誠',
+    options: [
+      { value: 'proactive', label: '積極詢問未來工作上之問題' },
+      { value: 'occasional', label: '偶爾提出工作上之問題' },
+      { value: 'passive', label: '被動接受主管所敘述之工作內容' }
+    ],
+    hasOther: true
+  },
+  {
+    code: 'assess_alignment',
+    label: '個人期望與公司發展方向',
+    options: [
+      { value: 'fully', label: '完全相符' },
+      { value: 'partial', label: '略為相符' },
+      { value: 'none', label: '應徵者毫無想法' }
+    ],
+    hasOther: true
+  },
+  {
+    code: 'assess_expectation',
+    label: '選擇新工作期望',
+    options: [
+      { value: 'development', label: '想要在目前的專業領域上繼續發展' },
+      { value: 'promotion', label: '希望晉升更高的職位及更多的收入' },
+      { value: 'none', label: '從來沒有想過' }
+    ],
+    hasOther: true
+  },
+  {
+    code: 'assess_personality',
+    label: '人格特質與性格',
+    options: [
+      { value: 'positive', label: '積極樂觀' },
+      { value: 'passive', label: '被動消極' },
+      { value: 'none', label: '沒有自己的想法' }
+    ],
+    hasOther: true
+  },
+  {
+    code: 'assess_comprehension',
+    label: '對問題的理解力 (EQ)',
+    options: [
+      { value: 'precise', label: '針對所問的問題精確的回答' },
+      { value: 'thoughtful', label: '需要思索之後才能回答' },
+      { value: 'repeated', label: '需要反覆的詢問且講解後始能回答' }
+    ],
+    hasOther: true
+  },
+  {
+    code: 'assess_expression',
+    label: '表達能力',
+    options: [
+      { value: 'clear', label: '表達清晰且很有見解' },
+      { value: 'average', label: '表達能力平平' },
+      { value: 'poor', label: '未能針對問題回答' }
+    ],
+    hasOther: true
+  },
+  {
+    code: 'assess_affinity',
+    label: '親和度',
+    options: [
+      { value: 'friendly', label: '非常熱誠友善' },
+      { value: 'approachable', label: '可以接近，尚稱友善' },
+      { value: 'distant', label: '表現很有距離及疏離感' }
+    ],
+    hasOther: true
+  },
+  {
+    code: 'assess_skillLevel',
+    label: '專業技能評價',
+    options: [
+      { value: 'expert', label: '相當豐富且具實力' },
+      { value: 'trainable', label: '需主管帶領，適用期後應可進入狀況' },
+      { value: 'fresher', label: '職場新鮮人，態度積極，可培訓' }
+    ],
+    hasOther: true
+  }
+];
+
+/**
+ * 綜合評估（10 題單選 + 其他）
+ */
+export interface ComprehensiveAssessment {
+  assess_appearance: string;
+  assess_appearance_other?: string;
+  assess_understanding: string;
+  assess_understanding_other?: string;
+  assess_passion: string;
+  assess_passion_other?: string;
+  assess_alignment: string;
+  assess_alignment_other?: string;
+  assess_expectation: string;
+  assess_expectation_other?: string;
+  assess_personality: string;
+  assess_personality_other?: string;
+  assess_comprehension: string;
+  assess_comprehension_other?: string;
+  assess_expression: string;
+  assess_expression_other?: string;
+  assess_affinity: string;
+  assess_affinity_other?: string;
+  assess_skillLevel: string;
+  assess_skillLevel_other?: string;
+}
+
+/**
+ * 錄取建議類型
+ */
+export type RecommendationType = 'Pass' | 'Hold' | 'Reject';
+
+/**
+ * 錄取建議選項
+ */
+export const RECOMMENDATION_OPTIONS: { value: RecommendationType; label: string }[] = [
+  { value: 'Pass', label: '建議錄取' },
+  { value: 'Hold', label: '考慮中 / 列入人才庫' },
+  { value: 'Reject', label: '不予錄取' }
+];
+
+/**
+ * 面試結果總評
+ */
+export interface FinalResult {
+  prosComment: string;              // 面試者優點總評 (必填)
+  consComment: string;              // 面試者缺點總評 (必填)
+  recommendation: RecommendationType; // 錄取建議 (必填)
+  remark?: string;                  // 備註 (選填)
+}
+
+/**
+ * 完整面試官評分
+ */
+export interface InterviewerScoring {
+  // 基本資訊（系統自動帶入）
+  basicInfo: {
+    fillDate: string;
+    interviewerName: string;
+    candidateName: string;
+    jobTitle: string;
+  };
+  // 17 題評核項目
+  scoringItems: ScoringItem[];
+  // 面試流程檢核
+  processChecklist: ProcessChecklist;
+  // 綜合評估（10 題）
+  comprehensiveAssessment: ComprehensiveAssessment;
+  // 面試結果總評
+  finalResult: FinalResult;
+  // 系統計算總分
+  totalScore: number;
+}
+
+// ============================================================
+// 面試評估 (Interview Evaluation) - 整合新舊格式
 // ============================================================
 
 /**
  * 面試評估資料
- * 記錄 HR 對候選人的面試評分與描述
+ * 記錄面試官對候選人的面試評分與描述
  */
 export interface InterviewEvaluation {
-  performanceDescription: string;     // 候選人表現描述 (自由文字)
-  scores: EvaluationScore[];          // 各維度評分
-  attachments: MediaAttachment[];     // 錄音/錄影附件
-  keywordsFound: string[];            // 偵測到的關鍵字
-  totalScore: number;                 // 維度平均分數
-  evaluatedBy?: string;               // 評分者 ID
-  evaluatedAt?: string;               // 評分時間
-  overallComment?: string;            // 整體評語
-  transcriptText?: string;            // 當下評分使用的逐字稿
-  mediaUrl?: string;                  // 錄音/錄影完整 URL (Persistence)
-  mediaSize?: number;                 // 錄音/錄影檔案大小 (bytes)
+  // ===== 新版欄位 =====
+  scoringItems?: ScoringItem[];               // 17 題評核項目
+  processChecklist?: ProcessChecklist;        // 面試流程檢核
+  comprehensiveAssessment?: ComprehensiveAssessment; // 綜合評估
+  prosComment?: string;                       // 優點總評
+  consComment?: string;                       // 缺點總評
+  recommendation?: RecommendationType;        // 錄取建議
+
+  // ===== 保留欄位 =====
+  performanceDescription?: string;            // 候選人表現描述 (自由文字)
+  overallComment?: string;                    // 整體評語
+  totalScore: number;                         // 總分（100 + Σ扣分）
+  evaluatedBy?: string;                       // 評分者 ID
+  evaluatedAt?: string;                       // 評分時間
+  transcriptText?: string;                    // 逐字稿
+  mediaUrl?: string;                          // 錄音/錄影 URL
+  mediaSize?: number;                         // 錄音/錄影檔案大小 (bytes)
+  attachments?: MediaAttachment[];            // 錄音/錄影附件
 }
 
 /**
- * 維度評分
+ * 初始化空的評核項目
  */
-export interface EvaluationScore {
-  dimensionId: string;                // 維度 ID
-  dimensionName: string;              // 維度名稱
-  score: number;                      // 分數 0-100
-  remark?: string;                    // 備註說明
+export function createEmptyScoringItems(): ScoringItem[] {
+  return SCORING_ITEMS_DEF.map(def => ({
+    code: def.code,
+    name: def.name,
+    category: def.category,
+    weight: def.weight,
+    score: null
+  }));
 }
+
+/**
+ * 初始化空的流程檢核
+ */
+export function createEmptyProcessChecklist(): ProcessChecklist {
+  return {
+    flow_introCompany: false,
+    flow_introBusiness: false,
+    flow_introOrg: false,
+    flow_introJob: false,
+    flow_introSalary: false,
+    flow_introTools: false
+  };
+}
+
+/**
+ * 初始化空的綜合評估
+ */
+export function createEmptyComprehensiveAssessment(): ComprehensiveAssessment {
+  return {
+    assess_appearance: '',
+    assess_understanding: '',
+    assess_passion: '',
+    assess_alignment: '',
+    assess_expectation: '',
+    assess_personality: '',
+    assess_comprehension: '',
+    assess_expression: '',
+    assess_affinity: '',
+    assess_skillLevel: ''
+  };
+}
+
+/**
+ * 計算總分（100 + Σ扣分）
+ */
+export function calculateTotalScore(scoringItems: ScoringItem[]): number {
+  let deduction = 0;
+  scoringItems.forEach(item => {
+    if (item.score) {
+      deduction += SCORING_LEVEL_MAP[item.score].deduction * item.weight;
+    }
+  });
+  return 100 + deduction;
+}
+
+// ============================================================
+// 媒體附件 (Media Attachment)
+// ============================================================
 
 /**
  * 媒體附件
@@ -301,6 +656,8 @@ export interface InterviewFormResponse {
     education?: string;
     expectedSalary?: string;
     experienceYears?: number;
+    birthday?: string;
+    drivingLicenses?: string[];
   };
   interview: {
     jobTitle: string;
@@ -309,6 +666,12 @@ export interface InterviewFormResponse {
     location?: string;
     round: number;
   };
+  // 從履歷帶入的工作經歷
+  workExperiences?: {
+    companyName: string;
+    jobTitle: string;
+    yearsOfService: string;
+  }[];
   formData?: CandidateFormData;
 }
 

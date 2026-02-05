@@ -1,0 +1,16 @@
+<div class="stat-card">
+  <div class="stat-card__icon" [ngStyle]="iconStyle()">
+    <i [class]="icon()"></i>
+  </div>
+  <div class="stat-card__content">
+    <div class="stat-card__value">{{ value() }}</div>
+    <div class="stat-card__label">{{ label() }}</div>
+  </div>
+  @if (showProgress()) {
+    <div class="stat-card__progress">
+      <div class="mini-progress-bar">
+        <div class="mini-progress-fill" [ngStyle]="progressStyle()"></div>
+      </div>
+    </div>
+  }
+</div>

@@ -9,6 +9,94 @@ import { Job, JobStats } from '../../models/job.model';
 import { CompetencyService } from '../../../competency/services/competency.service';
 import { JobDescription } from '../../../competency/models/competency.model';
 
+// 新增候選人表單介面
+interface NewCandidateForm {
+  // 基本資料
+  name: string;
+  nameEn: string;
+  gender: string;
+  birthday: string;
+  email: string;
+  phone: string;
+  tel: string;
+  contactInfo: string;
+  address: string;
+  nationality: string;
+  militaryStatus: string;
+  drivingLicenses: string;
+  transports: string;
+  // 求職條件
+  jobCharacteristic: string;
+  workInterval: string;
+  shiftWork: boolean | null;
+  startDateOpt: string;
+  expectedSalary: string;
+  preferredLocation: string;
+  preferredJobName: string;
+  preferredJobCategory: string;
+  preferredIndustry: string;
+  introduction: string;
+  motto: string;
+  characteristic: string;
+  certificates: string;
+  // 學經歷
+  educationList: EducationEntry[];
+  experienceList: ExperienceEntry[];
+  skillsText: string;
+  // 推薦人
+  recommenderList: RecommenderEntry[];
+}
+
+interface EducationEntry {
+  schoolName: string;
+  major: string;
+  degreeLevel: string;
+  degreeStatus: string;
+}
+
+interface ExperienceEntry {
+  firmName: string;
+  jobName: string;
+  industryCategory: string;
+  startDate: string;
+  endDate: string;
+  jobDesc: string;
+}
+
+interface RecommenderEntry {
+  name: string;
+  corp: string;
+  jobTitle: string;
+  tel: string;
+  email: string;
+}
+
+// 104 匯入排程設定介面
+interface Import104Schedule {
+  enabled: boolean;
+  frequency: 'daily' | 'weekly' | 'monthly';
+  dailyTime: string;
+  weeklyDays: number[];
+  weeklyTime: string;
+  monthlyDates: number[];
+  monthlyTime: string;
+}
+
+// 104 匯入進度介面
+interface ImportProgress {
+  isImporting: boolean;
+  currentIndex: number;
+  totalResumes: number;
+  jobs: ImportJobStatus[];
+}
+
+interface ImportJobStatus {
+  jobId: string;
+  jobTitle: string;
+  status: 'pending' | 'processing' | 'completed' | 'error';
+  resumeCount: number;
+}
+
 @Component({
   selector: 'app-jobs-page',
   standalone: true,
@@ -34,8 +122,92 @@ export class JobsPageComponent implements OnInit {
   showImportModal = signal<boolean>(false);
   selectedJobForImport = signal<Job | null>(null);
 
+  // ============================================================
+  // 新增候選人相關 Signals
+  // ============================================================
+  candidateFormTab = signal<number>(1);
+  candidateAttachments = signal<File[]>([]);
+  newCandidate = signal<NewCandidateForm>({
+    // 基本資料
+    name: '',
+    nameEn: '',
+    gender: '',
+    birthday: '',
+    email: '',
+    phone: '',
+    tel: '',
+    contactInfo: '',
+    address: '',
+    nationality: '',
+    militaryStatus: '',
+    drivingLicenses: '',
+    transports: '',
+    // 求職條件
+    jobCharacteristic: '',
+    workInterval: '',
+    shiftWork: null,
+    startDateOpt: '',
+    expectedSalary: '',
+    preferredLocation: '',
+    preferredJobName: '',
+    preferredJobCategory: '',
+    preferredIndustry: '',
+    introduction: '',
+    motto: '',
+    characteristic: '',
+    certificates: '',
+    // 學經歷
+    educationList: [{ schoolName: '', major: '', degreeLevel: '', degreeStatus: '' }],
+    experienceList: [{ firmName: '', jobName: '', industryCategory: '', startDate: '', endDate: '', jobDesc: '' }],
+    skillsText: '',
+    // 推薦人
+    recommenderList: []
+  });
+
   // 資料來源切換
   dataSource = signal<'internal' | '104'>('internal');
+
+  // ============================================================
+  // 104 匯入設定相關 Signals
+  // ============================================================
+  showImport104SettingsModal = signal<boolean>(false);
+  showImport104ProgressModal = signal<boolean>(false);
+  
+  import104Schedule = signal<Import104Schedule>({
+    enabled: false,
+    frequency: 'daily',
+    dailyTime: '09:00',
+    weeklyDays: [1], // 預設星期一
+    weeklyTime: '09:00',
+    monthlyDates: [1], // 預設 1 號
+    monthlyTime: '09:00'
+  });
+  
+  import104Progress = signal<ImportProgress>({
+    isImporting: false,
+    currentIndex: 0,
+    totalResumes: 0,
+    jobs: []
+  });
+  
+  // 時間選項（00:00 ~ 23:00）
+  timeOptions = Array.from({ length: 24 }, (_, i) => 
+    `${i.toString().padStart(2, '0')}:00`
+  );
+  
+  // 星期選項
+  weekDays = [
+    { value: 0, label: '日' },
+    { value: 1, label: '一' },
+    { value: 2, label: '二' },
+    { value: 3, label: '三' },
+    { value: 4, label: '四' },
+    { value: 5, label: '五' },
+    { value: 6, label: '六' }
+  ];
+  
+  // 日期選項（1~31）
+  monthDays = Array.from({ length: 31 }, (_, i) => i + 1);
 
   // JD 列表
   jobDescriptions = signal<JobDescription[]>([]);
@@ -353,21 +525,202 @@ export class JobsPageComponent implements OnInit {
     });
   }
 
-  // 匯入履歷相關
+  // ============================================================
+  // 新增候選人相關
+  // ============================================================
   openImportModal(job: Job): void {
     this.selectedJobForImport.set(job);
+    this.resetCandidateForm();
     this.showImportModal.set(true);
   }
 
   closeImportModal(): void {
     this.showImportModal.set(false);
     this.selectedJobForImport.set(null);
+    this.resetCandidateForm();
   }
 
-  importResumes(): void {
-    this.notificationService.success('履歷匯入成功！已觸發 AI 評分');
+  // 頁籤切換
+  setCandidateFormTab(tab: number): void {
+    this.candidateFormTab.set(tab);
+  }
+
+  prevCandidateTab(): void {
+    const current = this.candidateFormTab();
+    if (current > 1) {
+      this.candidateFormTab.set(current - 1);
+    }
+  }
+
+  nextCandidateTab(): void {
+    const current = this.candidateFormTab();
+    if (current < 4) {
+      this.candidateFormTab.set(current + 1);
+    }
+  }
+
+  // 學歷操作
+  addEducation(): void {
+    this.newCandidate.update(c => ({
+      ...c,
+      educationList: [...c.educationList, { schoolName: '', major: '', degreeLevel: '', degreeStatus: '' }]
+    }));
+  }
+
+  removeEducation(index: number): void {
+    this.newCandidate.update(c => ({
+      ...c,
+      educationList: c.educationList.filter((_, i) => i !== index)
+    }));
+  }
+
+  // 工作經歷操作
+  addExperience(): void {
+    this.newCandidate.update(c => ({
+      ...c,
+      experienceList: [...c.experienceList, { firmName: '', jobName: '', industryCategory: '', startDate: '', endDate: '', jobDesc: '' }]
+    }));
+  }
+
+  removeExperience(index: number): void {
+    this.newCandidate.update(c => ({
+      ...c,
+      experienceList: c.experienceList.filter((_, i) => i !== index)
+    }));
+  }
+
+  // 推薦人操作
+  addRecommender(): void {
+    this.newCandidate.update(c => ({
+      ...c,
+      recommenderList: [...c.recommenderList, { name: '', corp: '', jobTitle: '', tel: '', email: '' }]
+    }));
+  }
+
+  removeRecommender(index: number): void {
+    this.newCandidate.update(c => ({
+      ...c,
+      recommenderList: c.recommenderList.filter((_, i) => i !== index)
+    }));
+  }
+
+  // 附件上傳
+  onFileSelect(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files) {
+      const newFiles = Array.from(input.files);
+      this.candidateAttachments.update(files => [...files, ...newFiles]);
+    }
+  }
+
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  onFileDrop(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.dataTransfer?.files) {
+      const newFiles = Array.from(event.dataTransfer.files);
+      this.candidateAttachments.update(files => [...files, ...newFiles]);
+    }
+  }
+
+  removeAttachment(index: number): void {
+    this.candidateAttachments.update(files => files.filter((_, i) => i !== index));
+  }
+
+  formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
+
+  // 表單驗證
+  hasTabErrors(tab: number): boolean {
+    const c = this.newCandidate();
+    switch (tab) {
+      case 1: // 基本資料
+        return !c.name || !c.nameEn || !c.gender || !c.birthday || 
+               !c.email || !c.phone || !c.contactInfo || !c.address || !c.nationality;
+      case 2: // 求職條件
+        return !c.jobCharacteristic || !c.workInterval || c.shiftWork === null;
+      case 3: // 學經歷
+        const hasValidEdu = c.educationList.some(e => 
+          e.schoolName && e.major && e.degreeLevel && e.degreeStatus);
+        const hasValidExp = c.experienceList.some(e => 
+          e.firmName && e.jobName && e.industryCategory && e.startDate && e.jobDesc);
+        return !hasValidEdu || !hasValidExp;
+      default:
+        return false;
+    }
+  }
+
+  isCandidateFormValid(): boolean {
+    return !this.hasTabErrors(1) && !this.hasTabErrors(2) && !this.hasTabErrors(3);
+  }
+
+  // 提交候選人
+  submitCandidate(): void {
+    if (!this.isCandidateFormValid()) {
+      this.notificationService.error('請填寫所有必填欄位');
+      return;
+    }
+
+    const job = this.selectedJobForImport();
+    if (!job) return;
+
+    // TODO: 呼叫 API 建立候選人
+    console.log('Submitting candidate:', {
+      jobId: job.id,
+      candidate: this.newCandidate(),
+      attachments: this.candidateAttachments()
+    });
+
+    this.notificationService.success('候選人新增成功！已觸發 AI 履歷評分');
     this.closeImportModal();
     this.loadData();
+  }
+
+  // 重置候選人表單
+  private resetCandidateForm(): void {
+    this.candidateFormTab.set(1);
+    this.candidateAttachments.set([]);
+    this.newCandidate.set({
+      name: '',
+      nameEn: '',
+      gender: '',
+      birthday: '',
+      email: '',
+      phone: '',
+      tel: '',
+      contactInfo: '',
+      address: '',
+      nationality: '',
+      militaryStatus: '',
+      drivingLicenses: '',
+      transports: '',
+      jobCharacteristic: '',
+      workInterval: '',
+      shiftWork: null,
+      startDateOpt: '',
+      expectedSalary: '',
+      preferredLocation: '',
+      preferredJobName: '',
+      preferredJobCategory: '',
+      preferredIndustry: '',
+      introduction: '',
+      motto: '',
+      characteristic: '',
+      certificates: '',
+      educationList: [{ schoolName: '', major: '', degreeLevel: '', degreeStatus: '' }],
+      experienceList: [{ firmName: '', jobName: '', industryCategory: '', startDate: '', endDate: '', jobDesc: '' }],
+      skillsText: '',
+      recommenderList: []
+    });
   }
 
   private resetForm(): void {
@@ -684,5 +1037,178 @@ export class JobsPageComponent implements OnInit {
         this.notificationService.error('刪除失敗');
       }
     });
+  }
+
+  // ============================================================
+  // 104 匯入設定相關方法
+  // ============================================================
+  
+  /** 開啟匯入設定 Modal */
+  openImport104SettingsModal(): void {
+    this.showImport104SettingsModal.set(true);
+  }
+  
+  /** 關閉匯入設定 Modal */
+  closeImport104SettingsModal(): void {
+    this.showImport104SettingsModal.set(false);
+  }
+  
+  /** 更新匯入排程設定 */
+  updateImport104Schedule(field: keyof Import104Schedule, value: any): void {
+    this.import104Schedule.update(schedule => ({
+      ...schedule,
+      [field]: value
+    }));
+  }
+  
+  /** 切換星期選擇 */
+  toggleWeekday(day: number): void {
+    this.import104Schedule.update(schedule => {
+      const days = [...schedule.weeklyDays];
+      const index = days.indexOf(day);
+      if (index > -1) {
+        // 至少保留一天
+        if (days.length > 1) {
+          days.splice(index, 1);
+        }
+      } else {
+        days.push(day);
+        days.sort((a, b) => a - b);
+      }
+      return { ...schedule, weeklyDays: days };
+    });
+  }
+  
+  /** 更新每月日期 */
+  updateMonthlyDate(index: number, date: number): void {
+    this.import104Schedule.update(schedule => {
+      const dates = [...schedule.monthlyDates];
+      dates[index] = date;
+      return { ...schedule, monthlyDates: dates };
+    });
+  }
+  
+  /** 新增每月日期 */
+  addMonthlyDate(): void {
+    this.import104Schedule.update(schedule => ({
+      ...schedule,
+      monthlyDates: [...schedule.monthlyDates, 1]
+    }));
+  }
+  
+  /** 移除每月日期 */
+  removeMonthlyDate(index: number): void {
+    this.import104Schedule.update(schedule => ({
+      ...schedule,
+      monthlyDates: schedule.monthlyDates.filter((_, i) => i !== index)
+    }));
+  }
+  
+  /** 儲存匯入排程設定 */
+  saveImport104Schedule(): void {
+    const schedule = this.import104Schedule();
+    // TODO: 呼叫 API 儲存排程設定
+    console.log('Saving import schedule:', schedule);
+    this.notificationService.success('匯入排程設定已儲存');
+    this.closeImport104SettingsModal();
+  }
+  
+  /** 開始手動匯入 */
+  startManualImport(): void {
+    this.closeImport104SettingsModal();
+    
+    // 準備匯入進度資料（從已發布的 104 職缺）
+    const publishedJobs = this.jobs104().filter(job => job.status === 'published');
+    
+    if (publishedJobs.length === 0) {
+      this.notificationService.warning('目前沒有已發布的 104 職缺');
+      return;
+    }
+    
+    const jobStatusList: ImportJobStatus[] = publishedJobs.map(job => ({
+      jobId: job.job104No || job.id,
+      jobTitle: job.title,
+      status: 'pending' as const,
+      resumeCount: 0
+    }));
+    
+    this.import104Progress.set({
+      isImporting: true,
+      currentIndex: 0,
+      totalResumes: 0,
+      jobs: jobStatusList
+    });
+    
+    this.showImport104ProgressModal.set(true);
+    
+    // 開始模擬匯入流程
+    this.processImportQueue();
+  }
+  
+  /** 處理匯入佇列（模擬） */
+  private processImportQueue(): void {
+    const progress = this.import104Progress();
+    
+    if (!progress.isImporting || progress.currentIndex >= progress.jobs.length) {
+      // 匯入完成
+      this.import104Progress.update(p => ({ ...p, isImporting: false }));
+      this.cdr.markForCheck();
+      return;
+    }
+    
+    // 標記當前職缺為處理中
+    this.import104Progress.update(p => {
+      const jobs = [...p.jobs];
+      jobs[p.currentIndex] = { ...jobs[p.currentIndex], status: 'processing' };
+      return { ...p, jobs };
+    });
+    this.cdr.markForCheck();
+    
+    // 模擬 API 呼叫延遲（1~3秒）
+    const delay = 1000 + Math.random() * 2000;
+    setTimeout(() => {
+      // 模擬取得履歷數量（0~15）
+      const resumeCount = Math.floor(Math.random() * 16);
+      
+      this.import104Progress.update(p => {
+        const jobs = [...p.jobs];
+        jobs[p.currentIndex] = { 
+          ...jobs[p.currentIndex], 
+          status: 'completed',
+          resumeCount 
+        };
+        return { 
+          ...p, 
+          jobs,
+          currentIndex: p.currentIndex + 1,
+          totalResumes: p.totalResumes + resumeCount
+        };
+      });
+      this.cdr.markForCheck();
+      
+      // 處理下一個職缺
+      this.processImportQueue();
+    }, delay);
+  }
+  
+  /** 取消匯入 */
+  cancelImport104(): void {
+    this.import104Progress.update(p => ({ ...p, isImporting: false }));
+    this.showImport104ProgressModal.set(false);
+    this.notificationService.info('匯入已取消');
+  }
+  
+  /** 關閉匯入進度 Modal */
+  closeImport104ProgressModal(): void {
+    this.showImport104ProgressModal.set(false);
+    // 重新載入 104 職缺列表以顯示最新履歷
+    this.load104Jobs();
+  }
+  
+  /** 計算匯入進度百分比 */
+  getImportProgressPercent(): number {
+    const progress = this.import104Progress();
+    if (progress.jobs.length === 0) return 0;
+    return Math.round((progress.currentIndex / progress.jobs.length) * 100);
   }
 }

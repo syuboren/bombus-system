@@ -11,7 +11,6 @@ import {
   FormStatusResponse,
   CandidateFormData
 } from '../models/candidate.model';
-import { DEFAULT_DIMENSIONS } from '../models/job-keywords.model';
 
 @Injectable({
   providedIn: 'root'
@@ -299,34 +298,27 @@ export class InterviewService {
             jdMatch: 0,
             overall: data.score || 0
           },
-          // Map Evaluation Data
+          // Map Evaluation Data (新版 + 舊版相容)
           evaluation: data.evaluation ? {
+            // 新版欄位
+            scoringItems: data.evaluation.scoring_items ? 
+              (typeof data.evaluation.scoring_items === 'string' ? JSON.parse(data.evaluation.scoring_items) : data.evaluation.scoring_items) : undefined,
+            processChecklist: data.evaluation.process_checklist ?
+              (typeof data.evaluation.process_checklist === 'string' ? JSON.parse(data.evaluation.process_checklist) : data.evaluation.process_checklist) : undefined,
+            comprehensiveAssessment: data.evaluation.comprehensive_assessment ?
+              (typeof data.evaluation.comprehensive_assessment === 'string' ? JSON.parse(data.evaluation.comprehensive_assessment) : data.evaluation.comprehensive_assessment) : undefined,
+            prosComment: data.evaluation.pros_comment,
+            consComment: data.evaluation.cons_comment,
+            recommendation: data.evaluation.recommendation,
+            // 保留欄位
             performanceDescription: data.evaluation.performance_description,
-            scores: (() => {
-              const rawScores = data.evaluation.dimension_scores ? JSON.parse(data.evaluation.dimension_scores) : [];
-              // Repair logic for missing dimensionId (from legacy/buggy saves)
-              return rawScores.map((s: any) => {
-                if (!s.dimensionId && s.name) {
-                  // Try to find ID by name from default dimensions
-                  const found = DEFAULT_DIMENSIONS.find(d => d.name === s.name);
-                  return {
-                    dimensionId: found?.id || 'unknown',
-                    dimensionName: s.name,
-                    score: s.score,
-                    remark: s.comment || s.remark
-                  };
-                }
-                return s;
-              });
-            })(),
             overallComment: data.evaluation.overall_comment,
-            keywordsFound: [], // backend data table might not have this column detached yet
             totalScore: data.evaluation.total_score,
             evaluatedAt: data.evaluation.updated_at,
             transcriptText: data.evaluation.transcript_text,
-            mediaUrl: data.evaluation.media_url,   // 媒體 URL
-            mediaSize: data.evaluation.media_size, // 媒體檔案大小
-            attachments: [] // attachments are separate if any
+            mediaUrl: data.evaluation.media_url,
+            mediaSize: data.evaluation.media_size,
+            attachments: []
           } : undefined,
           // Map AI Analysis Result if exists in evaluation
           aiAnalysisResult: data.evaluation?.ai_analysis_result ? (typeof data.evaluation.ai_analysis_result === 'string' ? JSON.parse(data.evaluation.ai_analysis_result) : data.evaluation.ai_analysis_result) : undefined
@@ -383,14 +375,24 @@ export class InterviewService {
   }
 
   /**
-   * 儲存完整面試評分 (新 API)
+   * 儲存完整面試評分 (新版 - 17 題倒扣制)
    */
   saveEvaluation(candidateId: string, data: {
-    performanceDescription: string;
-    dimensionScores: any[];
-    overallComment: string;
+    interviewId?: string;
+    // 新版欄位
+    scoringItems?: any[];
+    processChecklist?: any;
+    comprehensiveAssessment?: any;
+    prosComment?: string;
+    consComment?: string;
+    recommendation?: string;
+    // 保留欄位
+    performanceDescription?: string;
+    overallComment?: string;
     totalScore: number;
     transcriptText?: string;
+    mediaUrl?: string;
+    mediaSize?: number;
     aiAnalysisResult?: any;
   }): Observable<any> {
     return this.http.post(`${this.apiUrl}/candidates/${candidateId}/evaluation`, data);

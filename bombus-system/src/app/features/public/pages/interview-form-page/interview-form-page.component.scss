@@ -241,6 +241,110 @@ $module-color-dark: darken($module-color, 10%);
   }
 }
 
+// Success Container (表單提交成功)
+.success-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 80px);
+  padding: 2rem;
+
+  .success-card {
+    background: white;
+    border-radius: 16px;
+    padding: 3rem 2.5rem;
+    max-width: 480px;
+    width: 100%;
+    box-shadow: 
+      0 4px 6px -1px rgba(0, 0, 0, 0.05),
+      0 10px 15px -3px rgba(0, 0, 0, 0.08),
+      0 20px 25px -5px rgba(0, 0, 0, 0.05);
+    text-align: center;
+  }
+
+  .success-icon-wrapper {
+    width: 96px;
+    height: 96px;
+    margin: 0 auto 1.5rem;
+    background: linear-gradient(135deg, rgba(vars.$color-success, 0.15) 0%, rgba(vars.$color-success, 0.05) 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    i {
+      font-size: 3rem;
+      color: vars.$color-success;
+    }
+  }
+
+  .success-title {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #1a1a2e;
+    margin: 0 0 0.75rem;
+  }
+
+  .success-message {
+    color: #6b7280;
+    font-size: 1.125rem;
+    line-height: 1.6;
+    margin: 0 0 1.5rem;
+  }
+
+  .success-info {
+    background: vars.$color-cloud-gray;
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 2rem;
+
+    p {
+      color: #6b7280;
+      font-size: 0.9375rem;
+      line-height: 1.6;
+      margin: 0;
+
+      &:not(:last-child) {
+        margin-bottom: 0.5rem;
+      }
+    }
+  }
+
+  .success-actions {
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      background: $module-color;
+      color: white;
+      border: none;
+      padding: 0.875rem 2rem;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 1rem;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba($module-color, 0.3);
+
+      i {
+        font-size: 1.125rem;
+      }
+
+      &:hover {
+        background: $module-color-dark;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba($module-color, 0.4);
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
+    }
+  }
+}
+
 // Start Screen
 .start-screen {
   display: flex;
@@ -532,7 +636,7 @@ $module-color-dark: darken($module-color, 10%);
   }
 }
 
-// Checkbox Group
+// Checkbox Group (legacy)
 .checkbox-group {
   display: flex;
   flex-wrap: wrap;
@@ -559,6 +663,131 @@ $module-color-dark: darken($module-color, 10%);
   .other-license {
     display: flex;
     align-items: center;
+  }
+}
+
+// License Section (駕照區塊 - 新樣式)
+.license-section {
+  margin-top: 2rem;
+  margin-bottom: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid vars.$color-soft-gray;
+
+  > .form-label {
+    display: block;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.75rem;
+  }
+}
+
+.license-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.license-option {
+  cursor: pointer;
+
+  input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .option-box {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    background: white;
+    border: 2px solid vars.$color-soft-gray;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+
+    i {
+      font-size: 1.25rem;
+      color: vars.$color-text-secondary;
+    }
+
+    span {
+      font-size: 0.9375rem;
+      color: vars.$color-text-primary;
+      font-weight: 500;
+    }
+  }
+
+  input[type="checkbox"]:checked + .option-box {
+    border-color: $module-color;
+    background: rgba($module-color, 0.08);
+
+    i {
+      color: $module-color;
+    }
+
+    span {
+      color: $module-color;
+    }
+  }
+
+  input[type="checkbox"]:focus + .option-box {
+    box-shadow: 0 0 0 3px rgba($module-color, 0.15);
+  }
+
+  &:hover .option-box {
+    border-color: rgba($module-color, 0.5);
+  }
+
+  input[type="checkbox"]:disabled + .option-box {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.other-license-input {
+  margin-top: 1rem;
+  max-width: 400px;
+
+  .form-input {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    font-size: 0.9375rem;
+    background: white;
+    transition: all 0.2s ease;
+
+    &:focus {
+      outline: none;
+      border-color: $module-color;
+      box-shadow: 0 0 0 3px rgba($module-color, 0.15);
+    }
+
+    &::placeholder {
+      color: #9ca3af;
+    }
+
+    &:disabled {
+      background: #f3f4f6;
+      cursor: not-allowed;
+    }
+
+    // 唯讀欄位樣式
+    &.readonly-field {
+      background: #f8f9fa;
+      color: #495057;
+      cursor: default;
+      border-color: #e9ecef;
+
+      &:focus {
+        outline: none;
+        border-color: #e9ecef;
+        box-shadow: none;
+      }
+    }
   }
 }
 

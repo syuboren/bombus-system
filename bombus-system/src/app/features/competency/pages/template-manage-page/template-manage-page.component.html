@@ -1,0 +1,359 @@
+<app-header [pageTitle]="pageTitle" [breadcrumbs]="breadcrumbs"></app-header>
+
+<div class="template-manage-page">
+  <!-- Stats Cards -->
+  <section class="stats-section">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--primary">
+          <i class="ri-file-list-3-line"></i>
+        </div>
+        <div class="stat-card__content">
+          <div class="stat-card__value">{{ templateStats().total }}</div>
+          <div class="stat-card__label">指標總數</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--info">
+          <i class="ri-building-line"></i>
+        </div>
+        <div class="stat-card__content">
+          <div class="stat-card__value">{{ templateStats().departments }}</div>
+          <div class="stat-card__label">部門數</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--success">
+          <i class="ri-user-settings-line"></i>
+        </div>
+        <div class="stat-card__content">
+          <div class="stat-card__value">{{ templateStats().positions }}</div>
+          <div class="stat-card__label">職位數</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--warning">
+          <i class="ri-checkbox-circle-line"></i>
+        </div>
+        <div class="stat-card__content">
+          <div class="stat-card__value">{{ templateStats().active }}</div>
+          <div class="stat-card__label">啟用中</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Content -->
+  <section class="content-section">
+    <!-- Filter & Actions -->
+    <div class="toolbar">
+      <div class="filter-bar">
+        <div class="filter-item">
+          <label>部門</label>
+          <select [ngModel]="selectedDepartment()" (ngModelChange)="onDepartmentChange($event)">
+            @for (opt of departmentOptions; track opt.value) {
+              <option [value]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+        </div>
+        <div class="filter-item">
+          <label>職位</label>
+          <select [ngModel]="selectedPosition()" (ngModelChange)="onPositionChange($event)">
+            @for (opt of positionOptions; track opt.value) {
+              <option [value]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+        </div>
+      </div>
+      <div class="action-bar">
+        <button class="btn-secondary" (click)="openCopyModal()" type="button">
+          <i class="ri-file-copy-line"></i>
+          複製模板
+        </button>
+        <button class="btn-primary" (click)="openCreateModal()" type="button">
+          <i class="ri-add-line"></i>
+          新增指標
+        </button>
+      </div>
+    </div>
+
+    @if (loading()) {
+      <div class="loading-state">
+        <i class="ri-loader-4-line spinner"></i>
+        <span>載入中...</span>
+      </div>
+    } @else if (error()) {
+      <div class="error-state">
+        <i class="ri-error-warning-line"></i>
+        <span>{{ error() }}</span>
+        <button class="btn-retry" (click)="loadTemplates()" type="button">重試</button>
+      </div>
+    } @else {
+      <!-- Template Groups -->
+      <div class="template-groups">
+        @for (groupKey of getGroupKeys(); track groupKey) {
+          <div class="template-group">
+            <div class="group-header">
+              <h3>{{ groupKey }}</h3>
+              <span class="group-count">{{ groupedTemplates()[groupKey].length }} 項指標</span>
+            </div>
+            <div class="template-list">
+              @for (template of groupedTemplates()[groupKey]; track trackByTemplate($index, template)) {
+                <div class="template-card" [class.inactive]="!template.isActive">
+                  <div class="template-card__header">
+                    <div class="template-order">{{ template.orderNum }}</div>
+                    <div class="template-info">
+                      <h4>{{ template.name }}</h4>
+                      <div class="template-meta">
+                        <span class="points">
+                          <i class="ri-star-line"></i>
+                          {{ template.points }} 點
+                        </span>
+                        @if (!template.isActive) {
+                          <span class="status-inactive">已停用</span>
+                        }
+                      </div>
+                    </div>
+                    <div class="template-actions">
+                      <button class="btn-icon" (click)="toggleActive(template)" type="button" 
+                              [title]="template.isActive ? '停用' : '啟用'">
+                        <i [class]="template.isActive ? 'ri-eye-off-line' : 'ri-eye-line'"></i>
+                      </button>
+                      <button class="btn-icon" (click)="openEditModal(template)" type="button" title="編輯">
+                        <i class="ri-edit-line"></i>
+                      </button>
+                      <button class="btn-icon btn-icon--danger" (click)="deleteTemplate(template)" type="button" title="刪除">
+                        <i class="ri-delete-bin-line"></i>
+                      </button>
+                    </div>
+                  </div>
+                  @if (template.description) {
+                    <div class="template-card__body">
+                      <div class="template-desc">
+                        <label>說明</label>
+                        <p>{{ template.description }}</p>
+                      </div>
+                      @if (template.measurement) {
+                        <div class="template-measurement">
+                          <label>衡量標準</label>
+                          <p>{{ template.measurement }}</p>
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        } @empty {
+          <div class="empty-state">
+            <i class="ri-folder-open-line"></i>
+            <p>尚無指標模板</p>
+            <button class="btn-primary" (click)="openCreateModal()" type="button">
+              <i class="ri-add-line"></i>
+              建立第一個指標
+            </button>
+          </div>
+        }
+      </div>
+    }
+  </section>
+</div>
+
+<!-- Edit/Create Modal -->
+@if (showModal()) {
+  <div class="modal-backdrop" (click)="closeModal()">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ isNewTemplate() ? '新增指標' : '編輯指標' }}</h2>
+        <button class="btn-close" (click)="closeModal()" type="button">
+          <i class="ri-close-line"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        @if (editingTemplate()) {
+          <div class="form-row">
+            <div class="form-group">
+              <label>部門 <span class="required">*</span></label>
+              <select 
+                [ngModel]="editingTemplate()?.department"
+                (ngModelChange)="updateEditingField('department', $event)">
+                @for (opt of departmentOptions; track opt.value) {
+                  @if (opt.value) {
+                    <option [value]="opt.value">{{ opt.label }}</option>
+                  }
+                }
+              </select>
+            </div>
+            <div class="form-group">
+              <label>職位 <span class="required">*</span></label>
+              <select 
+                [ngModel]="editingTemplate()?.position"
+                (ngModelChange)="updateEditingField('position', $event)">
+                @for (opt of positionOptions; track opt.value) {
+                  @if (opt.value) {
+                    <option [value]="opt.value">{{ opt.label }}</option>
+                  }
+                }
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>指標名稱 <span class="required">*</span></label>
+            <input 
+              type="text" 
+              [ngModel]="editingTemplate()?.name"
+              (ngModelChange)="updateEditingField('name', $event)"
+              placeholder="例：專案交付品質">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>點數權重</label>
+              <input 
+                type="number" 
+                min="1" 
+                max="10"
+                [ngModel]="editingTemplate()?.points"
+                (ngModelChange)="updateEditingField('points', $event)">
+            </div>
+            <div class="form-group">
+              <label>排序</label>
+              <input 
+                type="number" 
+                min="0"
+                [ngModel]="editingTemplate()?.orderNum"
+                (ngModelChange)="updateEditingField('orderNum', $event)">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>說明描述</label>
+            <textarea 
+              rows="3"
+              [ngModel]="editingTemplate()?.description"
+              (ngModelChange)="updateEditingField('description', $event)"
+              placeholder="描述這個指標的內容...">
+            </textarea>
+          </div>
+          <div class="form-group">
+            <label>衡量標準</label>
+            <textarea 
+              rows="3"
+              [ngModel]="editingTemplate()?.measurement"
+              (ngModelChange)="updateEditingField('measurement', $event)"
+              placeholder="如何衡量這個指標的達成程度...">
+            </textarea>
+          </div>
+        }
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="closeModal()" type="button" [disabled]="saving()">
+          取消
+        </button>
+        <button class="btn-primary" (click)="saveTemplate()" type="button" [disabled]="saving()">
+          @if (saving()) {
+            <i class="ri-loader-4-line spinner"></i>
+          }
+          {{ isNewTemplate() ? '建立' : '儲存' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Copy Modal -->
+@if (showCopyModal()) {
+  <div class="modal-backdrop" (click)="closeCopyModal()">
+    <div class="modal-container modal-container--sm" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>複製指標模板</h2>
+        <button class="btn-close" (click)="closeCopyModal()" type="button">
+          <i class="ri-close-line"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="copy-section">
+          <h4>
+            <i class="ri-logout-box-line"></i>
+            來源職位
+          </h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label>部門</label>
+              <select 
+                [ngModel]="copySource().department"
+                (ngModelChange)="updateCopySource('department', $event)">
+                <option value="">請選擇</option>
+                @for (opt of departmentOptions; track opt.value) {
+                  @if (opt.value) {
+                    <option [value]="opt.value">{{ opt.label }}</option>
+                  }
+                }
+              </select>
+            </div>
+            <div class="form-group">
+              <label>職位</label>
+              <select 
+                [ngModel]="copySource().position"
+                (ngModelChange)="updateCopySource('position', $event)">
+                <option value="">請選擇</option>
+                @for (opt of positionOptions; track opt.value) {
+                  @if (opt.value) {
+                    <option [value]="opt.value">{{ opt.label }}</option>
+                  }
+                }
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="copy-arrow">
+          <i class="ri-arrow-down-line"></i>
+        </div>
+        <div class="copy-section">
+          <h4>
+            <i class="ri-login-box-line"></i>
+            目標職位
+          </h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label>部門</label>
+              <select 
+                [ngModel]="copyTarget().department"
+                (ngModelChange)="updateCopyTarget('department', $event)">
+                <option value="">請選擇</option>
+                @for (opt of departmentOptions; track opt.value) {
+                  @if (opt.value) {
+                    <option [value]="opt.value">{{ opt.label }}</option>
+                  }
+                }
+              </select>
+            </div>
+            <div class="form-group">
+              <label>職位</label>
+              <select 
+                [ngModel]="copyTarget().position"
+                (ngModelChange)="updateCopyTarget('position', $event)">
+                <option value="">請選擇</option>
+                @for (opt of positionOptions; track opt.value) {
+                  @if (opt.value) {
+                    <option [value]="opt.value">{{ opt.label }}</option>
+                  }
+                }
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="closeCopyModal()" type="button" [disabled]="saving()">
+          取消
+        </button>
+        <button class="btn-primary" (click)="executeCopy()" type="button" [disabled]="saving()">
+          @if (saving()) {
+            <i class="ri-loader-4-line spinner"></i>
+          }
+          執行複製
+        </button>
+      </div>
+    </div>
+  </div>
+}

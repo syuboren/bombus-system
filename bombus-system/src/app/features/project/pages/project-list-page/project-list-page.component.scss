@@ -9,7 +9,7 @@ $color-border: #e2e8f0;
 $color-bg-card: #ffffff;
 $color-bg-base: #f8fafc;
 $color-success: #7FB095;
-$color-danger: #C77F7F;
+$color-error: #C77F7F;
 $color-warning: #E3C088;
 
 .project-list-page {
@@ -70,8 +70,8 @@ $color-warning: #E3C088;
   }
 
   &--risk {
-    background: rgba($color-danger, 0.1);
-    color: $color-danger;
+    background: rgba($color-error, 0.1);
+    color: $color-error;
   }
 }
 
@@ -92,7 +92,7 @@ $color-warning: #E3C088;
   gap: 5px;
 
   &--danger {
-    color: $color-danger;
+    color: $color-error;
   }
 }
 
@@ -115,7 +115,7 @@ $color-warning: #E3C088;
   }
 
   &.trend-down {
-    color: $color-danger;
+    color: $color-error;
   }
 }
 
@@ -342,8 +342,8 @@ $color-warning: #E3C088;
 }
 
 .status-risk {
-  background: rgba($color-danger, 0.15);
-  color: $color-danger;
+  background: rgba($color-error, 0.15);
+  color: $color-error;
 }
 
 .status-planning {
@@ -409,7 +409,7 @@ $color-warning: #E3C088;
   color: $color-text-primary;
 
   &--danger {
-    color: $color-danger;
+    color: $color-error;
   }
 
   &--success {

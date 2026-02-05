@@ -1,0 +1,635 @@
+@import '../../../../../assets/styles/variables';
+@import '../../../../../assets/styles/mixins';
+
+$module-color: $color-l2-terracotta;
+
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-lg;
+}
+
+.modal-container {
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  max-width: 900px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: $shadow-lg;
+}
+
+.modal-header {
+  @include flex-between;
+  padding: $spacing-lg;
+  border-bottom: 1px solid $color-soft-gray;
+  flex-shrink: 0;
+
+  h2 {
+    margin: 0;
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+  }
+
+  .btn-close {
+    @include flex-center;
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border: none;
+    border-radius: $radius-md;
+    cursor: pointer;
+    color: $color-text-secondary;
+    transition: all $transition-fast;
+
+    &:hover {
+      background: $color-soft-gray;
+      color: $color-text-dark;
+    }
+
+    i {
+      font-size: 22px;
+    }
+  }
+}
+
+.modal-body {
+  padding: $spacing-lg;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-footer {
+  @include flex-end;
+  gap: $spacing-sm;
+  padding: $spacing-md $spacing-lg;
+  border-top: 1px solid $color-soft-gray;
+  flex-shrink: 0;
+}
+
+// Loading & Error States
+.loading-state,
+.error-state {
+  @include flex-center;
+  flex-direction: column;
+  gap: $spacing-md;
+  padding: $spacing-2xl;
+  color: $color-text-secondary;
+
+  i {
+    font-size: 48px;
+  }
+
+  .spinner {
+    animation: spin 1s linear infinite;
+  }
+}
+
+.error-state {
+  i {
+    color: $color-error;
+  }
+}
+
+.btn-retry {
+  padding: $spacing-sm $spacing-md;
+  background: $module-color;
+  border: none;
+  border-radius: $radius-md;
+  color: white;
+  cursor: pointer;
+  font-size: $font-size-sm;
+
+  &:hover {
+    background: darken($module-color, 10%);
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+// Info Section
+.info-section {
+  margin-bottom: $spacing-lg;
+  padding: $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $spacing-md;
+
+  @include media-max-md {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include media-max-sm {
+    grid-template-columns: 1fr;
+  }
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+
+  label {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    font-weight: $font-weight-medium;
+  }
+
+  span {
+    font-size: $font-size-sm;
+    color: $color-text-dark;
+  }
+}
+
+// Items Section
+.items-section {
+  margin-bottom: $spacing-lg;
+
+  h3 {
+    font-size: $font-size-base;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+    margin: 0 0 $spacing-md 0;
+  }
+}
+
+.items-table-wrapper {
+  overflow-x: auto;
+}
+
+.items-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: $font-size-sm;
+
+  th, td {
+    padding: $spacing-sm $spacing-md;
+    text-align: left;
+    border-bottom: 1px solid $color-soft-gray;
+  }
+
+  th {
+    background: $color-cloud-gray;
+    font-weight: $font-weight-semibold;
+    color: $color-text-secondary;
+    font-size: $font-size-xs;
+    text-transform: uppercase;
+  }
+
+  tbody tr:hover {
+    background: rgba($module-color, 0.03);
+  }
+
+  .col-index {
+    width: 40px;
+    text-align: center;
+  }
+
+  .col-name {
+    min-width: 200px;
+  }
+
+  .col-points,
+  .col-score,
+  .col-weighted {
+    width: 100px;
+    text-align: center;
+  }
+
+  .item-name {
+    font-weight: $font-weight-medium;
+    color: $color-text-dark;
+  }
+
+  .item-desc {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    margin-top: 4px;
+    line-height: 1.5;
+
+    .desc-label {
+      font-weight: $font-weight-medium;
+      color: $color-text-primary;
+    }
+  }
+
+  .item-measurement {
+    font-size: $font-size-xs;
+    color: $module-color;
+    margin-top: 4px;
+    padding: $spacing-xs;
+    background: rgba($module-color, 0.08);
+    border-radius: $radius-sm;
+    line-height: 1.5;
+
+    .measurement-label {
+      font-weight: $font-weight-semibold;
+      color: darken($module-color, 10%);
+    }
+  }
+
+  .score-value,
+  .weighted-score {
+    font-weight: $font-weight-semibold;
+    color: $module-color;
+
+    &.empty {
+      color: $color-muted-gray;
+      font-weight: normal;
+    }
+  }
+
+  .score-select {
+    width: 100%;
+    padding: $spacing-xs;
+    border: 1px solid $color-soft-gray;
+    border-radius: $radius-sm;
+    font-size: $font-size-sm;
+    cursor: pointer;
+
+    &:focus {
+      outline: none;
+      border-color: $module-color;
+    }
+  }
+
+  .total-row {
+    background: $color-cloud-gray;
+
+    td {
+      border-bottom: none;
+      font-weight: $font-weight-semibold;
+    }
+
+    .total-label {
+      text-align: right;
+      color: $color-text-secondary;
+    }
+
+    .total-value {
+      text-align: center;
+      font-size: $font-size-lg;
+      color: $module-color;
+    }
+  }
+}
+
+// Comment Section
+.comment-section {
+  margin-bottom: $spacing-lg;
+
+  h3 {
+    font-size: $font-size-base;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+    margin: 0 0 $spacing-sm 0;
+  }
+}
+
+.comment-textarea {
+  width: 100%;
+  padding: $spacing-md;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  resize: vertical;
+  font-family: inherit;
+
+  &:focus {
+    outline: none;
+    border-color: $module-color;
+  }
+}
+
+.comment-content {
+  padding: $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  line-height: 1.6;
+}
+
+// Buttons
+.btn-cancel {
+  padding: $spacing-sm $spacing-lg;
+  background: transparent;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover:not(:disabled) {
+    border-color: $color-text-secondary;
+    color: $color-text-dark;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.btn-secondary {
+  padding: $spacing-sm $spacing-lg;
+  background: $color-soft-gray;
+  border: none;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover:not(:disabled) {
+    background: darken($color-soft-gray, 5%);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.btn-primary {
+  @include flex-center;
+  gap: $spacing-xs;
+  padding: $spacing-sm $spacing-lg;
+  background: $module-color;
+  border: none;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: white;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover:not(:disabled) {
+    background: darken($module-color, 10%);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .spinner {
+    animation: spin 1s linear infinite;
+    font-size: 16px;
+  }
+}
+
+.btn-danger {
+  @include flex-center;
+  gap: $spacing-xs;
+  padding: $spacing-sm $spacing-lg;
+  background: $color-error;
+  border: none;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: white;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover:not(:disabled) {
+    background: darken($color-error, 10%);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.btn-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+// Validation Alert
+.validation-alert {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  margin: 0 $spacing-lg;
+  background: rgba($color-error, 0.1);
+  border: 1px solid rgba($color-error, 0.3);
+  border-radius: $radius-md;
+  color: $color-error;
+  font-size: $font-size-sm;
+
+  i {
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  span {
+    flex: 1;
+  }
+
+  .btn-dismiss {
+    @include flex-center;
+    width: 24px;
+    height: 24px;
+    background: transparent;
+    border: none;
+    border-radius: $radius-sm;
+    cursor: pointer;
+    color: $color-error;
+    flex-shrink: 0;
+
+    &:hover {
+      background: rgba($color-error, 0.1);
+    }
+
+    i {
+      font-size: 16px;
+    }
+  }
+}
+
+// Progress Indicator
+.progress-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-md;
+  padding: $spacing-sm $spacing-lg;
+  background: $color-cloud-gray;
+  border-top: 1px solid $color-soft-gray;
+
+  .progress-text {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+  }
+
+  .progress-complete {
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: $color-success;
+
+    i {
+      font-size: 16px;
+    }
+  }
+
+  .progress-incomplete {
+    font-size: $font-size-sm;
+    color: $color-warning;
+  }
+}
+
+// Signatures Section - 歷史簽名記錄
+.signatures-section {
+  margin-bottom: $spacing-lg;
+  padding: $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+
+  h3 {
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+    font-size: $font-size-base;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+    margin: 0 0 $spacing-md 0;
+
+    i {
+      color: $module-color;
+    }
+  }
+}
+
+.signatures-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $spacing-md;
+
+  @include media-max-md {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include media-max-sm {
+    grid-template-columns: 1fr;
+  }
+}
+
+.signature-record {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+  padding: $spacing-sm;
+  background: $color-pure-white;
+  border-radius: $radius-sm;
+  border: 1px solid $color-soft-gray;
+
+  label {
+    font-size: $font-size-xs;
+    font-weight: $font-weight-medium;
+    color: $color-text-secondary;
+  }
+
+  .signature-image {
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fafafa;
+    border-radius: $radius-sm;
+    overflow: hidden;
+
+    img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+  }
+
+  .signature-date {
+    font-size: $font-size-xs;
+    color: $color-muted-gray;
+    text-align: right;
+  }
+}
+
+// Signature Section - 電子簽名區塊
+.signature-section {
+  margin-bottom: $spacing-lg;
+  padding: $spacing-md;
+  background: rgba($module-color, 0.05);
+  border: 2px dashed rgba($module-color, 0.3);
+  border-radius: $radius-md;
+
+  h3 {
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+    font-size: $font-size-base;
+    font-weight: $font-weight-semibold;
+    color: $module-color;
+    margin: 0 0 $spacing-xs 0;
+
+    i {
+      font-size: 18px;
+    }
+  }
+
+  .signature-hint {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    margin: 0 0 $spacing-md 0;
+  }
+
+  app-signature-pad {
+    display: block;
+    margin-bottom: $spacing-sm;
+  }
+
+  .signature-status {
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+    font-size: $font-size-sm;
+    padding: $spacing-xs $spacing-sm;
+    border-radius: $radius-sm;
+
+    i {
+      font-size: 16px;
+    }
+
+    &.success {
+      background: rgba($color-success, 0.1);
+      color: $color-success;
+    }
+
+    &.warning {
+      background: rgba($color-warning, 0.1);
+      color: $color-warning;
+    }
+  }
+}

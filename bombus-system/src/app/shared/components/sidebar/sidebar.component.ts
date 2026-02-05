@@ -64,9 +64,7 @@ export class SidebarComponent {
             { label: '人才庫與再接觸管理', icon: '', route: '/employee/talent-pool' },
             { label: '員工檔案與歷程管理', icon: '', route: '/employee/profile' },
             { label: '會議管理', icon: '', route: '/employee/meeting' },
-            { label: '入職文件管理', icon: '', route: '/employee/onboarding/templates' },
-            { label: '我的入職文件', icon: '', route: '/employee/onboarding/my-documents' },
-            { label: '入職簽核管理', icon: '', route: '/employee/onboarding/approval' }
+            { label: '入職管理', icon: '', route: '/employee/onboarding' }
           ]
         },
         {

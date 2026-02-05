@@ -97,8 +97,9 @@
                 <tr>
                   <th>員工</th>
                   <th>部門</th>
-                  <th>職位</th>
                   <th>職等</th>
+                  <th>職級</th>
+                  <th>職位</th>
                   <th>到職日</th>
                   <th>狀態</th>
                   <th>操作</th>
@@ -118,8 +119,9 @@
                     </div>
                   </td>
                   <td>{{ employee.department }}</td>
-                  <td>{{ employee.position }}</td>
+                  <td>{{ getGradeDisplay(employee.grade) }}</td>
                   <td>{{ employee.level }}</td>
+                  <td>{{ employee.position }}</td>
                   <td>{{ formatDate(employee.hireDate) }}</td>
                   <td>
                     <span class="status-badge status-{{ employee.status }}">
@@ -135,7 +137,7 @@
                 </tr>
                 } @empty {
                 <tr>
-                  <td colspan="7" class="empty-cell">
+                  <td colspan="8" class="empty-cell">
                     <div class="empty-state">
                       <i class="ri-user-search-line"></i>
                       <p>沒有找到符合條件的員工</p>
@@ -267,6 +269,10 @@
             (click)="setActiveTab('documents')">
             文件管理
           </button>
+          <button type="button" class="tab-btn" [class.active]="activeTab() === 'training'"
+            (click)="setActiveTab('training')">
+            培訓記錄
+          </button>
           <button type="button" class="tab-btn" [class.active]="activeTab() === 'performance'"
             (click)="setActiveTab('performance')">
             績效紀錄
@@ -308,6 +314,87 @@
               </div>
             </div>
           </div>
+
+          <!-- 來源追溯 (試用期員工) -->
+          @if (employee.candidateSource) {
+          <div class="info-section source-section">
+            <h4>
+              <i class="ri-user-received-line"></i>
+              來源追溯
+            </h4>
+            <div class="source-info">
+              <div class="source-badge">
+                <i class="ri-checkbox-circle-fill"></i>
+                從候選人轉入
+              </div>
+              <div class="source-details">
+                <div class="source-item">
+                  <label>原應徵職位</label>
+                  <span>{{ employee.candidateSource.position || '-' }}</span>
+                </div>
+                <div class="source-item">
+                  <label>招聘階段</label>
+                  <span>{{ employee.candidateSource.stage || '-' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          }
+
+          <!-- 入職進度 (試用期員工) -->
+          @if (employee.onboardingProgress) {
+          <div class="info-section onboarding-section">
+            <h4>
+              <i class="ri-walk-line"></i>
+              入職進度
+            </h4>
+            <div class="onboarding-info">
+              <div class="progress-overview">
+                <div class="progress-circle" [style.--progress]="employee.onboardingProgress.overall + '%'">
+                  <span class="progress-value">{{ employee.onboardingProgress.overall }}%</span>
+                </div>
+                <div class="progress-meta">
+                  <span class="probation-end">
+                    <i class="ri-calendar-todo-line"></i>
+                    試用期結束：{{ employee.onboardingProgress.probation_end_date }}
+                  </span>
+                </div>
+              </div>
+              <div class="progress-details">
+                <div class="progress-row">
+                  <span class="progress-label">
+                    <i class="ri-file-edit-line"></i>
+                    文件簽署
+                  </span>
+                  <div class="progress-bar-container">
+                    <div class="progress-bar" 
+                         [style.width.%]="employee.onboardingProgress.templates.total > 0 ? 
+                           (employee.onboardingProgress.templates.approved / employee.onboardingProgress.templates.total * 100) : 0">
+                    </div>
+                  </div>
+                  <span class="progress-count">
+                    {{ employee.onboardingProgress.templates.approved }}/{{ employee.onboardingProgress.templates.total }}
+                  </span>
+                </div>
+                <div class="progress-row">
+                  <span class="progress-label">
+                    <i class="ri-upload-cloud-line"></i>
+                    文件上傳
+                  </span>
+                  <div class="progress-bar-container">
+                    <div class="progress-bar" 
+                         [style.width.%]="employee.onboardingProgress.documents.total > 0 ? 
+                           (employee.onboardingProgress.documents.uploaded / employee.onboardingProgress.documents.total * 100) : 0">
+                    </div>
+                  </div>
+                  <span class="progress-count">
+                    {{ employee.onboardingProgress.documents.uploaded }}/{{ employee.onboardingProgress.documents.total }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          }
 
           <div class="info-section">
             <h4>學歷</h4>
@@ -394,44 +481,148 @@
 
           <!-- Documents Tab -->
           @if (activeTab() === 'documents') {
-          <div class="document-grid">
-            @for (doc of employee.documents; track doc.id) {
-            <div class="document-card" [attr.data-status]="doc.status">
-              <div class="doc-icon">
-                @switch (doc.type) {
-                @case ('contract') { <i class="ri-file-text-line"></i> }
-                @case ('certificate') { <i class="ri-award-line"></i> }
-                @case ('id') { <i class="ri-user-line"></i> }
-                @case ('insurance') { <i class="ri-shield-check-line"></i> }
-                @default { <i class="ri-file-line"></i> }
+          <div class="documents-sections">
+            <!-- 入職文件簽署清單 -->
+            <div class="document-section">
+              <h4 class="section-title">
+                <i class="ri-file-list-3-line"></i>
+                入職文件簽署清單
+              </h4>
+              @if (signatureSubmissions().length > 0) {
+              <div class="document-list">
+                @for (submission of signatureSubmissions(); track submission.id) {
+                <div class="document-list-item">
+                  <div class="doc-list-icon">
+                    <i class="ri-file-text-line"></i>
+                  </div>
+                  <div class="doc-list-info">
+                    <h5>{{ submission.template_name }}</h5>
+                    <p class="doc-list-meta">
+                      建立時間：{{ formatDateTime(submission.created_at) }}
+                      @if (submission.signed_at) {
+                      · 簽署時間：{{ formatDateTime(submission.signed_at) }}
+                      }
+                    </p>
+                  </div>
+                  <span class="doc-list-status" [class]="getSubmissionStatusClass(submission)">
+                    {{ getSubmissionStatusLabel(submission) }}
+                  </span>
+                  <div class="doc-list-actions">
+                    @if (submission.status === 'SIGNED' || submission.status === 'COMPLETED') {
+                    <button type="button" class="btn-icon" (click)="viewSignedDocument(submission)" title="查看">
+                      <i class="ri-eye-line"></i>
+                    </button>
+                    <button type="button" class="btn-icon" (click)="downloadSignedDocument(submission)" title="下載">
+                      <i class="ri-download-line"></i>
+                    </button>
+                    }
+                  </div>
+                </div>
                 }
               </div>
-              <div class="doc-info">
-                <h5>{{ doc.name }}</h5>
-                <p class="doc-type">{{ getDocumentTypeLabel(doc.type) }}</p>
-                <p class="doc-meta">
-                  版本 {{ doc.version }} · 上傳於 {{ formatDate(doc.uploadDate) }}
-                </p>
-                @if (doc.expiryDate) {
-                <p class="doc-expiry" [class]="'expiry-' + doc.status">
-                  到期：{{ formatDate(doc.expiryDate) }}
-                </p>
+              } @else {
+              <p class="empty-text">尚無簽署文件記錄</p>
+              }
+            </div>
+
+            <!-- 入職資料上傳清單 -->
+            <div class="document-section">
+              <h4 class="section-title">
+                <i class="ri-folder-upload-line"></i>
+                入職資料上傳清單
+              </h4>
+              @if (uploadedDocuments().length > 0) {
+              <div class="document-list">
+                @for (document of uploadedDocuments(); track document.id) {
+                <div class="document-list-item">
+                  <div class="doc-list-icon">
+                    @switch (document.type) {
+                    @case ('id_card') { <i class="ri-bank-card-line"></i> }
+                    @case ('bank_account') { <i class="ri-bank-line"></i> }
+                    @case ('health_report') { <i class="ri-heart-pulse-line"></i> }
+                    @case ('photo') { <i class="ri-user-smile-line"></i> }
+                    @case ('education_cert') { <i class="ri-medal-line"></i> }
+                    @default { <i class="ri-file-line"></i> }
+                    }
+                  </div>
+                  <div class="doc-list-info">
+                    <h5>{{ getUploadTypeLabel(document.type) }}</h5>
+                    <p class="doc-list-meta">
+                      檔案名稱：{{ document.fileName || document.label }} 
+                      @if (document.uploadedAt) {
+                      · 上傳時間：{{ formatDateTime(document.uploadedAt) }}
+                      }
+                    </p>
+                  </div>
+                  <span class="doc-list-status status-uploaded">
+                    已上傳
+                  </span>
+                  <div class="doc-list-actions">
+                    <button type="button" class="btn-icon" (click)="viewUploadedDocument(document)" title="查看">
+                      <i class="ri-eye-line"></i>
+                    </button>
+                    <button type="button" class="btn-icon" (click)="downloadUploadedDocument(document)" title="下載">
+                      <i class="ri-download-line"></i>
+                    </button>
+                  </div>
+                </div>
                 }
               </div>
-              <span class="doc-status status-{{ doc.status }}">
-                {{ getDocumentStatusLabel(doc.status) }}
-              </span>
+              } @else {
+              <p class="empty-text">尚無上傳文件記錄</p>
+              }
+            </div>
+          </div>
+          }
+
+          <!-- Training Tab -->
+          @if (activeTab() === 'training') {
+          <div class="training-section">
+            @if (employee.training && employee.training.length > 0) {
+            <div class="training-grid">
+              @for (training of employee.training; track training.id) {
+              <div class="training-card">
+                <div class="training-header">
+                  <h4>{{ training.courseName }}</h4>
+                  <span class="training-type" [class]="'type-' + training.courseType">
+                    @switch (training.courseType) {
+                    @case ('internal') { 內部培訓 }
+                    @case ('external') { 外部培訓 }
+                    @case ('online') { 線上課程 }
+                    }
+                  </span>
+                </div>
+                <div class="training-meta">
+                  <span><i class="ri-calendar-line"></i> {{ formatDate(training.completionDate) }}</span>
+                  <span><i class="ri-time-line"></i> {{ training.hours }} 小時</span>
+                  @if (training.cost) {
+                  <span><i class="ri-money-dollar-circle-line"></i> NT$ {{ training.cost | number }}</span>
+                  }
+                </div>
+                @if (training.score) {
+                <div class="training-score">成績：{{ training.score }} 分</div>
+                }
+                @if (training.certificate) {
+                <div class="training-cert"><i class="ri-medal-line"></i> 已取得證書</div>
+                }
+              </div>
+              }
+            </div>
+            } @else {
+            <div class="empty-state">
+              <i class="ri-book-open-line"></i>
+              <p>尚無培訓記錄</p>
             </div>
             }
           </div>
-          <button type="button" class="btn-upload">
-            <i class="ri-upload-line"></i>
-            上傳文件
-          </button>
           }
 
           <!-- Performance Tab -->
           @if (activeTab() === 'performance') {
+          <div class="mock-data-badge">
+            <i class="ri-information-line"></i>
+            此為模擬資料，實際功能開發中
+          </div>
           <div class="performance-list">
             @for (perf of employee.performance; track perf.id) {
             <div class="performance-card" [attr.data-grade]="perf.grade">
@@ -488,6 +679,10 @@
 
           <!-- ROI Tab -->
           @if (activeTab() === 'roi') {
+          <div class="mock-data-badge">
+            <i class="ri-information-line"></i>
+            此為模擬資料，實際功能開發中
+          </div>
           <div class="roi-dashboard">
             <div class="roi-summary">
               <div class="roi-card main">

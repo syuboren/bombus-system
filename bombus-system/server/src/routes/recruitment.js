@@ -346,10 +346,18 @@ try {
             total_score INTEGER DEFAULT 0,
             transcript_text TEXT,
             media_url TEXT,
+            media_size INTEGER DEFAULT 0,
             ai_analysis_result TEXT,
             status TEXT DEFAULT 'draft',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME,
+            -- 新版面試官評分欄位 (2026-01)
+            scoring_items TEXT,
+            process_checklist TEXT,
+            comprehensive_assessment TEXT,
+            pros_comment TEXT,
+            cons_comment TEXT,
+            recommendation TEXT,
             FOREIGN KEY (candidate_id) REFERENCES candidates(id)
         )
     `).run();
@@ -358,9 +366,29 @@ try {
     console.log('interview_evaluations table already exists or error:', err.message);
 }
 
+// --- 新增欄位 migration (向後相容) ---
+const newColumns = [
+    { name: 'scoring_items', type: 'TEXT' },
+    { name: 'process_checklist', type: 'TEXT' },
+    { name: 'comprehensive_assessment', type: 'TEXT' },
+    { name: 'pros_comment', type: 'TEXT' },
+    { name: 'cons_comment', type: 'TEXT' },
+    { name: 'recommendation', type: 'TEXT' },
+    { name: 'media_size', type: 'INTEGER DEFAULT 0' }
+];
+
+newColumns.forEach(col => {
+    try {
+        prepare(`ALTER TABLE interview_evaluations ADD COLUMN ${col.name} ${col.type}`).run();
+        console.log(`✅ Added column ${col.name} to interview_evaluations`);
+    } catch (err) {
+        // 欄位已存在，忽略錯誤
+    }
+});
+
 // --- 面試評分完整 API ---
 
-// 9. 儲存面試評分 (完整) - 使用 Upsert 邏輯
+// 9. 儲存面試評分 (完整) - 新版面試官評分表
 // POST /api/recruitment/candidates/:candidateId/evaluation
 router.post('/candidates/:candidateId/evaluation', (req, res) => {
     try {
@@ -368,19 +396,34 @@ router.post('/candidates/:candidateId/evaluation', (req, res) => {
         const {
             interviewId,
             evaluatorId,
+            // 保留欄位
             performanceDescription,
-            dimensionScores,
             overallComment,
             totalScore,
             transcriptText,
             mediaUrl,
-            mediaSize, // 新增：檔案大小
-            aiAnalysisResult
+            mediaSize,
+            aiAnalysisResult,
+            // 新版欄位
+            scoringItems,
+            processChecklist,
+            comprehensiveAssessment,
+            prosComment,
+            consComment,
+            recommendation
         } = req.body;
 
         const now = new Date().toISOString();
-        const dimensionScoresJson = typeof dimensionScores === 'object' ? JSON.stringify(dimensionScores) : dimensionScores;
-        const aiResultJson = typeof aiAnalysisResult === 'object' ? JSON.stringify(aiAnalysisResult) : aiAnalysisResult;
+        
+        // JSON 序列化
+        const aiResultJson = aiAnalysisResult ? 
+            (typeof aiAnalysisResult === 'object' ? JSON.stringify(aiAnalysisResult) : aiAnalysisResult) : null;
+        const scoringItemsJson = scoringItems ?
+            (typeof scoringItems === 'object' ? JSON.stringify(scoringItems) : scoringItems) : null;
+        const processChecklistJson = processChecklist ?
+            (typeof processChecklist === 'object' ? JSON.stringify(processChecklist) : processChecklist) : null;
+        const comprehensiveAssessmentJson = comprehensiveAssessment ?
+            (typeof comprehensiveAssessment === 'object' ? JSON.stringify(comprehensiveAssessment) : comprehensiveAssessment) : null;
 
         // 檢查是否已存在評分記錄
         const existing = prepare(`
@@ -397,23 +440,31 @@ router.post('/candidates/:candidateId/evaluation', (req, res) => {
                     interview_id = COALESCE(?, interview_id),
                     evaluator_id = COALESCE(?, evaluator_id),
                     performance_description = COALESCE(?, performance_description),
-                    dimension_scores = COALESCE(?, dimension_scores),
                     overall_comment = COALESCE(?, overall_comment),
                     total_score = COALESCE(?, total_score),
                     transcript_text = COALESCE(?, transcript_text),
                     media_url = COALESCE(?, media_url),
                     media_size = COALESCE(?, media_size),
                     ai_analysis_result = COALESCE(?, ai_analysis_result),
+                    scoring_items = COALESCE(?, scoring_items),
+                    process_checklist = COALESCE(?, process_checklist),
+                    comprehensive_assessment = COALESCE(?, comprehensive_assessment),
+                    pros_comment = COALESCE(?, pros_comment),
+                    cons_comment = COALESCE(?, cons_comment),
+                    recommendation = COALESCE(?, recommendation),
                     status = 'submitted',
                     updated_at = ?
                 WHERE id = ?
             `);
             stmt.run(
                 interviewId || null, evaluatorId || null,
-                performanceDescription || null, dimensionScoresJson || null,
-                overallComment || null, totalScore || null,
-                transcriptText || null, mediaUrl || null,
-                mediaSize || null, aiResultJson || null, now, evaluationId
+                performanceDescription || null, overallComment || null,
+                totalScore || null, transcriptText || null,
+                mediaUrl || null, mediaSize || null,
+                aiResultJson, scoringItemsJson,
+                processChecklistJson, comprehensiveAssessmentJson,
+                prosComment || null, consComment || null,
+                recommendation || null, now, evaluationId
             );
         } else {
             // 創建新記錄
@@ -421,19 +472,24 @@ router.post('/candidates/:candidateId/evaluation', (req, res) => {
             const stmt = prepare(`
                 INSERT INTO interview_evaluations (
                     id, candidate_id, interview_id, evaluator_id, 
-                    performance_description, dimension_scores, overall_comment, total_score,
-                    transcript_text, media_url, media_size, ai_analysis_result, status, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'submitted', ?, ?)
+                    performance_description, overall_comment, total_score,
+                    transcript_text, media_url, media_size, ai_analysis_result,
+                    scoring_items, process_checklist, comprehensive_assessment,
+                    pros_comment, cons_comment, recommendation,
+                    status, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'submitted', ?, ?)
             `);
             stmt.run(
                 evaluationId, candidateId, interviewId || null, evaluatorId || null,
-                performanceDescription, dimensionScoresJson, overallComment, totalScore || 0,
-                transcriptText || null, mediaUrl || null, mediaSize || 0, aiResultJson || null, now, now
+                performanceDescription || null, overallComment || null, totalScore || 0,
+                transcriptText || null, mediaUrl || null, mediaSize || 0, aiResultJson,
+                scoringItemsJson, processChecklistJson, comprehensiveAssessmentJson,
+                prosComment || null, consComment || null, recommendation || null,
+                now, now
             );
         }
 
         // 更新候選人狀態
-        // 根據是否有 AI 分析結果來決定狀態
         let newStatus = 'pending_ai'; // 預設：待 AI 分析
         if (aiResultJson) {
             newStatus = 'pending_decision'; // 有 AI 結果：待決策
@@ -477,7 +533,11 @@ router.get('/candidates/:candidateId/evaluation', (req, res) => {
         // 解析 JSON 欄位
         res.json({
             ...evaluation,
-            dimension_scores: evaluation.dimension_scores ? JSON.parse(evaluation.dimension_scores) : [],
+            // 新版欄位
+            scoring_items: evaluation.scoring_items ? JSON.parse(evaluation.scoring_items) : null,
+            process_checklist: evaluation.process_checklist ? JSON.parse(evaluation.process_checklist) : null,
+            comprehensive_assessment: evaluation.comprehensive_assessment ? JSON.parse(evaluation.comprehensive_assessment) : null,
+            // 保留欄位
             ai_analysis_result: evaluation.ai_analysis_result ? JSON.parse(evaluation.ai_analysis_result) : null
         });
 
@@ -493,13 +553,21 @@ router.patch('/candidates/:candidateId/evaluation', (req, res) => {
     try {
         const { candidateId } = req.params;
         const {
+            // 保留欄位
             performanceDescription,
-            dimensionScores,
             overallComment,
             totalScore,
             transcriptText,
             mediaUrl,
-            aiAnalysisResult
+            mediaSize,
+            aiAnalysisResult,
+            // 新版欄位
+            scoringItems,
+            processChecklist,
+            comprehensiveAssessment,
+            prosComment,
+            consComment,
+            recommendation
         } = req.body;
 
         const now = new Date().toISOString();
@@ -513,44 +581,59 @@ router.patch('/candidates/:candidateId/evaluation', (req, res) => {
             return res.status(404).json({ error: 'No evaluation found to update' });
         }
 
-        const dimensionScoresJson = dimensionScores ?
-            (typeof dimensionScores === 'object' ? JSON.stringify(dimensionScores) : dimensionScores) : null;
+        // JSON 序列化
         const aiResultJson = aiAnalysisResult ?
             (typeof aiAnalysisResult === 'object' ? JSON.stringify(aiAnalysisResult) : aiAnalysisResult) : null;
+        const scoringItemsJson = scoringItems ?
+            (typeof scoringItems === 'object' ? JSON.stringify(scoringItems) : scoringItems) : null;
+        const processChecklistJson = processChecklist ?
+            (typeof processChecklist === 'object' ? JSON.stringify(processChecklist) : processChecklist) : null;
+        const comprehensiveAssessmentJson = comprehensiveAssessment ?
+            (typeof comprehensiveAssessment === 'object' ? JSON.stringify(comprehensiveAssessment) : comprehensiveAssessment) : null;
 
         const stmt = prepare(`
             UPDATE interview_evaluations SET
                 performance_description = COALESCE(?, performance_description),
-                dimension_scores = COALESCE(?, dimension_scores),
                 overall_comment = COALESCE(?, overall_comment),
                 total_score = COALESCE(?, total_score),
                 transcript_text = COALESCE(?, transcript_text),
                 media_url = COALESCE(?, media_url),
+                media_size = COALESCE(?, media_size),
                 ai_analysis_result = COALESCE(?, ai_analysis_result),
+                scoring_items = COALESCE(?, scoring_items),
+                process_checklist = COALESCE(?, process_checklist),
+                comprehensive_assessment = COALESCE(?, comprehensive_assessment),
+                pros_comment = COALESCE(?, pros_comment),
+                cons_comment = COALESCE(?, cons_comment),
+                recommendation = COALESCE(?, recommendation),
                 updated_at = ?
             WHERE id = ?
         `);
         stmt.run(
             performanceDescription || null,
-            dimensionScoresJson,
             overallComment || null,
             totalScore || null,
             transcriptText || null,
             mediaUrl || null,
+            mediaSize || null,
             aiResultJson,
+            scoringItemsJson,
+            processChecklistJson,
+            comprehensiveAssessmentJson,
+            prosComment || null,
+            consComment || null,
+            recommendation || null,
             now,
             existing.id
         );
 
         // Update Candidate Status based on AI Analysis
-        // If AI Analysis is provided, move to 'pending_decision'
         if (aiResultJson) {
             const updateCand = prepare(`
                 UPDATE candidates SET status = 'pending_decision', scoring_status = 'Scored', updated_at = ? WHERE id = ?
             `);
             updateCand.run(now, candidateId);
         } else {
-            // Ensure it's marked as Scored at least
             const updateCand = prepare(`
                 UPDATE candidates SET scoring_status = 'Scored', updated_at = ? WHERE id = ?
             `);
@@ -1609,6 +1692,56 @@ router.get('/interview-form/:token', (req, res) => {
             remainingSeconds = Math.max(0, Math.floor((limitMs - elapsed) / 1000));
         }
 
+        // 取得候選人完整資料（工作經歷、駕照等）
+        const candidateFull = prepare(`
+            SELECT c.*, c.driving_licenses, c.birthday
+            FROM candidates c WHERE c.id = ?
+        `).get(form.candidate_id);
+
+        // 取得候選人工作經歷
+        const experiences = prepare(`
+            SELECT firm_name, job_name, start_date, end_date
+            FROM candidate_experiences 
+            WHERE candidate_id = ?
+            ORDER BY start_date DESC
+        `).all(form.candidate_id);
+
+        // 計算工作年資
+        const calculateYearsOfService = (startDate, endDate) => {
+            if (!startDate) return '';
+            const start = new Date(startDate);
+            const end = endDate ? new Date(endDate) : new Date();
+            const years = Math.floor((end - start) / (365.25 * 24 * 60 * 60 * 1000));
+            const months = Math.floor(((end - start) % (365.25 * 24 * 60 * 60 * 1000)) / (30.44 * 24 * 60 * 60 * 1000));
+            if (years > 0 && months > 0) return `${years}年${months}個月`;
+            if (years > 0) return `${years}年`;
+            if (months > 0) return `${months}個月`;
+            return '';
+        };
+
+        // 轉換工作經歷格式
+        const workExperiences = experiences.map(exp => ({
+            companyName: exp.firm_name || '',
+            jobTitle: exp.job_name || '',
+            yearsOfService: calculateYearsOfService(exp.start_date, exp.end_date)
+        }));
+
+        // 解析駕照資料
+        let drivingLicenses = [];
+        if (candidateFull?.driving_licenses) {
+            try {
+                const licenses = candidateFull.driving_licenses;
+                if (licenses.includes('普通小型車') || licenses.includes('汽車')) {
+                    drivingLicenses.push('汽車');
+                }
+                if (licenses.includes('普通重型機車') || licenses.includes('輕型機車') || licenses.includes('機車')) {
+                    drivingLicenses.push('機車');
+                }
+            } catch (e) {
+                console.warn('Error parsing driving licenses:', e);
+            }
+        }
+
         res.json({
             formId: form.id,
             status: form.status,
@@ -1625,8 +1758,12 @@ router.get('/interview-form/:token', (req, res) => {
                 phone: form.phone,
                 education: form.education,
                 expectedSalary: form.expected_salary,
-                experienceYears: form.experience_years
+                experienceYears: form.experience_years,
+                birthday: candidateFull?.birthday,
+                drivingLicenses: drivingLicenses
             },
+            // 候選人工作經歷（用於預填表單）
+            workExperiences: workExperiences.length > 0 ? workExperiences : null,
             // 面試資訊
             interview: {
                 jobTitle: form.job_title,

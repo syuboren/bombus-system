@@ -31,110 +31,211 @@
   <section class="matrix-section">
     <!-- Filter -->
     <div class="filter-bar">
-      <div class="filter-item">
-        <label class="filter-label">職系類別</label>
-        <select class="filter-select" [ngModel]="selectedType()" (ngModelChange)="onTypeChange($event)">
-          <option value="">全部類別</option>
-          @for (opt of typeOptions; track opt.value) {
-          <option [value]="opt.value">{{ opt.label }}</option>
-          }
-        </select>
-      </div>
-
-      <!-- Push info to the right -->
-      <div class="filter-info" style="margin-left: auto;">
-        共 <strong>{{ filteredGrades().length }}</strong> 個職等
+      <div class="filter-info">
+        <span class="info-text">職等職級矩陣</span>
+        <span class="info-count">共 <strong>{{ gradesNew().length }}</strong> 個職等 (Grade 1-7)</span>
       </div>
     </div>
 
-    <!-- Matrix Grid -->
-    <div class="matrix-container">
-      <!-- Professional Track -->
-      @if (!selectedType() || selectedType() === 'professional') {
-      <div class="track-section">
-        <div class="track-header">
-          <div class="track-icon professional">
-            <i class="ri-code-box-line"></i>
-          </div>
-          <div class="track-info">
-            <h3 class="track-title">專業職系</h3>
-            <p class="track-desc">技術專業人員的職涯發展路徑</p>
-          </div>
-        </div>
-        <div class="grades-timeline">
-          @for (grade of getGradesByType('professional'); track grade.id) {
-          <div class="grade-card" (click)="openGradeDetail(grade)">
-            <div class="grade-level">{{ grade.code }}</div>
-            <div class="grade-name">{{ grade.name }}</div>
-            <div class="grade-salary">
-              NT$ {{ formatSalary(grade.minSalary) }} - {{ formatSalary(grade.maxSalary) }}
-            </div>
-            <div class="grade-arrow">
-              <i class="ri-arrow-right-line"></i>
-            </div>
-          </div>
-          }
-        </div>
-      </div>
-      }
-
-      <!-- Management Track -->
-      @if (!selectedType() || selectedType() === 'management') {
-      <div class="track-section">
-        <div class="track-header">
-          <div class="track-icon management">
+    <!-- 新版雙軌制職等職級矩陣 -->
+    <div class="matrix-container matrix-dual-track">
+      <!-- 管理職軌道 -->
+      <div class="track-section track-management">
+        <div class="track-header management">
+          <div class="track-icon">
             <i class="ri-team-line"></i>
           </div>
           <div class="track-info">
-            <h3 class="track-title">管理職系</h3>
-            <p class="track-desc">團隊管理與領導的職涯發展路徑</p>
+            <h3 class="track-title">管理職</h3>
+            <p class="track-desc">團隊管理與領導發展路徑</p>
           </div>
         </div>
         <div class="grades-timeline">
-          @for (grade of getGradesByType('management'); track grade.id) {
-          <div class="grade-card" (click)="openGradeDetail(grade)">
-            <div class="grade-level">{{ grade.code }}</div>
-            <div class="grade-name">{{ grade.name }}</div>
+          @for (grade of gradesNew(); track grade.id) {
+          <div class="grade-card grade-card-new" (click)="openGradeDetailNew(grade)">
+            <div class="grade-badge">Grade {{ grade.grade }}</div>
+            <div class="grade-code">{{ grade.codeRange }}</div>
+            <div class="grade-title">{{ grade.titleManagement }}</div>
             <div class="grade-salary">
-              NT$ {{ formatSalary(grade.minSalary) }} - {{ formatSalary(grade.maxSalary) }}
+              {{ getSalaryRangeText(grade) }}
             </div>
+            @if (grade.grade < 7) {
             <div class="grade-arrow">
               <i class="ri-arrow-right-line"></i>
             </div>
+            }
           </div>
           }
         </div>
       </div>
-      }
 
-      <!-- Specialist Track -->
-      @if (!selectedType() || selectedType() === 'specialist') {
-      <div class="track-section">
-        <div class="track-header">
-          <div class="track-icon specialist">
-            <i class="ri-award-line"></i>
+      <!-- 專業職軌道 (Grade 1-6，專業職沒有 Grade 7) -->
+      <div class="track-section track-professional">
+        <div class="track-header professional">
+          <div class="track-icon">
+            <i class="ri-code-box-line"></i>
           </div>
           <div class="track-info">
-            <h3 class="track-title">專家職系</h3>
-            <p class="track-desc">領域專家與技術權威的發展路徑</p>
+            <h3 class="track-title">專業職</h3>
+            <p class="track-desc">技術專業人員發展路徑</p>
           </div>
         </div>
         <div class="grades-timeline">
-          @for (grade of getGradesByType('specialist'); track grade.id) {
-          <div class="grade-card" (click)="openGradeDetail(grade)">
-            <div class="grade-level">{{ grade.code }}</div>
-            <div class="grade-name">{{ grade.name }}</div>
-            <div class="grade-salary">
-              NT$ {{ formatSalary(grade.minSalary) }} - {{ formatSalary(grade.maxSalary) }}
+          @for (grade of gradesNew(); track grade.id) {
+            @if (grade.grade < 7) {
+            <div class="grade-card grade-card-new" (click)="openGradeDetailNew(grade)">
+              <div class="grade-badge">Grade {{ grade.grade }}</div>
+              <div class="grade-code">{{ grade.codeRange }}</div>
+              <div class="grade-title">{{ grade.titleProfessional }}</div>
+              <div class="grade-salary">
+                {{ getSalaryRangeText(grade) }}
+              </div>
+              @if (grade.grade < 6) {
+              <div class="grade-arrow">
+                <i class="ri-arrow-right-line"></i>
+              </div>
+              }
             </div>
-            <div class="grade-arrow">
-              <i class="ri-arrow-right-line"></i>
-            </div>
-          </div>
+            }
           }
         </div>
       </div>
-      }
+    </div>
+
+    <!-- 部門職位對照表 -->
+    <div class="department-positions-section">
+      <div class="section-header-inline">
+        <h4 class="section-title-inline">
+          <i class="ri-organization-chart"></i>
+          部門職位對照表
+        </h4>
+        <div class="section-filter">
+          <select class="filter-select-sm" [ngModel]="selectedDepartmentFilter()" (ngModelChange)="onDepartmentFilterChange($event)">
+            <option value="">全部部門</option>
+            @for (dept of departments(); track dept.id) {
+            <option [value]="dept.name">{{ dept.name }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <!-- 部門職位矩陣表格 (合併版) -->
+      <div class="positions-matrix">
+        <table class="positions-table positions-table-combined">
+          <thead>
+            <tr>
+              <th class="th-grade">職等</th>
+              <th class="th-code">職級</th>
+              <th class="th-salary">薪資範圍</th>
+              @for (dept of departments(); track dept.id) {
+              @if (!selectedDepartmentFilter() || dept.name === selectedDepartmentFilter()) {
+              <th class="th-department">{{ dept.name }}</th>
+              }
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (grade of gradesDescending(); track grade.id; let i = $index) {
+            <tr [class.row-odd]="i % 2 === 1">
+              <td class="td-grade">
+                <span class="grade-num">{{ grade.grade }}</span>
+              </td>
+              <td class="td-code">{{ grade.codeRange }}</td>
+              <td class="td-salary">
+                <span class="salary-range-text">{{ formatSalary(grade.minSalary) }} - {{ formatSalary(grade.maxSalary) }}</span>
+              </td>
+              @for (dept of departments(); track dept.id) {
+              @if (!selectedDepartmentFilter() || dept.name === selectedDepartmentFilter()) {
+                <!-- 檢查是否應該顯示跨部門合併格 -->
+                @if (shouldShowCrossDeptCell(dept.name, grade.grade)) {
+                  <td class="td-positions td-cross-dept" [attr.colspan]="getCrossDeptColspan(grade.grade)">
+                    <!-- 主要跨部門職位（執行長）帶皇冠 -->
+                    <div class="cross-dept-primary">
+                      <span class="position-tag tag-cross-dept" title="跨部門高階主管">
+                        <i class="ri-vip-crown-line"></i>
+                        {{ getCrossDeptPositionForGrade(grade.grade)?.title }}
+                      </span>
+                    </div>
+                    <!-- 次要跨部門職位（營運長等） -->
+                    @if (getSecondaryCrossDeptPositionsForGrade(grade.grade).length > 0) {
+                    <div class="cross-dept-secondary">
+                      @for (secondaryPos of getSecondaryCrossDeptPositionsForGrade(grade.grade); track secondaryPos.id) {
+                      <div class="secondary-pos-item">
+                        <span class="position-tag tag-cross-dept-secondary">
+                          {{ secondaryPos.title }}
+                        </span>
+                        <span class="supervised-info">
+                          管轄：{{ secondaryPos.supervisedDepartments?.join('、') }}
+                        </span>
+                      </div>
+                      }
+                    </div>
+                    }
+                  </td>
+                } @else if (!isDeptCoveredByCrossDept(dept.name, grade.grade)) {
+                  <!-- 一般部門職位（不被跨部門職位覆蓋） -->
+                  <td class="td-positions">
+                    @if (getManagementPosition(dept.name, grade.grade)) {
+                    <span class="position-tag tag-management" title="管理職">
+                      {{ getManagementPosition(dept.name, grade.grade) }}
+                    </span>
+                    }
+                    @if (getProfessionalPosition(dept.name, grade.grade)) {
+                    <span class="position-tag tag-professional" title="專業職">
+                      {{ getProfessionalPosition(dept.name, grade.grade) }}
+                    </span>
+                    }
+                    @if (!hasPositions(dept.name, grade.grade)) {
+                    <span class="no-position">-</span>
+                    }
+                  </td>
+                }
+              }
+              }
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 圖例說明 -->
+      <div class="positions-legend">
+        <span class="legend-item">
+          <span class="legend-tag tag-management">管理職</span>
+        </span>
+        <span class="legend-item">
+          <span class="legend-tag tag-professional">專業職</span>
+        </span>
+        <span class="legend-item">
+          <span class="legend-tag tag-cross-dept"><i class="ri-vip-crown-line"></i></span>
+          <span class="legend-label">跨部門高階主管</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- 職級薪資對照表 -->
+    <div class="salary-reference">
+      <div class="reference-header">
+        <h4 class="reference-title">
+          <i class="ri-money-dollar-circle-line"></i>
+          職級薪資對照表 (BS01-BS20)
+        </h4>
+      </div>
+      <div class="reference-table">
+        @for (grade of gradesNew(); track grade.id) {
+        <div class="salary-group">
+          <div class="group-header">Grade {{ grade.grade }} ({{ grade.codeRange }})</div>
+          <div class="salary-levels">
+            @for (level of grade.salaryLevels; track level.code) {
+            <span class="salary-level">
+              <span class="level-code">{{ level.code }}</span>
+              <span class="level-salary">NT$ {{ formatSalary(level.salary) }}</span>
+            </span>
+            }
+          </div>
+          </div>
+        }
+      </div>
     </div>
   </section>
   }
@@ -143,32 +244,47 @@
   @if (activeTab() === 'career') {
   <section class="career-section">
     <div class="section-header">
-      <h2 class="section-title">三大職涯發展路徑</h2>
-      <p class="section-subtitle">根據個人特質與組織需求，選擇最適合的發展方向</p>
+      <div class="header-left">
+        <h2 class="section-title">職涯發展路徑</h2>
+        <p class="section-subtitle">根據個人特質與組織需求，選擇最適合的發展方向</p>
+      </div>
+      <div class="header-right">
+        <div class="filter-item">
+          <label class="filter-label">路徑類型</label>
+          <select class="filter-select" [ngModel]="selectedType()" (ngModelChange)="onTypeChange($event)">
+            <option value="">全部類型</option>
+            <option value="vertical">垂直晉升</option>
+            <option value="horizontal">橫向發展</option>
+            <option value="cross-department">跨部門發展</option>
+          </select>
+        </div>
+      </div>
     </div>
 
+    <!-- 職涯路徑卡片 -->
     <div class="career-paths-grid">
-      @for (path of careerPaths(); track path.id) {
-      <div class="career-path-card" [class]="getCareerPathTypeClass(path.type)" (click)="openCareerPathDetail(path)">
+      @for (path of careerPathsNew(); track path.id) {
+      @if (!selectedType() || path.type === selectedType()) {
+      <div class="career-path-card career-path-card-new" [class]="getPathTypeClass(path.type)" (click)="openCareerPathDetailNew(path)">
         <div class="path-header">
           <div class="path-icon">
-            <i [class]="getCareerPathTypeIcon(path.type)"></i>
+            <i [class]="getPathTypeIcon(path.type)"></i>
           </div>
-          <span class="path-type-badge">{{ getCareerPathTypeLabel(path.type) }}</span>
+          <span class="path-type-badge">{{ getPathTypeLabel(path.type) }}</span>
         </div>
         <h3 class="path-name">{{ path.name }}</h3>
         <p class="path-desc">{{ path.description }}</p>
         <div class="path-journey">
           <div class="journey-point">
             <span class="journey-label">起點</span>
-            <span class="journey-value">{{ path.currentPosition }}</span>
+            <span class="journey-value">{{ path.fromPosition }}</span>
           </div>
           <div class="journey-arrow">
             <i class="ri-arrow-right-double-line"></i>
           </div>
           <div class="journey-point">
             <span class="journey-label">目標</span>
-            <span class="journey-value">{{ path.targetPosition }}</span>
+            <span class="journey-value">{{ path.toPosition }}</span>
           </div>
         </div>
         <div class="path-footer">
@@ -181,7 +297,16 @@
         </div>
       </div>
       }
+      }
     </div>
+
+    <!-- 空狀態 -->
+    @if (careerPathsNew().length === 0) {
+    <div class="empty-state">
+      <i class="ri-route-line"></i>
+      <p>目前沒有可用的職涯發展路徑資料</p>
+    </div>
+    }
   </section>
   }
 
@@ -588,77 +713,248 @@
   }
 </div>
 
-<!-- Grade Detail Modal -->
-@if (showGradeDetailModal() && selectedGrade(); as grade) {
+<!-- Grade Detail Modal (新版 - 7 個區塊) -->
+@if (showGradeDetailModal() && selectedGradeNew(); as grade) {
 <div class="modal-backdrop" (click)="closeGradeDetailModal()"></div>
-<div class="modal">
+<div class="modal modal--xlarge">
   <div class="modal-content">
     <div class="modal-header">
       <div class="modal-header-info">
-        <span class="grade-code-badge">{{ grade.code }}</span>
-        <span class="grade-type-badge" [class]="getTypeClass(grade.type)">
-          {{ getTypeLabel(grade.type) }}
-        </span>
+        <span class="grade-badge-large">Grade {{ grade.grade }}</span>
+        <span class="grade-code-badge">{{ grade.codeRange }}</span>
       </div>
       <button class="btn-close" (click)="closeGradeDetailModal()" type="button">
         <i class="ri-close-line"></i>
       </button>
     </div>
     <div class="modal-body">
-      <h2 class="modal-title">{{ grade.name }}</h2>
-
-      <div class="modal-section">
-        <h4 class="modal-section-title">薪資範圍</h4>
-        <div class="salary-range">
-          <span class="salary-min">NT$ {{ formatSalary(grade.minSalary) }}</span>
-          <div class="salary-bar">
-            <div class="salary-fill"></div>
+      <!-- 區塊1: 基本資訊 -->
+      <div class="detail-section basic-info-section">
+        <div class="detail-header">
+          <i class="ri-information-line"></i>
+          <h4>基本資訊</h4>
+        </div>
+        <div class="basic-info-grid">
+          <div class="info-card">
+            <span class="info-label">管理職職稱</span>
+            <span class="info-value">{{ grade.titleManagement }}</span>
           </div>
-          <span class="salary-max">NT$ {{ formatSalary(grade.maxSalary) }}</span>
+          <div class="info-card">
+            <span class="info-label">專業職職稱</span>
+            <span class="info-value">{{ grade.titleProfessional }}</span>
+          </div>
+          <div class="info-card">
+            <span class="info-label">職級代碼範圍</span>
+            <span class="info-value">{{ grade.codeRange }}</span>
+          </div>
         </div>
       </div>
 
-      <div class="modal-section">
-        <h4 class="modal-section-title">晉升條件</h4>
-        <ul class="requirements-list">
-          @for (req of grade.requirements; track req) {
-          <li class="requirement-item">
-            <i class="ri-checkbox-circle-line"></i>
-            <span>{{ req }}</span>
-          </li>
-          }
-        </ul>
-      </div>
-
-      <div class="modal-section">
-        <h4 class="modal-section-title">所需職能</h4>
-        <div class="competencies-tags">
-          @for (compId of grade.competencies; track compId) {
-          <span class="competency-tag">{{ compId }}</span>
+      <!-- 區塊2: 薪資職級對照 -->
+      <div class="detail-section salary-section">
+        <div class="detail-header">
+          <i class="ri-money-dollar-circle-line"></i>
+          <h4>薪資職級對照</h4>
+        </div>
+        <div class="salary-overview">
+          <div class="salary-range-display">
+            <span class="range-label">薪資範圍</span>
+            <span class="range-value">NT$ {{ formatSalary(grade.minSalary) }} ~ {{ formatSalary(grade.maxSalary) }}</span>
+          </div>
+        </div>
+        <div class="salary-levels-table">
+          @for (level of grade.salaryLevels; track level.code) {
+          <div class="level-item">
+            <span class="level-code">{{ level.code }}</span>
+            <span class="level-salary">NT$ {{ formatSalary(level.salary) }}</span>
+          </div>
           }
         </div>
       </div>
+
+      <!-- 區塊3: 學歷與資格要求 -->
+      <div class="detail-section education-section">
+        <div class="detail-header">
+          <i class="ri-graduation-cap-line"></i>
+          <h4>學歷與資格要求</h4>
+        </div>
+        <div class="education-content">
+          <div class="education-item">
+            <i class="ri-book-open-line"></i>
+            <span>{{ grade.educationRequirement }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 區塊4: 工作職責說明 -->
+      <div class="detail-section responsibility-section">
+        <div class="detail-header">
+          <i class="ri-briefcase-line"></i>
+          <h4>工作職責說明</h4>
+        </div>
+        <div class="responsibility-content">
+          <p>{{ grade.responsibilityDescription }}</p>
+        </div>
+      </div>
+
+      <!-- 區塊5: 晉升條件 (雙軌) -->
+      @if (selectedGradeDetail(); as detail) {
+      <div class="detail-section promotion-section">
+        <div class="detail-header">
+          <i class="ri-arrow-up-double-line"></i>
+          <h4>晉升條件</h4>
+        </div>
+        
+        @if (detail.promotionTo.length === 0 && detail.promotionFrom.length === 0) {
+        <div class="empty-promotion">
+          <i class="ri-information-line"></i>
+          <span>此職等暫無晉升條件資料</span>
+        </div>
+        } @else {
+        
+        <!-- 晉升至下一職等 -->
+        @if (detail.promotionTo.length > 0) {
+        <div class="promotion-direction">
+          <h5 class="promotion-direction-title">
+            <i class="ri-arrow-up-line"></i> 晉升至 Grade {{ grade.grade + 1 }}
+          </h5>
+          <div class="promotion-tracks">
+            @for (promo of detail.promotionTo; track promo.id) {
+            <div class="promotion-track-card" [class]="'track-' + promo.track">
+              <div class="track-badge">
+                <i [class]="promo.track === 'management' ? 'ri-team-line' : 'ri-code-box-line'"></i>
+                {{ getTrackLabel(promo.track) }}
+              </div>
+              
+              <div class="promo-item">
+                <span class="promo-label">績效門檻</span>
+                <span class="promo-value" [class]="getPerformanceThresholdClass(promo.performanceThreshold)">
+                  {{ promo.performanceThreshold }}%
+                </span>
+              </div>
+              
+              @if (promo.requiredSkills.length > 0) {
+              <div class="promo-item">
+                <span class="promo-label">必備技能</span>
+                <div class="promo-tags">
+                  @for (skill of promo.requiredSkills; track skill) {
+                  <span class="tag skill-tag">{{ skill }}</span>
+                  }
+                </div>
+              </div>
+              }
+              
+              @if (promo.requiredCourses.length > 0) {
+              <div class="promo-item">
+                <span class="promo-label">必修課程</span>
+                <div class="promo-tags">
+                  @for (course of promo.requiredCourses; track course) {
+                  <span class="tag course-tag">{{ course }}</span>
+                  }
+                </div>
+              </div>
+              }
+              
+              @if (promo.kpiFocus.length > 0) {
+              <div class="promo-item">
+                <span class="promo-label">KPI 重點</span>
+                <div class="promo-tags">
+                  @for (kpi of promo.kpiFocus; track kpi) {
+                  <span class="tag kpi-tag">{{ kpi }}</span>
+                  }
+                </div>
+              </div>
+              }
+              
+              @if (promo.additionalCriteria.length > 0) {
+              <div class="promo-item">
+                <span class="promo-label">其他條件</span>
+                <ul class="criteria-list">
+                  @for (criteria of promo.additionalCriteria; track criteria) {
+                  <li><i class="ri-checkbox-circle-line"></i> {{ criteria }}</li>
+                  }
+                </ul>
+              </div>
+              }
+            </div>
+            }
+          </div>
+        </div>
+        }
+        
+        <!-- 來自下一職等的晉升條件 (選用顯示) -->
+        @if (detail.promotionFrom.length > 0 && grade.grade > 1) {
+        <div class="promotion-direction promotion-from">
+          <h5 class="promotion-direction-title">
+            <i class="ri-arrow-down-line"></i> 從 Grade {{ grade.grade - 1 }} 晉升至此
+          </h5>
+          <p class="promotion-from-note">以下是從前一職等晉升至此職等所需條件</p>
+        </div>
+        }
+        }
+      </div>
+      }
+
+      <!-- 區塊6: 所需技能/培訓 (如有 promotionTo 則顯示彙總) -->
+      @if (selectedGradeDetail(); as detail) {
+      @if (detail.promotionTo.length > 0) {
+      <div class="detail-section skills-section">
+        <div class="detail-header">
+          <i class="ri-tools-line"></i>
+          <h4>所需技能與培訓</h4>
+        </div>
+        <div class="skills-summary">
+          @for (promo of detail.promotionTo; track promo.id) {
+          <div class="skill-track">
+            <span class="skill-track-label">{{ getTrackLabel(promo.track) }}</span>
+            <div class="skill-items">
+              @for (skill of promo.requiredSkills; track skill) {
+              <span class="skill-chip">{{ skill }}</span>
+              }
+              @for (course of promo.requiredCourses; track course) {
+              <span class="course-chip">{{ course }}</span>
+              }
+            </div>
+          </div>
+          }
+        </div>
+      </div>
+      }
+      }
+
+      <!-- 區塊7: 晉升程序說明 -->
+      @if (selectedGradeDetail(); as detail) {
+      @if (detail.promotionTo.length > 0 && detail.promotionTo[0].promotionProcedure) {
+      <div class="detail-section procedure-section">
+        <div class="detail-header">
+          <i class="ri-flow-chart"></i>
+          <h4>晉升程序說明</h4>
+        </div>
+        <div class="procedure-content">
+          <p>{{ detail.promotionTo[0].promotionProcedure }}</p>
+        </div>
+      </div>
+      }
+      }
+
     </div>
     <div class="modal-footer">
       <button class="btn-secondary" (click)="closeGradeDetailModal()" type="button">關閉</button>
-      <button class="btn-primary" type="button">
-        <i class="ri-edit-line"></i> 編輯職等
-      </button>
     </div>
   </div>
 </div>
 }
 
-<!-- Career Path Detail Modal -->
-@if (showCareerPathModal() && selectedCareerPath(); as path) {
+<!-- Career Path Detail Modal (新版) -->
+@if (showCareerPathModal() && selectedCareerPathNew(); as path) {
 <div class="modal-backdrop" (click)="closeCareerPathModal()"></div>
 <div class="modal modal--large">
   <div class="modal-content">
     <div class="modal-header">
       <div class="modal-header-info">
-        <span class="path-type-badge" [class]="getCareerPathTypeClass(path.type)">
-          <i [class]="getCareerPathTypeIcon(path.type)"></i>
-          {{ getCareerPathTypeLabel(path.type) }}
+        <span class="path-type-badge" [class]="getPathTypeClass(path.type)">
+          <i [class]="getPathTypeIcon(path.type)"></i>
+          {{ getPathTypeLabel(path.type) }}
         </span>
       </div>
       <button class="btn-close" (click)="closeCareerPathModal()" type="button">
@@ -672,11 +968,11 @@
       <div class="path-overview">
         <div class="overview-item">
           <span class="overview-label">起始職位</span>
-          <span class="overview-value">{{ path.currentPosition }}</span>
+          <span class="overview-value">{{ path.fromPosition }}</span>
         </div>
         <div class="overview-item">
           <span class="overview-label">目標職位</span>
-          <span class="overview-value">{{ path.targetPosition }}</span>
+          <span class="overview-value">{{ path.toPosition }}</span>
         </div>
         <div class="overview-item">
           <span class="overview-label">預估時間</span>
@@ -686,18 +982,33 @@
 
       <div class="modal-section">
         <h4 class="modal-section-title">發展階段</h4>
-        <div class="steps-timeline">
+        <div class="steps-timeline steps-timeline-new">
           @for (step of path.steps; track step.order) {
-          <div class="timeline-step" [class]="getStepStatusClass(step.status)">
+          <div class="timeline-step">
             <div class="step-marker">
-              <i [class]="getStepStatusIcon(step.status)"></i>
+              <span class="step-order">{{ step.order }}</span>
             </div>
             <div class="step-content">
               <div class="step-header">
                 <span class="step-title">{{ step.title }}</span>
+                <span class="step-grade">Grade {{ step.grade }}</span>
                 <span class="step-duration">{{ step.duration }}</span>
               </div>
               <p class="step-desc">{{ step.description }}</p>
+              @if (step.required_courses && step.required_courses.length > 0) {
+              <div class="step-requirements">
+                <span class="req-label">必修課程：</span>
+                @for (course of step.required_courses; track course) {
+                <span class="req-tag">{{ course }}</span>
+                }
+              </div>
+              }
+              @if (step.performance_threshold) {
+              <div class="step-threshold">
+                <span class="threshold-label">績效門檻：</span>
+                <span class="threshold-value">{{ step.performance_threshold }}%</span>
+              </div>
+              }
             </div>
           </div>
           }

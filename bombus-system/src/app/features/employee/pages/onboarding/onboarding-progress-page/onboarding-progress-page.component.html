@@ -1,0 +1,240 @@
+<div class="onboarding-progress-page">
+  <!-- 待入職候選人區塊 -->
+  <div class="section">
+    <div class="section-header" (click)="togglePending()">
+      <div class="section-title">
+        <i class="ri-user-received-line"></i>
+        <span>待入職候選人</span>
+        <span class="badge">{{ pendingCount() }}</span>
+      </div>
+      <button class="toggle-btn" type="button">
+        <i [class]="expandedPending() ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'"></i>
+      </button>
+    </div>
+
+    @if (expandedPending()) {
+    <div class="section-content">
+      @if (pendingCandidates().length === 0) {
+      <div class="empty-state">
+        <i class="ri-inbox-line"></i>
+        <p>目前沒有待入職的候選人</p>
+        <span class="hint">當候選人接受 Offer 後，會出現在這裡</span>
+      </div>
+      } @else {
+      <div class="candidates-table">
+        <div class="table-header">
+          <div class="col-name">姓名</div>
+          <div class="col-position">應徵職位</div>
+          <div class="col-date">接受日期</div>
+          <div class="col-days">等待天數</div>
+          <div class="col-action">操作</div>
+        </div>
+        @for (candidate of pendingCandidates(); track candidate.id) {
+        <div class="table-row">
+          <div class="col-name">
+            <div class="avatar">
+              @if (candidate.avatar) {
+                <img [src]="candidate.avatar" [alt]="candidate.name">
+              } @else {
+                <i class="ri-user-line"></i>
+              }
+            </div>
+            <div class="name-info">
+              <span class="name">{{ candidate.name }}</span>
+              <span class="email">{{ candidate.email }}</span>
+            </div>
+          </div>
+          <div class="col-position">{{ candidate.position || '未指定' }}</div>
+          <div class="col-date">{{ formatDate(candidate.offer_accepted_at) }}</div>
+          <div class="col-days">
+            <span class="days-badge" [class.warning]="candidate.days_since_accepted > 5">
+              {{ candidate.days_since_accepted }} 天
+            </span>
+          </div>
+          <div class="col-action">
+            <button class="btn-convert" (click)="openConvertModal(candidate)" type="button">
+              <i class="ri-user-add-line"></i>
+              啟動入職
+            </button>
+          </div>
+        </div>
+        }
+      </div>
+      }
+    </div>
+    }
+  </div>
+
+  <!-- 入職中員工區塊 -->
+  <div class="section">
+    <div class="section-header" (click)="toggleInProgress()">
+      <div class="section-title">
+        <i class="ri-walk-line"></i>
+        <span>入職中員工</span>
+        <span class="badge">{{ inProgressCount() }}</span>
+      </div>
+      <button class="toggle-btn" type="button">
+        <i [class]="expandedInProgress() ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'"></i>
+      </button>
+    </div>
+
+    @if (expandedInProgress()) {
+    <div class="section-content">
+      @if (inProgressEmployees().length === 0) {
+      <div class="empty-state">
+        <i class="ri-file-list-3-line"></i>
+        <p>目前沒有入職中的員工</p>
+        <span class="hint">將候選人轉為員工後，會出現在這裡追蹤入職進度</span>
+      </div>
+      } @else {
+      <div class="employees-grid">
+        @for (employee of inProgressEmployees(); track employee.id) {
+        <div class="employee-card" (click)="goToEmployeeProfile(employee.id)">
+          <div class="card-header">
+            <div class="avatar">
+              @if (employee.avatar) {
+                <img [src]="employee.avatar" [alt]="employee.name">
+              } @else {
+                <i class="ri-user-line"></i>
+              }
+            </div>
+            <div class="info">
+              <h4>{{ employee.name }}</h4>
+              <p>{{ employee.department }} / {{ employee.position }}</p>
+              <span class="employee-no">{{ employee.employee_no }}</span>
+            </div>
+            <div class="progress-circle" [style.--progress]="employee.progress.overall + '%'"
+                 [style.--color]="getProgressColor(employee.progress.overall)">
+              <span class="percentage">{{ employee.progress.overall }}%</span>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <div class="date-info">
+              <div class="date-item">
+                <i class="ri-calendar-check-line"></i>
+                <span>報到：{{ formatDate(employee.hire_date) }}</span>
+              </div>
+              <div class="date-item">
+                <i class="ri-calendar-todo-line"></i>
+                <span>試用期結束：{{ formatDate(employee.probation_end_date) }}</span>
+              </div>
+            </div>
+
+            <div class="progress-details">
+              <div class="progress-item">
+                <div class="progress-label">
+                  <i class="ri-file-edit-line"></i>
+                  <span>文件簽署</span>
+                </div>
+                <div class="progress-bar">
+                  <div class="progress-fill" 
+                       [style.width]="(employee.progress.templates.total > 0 ? 
+                         (employee.progress.templates.approved / employee.progress.templates.total * 100) : 0) + '%'">
+                  </div>
+                </div>
+                <span class="progress-text">
+                  {{ employee.progress.templates.approved }}/{{ employee.progress.templates.total }}
+                </span>
+              </div>
+
+              <div class="progress-item">
+                <div class="progress-label">
+                  <i class="ri-upload-cloud-line"></i>
+                  <span>文件上傳</span>
+                </div>
+                <div class="progress-bar">
+                  <div class="progress-fill" 
+                       [style.width]="(employee.progress.documents.total > 0 ? 
+                         (employee.progress.documents.uploaded / employee.progress.documents.total * 100) : 0) + '%'">
+                  </div>
+                </div>
+                <span class="progress-text">
+                  {{ employee.progress.documents.uploaded }}/{{ employee.progress.documents.total }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-actions" (click)="$event.stopPropagation()">
+            <button class="action-btn" (click)="openLinksModal(employee)" title="入職連結" type="button">
+              <i class="ri-link"></i>
+            </button>
+            <button class="action-btn" (click)="goToEmployeeProfile(employee.id)" title="查看員工檔案" type="button">
+              <i class="ri-arrow-right-line"></i>
+            </button>
+          </div>
+        </div>
+        }
+      </div>
+      }
+    </div>
+    }
+  </div>
+</div>
+
+<!-- 入職轉換 Modal -->
+@if (selectedCandidate()) {
+<app-onboarding-convert-modal
+  [candidate]="selectedCandidate()!"
+  [isVisible]="showConvertModal()"
+  (close)="closeConvertModal()"
+  (converted)="onConverted($event)">
+</app-onboarding-convert-modal>
+}
+
+<!-- 入職連結 Modal -->
+@if (showLinksModal()) {
+<div class="modal-overlay" (click)="closeLinksModal()">
+  <div class="modal-container links-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>
+        <i class="ri-link"></i>
+        入職文件連結
+      </h3>
+      <button class="close-btn" (click)="closeLinksModal()" type="button">
+        <i class="ri-close-line"></i>
+      </button>
+    </div>
+    
+    <div class="modal-body">
+      <!-- 員工資訊 -->
+      <div class="employee-info-bar">
+        <div class="avatar-circle">
+          {{ selectedEmployeeLinks().employee?.name?.charAt(0) }}
+        </div>
+        <div class="info">
+          <span class="name">{{ selectedEmployeeLinks().employee?.name }}</span>
+          <span class="detail">{{ selectedEmployeeLinks().employee?.department }} / {{ selectedEmployeeLinks().employee?.position }}</span>
+        </div>
+      </div>
+
+      <!-- 連結列表 -->
+      <div class="links-list">
+        @for (link of selectedEmployeeLinks().links; track link.token) {
+        <div class="link-item">
+          <div class="link-info">
+            <i class="ri-file-text-line"></i>
+            <span class="link-name">{{ link.name }}</span>
+          </div>
+          <div class="link-actions">
+            <input type="text" [value]="link.url" readonly class="link-url">
+            <button class="copy-btn" (click)="copyLink(link.url, link.name)" title="複製連結" type="button">
+              <i class="ri-file-copy-line"></i>
+            </button>
+          </div>
+        </div>
+        }
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeLinksModal()" type="button">關閉</button>
+      <button class="btn-primary" (click)="copyAllLinks()" type="button">
+        <i class="ri-file-copy-2-line"></i>
+        複製全部連結
+      </button>
+    </div>
+  </div>
+</div>
+}

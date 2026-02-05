@@ -35,5 +35,10 @@ export const COMPETENCY_ROUTES: Routes = [
     path: 'assessment',
     loadComponent: () => import('./pages/assessment-page/assessment-page.component')
       .then(m => m.AssessmentPageComponent)
+  },
+  {
+    path: 'templates',
+    loadComponent: () => import('./pages/template-manage-page/template-manage-page.component')
+      .then(m => m.TemplateManagePageComponent)
   }
 ];

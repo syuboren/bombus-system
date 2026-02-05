@@ -30,6 +30,29 @@
     </div>
   }
 
+  <!-- Success Page (表單提交成功) -->
+  @if (isSuccessPage()) {
+    <div class="success-container">
+      <div class="success-card">
+        <div class="success-icon-wrapper">
+          <i class="ri-checkbox-circle-line"></i>
+        </div>
+        <h2 class="success-title">表單已完成送出</h2>
+        <p class="success-message">感謝您填寫面試記錄表，我們已收到您的資料。</p>
+        <div class="success-info">
+          <p>人資部門將會審閱您的資料，並盡快與您聯繫。</p>
+          <p>如有任何問題，請聯繫人資部門。</p>
+        </div>
+        <div class="success-actions">
+          <a href="/" class="btn btn-primary">
+            <i class="ri-home-line"></i>
+            返回首頁
+          </a>
+        </div>
+      </div>
+    </div>
+  }
+
   <!-- Error State -->
   @if (error()) {
     <div class="error-container">
@@ -165,10 +188,9 @@
                 <label class="form-label required">填表日期</label>
                 <input
                   type="date"
-                  class="form-input"
+                  class="form-input readonly-field"
                   [value]="basicInfo().fillDate"
-                  (change)="updateBasicInfo('fillDate', $any($event.target).value)"
-                  [disabled]="isLocked()"
+                  readonly
                 />
               </div>
 
@@ -176,11 +198,9 @@
                 <label class="form-label required">應徵姓名</label>
                 <input
                   type="text"
-                  class="form-input"
+                  class="form-input readonly-field"
                   [value]="basicInfo().candidateName"
-                  (input)="updateBasicInfo('candidateName', $any($event.target).value)"
-                  [disabled]="isLocked()"
-                  placeholder="請輸入您的姓名"
+                  readonly
                 />
               </div>
 
@@ -188,11 +208,9 @@
                 <label class="form-label required">應徵部門</label>
                 <input
                   type="text"
-                  class="form-input"
+                  class="form-input readonly-field"
                   [value]="basicInfo().applyDept"
-                  (input)="updateBasicInfo('applyDept', $any($event.target).value)"
-                  [disabled]="isLocked()"
-                  placeholder="應徵部門"
+                  readonly
                 />
               </div>
 
@@ -200,11 +218,9 @@
                 <label class="form-label required">應徵職務</label>
                 <input
                   type="text"
-                  class="form-input"
+                  class="form-input readonly-field"
                   [value]="basicInfo().applyJob"
-                  (input)="updateBasicInfo('applyJob', $any($event.target).value)"
-                  [disabled]="isLocked()"
-                  placeholder="應徵職務"
+                  readonly
                 />
               </div>
 
@@ -297,47 +313,59 @@
               </div>
             </div>
 
-            <h3 class="subsection-title">駕照</h3>
-            <div class="checkbox-group">
-              <label class="checkbox-label">
-                <input
-                  type="checkbox"
-                  [checked]="basicInfo().licenses.includes('汽車')"
-                  (change)="toggleLicense('汽車')"
-                  [disabled]="isLocked()"
-                />
-                <span>汽車</span>
-              </label>
-              <label class="checkbox-label">
-                <input
-                  type="checkbox"
-                  [checked]="basicInfo().licenses.includes('機車')"
-                  (change)="toggleLicense('機車')"
-                  [disabled]="isLocked()"
-                />
-                <span>機車</span>
-              </label>
-              <div class="other-license">
-                <label class="checkbox-label">
+            <!-- 駕照區塊 -->
+            <div class="license-section">
+              <label class="form-label">駕照</label>
+              <div class="license-options">
+                <label class="license-option">
+                  <input
+                    type="checkbox"
+                    [checked]="basicInfo().licenses.includes('汽車')"
+                    (change)="toggleLicense('汽車')"
+                    [disabled]="isLocked()"
+                  />
+                  <span class="option-box">
+                    <i class="ri-car-line"></i>
+                    <span>汽車</span>
+                  </span>
+                </label>
+                <label class="license-option">
+                  <input
+                    type="checkbox"
+                    [checked]="basicInfo().licenses.includes('機車')"
+                    (change)="toggleLicense('機車')"
+                    [disabled]="isLocked()"
+                  />
+                  <span class="option-box">
+                    <i class="ri-motorbike-line"></i>
+                    <span>機車</span>
+                  </span>
+                </label>
+                <label class="license-option">
                   <input
                     type="checkbox"
                     [checked]="basicInfo().licenses.includes('其他')"
                     (change)="toggleLicense('其他')"
                     [disabled]="isLocked()"
                   />
-                  <span>其他</span>
+                  <span class="option-box">
+                    <i class="ri-file-list-3-line"></i>
+                    <span>其他</span>
+                  </span>
                 </label>
-                @if (basicInfo().licenses.includes('其他')) {
-                  <input
-                    type="text"
-                    class="form-input inline-input"
-                    [value]="basicInfo().otherLicense"
-                    (input)="updateBasicInfo('otherLicense', $any($event.target).value)"
-                    [disabled]="isLocked()"
-                    placeholder="請說明"
-                  />
-                }
               </div>
+              @if (basicInfo().licenses.includes('其他')) {
+              <div class="other-license-input">
+                <input
+                  type="text"
+                  class="form-input"
+                  [value]="basicInfo().otherLicense"
+                  (input)="updateBasicInfo('otherLicense', $any($event.target).value)"
+                  [disabled]="isLocked()"
+                  placeholder="請說明其他駕照類型"
+                />
+              </div>
+              }
             </div>
 
             <h2 class="section-title">工作經歷</h2>

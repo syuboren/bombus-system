@@ -3,9 +3,8 @@
 
 .approval-page {
     padding: 24px;
-    padding-top: calc(#{$header-height} + 24px); // Fix header overlap
-    max-width: 1200px;
-    margin: 0 auto;
+    // padding-top handled by parent component
+    // max-width removed to match templates page
 }
 
 /* Stats Cards */

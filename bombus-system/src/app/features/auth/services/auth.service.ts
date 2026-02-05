@@ -32,6 +32,30 @@ export class AuthService {
   }
 
   /**
+   * 取得當前使用者（同步方式）
+   */
+  getCurrentUser(): User | null {
+    return this.currentUserSignal();
+  }
+
+  /**
+   * 判斷是否為 HR（可管理員工文件）
+   * 使用 admin 角色或「人資部」部門判斷
+   */
+  isHR(): boolean {
+    const user = this.currentUserSignal();
+    if (!user) return false;
+    return user.role === 'admin' || user.department === '人資部';
+  }
+
+  /**
+   * Observable 版本（供非同步場景使用）
+   */
+  isHR$(): Observable<boolean> {
+    return of(this.isHR());
+  }
+
+  /**
    * 檢查是否有已儲存的登入狀態
    */
   private checkStoredSession(): void {

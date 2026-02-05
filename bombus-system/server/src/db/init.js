@@ -57,6 +57,28 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_submissions_template ON submissions(template_id);
   CREATE INDEX IF NOT EXISTS idx_submissions_token ON submissions(token);
   CREATE INDEX IF NOT EXISTS idx_template_versions_template ON template_versions(template_id);
+
+  -- 員工入職資料上傳表
+  CREATE TABLE IF NOT EXISTS employee_documents (
+    id TEXT PRIMARY KEY,
+    employee_id TEXT NOT NULL,
+    type TEXT NOT NULL,
+    label TEXT NOT NULL,
+    custom_name TEXT,
+    file_name TEXT,
+    file_url TEXT,
+    file_size INTEGER,
+    mime_type TEXT,
+    status TEXT DEFAULT 'uploaded',
+    reject_reason TEXT,
+    uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME
+  );
+
+  -- 建立索引
+  CREATE INDEX IF NOT EXISTS idx_employee_documents_employee ON employee_documents(employee_id);
+  CREATE INDEX IF NOT EXISTS idx_employee_documents_type ON employee_documents(type);
 `);
 
 console.log('✅ Database initialized successfully at:', dbPath);

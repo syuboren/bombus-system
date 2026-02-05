@@ -154,7 +154,7 @@ export interface Employee {
   grade: string; // 職級
   manager: string;
   managerId: string;
-  hireDate: Date;
+  hireDate?: Date;
   status: EmployeeStatus;
   contractType: 'full-time' | 'part-time' | 'contract' | 'intern';
   workLocation: string;
@@ -182,11 +182,35 @@ export interface EmployeeDetail extends Employee {
   training: EmployeeTraining[];
   performance: EmployeePerformance[];
   roi: EmployeeROI;
+  // 候選人追溯資訊
+  candidateSource?: {
+    candidate_id: string;
+    name: string;
+    email: string;
+    position: string;
+    status: string;
+    stage: string;
+  };
+  // 入職進度（試用期員工）
+  onboardingProgress?: {
+    overall: number;
+    templates: {
+      total: number;
+      signed: number;
+      approved: number;
+    };
+    documents: {
+      total: number;
+      uploaded: number;
+    };
+    probation_end_date: string;
+    probation_months: number;
+  };
 }
 
 export interface JobChange {
   id: string;
-  effectiveDate: Date;
+  effectiveDate?: Date;
   changeType: 'promotion' | 'transfer' | 'demotion' | 'title-change' | 'salary-adjustment';
   fromPosition: string;
   toPosition: string;
@@ -215,11 +239,14 @@ export interface EmployeeTraining {
   id: string;
   courseName: string;
   courseType: 'internal' | 'external' | 'online';
-  completionDate: Date;
+  completionDate?: Date;
   score?: number;
   certificate?: string;
   hours: number;
   cost: number;
+  status: 'enrolled' | 'in-progress' | 'completed' | 'cancelled';
+  instructor?: string;
+  notes?: string;
 }
 
 export interface EmployeePerformance {

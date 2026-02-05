@@ -1,9 +1,4 @@
 <app-header pageTitle="文件審核詳情" [breadcrumbs]="['首頁', '員工管理', '簽核管理', '審核詳情']">
-    <!-- Header Action: Back to List -->
-    <button class="btn btn--secondary" routerLink="/employee/onboarding/approval">
-        <i class="ri-arrow-left-line"></i>
-        返回列表
-    </button>
 </app-header>
 
 <!-- 全頁容器 -->
@@ -92,6 +87,10 @@
             <!-- 底部操作區 (Action Footer) -->
             <div class="action-footer">
                 @if (submission()?.status === 'SIGNED' && submission()?.approval_status === 'PENDING') {
+                <button class="btn btn--secondary btn--block" routerLink="/employee/onboarding" [queryParams]="{tab: 'approval'}">
+                    <i class="ri-arrow-left-line"></i>
+                    返回列表
+                </button>
                 <div class="buttons">
                     <button class="btn btn--danger outline" (click)="openRejectDialog()">
                         <i class="ri-close-circle-line"></i> 退回
@@ -120,6 +119,10 @@
                         審核時間：{{ formatDate(submission()?.approved_at) }}
                     </div>
                 </div>
+                <button class="btn btn--secondary btn--block" routerLink="/employee/onboarding" [queryParams]="{tab: 'approval'}" style="margin-top: 16px;">
+                    <i class="ri-arrow-left-line"></i>
+                    返回列表
+                </button>
                 }
             </div>
         </div>

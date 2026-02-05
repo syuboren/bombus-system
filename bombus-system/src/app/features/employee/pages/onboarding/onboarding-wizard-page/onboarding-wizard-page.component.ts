@@ -340,6 +340,6 @@ export class OnboardingWizardPageComponent implements OnInit {
     }
 
     backToDocuments(): void {
-        this.router.navigate(['/employee/onboarding/my-documents']);
+        this.router.navigate(['/employee/onboarding'], { queryParams: { tab: 'my-documents' } });
     }
 }

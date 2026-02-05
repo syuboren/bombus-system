@@ -48,7 +48,7 @@ export class OnboardingApprovalDetailPageComponent implements OnInit {
             this.loadDetail(id);
         } else {
             alert('無效的 ID');
-            this.router.navigate(['/employee/onboarding/approval']);
+            this.router.navigate(['/employee/onboarding'], { queryParams: { tab: 'approval' } });
         }
     }
 
@@ -73,7 +73,7 @@ export class OnboardingApprovalDetailPageComponent implements OnInit {
             error: (err) => {
                 console.error('Failed to load detail:', err);
                 alert('無法載入詳細資料');
-                this.router.navigate(['/employee/onboarding/approval']);
+                this.router.navigate(['/employee/onboarding'], { queryParams: { tab: 'approval' } });
             }
         });
     }
@@ -138,7 +138,7 @@ export class OnboardingApprovalDetailPageComponent implements OnInit {
             next: () => {
                 this.processingAction.set(false);
                 alert('已核准');
-                this.router.navigate(['/employee/onboarding/approval']);
+                this.router.navigate(['/employee/onboarding'], { queryParams: { tab: 'approval' } });
             },
             error: (err) => {
                 this.processingAction.set(false);
@@ -172,7 +172,7 @@ export class OnboardingApprovalDetailPageComponent implements OnInit {
             next: () => {
                 this.processingAction.set(false);
                 alert('已退回');
-                this.router.navigate(['/employee/onboarding/approval']);
+                this.router.navigate(['/employee/onboarding'], { queryParams: { tab: 'approval' } });
             },
             error: (err) => {
                 this.processingAction.set(false);

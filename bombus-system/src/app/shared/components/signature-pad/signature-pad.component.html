@@ -1,0 +1,20 @@
+<div class="signature-pad-wrapper" [class.disabled]="disabled" [class.has-content]="!isEmpty()">
+  <canvas 
+    #canvas 
+    (mousedown)="onMouseDown($event)" 
+    (mousemove)="onMouseMove($event)" 
+    (mouseup)="onMouseUp()"
+    (mouseleave)="onMouseLeave()" 
+    (touchstart)="onTouchStart($event)" 
+    (touchmove)="onTouchMove($event)"
+    (touchend)="onTouchEnd($event)">
+  </canvas>
+  @if (isEmpty()) {
+    <div class="placeholder-text">{{ label }}</div>
+  }
+  @if (!disabled && !isEmpty()) {
+    <button class="btn-clear" type="button" (click)="clear()" title="清除簽名">
+      <i class="ri-delete-bin-line"></i>
+    </button>
+  }
+</div>

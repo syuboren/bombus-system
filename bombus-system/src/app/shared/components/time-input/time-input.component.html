@@ -1,0 +1,47 @@
+<div class="time-input-container">
+  @if (label()) {
+    <label class="time-label">{{ label() }}</label>
+  }
+
+  <div class="time-input-wrapper">
+    <div class="input-group">
+      <input
+        type="number"
+        class="time-input"
+        [value]="value()"
+        [placeholder]="placeholder()"
+        [disabled]="disabled()"
+        min="0"
+        [max]="maxMinutes()"
+        (input)="onInputChange($event)">
+      <span class="input-suffix">分鐘</span>
+    </div>
+
+    @if (showQuickButtons() && !disabled()) {
+      <div class="quick-buttons">
+        @for (btn of quickButtons; track btn.value) {
+          <button
+            type="button"
+            class="quick-btn"
+            (click)="addTime(btn.value)"
+            [disabled]="disabled()">
+            {{ btn.label }}
+          </button>
+        }
+        <button
+          type="button"
+          class="quick-btn quick-btn--reset"
+          (click)="resetTime()"
+          [disabled]="disabled()">
+          歸零
+        </button>
+      </div>
+    }
+  </div>
+
+  @if (value() > 0) {
+    <div class="time-display">
+      = {{ formattedTime() }}
+    </div>
+  }
+</div>

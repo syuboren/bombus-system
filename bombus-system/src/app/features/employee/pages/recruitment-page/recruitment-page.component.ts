@@ -19,9 +19,21 @@ import { NotificationService } from '../../../../core/services/notification.serv
 import { InterviewService } from '../../services/interview.service';
 import { AIAnalysisService, AIAnalysisResult } from '../../services/ai-analysis.service';
 import { JobKeywordsService } from '../../services/job-keywords.service';
-import { Candidate, CandidateDetail, EvaluationScore } from '../../models/candidate.model';
+import { Candidate, CandidateDetail, CandidateFormData, FullAIAnalysisResult } from '../../models/candidate.model';
+import { CandidateFull, CandidateResumeAnalysis } from '../../models/job.model';
 import { EvaluationDimension } from '../../models/job-keywords.model';
 import * as echarts from 'echarts';
+import { InterviewScoringModalComponent } from '../../components/interview-scoring-modal/interview-scoring-modal.component';
+
+/**
+ * 評分維度（保留相容）
+ */
+interface EvaluationScore {
+  dimensionId: string;
+  dimensionName: string;
+  score: number;
+  remark?: string;
+}
 
 /**
  * 媒體附件介面
@@ -69,11 +81,12 @@ type CandidateStatus =
   | 'invite_declined' | 'interview_declined' | 'offer_declined';
 
 import { AiScoringOverlayComponent } from '../../components/ai-scoring-overlay/ai-scoring-overlay.component';
+import { JobService } from '../../services/job.service';
 
 @Component({
   selector: 'app-recruitment-page',
   standalone: true,
-  imports: [FormsModule, CommonModule, HeaderComponent, AiScoringOverlayComponent],
+  imports: [FormsModule, CommonModule, HeaderComponent, AiScoringOverlayComponent, InterviewScoringModalComponent],
   templateUrl: './recruitment-page.component.html',
   styleUrl: './recruitment-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -85,6 +98,7 @@ export class RecruitmentPageComponent implements OnInit, OnDestroy {
   private aiAnalysisService = inject(AIAnalysisService);
   private jobKeywordsService = inject(JobKeywordsService);
   private notificationService = inject(NotificationService);
+  private jobService = inject(JobService);
   private cdr = inject(ChangeDetectorRef);
   private ngZone = inject(NgZone);
 
@@ -101,7 +115,15 @@ export class RecruitmentPageComponent implements OnInit, OnDestroy {
   loading = signal<boolean>(false);
 
   // ============================================================
-  // 面試評分表單
+  // 新版評分 Modal（17 題倒扣制）
+  // ============================================================
+  isScoringModalVisible = signal<boolean>(false);
+  candidateFull = signal<CandidateFull | null>(null);
+  candidateFormData = signal<CandidateFormData | null>(null);
+  resumeAnalysisData = signal<CandidateResumeAnalysis | null>(null);
+
+  // ============================================================
+  // 面試評分表單（保留相容，用於雷達圖顯示）
   // ============================================================
   performanceDescription = signal<string>('');
   overallComment = signal<string>('');
@@ -380,16 +402,12 @@ export class RecruitmentPageComponent implements OnInit, OnDestroy {
         this.mediaOwnerId.set(candidate.id);
       }
 
-      // Load specific dimensions scores
-      if (evalData.scores && evalData.scores.length > 0) {
-        this.evaluationDimensions.set(
-          evalData.scores.map(s => ({ id: s.dimensionId, name: s.dimensionName, weight: 1 }))
-        );
-        this.dimensionScores.set(evalData.scores.map(s => ({
-          ...s,
-          remark: s.remark || (s as any).comment || ''
-        })));
+      // 檢查是否有新版評分資料
+      if (evalData.scoringItems && evalData.scoringItems.length > 0) {
+        // 新版評分資料：使用新版系統，不載入舊版維度
+        console.log('使用新版評分系統');
       } else {
+        // 舊版或無評分資料：載入預設維度
         this.loadEvaluationDimensions();
       }
     } else {
@@ -652,62 +670,91 @@ export class RecruitmentPageComponent implements OnInit, OnDestroy {
   }
 
   // ============================================================
-  // 提交面試評分
+  // 新版評分 Modal 操作
   // ============================================================
-  submitScoring(): void {
-    if (!this.isScoringComplete()) {
-      this.notificationService.warning('請完成所有評分項目');
+
+  /**
+   * 打開評分 Modal
+   */
+  openScoringModal(): void {
+    const candidate = this.selectedCandidate();
+    if (!candidate) {
+      this.notificationService.warning('請先選擇候選人');
       return;
     }
 
-    const candidate = this.selectedCandidate();
-    if (!candidate) return;
-
-    this.scoringSubmitting.set(true);
-
-    // 呼叫後端 API 儲存評分
-    const media = this.uploadedMedia();
-    const currentAiResult = this.aiAnalysisResult();
-    
-    const evaluationData = {
-      performanceDescription: this.performanceDescription(),
-      dimensionScores: this.dimensionScores().map(d => ({
-        dimensionId: d.dimensionId,    // Vital: Keep the ID!
-        dimensionName: d.dimensionName,
-        score: d.score,
-        comment: d.remark || ''
-      })),
-      overallComment: this.overallComment(),
-      totalScore: this.totalScore(),
-      transcriptText: this.transcriptText(),
-      mediaUrl: media?.url,      // Persist Media URL
-      mediaSize: media?.size,    // Persist Media Size
-      aiAnalysisResult: currentAiResult
-    };
-
-    this.interviewService.saveEvaluation(candidate.id, evaluationData).subscribe({
-      next: () => {
-        this.scoringSubmitting.set(false);
-        this.notificationService.success('面試評分已儲存');
-
-        // 直接重新載入候選人詳情（繞過 selectCandidate 的防護邏輯）
-        this.interviewService.getCandidateDetail(candidate.id).subscribe({
-          next: (detail) => {
-            if (detail) {
-              this.selectedCandidate.set(detail);
-              this.cdr.detectChanges();
-            }
+    // 載入候選人完整履歷資料（包含履歷解析報告）
+    if (candidate.jobId) {
+      this.jobService.getCandidateFull(candidate.jobId, candidate.id).subscribe({
+        next: (full) => {
+          this.candidateFull.set(full);
+          // 設定履歷解析報告
+          if (full.resumeAnalysis) {
+            this.resumeAnalysisData.set(full.resumeAnalysis);
           }
-        });
+        },
+        error: () => {
+          console.warn('Failed to load candidate full data');
+        }
+      });
+    }
 
-        // 重新載入候選人列表 (Update list status)
-        this.loadCandidates();
-      },
-      error: () => {
-        this.scoringSubmitting.set(false);
-        this.notificationService.error('儲存失敗，請稍後再試');
-      }
-    });
+    // 載入候選人面試表單資料（如果有面試 ID）
+    const interview = candidate.interviews?.find(i => i.result === 'Pending') || candidate.interviews?.[0];
+    if (interview) {
+      this.interviewService.getCandidateFormData(interview.id).subscribe({
+        next: (data) => {
+          if (data.formData) {
+            this.candidateFormData.set(data.formData);
+          }
+        },
+        error: () => {
+          console.warn('Failed to load candidate form data');
+        }
+      });
+    }
+
+    this.isScoringModalVisible.set(true);
+  }
+
+  /**
+   * 關閉評分 Modal
+   */
+  closeScoringModal(): void {
+    this.isScoringModalVisible.set(false);
+  }
+
+  /**
+   * 評分完成回調
+   */
+  onScoringCompleted(): void {
+    const candidate = this.selectedCandidate();
+    if (candidate) {
+      // 重新載入候選人詳情
+      this.interviewService.getCandidateDetail(candidate.id).subscribe({
+        next: (detail) => {
+          if (detail) {
+            console.log('=== Reloaded candidate detail ===');
+            console.log('evaluation.totalScore:', detail.evaluation?.totalScore);
+            console.log('evaluation.recommendation:', detail.evaluation?.recommendation);
+            console.log('evaluation.prosComment:', detail.evaluation?.prosComment);
+            console.log('evaluation.consComment:', detail.evaluation?.consComment);
+            this.selectedCandidate.set(detail);
+            this.cdr.detectChanges();
+          }
+        }
+      });
+    }
+    // 重新載入候選人列表
+    this.loadCandidates();
+    this.isScoringModalVisible.set(false);
+  }
+
+  // ============================================================
+  // 提交面試評分（改為打開新版評分 Modal）
+  // ============================================================
+  submitScoring(): void {
+    this.openScoringModal();
   }
 
   // ============================================================

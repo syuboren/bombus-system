@@ -12,10 +12,7 @@ const { v4: uuidv4 } = require('uuid');
 /**
  * POST /api/onboarding/sign/create
  * 建立新的簽署連結 (HR 端)
- */
-/**
- * POST /api/onboarding/sign/create
- * 建立新的簽署連結 (HR 端)
+ * 如果該員工對該模板已有待簽署記錄，返回現有記錄而不是建立新的
  */
 router.post('/create', (req, res) => {
     try {
@@ -30,10 +27,35 @@ router.post('/create', (req, res) => {
             return res.status(404).json({ error: 'Template not found' });
         }
 
+        // 檢查是否已存在該員工對該模板的「待簽署」記錄
+        // 只有當 employee_id 存在時才檢查
+        if (employee_id) {
+            const existingSubmission = prepare(`
+                SELECT id, token, status, template_version 
+                FROM submissions 
+                WHERE template_id = ? 
+                  AND employee_id = ? 
+                  AND status IN ('DRAFT', 'PENDING_APPROVAL')
+                ORDER BY created_at DESC
+                LIMIT 1
+            `).get(template_id, employee_id);
+
+            if (existingSubmission) {
+                console.log(`[CREATE_LINK] Found existing submission: ${existingSubmission.id}, token: ${existingSubmission.token}`);
+                return res.status(200).json({
+                    id: existingSubmission.id,
+                    token: existingSubmission.token,
+                    sign_url: `/employee/onboarding/sign/${existingSubmission.token}`,
+                    existing: true  // 標記這是現有記錄
+                });
+            }
+        }
+
+        // 沒有現有記錄，建立新的
         const id = uuidv4();
         const token = uuidv4().replace(/-/g, '').substring(0, 16);
 
-        console.log(`[CREATE_LINK] Generated token: ${token}`);
+        console.log(`[CREATE_LINK] Generated new token: ${token}`);
 
         // sql.js 無法處理 undefined，需轉為 null
         const safeName = employee_name || null;
@@ -51,7 +73,8 @@ router.post('/create', (req, res) => {
         res.status(201).json({
             id,
             token,
-            sign_url: `/employee/onboarding/sign/${token}`
+            sign_url: `/employee/onboarding/sign/${token}`,
+            existing: false
         });
     } catch (error) {
         console.error('Error creating sign link:', error);

@@ -1,0 +1,109 @@
+@import '../../../../assets/styles/variables';
+@import '../../../../assets/styles/mixins';
+
+.time-input-container {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.time-label {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+}
+
+.time-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  flex-wrap: wrap;
+}
+
+.input-group {
+  display: flex;
+  align-items: center;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  overflow: hidden;
+  background: $color-pure-white;
+
+  &:focus-within {
+    border-color: $color-primary;
+    box-shadow: 0 0 0 2px rgba($color-primary, 0.1);
+  }
+}
+
+.time-input {
+  width: 80px;
+  padding: $spacing-sm $spacing-md;
+  border: none;
+  font-size: $font-size-sm;
+  text-align: right;
+  -moz-appearance: textfield;
+
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  &:focus {
+    outline: none;
+  }
+
+  &:disabled {
+    background: $color-cloud-gray;
+    cursor: not-allowed;
+  }
+}
+
+.input-suffix {
+  padding: $spacing-sm $spacing-md;
+  background: $color-cloud-gray;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  border-left: 1px solid $color-soft-gray;
+}
+
+.quick-buttons {
+  display: flex;
+  gap: $spacing-xs;
+}
+
+.quick-btn {
+  padding: $spacing-xs $spacing-sm;
+  background: $color-cloud-gray;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover:not(:disabled) {
+    background: $color-soft-gray;
+    color: $color-text-dark;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &--reset {
+    color: $color-error;
+    border-color: rgba($color-error, 0.3);
+
+    &:hover:not(:disabled) {
+      background: rgba($color-error, 0.1);
+      border-color: $color-error;
+    }
+  }
+}
+
+.time-display {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  font-style: italic;
+}

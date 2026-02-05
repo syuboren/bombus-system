@@ -152,6 +152,36 @@ $module-color: $color-l1-sage;
             color: var(--color-red-900);
         }
     }
+
+    &--warning {
+        background-color: #fffbeb;
+        border-color: #fde68a;
+
+        .alert-icon {
+            color: #d97706;
+        }
+
+        .alert-title,
+        .alert-message,
+        .alert-hint {
+            color: #92400e;
+        }
+    }
+
+    &--success {
+        background-color: #ecfdf5;
+        border-color: #a7f3d0;
+
+        .alert-icon {
+            color: #059669;
+        }
+
+        .alert-title,
+        .alert-message,
+        .alert-hint {
+            color: #065f46;
+        }
+    }
 }
 
 // ==================== 階段 1：左右分割佈局 ====================
@@ -191,6 +221,55 @@ $module-color: $color-l1-sage;
     color: $color-text-secondary;
     margin: 0;
     font-size: $font-size-sm;
+
+    &.status-line {
+        margin-top: $spacing-xs;
+    }
+}
+
+// 狀態標籤樣式
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    border-radius: $radius-full;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+
+    i {
+        font-size: 14px;
+    }
+
+    &.status-draft {
+        background: rgba(#9ca3af, 0.15);
+        color: #6b7280;
+    }
+
+    &.status-pending {
+        background: rgba(#f59e0b, 0.15);
+        color: #d97706;
+    }
+
+    &.status-signed {
+        background: rgba($module-color, 0.15);
+        color: $module-color;
+    }
+
+    &.status-approved {
+        background: rgba($color-success, 0.15);
+        color: $color-success;
+    }
+
+    &.status-rejected {
+        background: rgba($color-error, 0.15);
+        color: $color-error;
+    }
+
+    &.status-completed {
+        background: rgba($color-success, 0.15);
+        color: $color-success;
+    }
 }
 
 .split-layout {
@@ -327,7 +406,17 @@ $module-color: $color-l1-sage;
 .form-scroll-area {
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden;
     padding: $spacing-lg;
+
+    // 隱藏滾軸但保留滾動功能
+    &::-webkit-scrollbar {
+        width: 0;
+        background: transparent;
+    }
+
+    -ms-overflow-style: none;
+    scrollbar-width: none;
 }
 
 .field-group {
@@ -416,9 +505,24 @@ $module-color: $color-l1-sage;
 }
 
 .form-actions {
-    padding: $spacing-lg;
+    padding: 24px;
     border-top: 1px solid $color-soft-gray;
     background: $color-pure-white;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
+    z-index: 20;
+    display: flex;
+    gap: 16px;
+    flex-shrink: 0;
+
+    .btn {
+        flex: 1;
+        justify-content: center;
+
+        &:only-child {
+            flex: none;
+            width: 100%;
+        }
+    }
 }
 
 // ==================== 階段 2：預覽佈局 ====================

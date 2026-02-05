@@ -54,6 +54,7 @@ export class InterviewFormPageComponent implements OnInit, OnDestroy {
   error = signal<string | null>(null);
   errorType = signal<string | null>(null);
   formInfo = signal<InterviewFormResponse | null>(null);
+  isSuccessPage = signal<boolean>(false);
   
   // Form state
   currentStep = signal<number>(1);
@@ -160,6 +161,14 @@ export class InterviewFormPageComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    // 檢查是否是成功頁面
+    const currentUrl = this.router.url;
+    if (currentUrl.includes('interview-form-success')) {
+      this.isSuccessPage.set(true);
+      this.loading.set(false);
+      return;
+    }
+
     // Get token from route
     this.route.paramMap.subscribe(params => {
       const token = params.get('token');
@@ -191,17 +200,37 @@ export class InterviewFormPageComponent implements OnInit, OnDestroy {
       next: (response) => {
         this.formInfo.set(response);
         
-        // Pre-fill basic info
+        // Pre-fill basic info from candidate resume data
         if (response.candidate) {
           const info = this.basicInfo();
+          // 填表日期固定為當日
+          info.fillDate = new Date().toISOString().split('T')[0];
           info.candidateName = response.candidate.name || '';
           info.contactInfo = response.candidate.phone || response.candidate.email || '';
           info.applyJob = response.interview.jobTitle || '';
           info.applyDept = response.interview.department || '';
+          // 帶入生日
+          if (response.candidate.birthday) {
+            info.birthDate = response.candidate.birthday;
+          }
+          // 帶入駕照
+          if (response.candidate.drivingLicenses?.length) {
+            info.licenses = response.candidate.drivingLicenses;
+          }
+          // 帶入教育程度（從履歷自動轉換）
+          if (response.candidate.education) {
+            const mappedLevel = this.mapEducationToLevel(response.candidate.education);
+            info.educationLevel = mappedLevel as typeof info.educationLevel;
+          }
           this.basicInfo.set({ ...info });
         }
 
-        // Restore saved form data
+        // Pre-fill work experiences from resume
+        if (response.workExperiences?.length) {
+          this.workExperiences.set(response.workExperiences);
+        }
+
+        // Restore saved form data (優先使用已儲存的資料)
         if (response.formData) {
           if (response.formData.basicInfo) {
             this.basicInfo.set(response.formData.basicInfo);
@@ -511,5 +540,37 @@ export class InterviewFormPageComponent implements OnInit, OnDestroy {
       grouped.set(q.category, [...existing, q]);
     });
     return grouped;
+  }
+
+  /**
+   * 將履歷教育程度字串轉換為表單選項值
+   */
+  private mapEducationToLevel(education: string): 'high_school' | 'college' | 'university' | 'master' | 'phd' {
+    if (!education) return 'university';
+    
+    const eduLower = education.toLowerCase();
+    
+    // 博士
+    if (eduLower.includes('博士') || eduLower.includes('phd') || eduLower.includes('doctorate')) {
+      return 'phd';
+    }
+    // 碩士
+    if (eduLower.includes('碩士') || eduLower.includes('master') || eduLower.includes('研究所')) {
+      return 'master';
+    }
+    // 大學
+    if (eduLower.includes('大學') || eduLower.includes('學士') || eduLower.includes('university') || eduLower.includes('bachelor')) {
+      return 'university';
+    }
+    // 專科
+    if (eduLower.includes('專科') || eduLower.includes('college') || eduLower.includes('副學士')) {
+      return 'college';
+    }
+    // 高中
+    if (eduLower.includes('高中') || eduLower.includes('高職') || eduLower.includes('high school')) {
+      return 'high_school';
+    }
+    
+    return 'university'; // 預設
   }
 }

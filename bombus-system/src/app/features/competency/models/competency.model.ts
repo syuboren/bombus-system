@@ -3,7 +3,7 @@
 // =====================================================
 
 // ---------------------------------------------------------------
-// 職等職級相關
+// 職等職級相關 (舊版 - 保留相容性)
 // ---------------------------------------------------------------
 export type GradeType = 'professional' | 'management' | 'specialist';
 
@@ -25,10 +25,57 @@ export interface GradeMatrix {
 }
 
 // ---------------------------------------------------------------
+// 職等職級相關 (新版 - 雙軌制 Grade 1-7)
+// ---------------------------------------------------------------
+export type GradeTrack = 'professional' | 'management' | 'both';
+
+// 職級薪資（對應 DB grade_salary_levels）
+export interface SalaryLevel {
+  code: string;     // BS01, BS02...
+  salary: number;   // 35000, 38000...
+  order: number;
+}
+
+// 職等（對應 DB grade_levels）
+export interface GradeLevelNew {
+  id: string;
+  grade: number;                    // 1-7
+  codeRange: string;                // BS01-BS04
+  titleManagement: string;          // 管理職稱
+  titleProfessional: string;        // 專業職稱
+  educationRequirement: string;     // 學歷要求
+  responsibilityDescription: string;// 職責描述
+  salaryLevels: SalaryLevel[];      // 職級薪資清單
+  minSalary: number;                // 薪資下限
+  maxSalary: number;                // 薪資上限
+}
+
+// 晉升條件（對應 DB promotion_criteria）
+export interface PromotionCriteria {
+  id: string;
+  fromGrade: number;
+  toGrade: number;
+  track: GradeTrack;
+  requiredSkills: string[];
+  requiredCourses: string[];
+  performanceThreshold: number;
+  kpiFocus: string[];
+  additionalCriteria: string[];
+  promotionProcedure: string;
+}
+
+// 職等詳情（含晉升條件）
+export interface GradeLevelDetail extends GradeLevelNew {
+  promotionTo: PromotionCriteria[];   // 晉升到此職等的條件
+  promotionFrom: PromotionCriteria[]; // 從此職等晉升的條件
+}
+
+// ---------------------------------------------------------------
 // 職涯路徑相關
 // ---------------------------------------------------------------
 export type CareerPathType = 'vertical' | 'horizontal' | 'cross-department';
 
+// 舊版 CareerStep (保留相容性)
 export interface CareerStep {
   order: number;
   title: string;
@@ -38,6 +85,18 @@ export interface CareerStep {
   status: 'completed' | 'current' | 'pending';
 }
 
+// 新版 CareerStep (含 grade 和課程資訊)
+export interface CareerStepNew {
+  order: number;
+  title: string;
+  grade: number;
+  description: string;
+  duration: string;
+  required_courses: string[];
+  performance_threshold: number;
+}
+
+// 舊版 CareerPath (保留相容性)
 export interface CareerPath {
   id: string;
   type: CareerPathType;
@@ -48,6 +107,18 @@ export interface CareerPath {
   estimatedTime: string;
   steps: CareerStep[];
   requiredCompetencies: CompetencyItem[];
+}
+
+// 新版 CareerPath (對應 DB career_paths)
+export interface CareerPathNew {
+  id: string;
+  type: CareerPathType;
+  name: string;
+  description: string;
+  fromPosition: string;
+  toPosition: string;
+  estimatedTime: string;
+  steps: CareerStepNew[];
 }
 
 // ---------------------------------------------------------------
@@ -443,5 +514,11 @@ export const GRADE_TYPE_OPTIONS: SelectOption[] = [
   { value: 'professional', label: '專業職' },
   { value: 'management', label: '管理職' },
   { value: 'specialist', label: '專家職' }
+];
+
+// 新版雙軌制選項 (移除專家職)
+export const GRADE_TRACK_OPTIONS: SelectOption[] = [
+  { value: 'professional', label: '專業職' },
+  { value: 'management', label: '管理職' }
 ];
 

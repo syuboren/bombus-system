@@ -3,9 +3,8 @@
 
 .documents-page {
     padding: 24px;
-    padding-top: calc(#{$header-height} + 24px); // Fix header overlap
-    max-width: 1200px;
-    margin: 0 auto;
+    // padding-top handled by parent component
+    // max-width removed to match templates page
 }
 
 .loading-container {
@@ -237,5 +236,723 @@
 @keyframes spin {
     to {
         transform: rotate(360deg);
+    }
+}
+
+// ==================== 入職資料上傳區塊 ====================
+
+.upload-section {
+    margin-top: 32px;
+    background: $color-pure-white;
+    border-radius: $radius-lg;
+    padding: 24px;
+    box-shadow: $shadow-soft;
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid $color-soft-gray;
+    }
+
+    .section-title-group {
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+
+            i {
+                color: $color-l1-sage;
+                font-size: 20px;
+            }
+        }
+
+        .section-description {
+            font-size: 14px;
+            color: $color-text-secondary;
+            margin: 0;
+        }
+    }
+
+    .upload-progress-badge {
+        text-align: right;
+
+        .progress-text {
+            font-size: 13px;
+            color: $color-text-secondary;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .mini-progress-bar {
+            width: 120px;
+            height: 6px;
+            background: $color-soft-gray;
+            border-radius: 3px;
+            overflow: hidden;
+
+            .mini-progress-fill {
+                height: 100%;
+                background: $color-l1-sage;
+                border-radius: 3px;
+                transition: width 0.3s ease;
+            }
+        }
+    }
+}
+
+// 上傳卡片網格
+.upload-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 20px;
+}
+
+// 上傳卡片
+.upload-card {
+    background: $color-pure-white;
+    border-radius: $radius-lg;
+    overflow: hidden;
+    box-shadow: $shadow-soft;
+    border: 1px solid $color-soft-gray;
+    transition: all 0.2s;
+
+    &:hover {
+        box-shadow: $shadow-md;
+    }
+
+    .card-status-line {
+        height: 4px;
+        width: 100%;
+        background: $color-soft-gray;
+    }
+
+    &.status-pending .card-status-line {
+        background: $color-muted-gray;
+    }
+
+    &.status-uploaded .card-status-line {
+        background: $color-warning;
+    }
+
+    &.status-approved .card-status-line {
+        background: $color-success;
+    }
+
+    &.status-rejected .card-status-line {
+        background: $color-error;
+    }
+
+    .card-content {
+        padding: 20px;
+    }
+
+    .card-header {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 16px;
+        align-items: flex-start;
+
+        .icon-wrapper {
+            width: 44px;
+            height: 44px;
+            border-radius: $radius-md;
+            background: rgba($color-l1-sage, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: $color-l1-sage;
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+
+        .doc-info {
+            flex: 1;
+            min-width: 0;
+
+            h4 {
+                font-size: 15px;
+                font-weight: 600;
+                margin: 0 0 4px 0;
+                color: $color-text-dark;
+            }
+
+            .doc-description {
+                font-size: 13px;
+                color: $color-text-secondary;
+                display: block;
+                line-height: 1.4;
+            }
+        }
+
+        .required-badge {
+            font-size: 11px;
+            padding: 2px 8px;
+            background: rgba($color-error, 0.1);
+            color: $color-error;
+            border-radius: 10px;
+            font-weight: 500;
+            flex-shrink: 0;
+        }
+    }
+}
+
+// 上傳區域
+.upload-zone {
+    border: 2px dashed $color-soft-gray;
+    border-radius: $radius-md;
+    padding: 24px;
+    text-align: center;
+    transition: all 0.2s;
+    cursor: pointer;
+
+    &:hover {
+        border-color: $color-l1-sage;
+        background: rgba($color-l1-sage, 0.03);
+    }
+
+    &.uploading {
+        border-color: $color-l1-sage;
+        background: rgba($color-l1-sage, 0.05);
+        cursor: default;
+    }
+
+    .upload-label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+
+        i {
+            font-size: 32px;
+            color: $color-muted-gray;
+        }
+
+        .upload-text {
+            font-size: 14px;
+            color: $color-text-secondary;
+        }
+
+        .upload-hint {
+            font-size: 12px;
+            color: $color-muted-gray;
+        }
+    }
+
+    .uploading-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        color: $color-l1-sage;
+
+        .spinner {
+            font-size: 28px;
+        }
+
+        span {
+            font-size: 14px;
+        }
+    }
+}
+
+// 上傳錯誤
+.upload-error {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: rgba($color-error, 0.1);
+    border-radius: $radius-sm;
+    color: $color-error;
+    font-size: 13px;
+
+    i {
+        font-size: 16px;
+    }
+}
+
+// 已上傳檔案預覽
+.file-preview {
+    background: $color-cloud-gray;
+    border-radius: $radius-md;
+    padding: 16px;
+
+    .file-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+
+        .file-icon {
+            font-size: 24px;
+            color: $color-l1-sage;
+        }
+
+        .file-details {
+            flex: 1;
+            min-width: 0;
+
+            .file-name {
+                display: block;
+                font-size: 14px;
+                font-weight: 500;
+                color: $color-text-dark;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .file-meta {
+                display: block;
+                font-size: 12px;
+                color: $color-text-secondary;
+                margin-top: 2px;
+            }
+        }
+
+        .status-badge {
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 500;
+            flex-shrink: 0;
+
+            &.status-uploaded {
+                background: rgba($color-warning, 0.15);
+                color: darken($color-warning, 15%);
+            }
+
+            &.status-approved {
+                background: rgba($color-success, 0.15);
+                color: $color-success;
+            }
+
+            &.status-rejected {
+                background: rgba($color-error, 0.15);
+                color: $color-error;
+            }
+        }
+    }
+
+    .file-actions {
+        display: flex;
+        gap: 8px;
+    }
+}
+
+// 退回原因
+.reject-reason {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin-top: 12px;
+    padding: 10px 12px;
+    background: rgba($color-error, 0.08);
+    border-radius: $radius-sm;
+    color: $color-error;
+    font-size: 13px;
+    line-height: 1.4;
+
+    i {
+        font-size: 16px;
+        margin-top: 1px;
+    }
+}
+
+// ==================== 其他文件區塊 ====================
+
+.other-documents-section {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid $color-soft-gray;
+
+    .other-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+
+        .other-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            color: $color-text-dark;
+            margin: 0;
+
+            i {
+                color: $color-l1-sage;
+            }
+        }
+    }
+}
+
+// 其他文件列表
+.other-documents-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.other-document-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: $color-cloud-gray;
+    border-radius: $radius-md;
+
+    .item-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex: 1;
+        min-width: 0;
+
+        > i {
+            font-size: 20px;
+            color: $color-l1-sage;
+        }
+
+        .item-details {
+            flex: 1;
+            min-width: 0;
+
+            .item-name {
+                display: block;
+                font-size: 14px;
+                font-weight: 500;
+                color: $color-text-dark;
+            }
+
+            .item-meta {
+                display: block;
+                font-size: 12px;
+                color: $color-text-secondary;
+                margin-top: 2px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+        }
+
+        .status-badge {
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 500;
+
+            &.status-uploaded {
+                background: rgba($color-warning, 0.15);
+                color: darken($color-warning, 15%);
+            }
+
+            &.status-approved {
+                background: rgba($color-success, 0.15);
+                color: $color-success;
+            }
+
+            &.status-rejected {
+                background: rgba($color-error, 0.15);
+                color: $color-error;
+            }
+        }
+    }
+}
+
+// 其他文件輸入區
+.other-document-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.other-input-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+
+    .input-group {
+        flex: 1;
+
+        &.file-input-group {
+            flex: 1.5;
+        }
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1px solid $color-soft-gray;
+        border-radius: $radius-md;
+        font-size: 14px;
+        transition: border-color 0.2s;
+
+        &:focus {
+            outline: none;
+            border-color: $color-l1-sage;
+        }
+    }
+
+    .file-select-btn {
+        display: block;
+        padding: 10px 14px;
+        border: 1px solid $color-soft-gray;
+        border-radius: $radius-md;
+        background: $color-pure-white;
+        font-size: 14px;
+        color: $color-text-secondary;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+
+        &:hover {
+            border-color: $color-l1-sage;
+        }
+
+        .file-selected {
+            color: $color-text-dark;
+        }
+    }
+
+    .input-actions {
+        display: flex;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+}
+
+.input-error {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: rgba($color-error, 0.1);
+    border-radius: $radius-sm;
+    color: $color-error;
+    font-size: 13px;
+
+    i {
+        font-size: 16px;
+    }
+}
+
+// 其他文件空狀態
+.other-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px;
+    text-align: center;
+    color: $color-muted-gray;
+
+    i {
+        font-size: 40px;
+        margin-bottom: 12px;
+    }
+
+    p {
+        font-size: 14px;
+        margin: 0 0 4px 0;
+        color: $color-text-secondary;
+    }
+
+    span {
+        font-size: 13px;
+    }
+}
+
+// ==================== 按鈕樣式 ====================
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 16px;
+    border-radius: $radius-md;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+
+    &--sm {
+        padding: 6px 12px;
+        font-size: 13px;
+    }
+
+    // 填滿樣式（基礎樣式，優先級較低）
+    &--primary {
+        background: $color-l1-sage;
+        color: $color-pure-white;
+
+        &:hover:not(:disabled) {
+            background: darken($color-l1-sage, 8%);
+        }
+
+        &:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+    }
+
+    &--secondary {
+        background: $color-cloud-gray;
+        color: $color-text-dark;
+
+        &:hover {
+            background: darken($color-cloud-gray, 5%);
+        }
+    }
+
+    &--danger {
+        background: $color-error;
+        color: $color-pure-white;
+
+        &:hover {
+            background: darken($color-error, 8%);
+        }
+    }
+
+    // 線條樣式（修飾樣式，優先級較高，定義在後面）
+    &--outline {
+        background: transparent;
+        border: 1px solid $color-l1-sage;
+        color: $color-l1-sage;
+
+        i {
+            color: $color-l1-sage;
+        }
+
+        &:hover {
+            background: $color-l1-sage;
+            color: $color-pure-white;
+            border-color: $color-l1-sage;
+
+            i {
+                color: $color-pure-white;
+            }
+        }
+
+        // 當 outline 與 danger 同時使用時
+        &.btn--danger {
+            background: transparent;
+            color: $color-error;
+            border-color: $color-error;
+
+            i {
+                color: $color-error;
+            }
+
+            &:hover {
+                background: $color-error;
+                color: $color-pure-white;
+                border-color: $color-error;
+
+                i {
+                    color: $color-pure-white;
+                }
+            }
+        }
+    }
+
+    &--full {
+        width: 100%;
+    }
+
+    i {
+        font-size: 16px;
+    }
+}
+
+// 響應式設計
+@media (max-width: 768px) {
+    .upload-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .upload-section .section-header {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .upload-section .upload-progress-badge {
+        text-align: left;
+    }
+
+    .other-input-row {
+        flex-wrap: wrap;
+
+        .input-group {
+            width: 100%;
+        }
+
+        .input-actions {
+            width: 100%;
+            justify-content: flex-end;
+        }
+    }
+}
+
+// ===================================
+// 員工選擇器樣式
+// ===================================
+
+.employee-selector {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 24px;
+    background: #fff;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+
+    label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 500;
+        color: #333;
+        white-space: nowrap;
+
+        i {
+            font-size: 18px;
+            color: #6B9080;
+        }
+    }
+
+    .employee-select {
+        flex: 1;
+        max-width: 300px;
+        padding: 8px 12px;
+        border: 1px solid #E5E5E5;
+        border-radius: 8px;
+        font-size: 14px;
+
+        &:focus {
+            outline: none;
+            border-color: #6B9080;
+        }
+    }
+
+    .current-view-badge {
+        padding: 6px 12px;
+        background: #E8F5F1;
+        color: #1D7A5C;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
     }
 }

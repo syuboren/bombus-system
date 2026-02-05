@@ -197,12 +197,16 @@ $module-color: $color-l1-sage;
 .buttons {
     display: flex;
     gap: 16px;
-    margin-top: 16px;
+    margin-top: 12px;
 
     button {
         flex: 1;
         justify-content: center;
     }
+}
+
+.btn--block + .buttons {
+    margin-top: 12px;
 }
 
 // ==================== 按鈕樣式 (IDP 標準) ====================

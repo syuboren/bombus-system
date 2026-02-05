@@ -2,6 +2,28 @@
 </app-header>
 
 <div class="documents-page">
+    <!-- 員工選擇器（僅 HR 可見） -->
+    @if (isHR()) {
+    <div class="employee-selector">
+        <label for="employee-select">
+            <i class="ri-user-settings-line"></i>
+            管理員工：
+        </label>
+        <select 
+            id="employee-select"
+            class="employee-select"
+            [value]="selectedEmployeeId()"
+            (change)="onEmployeeChange($any($event.target).value)">
+            @for (emp of employees(); track emp.id) {
+            <option [value]="emp.id">{{ emp.name }} ({{ emp.employeeNo }})</option>
+            }
+        </select>
+        <span class="current-view-badge">
+            目前查看：{{ selectedEmployeeName() }}
+        </span>
+    </div>
+    }
+
     @if (loading()) {
     <div class="loading-container">
         <i class="ri-loader-4-line spinner"></i>
@@ -70,18 +92,31 @@
                             開始簽署
                             <i class="ri-arrow-right-line"></i>
                         </button>
+                        } @else if (doc.status === 'DRAFT') {
+                        <!-- 已有待簽署記錄，直接導向簽署頁面 -->
+                        @if (doc.token) {
+                        <button class="btn btn--primary btn--full" (click)="viewSignDocument(doc.token)">
+                            開始簽署
+                            <i class="ri-arrow-right-line"></i>
+                        </button>
+                        } @else {
+                        <button class="btn btn--primary btn--full" (click)="startSigning(doc.template_id)">
+                            開始簽署
+                            <i class="ri-arrow-right-line"></i>
+                        </button>
+                        }
                         } @else if (doc.status === 'REJECTED') {
-                        <button class="btn btn--danger btn--full" (click)="startSigning(doc.template_id)">
+                        <button class="btn btn--danger btn--full" (click)="viewSignDocument(doc.token!)" [disabled]="!doc.token">
                             重新提交
                             <i class="ri-refresh-line"></i>
                         </button>
                         } @else if (doc.status === 'PENDING_APPROVAL') {
-                        <button class="btn btn--secondary btn--full" (click)="viewDocument(doc.token!)"
+                        <button class="btn btn--secondary btn--full" (click)="viewSignDocument(doc.token!)"
                             [disabled]="!doc.token">
                             <i class="ri-eye-line"></i> 檢視文件 (審核中)
                         </button>
                         } @else {
-                        <button class="btn btn--secondary btn--full" (click)="viewDocument(doc.token!)"
+                        <button class="btn btn--secondary btn--full" (click)="viewSignDocument(doc.token!)"
                             [disabled]="!doc.token">
                             <i class="ri-file-search-line"></i> 檢視文件 (已核准)
                         </button>
@@ -92,6 +127,235 @@
             }
         </div>
         }
+    </section>
+
+    <!-- ==================== 入職資料上傳區塊 ==================== -->
+    <section class="upload-section">
+        <div class="section-header">
+            <div class="section-title-group">
+                <h3 class="section-title">
+                    <i class="ri-upload-cloud-line"></i>
+                    入職資料上傳
+                </h3>
+                <p class="section-description">請上傳以下入職所需文件，支援 PDF、JPG、PNG 格式</p>
+            </div>
+            <div class="upload-progress-badge">
+                <span class="progress-text">已完成 {{ uploadProgress().uploaded }} / {{ uploadProgress().total }}</span>
+                <div class="mini-progress-bar">
+                    <div class="mini-progress-fill" [style.width.%]="uploadProgress().percentage"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 固定文件類型上傳卡片 -->
+        <div class="upload-grid">
+            @for (def of fixedDocumentTypes; track def.type) {
+            <div class="upload-card" [class]="getUploadStatusClass(getUploadedDocument(def.type))">
+                <div class="card-status-line"></div>
+                <div class="card-content">
+                    <div class="card-header">
+                        <div class="icon-wrapper">
+                            <i [class]="getDocumentIcon(def.type)"></i>
+                        </div>
+                        <div class="doc-info">
+                            <h4>{{ def.label }}</h4>
+                            <span class="doc-description">{{ def.description }}</span>
+                        </div>
+                        @if (def.required) {
+                        <span class="required-badge">必填</span>
+                        }
+                    </div>
+
+                    <!-- 上傳區域 -->
+                    @if (!getUploadedDocument(def.type)) {
+                    <!-- 尚未上傳 -->
+                    <div class="upload-zone" [class.uploading]="isUploading(def.type)">
+                        @if (isUploading(def.type)) {
+                        <div class="uploading-state">
+                            <i class="ri-loader-4-line spinner"></i>
+                            <span>上傳中...</span>
+                        </div>
+                        } @else {
+                        <label class="upload-label">
+                            <input type="file" 
+                                   [accept]="def.acceptTypes" 
+                                   (change)="onFileSelected($event, def.type, def)"
+                                   hidden>
+                            <i class="ri-upload-2-line"></i>
+                            <span class="upload-text">點擊或拖放檔案上傳</span>
+                            <span class="upload-hint">支援 {{ def.acceptTypes }}，最大 {{ def.maxSize / 1024 / 1024 }}MB</span>
+                        </label>
+                        }
+                    </div>
+                    @if (getUploadError(def.type)) {
+                    <div class="upload-error">
+                        <i class="ri-error-warning-line"></i>
+                        {{ getUploadError(def.type) }}
+                    </div>
+                    }
+                    } @else {
+                    <!-- 已上傳 -->
+                    <div class="file-preview">
+                        <div class="file-info">
+                            <i class="ri-file-line file-icon"></i>
+                            <div class="file-details">
+                                <span class="file-name" 
+                                      [title]="getUploadedDocument(def.type)?.fileName">
+                                    {{ getUploadedDocument(def.type)?.fileName }}
+                                </span>
+                                <span class="file-meta">
+                                    {{ formatFileSize(getUploadedDocument(def.type)?.fileSize) }}
+                                    · {{ formatDate(getUploadedDocument(def.type)?.uploadedAt) }}
+                                </span>
+                            </div>
+                            <span class="status-badge" [class]="getUploadStatusClass(getUploadedDocument(def.type))">
+                                {{ getUploadStatusText(getUploadedDocument(def.type)) }}
+                            </span>
+                        </div>
+                        <div class="file-actions">
+                            <button class="btn btn--sm btn--outline" 
+                                    (click)="viewDocument(getUploadedDocument(def.type)!)"
+                                    type="button">
+                                <i class="ri-eye-line"></i>
+                                查看
+                            </button>
+                            <label class="btn btn--sm btn--outline">
+                                <input type="file" 
+                                       [accept]="def.acceptTypes" 
+                                       (change)="onFileSelected($event, def.type, def)"
+                                       hidden>
+                                <i class="ri-refresh-line"></i>
+                                重新上傳
+                            </label>
+                            <button class="btn btn--sm btn--outline btn--danger" 
+                                    (click)="deleteDocument(getUploadedDocument(def.type)!)"
+                                    type="button">
+                                <i class="ri-delete-bin-line"></i>
+                                刪除
+                            </button>
+                        </div>
+                    </div>
+                    @if (getUploadedDocument(def.type)?.status === 'rejected') {
+                    <div class="reject-reason">
+                        <i class="ri-information-line"></i>
+                        退回原因：{{ getUploadedDocument(def.type)?.rejectReason }}
+                    </div>
+                    }
+                    }
+                </div>
+            </div>
+            }
+        </div>
+
+        <!-- 其他文件區塊 -->
+        <div class="other-documents-section">
+            <div class="other-header">
+                <h4 class="other-title">
+                    <i class="ri-file-add-line"></i>
+                    其他文件
+                </h4>
+                <button class="btn btn--sm btn--outline" (click)="addOtherDocumentInput()">
+                    <i class="ri-add-line"></i>
+                    新增文件
+                </button>
+            </div>
+
+            <!-- 已上傳的其他文件 -->
+            @if (otherDocuments().length > 0) {
+            <div class="other-documents-list">
+                @for (doc of otherDocuments(); track doc.id) {
+                <div class="other-document-item">
+                    <div class="item-info">
+                        <i class="ri-file-text-line"></i>
+                        <div class="item-details">
+                            <span class="item-name" [title]="doc.customName">{{ doc.customName }}</span>
+                            <span class="item-meta" [title]="doc.fileName">
+                                {{ doc.fileName }} · {{ formatFileSize(doc.fileSize) }}
+                                · {{ formatDate(doc.uploadedAt) }}
+                            </span>
+                        </div>
+                        <span class="status-badge" [class]="getUploadStatusClass(doc)">
+                            {{ getUploadStatusText(doc) }}
+                        </span>
+                    </div>
+                    <div class="item-actions">
+                        <button class="btn btn--sm btn--outline" 
+                                (click)="viewDocument(doc)"
+                                type="button">
+                            <i class="ri-eye-line"></i>
+                            查看
+                        </button>
+                        <button class="btn btn--sm btn--outline btn--danger" 
+                                (click)="deleteDocument(doc)"
+                                type="button">
+                            <i class="ri-delete-bin-line"></i>
+                            刪除
+                        </button>
+                    </div>
+                </div>
+                }
+            </div>
+            }
+
+            <!-- 新增其他文件輸入區 -->
+            @if (otherDocumentInputs().length > 0) {
+            <div class="other-document-inputs">
+                @for (input of otherDocumentInputs(); track input.id) {
+                <div class="other-input-row">
+                    <div class="input-group">
+                        <input type="text" 
+                               class="form-input" 
+                               placeholder="文件名稱（如：專業證照）"
+                               [(ngModel)]="input.customName">
+                    </div>
+                    <div class="input-group file-input-group">
+                        <label class="file-select-btn">
+                            <input type="file" 
+                                   accept="image/*,.pdf"
+                                   (change)="onOtherFileSelected($event, input.id)"
+                                   hidden>
+                            @if (input.file) {
+                            <span class="file-selected">{{ input.file.name }}</span>
+                            } @else {
+                            <span>選擇檔案</span>
+                            }
+                        </label>
+                    </div>
+                    <div class="input-actions">
+                        <button class="btn btn--sm btn--primary" 
+                                [disabled]="!input.customName || !input.file || input.uploading"
+                                (click)="uploadOtherDocument(input.id)">
+                            @if (input.uploading) {
+                            <i class="ri-loader-4-line spinner"></i>
+                            } @else {
+                            <i class="ri-upload-line"></i>
+                            }
+                            上傳
+                        </button>
+                        <button class="btn btn--sm btn--outline" (click)="removeOtherDocumentInput(input.id)">
+                            <i class="ri-close-line"></i>
+                        </button>
+                    </div>
+                </div>
+                @if (input.error) {
+                <div class="input-error">
+                    <i class="ri-error-warning-line"></i>
+                    {{ input.error }}
+                </div>
+                }
+                }
+            </div>
+            }
+
+            <!-- 空狀態 -->
+            @if (otherDocuments().length === 0 && otherDocumentInputs().length === 0) {
+            <div class="other-empty-state">
+                <i class="ri-folder-add-line"></i>
+                <p>尚未上傳其他文件</p>
+                <span>如有額外需要提交的文件，請點擊「新增文件」按鈕</span>
+            </div>
+            }
+        </div>
     </section>
     }
 </div>

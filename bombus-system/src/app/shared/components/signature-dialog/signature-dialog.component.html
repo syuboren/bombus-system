@@ -1,0 +1,48 @@
+@if (visible()) {
+  <div class="dialog-backdrop" (click)="onBackdropClick($event)">
+    <div class="dialog-container">
+      <div class="dialog-header">
+        <h3>{{ title() }}</h3>
+        <button class="btn-close" (click)="onCancel()" type="button">
+          <i class="ri-close-line"></i>
+        </button>
+      </div>
+
+      <div class="dialog-body">
+        <div class="signature-area">
+          <app-signature-pad
+            #signaturePad
+            label="請在此區域簽名"
+            (signatureChange)="onSignatureChange($event)">
+          </app-signature-pad>
+        </div>
+
+        @if (error()) {
+          <div class="error-message">
+            <i class="ri-error-warning-line"></i>
+            {{ error() }}
+          </div>
+        }
+
+        <p class="signature-hint">
+          <i class="ri-information-line"></i>
+          請使用滑鼠或觸控筆在上方區域簽名
+        </p>
+      </div>
+
+      <div class="dialog-footer">
+        <button class="btn-clear" (click)="clearSignature()" type="button">
+          <i class="ri-delete-bin-line"></i>
+          清除
+        </button>
+        <button class="btn-cancel" (click)="onCancel()" type="button">
+          取消
+        </button>
+        <button class="btn-confirm" (click)="onConfirm()" type="button">
+          <i class="ri-check-line"></i>
+          確認簽章
+        </button>
+      </div>
+    </div>
+  </div>
+}

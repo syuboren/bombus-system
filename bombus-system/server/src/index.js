@@ -64,6 +64,30 @@ async function start() {
         const integration104Router = require('./routes/integration/104');
         app.use('/api/integration/104', integration104Router);
 
+        // Competency Assessment Routes (職能評估系統)
+        const competencyRouter = require('./routes/competency');
+        const monthlyCheckTemplatesRouter = require('./routes/monthly-check-templates');
+        const weeklyReportsRouter = require('./routes/weekly-reports');
+        const quarterlyReviewsRouter = require('./routes/quarterly-reviews');
+        
+        app.use('/api', competencyRouter); // 包含 /monthly-checks, /competency-stats
+        app.use('/api/monthly-check-templates', monthlyCheckTemplatesRouter);
+        app.use('/api/weekly-reports', weeklyReportsRouter);
+        app.use('/api/quarterly-reviews', quarterlyReviewsRouter);
+        app.use('/api/satisfaction-questions', quarterlyReviewsRouter); // 滿意度調查題目
+        
+        // Export Routes (Excel 匯出)
+        const exportRouter = require('./routes/export');
+        app.use('/api/export', exportRouter);
+
+        // HR Onboarding Routes (候選人轉員工)
+        const hrOnboardingRouter = require('./routes/hr-onboarding');
+        app.use('/api/hr/onboarding', hrOnboardingRouter);
+
+        // Grade Matrix Routes (職等職級矩陣)
+        const gradeMatrixRouter = require('./routes/grade-matrix');
+        app.use('/api/grade-matrix', gradeMatrixRouter);
+
         app.listen(PORT, () => {
             console.log(`🚀 Onboarding API Server running on http://localhost:${PORT}`);
         });

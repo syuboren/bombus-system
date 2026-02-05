@@ -8,7 +8,13 @@ import {
   GradeMatrix,
   CareerPath,
   GradeType,
-  GRADE_TYPE_OPTIONS
+  GRADE_TYPE_OPTIONS,
+  GradeLevelNew,
+  GradeLevelDetail,
+  PromotionCriteria,
+  CareerPathNew,
+  GradeTrack,
+  GRADE_TRACK_OPTIONS
 } from '../../models/competency.model';
 import * as echarts from 'echarts';
 
@@ -67,6 +73,18 @@ interface CareerSimulation {
   riskLevel: 'low' | 'medium' | 'high';
 }
 
+// 部門職位介面
+interface DepartmentPosition {
+  id: string;
+  department: string;
+  grade: number;
+  title: string;
+  track: string;
+  gradeTitleManagement: string;
+  gradeTitleProfessional: string;
+  supervisedDepartments: string[] | null; // 管轄的部門列表（跨部門職位）
+}
+
 @Component({
   selector: 'app-grade-matrix-page',
   standalone: true,
@@ -84,15 +102,28 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
   readonly pageTitle = '職等職級管理';
   readonly breadcrumbs = ['首頁', '職能管理'];
 
-  // Data signals
+  // Data signals (舊版 - 保留相容性)
   gradeMatrix = signal<GradeMatrix | null>(null);
   careerPaths = signal<CareerPath[]>([]);
   loading = signal(true);
 
+  // Data signals (新版 - 使用 API)
+  gradesNew = signal<GradeLevelNew[]>([]);
+  careerPathsNew = signal<CareerPathNew[]>([]);
+  selectedGradeNew = signal<GradeLevelNew | null>(null);
+  selectedGradeDetail = signal<GradeLevelDetail | null>(null);
+  selectedCareerPathNew = signal<CareerPathNew | null>(null);
+  promotionCriteria = signal<PromotionCriteria[]>([]);
+
+  // 部門職位資料
+  departments = signal<{ id: string; name: string; code: string }[]>([]);
+  departmentPositions = signal<DepartmentPosition[]>([]);
+  selectedDepartmentFilter = signal<string>('');
+
   // Active tab
   activeTab = signal<'matrix' | 'career' | 'ai-assistant'>('matrix');
 
-  // Selected items
+  // Selected items (舊版)
   selectedGrade = signal<GradeLevel | null>(null);
   selectedCareerPath = signal<CareerPath | null>(null);
 
@@ -103,7 +134,9 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
 
   // Filter
   selectedType = signal<string>('');
+  selectedTrack = signal<GradeTrack | ''>('');
   readonly typeOptions = GRADE_TYPE_OPTIONS;
+  readonly trackOptions = GRADE_TRACK_OPTIONS;
 
   // AI Assistant state - Enhanced
   employees = signal<Employee[]>([]);
@@ -112,7 +145,7 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
   aiAnalyzing = signal(false);
   aiAnalysisResult = signal<AICareerAnalysis | null>(null);
 
-  // Computed
+  // Computed (舊版)
   filteredGrades = computed(() => {
     const matrix = this.gradeMatrix();
     if (!matrix) return [];
@@ -124,6 +157,67 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
     return grades;
   });
 
+  // Computed (新版)
+  filteredGradesNew = computed(() => {
+    return this.gradesNew();
+  });
+
+  // 按部門分組的職位資料
+  positionsByDepartment = computed(() => {
+    const positions = this.departmentPositions();
+    const deptFilter = this.selectedDepartmentFilter();
+    
+    // 先按部門篩選
+    const filtered = deptFilter 
+      ? positions.filter(p => p.department === deptFilter)
+      : positions;
+    
+    // 按部門分組
+    const grouped: Record<string, DepartmentPosition[]> = {};
+    for (const pos of filtered) {
+      if (!grouped[pos.department]) {
+        grouped[pos.department] = [];
+      }
+      grouped[pos.department].push(pos);
+    }
+    
+    // 每個部門內按職等排序
+    for (const dept of Object.keys(grouped)) {
+      grouped[dept].sort((a, b) => b.grade - a.grade);
+    }
+    
+    return grouped;
+  });
+
+  // 按職等分組的職位資料 (用於矩陣表格)
+  positionsByGrade = computed(() => {
+    const positions = this.departmentPositions();
+    const grouped: Record<number, DepartmentPosition[]> = {};
+    
+    for (const pos of positions) {
+      if (!grouped[pos.grade]) {
+        grouped[pos.grade] = [];
+      }
+      grouped[pos.grade].push(pos);
+    }
+    
+    return grouped;
+  });
+
+  // 跨部門高階主管（有管轄部門的職位）
+  crossDepartmentExecutives = computed(() => {
+    return this.departmentPositions().filter(p => 
+      p.supervisedDepartments && p.supervisedDepartments.length > 0
+    );
+  });
+
+  // 一般部門職位（不包含跨部門高階主管）
+  regularDepartmentPositions = computed(() => {
+    return this.departmentPositions().filter(p => 
+      !p.supervisedDepartments || p.supervisedDepartments.length === 0
+    );
+  });
+
   selectedEmployee = computed(() => {
     const id = this.selectedEmployeeId();
     return this.employees().find(e => e.id === id) || null;
@@ -131,6 +225,7 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
 
   ngOnInit(): void {
     this.loadData();
+    this.loadDataNew();
     this.loadEmployees();
   }
 
@@ -138,6 +233,7 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
     // Radar chart will be initialized when AI analysis is complete
   }
 
+  // 載入舊版資料 (保留相容性)
   loadData(): void {
     this.loading.set(true);
 
@@ -149,6 +245,133 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
       this.careerPaths.set(data);
       this.loading.set(false);
     });
+  }
+
+  // 載入新版資料 (從 API)
+  loadDataNew(): void {
+    this.competencyService.getGradeMatrixFromAPI().subscribe(data => {
+      this.gradesNew.set(data);
+    });
+
+    this.competencyService.getCareerPathsFromAPI().subscribe(data => {
+      this.careerPathsNew.set(data);
+    });
+
+    this.competencyService.getPromotionCriteria().subscribe(data => {
+      this.promotionCriteria.set(data);
+    });
+
+    // 載入部門和職位資料
+    this.competencyService.getDepartments().subscribe(data => {
+      this.departments.set(data);
+    });
+
+    this.competencyService.getDepartmentPositions().subscribe(data => {
+      this.departmentPositions.set(data);
+    });
+  }
+
+  // 部門篩選變更
+  onDepartmentFilterChange(value: string): void {
+    this.selectedDepartmentFilter.set(value);
+  }
+
+  // 取得部門的職位 (按職等)
+  getPositionsForDepartment(department: string, grade: number): DepartmentPosition[] {
+    return this.departmentPositions().filter(p => 
+      p.department === department && p.grade === grade
+    );
+  }
+
+  // 取得職等的所有職位
+  getPositionsForGrade(grade: number): DepartmentPosition[] {
+    return this.departmentPositions().filter(p => p.grade === grade);
+  }
+
+  // 取得特定部門、職等、軌道的職位名稱
+  getPositionTitle(department: string, grade: number, track: string): string {
+    const pos = this.departmentPositions().find(p => 
+      p.department === department && p.grade === grade && p.track === track
+    );
+    return pos?.title || '';
+  }
+
+  // 取得部門在該職等的管理職職位
+  getManagementPosition(department: string, grade: number): string {
+    return this.getPositionTitle(department, grade, 'management');
+  }
+
+  // 取得部門在該職等的專業職職位
+  getProfessionalPosition(department: string, grade: number): string {
+    return this.getPositionTitle(department, grade, 'professional');
+  }
+
+  // 檢查部門在該職等是否有職位
+  hasPositions(department: string, grade: number): boolean {
+    return this.departmentPositions().some(p => 
+      p.department === department && p.grade === grade
+    );
+  }
+
+  // 取得職等由高到低排序的資料
+  gradesDescending = computed(() => {
+    return [...this.gradesNew()].sort((a, b) => b.grade - a.grade);
+  });
+
+  // 取得特定職等的跨部門職位（返回所有跨部門職位，按管轄範圍排序）
+  getCrossDeptPositionsForGrade(grade: number): DepartmentPosition[] {
+    return this.departmentPositions()
+      .filter(p => p.grade === grade && p.supervisedDepartments && p.supervisedDepartments.length > 0)
+      .sort((a, b) => (b.supervisedDepartments?.length || 0) - (a.supervisedDepartments?.length || 0));
+  }
+
+  // 取得特定職等的主要跨部門職位（管轄範圍最大的）
+  getCrossDeptPositionForGrade(grade: number): DepartmentPosition | null {
+    const positions = this.getCrossDeptPositionsForGrade(grade);
+    return positions.length > 0 ? positions[0] : null;
+  }
+
+  // 取得特定職等的次要跨部門職位（除了主要的以外）
+  getSecondaryCrossDeptPositionsForGrade(grade: number): DepartmentPosition[] {
+    const positions = this.getCrossDeptPositionsForGrade(grade);
+    return positions.slice(1);
+  }
+
+  // 檢查部門是否被跨部門職位覆蓋（用於決定是否跳過渲染）
+  isDeptCoveredByCrossDept(department: string, grade: number): boolean {
+    const crossDeptPos = this.getCrossDeptPositionForGrade(grade);
+    if (!crossDeptPos || !crossDeptPos.supervisedDepartments) return false;
+    return crossDeptPos.supervisedDepartments.includes(department);
+  }
+
+  // 取得跨部門職位的 colspan（管轄部門數量）
+  getCrossDeptColspan(grade: number): number {
+    const crossDeptPos = this.getCrossDeptPositionForGrade(grade);
+    if (!crossDeptPos || !crossDeptPos.supervisedDepartments) return 1;
+    
+    // 計算在顯示的部門中有多少被管轄
+    const deptFilter = this.selectedDepartmentFilter();
+    if (deptFilter) {
+      // 如果有篩選，檢查篩選的部門是否在管轄範圍內
+      return crossDeptPos.supervisedDepartments.includes(deptFilter) ? 1 : 0;
+    }
+    return crossDeptPos.supervisedDepartments.length;
+  }
+
+  // 檢查是否應該顯示跨部門合併格（只在第一個被管轄的部門顯示）
+  shouldShowCrossDeptCell(department: string, grade: number): boolean {
+    const crossDeptPos = this.getCrossDeptPositionForGrade(grade);
+    if (!crossDeptPos || !crossDeptPos.supervisedDepartments) return false;
+    
+    const deptFilter = this.selectedDepartmentFilter();
+    if (deptFilter) {
+      // 如果有篩選，只有篩選的部門等於第一個管轄部門時才顯示
+      return crossDeptPos.supervisedDepartments.includes(deptFilter);
+    }
+    
+    // 取得第一個被管轄的部門
+    const firstSupervisedDept = crossDeptPos.supervisedDepartments[0];
+    return department === firstSupervisedDept;
   }
 
   loadEmployees(): void {
@@ -170,26 +393,64 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
     this.selectedType.set(value);
   }
 
-  // Grade Detail Modal
+  onTrackChange(value: string): void {
+    this.selectedTrack.set(value as GradeTrack | '');
+  }
+
+  // Grade Detail Modal (舊版)
   openGradeDetail(grade: GradeLevel): void {
     this.selectedGrade.set(grade);
+    this.showGradeDetailModal.set(true);
+  }
+
+  // Grade Detail Modal (新版)
+  openGradeDetailNew(grade: GradeLevelNew): void {
+    this.selectedGradeNew.set(grade);
+    // 載入該職等的詳細資料（含晉升條件）
+    this.competencyService.getGradeDetail(grade.grade).subscribe(detail => {
+      this.selectedGradeDetail.set(detail);
+    });
     this.showGradeDetailModal.set(true);
   }
 
   closeGradeDetailModal(): void {
     this.showGradeDetailModal.set(false);
     this.selectedGrade.set(null);
+    this.selectedGradeNew.set(null);
+    this.selectedGradeDetail.set(null);
   }
 
-  // Career Path Modal
+  // Career Path Modal (舊版)
   openCareerPathDetail(path: CareerPath): void {
     this.selectedCareerPath.set(path);
+    this.showCareerPathModal.set(true);
+  }
+
+  // Career Path Modal (新版)
+  openCareerPathDetailNew(path: CareerPathNew): void {
+    this.selectedCareerPathNew.set(path);
     this.showCareerPathModal.set(true);
   }
 
   closeCareerPathModal(): void {
     this.showCareerPathModal.set(false);
     this.selectedCareerPath.set(null);
+    this.selectedCareerPathNew.set(null);
+  }
+
+  // 取得特定職等的晉升條件
+  getPromotionToGrade(grade: number, track?: string): PromotionCriteria | null {
+    const criteria = this.promotionCriteria();
+    return criteria.find(c => 
+      c.toGrade === grade && 
+      (!track || c.track === track || c.track === 'both')
+    ) || null;
+  }
+
+  // 取得職等的薪資範圍字串
+  getSalaryRangeText(grade: GradeLevelNew): string {
+    if (grade.salaryLevels.length === 0) return 'N/A';
+    return `NT$ ${this.formatSalary(grade.minSalary)} - ${this.formatSalary(grade.maxSalary)}`;
   }
 
   // AI Assistant Methods
@@ -537,6 +798,53 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
 
   getGradesByType(type: GradeType): GradeLevel[] {
     return this.filteredGrades().filter(g => g.type === type);
+  }
+
+  // 取得軌道標籤
+  getTrackLabel(track: GradeTrack | string): string {
+    const map: Record<string, string> = {
+      professional: '專業職',
+      management: '管理職',
+      both: '通用'
+    };
+    return map[track] || track;
+  }
+
+  // 取得職涯路徑類型標籤
+  getPathTypeLabel(type: string): string {
+    const map: Record<string, string> = {
+      vertical: '垂直晉升',
+      horizontal: '橫向發展',
+      'cross-department': '跨部門發展'
+    };
+    return map[type] || type;
+  }
+
+  // 取得職涯路徑類型 CSS class
+  getPathTypeClass(type: string): string {
+    const map: Record<string, string> = {
+      vertical: 'type-vertical',
+      horizontal: 'type-horizontal',
+      'cross-department': 'type-cross'
+    };
+    return map[type] || '';
+  }
+
+  // 取得職涯路徑類型圖標
+  getPathTypeIcon(type: string): string {
+    const map: Record<string, string> = {
+      vertical: 'ri-arrow-up-double-line',
+      horizontal: 'ri-arrow-left-right-line',
+      'cross-department': 'ri-git-branch-line'
+    };
+    return map[type] || 'ri-route-line';
+  }
+
+  // 績效門檻顯示
+  getPerformanceThresholdClass(threshold: number): string {
+    if (threshold >= 110) return 'threshold-high';
+    if (threshold >= 100) return 'threshold-medium';
+    return 'threshold-normal';
   }
 }
 

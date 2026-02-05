@@ -1,0 +1,1254 @@
+@import '../../../../../assets/styles/variables';
+@import '../../../../../assets/styles/mixins';
+
+$module-color: $color-l2-terracotta;
+$manager-color: $color-l3-petrol;
+
+// =====================================================
+// Modal Base
+// =====================================================
+
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-lg;
+}
+
+.modal-container {
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  max-width: 900px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: $shadow-lg;
+
+  &--lg {
+    max-width: 1100px;
+  }
+}
+
+// =====================================================
+// Modal Header
+// =====================================================
+
+.modal-header {
+  @include flex-between;
+  padding: $spacing-lg;
+  border-bottom: 1px solid $color-soft-gray;
+  flex-shrink: 0;
+
+  .header-content {
+    flex: 1;
+  }
+
+  h2 {
+    margin: 0;
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+  }
+
+  .header-period {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-normal;
+    color: $color-text-secondary;
+    padding: 2px 8px;
+    background: $color-cloud-gray;
+    border-radius: $radius-sm;
+  }
+
+  .btn-close {
+    @include flex-center;
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border: none;
+    border-radius: $radius-md;
+    cursor: pointer;
+    color: $color-text-secondary;
+    transition: all $transition-fast;
+    flex-shrink: 0;
+
+    &:hover {
+      background: $color-soft-gray;
+      color: $color-text-dark;
+    }
+
+    i { font-size: 22px; }
+  }
+}
+
+// =====================================================
+// Status Flow Indicator
+// =====================================================
+
+.status-flow {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-top: $spacing-md;
+  padding: $spacing-sm $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+  overflow-x: auto;
+}
+
+.flow-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+
+  .flow-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: $color-muted-gray;
+    transition: all $transition-fast;
+  }
+
+  .flow-label {
+    font-size: $font-size-xs;
+    color: $color-muted-gray;
+    white-space: nowrap;
+    transition: color $transition-fast;
+  }
+
+  &.active {
+    .flow-dot {
+      background: $module-color;
+      box-shadow: 0 0 0 3px rgba($module-color, 0.2);
+    }
+    .flow-label {
+      color: $module-color;
+      font-weight: $font-weight-semibold;
+    }
+  }
+
+  &.completed {
+    .flow-dot {
+      background: $color-success;
+    }
+    .flow-label {
+      color: $color-success;
+    }
+  }
+}
+
+.flow-line {
+  width: 24px;
+  height: 2px;
+  background: $color-muted-gray;
+  flex-shrink: 0;
+  margin: 0 4px;
+  margin-bottom: 18px;
+
+  &.completed {
+    background: $color-success;
+  }
+}
+
+// =====================================================
+// Modal Body & Footer
+// =====================================================
+
+.modal-body {
+  padding: $spacing-lg;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-footer {
+  @include flex-end;
+  gap: $spacing-sm;
+  padding: $spacing-md $spacing-lg;
+  border-top: 1px solid $color-soft-gray;
+  flex-shrink: 0;
+}
+
+.footer-spacer {
+  flex: 1;
+}
+
+// =====================================================
+// Loading & Error States
+// =====================================================
+
+.loading-state, .error-state {
+  @include flex-center;
+  flex-direction: column;
+  gap: $spacing-md;
+  padding: $spacing-2xl;
+  color: $color-text-secondary;
+
+  i { font-size: 48px; }
+  .spinner { animation: spin 1s linear infinite; }
+}
+
+.error-state i { color: $color-error; }
+
+.btn-retry {
+  padding: $spacing-sm $spacing-md;
+  background: $module-color;
+  border: none;
+  border-radius: $radius-md;
+  color: white;
+  cursor: pointer;
+  font-size: $font-size-sm;
+
+  &:hover { background: darken($module-color, 10%); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+// =====================================================
+// Info Section
+// =====================================================
+
+.info-section {
+  margin-bottom: $spacing-lg;
+  padding: $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $spacing-md;
+
+  &--compact {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include media-max-md { grid-template-columns: repeat(2, 1fr); }
+  @include media-max-sm { grid-template-columns: 1fr; }
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+
+  label {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    font-weight: $font-weight-medium;
+  }
+
+  span {
+    font-size: $font-size-sm;
+    color: $color-text-dark;
+  }
+
+  .score-highlight {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-bold;
+    color: $module-color;
+  }
+}
+
+.form-type-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: rgba($color-l1-sage, 0.15);
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  color: $color-l1-sage;
+
+  &.manager {
+    background: rgba($manager-color, 0.15);
+    color: $manager-color;
+  }
+
+  i { font-size: 14px; }
+}
+
+// =====================================================
+// Steps Navigation
+// =====================================================
+
+.steps-nav {
+  display: flex;
+  gap: $spacing-xs;
+  margin-bottom: $spacing-lg;
+  padding: $spacing-sm;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+  overflow-x: auto;
+}
+
+.step-btn {
+  @include flex-center;
+  gap: $spacing-xs;
+  padding: $spacing-sm $spacing-md;
+  background: $color-pure-white;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: all $transition-fast;
+  white-space: nowrap;
+
+  i { font-size: 16px; }
+
+  &:hover {
+    border-color: $module-color;
+    color: $module-color;
+  }
+
+  &.active {
+    background: $module-color;
+    border-color: $module-color;
+    color: white;
+  }
+
+  &.completed {
+    background: rgba($color-success, 0.1);
+    border-color: $color-success;
+    color: $color-success;
+  }
+}
+
+// =====================================================
+// Form Sections
+// =====================================================
+
+.form-section {
+  margin-bottom: $spacing-xl;
+
+  &.hidden { display: none; }
+
+  h3 {
+    @include flex-start;
+    gap: $spacing-sm;
+    font-size: $font-size-base;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+    margin: 0 0 $spacing-md 0;
+
+    i {
+      color: $module-color;
+      font-size: 20px;
+    }
+  }
+
+  h4 {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+    margin: 0 0 $spacing-sm 0;
+    padding-bottom: $spacing-xs;
+    border-bottom: 1px solid $color-soft-gray;
+  }
+
+  .section-header {
+    @include flex-between;
+    margin-bottom: $spacing-md;
+
+    h3 { margin: 0; }
+
+    &--spaced {
+      margin-top: $spacing-xl;
+    }
+  }
+}
+
+.section-desc {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-md;
+
+  &--sm {
+    font-size: $font-size-xs;
+    margin-bottom: $spacing-sm;
+  }
+}
+
+.subsection {
+  margin-bottom: $spacing-xl;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+// =====================================================
+// Form Elements
+// =====================================================
+
+.form-textarea {
+  width: 100%;
+  padding: $spacing-md;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  font-family: inherit;
+  line-height: 1.6;
+  resize: vertical;
+
+  &:focus {
+    outline: none;
+    border-color: $module-color;
+  }
+}
+
+.form-input {
+  width: 100%;
+  padding: $spacing-sm $spacing-md;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+
+  &:focus {
+    outline: none;
+    border-color: $module-color;
+  }
+}
+
+.content-block {
+  padding: $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  margin-bottom: $spacing-md;
+
+  &:last-child { margin-bottom: 0; }
+
+  .block-label {
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-text-secondary;
+    margin-bottom: $spacing-xs;
+  }
+
+  .block-content {
+    color: $color-text-dark;
+  }
+}
+
+.empty-content {
+  color: $color-muted-gray;
+  font-style: italic;
+  padding: $spacing-md;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+
+  label {
+    font-size: $font-size-xs;
+    font-weight: $font-weight-medium;
+    color: $color-text-secondary;
+  }
+
+  input, textarea, select {
+    padding: $spacing-sm $spacing-md;
+    border: 1px solid $color-soft-gray;
+    border-radius: $radius-sm;
+    font-size: $font-size-sm;
+    background: $color-pure-white;
+    font-family: inherit;
+
+    &:focus {
+      outline: none;
+      border-color: $module-color;
+    }
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 60px;
+    line-height: 1.5;
+  }
+
+  &--spaced {
+    margin-top: $spacing-lg;
+  }
+
+  &--half {
+    flex: 1;
+  }
+}
+
+.field-row {
+  display: flex;
+  gap: $spacing-md;
+
+  @include media-max-sm {
+    flex-direction: column;
+  }
+}
+
+// =====================================================
+// List Items (Contribution, Learning, etc.)
+// =====================================================
+
+.list-items {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+
+  &.readonly {
+    gap: $spacing-sm;
+  }
+}
+
+.list-item {
+  padding: $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+
+  .item-header {
+    @include flex-between;
+    margin-bottom: $spacing-md;
+  }
+
+  .item-number {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $module-color;
+  }
+
+  .item-fields {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-sm;
+
+    &--grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: $spacing-sm;
+
+      @include media-max-sm {
+        grid-template-columns: 1fr;
+      }
+    }
+  }
+}
+
+.list-item-readonly {
+  padding: $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+
+  .item-number {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $module-color;
+    margin-bottom: $spacing-sm;
+  }
+
+  .item-row {
+    font-size: $font-size-sm;
+    margin-bottom: $spacing-xs;
+
+    &:last-child { margin-bottom: 0; }
+
+    .label {
+      font-weight: $font-weight-medium;
+      color: $color-text-secondary;
+    }
+  }
+}
+
+.btn-add {
+  @include flex-center;
+  gap: $spacing-xs;
+  padding: $spacing-xs $spacing-sm;
+  background: transparent;
+  border: 1px dashed $module-color;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  color: $module-color;
+  cursor: pointer;
+
+  &:hover { background: rgba($module-color, 0.05); }
+}
+
+.btn-remove {
+  @include flex-center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  border-radius: $radius-sm;
+  color: $color-error;
+  cursor: pointer;
+  opacity: 0.6;
+
+  &:hover {
+    opacity: 1;
+    background: rgba($color-error, 0.1);
+  }
+}
+
+// =====================================================
+// Score Table (JD/OKR Review)
+// =====================================================
+
+.score-table {
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  overflow: hidden;
+  margin-bottom: $spacing-md;
+}
+
+.score-table-header {
+  display: flex;
+  background: $color-cloud-gray;
+  padding: $spacing-sm $spacing-md;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-secondary;
+  gap: $spacing-sm;
+}
+
+.score-table-row {
+  display: flex;
+  padding: $spacing-sm $spacing-md;
+  border-top: 1px solid $color-soft-gray;
+  align-items: flex-start;
+  gap: $spacing-sm;
+
+  &:nth-child(even) {
+    background: rgba($color-cloud-gray, 0.5);
+  }
+}
+
+.col-month, .col-order {
+  width: 60px;
+  flex-shrink: 0;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $module-color;
+  padding-top: $spacing-xs;
+}
+
+.col-objective {
+  width: 150px;
+  flex-shrink: 0;
+
+  input {
+    width: 100%;
+    padding: $spacing-xs;
+    border: 1px solid $color-soft-gray;
+    border-radius: $radius-sm;
+    font-size: $font-size-sm;
+
+    &:focus {
+      outline: none;
+      border-color: $module-color;
+    }
+  }
+}
+
+.col-desc {
+  flex: 1;
+  min-width: 0;
+  max-width: 400px;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+
+  input, textarea {
+    width: 100%;
+    padding: $spacing-xs;
+    border: 1px solid $color-soft-gray;
+    border-radius: $radius-sm;
+    font-size: $font-size-sm;
+    resize: vertical;
+    font-family: inherit;
+
+    &:focus {
+      outline: none;
+      border-color: $module-color;
+    }
+  }
+
+  .desc-content {
+    padding: $spacing-xs;
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.5;
+  }
+}
+
+.col-score {
+  width: 160px;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-top: $spacing-xs;
+}
+
+// =====================================================
+// Score Select & Display
+// =====================================================
+
+.score-select {
+  display: flex;
+  gap: 6px;
+  flex-wrap: nowrap;
+
+  &--compact {
+    gap: 4px;
+  }
+}
+
+.score-radio {
+  @include flex-center;
+  cursor: pointer;
+
+  input[type="radio"] {
+    display: none;
+  }
+
+  span {
+    @include flex-center;
+    width: 28px;
+    height: 28px;
+    border: 2px solid $color-soft-gray;
+    border-radius: 50%;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-medium;
+    color: $color-text-secondary;
+    transition: all $transition-fast;
+  }
+
+  &:hover span {
+    border-color: $module-color;
+  }
+
+  &.selected span,
+  input:checked + span {
+    border-color: $module-color;
+    background: $module-color;
+    color: white;
+  }
+
+  &--sm span {
+    width: 24px;
+    height: 24px;
+    font-size: 11px;
+  }
+
+  &--manager {
+    &:hover span {
+      border-color: $manager-color;
+    }
+
+    &.selected span,
+    input:checked + span {
+      border-color: $manager-color;
+      background: $manager-color;
+    }
+  }
+}
+
+.score-display {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $module-color;
+
+  &--sm {
+    font-size: $font-size-sm;
+    width: 120px;
+    text-align: center;
+  }
+
+  &--manager {
+    color: $manager-color;
+  }
+}
+
+.score-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-xs;
+}
+
+.score-label {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+// =====================================================
+// Competency Cards
+// =====================================================
+
+.competency-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+
+  &--compact {
+    gap: $spacing-sm;
+  }
+}
+
+.competency-card {
+  padding: $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+}
+
+.competency-header {
+  @include flex-between;
+  margin-bottom: $spacing-sm;
+  gap: $spacing-md;
+
+  @include media-max-sm {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.competency-name {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+}
+
+.competency-scores {
+  display: flex;
+  gap: $spacing-lg;
+  flex-shrink: 0;
+}
+
+.competency-behavior {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  line-height: 1.5;
+  margin-bottom: $spacing-sm;
+
+  .behavior-label {
+    font-weight: $font-weight-medium;
+    color: $color-text-primary;
+  }
+}
+
+.competency-event {
+  label {
+    display: block;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-medium;
+    color: $color-text-secondary;
+    margin-bottom: $spacing-xs;
+  }
+
+  textarea {
+    width: 100%;
+    padding: $spacing-sm;
+    border: 1px solid $color-soft-gray;
+    border-radius: $radius-sm;
+    font-size: $font-size-sm;
+    font-family: inherit;
+    resize: vertical;
+
+    &:focus {
+      outline: none;
+      border-color: $module-color;
+    }
+  }
+
+  .event-content {
+    font-size: $font-size-sm;
+    color: $color-text-primary;
+    padding: $spacing-sm;
+    background: $color-pure-white;
+    border-radius: $radius-sm;
+    min-height: 40px;
+  }
+}
+
+// Compact competency row for manager review
+.competency-row {
+  @include flex-between;
+  padding: $spacing-sm $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+  gap: $spacing-md;
+
+  @include media-max-sm {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.competency-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  .competency-event-preview {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+// =====================================================
+// Supervisor Evaluation
+// =====================================================
+
+.eval-category {
+  margin-bottom: $spacing-lg;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.category-header {
+  @include flex-between;
+  padding: $spacing-sm $spacing-md;
+  background: $color-cloud-gray;
+
+  .category-name {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+  }
+
+  .category-scores {
+    display: flex;
+    gap: $spacing-lg;
+  }
+
+  .score-col-label {
+    width: 120px;
+    text-align: center;
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+  }
+}
+
+.category-items {
+  padding: $spacing-xs 0;
+}
+
+.eval-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-sm $spacing-md;
+  gap: $spacing-md;
+  min-height: 48px;
+
+  &:nth-child(even) {
+    background: rgba($color-cloud-gray, 0.3);
+  }
+}
+
+.eval-desc {
+  flex: 1;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  line-height: 1.4;
+}
+
+.eval-scores {
+  display: flex;
+  gap: $spacing-lg;
+  flex-shrink: 0;
+  align-items: center;
+  min-width: fit-content;
+
+  // 確保與標頭對齊
+  > .score-display--sm {
+    width: 120px;
+    display: flex;
+    justify-content: center;
+  }
+
+  > .score-select--compact {
+    width: 120px;
+    display: flex;
+    justify-content: center;
+    flex-wrap: nowrap;
+  }
+}
+
+.eval-summary {
+  @include flex-end;
+  gap: $spacing-xl;
+  padding: $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+  margin-top: $spacing-md;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+
+  strong {
+    color: $module-color;
+    font-size: $font-size-base;
+  }
+}
+
+.supervisor-comment-section {
+  margin-top: $spacing-xl;
+  padding-top: $spacing-lg;
+  border-top: 1px solid $color-soft-gray;
+
+  h4 {
+    margin-bottom: $spacing-md;
+  }
+}
+
+.comment-fields {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+// =====================================================
+// Satisfaction Survey
+// =====================================================
+
+.survey-status {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  background: rgba($module-color, 0.1);
+  color: $color-warning;
+
+  &.completed {
+    background: rgba($color-success, 0.1);
+    color: $color-success;
+  }
+
+  i {
+    font-size: 1rem;
+  }
+}
+
+.survey-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.survey-item {
+  @include flex-between;
+  padding: $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+  gap: $spacing-md;
+
+  @include media-max-sm {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.survey-question {
+  flex: 1;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  line-height: 1.5;
+
+  .q-num {
+    font-weight: $font-weight-semibold;
+    color: $module-color;
+    margin-right: $spacing-xs;
+  }
+}
+
+.survey-options {
+  display: flex;
+  gap: $spacing-sm;
+  flex-shrink: 0;
+}
+
+.radio-option {
+  @include flex-center;
+  cursor: pointer;
+
+  input[type="radio"] {
+    display: none;
+  }
+
+  .radio-label {
+    @include flex-center;
+    width: 32px;
+    height: 32px;
+    border: 2px solid $color-soft-gray;
+    border-radius: 50%;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: $color-text-secondary;
+    transition: all $transition-fast;
+  }
+
+  input:checked + .radio-label {
+    border-color: $module-color;
+    background: $module-color;
+    color: white;
+  }
+
+  &:hover .radio-label {
+    border-color: $module-color;
+  }
+}
+
+.survey-score {
+  @include flex-center;
+  gap: $spacing-xs;
+
+  .score-value {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-bold;
+    color: $module-color;
+  }
+
+  .score-label {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+  }
+
+  .score-pending {
+    font-size: $font-size-sm;
+    color: $color-muted-gray;
+  }
+}
+
+// =====================================================
+// Manager & Schedule Fields
+// =====================================================
+
+.manager-fields, .schedule-fields {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+// =====================================================
+// Result Summary
+// =====================================================
+
+.result-summary {
+  display: flex;
+  gap: $spacing-xl;
+  padding: $spacing-lg;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+}
+
+.result-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-xs;
+
+  .result-label {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+  }
+
+  .result-value {
+    font-size: $font-size-2xl;
+    font-weight: $font-weight-bold;
+    color: $color-text-dark;
+  }
+
+  &--highlight {
+    .result-value {
+      color: $module-color;
+    }
+  }
+}
+
+// =====================================================
+// Buttons
+// =====================================================
+
+.btn-cancel {
+  @include flex-center;
+  gap: $spacing-xs;
+  padding: $spacing-sm $spacing-lg;
+  background: transparent;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  cursor: pointer;
+
+  i { font-size: 16px; }
+
+  &:hover:not(:disabled) {
+    border-color: $color-text-secondary;
+    color: $color-text-dark;
+  }
+
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.btn-secondary {
+  @include flex-center;
+  gap: $spacing-xs;
+  padding: $spacing-sm $spacing-lg;
+  background: $color-soft-gray;
+  border: none;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  cursor: pointer;
+
+  &:hover:not(:disabled) { background: darken($color-soft-gray, 5%); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.btn-primary {
+  @include flex-center;
+  gap: $spacing-xs;
+  padding: $spacing-sm $spacing-lg;
+  background: $module-color;
+  border: none;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: white;
+  cursor: pointer;
+
+  &:hover:not(:disabled) { background: darken($module-color, 10%); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .spinner { animation: spin 1s linear infinite; font-size: 16px; }
+}

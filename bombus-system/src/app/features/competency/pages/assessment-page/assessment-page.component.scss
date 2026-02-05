@@ -19,115 +19,6 @@ $module-color-dark: $color-l2-terracotta-dark;
 }
 
 // ---------------------------------------------------------------
-// Stats Section
-// ---------------------------------------------------------------
-.stats-section {
-  margin-bottom: $spacing-lg;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: $spacing-md;
-
-  @include media-max-lg {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  @include media-max-sm {
-    grid-template-columns: 1fr;
-  }
-}
-
-.stat-card {
-  @include flex-start;
-  gap: $spacing-md;
-  background: $color-pure-white;
-  border-radius: $radius-lg;
-  padding: $spacing-lg;
-  box-shadow: $shadow-soft;
-  position: relative;
-  overflow: hidden;
-
-  &__icon {
-    @include flex-center;
-    width: 56px;
-    height: 56px;
-    border-radius: $radius-md;
-    font-size: 24px;
-    flex-shrink: 0;
-  }
-
-  &__content {
-    flex: 1;
-  }
-
-  &__value {
-    font-size: $font-size-3xl;
-    font-weight: $font-weight-bold;
-    color: $color-text-dark;
-    line-height: 1;
-    margin-bottom: $spacing-xs;
-  }
-
-  &__label {
-    font-size: $font-size-sm;
-    color: $color-text-secondary;
-  }
-
-  &__progress {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-  }
-
-  // Variants
-  &--total {
-    .stat-card__icon {
-      background: rgba($module-color, 0.15);
-      color: $module-color;
-    }
-  }
-
-  &--completed {
-    .stat-card__icon {
-      background: rgba($color-success, 0.15);
-      color: $color-success;
-    }
-  }
-
-  &--progress {
-    .stat-card__icon {
-      background: rgba($color-warning, 0.15);
-      color: darken($color-warning, 15%);
-    }
-  }
-
-  &--rate {
-    .stat-card__icon {
-      background: rgba($color-info, 0.15);
-      color: $color-info;
-    }
-
-    .stat-card__value {
-      color: $module-color;
-    }
-  }
-}
-
-.mini-progress-bar {
-  height: 4px;
-  background: $color-soft-gray;
-}
-
-.mini-progress-fill {
-  height: 100%;
-  background: $module-color;
-  transition: width $transition-normal;
-}
-
-// ---------------------------------------------------------------
 // Tabs Section
 // ---------------------------------------------------------------
 .tabs-section {
@@ -141,6 +32,11 @@ $module-color-dark: $color-l2-terracotta-dark;
   @include flex-start;
   border-bottom: 1px solid $color-soft-gray;
   padding: 0 $spacing-md;
+  overflow-x: auto;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 .tab-btn {
@@ -155,6 +51,7 @@ $module-color-dark: $color-l2-terracotta-dark;
   cursor: pointer;
   position: relative;
   transition: color $transition-fast;
+  white-space: nowrap;
 
   &::after {
     content: '';
@@ -189,130 +86,236 @@ $module-color-dark: $color-l2-terracotta-dark;
 }
 
 // ---------------------------------------------------------------
-// Schedules List
+// Overview Section
 // ---------------------------------------------------------------
-.schedules-list {
-  display: flex;
-  flex-direction: column;
+.overview-section {
+  margin-bottom: $spacing-xl;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.section-title {
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+  margin: 0 0 $spacing-md 0;
+  padding-bottom: $spacing-sm;
+  border-bottom: 1px solid $color-soft-gray;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
   gap: $spacing-md;
-}
 
-.schedule-card {
-  background: $color-cloud-gray;
-  border-radius: $radius-md;
-  padding: $spacing-lg;
-  border-left: 4px solid $module-color;
-
-  &__header {
-    @include flex-between;
-    margin-bottom: $spacing-md;
+  &--3 {
+    grid-template-columns: repeat(3, 1fr);
   }
 
-  &__title {
-    font-size: $font-size-base;
-    font-weight: $font-weight-semibold;
-    color: $color-text-dark;
-    margin: 0;
+  @include media-max-lg {
+    grid-template-columns: repeat(2, 1fr);
   }
-
-  &__status {
-    font-size: $font-size-xs;
-    padding: 4px 10px;
-    border-radius: $radius-full;
-    font-weight: $font-weight-medium;
-
-    &.schedule-scheduled {
-      background: rgba($color-info, 0.15);
-      color: $color-info;
-    }
-
-    &.schedule-in-progress {
-      background: rgba($color-warning, 0.15);
-      color: darken($color-warning, 20%);
-    }
-
-    &.schedule-completed {
-      background: rgba($color-success, 0.15);
-      color: $color-success;
-    }
-  }
-
-  &__body {
-    margin-bottom: $spacing-md;
-  }
-
-  &__actions {
-    @include flex-end;
-    gap: $spacing-sm;
-    padding-top: $spacing-md;
-    border-top: 1px solid $color-soft-gray;
-  }
-}
-
-.schedule-info {
-  @include flex-start;
-  gap: $spacing-lg;
-  margin-bottom: $spacing-md;
 
   @include media-max-sm {
-    flex-direction: column;
-    gap: $spacing-sm;
+    grid-template-columns: 1fr;
   }
-}
-
-.info-item {
-  @include flex-start;
-  gap: $spacing-xs;
-  font-size: $font-size-sm;
-  color: $color-text-secondary;
-
-  i {
-    color: $module-color;
-  }
-}
-
-.schedule-progress {
-  .progress-header {
-    @include flex-between;
-    margin-bottom: $spacing-xs;
-    font-size: $font-size-sm;
-    color: $color-text-secondary;
-  }
-
-  .progress-value {
-    font-weight: $font-weight-semibold;
-    color: $module-color;
-  }
-}
-
-.progress-bar {
-  height: 8px;
-  background: $color-soft-gray;
-  border-radius: $radius-full;
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  background: $module-color;
-  border-radius: $radius-full;
-  transition: width $transition-normal;
 }
 
 // ---------------------------------------------------------------
-// Filters
-// ---------------------------------------------------------------
-// ---------------------------------------------------------------
-// Filters
+// Filter Bar
 // ---------------------------------------------------------------
 .filter-bar {
   @include filter-bar($module-color);
+
+  &--simple {
+    margin-bottom: $spacing-lg;
+  }
 }
 
+.filter-spacer {
+  flex: 1;
+}
 
+// 週別篩選器需要更寬以顯示日期區間
+.filter-select--wide {
+  min-width: 180px;
+  
+  @include media-max-md {
+    min-width: 140px;
+  }
+}
+
+// 篩選區操作按鈕
+.filter-actions {
+  margin-left: auto;
+  
+  .btn {
+    @include flex-center;
+    gap: $spacing-xs;
+    padding: $spacing-sm $spacing-md;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    border-radius: $radius-md;
+    cursor: pointer;
+    transition: all $transition-fast;
+    
+    i {
+      font-size: 16px;
+    }
+    
+    &--secondary {
+      background: $module-color;
+      border: none;
+      color: white;
+      
+      &:hover:not(:disabled) {
+        background: $module-color-dark;
+      }
+      
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+    }
+  }
+}
+
+// 截止日提醒
+.deadline-reminder {
+  @include flex-between;
+  padding: $spacing-md;
+  margin-bottom: $spacing-md;
+  background: lighten($color-warning, 38%);
+  border-radius: $radius-md;
+  border-left: 4px solid $color-warning;
+  
+  &__info {
+    @include flex-center;
+    gap: $spacing-sm;
+    font-size: $font-size-sm;
+    color: $color-text-primary;
+    
+    i {
+      font-size: 18px;
+      color: $color-warning;
+    }
+    
+    strong {
+      font-weight: $font-weight-semibold;
+      color: darken($color-warning, 15%);
+    }
+  }
+  
+  &__hint {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+  }
+  
+  @include media-max-md {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: $spacing-xs;
+  }
+}
+
+.btn-export {
+  @include flex-center;
+  gap: $spacing-xs;
+  padding: $spacing-sm $spacing-md;
+  background: $module-color;
+  border: none;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: white;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    background: $module-color-dark;
+  }
+
+  i {
+    font-size: 16px;
+  }
+}
+
+.btn-initialize {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-xs;
+  padding: $spacing-sm $spacing-md;
+  background: $color-success;
+  border: none;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: white;
+  cursor: pointer;
+  transition: all $transition-fast;
+  line-height: 1;
+
+  &:hover:not(:disabled) {
+    background: darken($color-success, 10%);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  i {
+    font-size: 16px;
+    line-height: 1;
+  }
+
+  .spinner {
+    animation: spin 1s linear infinite;
+  }
+}
+
+.btn-initialize-empty {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-xs;
+  margin-top: $spacing-lg;
+  padding: $spacing-md $spacing-xl;
+  background: $module-color;
+  border: none;
+  border-radius: $radius-md;
+  font-size: $font-size-base;
+  font-weight: $font-weight-medium;
+  color: white;
+  cursor: pointer;
+  transition: all $transition-fast;
+  line-height: 1;
+
+  &:hover:not(:disabled) {
+    background: $module-color-dark;
+    transform: translateY(-2px);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  i {
+    font-size: 20px;
+    line-height: 1;
+  }
+
+  .spinner {
+    animation: spin 1s linear infinite;
+  }
+}
 
 // ---------------------------------------------------------------
-// Loading & Empty
+// Loading & Empty States
 // ---------------------------------------------------------------
 .loading-container {
   @include flex-center;
@@ -327,13 +330,8 @@ $module-color-dark: $color-l2-terracotta-dark;
 }
 
 @keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .empty-state {
@@ -347,10 +345,14 @@ $module-color-dark: $color-l2-terracotta-dark;
     margin-bottom: $spacing-md;
     opacity: 0.5;
   }
+
+  p {
+    margin: 0;
+  }
 }
 
 // ---------------------------------------------------------------
-// Assessment Table
+// Data Table
 // ---------------------------------------------------------------
 .table-wrapper {
   overflow-x: auto;
@@ -358,6 +360,14 @@ $module-color-dark: $color-l2-terracotta-dark;
 
 .data-table {
   @include data-table($module-color);
+
+  tr.overdue {
+    background: rgba($color-error, 0.05);
+
+    &:hover {
+      background: rgba($color-error, 0.08);
+    }
+  }
 }
 
 .employee-cell {
@@ -398,26 +408,6 @@ $module-color-dark: $color-l2-terracotta-dark;
   }
 }
 
-.status-badge {
-  @include status-badge;
-
-  &.status-not-started {
-    @include status-badge-color($color-muted-gray);
-  }
-
-  &.status-self-assessment {
-    @include status-badge-color($color-info);
-  }
-
-  &.status-manager-review {
-    @include status-badge-color($color-warning);
-  }
-
-  &.status-completed {
-    @include status-badge-color($color-success);
-  }
-}
-
 .score-badge {
   display: inline-block;
   padding: 4px 10px;
@@ -426,10 +416,33 @@ $module-color-dark: $color-l2-terracotta-dark;
   font-size: $font-size-sm;
   font-weight: $font-weight-bold;
   color: $module-color;
+
+  &.score-pending {
+    background: $color-soft-gray;
+    color: $color-muted-gray;
+  }
 }
 
-.score-pending {
-  color: $color-muted-gray;
+.form-type-badge {
+  @include flex-center;
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px 10px;
+  background: rgba($color-l1-sage, 0.15);
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $color-l1-sage;
+  white-space: nowrap;
+
+  i {
+    font-size: 14px;
+  }
+
+  &--manager {
+    background: rgba($color-l3-petrol, 0.15);
+    color: $color-l3-petrol;
+  }
 }
 
 .btn-action {
@@ -449,7 +462,7 @@ $module-color-dark: $color-l2-terracotta-dark;
     color: $module-color;
   }
 
-  &--start {
+  &--primary {
     background: $module-color;
     border-color: $module-color;
     color: white;
@@ -462,29 +475,1285 @@ $module-color-dark: $color-l2-terracotta-dark;
   }
 }
 
-.btn-outline {
+// ---------------------------------------------------------------
+// Modal Styles (placeholder for future modals)
+// ---------------------------------------------------------------
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-container {
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  max-width: 800px;
+  width: 90%;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  @include flex-between;
+  padding: $spacing-lg;
+  border-bottom: 1px solid $color-soft-gray;
+
+  h2 {
+    margin: 0;
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+  }
+
+  .btn-close {
+    @include flex-center;
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: none;
+    border-radius: $radius-md;
+    cursor: pointer;
+    color: $color-text-secondary;
+    transition: all $transition-fast;
+
+    &:hover {
+      background: $color-soft-gray;
+      color: $color-text-dark;
+    }
+
+    i {
+      font-size: 20px;
+    }
+  }
+}
+
+.modal-body {
+  padding: $spacing-lg;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-footer {
+  @include flex-end;
+  gap: $spacing-sm;
+  padding: $spacing-md $spacing-lg;
+  border-top: 1px solid $color-soft-gray;
+}
+
+// ---------------------------------------------------------------
+// Bento UI Dashboard
+// ---------------------------------------------------------------
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: $spacing-md;
+  margin-top: $spacing-lg;
+
+  @include media-max-xl {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include media-max-md {
+    grid-template-columns: 1fr;
+  }
+}
+
+.bento-span-2 {
+  grid-column: span 2;
+
+  @include media-max-md {
+    grid-column: span 1;
+  }
+}
+
+.bento-card {
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-soft;
+  overflow: hidden;
+  transition: all $transition-fast;
+
+  &:hover {
+    box-shadow: $shadow-md;
+    transform: translateY(-2px);
+  }
+
+  &__header {
+    @include flex-between;
+    padding: $spacing-md $spacing-lg;
+
+    h3 {
+      @include flex-center;
+      gap: $spacing-xs;
+      margin: 0;
+      font-size: $font-size-sm;
+      font-weight: $font-weight-semibold;
+      color: $color-text-dark;
+
+      i {
+        color: $module-color;
+        font-size: 16px;
+      }
+    }
+  }
+
+  &__week-badge {
+    display: inline-block;
+    margin-left: $spacing-xs;
+    padding: 2px $spacing-xs;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-medium;
+    color: $color-l1-sage;
+    background: rgba($color-l1-sage, 0.15);
+    border-radius: $radius-sm;
+  }
+
+  &__time-badge {
+    display: inline-block;
+    margin-left: $spacing-xs;
+    padding: 2px $spacing-sm;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-medium;
+    border-radius: $radius-sm;
+    
+    // 預設樣式（週報用）
+    color: $color-l1-sage;
+    background: rgba($color-l1-sage, 0.15);
+    
+    // 淺色版本（用於深色背景，如月度檢核圖卡）
+    &--light {
+      color: white;
+      background: rgba(white, 0.25);
+    }
+    
+    // 月度檢核用（用於清單標題）
+    &--highlight {
+      color: $module-color;
+      background: rgba($module-color, 0.12);
+    }
+    
+    // 季度面談用
+    &--secondary {
+      color: $color-l3-petrol;
+      background: rgba($color-l3-petrol, 0.15);
+    }
+    
+    // 週報用
+    &--tertiary {
+      color: $color-l1-sage;
+      background: rgba($color-l1-sage, 0.15);
+    }
+  }
+
+  &__icon {
+    @include flex-center;
+    width: 40px;
+    height: 40px;
+    background: rgba($module-color, 0.1);
+    border-radius: $radius-md;
+
+    i {
+      font-size: 20px;
+      color: $module-color;
+    }
+
+    &--secondary {
+      background: rgba($color-l3-petrol, 0.1);
+
+      i {
+        color: $color-l3-petrol;
+      }
+    }
+
+    &--tertiary {
+      background: rgba($color-l1-sage, 0.1);
+
+      i {
+        color: $color-l1-sage;
+      }
+    }
+  }
+
+  &__body {
+    padding: $spacing-md $spacing-lg;
+  }
+
+  &--highlight {
+    background: linear-gradient(135deg, $module-color 0%, $module-color-dark 100%);
+
+    .bento-card__header h3 {
+      color: white;
+
+      i {
+        color: white;
+      }
+    }
+
+    .bento-card__icon {
+      background: rgba(white, 0.2);
+
+      i {
+        color: white;
+      }
+    }
+  }
+
+  &--secondary {
+    // 移除左側框線，改用頂部色條
+    border-top: 3px solid $color-l3-petrol;
+  }
+
+  &--tertiary {
+    // 移除左側框線，改用頂部色條
+    border-top: 3px solid $color-l1-sage;
+  }
+
+  &--list {
+    .bento-card__header {
+      border-bottom: 1px solid $color-soft-gray;
+    }
+  }
+
+  &--chart {
+    .bento-card__header {
+      border-bottom: 1px solid $color-soft-gray;
+    }
+  }
+
+  // 各部門平均分數 - 1/4 寬度版本
+  &--dept-score {
+    .bento-card__header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: $spacing-sm;
+      
+      h3 {
+        width: 100%;
+      }
+      
+      .dept-score-toggle {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+    
+    .dept-score-list {
+      max-height: 320px;
+      overflow-y: auto;
+      padding-right: $spacing-xs;
+      
+      &::-webkit-scrollbar {
+        width: 4px;
+      }
+      
+      &::-webkit-scrollbar-track {
+        background: $color-soft-gray;
+        border-radius: 2px;
+      }
+      
+      &::-webkit-scrollbar-thumb {
+        background: $color-muted-gray;
+        border-radius: 2px;
+      }
+    }
+    
+    .dept-score-item {
+      .dept-name {
+        font-size: $font-size-xs;
+      }
+      
+      .dept-meta {
+        font-size: 10px;
+      }
+    }
+  }
+
+  &__stats {
+    display: flex;
+    align-items: center;
+    gap: $spacing-xl;
+    padding: $spacing-lg;
+  }
+
+  &__mini-stats {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: $spacing-lg;
+    padding: $spacing-lg;
+    flex: 1;
+  }
+}
+
+// Stat Circle (環形圖)
+.stat-circle {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  flex-shrink: 0;
+
+  svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+  }
+
+  &__bg {
+    fill: none;
+    stroke: rgba(white, 0.2);
+    stroke-width: 8;
+  }
+
+  &__fill {
+    fill: none;
+    stroke: white;
+    stroke-width: 8;
+    stroke-linecap: round;
+    transition: stroke-dasharray 0.6s ease;
+  }
+
+  &__value {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: $font-size-xl;
+    font-weight: $font-weight-bold;
+    color: white;
+  }
+}
+
+// Stat Details
+.stat-details {
+  flex: 1;
+}
+
+.stat-row {
+  @include flex-between;
+  padding: $spacing-xs 0;
+  border-bottom: 1px solid rgba(white, 0.1);
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  .stat-label {
+    font-size: $font-size-sm;
+    color: rgba(white, 0.8);
+  }
+
+  .stat-value {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: white;
+
+    &.text-success {
+      color: $color-success-light;
+    }
+
+    &.text-warning {
+      // 進行中改為白色以提高可讀性
+      color: white;
+    }
+
+    &.text-error {
+      color: $color-error-light;
+    }
+  }
+}
+
+// Mini Stats - 放大重點指標，減少留白
+.mini-stat {
+  text-align: center;
+  flex: 1;
+
+  &__value {
+    display: block;
+    font-size: $font-size-3xl;
+    font-weight: $font-weight-bold;
+    color: $color-text-dark;
+    line-height: 1.2;
+  }
+
+  &__label {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    margin-top: $spacing-xs;
+  }
+}
+
+.mini-stat-divider {
+  width: 1px;
+  height: 50px;
+  background: $color-soft-gray;
+}
+
+// Badge Count
+.badge-count {
+  @include flex-center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 $spacing-xs;
+  background: $module-color;
+  border-radius: 12px;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: white;
+
+  &--secondary {
+    background: $color-l3-petrol;
+  }
+
+  &--tertiary {
+    background: $color-l1-sage;
+  }
+}
+
+// Empty State Mini
+.empty-state-mini {
+  @include flex-center;
+  flex-direction: column;
+  gap: $spacing-sm;
+  padding: $spacing-xl;
+  color: $color-text-secondary;
+
+  i {
+    font-size: 36px;
+    color: $color-success;
+  }
+
+  p {
+    margin: 0;
+    font-size: $font-size-sm;
+  }
+}
+
+// Incomplete List
+.incomplete-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.incomplete-item {
+  @include flex-start;
+  gap: $spacing-md;
+  padding: $spacing-sm 0;
+  border-bottom: 1px solid $color-soft-gray;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background: $color-cloud-gray;
+    margin: 0 (-$spacing-md);
+    padding: $spacing-sm $spacing-md;
+    border-radius: $radius-sm;
+  }
+}
+
+.incomplete-avatar {
+  @include flex-center;
+  width: 36px;
+  height: 36px;
+  background: $module-color-light;
+  border-radius: $radius-full;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $module-color-dark;
+  flex-shrink: 0;
+}
+
+.incomplete-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+
+  .incomplete-name {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: $color-text-dark;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .incomplete-dept {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.incomplete-status {
+  flex-shrink: 0;
+}
+
+.incomplete-more {
+  padding-top: $spacing-sm;
+  text-align: center;
+}
+
+.btn-more {
   @include flex-center;
   gap: $spacing-xs;
   padding: $spacing-sm $spacing-md;
-  background: transparent;
-  border: 1px solid $color-soft-gray;
+  background: none;
+  border: 1px dashed $color-soft-gray;
   border-radius: $radius-md;
-  font-size: $font-size-sm;
+  font-size: $font-size-xs;
   color: $color-text-secondary;
   cursor: pointer;
+  width: 100%;
   transition: all $transition-fast;
 
   &:hover {
     border-color: $module-color;
     color: $module-color;
   }
+
+  i {
+    font-size: 14px;
+  }
+
+  &--compact {
+    padding: $spacing-xs $spacing-sm;
+    margin-top: $spacing-xs;
+    font-size: 11px;
+  }
 }
 
-.btn-primary {
-  @include button-primary;
-  background: $module-color;
+// Compact variants for smaller cards
+.empty-state-mini--compact {
+  padding: $spacing-md;
+  
+  i {
+    font-size: 24px;
+  }
+  
+  p {
+    font-size: $font-size-xs;
+  }
+}
+
+.incomplete-list--compact {
+  .incomplete-item {
+    padding: $spacing-xs 0;
+  }
+}
+
+.incomplete-item--compact {
+  gap: $spacing-sm;
+  
+  &:hover {
+    margin: 0 (-$spacing-sm);
+    padding: $spacing-xs $spacing-sm;
+  }
+}
+
+.incomplete-avatar--sm {
+  width: 28px;
+  height: 28px;
+  font-size: $font-size-xs;
+}
+
+.incomplete-avatar--tertiary {
+  background: rgba($color-l1-sage, 0.2);
+  color: $color-l1-sage-dark;
+}
+
+// Department Score Toggle
+.dept-score-toggle {
+  display: flex;
+  background: $color-cloud-gray;
+  border-radius: $radius-sm;
+  padding: 2px;
+}
+
+.dept-score-source {
+  margin-bottom: $spacing-sm;
+  
+  .source-label {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    background: $color-cloud-gray;
+    padding: 2px $spacing-sm;
+    border-radius: $radius-sm;
+  }
+}
+
+// Department Score List
+.dept-score-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.dept-score-item {
+  .dept-score-header {
+    @include flex-between;
+    margin-bottom: $spacing-xs;
+  }
+
+  .dept-name {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: $color-text-dark;
+  }
+
+  .dept-score {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-bold;
+
+    &.score-excellent {
+      color: $color-success;
+    }
+
+    &.score-good {
+      color: $color-l1-sage;
+    }
+
+    &.score-average {
+      color: $color-warning;
+    }
+
+    &.score-below {
+      color: $color-l5-brick;
+    }
+
+    &.score-poor {
+      color: $color-error;
+    }
+  }
+
+  .dept-score-bar {
+    height: 8px;
+    background: $color-soft-gray;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: $spacing-xs;
+  }
+
+  .dept-score-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width $transition-normal;
+
+    &.fill-excellent {
+      background: $color-success;
+    }
+
+    &.fill-good {
+      background: $color-l1-sage;
+    }
+
+    &.fill-average {
+      background: $color-warning;
+    }
+
+    &.fill-below {
+      background: $color-l5-brick;
+    }
+
+    &.fill-poor {
+      background: $color-error;
+    }
+  }
+
+  .dept-meta {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+  }
+}
+
+// Employee Select
+.employee-select {
+  padding: $spacing-xs $spacing-sm;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  color: $color-text-primary;
+  background: $color-pure-white;
+  outline: none;
+  cursor: pointer;
+
+  &:focus {
+    border-color: $module-color;
+  }
+}
+
+// Performance Chart
+.performance-chart {
+  .chart-header {
+    margin-bottom: $spacing-md;
+  }
+
+  .chart-employee {
+    display: block;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+  }
+
+  .chart-dept {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+  }
+}
+
+.score-timeline {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  height: 120px;
+  padding-top: $spacing-md;
+  gap: $spacing-sm;
+}
+
+.timeline-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-xs;
+  max-width: 60px;
+
+  .timeline-bar {
+    width: 100%;
+    max-width: 24px;
+    background: linear-gradient(180deg, $module-color 0%, $module-color-light 100%);
+    border-radius: $radius-sm $radius-sm 0 0;
+    min-height: 8px;
+    transition: height $transition-normal;
+  }
+
+  .timeline-score {
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+  }
+
+  .timeline-label {
+    font-size: 10px;
+    color: $color-text-secondary;
+    white-space: nowrap;
+  }
+}
+
+.quick-action-btn {
+  @include flex-center;
+  flex-direction: column;
+  gap: $spacing-xs;
+  padding: $spacing-md;
+  background: $color-cloud-gray;
+  border: none;
+  border-radius: $radius-md;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  i {
+    font-size: 24px;
+    color: $module-color;
+  }
+
+  span {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+  }
 
   &:hover {
-    background: $module-color-dark;
+    background: $module-color;
+
+    i, span {
+      color: white;
+    }
+  }
+}
+
+// Stats Grid Variations
+.stats-grid--4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: $spacing-md;
+  margin-bottom: $spacing-lg;
+
+  @include media-max-lg {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include media-max-sm {
+    grid-template-columns: 1fr;
+  }
+}
+
+// Bento Span 3 (3/4 寬)
+.bento-span-3 {
+  grid-column: span 3;
+
+  @include media-max-xl {
+    grid-column: span 2;
+  }
+
+  @include media-max-md {
+    grid-column: span 1;
+  }
+}
+
+// Bento Span 4 (全寬)
+.bento-span-4 {
+  grid-column: span 4;
+
+  @include media-max-xl {
+    grid-column: span 2;
+  }
+
+  @include media-max-md {
+    grid-column: span 1;
+  }
+}
+
+// ---------------------------------------------------------------
+// Performance Dashboard (績效分析儀表板)
+// ---------------------------------------------------------------
+.bento-card--performance {
+  .bento-card__header {
+    flex-wrap: wrap;
+    gap: $spacing-md;
+    border-bottom: 1px solid $color-soft-gray;
+  }
+
+  .bento-card__body {
+    padding: 0;
+  }
+}
+
+.performance-controls {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  margin-left: auto;
+
+  @include media-max-md {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+}
+
+.view-toggle,
+.compare-toggle {
+  display: flex;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+  padding: 2px;
+}
+
+.toggle-btn {
+  @include flex-center;
+  gap: $spacing-xs;
+  padding: $spacing-xs $spacing-md;
+  background: transparent;
+  border: none;
+  border-radius: $radius-sm;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: all $transition-fast;
+  white-space: nowrap;
+
+  i {
+    font-size: 14px;
+  }
+
+  &:hover {
+    color: $color-text-dark;
+  }
+
+  &.active {
+    background: $color-pure-white;
+    color: $module-color;
+    box-shadow: $shadow-sm;
+  }
+
+  &--sm {
+    padding: $spacing-xs $spacing-sm;
+    font-size: $font-size-xs;
+  }
+}
+
+.performance-dashboard {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  min-height: 360px;
+
+  @include media-max-xl {
+    grid-template-columns: 200px 1fr;
+  }
+
+  @include media-max-lg {
+    grid-template-columns: 1fr;
+  }
+}
+
+.performance-sidebar {
+  padding: $spacing-lg;
+  border-right: 1px solid $color-soft-gray;
+  background: $color-cloud-gray;
+
+  @include media-max-lg {
+    border-right: none;
+    border-bottom: 1px solid $color-soft-gray;
+  }
+}
+
+.employee-selector {
+  margin-bottom: $spacing-lg;
+
+  label {
+    display: block;
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    margin-bottom: $spacing-xs;
+  }
+
+  .employee-select {
+    width: 100%;
+    padding: $spacing-sm $spacing-md;
+    border: 1px solid $color-soft-gray;
+    border-radius: $radius-md;
+    font-size: $font-size-sm;
+    background: $color-pure-white;
+    cursor: pointer;
+
+    &:focus {
+      border-color: $module-color;
+      outline: none;
+    }
+  }
+}
+
+.employee-summary {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-md;
+  background: $color-pure-white;
+  border-radius: $radius-md;
+  margin-bottom: $spacing-md;
+}
+
+.summary-avatar {
+  @include flex-center;
+  width: 48px;
+  height: 48px;
+  background: $module-color;
+  border-radius: $radius-full;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: white;
+  flex-shrink: 0;
+}
+
+.summary-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  .summary-name {
+    font-size: $font-size-base;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+  }
+
+  .summary-dept {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+  }
+}
+
+.summary-stats {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.summary-stat {
+  @include flex-between;
+  padding: $spacing-sm $spacing-md;
+  background: $color-pure-white;
+  border-radius: $radius-sm;
+
+  &__label {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+  }
+
+  &__value {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+
+    &.text-success {
+      color: $color-success;
+    }
+
+    &.text-warning {
+      color: $color-warning;
+    }
+  }
+}
+
+.performance-chart-area {
+  padding: $spacing-lg;
+  display: flex;
+  flex-direction: column;
+}
+
+.empty-state-chart {
+  @include flex-center;
+  flex-direction: column;
+  gap: $spacing-md;
+  flex: 1;
+  color: $color-text-secondary;
+
+  i {
+    font-size: 48px;
+    color: $color-muted-gray;
+  }
+
+  p {
+    margin: 0;
+    font-size: $font-size-sm;
+  }
+}
+
+.chart-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-title {
+  @include flex-between;
+  margin-bottom: $spacing-lg;
+
+  span:first-child {
+    font-size: $font-size-base;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+  }
+
+  .chart-source {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    background: $color-cloud-gray;
+    padding: 2px $spacing-sm;
+    border-radius: $radius-sm;
+  }
+}
+
+.chart-bars {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: $spacing-sm;
+  flex: 1;
+  padding-bottom: $spacing-md;
+  min-height: 200px;
+}
+
+.chart-bar-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-xs;
+  max-width: 60px;
+}
+
+.chart-bar-wrapper {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 180px;
+  width: 100%;
+}
+
+.chart-bar {
+  flex: 1;
+  border-radius: $radius-sm $radius-sm 0 0;
+  min-height: 4px;
+  transition: height $transition-normal;
+  position: relative;
+
+  &--primary {
+    background: linear-gradient(180deg, $module-color 0%, $module-color-light 100%);
+
+    &.no-data {
+      background: $color-soft-gray;
+      height: 4px !important;
+    }
+  }
+
+  &--compare {
+    background: rgba($color-l3-petrol, 0.4);
+    max-width: 12px;
+  }
+
+  .bar-value {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+    white-space: nowrap;
+  }
+}
+
+.chart-bar-label {
+  font-size: 10px;
+  color: $color-text-secondary;
+}
+
+.chart-legend {
+  display: flex;
+  justify-content: center;
+  gap: $spacing-lg;
+  margin-top: $spacing-md;
+  padding-top: $spacing-md;
+  border-top: 1px solid $color-soft-gray;
+}
+
+.legend-item {
+  @include flex-center;
+  gap: $spacing-xs;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+
+  &--primary {
+    background: $module-color;
+  }
+
+  &--compare {
+    background: rgba($color-l3-petrol, 0.4);
+  }
+}
+
+// Quarterly Grid
+.quarterly-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: $spacing-md;
+  flex: 1;
+
+  @include media-max-md {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.quarterly-card {
+  background: $color-cloud-gray;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  text-align: center;
+  transition: all $transition-fast;
+
+  &:hover {
+    background: darken($color-cloud-gray, 2%);
+  }
+
+  &.no-data {
+    opacity: 0.6;
+  }
+}
+
+.quarterly-header {
+  margin-bottom: $spacing-md;
+
+  .quarterly-label {
+    display: block;
+    font-size: $font-size-xl;
+    font-weight: $font-weight-bold;
+    color: $module-color;
+  }
+
+  .quarterly-months {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+  }
+}
+
+.quarterly-score {
+  margin-bottom: $spacing-md;
+
+  .score-value {
+    display: block;
+    font-size: $font-size-3xl;
+    font-weight: $font-weight-bold;
+    color: $color-text-dark;
+    line-height: 1.2;
+  }
+
+  .score-compare {
+    @include flex-center;
+    gap: 2px;
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    margin-top: $spacing-xs;
+
+    i {
+      font-size: 14px;
+    }
+
+    &.up {
+      color: $color-success;
+    }
+
+    &.down {
+      color: $color-error;
+    }
+  }
+
+  .score-pending {
+    font-size: $font-size-sm;
+    color: $color-muted-gray;
+  }
+}
+
+.quarterly-progress {
+  .progress-bar {
+    height: 6px;
+    background: $color-soft-gray;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: $module-color;
+    border-radius: 3px;
+    transition: width $transition-normal;
   }
 }

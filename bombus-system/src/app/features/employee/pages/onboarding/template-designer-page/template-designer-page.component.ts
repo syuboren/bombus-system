@@ -124,7 +124,7 @@ export class TemplateDesignerPageComponent implements OnInit {
             error: (err) => {
                 console.error('Failed to load draft:', err);
                 alert('載入草稿失敗');
-                this.router.navigate(['/employee/onboarding/templates']);
+                this.router.navigate(['/employee/onboarding'], { queryParams: { tab: 'templates' } });
             }
         });
     }
@@ -523,10 +523,10 @@ export class TemplateDesignerPageComponent implements OnInit {
     goBack(): void {
         if (this.hasUnsavedChanges()) {
             if (confirm('確定要返回嗎？未儲存的變更將遺失。')) {
-                this.router.navigate(['/employee/onboarding/templates']);
+                this.router.navigate(['/employee/onboarding'], { queryParams: { tab: 'templates' } });
             }
         } else {
-            this.router.navigate(['/employee/onboarding/templates']);
+            this.router.navigate(['/employee/onboarding'], { queryParams: { tab: 'templates' } });
         }
     }
 
@@ -572,7 +572,7 @@ export class TemplateDesignerPageComponent implements OnInit {
             next: (response) => {
                 this.publishingDraft.set(false);
                 alert(`發布成功！目前版本為 v${response.version}`);
-                this.router.navigate(['/employee/onboarding/templates']);
+                this.router.navigate(['/employee/onboarding'], { queryParams: { tab: 'templates' } });
             },
             error: (err) => {
                 this.publishingDraft.set(false);
@@ -595,7 +595,7 @@ export class TemplateDesignerPageComponent implements OnInit {
             next: () => {
                 this.deletingDraft.set(false);
                 alert('草稿已刪除');
-                this.router.navigate(['/employee/onboarding/templates']);
+                this.router.navigate(['/employee/onboarding'], { queryParams: { tab: 'templates' } });
             },
             error: (err) => {
                 this.deletingDraft.set(false);

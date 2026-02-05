@@ -464,6 +464,329 @@ $module-color: $color-l1-sage;
 }
 
 // ---------------------------------------------------------------
+// 新增候選人表單
+// ---------------------------------------------------------------
+.modal--large {
+  max-width: 900px;
+  width: 95%;
+}
+
+.modal__body--tabs {
+  padding: $spacing-lg;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+// 候選人分頁導航
+.candidate-tabs {
+  display: flex;
+  gap: $spacing-xs;
+  margin-bottom: $spacing-lg;
+  padding-bottom: $spacing-md;
+  border-bottom: 1px solid $color-soft-gray;
+  overflow-x: auto;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.candidate-tab {
+  @include flex-center;
+  gap: $spacing-xs;
+  padding: $spacing-sm $spacing-md;
+  background: transparent;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: all $transition-fast;
+  white-space: nowrap;
+  position: relative;
+
+  i {
+    font-size: 16px;
+  }
+
+  &:hover {
+    border-color: $module-color;
+    color: $module-color;
+  }
+
+  &.active {
+    background: $module-color;
+    border-color: $module-color;
+    color: white;
+  }
+
+  .tab-error-dot {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 8px;
+    height: 8px;
+    background: $color-error;
+    border-radius: 50%;
+  }
+}
+
+// 候選人表單
+.candidate-form {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
+
+.form-section {
+  &__header {
+    @include flex-between;
+    margin-bottom: $spacing-md;
+  }
+
+  &__title {
+    @include flex-center;
+    gap: $spacing-xs;
+    margin: 0 0 $spacing-md;
+    font-size: $font-size-base;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+
+    .required {
+      color: $color-error;
+    }
+  }
+}
+
+// 表單網格
+.form-grid {
+  display: grid;
+  gap: $spacing-md;
+  margin-bottom: $spacing-md;
+
+  &--1 {
+    grid-template-columns: 1fr;
+  }
+
+  &--2 {
+    grid-template-columns: repeat(2, 1fr);
+
+    @include media-max-sm {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &--3 {
+    grid-template-columns: repeat(3, 1fr);
+
+    @include media-max-md {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @include media-max-sm {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+// 表單卡片（學歷、經歷等）
+.form-card {
+  padding: $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+  margin-bottom: $spacing-md;
+
+  &__header {
+    @include flex-between;
+    margin-bottom: $spacing-md;
+    padding-bottom: $spacing-sm;
+    border-bottom: 1px solid $color-soft-gray;
+  }
+
+  &__title {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+  }
+}
+
+// 空狀態卡片
+.empty-card {
+  @include flex-center;
+  flex-direction: column;
+  gap: $spacing-sm;
+  padding: $spacing-xl;
+  background: $color-cloud-gray;
+  border: 2px dashed $color-soft-gray;
+  border-radius: $radius-md;
+  color: $color-text-secondary;
+
+  i {
+    font-size: 32px;
+    opacity: 0.5;
+  }
+
+  p {
+    margin: 0;
+    font-size: $font-size-sm;
+  }
+
+  &--sm {
+    padding: $spacing-lg;
+
+    i {
+      font-size: 24px;
+    }
+  }
+}
+
+// 表單輸入元素
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  padding: $spacing-sm $spacing-md;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  background: $color-pure-white;
+  transition: all $transition-fast;
+
+  &:focus {
+    outline: none;
+    border-color: $module-color;
+    box-shadow: 0 0 0 3px rgba($module-color, 0.1);
+  }
+
+  &::placeholder {
+    color: $color-muted-gray;
+  }
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+// 小型按鈕
+.btn-sm {
+  padding: $spacing-xs $spacing-sm;
+  font-size: $font-size-xs;
+}
+
+.btn-icon {
+  @include flex-center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-sm;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  i {
+    font-size: 14px;
+  }
+
+  &:hover {
+    border-color: $color-text-secondary;
+    color: $color-text-dark;
+  }
+
+  &--danger {
+    &:hover {
+      border-color: $color-error;
+      color: $color-error;
+      background: rgba($color-error, 0.05);
+    }
+  }
+}
+
+// 附件上傳區
+.upload-zone {
+  @include flex-center;
+  flex-direction: column;
+  gap: $spacing-sm;
+  padding: $spacing-xl;
+  border: 2px dashed $color-soft-gray;
+  border-radius: $radius-lg;
+  background: $color-cloud-gray;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    border-color: $module-color;
+    background: rgba($module-color, 0.03);
+  }
+
+  i {
+    font-size: 48px;
+    color: $module-color;
+    opacity: 0.6;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: $font-size-base;
+    font-weight: $font-weight-medium;
+    color: $color-text-dark;
+  }
+
+  &__hint {
+    margin: 0;
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+  }
+}
+
+// 附件清單
+.attachment-list {
+  margin-top: $spacing-md;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.attachment-item {
+  @include flex-start;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  background: $color-pure-white;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+
+  i {
+    font-size: 20px;
+    color: $module-color;
+  }
+
+  .attachment-name {
+    flex: 1;
+    font-size: $font-size-sm;
+    color: $color-text-dark;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .attachment-size {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    white-space: nowrap;
+  }
+}
+
+// Modal Footer 導航
+.footer-nav {
+  display: flex;
+  gap: $spacing-sm;
+}
+
+// ---------------------------------------------------------------
 // 分頁切換（104 資料來源）
 // ---------------------------------------------------------------
 .tab-group {
@@ -851,6 +1174,470 @@ $module-color: $color-l1-sage;
   color: $color-brand-main;
 
   i {
+    font-size: 1.1rem;
+  }
+}
+
+// ============================================================
+// 104 匯入設定相關樣式
+// ============================================================
+
+// 匯入設定按鈕
+.btn-import-settings {
+  @include button-outline-module($module-color);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: $spacing-xs $spacing-md;
+  font-size: $font-size-sm;
+  border-radius: $radius-sm;
+  transition: all 0.2s ease;
+
+  i {
+    font-size: 1rem;
+  }
+
+  &:hover {
+    background: rgba($module-color, 0.1);
+  }
+}
+
+// 中型 Modal
+.modal--medium {
+  max-width: 600px;
+}
+
+// 匯入區塊
+.import-section {
+  background: $color-cloud-gray;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-md;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    font-size: 1rem;
+    font-weight: 600;
+    color: $color-text-primary;
+    margin-bottom: $spacing-md;
+    padding-bottom: $spacing-sm;
+    border-bottom: 1px solid $color-soft-gray;
+
+    i {
+      color: $module-color;
+      font-size: 1.2rem;
+    }
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-md;
+  }
+
+  &__desc {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    margin: 0 0 $spacing-sm;
+  }
+}
+
+// 排程啟用開關
+.schedule-toggle {
+  margin-bottom: $spacing-sm;
+}
+
+.toggle-label {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-sm;
+  cursor: pointer;
+  user-select: none;
+
+  input {
+    display: none;
+  }
+}
+
+.toggle-switch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: $color-soft-gray;
+  border-radius: 12px;
+  transition: background 0.2s ease;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease;
+  }
+
+  input:checked + & {
+    background: $module-color;
+
+    &::after {
+      transform: translateX(20px);
+    }
+  }
+}
+
+.toggle-text {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+}
+
+// 頻率選擇
+.schedule-frequency {
+  .form-label {
+    display: block;
+    font-size: $font-size-sm;
+    font-weight: 500;
+    color: $color-text-secondary;
+    margin-bottom: $spacing-xs;
+  }
+}
+
+.radio-group {
+  display: flex;
+  gap: $spacing-lg;
+}
+
+.radio-label {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-xs;
+  cursor: pointer;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+
+  input {
+    display: none;
+  }
+}
+
+.radio-mark {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  border: 2px solid $color-soft-gray;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    width: 10px;
+    height: 10px;
+    background: $module-color;
+    border-radius: 50%;
+    transition: transform 0.2s ease;
+  }
+
+  input:checked + & {
+    border-color: $module-color;
+
+    &::after {
+      transform: translate(-50%, -50%) scale(1);
+    }
+  }
+}
+
+// 排程詳細設定
+.schedule-detail {
+  background: white;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-sm;
+  padding: $spacing-md;
+  margin-top: $spacing-sm;
+
+  .form-label {
+    display: block;
+    font-size: $font-size-sm;
+    font-weight: 500;
+    color: $color-text-secondary;
+    margin-bottom: $spacing-xs;
+    margin-top: $spacing-md;
+
+    &:first-child {
+      margin-top: 0;
+    }
+  }
+}
+
+.time-picker {
+  .form-select {
+    width: auto;
+    min-width: 120px;
+  }
+}
+
+// 星期選擇器
+.weekday-picker {
+  display: flex;
+  gap: $spacing-xs;
+  flex-wrap: wrap;
+}
+
+.weekday-checkbox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-sm;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  input {
+    display: none;
+  }
+
+  &:hover {
+    border-color: $module-color;
+    color: $module-color;
+  }
+
+  &.active {
+    background: $module-color;
+    border-color: $module-color;
+    color: white;
+  }
+}
+
+// 每月日期選擇
+.monthly-dates {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.monthly-date-item {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+
+  .form-select {
+    width: auto;
+    min-width: 100px;
+  }
+}
+
+.btn-icon--danger {
+  color: #dc3545;
+  background: transparent;
+  border: none;
+  padding: $spacing-xs;
+  cursor: pointer;
+  border-radius: $radius-sm;
+  transition: background 0.2s ease;
+
+  &:hover {
+    background: rgba(#dc3545, 0.1);
+  }
+}
+
+.btn--sm {
+  padding: $spacing-xs $spacing-sm;
+  font-size: $font-size-sm;
+}
+
+.btn-outline-primary {
+  @include button-outline-module($module-color);
+}
+
+// ============================================================
+// 104 匯入進度 Modal
+// ============================================================
+
+// 旋轉動畫
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.import-icon--spinning {
+  animation: spin 1s linear infinite;
+}
+
+.import-progress__desc {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin: 0 0 $spacing-md;
+}
+
+// 職缺處理列表
+.import-job-list {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  margin-bottom: $spacing-md;
+}
+
+.import-job-item {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-sm $spacing-md;
+  border-bottom: 1px solid $color-soft-gray;
+  transition: background 0.2s ease;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: $color-cloud-gray;
+    color: $color-text-secondary;
+    font-size: 1rem;
+  }
+
+  &__info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__title {
+    display: block;
+    font-size: $font-size-sm;
+    font-weight: 500;
+    color: $color-text-primary;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__id {
+    font-size: 0.75rem;
+    color: $color-text-secondary;
+  }
+
+  &__status {
+    flex-shrink: 0;
+  }
+
+  // 狀態變體
+  &--processing {
+    background: rgba($module-color, 0.05);
+
+    .import-job-item__icon {
+      background: rgba($module-color, 0.1);
+      color: $module-color;
+    }
+  }
+
+  &--completed {
+    .import-job-item__icon {
+      background: rgba(#28a745, 0.1);
+      color: #28a745;
+    }
+  }
+
+  &--error {
+    .import-job-item__icon {
+      background: rgba(#dc3545, 0.1);
+      color: #dc3545;
+    }
+  }
+}
+
+// 狀態文字
+.status-text {
+  font-size: $font-size-sm;
+  font-weight: 500;
+
+  &--success {
+    color: #28a745;
+  }
+
+  &--processing {
+    color: $module-color;
+  }
+
+  &--error {
+    color: #dc3545;
+  }
+
+  &--pending {
+    color: $color-text-secondary;
+  }
+}
+
+// 進度條
+.import-progress-bar {
+  margin-bottom: $spacing-md;
+
+  &__info {
+    display: flex;
+    justify-content: space-between;
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    margin-bottom: $spacing-xs;
+  }
+
+  &__track {
+    height: 8px;
+    background: $color-soft-gray;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  &__fill {
+    height: 100%;
+    background: linear-gradient(90deg, $module-color, lighten($module-color, 10%));
+    border-radius: 4px;
+    transition: width 0.3s ease;
+  }
+}
+
+// 完成統計
+.import-complete-stats {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-sm;
+  padding: $spacing-md;
+  background: rgba(#28a745, 0.1);
+  border-radius: $radius-md;
+  color: #28a745;
+  font-size: $font-size-sm;
+
+  i {
+    font-size: 1.2rem;
+  }
+
+  strong {
     font-size: 1.1rem;
   }
 }

@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, of, delay } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { Observable, of, delay, map, catchError } from 'rxjs';
 import {
   CompetencyItem,
   CompetencyFramework,
@@ -20,11 +21,17 @@ import {
   KSAContent,
   CoreManagementCompetency,
   KSACompetencyItem,
-  CompetencyLevelIndicator
+  CompetencyLevelIndicator,
+  GradeLevelNew,
+  GradeLevelDetail,
+  PromotionCriteria,
+  CareerPathNew
 } from '../models/competency.model';
 
 @Injectable({ providedIn: 'root' })
 export class CompetencyService {
+  private http = inject(HttpClient);
+  private apiUrl = 'http://localhost:3001/api';
 
   // =====================================================
   // 職能框架相關 API
@@ -933,6 +940,116 @@ export class CompetencyService {
       }
     ];
     return of(paths).pipe(delay(400));
+  }
+
+  // =====================================================
+  // 職等職級相關 API (新版 - 呼叫後端 API)
+  // =====================================================
+
+  /**
+   * 取得完整職等職級矩陣（從 API）
+   */
+  getGradeMatrixFromAPI(): Observable<GradeLevelNew[]> {
+    return this.http.get<{ success: boolean; data: GradeLevelNew[] }>(`${this.apiUrl}/grade-matrix`).pipe(
+      map(res => res.data),
+      catchError(error => {
+        console.error('Error fetching grade matrix from API:', error);
+        return of([]);
+      })
+    );
+  }
+
+  /**
+   * 取得單一職等詳情（含晉升條件）
+   */
+  getGradeDetail(grade: number): Observable<GradeLevelDetail | null> {
+    return this.http.get<{ success: boolean; data: GradeLevelDetail }>(`${this.apiUrl}/grade-matrix/${grade}`).pipe(
+      map(res => res.data),
+      catchError(error => {
+        console.error('Error fetching grade detail:', error);
+        return of(null);
+      })
+    );
+  }
+
+  /**
+   * 取得晉升條件
+   */
+  getPromotionCriteria(fromGrade?: number, toGrade?: number, track?: string): Observable<PromotionCriteria[]> {
+    let params = new URLSearchParams();
+    if (fromGrade) params.append('fromGrade', fromGrade.toString());
+    if (toGrade) params.append('toGrade', toGrade.toString());
+    if (track) params.append('track', track);
+
+    const url = `${this.apiUrl}/grade-matrix/promotion/criteria${params.toString() ? '?' + params.toString() : ''}`;
+    return this.http.get<{ success: boolean; data: PromotionCriteria[] }>(url).pipe(
+      map(res => res.data),
+      catchError(error => {
+        console.error('Error fetching promotion criteria:', error);
+        return of([]);
+      })
+    );
+  }
+
+  /**
+   * 取得職涯路徑（從 API）
+   */
+  getCareerPathsFromAPI(type?: string): Observable<CareerPathNew[]> {
+    let url = `${this.apiUrl}/grade-matrix/career/paths`;
+    if (type) url += `?type=${type}`;
+
+    return this.http.get<{ success: boolean; data: CareerPathNew[] }>(url).pipe(
+      map(res => res.data),
+      catchError(error => {
+        console.error('Error fetching career paths from API:', error);
+        return of([]);
+      })
+    );
+  }
+
+  /**
+   * 取得單一職涯路徑詳情
+   */
+  getCareerPathDetail(id: string): Observable<CareerPathNew | null> {
+    return this.http.get<{ success: boolean; data: CareerPathNew }>(`${this.apiUrl}/grade-matrix/career/paths/${id}`).pipe(
+      map(res => res.data),
+      catchError(error => {
+        console.error('Error fetching career path detail:', error);
+        return of(null);
+      })
+    );
+  }
+
+  /**
+   * 取得部門列表
+   */
+  getDepartments(): Observable<{ id: string; name: string; code: string }[]> {
+    return this.http.get<{ success: boolean; data: { id: string; name: string; code: string }[] }>(`${this.apiUrl}/grade-matrix/departments/list`).pipe(
+      map(res => res.data),
+      catchError(error => {
+        console.error('Error fetching departments:', error);
+        return of([]);
+      })
+    );
+  }
+
+  /**
+   * 取得部門職位對照表
+   */
+  getDepartmentPositions(department?: string, grade?: number, track?: string): Observable<any[]> {
+    let params = new URLSearchParams();
+    if (department) params.append('department', department);
+    if (grade) params.append('grade', grade.toString());
+    if (track) params.append('track', track);
+
+    const url = `${this.apiUrl}/grade-matrix/positions/list${params.toString() ? '?' + params.toString() : ''}`;
+    return this.http.get<{ success: boolean; data: any[] }>(url).pipe(
+      map(res => res.data),
+      catchError(error => {
+        console.error('Error fetching department positions:', error);
+        return of([]);
+      })
+    );
   }
 
   // =====================================================
