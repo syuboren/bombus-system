@@ -73,8 +73,8 @@ export class SidebarComponent {
           moduleClass: 'module-l2',
           children: [
             { label: '職等職級管理', icon: '', route: '/competency/grade-matrix' },
+            { label: '職能模型基準', icon: '', route: '/competency/framework' },
             { label: '職務說明書', icon: '', route: '/competency/job-description' },
-            { label: '職能基準庫', icon: '', route: '/competency/framework' },
             { label: '職能評估系統', icon: '', route: '/competency/assessment' },
             { label: '職能落差分析', icon: '', route: '/competency/gap-analysis' }
           ]

@@ -22,6 +22,7 @@ import {
   CoreManagementCompetency,
   KSACompetencyItem,
   CompetencyLevelIndicator,
+  CompetencyGradeLevel,
   GradeLevelNew,
   GradeLevelDetail,
   PromotionCriteria,
@@ -38,47 +39,168 @@ export class CompetencyService {
   // =====================================================
 
   getCompetencyStats(): Observable<CompetencyStats> {
-    // 統計數據依據職能基準管理辦法
-    // 核心職能 5 項 + 管理職能 3 項 + KSA職能 (依據 9 份 JD)
-    return of({
-      totalCompetencies: 60, // 核心5 + 管理3 + KSA約52項
-      byType: {
-        knowledge: 25,  // KSA 知識類
-        skill: 27,      // KSA 技能類
-        attitude: 8     // KSA 態度類
-      },
-      byCategory: {
-        core: 5,         // 核心職能: 溝通表達、問題解決、專案思維、客戶導向、成長思維
-        management: 3,   // 管理職能: 人才發展、決策能力、團隊領導
-        ksa: 52          // KSA職能: 知識/技能/態度
-      },
-      recentlyUpdated: 9 // 9份JD更新
-    }).pipe(delay(300));
+    // 從 API 獲取職能統計數據
+    return this.http.get<{ success: boolean; data: any }>(`${this.apiUrl}/competencies/stats`).pipe(
+      map(response => {
+        if (response.success) {
+          const data = response.data;
+          return {
+            totalCompetencies: data.total || 0,
+            byType: {
+              knowledge: data.byCategory?.ksa || 0,
+              skill: 0,
+              attitude: 0
+            },
+            byCategory: {
+              core: data.byCategory?.core || 0,
+              management: data.byCategory?.management || 0,
+              professional: data.byCategory?.professional || 0,
+              ksa: data.byCategory?.ksa || 0
+            },
+            recentlyUpdated: 9
+          };
+        }
+        throw new Error('API 回傳失敗');
+      }),
+      catchError(() => {
+        // Fallback to mock data if API fails
+        return of({
+          totalCompetencies: 70,
+          byType: { knowledge: 25, skill: 27, attitude: 8 },
+          byCategory: { core: 5, management: 3, professional: 9, ksa: 53 },
+          recentlyUpdated: 9
+        });
+      })
+    );
   }
 
   // =====================================================
-  // 核心職能 API (L1-L6 等級)
+  // 核心職能 API (L1-L6 等級) - 從資料庫獲取
   // =====================================================
   getCoreCompetenciesWithLevels(): Observable<CoreManagementCompetency[]> {
-    return of(this.buildCoreCompetencies()).pipe(delay(300));
+    return this.http.get<{ success: boolean; data: any[] }>(`${this.apiUrl}/competencies?category=core`).pipe(
+      map(response => {
+        if (response.success && response.data) {
+          return this.mapToCoreMgmtCompetencies(response.data, 'core');
+        }
+        return [];
+      }),
+      catchError(() => of(this.buildCoreCompetencies())) // Fallback to mock data
+    );
   }
 
   // =====================================================
-  // 管理職能 API (L1-L6 等級)
+  // 管理職能 API (L1-L6 等級) - 從資料庫獲取
   // =====================================================
   getManagementCompetenciesWithLevels(): Observable<CoreManagementCompetency[]> {
-    return of(this.buildManagementCompetencies()).pipe(delay(300));
+    return this.http.get<{ success: boolean; data: any[] }>(`${this.apiUrl}/competencies?category=management`).pipe(
+      map(response => {
+        if (response.success && response.data) {
+          return this.mapToCoreMgmtCompetencies(response.data, 'management');
+        }
+        return [];
+      }),
+      catchError(() => of(this.buildManagementCompetencies())) // Fallback to mock data
+    );
   }
 
   // =====================================================
-  // KSA 職能 API (無等級)
+  // 專業職能 API (L1-L6 等級) - 從資料庫獲取
+  // =====================================================
+  getProfessionalCompetenciesWithLevels(): Observable<CoreManagementCompetency[]> {
+    return this.http.get<{ success: boolean; data: any[] }>(`${this.apiUrl}/competencies?category=professional`).pipe(
+      map(response => {
+        if (response.success && response.data) {
+          return this.mapToCoreMgmtCompetencies(response.data, 'professional');
+        }
+        return [];
+      }),
+      catchError(() => of([])) // No fallback mock data for professional
+    );
+  }
+
+  // =====================================================
+  // KSA 職能 API (無等級) - 從資料庫獲取
   // =====================================================
   getKSACompetencies(ksaType?: CompetencyType): Observable<KSACompetencyItem[]> {
-    let items = this.buildKSACompetencies();
-    if (ksaType) {
-      items = items.filter(item => item.ksaType === ksaType);
-    }
-    return of(items).pipe(delay(300));
+    return this.http.get<{ success: boolean; data: any[] }>(`${this.apiUrl}/competencies?category=ksa`).pipe(
+      map(response => {
+        if (response.success && response.data) {
+          let items = this.mapToKSACompetencies(response.data);
+          if (ksaType) {
+            items = items.filter(item => item.ksaType === ksaType);
+          }
+          return items;
+        }
+        return [];
+      }),
+      catchError(() => {
+        // Fallback to mock data if API fails
+        let items = this.buildKSACompetencies();
+        if (ksaType) {
+          items = items.filter(item => item.ksaType === ksaType);
+        }
+        return of(items);
+      })
+    );
+  }
+
+  // =====================================================
+  // API 資料轉換方法
+  // =====================================================
+  
+  /**
+   * 將 API 資料轉換為 CoreManagementCompetency 格式
+   */
+  private mapToCoreMgmtCompetencies(data: any[], type: 'core' | 'management' | 'professional'): CoreManagementCompetency[] {
+    return data.map(item => ({
+      id: item.id,
+      code: item.code,
+      name: item.name,
+      type: type as 'core' | 'management',
+      definition: item.description || '',
+      levels: (item.levels || []).map((lvl: any) => ({
+        level: lvl.level as CompetencyGradeLevel,
+        indicators: typeof lvl.indicators === 'string' ? JSON.parse(lvl.indicators) : lvl.indicators
+      })),
+      createdAt: new Date(item.created_at || item.createdAt),
+      updatedAt: new Date(item.updated_at || item.updatedAt)
+    }));
+  }
+
+  /**
+   * 將 API 資料轉換為 KSACompetencyItem 格式
+   */
+  private mapToKSACompetencies(data: any[]): KSACompetencyItem[] {
+    return data.map(item => {
+      const ksaDetail = item.ksaDetail || {};
+      const behaviorIndicators = ksaDetail.behaviorIndicators 
+        ? (typeof ksaDetail.behaviorIndicators === 'string' ? JSON.parse(ksaDetail.behaviorIndicators) : ksaDetail.behaviorIndicators)
+        : [];
+      const linkedCourses = ksaDetail.linkedCourses
+        ? (typeof ksaDetail.linkedCourses === 'string' ? JSON.parse(ksaDetail.linkedCourses) : ksaDetail.linkedCourses)
+        : [];
+      
+      // 從 code 推斷 ksaType (K-xx = knowledge, S-xx = skill, A-xx = attitude)
+      let ksaType: CompetencyType = 'knowledge';
+      if (item.code?.startsWith('S-')) {
+        ksaType = 'skill';
+      } else if (item.code?.startsWith('A-')) {
+        ksaType = 'attitude';
+      }
+      
+      return {
+        id: item.id,
+        code: item.code,
+        name: item.name,
+        ksaType,
+        description: item.description || '',
+        behaviorIndicators,
+        linkedCourses,
+        createdAt: new Date(item.created_at || item.createdAt),
+        updatedAt: new Date(item.updated_at || item.updatedAt)
+      };
+    });
   }
 
   // =====================================================
@@ -1433,1728 +1555,149 @@ export class CompetencyService {
   }
 
   // =====================================================
-  // 職務說明書相關 API
+  // 職務說明書相關 API (介接資料庫)
   // =====================================================
 
-  getJobDescriptions(): Observable<JobDescription[]> {
-    const jds: JobDescription[] = [
-      // =====================================================
-      // JD-001: 財務長 (CFO)
-      // 來源: Bombus-ISMS-HR-4-094-財務長工作職務說明書-V1.0-1130229.pdf
-      // =====================================================
-      {
-        id: 'jd-cfo-001',
-        positionCode: 'HR-4-094',
-        positionName: '財務長',
-        department: '財務部',
-        gradeLevel: 'C-Level',
-
-        // 1. 主要職責
-        responsibilities: [
-          '經營目標設定、經營決策團隊養成、規劃公司的結構業績、企業願景規劃',
-          '負責全面管理公司財務部，確保部門的高效運營和協作',
-          '針對公司整體營運與執行面進行協作，以求提升各部門管理職之領導力',
-          '制定和執行公司的策略和政策，以支持公司的業務目標和發展需求',
-          '財務部管理：制定和執行公司的財務策略，確保財務活動的合規性和有效性',
-          '管理專案財務，確保專案財務計劃、預算管理、成本控制、財務報告準確性和及時性',
-          '審核公司的財務報表，定期提供執行長準確的財務數據和分析',
-          '評估和管理財務風險，確保公司財務的穩定性和安全性',
-          '設定毛利與毛利率、營業費用、管銷與對應費用率、淨利與EPS、成長率與市占率',
-          '編列年度公司整體與部門預算會議'
-        ],
-
-        // 2. 職務目的
-        jobPurpose: [
-          '管理工作團隊效能工作品質，以達成組織之績效目標，並依營運目標進行行政團隊與財務管理',
-          '確保公司的財務、人力資源和專案管理方面的有效運作',
-          '於行政管理部提供領導和管理，確保公司在財務、人力資源和專案管理方面的目標得以實現',
-          '確保公司的財務狀況健康，支持公司的營運和發展',
-          '確保公司有足夠的優秀人才，並且能夠有效地應對人力資源挑戰',
-          '確保公司有效的專案管理流程，以提高生產力和客戶滿意度'
-        ],
-
-        // 3. 職務要求
-        qualifications: [
-          '商業管理、財務管理相關領域的學士學位(碩士學位優先)',
-          '至少8年管理經驗，具有營運管理和財務管理經驗者優先',
-          '熟悉財務管理和會計原則，具備財務分析和預算管理能力',
-          '熟悉法律法規，具備招聘、培訓和員工發展經驗',
-          '優秀的領導能力和團隊管理技能',
-          '優秀的溝通和協調能力，能夠有效處理內部和外部的關係',
-          '良好的數字分析能力和問題解決與決策能力',
-          '熟練使用進銷存系統和辦公軟體',
-          '精通MS Office套件(Word, Excel, PowerPoint)'
-        ],
-
-        // 4. 最終有價值產品 VFP
-        vfp: [
-          '提高公司整體的財務性能和長期價值，建立健康、高效且成功的企業營運模式',
-          '提升公司的財務效率和可持續性，以支持公司的整體策略目標',
-          '財務透明度與合規性：強化內部控制與合規，確保財務報告的準確性和透明度',
-          '風險管理：建立全面的風險管理框架，定期評估財務風險',
-          '確保財務健康：預算控制、資金管理和風險管理',
-          '資本結構與資金管理：最佳資本結構決策，現金流管理',
-          '成本控制與效率：實施成本削減策略，價值驅動的預算制定',
-          '投資與增長策略：戰略投資決策，監控投資表現'
-        ],
-
-        // 5. 職能基準 (包含 KSA)
-        competencyStandards: [
-          {
-            mainDuty: '提升團隊效能',
-            tasks: [
-              { taskName: '擬定達成團隊目標的計畫', outputs: ['團隊工作計畫書'], indicators: ['與團隊成員溝通後，確定並擬定團隊工作目標', '協助團隊成員達成團隊合作計畫所列之預期成果'] },
-              { taskName: '帶領工作團隊增進凝聚力', outputs: ['團隊績效報告'], indicators: ['促使團隊成員規劃、決策及實務操作', '適時獎勵個人和團隊的努力成果與貢獻', '確保自己是團隊成員楷模'] },
-              { taskName: '溝通與建立績效指標', outputs: ['團隊績效指標文件', '團隊成員回饋意見報告'], indicators: ['和管理階層隨時保持溝通順暢', '設定與確認團隊績效指標符合組織營運目標'] }
-            ]
-          },
-          {
-            mainDuty: '規劃營運計畫',
-            tasks: [
-              { taskName: '發展營運計畫', outputs: ['中小型企業營運計畫書'], indicators: ['確認營運模式並訂定短、中、長期目標', '依據營運計畫執行衡量營運績效', '尋求專業資源與建議，有效運用資源'] }
-            ]
-          },
-          {
-            mainDuty: '執行營運計畫',
-            tasks: [
-              { taskName: '執行營運計畫', outputs: ['營運計畫執行進度管控文件'], indicators: ['蒐集與分析執行營運計畫所需資源', '帶領工作團隊執行營運計畫', '定期確認團隊執行營運計畫的進度'] },
-              { taskName: '評估績效', outputs: ['績效考核表', '營運績效評估報告'], indicators: ['依據團隊績效指標，評估及分析團隊與成員個人績效', '提出營運績效評估報告'] }
-            ]
-          },
-          {
-            mainDuty: '營運管理',
-            tasks: [
-              { taskName: '營運分析', outputs: ['營運報表分析', '改善方案'], indicators: ['理解營運報表，發覺異常數字或狀況', '提出改善方案或目標達成對策', '落實改善對策，達成業績目標'] },
-              { taskName: '管理財務', outputs: ['成本/收支分析文件'], indicators: ['根據各項經營需求進行成本分析與收支管理'] },
-              { taskName: '預算規劃', outputs: ['預算分配表'], indicators: ['根據銷售預算，規劃部門業績與預算分配'] }
-            ]
-          }
-        ],
-        requiredCompetencies: [
-          { competencyId: 'c-hr-k-fin', competencyName: '經營管理知識', type: 'knowledge' as const, requiredLevel: 5, weight: 15 },
-          { competencyId: 'c-mgmt-1', competencyName: '團隊領導', type: 'skill' as const, requiredLevel: 5, weight: 20 },
-          { competencyId: 'c-core-3', competencyName: '溝通協調', type: 'skill' as const, requiredLevel: 4, weight: 15 },
-          { competencyId: 'c-hr-s-plan', competencyName: '營運規劃', type: 'skill' as const, requiredLevel: 5, weight: 20 },
-          { competencyId: 'c-mgmt-3', competencyName: '策略規劃', type: 'skill' as const, requiredLevel: 5, weight: 15 },
-          { competencyId: 'c-core-2', competencyName: '問題解決', type: 'skill' as const, requiredLevel: 4, weight: 15 }
-        ],
-
-        // 5.1 職能需求 (分類含權重)
-        coreCompetencyRequirements: [
-          { competencyId: 'core-001', competencyName: '溝通表達', type: 'core' as const, requiredLevel: 'L5' as const, weight: 10 },
-          { competencyId: 'core-002', competencyName: '問題解決', type: 'core' as const, requiredLevel: 'L5' as const, weight: 10 },
-          { competencyId: 'core-003', competencyName: '專案思維', type: 'core' as const, requiredLevel: 'L4' as const, weight: 5 },
-          { competencyId: 'core-004', competencyName: '客戶導向', type: 'core' as const, requiredLevel: 'L4' as const, weight: 5 },
-          { competencyId: 'core-005', competencyName: '成長思維', type: 'core' as const, requiredLevel: 'L5' as const, weight: 5 }
-        ],
-        managementCompetencyRequirements: [
-          { competencyId: 'mgmt-001', competencyName: '人才發展', type: 'management' as const, requiredLevel: 'L5' as const, weight: 10 },
-          { competencyId: 'mgmt-002', competencyName: '決策能力', type: 'management' as const, requiredLevel: 'L6' as const, weight: 15 },
-          { competencyId: 'mgmt-003', competencyName: '團隊領導', type: 'management' as const, requiredLevel: 'L6' as const, weight: 15 }
-        ],
-        ksaCompetencyRequirements: [
-          { competencyId: 'ksa-k-001', competencyName: '經營管理知識', ksaType: 'knowledge' as const, weight: 5 },
-          { competencyId: 'ksa-k-002', competencyName: '財務管理知識', ksaType: 'knowledge' as const, weight: 5 },
-          { competencyId: 'ksa-s-001', competencyName: '策略規劃能力', ksaType: 'skill' as const, weight: 5 },
-          { competencyId: 'ksa-s-002', competencyName: '財務分析能力', ksaType: 'skill' as const, weight: 5 },
-          { competencyId: 'ksa-a-001', competencyName: '主動積極', ksaType: 'attitude' as const, weight: 5 }
-        ],
-
-        // 5.2 職能內涵 (K/S/A)
-        ksaContent: {
-          knowledge: [
-            { code: 'K01', name: '經營管理知識', description: '了解企業經營管理的原理與方法' },
-            { code: 'K02', name: '財務管理知識', description: '熟悉財務規劃、預算管理、資金調度' },
-            { code: 'K03', name: '會計準則知識', description: '了解會計原則與財務報表編製' },
-            { code: 'K04', name: '稅法相關知識', description: '熟悉稅務法規與申報作業' },
-            { code: 'K05', name: '投資分析知識', description: '了解投資評估與風險分析方法' }
-          ],
-          skills: [
-            { code: 'S01', name: '策略規劃能力', description: '能制定並執行公司策略' },
-            { code: 'S02', name: '團隊領導能力', description: '能有效帶領團隊達成目標' },
-            { code: 'S03', name: '溝通協調能力', description: '能與各部門有效溝通協調' },
-            { code: 'S04', name: '財務分析能力', description: '能進行財務分析與決策支持' },
-            { code: 'S05', name: '營運規劃能力', description: '能制定營運計畫與預算' }
-          ],
-          attitudes: [
-            { code: 'A01', name: '主動積極', description: '不需他人指示或要求能自動自發做事，面臨問題立即採取行動加以解決' },
-            { code: 'A02', name: '正直誠實', description: '展現高道德標準及值得信賴的行為，以維持組織誠信為行事原則' },
-            { code: 'A03', name: '持續學習', description: '能夠展現自我提升的企圖心，學習任務所需的新知識與技能' },
-            { code: 'A04', name: '謹慎細心', description: '對於任務的執行過程，能謹慎考量及處理所有細節' },
-            { code: 'A05', name: '壓力容忍', description: '冷靜且有效地應對及處理高度緊張的情況或壓力' },
-            { code: 'A06', name: '自我管理', description: '設立定義明確且實際可行的個人目標，展現高度進取與負責任的行為' }
-          ]
-        },
-
-        // 6. 工作描述
-        workDescription: [
-          '根據主管制定的目標與職責，規劃職務的目標',
-          '發展出改進公司營運的方案，並呈交主管核准',
-          '從事分析企業各項量化資料，提出與財務、投資、融資等相關之專業報告',
-          '執行各項與資金有關之收、支、存等財務作業',
-          '發展中小型企業之營運計畫，並依營運目標進行產品行銷與財務管理'
-        ],
-
-        // 7. 檢查清單
-        checklist: [
-          { item: '審核財務報表準確性', points: 5 },
-          { item: '確認預算執行進度', points: 3 },
-          { item: '評估財務風險', points: 4 },
-          { item: '檢視資金調度狀況', points: 3 },
-          { item: '確認法規遵循情形', points: 4 },
-          { item: '審核投資決策文件', points: 5 }
-        ],
-
-        // 8. 職務責任
-        jobDuties: [
-          '確保財務報表的準確性和及時性',
-          '維護公司財務的穩定性和安全性',
-          '達成年度財務目標和預算控制',
-          '建立和維護有效的內部控制制度',
-          '確保所有財務活動符合法規要求'
-        ],
-
-        // 9. 每日工作
-        dailyTasks: [
-          '審核重要財務文件和報表',
-          '參與經營決策會議',
-          '監控資金流動狀況',
-          '處理緊急財務事務',
-          '與各部門主管溝通協調'
-        ],
-
-        // 10. 每週工作
-        weeklyTasks: [
-          '召開財務部門週會',
-          '審核週報和關鍵績效指標',
-          '與執行長匯報財務狀況',
-          '評估投資項目進度',
-          '檢視成本控制執行情形'
-        ],
-
-        // 11. 每月工作
-        monthlyTasks: [
-          '審核月度財務報表',
-          '召開預算檢討會議',
-          '進行月度績效評估',
-          '更新財務風險評估報告',
-          '提交月度營運分析報告給董事會',
-          '檢視銀行融資額度使用情形'
-        ],
-
-        // 元資料
-        summary: '管理工作團隊效能工作品質，以達成組織之績效目標，並依營運目標進行行政團隊與財務管理；確保公司的財務、人力資源和專案管理方面的有效運作。',
-        version: '1.0',
-        status: 'published' as const,
-        createdAt: new Date('2024-01-10'),
-        updatedAt: new Date('2024-11-20'),
-        createdBy: 'HR Admin'
-      },
-      // =====================================================
-      // JD-002: 主辦會計
-      // 來源: Bombus-ISMS-HR-4-095-主辦會計工作職務說明書-V1.0-1130119.pdf
-      // =====================================================
-      {
-        id: 'jd-acc-001',
-        positionCode: 'HR-4-095',
-        positionName: '主辦會計',
-        department: '財務部',
-        gradeLevel: 'P3',
-
-        // 1. 主要職責
-        responsibilities: [
-          '蒐集及分析資金資訊',
-          '蒐集及分析產業現況',
-          '即時更新影響重大之經濟活動',
-          '分析組織價值並預估未來獲利',
-          '編製預算管理報表與檢核組織內部之經營績效',
-          '覆核及檢討財務報表異常項目',
-          '提供國內稅務資訊與財務規劃',
-          '提供營運之財務分析',
-          '分析專案與營業成本',
-          '分析公司管理人銷成本',
-          '發展營運計畫'
-        ],
-
-        // 2. 職務目的
-        jobPurpose: [
-          '確實審核所有應收的收入、及時支付的支出與有形資產，以增加資產的價值',
-          '讓公司主管隨時都能獲得精準、及時的財務資料',
-          '規劃管理財務與稅務會計，並維護會計系統，確保它符合管理階層與政府機關的要求'
-        ],
-
-        // 3. 職務要求
-        qualifications: [
-          '會計、財務相關科系大學以上學歷',
-          '3年以上會計相關經驗',
-          '熟悉財務報表分析與預算管理',
-          '具備稅務相關知識',
-          '良好的數字分析能力',
-          '熟練使用會計軟體與MS Office'
-        ],
-
-        // 4. 最終有價值產品 VFP
-        vfp: [
-          '正確、及時的覆核財務報表',
-          '專業的提供營運規劃'
-        ],
-
-        // 5. 職能基準 (包含 KSA)
-        competencyStandards: [
-          {
-            mainDuty: '蒐集、分析組織資金狀況、分析產業現況與重大經濟活動',
-            tasks: [
-              { taskName: '蒐集及分析資金資訊', outputs: ['資金資訊分析報告'], indicators: ['蒐集組織資金流動現況', '蒐集之資金流動狀況進行分析，並就分析預測之結果加以規劃未來之業務與相關投資規劃'] },
-              { taskName: '蒐集及分析產業現況', outputs: ['產業趨勢分析報告', '投資規劃書'], indicators: ['蒐集相關之產業現況及未來趨勢', '就蒐集之產業資訊加以分析，預測未來市場需求及發展方向', '擬定組織財務投資規劃，了解市場動向，規避投資風險'] },
-              { taskName: '即時更新影響重大之經濟活動', outputs: ['重大經濟活動分析報告'], indicators: ['即時更新重大經濟活動對相關產業之影響', '將蒐集之資金資訊依據短期、中期及長期影響加以分析'] }
-            ]
-          },
-          {
-            mainDuty: '檢核組織經營績效',
-            tasks: [
-              { taskName: '分析組織價值並預估未來獲利', outputs: ['營運計劃書'], indicators: ['就組織價值檢核獲利狀況，以收益法、成本/資產法與市場法進行分析評估組織價值'] },
-              { taskName: '編製預算管理報表與檢核組織內部之經營績效', outputs: ['預算管理報表', '績效報告'], indicators: ['蒐集合理有用之資訊，檢視產業變動趨勢及內部經營條件', '就各單位提供之預算報表，考量未來經營計畫、目標與策略後，評估預算金額之適當性', '年度終了就實際執行成果與預算目標進行差異分析'] }
-            ]
-          },
-          {
-            mainDuty: '覆核財務報表',
-            tasks: [
-              { taskName: '覆核及檢討財務報表異常項目', outputs: ['財務報表分析報告'], indicators: ['定期覆核組織內部之財務報表，並針對異常項目執行差異分析', '與會計人員確認上列項目異常之原因，判斷正確性及確保符合會計準則與稅法之規定'] }
-            ]
-          },
-          {
-            mainDuty: '提供國內稅務資訊與財務規劃',
-            tasks: [
-              { taskName: '擬訂與檢討財務投資規劃', outputs: ['預算規劃書', '財務報告書'], indicators: ['提供國內稅務最新資訊，並應適時徵詢稅務專家', '就國內之稅務、財務、成本規劃進行成效追蹤'] },
-              { taskName: '提供營運之財務分析', outputs: ['營運分析報告'], indicators: ['提供定價與訂單之相關資訊', '提供管理決策所需之產銷相關財務分析'] }
-            ]
-          },
-          {
-            mainDuty: '分析營運成本',
-            tasks: [
-              { taskName: '分析專案與營業成本', outputs: ['公司營收成本預算管理'], indicators: ['專案成本預估與分析'] },
-              { taskName: '分析公司管理人銷成本', outputs: ['銀行額度的開發與管理'], indicators: ['銀行貸款窗口維護', '銀行文件與報表維護'] }
-            ]
-          }
-        ],
-        requiredCompetencies: [
-          { competencyId: 'c-hr-k-acc', competencyName: '會計專業知識', type: 'knowledge' as const, requiredLevel: 4, weight: 25 },
-          { competencyId: 'c-hr-k-tax', competencyName: '稅務法規知識', type: 'knowledge' as const, requiredLevel: 4, weight: 20 },
-          { competencyId: 'c-prof-4', competencyName: '資料分析', type: 'skill' as const, requiredLevel: 4, weight: 20 },
-          { competencyId: 'c-core-2', competencyName: '問題解決', type: 'skill' as const, requiredLevel: 3, weight: 15 },
-          { competencyId: 'c-hr-a-care', competencyName: '細心謹慎', type: 'attitude' as const, requiredLevel: 4, weight: 20 }
-        ],
-
-        // 5.1 職能需求 (分類含權重)
-        coreCompetencyRequirements: [
-          { competencyId: 'core-001', competencyName: '溝通表達', type: 'core' as const, requiredLevel: 'L3' as const, weight: 10 },
-          { competencyId: 'core-002', competencyName: '問題解決', type: 'core' as const, requiredLevel: 'L3' as const, weight: 15 },
-          { competencyId: 'core-005', competencyName: '成長思維', type: 'core' as const, requiredLevel: 'L3' as const, weight: 10 }
-        ],
-        managementCompetencyRequirements: [],
-        ksaCompetencyRequirements: [
-          { competencyId: 'ksa-k-001', competencyName: '財務相關法規', ksaType: 'knowledge' as const, weight: 15 },
-          { competencyId: 'ksa-k-002', competencyName: '財務報表相關知識', ksaType: 'knowledge' as const, weight: 15 },
-          { competencyId: 'ksa-s-001', competencyName: '分析規劃能力', ksaType: 'skill' as const, weight: 15 },
-          { competencyId: 'ksa-s-002', competencyName: '檢核能力', ksaType: 'skill' as const, weight: 10 },
-          { competencyId: 'ksa-a-001', competencyName: '謹慎細心', ksaType: 'attitude' as const, weight: 10 }
-        ],
-
-        // 5.2 職能內涵 (K/S/A) - 依據 HR-4-095 MD 文件
-        ksaContent: {
-          knowledge: [
-            { code: 'K01', name: '財務相關法規', description: 'TIFRS(國際會計準則)、商業會計法、商業會計處理準則、稅法、洗錢防制法、公司法、證券交易法' },
-            { code: 'K02', name: '財務報表相關知識', description: '資產負債表、綜合損益表、權益變動表與現金流量表、財務資訊、各類政府規定之申報表' },
-            { code: 'K03', name: '成本概論', description: '成本分析與成本控制方法' },
-            { code: 'K04', name: '電腦資訊相關知識', description: '會計軟體與辦公軟體操作' },
-            { code: 'K05', name: '財務分析規劃相關知識', description: '財務分析方法與規劃技巧' },
-            { code: 'K06', name: '產業趨勢', description: '了解產業現況與未來發展趨勢' }
-          ],
-          skills: [
-            { code: 'S01', name: '電腦資訊應用能力', description: '熟練操作會計系統與辦公軟體' },
-            { code: 'S02', name: '資料蒐集彙整能力', description: '能有效蒐集並彙整財務資料' },
-            { code: 'S03', name: '文書處理能力', description: '能撰寫專業財務報告與文件' },
-            { code: 'S04', name: '分析規劃能力', description: '能進行財務分析與規劃' },
-            { code: 'S05', name: '計算能力', description: '準確計算各項財務數據' },
-            { code: 'S06', name: '檢核能力', description: '能仔細檢核財務資料的正確性' },
-            { code: 'S07', name: '專案報表管理能力', description: '能編製與管理專案財務報表' }
-          ],
-          attitudes: [
-            { code: 'A01', name: '主動積極', description: '不需他人指示或要求能自動自發做事，面臨問題立即採取行動加以解決，且為達目標願意主動承擔額外責任' },
-            { code: 'A02', name: '正直誠實', description: '展現高道德標準及值得信賴的行為，且能以維持組織誠信為行事原則，瞭解違反組織、自己及他人的道德標準之影響' },
-            { code: 'A03', name: '持續學習', description: '能夠展現自我提升的企圖心，利用且積極參與各種機會，學習任務所需的新知識與技能，並能有效應用在特定任務' },
-            { code: 'A04', name: '謹慎細心', description: '對於任務的執行過程，能謹慎考量及處理所有細節，精確地檢視每個程序，並持續對其保持高度關注' },
-            { code: 'A05', name: '壓力容忍', description: '冷靜且有效地應對及處理高度緊張的情況或壓力，如緊迫的時間、不友善的人、各類突發事件及危急狀況' },
-            { code: 'A06', name: '自我管理', description: '設立定義明確且實際可行的個人目標；對於及時完成任務展現高度進取、努力、承諾及負責任的行為' }
-          ]
-        },
-
-        // 6. 工作描述
-        workDescription: [
-          '蒐集組織資金流動現況並進行分析',
-          '編製預算管理報表與績效報告',
-          '覆核財務報表並執行差異分析',
-          '提供稅務資訊與財務規劃建議',
-          '進行專案成本預估與分析'
-        ],
-
-        // 7. 檢查清單
-        checklist: [
-          { item: '核對所有收入憑證正確性', points: 1 },
-          { item: '核對所有應付憑證正確性', points: 1 },
-          { item: '將每一筆收入登入會計系統', points: 1 },
-          { item: '針對收入資料異常進行處理', points: 2 },
-          { item: '會計系統貨款銷帳與傳票製作', points: 2 },
-          { item: '覆核財務報表異常項目', points: 3 }
-        ],
-
-        // 8. 職務責任
-        jobDuties: [
-          '確保財務報表的準確性',
-          '維護會計系統的正常運作',
-          '提供正確的財務資訊給管理階層',
-          '確保所有會計作業符合法規要求',
-          '管理預算編製與執行追蹤'
-        ],
-
-        // 9. 每日工作
-        dailyTasks: [
-          '審核日常收支憑證',
-          '登錄會計傳票',
-          '處理資金調度事宜',
-          '回覆財務相關詢問'
-        ],
-
-        // 10. 每週工作
-        weeklyTasks: [
-          '編製週報表',
-          '檢視預算執行進度',
-          '核對銀行往來明細',
-          '更新資金預測報表'
-        ],
-
-        // 11. 每月工作
-        monthlyTasks: [
-          '編製月結財務報表',
-          '進行預算差異分析',
-          '申報營業稅',
-          '編製管理報表',
-          '進行月度績效檢討'
-        ],
-
-        // 元資料
-        summary: '確實審核所有應收的收入、及時支付的支出與有形資產，以增加資產的價值；讓公司主管隨時都能獲得精準、及時的財務資料。規劃管理財務與稅務會計，並維護會計系統。',
-        version: '1.0',
-        status: 'published' as const,
-        createdAt: new Date('2024-01-15'),
-        updatedAt: new Date('2024-11-20'),
-        createdBy: 'HR Admin'
-      },
-      // =====================================================
-      // JD-003: 專案部副理
-      // 來源: Bombus-ISMS-HR-4-098-專案部副理工作職務說明書-V1.0-1130229.pdf
-      // =====================================================
-      {
-        id: 'jd-pm-001',
-        positionCode: 'HR-4-098',
-        positionName: '專案部副理',
-        department: '專案部',
-        gradeLevel: 'M1',
-
-        // 1. 主要職責
-        responsibilities: [
-          '負責領導專案部團隊，管理和協調多個專案的執行',
-          '監控專案進度，確保專案按時、在預算內完成，並達到預期質量標準',
-          '參與公司策略制定，並將其轉化為具體的專案計劃和行動',
-          '提供團隊培訓和指導，提升團隊的專業能力',
-          '直接管理公司整體專案的具體實施',
-          '制定專案計劃，確定專案目標、範疇和資源需求',
-          '識別和解決專案中的問題和風險，提供適當的解決方案',
-          '辦理專案文件和報告，進行專案後評估，總結經驗教訓，並提出改進建議',
-          '協調內部資源和外部供應商關係，確保所有專案參與者在既定時間內完成任務',
-          '評估和選擇供應商，建立和維護與供應商的良好關係',
-          '管理和監督專案採購任務，確保物料和服務的供應及時、成本效益高且符合質量標準',
-          '制定和執行採購策略與庫存管理策略，確保運營效率和合規性',
-          '分析市場趨勢和價格變動，為採購決策提供數據支持',
-          '負責監督和管理公司的庫存活動，確保物料的準確性、有效性和適時性',
-          '優化庫存流程，確保物料的高效利用和成本控制',
-          '監控庫存管理系統進行盤點、庫存記錄和分析追踪'
-        ],
-
-        // 2. 職務目的
-        jobPurpose: [
-          '通過有效的規劃、協調和監控，確保專案部能夠高效運作',
-          '如期如質完成的專案目標，為公司和客戶創造價值',
-          '監控和評估供應商的表現，確保其符合公司的要求和標準',
-          '監控採購預算，控制成本並確保符合財務預算要求',
-          '監控庫存管理系統，降低成本與空間的浪費'
-        ],
-
-        // 3. 職務要求
-        qualifications: [
-          '相關領域的大專以上畢業學歷',
-          '至少具3年以上專案管理相關經驗，尤其在領導與管理專案團隊方面',
-          '具有2年以上採購與庫存管理經驗，具備相關行業經驗者優先',
-          '熟悉專案管理工具和方法（如PMP、Agile、Scrum等）',
-          '熟悉採購流程、合約管理與供應商管理的工具與方法',
-          '熟悉庫存管理流程、庫存控制與倉儲管理的工具與方法',
-          '優秀的數據分析與報告能力，能準確解讀與呈現庫存數據',
-          '優秀的談判與協商技能，能夠確保最佳的採購條件',
-          '優秀的領導能力和團隊管理技能，確保專案執行達到優質標準',
-          '優秀的溝通和協調能力，能夠有效處理內部和外部（供應商、客戶等）的關係',
-          '精通MS Office套件（Word, Excel, PowerPoint）和專案管理軟件（如Microsoft Project、JIRA）'
-        ],
-
-        // 4. 最終有價值產品 VFP
-        vfp: [
-          '成功完成的專案及其相關產出',
-          '符合客戶需求，創造有價值的專案成果'
-        ],
-
-        // 5. 職能基準 (包含 KSA)
-        competencyStandards: [
-          {
-            mainDuty: '專案規劃與執行',
-            tasks: [
-              { taskName: '制定專案計劃', outputs: ['專案計劃書', '工作分解結構(WBS)'], indicators: ['確定專案目標、範疇和資源需求', '建立專案時程和里程碑'] },
-              { taskName: '專案執行與監控', outputs: ['專案進度報告', '風險管理報告'], indicators: ['監控專案進度與預算執行', '識別和解決專案問題與風險'] },
-              { taskName: '專案結案與評估', outputs: ['專案結案報告', '經驗學習文件'], indicators: ['進行專案後評估', '總結經驗教訓並提出改進建議'] }
-            ]
-          },
-          {
-            mainDuty: '團隊領導與管理',
-            tasks: [
-              { taskName: '團隊培訓與指導', outputs: ['培訓計劃', '績效評估報告'], indicators: ['提供團隊培訓和指導', '提升團隊的專業能力'] },
-              { taskName: '資源協調', outputs: ['資源分配表'], indicators: ['協調內部資源', '確保專案參與者在既定時間內完成任務'] }
-            ]
-          },
-          {
-            mainDuty: '採購與供應商管理',
-            tasks: [
-              { taskName: '供應商評估與選擇', outputs: ['供應商評估報告', '採購合約'], indicators: ['評估和選擇供應商', '確保最佳的採購條件'] },
-              { taskName: '採購執行與監控', outputs: ['採購訂單', '供應商績效報告'], indicators: ['管理和監督專案採購任務', '確保物料和服務的供應及時'] }
-            ]
-          },
-          {
-            mainDuty: '庫存管理',
-            tasks: [
-              { taskName: '庫存控制與優化', outputs: ['庫存報表', '盤點報告'], indicators: ['監控庫存管理系統', '優化庫存流程，確保成本控制'] }
-            ]
-          }
-        ],
-        requiredCompetencies: [
-          { competencyId: 'c-prof-3', competencyName: '專案管理', type: 'skill' as const, requiredLevel: 4, weight: 25 },
-          { competencyId: 'c-mgmt-1', competencyName: '團隊領導', type: 'skill' as const, requiredLevel: 4, weight: 20 },
-          { competencyId: 'c-core-3', competencyName: '溝通表達', type: 'skill' as const, requiredLevel: 4, weight: 15 },
-          { competencyId: 'c-core-2', competencyName: '問題解決', type: 'skill' as const, requiredLevel: 4, weight: 15 },
-          { competencyId: 'c-hr-s-vendor', competencyName: '供應商管理', type: 'skill' as const, requiredLevel: 3, weight: 15 },
-          { competencyId: 'c-hr-a-resp', competencyName: '責任感', type: 'attitude' as const, requiredLevel: 4, weight: 10 }
-        ],
-
-        // 5.1 職能需求 (分類含權重)
-        coreCompetencyRequirements: [
-          { competencyId: 'core-001', competencyName: '溝通表達', type: 'core' as const, requiredLevel: 'L4' as const, weight: 10 },
-          { competencyId: 'core-002', competencyName: '問題解決', type: 'core' as const, requiredLevel: 'L4' as const, weight: 10 },
-          { competencyId: 'core-003', competencyName: '專案思維', type: 'core' as const, requiredLevel: 'L4' as const, weight: 10 },
-          { competencyId: 'core-004', competencyName: '客戶導向', type: 'core' as const, requiredLevel: 'L3' as const, weight: 5 }
-        ],
-        managementCompetencyRequirements: [
-          { competencyId: 'mgmt-003', competencyName: '團隊領導', type: 'management' as const, requiredLevel: 'L4' as const, weight: 15 },
-          { competencyId: 'mgmt-001', competencyName: '人才發展', type: 'management' as const, requiredLevel: 'L3' as const, weight: 10 }
-        ],
-        ksaCompetencyRequirements: [
-          { competencyId: 'ksa-k-001', competencyName: '專案管理知識', ksaType: 'knowledge' as const, weight: 10 },
-          { competencyId: 'ksa-s-001', competencyName: '專案規劃能力', ksaType: 'skill' as const, weight: 15 },
-          { competencyId: 'ksa-s-002', competencyName: '供應商管理能力', ksaType: 'skill' as const, weight: 10 },
-          { competencyId: 'ksa-a-001', competencyName: '責任感', ksaType: 'attitude' as const, weight: 5 }
-        ],
-
-        // 5.2 職能內涵 (K/S/A) - 依據 HR-4-098 PDF 文件
-        ksaContent: {
-          knowledge: [
-            { code: 'K01', name: '專案管理知識', description: '熟悉專案管理工具和方法（如PMP、Agile、Scrum等）' },
-            { code: 'K02', name: '採購流程知識', description: '熟悉採購流程、合約管理與供應商管理的工具與方法' },
-            { code: 'K03', name: '庫存管理知識', description: '熟悉庫存管理流程、庫存控制與倉儲管理的工具與方法' },
-            { code: 'K04', name: '財務相關法規', description: '了解財務報表與成本控制相關知識' },
-            { code: 'K05', name: '風險管理', description: '了解專案風險識別與管控方法' }
-          ],
-          skills: [
-            { code: 'S01', name: '專案規劃能力', description: '能制定專案計劃，確定專案目標、範疇和資源需求' },
-            { code: 'S02', name: '團隊領導能力', description: '優秀的領導能力和團隊管理技能，確保專案執行達到優質標準' },
-            { code: 'S03', name: '溝通協調能力', description: '能夠有效處理內部和外部（供應商、客戶等）的關係' },
-            { code: 'S04', name: '數據分析能力', description: '優秀的數據分析與報告能力，能準確解讀與呈現庫存數據' },
-            { code: 'S05', name: '談判協商能力', description: '優秀的談判與協商技能，能夠確保最佳的採購條件' },
-            { code: 'S06', name: '問題解決能力', description: '識別和解決專案中的問題和風險，提供適當的解決方案' },
-            { code: 'S07', name: '專案報表管理能力', description: '辦理專案文件和報告，進行專案後評估' }
-          ],
-          attitudes: [
-            { code: 'A01', name: '主動積極', description: '不需他人指示或要求能自動自發做事，面臨問題立即採取行動加以解決' },
-            { code: 'A02', name: '正直誠實', description: '展現高道德標準及值得信賴的行為，以維持組織誠信為行事原則' },
-            { code: 'A03', name: '持續學習', description: '能夠展現自我提升的企圖心，學習任務所需的新知識與技能' },
-            { code: 'A04', name: '謹慎細心', description: '對於任務的執行過程，能謹慎考量及處理所有細節' },
-            { code: 'A05', name: '壓力容忍', description: '冷靜且有效地應對及處理高度緊張的情況或壓力' },
-            { code: 'A06', name: '自我管理', description: '設立定義明確且實際可行的個人目標，展現高度進取與負責任的行為' }
-          ]
-        },
-
-        // 6. 工作描述
-        workDescription: [
-          '領導專案部團隊，管理和協調多個專案的執行',
-          '制定專案計劃，確定專案目標、範疇和資源需求',
-          '識別和解決專案中的問題和風險',
-          '管理採購與供應商關係',
-          '監督庫存活動，確保物料的準確性'
-        ],
-
-        // 7. 檢查清單
-        checklist: [
-          { item: '確認專案進度符合計劃', points: 3 },
-          { item: '檢視專案預算執行情況', points: 3 },
-          { item: '確認供應商交付品質', points: 2 },
-          { item: '更新庫存紀錄', points: 2 },
-          { item: '完成專案風險評估', points: 3 },
-          { item: '團隊成員績效追蹤', points: 2 }
-        ],
-
-        // 8. 職務責任
-        jobDuties: [
-          '確保專案按時、在預算內完成',
-          '達成專案預期質量標準',
-          '維護良好的供應商關係',
-          '控制採購成本',
-          '確保庫存數據準確性'
-        ],
-
-        // 9. 每日工作
-        dailyTasks: [
-          '追蹤專案進度',
-          '處理專案相關問題',
-          '與團隊成員溝通協調',
-          '審核採購申請',
-          '監控庫存異動'
-        ],
-
-        // 10. 每週工作
-        weeklyTasks: [
-          '召開專案週會',
-          '更新專案進度報告',
-          '審核供應商績效',
-          '檢視庫存水位',
-          '團隊成員一對一面談'
-        ],
-
-        // 11. 每月工作
-        monthlyTasks: [
-          '編製專案月報',
-          '進行月度預算檢討',
-          '供應商績效評估',
-          '庫存盤點',
-          '提交管理層報告',
-          '團隊培訓活動'
-        ],
-
-        // 元資料
-        summary: '通過有效的規劃、協調和監控，確保專案部能夠高效運作，如期如質完成的專案目標，為公司和客戶創造價值。',
-        version: '1.0',
-        status: 'published' as const,
-        createdAt: new Date('2024-02-01'),
-        updatedAt: new Date('2024-11-20'),
-        createdBy: 'HR Admin'
-      },
-      // =====================================================
-      // JD-004: 出納會計
-      // 來源: Bombus-ISMS-AD-4-125-出納會計工作職務說明書-20250326.pdf
-      // =====================================================
-      {
-        id: 'jd-cashier-001',
-        positionCode: 'AD-4-125',
-        positionName: '出納會計',
-        department: '財務部',
-        gradeLevel: 'P1',
-
-        // 1. 主要職責
-        responsibilities: [
-          '資金管理與支付作業：每日資金進出應妥善、細心作業',
-          '應付款應取得主管簽章核准後，始得付款，並確保支付對象及金額的正確性',
-          '按規定每日登記現金日記帳與銀行存款日記帳，確保帳務準確',
-          '票據管理與銀行往來：保管好各種空白支票、票據，確保票據安全與妥善管理',
-          '準備銀行額度申請所需之必要資料，確保融資需求順利進行',
-          '資金對帳與帳務核對：每日資金、現金及零用金進出登錄，確保系統對帳表、現金簿與銀行對帳單、庫存現金/零用金相符',
-          '每日產出銀行餘額明細表，確保公司資金管理透明',
-          '每月製作銀行融資明細表，提供管理階層參考',
-          '票據作業與資金調度：確保公司資金充足並合理調度，避免資金閒置或短缺',
-          '應付票據開立與兌現，確保支付準確及時',
-          '應收票據託收與兌現，確保應收帳款順利回收',
-          '現金及零用金管理，確保日常運營資金充足且記錄清楚',
-          '有價證券等進出作業，依公司政策執行，並確保合規'
-        ],
-
-        // 2. 職務目的
-        jobPurpose: [
-          '管帳不管錢、管錢不管帳，應分由專人管理',
-          '降低舞弊與盜用風險',
-          '符合內部內控流程管理'
-        ],
-
-        // 3. 職務要求
-        qualifications: [
-          '具財稅(經)、會計科系大學學歷以上',
-          '具至少2年以上會計與財務相關專業經歷',
-          '具備銀行存款轉帳、收付、開/收票等資金操作實務經驗',
-          '具備資金規劃之作業經驗',
-          '具備銀行借/還款實務經驗，熟悉相關操作流程',
-          '熟悉現金與零用金管理，具備良好的風險管控意識',
-          '具備製作銀行貸款明細表的實務經驗，能清楚記錄資金流向',
-          '具備良好溝通與協調能力，能夠有效與銀行、內部財務團隊及其他部門協作',
-          '具備團隊合作精神，能夠主動配合業務需求並確保資金管理順暢'
-        ],
-
-        // 4. 最終有價值產品 VFP
-        vfp: [
-          '確保資金流動順暢，準確執行每日收付款，確保資金安全與即時處理',
-          '維護會計記錄，確保帳務透明與準確性',
-          '定期核對對帳表，確保與銀行對帳單相符，維護財務數據的一致性與準確性',
-          '確保帳、物相符，嚴格控管現金與票據，維護出納作業的標準化與完整性'
-        ],
-
-        // 5. 職能基準 (包含 KSA)
-        competencyStandards: [
-          {
-            mainDuty: '資金管理與支付',
-            tasks: [
-              { taskName: '資金收付作業', outputs: ['現金日記帳', '銀行存款日記帳'], indicators: ['每日資金進出妥善作業', '確保支付對象及金額的正確性'] },
-              { taskName: '票據管理', outputs: ['票據登記簿', '銀行額度申請資料'], indicators: ['保管空白支票、票據', '準備銀行額度申請所需資料'] }
-            ]
-          },
-          {
-            mainDuty: '帳務核對',
-            tasks: [
-              { taskName: '資金對帳', outputs: ['銀行餘額明細表', '銀行調節表'], indicators: ['每日資金、現金及零用金進出登錄', '確保系統對帳表與銀行對帳單相符'] },
-              { taskName: '月結作業', outputs: ['銀行融資明細表'], indicators: ['每月製作銀行融資明細表'] }
-            ]
-          },
-          {
-            mainDuty: '資金調度',
-            tasks: [
-              { taskName: '資金調度', outputs: ['資金調度報表'], indicators: ['確保公司資金充足並合理調度', '避免資金閒置或短缺'] },
-              { taskName: '票據兌現', outputs: ['票據兌現紀錄'], indicators: ['應付票據開立與兌現', '應收票據託收與兌現'] }
-            ]
-          }
-        ],
-        requiredCompetencies: [
-          { competencyId: 'c-hr-k-acc', competencyName: '會計專業知識', type: 'knowledge' as const, requiredLevel: 3, weight: 25 },
-          { competencyId: 'c-hr-s-fund', competencyName: '資金管理', type: 'skill' as const, requiredLevel: 3, weight: 25 },
-          { competencyId: 'c-hr-a-care', competencyName: '細心謹慎', type: 'attitude' as const, requiredLevel: 4, weight: 20 },
-          { competencyId: 'c-core-3', competencyName: '溝通表達', type: 'skill' as const, requiredLevel: 2, weight: 15 },
-          { competencyId: 'c-hr-a-integ', competencyName: '誠信正直', type: 'attitude' as const, requiredLevel: 4, weight: 15 }
-        ],
-
-        // 5.1 職能需求 (分類含權重)
-        coreCompetencyRequirements: [
-          { competencyId: 'core-001', competencyName: '溝通表達', type: 'core' as const, requiredLevel: 'L2' as const, weight: 10 },
-          { competencyId: 'core-002', competencyName: '問題解決', type: 'core' as const, requiredLevel: 'L2' as const, weight: 10 },
-          { competencyId: 'core-005', competencyName: '成長思維', type: 'core' as const, requiredLevel: 'L2' as const, weight: 5 }
-        ],
-        managementCompetencyRequirements: [],
-        ksaCompetencyRequirements: [
-          { competencyId: 'ksa-k-001', competencyName: '會計專業知識', ksaType: 'knowledge' as const, weight: 20 },
-          { competencyId: 'ksa-k-002', competencyName: '銀行作業知識', ksaType: 'knowledge' as const, weight: 15 },
-          { competencyId: 'ksa-s-001', competencyName: '資金管理能力', ksaType: 'skill' as const, weight: 15 },
-          { competencyId: 'ksa-s-002', competencyName: '帳務處理能力', ksaType: 'skill' as const, weight: 10 },
-          { competencyId: 'ksa-a-001', competencyName: '謹慎細心', ksaType: 'attitude' as const, weight: 10 },
-          { competencyId: 'ksa-a-002', competencyName: '正直誠實', ksaType: 'attitude' as const, weight: 5 }
-        ],
-
-        // 5.2 職能內涵 (K/S/A) - 依據 AD-4-125 MD 文件
-        ksaContent: {
-          knowledge: [
-            { code: 'K01', name: '財務相關法規', description: 'TIFRS(國際會計準則)、商業會計法、商業會計處理準則、稅法' },
-            { code: 'K02', name: '財務報表相關知識', description: '現金日記帳、銀行存款日記帳、銀行調節表等' },
-            { code: 'K03', name: '成本概論', description: '了解成本控制與資金管理' },
-            { code: 'K04', name: '電腦資訊相關知識', description: '會計系統與銀行系統操作' },
-            { code: 'K05', name: '財務分析規劃相關知識', description: '資金規劃與調度' },
-            { code: 'K06', name: '產業趨勢', description: '了解金融市場與銀行往來實務' }
-          ],
-          skills: [
-            { code: 'S01', name: '電腦資訊應用能力', description: '熟練操作會計系統與銀行系統' },
-            { code: 'S02', name: '資料蒐集彙整能力', description: '能準確蒐集並彙整資金資料' },
-            { code: 'S03', name: '文書處理能力', description: '能製作財務報表與相關文件' },
-            { code: 'S04', name: '分析規劃能力', description: '能進行資金規劃與調度' },
-            { code: 'S05', name: '計算能力', description: '準確計算資金收付金額' },
-            { code: 'S06', name: '檢核能力', description: '能仔細核對帳務資料的正確性' },
-            { code: 'S07', name: '專案報表管理能力', description: '能編製資金報表與銀行融資明細表' }
-          ],
-          attitudes: [
-            { code: 'A01', name: '主動積極', description: '不需他人指示或要求能自動自發做事，面臨問題立即採取行動加以解決' },
-            { code: 'A02', name: '正直誠實', description: '展現高道德標準及值得信賴的行為，嚴守資金管理紀律' },
-            { code: 'A03', name: '持續學習', description: '能夠展現自我提升的企圖心，學習新知識與技能' },
-            { code: 'A04', name: '謹慎細心', description: '對於資金收付作業，能謹慎考量及處理所有細節，確保帳物相符' },
-            { code: 'A05', name: '壓力容忍', description: '冷靜且有效地應對資金調度壓力與緊急狀況' },
-            { code: 'A06', name: '自我管理', description: '設立明確目標，展現高度進取與負責任的行為' }
-          ]
-        },
-
-        // 6. 工作描述
-        workDescription: [
-          '執行每日資金收付作業',
-          '登記現金日記帳與銀行存款日記帳',
-          '保管票據並執行票據作業',
-          '進行資金對帳與核對',
-          '執行資金調度作業'
-        ],
-
-        // 7. 檢查清單
-        checklist: [
-          { item: '現金日記帳登錄完成', points: 1 },
-          { item: '銀行存款日記帳登錄完成', points: 1 },
-          { item: '銀行餘額明細表產出', points: 1 },
-          { item: '零用金核對', points: 1 },
-          { item: '票據保管確認', points: 2 },
-          { item: '資金對帳完成', points: 2 }
-        ],
-
-        // 8. 職務責任
-        jobDuties: [
-          '確保每日資金收付的正確性',
-          '維護票據的安全與完整',
-          '確保帳務與實際資金一致',
-          '降低資金操作風險',
-          '配合內部稽核要求'
-        ],
-
-        // 9. 每日工作
-        dailyTasks: [
-          '登記現金日記帳',
-          '登記銀行存款日記帳',
-          '產出銀行餘額明細表',
-          '執行資金收付作業',
-          '核對零用金餘額'
-        ],
-
-        // 10. 每週工作
-        weeklyTasks: [
-          '核對銀行對帳單',
-          '整理待兌現票據',
-          '更新資金調度計畫',
-          '整理銀行往來文件'
-        ],
-
-        // 11. 每月工作
-        monthlyTasks: [
-          '製作銀行融資明細表',
-          '進行月度資金對帳',
-          '編製銀行調節表',
-          '提交月度出納報表',
-          '配合月結作業'
-        ],
-
-        // 元資料
-        summary: '確保資金流動順暢，準確執行每日收付款，確保資金安全與即時處理。維護會計記錄，確保帳務透明與準確性。',
-        version: '2.0',
-        status: 'published' as const,
-        createdAt: new Date('2024-03-01'),
-        updatedAt: new Date('2024-11-20'),
-        createdBy: 'HR Admin'
-      },
-      // =====================================================
-      // JD-005: 招募與績效管理
-      // 來源: Bombus-ISMS-HR-4-084-招募與績效管理工作職務說明書-V1.0-1130229.pdf
-      // =====================================================
-      {
-        id: 'jd-hr-recruit-001',
-        positionCode: 'HR-4-084',
-        positionName: '招募與績效管理',
-        department: '人資部',
-        gradeLevel: 'P3',
-
-        // 1. 主要職責
-        responsibilities: [
-          '依據產業或組織發展的用人規劃需求，執行人員招募甄選之任務',
-          '協助組織尋找合適人才、適時檢視招募甄選成效與提出改善建議',
-          '依法令規範與組織政策，規劃發展員工關係策略',
-          '作為企業與內部成員間的溝通橋樑，維護勞資關係和諧達到企業組織發展',
-          '了解與確認人力需求',
-          '了解與確認職位說明書與工作規範',
-          '運用徵才管道與搜尋履歷',
-          '運用甄選工具決定錄取人選'
-        ],
-
-        // 2. 職務目的
-        jobPurpose: [
-          '確保組織人力需求獲得滿足',
-          '維護勞資關係和諧',
-          '支持企業組織發展'
-        ],
-
-        // 3. 職務要求
-        qualifications: [
-          '人力資源或相關科系大學以上學歷',
-          '3年以上人力資源管理經驗',
-          '熟悉招募甄選流程與工具',
-          '熟悉勞動法規與人資作業流程',
-          '具備良好的溝通協調能力'
-        ],
-
-        // 4. 最終有價值產品 VFP
-        vfp: [
-          '招募到符合組織需求的合適人才',
-          '維護良好的勞資關係',
-          '提升招募甄選成效'
-        ],
-
-        // 5. 職能基準 (包含 KSA)
-        competencyStandards: [
-          {
-            mainDuty: '協助了解與確認人力需求與工作規範',
-            tasks: [
-              { taskName: '了解與確認人力需求', outputs: ['人力需求單'], indicators: ['當單位提出人力招募需求時，依據組織既定的人力需求計畫，確認並申請核准人力需求職類人數與進用時程', '彙整臨時性或跨部門的人力招募需求'] },
-              { taskName: '了解與確認職位說明書與工作規範', outputs: ['職缺與徵才條件表'], indicators: ['人力招募需求經核准後，確認並依據職缺職位說明書與工作規範，撰寫或更新公司介紹／職缺訊息／徵才條件'] }
-            ]
-          },
-          {
-            mainDuty: '運用徵才管道與搜尋履歷',
-            tasks: [
-              { taskName: '確認與使用徵才管道', outputs: ['徵才管道效益分析表'], indicators: ['依據職務需求與求才時間，選擇內部或外部合適的徵才管道', '運用內部管道，如離職人才回任、內部員工推薦、轉調機制', '運用外部管道，如人力銀行、校園徵才、獵才公司'] },
-              { taskName: '搜尋與篩選履歷', outputs: ['適合履歷'], indicators: ['運用科技／工具搜尋符合資格條件之履歷', '依照職位說明書／工作規範與用人主管討論，確認初選合格名單'] }
-            ]
-          },
-          {
-            mainDuty: '運用甄選工具決定錄取人選',
-            tasks: [
-              { taskName: '使用合適甄選工具與執行甄選', outputs: ['甄選面談紀錄表', '背景調查結果報告', '甄選工具效益分析表'], indicators: ['依照職務類別選擇合適的甄選工具', '規劃／安排面談時間場次與場地', '視職務性質與需求，安排合適之專業測驗', '進行背景調查，收集或驗證應徵人選先前工作表現'] }
-            ]
-          }
-        ],
-        requiredCompetencies: [
-          { competencyId: 'c-hr-s-recruit', competencyName: '招募甄選', type: 'skill' as const, requiredLevel: 4, weight: 25 },
-          { competencyId: 'c-hr-s-interview', competencyName: '面試技巧', type: 'skill' as const, requiredLevel: 4, weight: 20 },
-          { competencyId: 'c-hr-k-labor', competencyName: '勞動法規知識', type: 'knowledge' as const, requiredLevel: 3, weight: 20 },
-          { competencyId: 'c-core-3', competencyName: '溝通表達', type: 'skill' as const, requiredLevel: 4, weight: 20 },
-          { competencyId: 'c-hr-a-proact', competencyName: '積極主動', type: 'attitude' as const, requiredLevel: 4, weight: 15 }
-        ],
-
-        // 5.1 職能需求 (分類含權重)
-        coreCompetencyRequirements: [
-          { competencyId: 'core-001', competencyName: '溝通表達', type: 'core' as const, requiredLevel: 'L4' as const, weight: 15 },
-          { competencyId: 'core-002', competencyName: '問題解決', type: 'core' as const, requiredLevel: 'L3' as const, weight: 10 },
-          { competencyId: 'core-004', competencyName: '客戶導向', type: 'core' as const, requiredLevel: 'L3' as const, weight: 10 }
-        ],
-        managementCompetencyRequirements: [],
-        ksaCompetencyRequirements: [
-          { competencyId: 'ksa-k-001', competencyName: '勞動法規知識', ksaType: 'knowledge' as const, weight: 15 },
-          { competencyId: 'ksa-k-002', competencyName: '績效管理知識', ksaType: 'knowledge' as const, weight: 10 },
-          { competencyId: 'ksa-s-001', competencyName: '招募甄選能力', ksaType: 'skill' as const, weight: 15 },
-          { competencyId: 'ksa-s-002', competencyName: '面試技巧', ksaType: 'skill' as const, weight: 10 },
-          { competencyId: 'ksa-a-001', competencyName: '主動積極', ksaType: 'attitude' as const, weight: 10 },
-          { competencyId: 'ksa-a-002', competencyName: '正直誠實', ksaType: 'attitude' as const, weight: 5 }
-        ],
-
-        // 5.2 職能內涵 (K/S/A) - 依據 HR-4-084 MD 文件
-        ksaContent: {
-          knowledge: [
-            { code: 'K01', name: '產業、公司概況與人事規章制度', description: '了解產業趨勢與公司人事規定' },
-            { code: 'K02', name: '招募甄選、僱用與引導作業流程概念', description: '熟悉完整招募作業流程' },
-            { code: 'K03', name: '人力規劃及需求分析', description: '能分析人力需求並規劃招募計畫' },
-            { code: 'K04', name: '工作分析與職位說明書', description: '能撰寫與維護職位說明書' },
-            { code: 'K05', name: '勞動相關法令', description: '就業服務法、勞動基準法、稅法、職工福利金條例、身心障礙權益保障法、性別工作平等法、性騷擾防治法、個人資料保護法、勞動事件法等' },
-            { code: 'K06', name: '雇主品牌的概念', description: '了解雇主品牌經營與人才吸引策略' },
-            { code: 'K07', name: '內外部徵才管道', description: '熟悉各種徵才管道的運用' },
-            { code: 'K08', name: '公司甄選流程與工具', description: '熟悉公司甄選流程與評估工具' },
-            { code: 'K09', name: '職業適性測驗工具', description: '了解職業適性測驗的應用' },
-            { code: 'K10', name: '職能測評工具', description: '熟悉職能測評工具的使用' },
-            { code: 'K11', name: '性格測驗工具', description: '了解性格測驗的應用與解讀' },
-            { code: 'K12', name: '人才資料庫資料更新與管理', description: '能維護與管理人才資料庫' },
-            { code: 'K13', name: '公司訓練政策', description: '了解公司訓練政策與新人訓練流程' },
-            { code: 'K14', name: '產業勞動力供需資訊', description: '掌握產業人才市場動態' }
-          ],
-          skills: [
-            { code: 'S01', name: '基礎專案管理能力', description: '能有效管理招募專案' },
-            { code: 'S02', name: '時間管理能力', description: '能有效管理招募時程' },
-            { code: 'S03', name: '正確傾聽與溝通協調技巧', description: '能與用人主管及應徵者有效溝通' },
-            { code: 'S04', name: '基礎統計分析與解讀能力', description: '能分析招募數據與成效' },
-            { code: 'S05', name: '公文文書撰寫能力', description: '能撰寫招募相關文件' },
-            { code: 'S06', name: '電腦文書軟體操作能力', description: '熟練操作辦公軟體' },
-            { code: 'S07', name: '資料蒐集能力', description: '能蒐集產業與人才市場資訊' },
-            { code: 'S08', name: '文案撰寫能力', description: '能撰寫吸引人才的職缺說明' },
-            { code: 'S09', name: '人脈拓展能力', description: '能建立與維護人才網絡' },
-            { code: 'S10', name: '招募系統應用能力', description: '熟練操作招募管理系統' },
-            { code: 'S11', name: '履歷篩選能力', description: '能有效篩選符合條件的履歷' },
-            { code: 'S12', name: '面談設計與面談技巧', description: '能設計結構化面試並有效評估應徵者' },
-            { code: 'S13', name: '問題解決能力', description: '能解決招募過程中的問題' },
-            { code: 'S14', name: '視訊工具應用能力', description: '能運用視訊工具進行遠距面試' },
-            { code: 'S15', name: '人際互動與表達能力', description: '能與各層級人員有效互動' },
-            { code: 'S23', name: '人力資源需求規劃能力', description: '能規劃人力資源需求' },
-            { code: 'S24', name: '人力資源報告撰寫能力', description: '能撰寫招募成效報告' }
-          ],
-          attitudes: [
-            { code: 'A01', name: '主動積極', description: '不需他人指示或要求能自動自發做事，面臨問題立即採取行動加以解決' },
-            { code: 'A02', name: '正直誠實', description: '展現高道德標準及值得信賴的行為，以維持組織誠信為行事原則' },
-            { code: 'A03', name: '持續學習', description: '能夠展現自我提升的企圖心，學習任務所需的新知識與技能' },
-            { code: 'A04', name: '謹慎細心', description: '對於任務的執行過程，能謹慎考量及處理所有細節' },
-            { code: 'A05', name: '壓力容忍', description: '冷靜且有效地應對及處理高度緊張的情況或壓力' },
-            { code: 'A06', name: '自我管理', description: '設立定義明確且實際可行的個人目標，展現高度進取與負責任的行為' },
-            { code: 'A07', name: '親和力', description: '對他人表現理解、友善、同理心、關心和禮貌，並能與不同背景的人發展及維持良好關係' },
-            { code: 'A08', name: '應對不確定性', description: '當狀況不明或問題不夠具體的情況下，能在必要時採取行動，以有效釐清模糊不清的態勢' }
-          ]
-        },
-
-        // 6. 工作描述
-        workDescription: [
-          '確認人力需求並規劃招募作業',
-          '運用多元徵才管道尋找人才',
-          '執行面試與甄選作業',
-          '進行背景調查與錄用決策',
-          '維護雇主品牌與招募成效分析'
-        ],
-
-        // 7. 檢查清單
-        checklist: [
-          { item: '確認人力需求單', points: 1 },
-          { item: '更新職缺說明', points: 1 },
-          { item: '發布職缺', points: 1 },
-          { item: '篩選履歷', points: 2 },
-          { item: '安排面試', points: 2 },
-          { item: '進行背景調查', points: 2 },
-          { item: '完成錄用通知', points: 2 }
-        ],
-
-        // 8. 職務責任
-        jobDuties: [
-          '確保招募作業符合組織需求',
-          '維護良好的應徵者體驗',
-          '達成招募目標與時程',
-          '確保甄選過程公正公平',
-          '維護招募資料保密性'
-        ],
-
-        // 9. 每日工作
-        dailyTasks: [
-          '查看履歷與安排面試',
-          '與用人主管溝通招募進度',
-          '回覆應徵者詢問',
-          '更新招募系統資料'
-        ],
-
-        // 10. 每週工作
-        weeklyTasks: [
-          '彙整招募進度報告',
-          '檢視各職缺招募狀態',
-          '優化招募管道效益',
-          '參與面試與甄選會議'
-        ],
-
-        // 11. 每月工作
-        monthlyTasks: [
-          '編製招募月報',
-          '分析招募成效指標',
-          '優化招募流程',
-          '更新職缺說明書',
-          '維護雇主品牌活動'
-        ],
-
-        // 元資料
-        summary: '依據產業或組織發展的用人規劃需求，執行人員招募甄選之任務，協助組織尋找合適人才、適時檢視招募甄選成效與提出改善建議。',
-        version: '1.0',
-        status: 'published' as const,
-        createdAt: new Date('2024-01-20'),
-        updatedAt: new Date('2024-11-20'),
-        createdBy: 'HR Admin'
-      },
-      // =====================================================
-      // JD-006: 財務會計
-      // 來源: Bombus-ISMS-HR-4-096-財務會計工作職務說明書-V1.0-1130229.pdf
-      // =====================================================
-      {
-        id: 'jd-fin-acc-001',
-        positionCode: 'HR-4-096',
-        positionName: '財務會計',
-        department: '財務部',
-        gradeLevel: 'P2',
-
-        // 1. 主要職責
-        responsibilities: [
-          '負責監督和管理公司專案的財務活動，確保專案的財務規劃、預算管理、成本控制和財務報告的準確性和及時性',
-          '與專案團隊和其他部門密切合作，確保專案的財務健康和合規性',
-          '制定和管理專案的財務計劃和預算，確保專案資金的有效分配和使用',
-          '監控專案的財務狀況，包括收入、成本和支出，及時報告財務狀況和異常情況',
-          '協助專案部進行財務分析和決策，提供準確的財務數據和建議',
-          '與專案團隊合作，確保專案的財務活動符合公司的財務政策和程序',
-          '編制和審核專案的財務報告，確保數據的準確性和完整性',
-          '識別和評估專案的財務風險，並提出風險管理方案',
-          '參與專案的成本控制和優化活動，確保專案的財務效益最大化',
-          '與內部和外部審計機構合作，確保專案的財務活動符合相關法律和規範',
-          '提供財務培訓和指導，提升專案團隊的財務管理能力'
-        ],
-
-        // 2. 職務目的
-        jobPurpose: [
-          '收齊所有應收的收入、及時支付的支出與有形資產，以增加資產的價值',
-          '讓公司主管隨時都能獲得精準、及時的財務資料',
-          '規畫管理財務與稅務會計，並維護會計系統，確保它符合管理階層與政府機關的要求',
-          '確保企業的財務狀況良好，並提供準確的財務資訊來支持管理層的決策'
-        ],
-
-        // 3. 職務要求
-        qualifications: [
-          '具會計或財務相關專業學經歷，至少5年以上財務管理經驗，專案財務管理經驗者優先',
-          '熟悉財務分析、預算管理和成本控制的工具和方法',
-          '從事會計及簿記之記錄與計算、付款、收款及開立扣繳或免扣繳憑單等工作',
-          '從事分析企業各項量化資料，提出與財務、投資、融資等相關之專業報告',
-          '優秀的數據分析和報告能力，能夠準確地解讀和呈現財務數據',
-          '優秀的溝通和協調能力，能夠與多個部門和團隊合作',
-          '良好的問題解決和決策能力，能夠在壓力下工作',
-          '熟練使用財務管理ERP系統和MS Office套件（特別是Excel）',
-          '熟悉會計準則和稅法法規'
-        ],
-
-        // 4. 最終有價值產品 VFP
-        vfp: [
-          '正確、及時紀錄並保存完整的財務資料'
-        ],
-
-        // 5. 職能基準 (包含 KSA)
-        competencyStandards: [
-          {
-            mainDuty: '製作組織財務原始憑證',
-            tasks: [
-              { taskName: '審查財務收款文件及憑證', outputs: ['付款傳票', '沖帳傳票'], indicators: ['依據一般記帳與會計準則，辦理組織專案或協力廠商之支出請款事宜', '確認經辦人員依權責辦理各類原始憑證', '確認原始記帳憑證與會計科目正確無誤'] },
-              { taskName: '辦理日常應付帳款作業', outputs: ['應付帳款報表'], indicators: ['核對ERP與紙本憑證一致，入ERP作業'] }
-            ]
-          }
-        ],
-        requiredCompetencies: [
-          { competencyId: 'c-hr-k-acc', competencyName: '會計專業知識', type: 'knowledge' as const, requiredLevel: 4, weight: 25 },
-          { competencyId: 'c-prof-4', competencyName: '資料分析', type: 'skill' as const, requiredLevel: 4, weight: 20 },
-          { competencyId: 'c-hr-k-tax', competencyName: '稅務法規知識', type: 'knowledge' as const, requiredLevel: 3, weight: 20 },
-          { competencyId: 'c-core-3', competencyName: '溝通表達', type: 'skill' as const, requiredLevel: 3, weight: 15 },
-          { competencyId: 'c-hr-a-care', competencyName: '細心謹慎', type: 'attitude' as const, requiredLevel: 4, weight: 20 }
-        ],
-
-        // 5.1 職能需求 (分類含權重)
-        coreCompetencyRequirements: [
-          { competencyId: 'core-001', competencyName: '溝通表達', type: 'core' as const, requiredLevel: 'L3' as const, weight: 10 },
-          { competencyId: 'core-002', competencyName: '問題解決', type: 'core' as const, requiredLevel: 'L3' as const, weight: 10 },
-          { competencyId: 'core-005', competencyName: '成長思維', type: 'core' as const, requiredLevel: 'L3' as const, weight: 5 }
-        ],
-        managementCompetencyRequirements: [],
-        ksaCompetencyRequirements: [
-          { competencyId: 'ksa-k-001', competencyName: '會計專業知識', ksaType: 'knowledge' as const, weight: 20 },
-          { competencyId: 'ksa-k-002', competencyName: '稅務法規知識', ksaType: 'knowledge' as const, weight: 15 },
-          { competencyId: 'ksa-s-001', competencyName: '資料分析能力', ksaType: 'skill' as const, weight: 15 },
-          { competencyId: 'ksa-s-002', competencyName: '財務報表編製能力', ksaType: 'skill' as const, weight: 10 },
-          { competencyId: 'ksa-a-001', competencyName: '謹慎細心', ksaType: 'attitude' as const, weight: 10 },
-          { competencyId: 'ksa-a-002', competencyName: '持續學習', ksaType: 'attitude' as const, weight: 5 }
-        ],
-
-        // 5.2 職能內涵 (K/S/A) - 依據 HR-4-096 MD 文件
-        ksaContent: {
-          knowledge: [
-            { code: 'K01', name: '財務相關法規', description: 'TIFRS(國際會計準則)、商業會計法、商業會計處理準則、稅法、洗錢防制法、公司法、證券交易法' },
-            { code: 'K02', name: '財務報表相關知識', description: '資產負債表、綜合損益表、權益變動表與現金流量表、財務資訊、各類政府規定之申報表' },
-            { code: 'K03', name: '成本概論', description: '成本分析與成本控制方法' },
-            { code: 'K04', name: '電腦資訊相關知識', description: '財務管理ERP系統和MS Office套件操作' },
-            { code: 'K05', name: '財務分析規劃相關知識', description: '財務分析、預算管理和成本控制的工具和方法' },
-            { code: 'K06', name: '產業趨勢', description: '了解產業現況與專案財務管理趨勢' }
-          ],
-          skills: [
-            { code: 'S01', name: '電腦資訊應用能力', description: '熟練操作財務管理ERP系統' },
-            { code: 'S02', name: '資料蒐集彙整能力', description: '能有效蒐集並彙整專案財務資料' },
-            { code: 'S03', name: '文書處理能力', description: '能撰寫專業財務報告與文件' },
-            { code: 'S04', name: '分析規劃能力', description: '能進行專案財務分析與規劃' },
-            { code: 'S05', name: '計算能力', description: '準確計算專案財務數據' },
-            { code: 'S06', name: '檢核能力', description: '能仔細檢核專案財務資料的正確性' },
-            { code: 'S07', name: '專案報表管理能力', description: '能編製與管理專案財務報表' }
-          ],
-          attitudes: [
-            { code: 'A01', name: '主動積極', description: '不需他人指示或要求能自動自發做事，面臨問題立即採取行動加以解決' },
-            { code: 'A02', name: '正直誠實', description: '展現高道德標準及值得信賴的行為，以維持組織誠信為行事原則' },
-            { code: 'A03', name: '持續學習', description: '能夠展現自我提升的企圖心，學習任務所需的新知識與技能' },
-            { code: 'A04', name: '謹慎細心', description: '對於任務的執行過程，能謹慎考量及處理所有細節' },
-            { code: 'A05', name: '壓力容忍', description: '冷靜且有效地應對及處理高度緊張的情況或壓力' },
-            { code: 'A06', name: '自我管理', description: '設立定義明確且實際可行的個人目標，展現高度進取與負責任的行為' }
-          ]
-        },
-
-        // 6. 工作描述
-        workDescription: [
-          '監督和管理專案的財務活動',
-          '制定和管理專案的財務計劃和預算',
-          '編制和審核專案的財務報告',
-          '識別和評估專案的財務風險',
-          '提供財務培訓和指導'
-        ],
-
-        // 7. 檢查清單
-        checklist: [
-          { item: '審查財務收款文件', points: 2 },
-          { item: '製作付款傳票', points: 2 },
-          { item: '核對ERP與紙本憑證', points: 2 },
-          { item: '編制財務報告', points: 3 },
-          { item: '評估財務風險', points: 3 }
-        ],
-
-        // 8. 職務責任
-        jobDuties: [
-          '確保專案財務報告的準確性',
-          '維護專案的財務健康',
-          '支持專案部的財務決策',
-          '確保財務活動符合法規要求'
-        ],
-
-        // 9. 每日工作
-        dailyTasks: [
-          '審核財務憑證',
-          '登錄會計傳票',
-          '處理專案收支',
-          '回覆財務詢問'
-        ],
-
-        // 10. 每週工作
-        weeklyTasks: [
-          '編製週報表',
-          '檢視專案預算執行',
-          '核對帳務資料',
-          '與專案團隊溝通'
-        ],
-
-        // 11. 每月工作
-        monthlyTasks: [
-          '編製專案財務報表',
-          '進行預算差異分析',
-          '提交管理報表',
-          '進行月度結帳'
-        ],
-
-        // 元資料
-        summary: '負責監督和管理公司專案的財務活動，確保專案的財務規劃、預算管理、成本控制和財務報告的準確性和及時性。',
-        version: '1.0',
-        status: 'published' as const,
-        createdAt: new Date('2024-02-15'),
-        updatedAt: new Date('2024-11-20'),
-        createdBy: 'HR Admin'
-      },
-      // =====================================================
-      // JD-007: 業務部業務
-      // 來源: Bombus-ISMS-HR-4-093-業務部業務工作職務說明書-V1.0-1130229.pdf
-      // =====================================================
-      {
-        id: 'jd-sales-001',
-        positionCode: 'HR-4-093',
-        positionName: '業務部業務',
-        department: '業務部',
-        gradeLevel: 'P2',
-
-        // 1. 主要職責
-        responsibilities: [
-          '進行專案提案企畫',
-          '掌握客戶需求',
-          '協助開發潛在客戶',
-          '經營與維繫客戶關係',
-          '處理客戶抱怨及問題',
-          '維護良好的客戶互動'
-        ],
-
-        // 2. 職務目的
-        jobPurpose: [
-          '收齊所有應收的收入、及時支付的支出與有形資產，以增加資產的價值',
-          '讓公司主管隨時都能獲得精準、及時的財務資料',
-          '規畫管理財務與稅務會計，並維護會計系統，確保它符合管理階層與政府機關的要求',
-          '確保企業的財務狀況良好，並提供準確的財務資訊來支持管理層的決策'
-        ],
-
-        // 3. 職務要求
-        qualifications: [
-          '業務或相關科系大學以上學歷',
-          '2年以上業務相關經驗',
-          '具備良好的溝通與談判能力',
-          '熟悉客戶關係管理',
-          '具備問題解決能力'
-        ],
-
-        // 4. 最終有價值產品 VFP
-        vfp: [
-          '正確、及時紀錄並保存完整的財務資料',
-          '達成業務目標',
-          '維護良好客戶關係'
-        ],
-
-        // 5. 職能基準 (包含 KSA)
-        competencyStandards: [
-          {
-            mainDuty: '管理客戶關係',
-            tasks: [
-              { taskName: '掌握客戶需求', outputs: ['客戶需求紀錄'], indicators: ['依據客戶資料，詢問並釐清客戶對服務或產品的需求及偏好', '針對客戶需求及偏好，提供適合的服務或產品採購建議'] },
-              { taskName: '協助開發潛在客戶', outputs: ['客戶開發紀錄'], indicators: ['依據組織營運目標，訂定年度的客戶開發策略及方式', '運用組織社群網絡關係與科技工具，協助開發潛在客戶'] },
-              { taskName: '經營與維繫客戶關係', outputs: ['客戶聯繫紀錄', '客訴處理紀錄'], indicators: ['根據組織規範與營運策略，協助發展客戶忠誠度', '確認客戶的抱怨及問題，並能及時處理', '與客戶建立及維持良好的互動'] }
-            ]
-          }
-        ],
-        requiredCompetencies: [
-          { competencyId: 'c-core-3', competencyName: '溝通表達', type: 'skill' as const, requiredLevel: 4, weight: 25 },
-          { competencyId: 'c-hr-s-nego', competencyName: '談判協商', type: 'skill' as const, requiredLevel: 4, weight: 25 },
-          { competencyId: 'c-hr-a-service', competencyName: '服務導向', type: 'attitude' as const, requiredLevel: 4, weight: 20 },
-          { competencyId: 'c-core-2', competencyName: '問題解決', type: 'skill' as const, requiredLevel: 3, weight: 15 },
-          { competencyId: 'c-hr-a-proact', competencyName: '積極主動', type: 'attitude' as const, requiredLevel: 4, weight: 15 }
-        ],
-
-        // 5.1 職能需求 (分類含權重)
-        coreCompetencyRequirements: [
-          { competencyId: 'core-001', competencyName: '溝通表達', type: 'core' as const, requiredLevel: 'L4' as const, weight: 15 },
-          { competencyId: 'core-002', competencyName: '問題解決', type: 'core' as const, requiredLevel: 'L3' as const, weight: 10 },
-          { competencyId: 'core-004', competencyName: '客戶導向', type: 'core' as const, requiredLevel: 'L4' as const, weight: 15 }
-        ],
-        managementCompetencyRequirements: [],
-        ksaCompetencyRequirements: [
-          { competencyId: 'ksa-k-001', competencyName: '產品知識', ksaType: 'knowledge' as const, weight: 15 },
-          { competencyId: 'ksa-k-002', competencyName: '市場知識', ksaType: 'knowledge' as const, weight: 10 },
-          { competencyId: 'ksa-s-001', competencyName: '談判協商能力', ksaType: 'skill' as const, weight: 15 },
-          { competencyId: 'ksa-s-002', competencyName: '客戶關係管理能力', ksaType: 'skill' as const, weight: 10 },
-          { competencyId: 'ksa-a-001', competencyName: '服務導向', ksaType: 'attitude' as const, weight: 5 },
-          { competencyId: 'ksa-a-002', competencyName: '積極主動', ksaType: 'attitude' as const, weight: 5 }
-        ],
-
-        // 5.2 職能內涵 (K/S/A) - 依據 HR-4-093 PDF 文件
-        ksaContent: {
-          knowledge: [
-            { code: 'K01', name: '產業與公司概況知識', description: '了解產業趨勢與公司產品服務' },
-            { code: 'K02', name: '客戶關係管理知識', description: '了解客戶關係管理的原理與方法' },
-            { code: 'K03', name: '銷售流程知識', description: '熟悉銷售流程與技巧' },
-            { code: 'K04', name: '市場分析知識', description: '了解市場分析與競爭分析方法' }
-          ],
-          skills: [
-            { code: 'S01', name: '客戶需求分析能力', description: '能詢問並釐清客戶對服務或產品的需求及偏好' },
-            { code: 'S02', name: '客戶開發能力', description: '運用組織社群網絡關係與科技工具，協助開發潛在客戶' },
-            { code: 'S03', name: '客戶關係維護能力', description: '與客戶建立及維持良好的互動' },
-            { code: 'S04', name: '客訴處理能力', description: '確認客戶的抱怨及問題，並能及時處理' },
-            { code: 'S05', name: '溝通表達能力', description: '能有效與客戶溝通並提供專業建議' },
-            { code: 'S06', name: '談判協商能力', description: '能進行有效的商業談判' }
-          ],
-          attitudes: [
-            { code: 'A01', name: '主動積極', description: '不需他人指示或要求能自動自發做事，面臨問題立即採取行動加以解決' },
-            { code: 'A02', name: '服務導向', description: '以客戶需求為中心，提供優質服務' },
-            { code: 'A03', name: '正直誠實', description: '展現高道德標準及值得信賴的行為' },
-            { code: 'A04', name: '持續學習', description: '能夠展現自我提升的企圖心，學習任務所需的新知識與技能' },
-            { code: 'A05', name: '壓力容忍', description: '冷靜且有效地應對及處理高度緊張的情況或壓力' }
-          ]
-        },
-
-        // 6. 工作描述
-        workDescription: [
-          '掌握客戶需求並提供解決方案',
-          '開發潛在客戶',
-          '維護現有客戶關係',
-          '處理客訴並提升客戶滿意度',
-          '達成業務目標'
-        ],
-
-        // 7. 檢查清單
-        checklist: [
-          { item: '客戶需求記錄', points: 2 },
-          { item: '客戶聯繫記錄', points: 1 },
-          { item: '客訴處理', points: 3 },
-          { item: '業務報表', points: 2 }
-        ],
-
-        // 8. 職務責任
-        jobDuties: [
-          '達成業務目標',
-          '維護客戶滿意度',
-          '開發新客戶',
-          '維護良好客戶關係'
-        ],
-
-        // 9. 每日工作
-        dailyTasks: [
-          '聯繫客戶',
-          '處理客戶詢問',
-          '更新客戶資料',
-          '跟進業務機會'
-        ],
-
-        // 10. 每週工作
-        weeklyTasks: [
-          '業務週報',
-          '客戶拜訪',
-          '業務會議',
-          '檢視業績進度'
-        ],
-
-        // 11. 每月工作
-        monthlyTasks: [
-          '業務月報',
-          '客戶滿意度調查',
-          '業績檢討會議',
-          '市場分析'
-        ],
-
-        // 元資料
-        summary: '負責客戶關係管理、業務開發與維護，確保達成業務目標並維護良好客戶關係。',
-        version: '1.0',
-        status: 'published' as const,
-        createdAt: new Date('2024-02-20'),
-        updatedAt: new Date('2024-11-20'),
-        createdBy: 'HR Admin'
-      },
-      // =====================================================
-      // JD-008: 技術部工程師
-      // 來源: Bombus-ISMS-HR-4-088-技術部工程師工作職務說明書-V1.0-1130119.pdf
-      // =====================================================
-      {
-        id: 'jd-engineer-001',
-        positionCode: 'HR-4-088',
-        positionName: '技術部工程師',
-        department: '技術部',
-        gradeLevel: 'P2',
-
-        // 1. 主要職責
-        responsibilities: [
-          '負責資通網路設備建置、安裝與維護等事宜',
-          '資通網路系統規劃、建置與維護管理',
-          '規劃符合客戶需求之產品，創造業務營收',
-          '路由協定應用',
-          '規劃網路專案執行',
-          '執行企業整合通訊網路',
-          '規劃並組態虛擬私有網路通道協定',
-          '管理資通網路',
-          '監控、分析及處理網路警報'
-        ],
-
-        // 2. 職務目的
-        jobPurpose: [
-          '負責資通網路設備建置、安裝與維護等事宜',
-          '資通網路系統規劃、建置與維護管理',
-          '規劃符合客戶需求之產品，創造業務營收'
-        ],
-
-        // 3. 職務要求
-        qualifications: [
-          '資訊工程、電機或相關科系大學以上學歷',
-          '2年以上網路工程相關經驗',
-          '熟悉網路協定與設備',
-          '具備問題分析與解決能力',
-          '具備團隊合作精神'
-        ],
-
-        // 4. 最終有價值產品 VFP
-        vfp: [
-          '穩定運作的網路系統',
-          '符合客戶需求的技術解決方案',
-          '高品質的技術服務'
-        ],
-
-        // 5. 職能基準 (包含 KSA)
-        competencyStandards: [
-          {
-            mainDuty: '建置資通網路',
-            tasks: [
-              { taskName: '路由協定應用', outputs: ['安裝紀錄'], indicators: ['應用路由協定，確認安全性危害，實施風險控管措施', '設定路由介面，測試進階路由實作定址'] },
-              { taskName: '規劃網路專案執行', outputs: ['執行計畫書'], indicators: ['分析不同型態的網路技術', '檢視法規、規範標準，製作網路部署設計或計畫文件'] },
-              { taskName: '執行企業整合通訊網路', outputs: ['規劃報告', '設定紀錄', '完工報告'], indicators: ['規劃企業整合通訊網路基礎架構建置順序', '安裝並設定企業整合通訊網路基礎架構', '測試與評估網路效能'] },
-              { taskName: '規劃並組態虛擬私有網路通道協定', outputs: ['網路拓樸圖', '設定紀錄', 'VPLS拓樸圖', '定版計畫'], indicators: ['建立多協定標籤交換(MPLS)服務', '組態MPLS網路並驗證訊務工程(TE)', '製作最終設計定版計畫'] }
-            ]
-          },
-          {
-            mainDuty: '管理資通網路',
-            tasks: [
-              { taskName: '監控、分析及處理網路警報', outputs: ['警報處理報告'], indicators: ['規劃網路警報的應變', '根據服務等級協議(SLA)，安排警報的動作及順序', '安排網路問題矯正', '清除警報'] }
-            ]
-          }
-        ],
-        requiredCompetencies: [
-          { competencyId: 'c-tech-network', competencyName: '網路技術', type: 'skill' as const, requiredLevel: 4, weight: 30 },
-          { competencyId: 'c-core-2', competencyName: '問題解決', type: 'skill' as const, requiredLevel: 4, weight: 25 },
-          { competencyId: 'c-tech-security', competencyName: '資訊安全', type: 'knowledge' as const, requiredLevel: 3, weight: 20 },
-          { competencyId: 'c-core-1', competencyName: '團隊合作', type: 'attitude' as const, requiredLevel: 3, weight: 15 },
-          { competencyId: 'c-hr-a-proact', competencyName: '積極主動', type: 'attitude' as const, requiredLevel: 4, weight: 10 }
-        ],
-
-        // 5.1 職能需求 (分類含權重)
-        coreCompetencyRequirements: [
-          { competencyId: 'core-001', competencyName: '溝通表達', type: 'core' as const, requiredLevel: 'L3' as const, weight: 10 },
-          { competencyId: 'core-002', competencyName: '問題解決', type: 'core' as const, requiredLevel: 'L4' as const, weight: 15 },
-          { competencyId: 'core-003', competencyName: '專案思維', type: 'core' as const, requiredLevel: 'L3' as const, weight: 10 },
-          { competencyId: 'core-005', competencyName: '成長思維', type: 'core' as const, requiredLevel: 'L3' as const, weight: 5 }
-        ],
-        managementCompetencyRequirements: [],
-        ksaCompetencyRequirements: [
-          { competencyId: 'ksa-k-001', competencyName: '網路技術知識', ksaType: 'knowledge' as const, weight: 20 },
-          { competencyId: 'ksa-k-002', competencyName: '資訊安全知識', ksaType: 'knowledge' as const, weight: 15 },
-          { competencyId: 'ksa-s-001', competencyName: '系統維運能力', ksaType: 'skill' as const, weight: 10 },
-          { competencyId: 'ksa-s-002', competencyName: '故障排除能力', ksaType: 'skill' as const, weight: 10 },
-          { competencyId: 'ksa-a-001', competencyName: '主動積極', ksaType: 'attitude' as const, weight: 5 }
-        ],
-
-        // 5.2 職能內涵 (K/S/A) - 依據 HR-4-088 PDF 文件
-        ksaContent: {
-          knowledge: [
-            { code: 'K01', name: '網路協定知識', description: '了解路由協定、TCP/IP、MPLS等網路協定' },
-            { code: 'K02', name: '網路架構知識', description: '了解企業網路架構設計與規劃' },
-            { code: 'K03', name: '資訊安全知識', description: '了解網路安全風險與防護措施' },
-            { code: 'K04', name: '虛擬網路技術', description: '了解VPN、VPLS等虛擬網路技術' },
-            { code: 'K05', name: '網路設備知識', description: '熟悉各類網路設備的功能與操作' }
-          ],
-          skills: [
-            { code: 'S01', name: '路由協定應用能力', description: '能應用路由協定，確認安全性危害，實施風險控管措施' },
-            { code: 'S02', name: '網路專案規劃能力', description: '能分析不同型態的網路技術，製作網路部署設計或計畫文件' },
-            { code: 'S03', name: '網路建置能力', description: '能規劃並安裝企業整合通訊網路基礎架構' },
-            { code: 'S04', name: 'VPN設定能力', description: '能規劃並組態虛擬私有網路通道協定' },
-            { code: 'S05', name: '網路監控能力', description: '能監控、分析及處理網路警報' },
-            { code: 'S06', name: '問題解決能力', description: '能診斷並解決網路問題' },
-            { code: 'S07', name: '技術文件撰寫能力', description: '能撰寫技術文件與規劃報告' }
-          ],
-          attitudes: [
-            { code: 'A01', name: '主動積極', description: '不需他人指示或要求能自動自發做事，面臨問題立即採取行動加以解決' },
-            { code: 'A02', name: '正直誠實', description: '展現高道德標準及值得信賴的行為' },
-            { code: 'A03', name: '持續學習', description: '能夠展現自我提升的企圖心，學習新技術與知識' },
-            { code: 'A04', name: '謹慎細心', description: '對於網路設定與操作，能謹慎考量及處理所有細節' },
-            { code: 'A05', name: '壓力容忍', description: '冷靜且有效地應對網路故障與緊急狀況' },
-            { code: 'A06', name: '團隊合作', description: '能與他人有效協作，達成共同目標' }
-          ]
-        },
-
-        // 6. 工作描述
-        workDescription: [
-          '建置與維護網路設備',
-          '規劃與執行網路專案',
-          '監控與處理網路警報',
-          '提供技術支援服務',
-          '撰寫技術文件'
-        ],
-
-        // 7. 檢查清單
-        checklist: [
-          { item: '網路設備運作正常', points: 3 },
-          { item: '網路效能符合標準', points: 2 },
-          { item: '安全性檢查', points: 3 },
-          { item: '文件更新', points: 1 }
-        ],
-
-        // 8. 職務責任
-        jobDuties: [
-          '確保網路系統穩定運作',
-          '及時處理網路問題',
-          '維護網路安全',
-          '提升網路效能'
-        ],
-
-        // 9. 每日工作
-        dailyTasks: [
-          '監控網路狀態',
-          '處理網路警報',
-          '回覆技術詢問',
-          '執行例行維護'
-        ],
-
-        // 10. 每週工作
-        weeklyTasks: [
-          '網路效能分析',
-          '安全性檢查',
-          '設備狀態檢視',
-          '技術會議'
-        ],
-
-        // 11. 每月工作
-        monthlyTasks: [
-          '網路月報',
-          '容量規劃',
-          '安全性評估',
-          '設備盤點',
-          '技術培訓'
-        ],
-
-        // 元資料
-        summary: '負責資通網路設備建置、安裝與維護等事宜，資通網路系統規劃、建置與維護管理。',
-        version: '1.0',
-        status: 'published' as const,
-        createdAt: new Date('2024-03-10'),
-        updatedAt: new Date('2024-11-20'),
-        createdBy: 'HR Admin'
-      },
-      // =====================================================
-      // JD-009: 專業經理人
-      // 來源: Bombus-ISMS-HR-4-082-專業經理人工作職務說明書-V1.0-1130119.pdf
-      // =====================================================
-      {
-        id: 'jd-pro-mgr-001',
-        positionCode: 'HR-4-082',
-        positionName: '專業經理人',
-        department: '管理部',
-        gradeLevel: 'M2',
-
-        // 1. 主要職責
-        responsibilities: [
-          '根據主管制定的目標與職責，規劃職務的目標',
-          '發展出改進公司營運的方案，並呈交主管核准',
-          '從事分析企業各項量化資料，提出與財務、投資、融資等相關之專業報告',
-          '執行各項與資金有關之收、支、存等財務作業',
-          '發展中小型企業之營運計畫，並依營運目標進行產品行銷與財務管理'
-        ],
-
-        // 2. 職務目的
-        jobPurpose: [
-          '規劃與執行公司營運策略',
-          '提升公司營運效能',
-          '達成組織績效目標'
-        ],
-
-        // 3. 職務要求
-        qualifications: [
-          '企業管理或相關科系大學以上學歷',
-          '5年以上管理經驗',
-          '熟悉財務管理與會計原則',
-          '具備領導能力與團隊管理技能',
-          '具備策略思維與分析能力'
-        ],
-
-        // 4. 最終有價值產品 VFP
-        vfp: [
-          '改進公司營運的有效方案',
-          '準確的財務與投資專業報告',
-          '成功執行的營運計畫'
-        ],
-
-        // 5. 職能基準 (包含 KSA)
-        competencyStandards: [
-          {
-            mainDuty: '營運規劃',
-            tasks: [
-              { taskName: '規劃職務目標', outputs: ['目標計畫書'], indicators: ['根據主管制定的目標與職責，規劃職務的目標'] },
-              { taskName: '發展改進方案', outputs: ['營運改善方案'], indicators: ['發展出改進公司營運的方案，並呈交主管核准'] }
-            ]
-          },
-          {
-            mainDuty: '財務分析',
-            tasks: [
-              { taskName: '企業資料分析', outputs: ['財務分析報告', '投資報告', '融資報告'], indicators: ['從事分析企業各項量化資料', '提出與財務、投資、融資等相關之專業報告'] },
-              { taskName: '資金作業執行', outputs: ['財務作業紀錄'], indicators: ['執行各項與資金有關之收、支、存等財務作業'] }
-            ]
-          },
-          {
-            mainDuty: '營運管理',
-            tasks: [
-              { taskName: '營運計畫發展', outputs: ['營運計畫書'], indicators: ['發展中小型企業之營運計畫', '依營運目標進行產品行銷與財務管理'] }
-            ]
-          }
-        ],
-        requiredCompetencies: [
-          { competencyId: 'c-mgmt-3', competencyName: '策略規劃', type: 'skill' as const, requiredLevel: 4, weight: 25 },
-          { competencyId: 'c-mgmt-1', competencyName: '團隊領導', type: 'skill' as const, requiredLevel: 4, weight: 20 },
-          { competencyId: 'c-hr-k-fin', competencyName: '經營管理知識', type: 'knowledge' as const, requiredLevel: 4, weight: 20 },
-          { competencyId: 'c-core-2', competencyName: '問題解決', type: 'skill' as const, requiredLevel: 4, weight: 15 },
-          { competencyId: 'c-core-3', competencyName: '溝通表達', type: 'skill' as const, requiredLevel: 4, weight: 20 }
-        ],
-
-        // 5.1 職能需求 (分類含權重)
-        coreCompetencyRequirements: [
-          { competencyId: 'core-001', competencyName: '溝通表達', type: 'core' as const, requiredLevel: 'L4' as const, weight: 10 },
-          { competencyId: 'core-002', competencyName: '問題解決', type: 'core' as const, requiredLevel: 'L4' as const, weight: 10 },
-          { competencyId: 'core-003', competencyName: '專案思維', type: 'core' as const, requiredLevel: 'L4' as const, weight: 10 },
-          { competencyId: 'core-004', competencyName: '客戶導向', type: 'core' as const, requiredLevel: 'L4' as const, weight: 5 },
-          { competencyId: 'core-005', competencyName: '成長思維', type: 'core' as const, requiredLevel: 'L4' as const, weight: 5 }
-        ],
-        managementCompetencyRequirements: [
-          { competencyId: 'mgmt-001', competencyName: '人才發展', type: 'management' as const, requiredLevel: 'L4' as const, weight: 10 },
-          { competencyId: 'mgmt-002', competencyName: '決策能力', type: 'management' as const, requiredLevel: 'L4' as const, weight: 10 },
-          { competencyId: 'mgmt-003', competencyName: '團隊領導', type: 'management' as const, requiredLevel: 'L4' as const, weight: 10 }
-        ],
-        ksaCompetencyRequirements: [
-          { competencyId: 'ksa-k-001', competencyName: '經營管理知識', ksaType: 'knowledge' as const, weight: 10 },
-          { competencyId: 'ksa-s-001', competencyName: '策略規劃能力', ksaType: 'skill' as const, weight: 10 },
-          { competencyId: 'ksa-s-002', competencyName: '營運管理能力', ksaType: 'skill' as const, weight: 5 },
-          { competencyId: 'ksa-a-001', competencyName: '主動積極', ksaType: 'attitude' as const, weight: 5 }
-        ],
-
-        // 5.2 職能內涵 (K/S/A) - 依據 HR-4-082 MD 文件
-        ksaContent: {
-          knowledge: [
-            { code: 'K01', name: '財務相關法規', description: 'TIFRS(國際會計準則)、商業會計法、稅法等財務法規' },
-            { code: 'K02', name: '財務報表相關知識', description: '資產負債表、綜合損益表、權益變動表與現金流量表等' },
-            { code: 'K03', name: '成本概論', description: '成本分析與成本控制方法' },
-            { code: 'K04', name: '電腦資訊相關知識', description: '進銷存系統與辦公軟體操作' },
-            { code: 'K05', name: '財務分析規劃相關知識', description: '財務分析方法與營運規劃技巧' },
-            { code: 'K06', name: '產業趨勢', description: '了解產業現況與未來發展趨勢' },
-            { code: 'K07', name: '風險管理', description: '了解風險評估與管控方法' }
-          ],
-          skills: [
-            { code: 'S01', name: '電腦資訊應用能力', description: '熟練操作進銷存系統與辦公軟體' },
-            { code: 'S02', name: '資料蒐集彙整能力', description: '能有效蒐集並彙整營運資料' },
-            { code: 'S03', name: '文書處理能力', description: '能撰寫專業營運報告與文件' },
-            { code: 'S04', name: '分析規劃能力', description: '能進行營運分析與策略規劃' },
-            { code: 'S05', name: '計算能力', description: '準確計算各項營運數據' },
-            { code: 'S06', name: '檢核能力', description: '能仔細檢核營運資料的正確性' },
-            { code: 'S07', name: '專案報表管理能力', description: '能編製與管理營運報表' }
-          ],
-          attitudes: [
-            { code: 'A01', name: '主動積極', description: '不需他人指示或要求能自動自發做事，面臨問題立即採取行動加以解決' },
-            { code: 'A02', name: '正直誠實', description: '展現高道德標準及值得信賴的行為，以維持組織誠信為行事原則' },
-            { code: 'A03', name: '持續學習', description: '能夠展現自我提升的企圖心，學習任務所需的新知識與技能' },
-            { code: 'A04', name: '謹慎細心', description: '對於任務的執行過程，能謹慎考量及處理所有細節' },
-            { code: 'A05', name: '壓力容忍', description: '冷靜且有效地應對及處理高度緊張的情況或壓力' },
-            { code: 'A06', name: '自我管理', description: '設立定義明確且實際可行的個人目標，展現高度進取與負責任的行為' }
-          ]
-        },
-
-        // 6. 工作描述
-        workDescription: [
-          '根據主管制定的目標與職責，規劃職務的目標',
-          '發展出改進公司營運的方案',
-          '從事分析企業各項量化資料',
-          '執行各項與資金有關之財務作業',
-          '發展中小型企業之營運計畫'
-        ],
-
-        // 7. 檢查清單
-        checklist: [
-          { item: '目標計畫書完成', points: 3 },
-          { item: '財務報告審核', points: 3 },
-          { item: '營運方案提交', points: 4 },
-          { item: '預算執行檢視', points: 2 }
-        ],
-
-        // 8. 職務責任
-        jobDuties: [
-          '達成營運目標',
-          '提升公司效能',
-          '確保財務健康',
-          '培育團隊成員'
-        ],
-
-        // 9. 每日工作
-        dailyTasks: [
-          '審核重要文件',
-          '參與決策會議',
-          '監控營運狀況',
-          '處理緊急事務'
-        ],
-
-        // 10. 每週工作
-        weeklyTasks: [
-          '召開部門週會',
-          '審核週報',
-          '與主管匯報進度',
-          '檢視績效指標'
-        ],
-
-        // 11. 每月工作
-        monthlyTasks: [
-          '編製月度報表',
-          '召開月度檢討會議',
-          '進行績效評估',
-          '更新營運計畫',
-          '提交管理報告'
-        ],
-
-        // 元資料
-        summary: '負責規劃與執行公司營運策略，分析企業資料並提出專業報告，達成組織績效目標。',
-        version: '1.0',
-        status: 'published' as const,
-        createdAt: new Date('2024-03-15'),
-        updatedAt: new Date('2024-11-20'),
-        createdBy: 'HR Admin'
-      }
-    ];
-    return of(jds).pipe(delay(400));
+  getJobDescriptions(params?: { status?: string; department?: string }): Observable<JobDescription[]> {
+    let url = `${this.apiUrl}/job-descriptions`;
+    if (params) {
+      const q = new URLSearchParams();
+      if (params.status) q.set('status', params.status);
+      if (params.department) q.set('department', params.department);
+      const qs = q.toString();
+      if (qs) url += '?' + qs;
+    }
+    return this.http.get<{ success: boolean; data: any[] }>(url).pipe(
+      map(res => (res.success && res.data ? res.data.map(d => this.mapApiToJobDescription(d)) : [])),
+      catchError(() => of([]))
+    );
   }
+
+  getJobDescriptionById(id: string): Observable<JobDescription | null> {
+    return this.http.get<{ success: boolean; data: any }>(`${this.apiUrl}/job-descriptions/${id}`).pipe(
+      map(res => (res.success && res.data ? this.mapApiToJobDescription(res.data) : null)),
+      catchError(() => of(null))
+    );
+  }
+
+  createJobDescription(jd: Partial<JobDescription>): Observable<JobDescription | null> {
+    const payload = this.jobDescriptionToApiPayload(jd);
+    return this.http.post<{ success: boolean; data: any }>(`${this.apiUrl}/job-descriptions`, payload).pipe(
+      map(res => (res.success && res.data ? this.mapApiToJobDescription(res.data) : null)),
+      catchError(() => of(null))
+    );
+  }
+
+  updateJobDescription(id: string, jd: Partial<JobDescription>): Observable<JobDescription | null> {
+    const payload = this.jobDescriptionToApiPayload(jd);
+    return this.http.put<{ success: boolean; data: any }>(`${this.apiUrl}/job-descriptions/${id}`, payload).pipe(
+      map(res => (res.success && res.data ? this.mapApiToJobDescription(res.data) : null)),
+      catchError(() => of(null))
+    );
+  }
+
+  deleteJobDescription(id: string): Observable<boolean> {
+    return this.http.delete<{ success: boolean }>(`${this.apiUrl}/job-descriptions/${id}`).pipe(
+      map(res => res.success === true),
+      catchError(() => of(false))
+    );
+  }
+
+  generateJDCode(departmentCode: string, grade: number): Observable<string | null> {
+    const url = `${this.apiUrl}/job-descriptions/generate-code?department=${encodeURIComponent(departmentCode)}&grade=${grade}`;
+    return this.http.get<{ success: boolean; data: { positionCode: string } }>(url).pipe(
+      map(res => (res.success && res.data?.positionCode ? res.data.positionCode : null)),
+      catchError(() => of(null))
+    );
+  }
+
+  getGradeLevelsForJD(): Observable<any[]> {
+    return this.http.get<{ success: boolean; data: any[] }>(`${this.apiUrl}/grade-matrix`).pipe(
+      map(res => (res.success && Array.isArray(res.data) ? res.data : [])),
+      catchError(() => of([]))
+    );
+  }
+
+  getPositions(department?: string, grade?: number): Observable<any[]> {
+    let url = `${this.apiUrl}/grade-matrix/positions/list`;
+    const params = new URLSearchParams();
+    if (department) params.set('department', department);
+    if (grade != null) params.set('grade', String(grade));
+    const qs = params.toString();
+    if (qs) url += '?' + qs;
+    return this.http.get<{ success: boolean; data: any[] }>(url).pipe(
+      map(res => (res.success && res.data ? res.data : [])),
+      catchError(() => of([]))
+    );
+  }
+
+  private mapApiToJobDescription(d: any): JobDescription {
+    const arr = (v: any) => (Array.isArray(v) ? v : (v ? [v] : []));
+    return {
+      id: d.id,
+      positionCode: d.positionCode ?? d.position_code ?? '',
+      positionName: d.positionName ?? d.position_name ?? '',
+      department: d.department ?? '',
+      gradeLevel: d.gradeLevel ?? (d.grade != null ? String(d.grade) : '') ?? d.gradeCode ?? '',
+      responsibilities: arr(d.responsibilities),
+      jobPurpose: arr(d.jobPurpose ?? d.job_purpose),
+      qualifications: arr(d.qualifications),
+      vfp: arr(d.vfp),
+      competencyStandards: arr(d.competencyStandards ?? d.competency_standards),
+      requiredCompetencies: arr(d.requiredCompetencies ?? d.required_competencies),
+      coreCompetencyRequirements: arr(d.coreCompetencyRequirements ?? d.core_competency_requirements),
+      managementCompetencyRequirements: arr(d.managementCompetencyRequirements ?? d.management_competency_requirements),
+      professionalCompetencyRequirements: arr((d as any).professionalCompetencyRequirements ?? (d as any).professional_competency_requirements),
+      ksaCompetencyRequirements: arr(d.ksaCompetencyRequirements ?? d.ksa_competency_requirements),
+      ksaContent: d.ksaContent ?? d.ksa_content ?? undefined,
+      workDescription: arr(d.workDescription ?? d.work_description),
+      checklist: arr(d.checklist),
+      jobDuties: arr(d.jobDuties ?? d.job_duties),
+      dailyTasks: arr(d.dailyTasks ?? d.daily_tasks),
+      weeklyTasks: arr(d.weeklyTasks ?? d.weekly_tasks),
+      monthlyTasks: arr(d.monthlyTasks ?? d.monthly_tasks),
+      summary: d.summary ?? '',
+      version: d.version ?? '1.0',
+      status: (d.status === 'draft' || d.status === 'published' || d.status === 'archived' ? d.status : 'draft') as 'draft' | 'published' | 'archived',
+      createdAt: d.createdAt ? new Date(d.createdAt) : new Date(),
+      updatedAt: d.updatedAt ? new Date(d.updatedAt) : new Date(),
+      createdBy: d.createdBy ?? d.created_by ?? ''
+    };
+  }
+
+  private jobDescriptionToApiPayload(jd: Partial<JobDescription>): any {
+    return {
+      id: jd.id,
+      positionCode: jd.positionCode,
+      positionName: jd.positionName,
+      department: jd.department,
+      grade: (jd as any).grade != null ? (jd as any).grade : (jd.gradeLevel ? parseInt(String(jd.gradeLevel), 10) : undefined),
+      gradeCode: (jd as any).gradeCode,
+      positionTitle: (jd as any).positionTitle,
+      summary: jd.summary,
+      version: jd.version,
+      status: jd.status,
+      responsibilities: jd.responsibilities ?? [],
+      jobPurpose: jd.jobPurpose ?? [],
+      qualifications: jd.qualifications ?? [],
+      vfp: jd.vfp ?? [],
+      competencyStandards: jd.competencyStandards ?? [],
+      requiredCompetencies: jd.requiredCompetencies ?? [],
+      coreCompetencyRequirements: jd.coreCompetencyRequirements ?? [],
+      managementCompetencyRequirements: jd.managementCompetencyRequirements ?? [],
+      professionalCompetencyRequirements: (jd as any).professionalCompetencyRequirements ?? [],
+      ksaCompetencyRequirements: jd.ksaCompetencyRequirements ?? [],
+      ksaContent: jd.ksaContent,
+      workDescription: jd.workDescription ?? [],
+      checklist: jd.checklist ?? [],
+      jobDuties: jd.jobDuties ?? [],
+      dailyTasks: jd.dailyTasks ?? [],
+      weeklyTasks: jd.weeklyTasks ?? [],
+      monthlyTasks: jd.monthlyTasks ?? [],
+      createdBy: jd.createdBy
+    };
+  }
+
 
   // =====================================================
   // Private Mock Data Methods

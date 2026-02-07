@@ -84,7 +84,7 @@
         <app-view-toggle [viewMode]="viewMode()" [moduleColor]="'#D6A28C'" (viewModeChange)="setViewMode($event)" />
         <button class="btn-primary" type="button" (click)="router.navigate(['/competency/job-description/create'])">
           <i class="ri-add-line"></i>
-          發布職缺
+          新增職務說明書
         </button>
       </div>
     </div>
@@ -245,6 +245,10 @@
               <span class="info-value">{{ jd.gradeLevel }}</span>
             </div>
             <div class="info-item">
+              <span class="info-label">職位</span>
+              <span class="info-value">{{ jd.positionTitle || '未設定' }}</span>
+            </div>
+            <div class="info-item">
               <span class="info-label">版本</span>
               <span class="info-value">{{ jd.version }}</span>
             </div>
@@ -386,6 +390,36 @@
                   <tr>
                     <td>{{ comp.competencyName }}</td>
                     <td><span class="level-badge management">{{ comp.requiredLevel }}</span></td>
+                    <td><span class="weight-badge">{{ comp.weight }}%</span></td>
+                  </tr>
+                  }
+                </tbody>
+              </table>
+              } @else {
+              <span class="no-data">未設定</span>
+              }
+            </div>
+
+            <!-- 專業職能 -->
+            <div class="competency-section">
+              <h5 class="competency-section-title">
+                <i class="ri-briefcase-line"></i>
+                專業職能
+              </h5>
+              @if (jd.professionalCompetencyRequirements && jd.professionalCompetencyRequirements.length > 0) {
+              <table class="competency-table">
+                <thead>
+                  <tr>
+                    <th>職能名稱</th>
+                    <th>需求等級</th>
+                    <th>權重</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (comp of jd.professionalCompetencyRequirements; track comp.competencyId) {
+                  <tr>
+                    <td>{{ comp.competencyName }}</td>
+                    <td><span class="level-badge professional">{{ comp.requiredLevel }}</span></td>
                     <td><span class="weight-badge">{{ comp.weight }}%</span></td>
                   </tr>
                   }

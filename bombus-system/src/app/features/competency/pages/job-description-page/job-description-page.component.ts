@@ -43,7 +43,7 @@ export class JobDescriptionPageComponent implements OnInit {
   jobDescriptions = signal<JobDescription[]>([]);
   loading = signal(true);
 
-  // 職能基準庫資料
+  // 職能模型基準資料
   coreCompetencies = signal<CoreManagementCompetency[]>([]);
   managementCompetencies = signal<CoreManagementCompetency[]>([]);
   ksaCompetencies = signal<KSACompetencyItem[]>([]);
@@ -380,12 +380,12 @@ export class JobDescriptionPageComponent implements OnInit {
 
   getLevelLabel(level: CompetencyGradeLevel): string {
     const levelMap: Record<CompetencyGradeLevel, string> = {
-      'L1': 'L1 - 基礎執行',
-      'L2': 'L2 - 獨立作業',
-      'L3': 'L3 - 帶領團隊',
-      'L4': 'L4 - 策略規劃',
-      'L5': 'L5 - 高階領導',
-      'L6': 'L6 - 戰略引領'
+      'L1': 'L1',
+      'L2': 'L2',
+      'L3': 'L3',
+      'L4': 'L4',
+      'L5': 'L5',
+      'L6': 'L6'
     };
     return levelMap[level] || level;
   }

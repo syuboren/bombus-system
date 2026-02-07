@@ -1052,6 +1052,11 @@ $module-color-dark: $color-l2-terracotta-dark;
     background: rgba(#8B5CF6, 0.12);
     color: #8B5CF6;
   }
+
+  &.professional {
+    background: rgba($color-brand-main, 0.12);
+    color: $color-brand-main;
+  }
 }
 
 .weight-badge {

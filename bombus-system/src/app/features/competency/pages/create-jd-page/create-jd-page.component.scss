@@ -240,6 +240,56 @@ $module-color-dark: $color-l2-terracotta-dark;
   width: 100%;
 }
 
+// Template Selection
+.template-selection {
+  margin-bottom: $spacing-xl;
+  padding: $spacing-lg;
+  background: rgba($module-color, 0.05);
+  border-radius: $radius-md;
+  border: 1px solid rgba($module-color, 0.2);
+}
+
+.template-select-row {
+  display: flex;
+  gap: $spacing-md;
+  align-items: flex-start;
+  margin-top: $spacing-sm;
+
+  @include media-max-sm {
+    flex-direction: column;
+  }
+
+  .form-select {
+    flex: 1;
+  }
+}
+
+.btn-apply-template {
+  @include flex-center;
+  gap: $spacing-xs;
+  white-space: nowrap;
+  padding: $spacing-sm $spacing-md;
+  min-width: 120px;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .spinner {
+    animation: spin 1s linear infinite;
+  }
+}
+
+.template-hint {
+  margin: $spacing-md 0 0;
+  padding: $spacing-sm $spacing-md;
+  background: rgba($color-success, 0.1);
+  border-radius: $radius-sm;
+  font-size: $font-size-sm;
+  color: $color-success;
+}
+
 // Competency Selection
 .competency-category {
   margin-bottom: $spacing-xl;
@@ -795,7 +845,7 @@ $module-color-dark: $color-l2-terracotta-dark;
   }
 }
 
-// Competency Summary (步驟4的職能基準庫顯示)
+// Competency Summary (步驟4的職能模型基準顯示)
 .competency-summary {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -854,6 +904,11 @@ $module-color-dark: $color-l2-terracotta-dark;
     background: rgba($module-color, 0.15);
     color: $module-color;
   }
+
+  &.professional {
+    background: rgba($color-brand-main, 0.15);
+    color: $color-brand-main;
+  }
 }
 
 // Checklist Editor
@@ -873,6 +928,11 @@ $module-color-dark: $color-l2-terracotta-dark;
   color: $color-text-secondary;
   background: $color-pure-white;
   border-radius: $radius-sm;
+
+  .checklist-col-points,
+  .checklist-col-action {
+    text-align: center;
+  }
 }
 
 .checklist-item {

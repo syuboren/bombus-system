@@ -88,6 +88,10 @@ async function start() {
         const gradeMatrixRouter = require('./routes/grade-matrix');
         app.use('/api/grade-matrix', gradeMatrixRouter);
 
+        // Job Descriptions (職務說明書)
+        const jobDescriptionsRouter = require('./routes/job-descriptions');
+        app.use('/api/job-descriptions', jobDescriptionsRouter);
+
         app.listen(PORT, () => {
             console.log(`🚀 Onboarding API Server running on http://localhost:${PORT}`);
         });

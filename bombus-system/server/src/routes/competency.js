@@ -1029,4 +1029,209 @@ function getWeekNumber(date) {
   return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
 }
 
+// =====================================================
+// 職能基準庫 API (Competency Framework)
+// =====================================================
+
+/**
+ * GET /api/competencies
+ * 取得職能列表
+ * @query type - 職能類型篩選 (level-based, ksa)
+ * @query category - 職能類別篩選 (core, management, professional, ksa)
+ */
+router.get('/competencies', (req, res) => {
+  try {
+    const { type, category } = req.query;
+    
+    // 建構查詢條件
+    let conditions = [];
+    let params = [];
+    
+    if (type) {
+      conditions.push('type = ?');
+      params.push(type);
+    }
+    if (category) {
+      conditions.push('category = ?');
+      params.push(category);
+    }
+    
+    const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
+    
+    // 查詢職能主表
+    const competencies = prepare(`
+      SELECT id, code, name, type, category, description, created_at, updated_at
+      FROM competencies
+      ${whereClause}
+      ORDER BY category, code
+    `).all(...params);
+    
+    // 根據類型附加對應的詳細資訊
+    const result = competencies.map(comp => {
+      // 核心職能、管理職能、專業職能都有 L1-L6 等級
+      if (comp.category === 'core' || comp.category === 'management' || comp.category === 'professional') {
+        // 取得等級資料
+        const levels = prepare(`
+          SELECT id, level, indicators
+          FROM competency_levels
+          WHERE competency_id = ?
+          ORDER BY level
+        `).all(comp.id);
+        
+        return {
+          ...comp,
+          levels: levels.map(lvl => ({
+            id: lvl.id,
+            level: lvl.level,
+            indicators: lvl.indicators
+          }))
+        };
+      } else if (comp.category === 'ksa') {
+        // 取得 KSA 詳細資訊
+        const ksaDetail = prepare(`
+          SELECT id, behavior_indicators, linked_courses
+          FROM competency_ksa_details
+          WHERE competency_id = ?
+        `).get(comp.id);
+        
+        return {
+          ...comp,
+          ksaDetail: ksaDetail ? {
+            id: ksaDetail.id,
+            behaviorIndicators: ksaDetail.behavior_indicators,
+            linkedCourses: ksaDetail.linked_courses
+          } : null
+        };
+      }
+      return comp;
+    });
+    
+    res.json({
+      success: true,
+      data: result
+    });
+  } catch (error) {
+    console.error('Error fetching competencies:', error);
+    res.status(500).json({ success: false, error: { code: 'INTERNAL_ERROR', message: error.message } });
+  }
+});
+
+/**
+ * GET /api/competencies/stats
+ * 取得職能統計數據
+ */
+router.get('/competencies/stats', (req, res) => {
+  try {
+    // 計算各類別的職能數量
+    const stats = {
+      total: 0,
+      byCategory: {},
+      byType: {}
+    };
+    
+    // 按類別統計
+    const categoryStats = prepare(`
+      SELECT category, COUNT(*) as count
+      FROM competencies
+      GROUP BY category
+    `).all();
+    
+    categoryStats.forEach(row => {
+      stats.byCategory[row.category] = row.count;
+      stats.total += row.count;
+    });
+    
+    // 按類型統計
+    const typeStats = prepare(`
+      SELECT type, COUNT(*) as count
+      FROM competencies
+      GROUP BY type
+    `).all();
+    
+    typeStats.forEach(row => {
+      stats.byType[row.type] = row.count;
+    });
+    
+    // 額外統計
+    const levelsCount = prepare('SELECT COUNT(*) as count FROM competency_levels').get().count;
+    const ksaDetailsCount = prepare('SELECT COUNT(*) as count FROM competency_ksa_details').get().count;
+    
+    stats.levelsCount = levelsCount;
+    stats.ksaDetailsCount = ksaDetailsCount;
+    
+    res.json({
+      success: true,
+      data: stats
+    });
+  } catch (error) {
+    console.error('Error fetching competency stats:', error);
+    res.status(500).json({ success: false, error: { code: 'INTERNAL_ERROR', message: error.message } });
+  }
+});
+
+/**
+ * GET /api/competencies/:id
+ * 取得單一職能詳細資訊
+ */
+router.get('/competencies/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // 查詢職能主表
+    const competency = prepare(`
+      SELECT id, code, name, type, category, description, created_at, updated_at
+      FROM competencies
+      WHERE id = ?
+    `).get(id);
+    
+    if (!competency) {
+      return res.status(404).json({ 
+        success: false, 
+        error: { code: 'NOT_FOUND', message: '找不到此職能' } 
+      });
+    }
+    
+    let result = { ...competency };
+    
+    if (competency.type === 'level-based') {
+      // 取得等級資料
+      const levels = prepare(`
+        SELECT id, level, indicators
+        FROM competency_levels
+        WHERE competency_id = ?
+        ORDER BY level
+      `).all(id);
+      
+      result.levels = levels.map(lvl => ({
+        id: lvl.id,
+        level: lvl.level,
+        indicators: lvl.indicators
+      }));
+    } else if (competency.type === 'ksa') {
+      // 取得 KSA 詳細資訊
+      const ksaDetail = prepare(`
+        SELECT id, behavior_indicators, linked_courses
+        FROM competency_ksa_details
+        WHERE competency_id = ?
+      `).get(id);
+      
+      if (ksaDetail) {
+        result.ksaDetail = {
+          id: ksaDetail.id,
+          behaviorIndicators: ksaDetail.behavior_indicators,
+          linkedCourses: ksaDetail.linked_courses
+        };
+      }
+    }
+    
+    res.json({
+      success: true,
+      data: result
+    });
+  } catch (error) {
+    console.error('Error fetching competency:', error);
+    res.status(500).json({ success: false, error: { code: 'INTERNAL_ERROR', message: error.message } });
+  }
+});
+
 module.exports = router;

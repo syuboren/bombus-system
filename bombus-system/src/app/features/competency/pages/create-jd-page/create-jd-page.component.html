@@ -90,20 +90,33 @@
 
       @if (currentMode() === 'template') {
       <div class="template-selection">
-        <label class="form-label">選擇模板</label>
-        <select class="form-select" [(ngModel)]="selectedTemplate" (change)="importTemplate(selectedTemplate())">
-          <option value="">請選擇模板</option>
-          <option value="template-1">財務長模板</option>
-          <option value="template-2">人資主管模板</option>
-          <option value="template-3">專案經理模板</option>
-        </select>
+        <label class="form-label">選擇模板（從現有職務說明書）</label>
+        <div class="template-select-row">
+          <select class="form-select" [(ngModel)]="selectedTemplate">
+            <option value="">請選擇模板</option>
+            @for (tpl of availableTemplates(); track tpl.id) {
+            <option [value]="tpl.id">{{ tpl.positionName }} ({{ tpl.department }})</option>
+            }
+          </select>
+          <button class="btn-secondary btn-apply-template" type="button"
+            [disabled]="!selectedTemplate() || isLoadingTemplate()" (click)="importTemplate(selectedTemplate())">
+            @if (isLoadingTemplate()) {
+            <i class="ri-loader-4-line spinner"></i> 載入中...
+            } @else {
+            <i class="ri-file-copy-line"></i> 套用模版
+            }
+          </button>
+        </div>
+        @if (selectedTemplate() && !isLoadingTemplate()) {
+        <p class="template-hint">已套用模版資料，請檢視並修改下方基本資訊</p>
+        }
       </div>
       }
 
       <div class="form-grid">
         <div class="form-group">
           <label class="form-label">職位代碼 <span class="required">*</span></label>
-          <input type="text" class="form-input" placeholder="例如：HR-4-094" [(ngModel)]="positionCode">
+          <input type="text" class="form-input" placeholder="選部門與職等後自動產生" readonly [ngModel]="basicInfo().positionCode">
         </div>
         <div class="form-group">
           <label class="form-label">職位名稱 <span class="required">*</span></label>
@@ -113,21 +126,36 @@
           <label class="form-label">部門 <span class="required">*</span></label>
           <select class="form-select" [(ngModel)]="department">
             <option value="">請選擇部門</option>
-            @for (opt of departmentOptions; track opt.value) {
-            <option [value]="opt.value">{{ opt.label }}</option>
+            @for (d of departments(); track d.id) {
+            <option [value]="d.name">{{ d.name }}</option>
             }
           </select>
         </div>
         <div class="form-group">
           <label class="form-label">職等 <span class="required">*</span></label>
-          <input type="text" class="form-input" placeholder="例如：C-Level" [(ngModel)]="gradeLevel">
+          <select class="form-select" [ngModel]="basicInfo().grade" (ngModelChange)="grade=$event">
+            <option [value]="0">請選擇職等</option>
+            @for (g of gradeLevels(); track g.grade) {
+            <option [value]="g.grade">Grade {{ g.grade }} - {{ g.titleManagement || g.titleProfessional || '' }}
+            </option>
+            }
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">職位 <span class="required">*</span></label>
+          <select class="form-select" [(ngModel)]="positionTitle">
+            <option value="">請選擇職位</option>
+            @for (p of positions(); track p.id) {
+            <option [value]="p.title">{{ p.title }}</option>
+            }
+          </select>
         </div>
       </div>
 
       <div class="form-actions">
         <button class="btn-secondary" (click)="prevStep()" type="button">上一步</button>
         <button class="btn-primary"
-          [disabled]="!basicInfo().positionCode || !basicInfo().positionName || !basicInfo().department"
+          [disabled]="!basicInfo().positionCode || !basicInfo().positionName || !basicInfo().department || !basicInfo().grade"
           (click)="nextStep()" type="button">
           下一步
         </button>
@@ -141,7 +169,7 @@
   <div class="step-content">
     <div class="form-section">
       <h2 class="section-title">職能需求設定</h2>
-      <p class="section-subtitle">從職能基準庫選擇適用職能，設定需求等級與權重</p>
+      <p class="section-subtitle">從職能模型基準選擇適用職能，設定需求等級與權重</p>
 
       <!-- 核心職能 -->
       <div class="competency-category">
@@ -163,10 +191,10 @@
             <div class="comp-settings">
               <div class="setting-group">
                 <label class="setting-label">要求等級：</label>
-                <select class="setting-select" [value]="getCoreLevel(comp.id) || 'L1'"
-                  (change)="toggleCoreCompetency(comp, $any($event.target).value)">
+                <select class="setting-select" (change)="toggleCoreCompetency(comp, $any($event.target).value)">
                   @for (levelOpt of levelOptions; track levelOpt.value) {
-                  <option [value]="levelOpt.value">{{ levelOpt.label }}</option>
+                  <option [value]="levelOpt.value" [selected]="getCoreLevel(comp.id) === levelOpt.value">{{
+                    levelOpt.label }}</option>
                   }
                 </select>
               </div>
@@ -203,10 +231,10 @@
             <div class="comp-settings">
               <div class="setting-group">
                 <label class="setting-label">要求等級：</label>
-                <select class="setting-select" [value]="getManagementLevel(comp.id) || 'L1'"
-                  (change)="toggleManagementCompetency(comp, $any($event.target).value)">
+                <select class="setting-select" (change)="toggleManagementCompetency(comp, $any($event.target).value)">
                   @for (levelOpt of levelOptions; track levelOpt.value) {
-                  <option [value]="levelOpt.value">{{ levelOpt.label }}</option>
+                  <option [value]="levelOpt.value" [selected]="getManagementLevel(comp.id) === levelOpt.value">{{
+                    levelOpt.label }}</option>
                   }
                 </select>
               </div>
@@ -215,6 +243,47 @@
                 <input type="number" class="setting-input" min="0" max="100"
                   [value]="getWeight('management-' + comp.id)"
                   (change)="updateWeight('management-' + comp.id, +$any($event.target).value)">
+                <span class="setting-unit">%</span>
+              </div>
+            </div>
+            }
+          </div>
+          }
+        </div>
+      </div>
+
+      <!-- 專業職能 -->
+      <div class="competency-category">
+        <h3 class="category-title">
+          <i class="ri-briefcase-line"></i>
+          專業職能 (L1-L6 等級)
+        </h3>
+        <div class="competency-list">
+          @for (comp of professionalCompetencies(); track comp.id) {
+          <div class="competency-item">
+            <div class="comp-header">
+              <label class="comp-checkbox">
+                <input type="checkbox" [checked]="isProfessionalSelected(comp.id)"
+                  (change)="toggleProfessionalCompetency(comp, isProfessionalSelected(comp.id) ? null : 'L1')">
+                <span class="comp-name">{{ comp.name }}</span>
+              </label>
+            </div>
+            @if (isProfessionalSelected(comp.id)) {
+            <div class="comp-settings">
+              <div class="setting-group">
+                <label class="setting-label">要求等級：</label>
+                <select class="setting-select" (change)="toggleProfessionalCompetency(comp, $any($event.target).value)">
+                  @for (levelOpt of levelOptions; track levelOpt.value) {
+                  <option [value]="levelOpt.value" [selected]="getProfessionalLevel(comp.id) === levelOpt.value">{{
+                    levelOpt.label }}</option>
+                  }
+                </select>
+              </div>
+              <div class="setting-group">
+                <label class="setting-label">權重：</label>
+                <input type="number" class="setting-input" min="0" max="100"
+                  [value]="getWeight('professional-' + comp.id)"
+                  (change)="updateWeight('professional-' + comp.id, +$any($event.target).value)">
                 <span class="setting-unit">%</span>
               </div>
             </div>
@@ -260,8 +329,8 @@
             <div class="comp-settings">
               <div class="setting-group">
                 <label class="setting-label">權重：</label>
-                <input type="number" class="setting-input" min="0" max="100" [value]="getWeight('ksa-' + comp.id)"
-                  (change)="updateWeight('ksa-' + comp.id, +$any($event.target).value)">
+                <input type="number" class="setting-input" min="0" max="100" [value]="getWeight(comp.id)"
+                  (change)="updateWeight(comp.id, +$any($event.target).value)">
                 <span class="setting-unit">%</span>
               </div>
             </div>
@@ -320,7 +389,8 @@
           </div>
           <div class="info-row">
             <span class="info-label">職等：</span>
-            <span class="info-value">{{ basicInfo().gradeLevel }}</span>
+            <span class="info-value">{{ basicInfo().grade ? 'Grade ' + basicInfo().grade : '' }}{{
+              basicInfo().positionTitle ? ' - ' + basicInfo().positionTitle : '' }}</span>
           </div>
         </div>
       </div>
@@ -444,6 +514,17 @@
               @for (entry of Array.from(selectedCompetencies().entries()); track entry[0]) {
               @if (entry[1].type === 'management') {
               <span class="summary-tag management">{{ entry[1].competencyName }} {{ entry[1].level }} ({{
+                entry[1].weight }}%)</span>
+              }
+              }
+            </div>
+          </div>
+          <div class="summary-category">
+            <h4><i class="ri-briefcase-line"></i> 專業職能</h4>
+            <div class="summary-items">
+              @for (entry of Array.from(selectedCompetencies().entries()); track entry[0]) {
+              @if (entry[1].type === 'professional') {
+              <span class="summary-tag professional">{{ entry[1].competencyName }} {{ entry[1].level }} ({{
                 entry[1].weight }}%)</span>
               }
               }
@@ -652,6 +733,10 @@
               <span class="info-label">職等：</span>
               <span class="info-value">{{ jd.gradeLevel }}</span>
             </div>
+            <div class="jd-info-item">
+              <span class="info-label">職位：</span>
+              <span class="info-value">{{ jd.positionTitle || '未設定' }}</span>
+            </div>
           </div>
         </div>
 
@@ -707,14 +792,60 @@
         @if (jd.requiredCompetencies && jd.requiredCompetencies.length > 0) {
         <div class="jd-section">
           <h3 class="jd-section-title"><span class="section-num">6</span> 職能需求</h3>
-          <div class="jd-competencies">
-            @for (comp of jd.requiredCompetencies; track comp.competencyId) {
-            <div class="jd-comp-item">
-              <span class="comp-name">{{ comp.competencyName }}</span>
-              @if (comp.requiredLevel) {
-              <span class="comp-level">L{{ comp.requiredLevel }}</span>
-              }
-              <span class="comp-weight">{{ comp.weight }}%</span>
+          <div class="competency-summary">
+            <!-- 核心職能 -->
+            @if (jd.coreCompetencyRequirements && jd.coreCompetencyRequirements.length > 0) {
+            <div class="summary-category">
+              <h4><i class="ri-heart-pulse-line"></i> 核心職能</h4>
+              <div class="summary-items">
+                @for (comp of jd.coreCompetencyRequirements; track comp.competencyId) {
+                <span class="summary-tag core">
+                  {{ comp.competencyName }} L{{ comp.requiredLevel }} ({{ comp.weight }}%)
+                </span>
+                }
+              </div>
+            </div>
+            }
+
+            <!-- 管理職能 -->
+            @if (jd.managementCompetencyRequirements && jd.managementCompetencyRequirements.length > 0) {
+            <div class="summary-category">
+              <h4><i class="ri-team-line"></i> 管理職能</h4>
+              <div class="summary-items">
+                @for (comp of jd.managementCompetencyRequirements; track comp.competencyId) {
+                <span class="summary-tag management">
+                  {{ comp.competencyName }} L{{ comp.requiredLevel }} ({{ comp.weight }}%)
+                </span>
+                }
+              </div>
+            </div>
+            }
+
+            <!-- 專業職能 -->
+            @if (jd.professionalCompetencyRequirements && jd.professionalCompetencyRequirements.length > 0) {
+            <div class="summary-category">
+              <h4><i class="ri-briefcase-line"></i> 專業職能</h4>
+              <div class="summary-items">
+                @for (comp of jd.professionalCompetencyRequirements; track comp.competencyId) {
+                <span class="summary-tag professional">
+                  {{ comp.competencyName }} L{{ comp.requiredLevel }} ({{ comp.weight }}%)
+                </span>
+                }
+              </div>
+            </div>
+            }
+
+            <!-- KSA 職能 -->
+            @if (jd.ksaCompetencyRequirements && jd.ksaCompetencyRequirements.length > 0) {
+            <div class="summary-category">
+              <h4><i class="ri-book-3-line"></i> KSA 職能</h4>
+              <div class="summary-items">
+                @for (comp of jd.ksaCompetencyRequirements; track comp.competencyId) {
+                <span class="summary-tag ksa">
+                  {{ comp.competencyName }} ({{ comp.weight }}%)
+                </span>
+                }
+              </div>
             </div>
             }
           </div>
@@ -800,8 +931,12 @@
 
       <div class="form-actions">
         <button class="btn-secondary" (click)="currentStep.set('content')" type="button">返回編輯</button>
-        <button class="btn-primary" (click)="saveJD()" type="button">
+        <button class="btn-primary" (click)="saveJD()" type="button" [disabled]="saving()">
+          @if (saving()) {
+          <span>儲存中...</span>
+          } @else {
           <i class="ri-save-line"></i> 儲存職務說明書
+          }
         </button>
       </div>
     </div>

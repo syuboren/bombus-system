@@ -205,7 +205,7 @@ export interface CompetencyFramework {
 export interface CoreMgmtCompetencyRequirement {
   competencyId: string;
   competencyName: string;
-  type: 'core' | 'management';
+  type: 'core' | 'management' | 'professional';
   requiredLevel: CompetencyGradeLevel;  // L1-L6
   weight: number;  // 權重百分比
 }
@@ -227,6 +227,9 @@ export interface JobDescription {
   positionName: string;
   department: string;
   gradeLevel: string;
+  grade?: number;           // 職等數字 (如 1-7)
+  gradeCode?: string;       // 職等代碼 (如 M3)
+  positionTitle?: string;   // 職位 (如 Controller)
 
   // ====== 11 個區塊 ======
   // 1. 主要職責
@@ -248,6 +251,7 @@ export interface JobDescription {
   // 5.1 職能需求 (分類含權重)
   coreCompetencyRequirements?: CoreMgmtCompetencyRequirement[];      // 核心職能需求
   managementCompetencyRequirements?: CoreMgmtCompetencyRequirement[]; // 管理職能需求
+  professionalCompetencyRequirements?: CoreMgmtCompetencyRequirement[]; // 專業職能需求
   ksaCompetencyRequirements?: KSACompetencyRequirement[];            // KSA 職能需求
 
   // 5.2 職能內涵 (K/S/A 詳細內容)
@@ -452,9 +456,10 @@ export interface CompetencyStats {
     attitude: number;
   };
   byCategory: {
-    core: number;        // 核心職能
-    management: number;  // 管理職能
-    ksa: number;         // KSA職能 (K/S/A)
+    core: number;           // 核心職能
+    management: number;     // 管理職能
+    professional?: number;  // 專業職能
+    ksa: number;            // KSA職能 (K/S/A)
   };
   recentlyUpdated: number;
 }
@@ -502,12 +507,12 @@ export const COMPETENCY_LEVEL_OPTIONS: SelectOption[] = [
 
 // 核心職能/管理職能等級選項 (L1-L6)
 export const COMPETENCY_GRADE_LEVEL_OPTIONS: SelectOption[] = [
-  { value: 'L1', label: 'L1 - 基礎執行' },
-  { value: 'L2', label: 'L2 - 獨立作業' },
-  { value: 'L3', label: 'L3 - 帶領團隊' },
-  { value: 'L4', label: 'L4 - 策略規劃' },
-  { value: 'L5', label: 'L5 - 高階領導' },
-  { value: 'L6', label: 'L6 - 戰略引領' }
+  { value: 'L1', label: 'L1' },
+  { value: 'L2', label: 'L2' },
+  { value: 'L3', label: 'L3' },
+  { value: 'L4', label: 'L4' },
+  { value: 'L5', label: 'L5' },
+  { value: 'L6', label: 'L6' }
 ];
 
 export const GRADE_TYPE_OPTIONS: SelectOption[] = [

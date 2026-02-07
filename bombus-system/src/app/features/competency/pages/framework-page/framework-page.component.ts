@@ -17,7 +17,7 @@ import {
   COMPETENCY_LEVEL_OPTIONS
 } from '../../models/competency.model';
 
-type ActiveTab = 'core' | 'management' | 'ksa';
+type ActiveTab = 'core' | 'management' | 'professional' | 'ksa';
 
 import { ViewToggleComponent } from '../../../../shared/components/view-toggle/view-toggle.component';
 
@@ -33,17 +33,18 @@ export class FrameworkPageComponent implements OnInit {
   private competencyService = inject(CompetencyService);
 
   // Page Info
-  readonly pageTitle = '職能基準庫';
-  readonly breadcrumbs = ['首頁', '職能管理'];
+  readonly pageTitle = '職能模型基準';
+  readonly breadcrumbs = ['首頁', '職能管理', '職能模型基準'];
 
   // Data signals
   stats = signal<CompetencyStats | null>(null);
   frameworks = signal<CompetencyFramework[]>([]);
   loading = signal(true);
 
-  // 三類職能資料（完全獨立）
+  // 四類職能資料（完全獨立）
   coreCompetencies = signal<CoreManagementCompetency[]>([]);
   managementCompetencies = signal<CoreManagementCompetency[]>([]);
+  professionalCompetencies = signal<CoreManagementCompetency[]>([]);
   ksaCompetencies = signal<KSACompetencyItem[]>([]);
 
   // 舊版 KSA 資料（供列表顯示）
@@ -74,12 +75,12 @@ export class FrameworkPageComponent implements OnInit {
 
   // Level labels
   readonly levelLabels: Record<string, string> = {
-    'L1': 'L1 - 基礎執行',
-    'L2': 'L2 - 獨立作業',
-    'L3': 'L3 - 帶領團隊',
-    'L4': 'L4 - 策略規劃',
-    'L5': 'L5 - 高階領導',
-    'L6': 'L6 - 戰略引領'
+    'L1': 'L1',
+    'L2': 'L2',
+    'L3': 'L3',
+    'L4': 'L4',
+    'L5': 'L5',
+    'L6': 'L6'
   };
 
   // Filtered KSA competencies
@@ -126,6 +127,11 @@ export class FrameworkPageComponent implements OnInit {
     // Load management competencies (L1-L6)
     this.competencyService.getManagementCompetenciesWithLevels().subscribe(data => {
       this.managementCompetencies.set(data);
+    });
+
+    // Load professional competencies (L1-L6)
+    this.competencyService.getProfessionalCompetenciesWithLevels().subscribe(data => {
+      this.professionalCompetencies.set(data);
     });
 
     // Load KSA competencies (no levels)
@@ -287,13 +293,14 @@ export class FrameworkPageComponent implements OnInit {
     return `type-${type}`;
   }
 
-  getCategoryName(category: CompetencyCategory): string {
-    const categoryMap: Record<CompetencyCategory, string> = {
+  getCategoryName(category: CompetencyCategory | 'professional'): string {
+    const categoryMap: Record<string, string> = {
       core: '核心職能',
       management: '管理職能',
+      professional: '專業職能',
       ksa: 'KSA職能'
     };
-    return categoryMap[category];
+    return categoryMap[category] || category;
   }
 
   getLevelName(level: CompetencyLevel): string {

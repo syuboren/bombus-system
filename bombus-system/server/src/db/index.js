@@ -1413,6 +1413,53 @@ async function initDatabase() {
   console.log('✅ 職能評估系統資料表已建立');
 
   // ============================================================
+  // 職能基準庫資料表 (Competency Framework)
+  // ============================================================
+
+  // 1. 職能主表 - 儲存所有職能的基本資訊 (Core, Management, Professional, KSA)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS competencies (
+      id TEXT PRIMARY KEY,
+      code TEXT UNIQUE NOT NULL,
+      name TEXT NOT NULL,
+      type TEXT NOT NULL,
+      category TEXT NOT NULL,
+      description TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    )
+  `);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_competencies_type ON competencies(type)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_competencies_category ON competencies(category)`);
+
+  // 2. 職能等級表 - 僅適用於 Core/Management/Professional 職能，儲存 L1-L6 的行為指標
+  db.run(`
+    CREATE TABLE IF NOT EXISTS competency_levels (
+      id TEXT PRIMARY KEY,
+      competency_id TEXT NOT NULL,
+      level TEXT NOT NULL,
+      indicators TEXT NOT NULL,
+      FOREIGN KEY (competency_id) REFERENCES competencies(id) ON DELETE CASCADE
+    )
+  `);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_competency_levels_competency ON competency_levels(competency_id)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_competency_levels_level ON competency_levels(level)`);
+
+  // 3. KSA 詳細資訊表 - 僅適用於 KSA 職能，儲存無等級區分的詳細資訊
+  db.run(`
+    CREATE TABLE IF NOT EXISTS competency_ksa_details (
+      id TEXT PRIMARY KEY,
+      competency_id TEXT NOT NULL,
+      behavior_indicators TEXT NOT NULL,
+      linked_courses TEXT DEFAULT '[]',
+      FOREIGN KEY (competency_id) REFERENCES competencies(id) ON DELETE CASCADE
+    )
+  `);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_competency_ksa_details_competency ON competency_ksa_details(competency_id)`);
+
+  console.log('✅ 職能基準庫資料表已建立');
+
+  // ============================================================
   // 資料庫遷移與初始化
   // ============================================================
   migrateInvitationDecisionsTable();
@@ -1420,6 +1467,7 @@ async function initDatabase() {
   migrateMonthlyChecksSignature();  // 新增電子簽名欄位
   migrateWeeklyReportsTable();      // 新增週報擴充欄位
   initGradeMatrixTables();          // 新增職等職級資料表
+  initJobDescriptionsTable();       // 新增職務說明書資料表
   migrateEmployeeGradeLevels();     // 遷移員工職等職級資料
   initFullEmployeeData();
 
@@ -2080,6 +2128,57 @@ function initGradeMatrixTables() {
     console.log('✅ 職等職級資料表已建立');
   } catch (error) {
     console.error('Error initializing grade matrix tables:', error.message);
+  }
+}
+
+/**
+ * 職務說明書 (Job Descriptions) 資料表
+ * 須在 initGradeMatrixTables 之後執行（依賴 departments, grade_levels）
+ */
+function initJobDescriptionsTable() {
+  try {
+    db.run(`
+      CREATE TABLE IF NOT EXISTS job_descriptions (
+        id TEXT PRIMARY KEY,
+        position_code TEXT UNIQUE NOT NULL,
+        position_name TEXT NOT NULL,
+        department TEXT NOT NULL,
+        grade INTEGER,
+        grade_code TEXT,
+        position_title TEXT,
+        summary TEXT,
+        version TEXT DEFAULT '1.0',
+        status TEXT DEFAULT 'draft',
+        responsibilities TEXT DEFAULT '[]',
+        job_purpose TEXT DEFAULT '[]',
+        qualifications TEXT DEFAULT '[]',
+        vfp TEXT DEFAULT '[]',
+        competency_standards TEXT DEFAULT '[]',
+        required_competencies TEXT DEFAULT '[]',
+        core_competency_requirements TEXT DEFAULT '[]',
+        management_competency_requirements TEXT DEFAULT '[]',
+        professional_competency_requirements TEXT DEFAULT '[]',
+        ksa_competency_requirements TEXT DEFAULT '[]',
+        ksa_content TEXT,
+        work_description TEXT DEFAULT '[]',
+        checklist TEXT DEFAULT '[]',
+        job_duties TEXT DEFAULT '[]',
+        daily_tasks TEXT DEFAULT '[]',
+        weekly_tasks TEXT DEFAULT '[]',
+        monthly_tasks TEXT DEFAULT '[]',
+        created_by TEXT DEFAULT 'system',
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (department) REFERENCES departments(name),
+        FOREIGN KEY (grade) REFERENCES grade_levels(grade)
+      )
+    `);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_job_descriptions_department ON job_descriptions(department)`);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_job_descriptions_grade ON job_descriptions(grade)`);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_job_descriptions_status ON job_descriptions(status)`);
+    console.log('✅ 職務說明書資料表已建立');
+  } catch (error) {
+    console.error('Error initializing job_descriptions table:', error.message);
   }
 }
 

@@ -35,7 +35,7 @@ interface JDContentBlocks {
 interface CompetencySelection {
   competencyId: string;
   competencyName: string;
-  type: 'core' | 'management' | 'ksa';
+  type: 'core' | 'management' | 'professional' | 'ksa';
   level?: CompetencyGradeLevel;
   ksaType?: CompetencyType;
   weight: number;
@@ -68,17 +68,25 @@ export class CreateJDPageComponent implements OnInit {
   aiGenerationProgress = signal(0);
   aiGenerationMessage = signal('');
 
-  // 職能基準庫資料
+  // 職能模型基準資料
   coreCompetencies = signal<CoreManagementCompetency[]>([]);
   managementCompetencies = signal<CoreManagementCompetency[]>([]);
+  professionalCompetencies = signal<CoreManagementCompetency[]>([]);
   ksaCompetencies = signal<KSACompetencyItem[]>([]);
+
+  // 基本資料選項（介接資料庫）
+  departments = signal<{ id: string; name: string; code: string; sort_order?: number }[]>([]);
+  gradeLevels = signal<any[]>([]);
+  positions = signal<any[]>([]);
 
   // 基本資訊
   basicInfo = signal({
     positionCode: '',
     positionName: '',
     department: '',
-    gradeLevel: ''
+    grade: 0 as number,
+    gradeCode: '',
+    positionTitle: ''
   });
 
   // 用於 ngModel 的 getter/setter
@@ -94,12 +102,27 @@ export class CreateJDPageComponent implements OnInit {
 
   get department() { return this.basicInfo().department; }
   set department(value: string) {
-    this.basicInfo.update(info => ({ ...info, department: value }));
+    this.basicInfo.update(info => ({ ...info, department: value, positionTitle: '', positionName: info.positionName || '' }));
+    this.loadPositions();
+    if (this.basicInfo().grade) this.generateCodeIfReady();
   }
 
-  get gradeLevel() { return this.basicInfo().gradeLevel; }
+  get grade() { return this.basicInfo().grade; }
+  set grade(value: number) {
+    this.basicInfo.update(info => ({ ...info, grade: value }));
+    this.loadPositions();
+    this.generateCodeIfReady();
+  }
+
+  get gradeLevel() { return this.basicInfo().grade > 0 ? String(this.basicInfo().grade) : ''; }
   set gradeLevel(value: string) {
-    this.basicInfo.update(info => ({ ...info, gradeLevel: value }));
+    const num = value ? parseInt(value, 10) : 0;
+    this.grade = num;
+  }
+
+  get positionTitle() { return this.basicInfo().positionTitle; }
+  set positionTitle(value: string) {
+    this.basicInfo.update(info => ({ ...info, positionTitle: value, positionName: value || info.positionName }));
   }
 
   // 職能選擇
@@ -111,6 +134,8 @@ export class CreateJDPageComponent implements OnInit {
 
   // 模板選擇
   selectedTemplate = signal<string>('');
+  availableTemplates = signal<{ id: string; positionCode: string; positionName: string; department: string; grade: number }[]>([]);
+  isLoadingTemplate = signal(false);
 
   // 12區塊內容（步驟4編輯用）
   jdContent = signal<JDContentBlocks>({
@@ -132,13 +157,6 @@ export class CreateJDPageComponent implements OnInit {
   // Options
   readonly levelOptions = COMPETENCY_GRADE_LEVEL_OPTIONS;
   readonly typeOptions = COMPETENCY_TYPE_OPTIONS;
-  readonly departmentOptions = [
-    { value: '研發部', label: '研發部' },
-    { value: '業務部', label: '業務部' },
-    { value: '行銷部', label: '行銷部' },
-    { value: '人資部', label: '人資部' },
-    { value: '財務部', label: '財務部' }
-  ];
 
   // 過濾後的 KSA 職能
   filteredKSACompetencies = computed(() => {
@@ -161,19 +179,72 @@ export class CreateJDPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadCompetencies();
+    this.loadDepartments();
+    this.loadGradeLevels();
+    this.loadTemplates();
   }
 
   loadCompetencies(): void {
     this.competencyService.getCoreCompetenciesWithLevels().subscribe(data => {
       this.coreCompetencies.set(data);
     });
-
     this.competencyService.getManagementCompetenciesWithLevels().subscribe(data => {
       this.managementCompetencies.set(data);
     });
-
+    this.competencyService.getProfessionalCompetenciesWithLevels().subscribe(data => {
+      this.professionalCompetencies.set(data);
+    });
     this.competencyService.getKSACompetencies().subscribe(data => {
       this.ksaCompetencies.set(data);
+    });
+  }
+
+  loadDepartments(): void {
+    this.competencyService.getDepartments().subscribe(data => {
+      this.departments.set(data);
+    });
+  }
+
+  loadGradeLevels(): void {
+    this.competencyService.getGradeLevelsForJD().subscribe((data: any[]) => {
+      this.gradeLevels.set(data);
+    });
+  }
+
+  loadPositions(): void {
+    const info = this.basicInfo();
+    if (!info.department) {
+      this.positions.set([]);
+      return;
+    }
+    this.competencyService.getPositions(info.department, info.grade || undefined).subscribe(data => {
+      this.positions.set(data);
+    });
+  }
+
+  // 載入可用模版（從現有職務說明書）
+  loadTemplates(): void {
+    // 載入所有職務說明書作為模版選項（不限狀態）
+    this.competencyService.getJobDescriptions().subscribe(data => {
+      const templates = data.map(jd => ({
+        id: jd.id || '',
+        positionCode: jd.positionCode || '',
+        positionName: jd.positionName || '',
+        department: jd.department || '',
+        grade: typeof jd.gradeLevel === 'string' ? parseInt(jd.gradeLevel, 10) || 0 : 0
+      }));
+      this.availableTemplates.set(templates);
+    });
+  }
+
+  generateCodeIfReady(): void {
+    const info = this.basicInfo();
+    const dept = this.departments().find(d => d.name === info.department);
+    if (!dept?.code || !info.grade) return;
+    this.competencyService.generateJDCode(dept.code, info.grade).subscribe(code => {
+      if (code) {
+        this.basicInfo.update(i => ({ ...i, positionCode: code }));
+      }
     });
   }
 
@@ -208,7 +279,7 @@ export class CreateJDPageComponent implements OnInit {
   toggleCoreCompetency(competency: CoreManagementCompetency, level: CompetencyGradeLevel | null): void {
     const selected = new Map(this.selectedCompetencies());
     const key = `core-${competency.id}`;
-    
+
     if (level === null) {
       selected.delete(key);
     } else {
@@ -227,7 +298,7 @@ export class CreateJDPageComponent implements OnInit {
   toggleManagementCompetency(competency: CoreManagementCompetency, level: CompetencyGradeLevel | null): void {
     const selected = new Map(this.selectedCompetencies());
     const key = `management-${competency.id}`;
-    
+
     if (level === null) {
       selected.delete(key);
     } else {
@@ -243,10 +314,30 @@ export class CreateJDPageComponent implements OnInit {
     this.selectedCompetencies.set(selected);
   }
 
+  toggleProfessionalCompetency(competency: CoreManagementCompetency, level: CompetencyGradeLevel | null): void {
+    const selected = new Map(this.selectedCompetencies());
+    const key = `professional-${competency.id}`;
+
+    if (level === null) {
+      selected.delete(key);
+    } else {
+      const existing = selected.get(key);
+      selected.set(key, {
+        competencyId: competency.id,
+        competencyName: competency.name,
+        type: 'professional',
+        level: level,
+        weight: existing?.weight || 10
+      });
+    }
+    this.selectedCompetencies.set(selected);
+  }
+
   toggleKSACompetency(competency: KSACompetencyItem): void {
     const selected = new Map(this.selectedCompetencies());
-    const key = `ksa-${competency.id}`;
-    
+    // competency.id 已包含 ksa- 前綴（如 ksa-a-01），直接使用
+    const key = competency.id;
+
     if (selected.has(key)) {
       selected.delete(key);
     } else {
@@ -287,8 +378,17 @@ export class CreateJDPageComponent implements OnInit {
     return this.selectedCompetencies().get(`management-${competencyId}`)?.level || null;
   }
 
+  isProfessionalSelected(competencyId: string): boolean {
+    return this.selectedCompetencies().has(`professional-${competencyId}`);
+  }
+
+  getProfessionalLevel(competencyId: string): CompetencyGradeLevel | null {
+    return this.selectedCompetencies().get(`professional-${competencyId}`)?.level || null;
+  }
+
   isKSASelected(competencyId: string): boolean {
-    return this.selectedCompetencies().has(`ksa-${competencyId}`);
+    // competencyId 已包含 ksa- 前綴（如 ksa-a-01），直接使用
+    return this.selectedCompetencies().has(competencyId);
   }
 
   getWeight(key: string): number {
@@ -301,13 +401,13 @@ export class CreateJDPageComponent implements OnInit {
     this.isGenerating.set(true);
     this.aiGenerationProgress.set(0);
     this.aiGenerationMessage.set('正在分析職位需求...');
-    
+
     // 模擬 AI 生成進度
     const messages = [
       { progress: 15, message: '正在分析職位需求...' },
       { progress: 30, message: '解析職能要求...' },
       { progress: 50, message: '生成職務說明內容...' },
-      { progress: 70, message: '匹配職能基準庫...' },
+      { progress: 70, message: '匹配職能模型基準...' },
       { progress: 85, message: '優化結構化內容...' },
       { progress: 100, message: '生成完成！' }
     ];
@@ -320,15 +420,17 @@ export class CreateJDPageComponent implements OnInit {
         step++;
       } else {
         clearInterval(interval);
-        
+
         // 設定生成的基本資訊
         this.basicInfo.set({
           positionCode: 'HR-4-XXX',
           positionName: 'AI 生成的職位',
           department: '人資部',
-          gradeLevel: '中階'
+          grade: 5,
+          gradeCode: '',
+          positionTitle: ''
         });
-        
+
         setTimeout(() => {
           this.isGenerating.set(false);
           this.currentStep.set('competency');
@@ -337,19 +439,143 @@ export class CreateJDPageComponent implements OnInit {
     }, 600);
   }
 
-  // Template import
+  // Template import - 載入並套用模版資料
   importTemplate(templateId: string): void {
+    if (!templateId) return;
     this.selectedTemplate.set(templateId);
-    // 模擬載入模板
-    setTimeout(() => {
-      this.currentStep.set('competency');
-    }, 500);
+    this.isLoadingTemplate.set(true);
+
+    // 從 API 載入完整職務說明書資料
+    this.competencyService.getJobDescriptionById(templateId).subscribe({
+      next: (jd) => {
+        if (jd) {
+          this.applyTemplate(jd);
+        }
+        this.isLoadingTemplate.set(false);
+      },
+      error: () => {
+        this.isLoadingTemplate.set(false);
+      }
+    });
   }
+
+  // 套用模版資料到各 Signal
+  private applyTemplate(jd: JobDescription): void {
+    // 防禦性檢查
+    if (!jd) {
+      console.warn('applyTemplate: jd is undefined');
+      return;
+    }
+
+    // 1. 套用基本資訊（清空職位代碼以重新生成）
+    this.basicInfo.set({
+      positionCode: '', // 清空以重新生成
+      positionName: jd.positionName || '',
+      department: jd.department || '',
+      grade: typeof jd.gradeLevel === 'string' ? parseInt(jd.gradeLevel, 10) || 0 : 0,
+      gradeCode: '',
+      positionTitle: ''
+    });
+
+    // 載入該部門的職位選項
+    this.loadPositions();
+
+    // 2. 套用職能需求（從模版的職能需求設定）
+    const newSelections = new Map<string, CompetencySelection>();
+
+    // 核心職能
+    if (jd.coreCompetencyRequirements) {
+      jd.coreCompetencyRequirements.forEach((req: any) => {
+        const key = `core-${req.competencyId}`;
+        newSelections.set(key, {
+          competencyId: req.competencyId,
+          competencyName: req.competencyName,
+          type: 'core',
+          level: req.requiredLevel || 'L1',
+          weight: req.weight || 10
+        });
+      });
+    }
+
+    // 管理職能
+    if (jd.managementCompetencyRequirements) {
+      jd.managementCompetencyRequirements.forEach((req: any) => {
+        const key = `management-${req.competencyId}`;
+        newSelections.set(key, {
+          competencyId: req.competencyId,
+          competencyName: req.competencyName,
+          type: 'management',
+          level: req.requiredLevel || 'L1',
+          weight: req.weight || 10
+        });
+      });
+    }
+
+    // 專業職能
+    if (jd.professionalCompetencyRequirements) {
+      jd.professionalCompetencyRequirements.forEach((req: any) => {
+        const key = `professional-${req.competencyId}`;
+        newSelections.set(key, {
+          competencyId: req.competencyId,
+          competencyName: req.competencyName,
+          type: 'professional',
+          level: req.requiredLevel || 'L1',
+          weight: req.weight || 10
+        });
+      });
+    }
+
+    // KSA 職能
+    if (jd.ksaCompetencyRequirements) {
+      jd.ksaCompetencyRequirements.forEach((req: any) => {
+        // KSA competencyId 已包含 ksa- 前綴（如 ksa-a-01），直接使用
+        const key = req.competencyId;
+        newSelections.set(key, {
+          competencyId: req.competencyId,
+          competencyName: req.competencyName,
+          type: 'ksa',
+          ksaType: req.ksaType,
+          weight: req.weight || 5
+        });
+      });
+    }
+
+    this.selectedCompetencies.set(newSelections);
+
+    // 3. 套用 12 區塊內容
+    this.jdContent.set({
+      responsibilities: jd.responsibilities?.length ? jd.responsibilities : [''],
+      jobPurpose: jd.jobPurpose?.length ? jd.jobPurpose : [''],
+      qualifications: jd.qualifications?.length ? jd.qualifications : [''],
+      vfp: jd.vfp?.length ? jd.vfp : [''],
+      workDescription: jd.workDescription?.length ? jd.workDescription : [''],
+      checklist: jd.checklist?.length ? jd.checklist : [{ item: '', points: 0 }],
+      jobDuties: jd.jobDuties?.length ? jd.jobDuties : [''],
+      dailyTasks: jd.dailyTasks?.length ? jd.dailyTasks : [''],
+      weeklyTasks: jd.weeklyTasks?.length ? jd.weeklyTasks : [''],
+      monthlyTasks: jd.monthlyTasks?.length ? jd.monthlyTasks : ['']
+    });
+
+    // 重新生成職位代碼
+    this.generateCodeIfReady();
+  }
+
+  saving = signal(false);
 
   // Save JD
   saveJD(): void {
-    // 儲存邏輯
-    this.router.navigate(['/competency/job-description']);
+    const jd = this.generatedJD();
+    if (!jd) return;
+    this.saving.set(true);
+    this.competencyService.createJobDescription(jd).subscribe({
+      next: () => {
+        this.saving.set(false);
+        this.router.navigate(['/competency/job-description']);
+      },
+      error: () => {
+        this.saving.set(false);
+      }
+    });
   }
 
   // 內容編輯方法
@@ -415,17 +641,48 @@ export class CreateJDPageComponent implements OnInit {
   // 從步驟4生成JD並進入步驟5
   generateFromContent(): void {
     this.isGenerating.set(true);
-    
+
     setTimeout(() => {
       const basic = this.basicInfo();
       const competencies = Array.from(this.selectedCompetencies().values());
       const content = this.jdContent();
-      
+
+      const coreReqs = competencies.filter(c => c.type === 'core').map(c => ({
+        competencyId: c.competencyId,
+        competencyName: c.competencyName,
+        type: 'core' as const,
+        requiredLevel: c.level || 'L1',
+        weight: c.weight
+      }));
+      const mgmtReqs = competencies.filter(c => c.type === 'management').map(c => ({
+        competencyId: c.competencyId,
+        competencyName: c.competencyName,
+        type: 'management' as const,
+        requiredLevel: c.level || 'L1',
+        weight: c.weight
+      }));
+      const profReqs = competencies.filter(c => c.type === 'professional').map(c => ({
+        competencyId: c.competencyId,
+        competencyName: c.competencyName,
+        type: 'professional' as const,
+        requiredLevel: c.level || 'L1',
+        weight: c.weight
+      }));
+      const ksaReqs = competencies.filter(c => c.type === 'ksa').map(c => ({
+        competencyId: c.competencyId,
+        competencyName: c.competencyName,
+        ksaType: c.ksaType || 'skill',
+        weight: c.weight
+      }));
+
       const jd: Partial<JobDescription> = {
         positionCode: basic.positionCode,
         positionName: basic.positionName,
         department: basic.department,
-        gradeLevel: basic.gradeLevel,
+        gradeLevel: basic.grade > 0 ? String(basic.grade) : '',
+        grade: basic.grade || undefined,
+        gradeCode: basic.gradeCode || undefined,
+        positionTitle: basic.positionTitle || undefined,
         summary: `負責${basic.positionName}相關工作，確保達成組織目標`,
         responsibilities: content.responsibilities.filter(r => r.trim()),
         jobPurpose: content.jobPurpose.filter(p => p.trim()),
@@ -436,9 +693,13 @@ export class CreateJDPageComponent implements OnInit {
           competencyId: c.competencyId,
           competencyName: c.competencyName,
           type: c.ksaType || 'skill',
-          requiredLevel: c.level ? parseInt(c.level.replace('L', '')) : 3,
+          requiredLevel: c.level ? parseInt(c.level.replace('L', ''), 10) : 3,
           weight: c.weight
         })),
+        coreCompetencyRequirements: coreReqs,
+        managementCompetencyRequirements: mgmtReqs,
+        professionalCompetencyRequirements: profReqs,
+        ksaCompetencyRequirements: ksaReqs,
         workDescription: content.workDescription.filter(w => w.trim()),
         checklist: content.checklist.filter(c => c.item.trim()),
         jobDuties: content.jobDuties.filter(d => d.trim()),
@@ -462,12 +723,12 @@ export class CreateJDPageComponent implements OnInit {
   // Helper methods
   getLevelLabel(level: CompetencyGradeLevel): string {
     const levelMap: Record<CompetencyGradeLevel, string> = {
-      'L1': 'L1 - 基礎執行',
-      'L2': 'L2 - 獨立作業',
-      'L3': 'L3 - 帶領團隊',
-      'L4': 'L4 - 策略規劃',
-      'L5': 'L5 - 高階領導',
-      'L6': 'L6 - 戰略引領'
+      'L1': 'L1',
+      'L2': 'L2',
+      'L3': 'L3',
+      'L4': 'L4',
+      'L5': 'L5',
+      'L6': 'L6'
     };
     return levelMap[level] || level;
   }

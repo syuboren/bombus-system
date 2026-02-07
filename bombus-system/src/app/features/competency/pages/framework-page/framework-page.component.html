@@ -25,6 +25,16 @@
         </div>
       </div>
 
+      <div class="stat-card stat-card--professional">
+        <div class="stat-card__icon">
+          <i class="ri-briefcase-line"></i>
+        </div>
+        <div class="stat-card__content">
+          <div class="stat-card__value">{{ s.byCategory.professional }}</div>
+          <div class="stat-card__label">專業職能</div>
+        </div>
+      </div>
+
       <div class="stat-card stat-card--ksa">
         <div class="stat-card__icon">
           <i class="ri-book-3-line"></i>
@@ -61,6 +71,12 @@
         <i class="ri-team-line"></i>
         管理職能
         <span class="tab-badge">{{ managementCompetencies().length }}</span>
+      </button>
+      <button class="tab-btn" [class.active]="activeTab() === 'professional'" (click)="setActiveTab('professional')"
+        type="button">
+        <i class="ri-briefcase-line"></i>
+        專業職能
+        <span class="tab-badge">{{ professionalCompetencies().length }}</span>
       </button>
       <button class="tab-btn" [class.active]="activeTab() === 'ksa'" (click)="setActiveTab('ksa')" type="button">
         <i class="ri-book-3-line"></i>
@@ -262,6 +278,103 @@
       <div class="cumulative-note">
         <i class="ri-lightbulb-line"></i>
         <span><strong>等級累進說明：</strong>若職位要求為 L4，則需具備 L1、L2、L3、L4 所有行為指標</span>
+      </div>
+    </div>
+    }
+  </div>
+  }
+  </div>
+</section>
+}
+
+<!-- Professional Competencies Tab -->
+@if (activeTab() === 'professional') {
+<section class="competency-hierarchy-section">
+  <div class="section-header">
+    <div class="section-header__left">
+      <h2 class="section-title">
+        <i class="ri-briefcase-line"></i>
+        專業職能框架
+      </h2>
+      <p class="section-subtitle">依據各部門 JD 萃取之專業職能，涵蓋 {{ professionalCompetencies().length }} 項專業職能，每項職能分 L1-L6 共六個等級</p>
+    </div>
+    <div class="section-header__hint">
+      <i class="ri-information-line"></i>
+      <span>點選職能名稱展開查看各等級行為指標，等級為累進制（如 L3 需具備 L1-L3 所有行為指標）</span>
+    </div>
+  </div>
+
+  <div class="hierarchy-list">
+    @for (competency of professionalCompetencies(); track competency.id) {
+    <div class="hierarchy-item" [class.expanded]="isCompetencyExpanded(competency.id)">
+      <!-- Competency Header -->
+      <div class="hierarchy-item__header" (click)="toggleCompetency(competency.id)">
+        <div class="hierarchy-item__toggle">
+          <i [class]="isCompetencyExpanded(competency.id) ? 'ri-arrow-down-s-line' : 'ri-arrow-right-s-line'"></i>
+        </div>
+        <div class="hierarchy-item__icon" style="background-color: #4A7C6F">
+          <i class="ri-briefcase-line"></i>
+        </div>
+        <div class="hierarchy-item__info">
+          <h3 class="hierarchy-item__name">{{ competency.name }}</h3>
+          <p class="hierarchy-item__definition">{{ competency.definition }}</p>
+        </div>
+        <div class="hierarchy-item__levels">
+          @for (levelData of competency.levels; track levelData.level) {
+          <span class="level-tag" [style.background-color]="getLevelColor(levelData.level)"
+            (click)="expandUpToLevel(competency.id, levelData.level); $event.stopPropagation()">
+            {{ levelData.level }}
+          </span>
+          }
+        </div>
+      </div>
+
+      <!-- Level Details (Expanded) -->
+      @if (isCompetencyExpanded(competency.id)) {
+      <div class="hierarchy-item__body">
+        <div class="level-timeline">
+          @for (levelData of competency.levels; track levelData.level; let i = $index) {
+          <div class="level-block" [class.expanded]="isLevelExpanded(competency.id + '-' + levelData.level)">
+            <div class="level-block__header"
+              (click)="toggleLevel(competency.id + '-' + levelData.level); $event.stopPropagation()">
+              <div class="level-block__marker" [style.background-color]="getLevelColor(levelData.level)">
+                {{ levelData.level }}
+              </div>
+              <div class="level-block__title">
+                <span class="level-block__name">{{ levelLabels[levelData.level] }}</span>
+                <span class="level-block__count">{{ levelData.indicators.length }} 項行為指標</span>
+              </div>
+              <div class="level-block__toggle">
+                <i
+                  [class]="isLevelExpanded(competency.id + '-' + levelData.level) ? 'ri-subtract-line' : 'ri-add-line'"></i>
+              </div>
+            </div>
+
+            @if (isLevelExpanded(competency.id + '-' + levelData.level)) {
+            <div class="level-block__content">
+              <ul class="indicator-list">
+                @for (indicator of levelData.indicators; track indicator) {
+                <li class="indicator-item">
+                  <i class="ri-checkbox-circle-line"></i>
+                  <span>{{ indicator }}</span>
+                </li>
+                }
+              </ul>
+            </div>
+            }
+
+            <!-- Connector line -->
+            @if (i < competency.levels.length - 1) { <div class="level-connector">
+          </div>
+          }
+        </div>
+        }
+      </div>
+
+      <!-- Cumulative Note -->
+      <div class="cumulative-note">
+        <i class="ri-lightbulb-line"></i>
+        <span><strong>等級累進說明：</strong>若職位要求為 L3，則需具備 L1、L2、L3 所有行為指標</span>
       </div>
     </div>
     }

@@ -33,11 +33,11 @@ $ksa-color: #8DA399;
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: $spacing-md;
 
   @include media-max-lg {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
   }
 
   @include media-max-sm {
@@ -120,6 +120,17 @@ $ksa-color: #8DA399;
 
     .stat-card__value {
       color: $management-color;
+    }
+  }
+
+  &--professional {
+    .stat-card__icon {
+      background: rgba(#4A7C6F, 0.15);
+      color: #4A7C6F;
+    }
+
+    .stat-card__value {
+      color: #4A7C6F;
     }
   }
 
