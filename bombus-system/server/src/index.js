@@ -69,13 +69,13 @@ async function start() {
         const monthlyCheckTemplatesRouter = require('./routes/monthly-check-templates');
         const weeklyReportsRouter = require('./routes/weekly-reports');
         const quarterlyReviewsRouter = require('./routes/quarterly-reviews');
-        
+
         app.use('/api', competencyRouter); // 包含 /monthly-checks, /competency-stats
         app.use('/api/monthly-check-templates', monthlyCheckTemplatesRouter);
         app.use('/api/weekly-reports', weeklyReportsRouter);
         app.use('/api/quarterly-reviews', quarterlyReviewsRouter);
         app.use('/api/satisfaction-questions', quarterlyReviewsRouter); // 滿意度調查題目
-        
+
         // Export Routes (Excel 匯出)
         const exportRouter = require('./routes/export');
         app.use('/api/export', exportRouter);
@@ -91,6 +91,10 @@ async function start() {
         // Job Descriptions (職務說明書)
         const jobDescriptionsRouter = require('./routes/job-descriptions');
         app.use('/api/job-descriptions', jobDescriptionsRouter);
+
+        // Competency Management Routes (職能基準庫管理)
+        const competencyManagementRouter = require('./routes/competency-management');
+        app.use('/api/competency-mgmt', competencyManagementRouter);
 
         app.listen(PORT, () => {
             console.log(`🚀 Onboarding API Server running on http://localhost:${PORT}`);

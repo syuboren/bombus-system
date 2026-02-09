@@ -81,7 +81,7 @@
       <button class="tab-btn" [class.active]="activeTab() === 'ksa'" (click)="setActiveTab('ksa')" type="button">
         <i class="ri-book-3-line"></i>
         KSA 職能
-        <span class="tab-badge">{{ legacyCompetencies().length }}</span>
+        <span class="tab-badge">{{ ksaCompetencies().length }}</span>
       </button>
     </div>
   </section>
@@ -104,9 +104,11 @@
         </h2>
         <p class="section-subtitle">適用全員，涵蓋 5 項核心職能，每項職能分 L1-L6 共六個等級</p>
       </div>
-      <div class="section-header__hint">
-        <i class="ri-information-line"></i>
-        <span>點選職能名稱展開查看各等級行為指標，等級為累進制（如 L3 需具備 L1-L3 所有行為指標）</span>
+      <div class="section-header__actions">
+        <button class="btn-add" type="button" (click)="openCreateModal('core')">
+          <i class="ri-add-line"></i>
+          新增核心職能
+        </button>
       </div>
     </div>
 
@@ -132,6 +134,15 @@
               {{ levelData.level }}
             </span>
             }
+          </div>
+          <div class="hierarchy-item__actions" (click)="$event.stopPropagation()">
+            <button class="btn-action btn-action--edit" title="編輯職能" (click)="openEditModal('core', competency)">
+              <i class="ri-edit-line"></i>
+            </button>
+            <button class="btn-action btn-action--delete" title="刪除職能"
+              (click)="confirmDeleteCompetency('core', competency)">
+              <i class="ri-delete-bin-line"></i>
+            </button>
           </div>
         </div>
 
@@ -201,9 +212,11 @@
       </h2>
       <p class="section-subtitle">適用於管理職，涵蓋 3 項管理職能，每項職能分 L1-L6 共六個等級</p>
     </div>
-    <div class="section-header__hint">
-      <i class="ri-information-line"></i>
-      <span>點選職能名稱展開查看各等級行為指標，等級為累進制（如 L4 需具備 L1-L4 所有行為指標）</span>
+    <div class="section-header__actions">
+      <button class="btn-add" type="button" (click)="openCreateModal('management')">
+        <i class="ri-add-line"></i>
+        新增管理職能
+      </button>
     </div>
   </div>
 
@@ -229,6 +242,15 @@
             {{ levelData.level }}
           </span>
           }
+        </div>
+        <div class="hierarchy-item__actions" (click)="$event.stopPropagation()">
+          <button class="btn-action btn-action--edit" title="編輯職能" (click)="openEditModal('management', competency)">
+            <i class="ri-edit-line"></i>
+          </button>
+          <button class="btn-action btn-action--delete" title="刪除職能"
+            (click)="confirmDeleteCompetency('management', competency)">
+            <i class="ri-delete-bin-line"></i>
+          </button>
         </div>
       </div>
 
@@ -296,11 +318,14 @@
         <i class="ri-briefcase-line"></i>
         專業職能框架
       </h2>
-      <p class="section-subtitle">依據各部門 JD 萃取之專業職能，涵蓋 {{ professionalCompetencies().length }} 項專業職能，每項職能分 L1-L6 共六個等級</p>
+      <p class="section-subtitle">依據各部門 JD 萃取之專業職能，涵蓋 {{ professionalCompetencies().length }} 項專業職能，每項職能分 L1-L6 共六個等級
+      </p>
     </div>
-    <div class="section-header__hint">
-      <i class="ri-information-line"></i>
-      <span>點選職能名稱展開查看各等級行為指標，等級為累進制（如 L3 需具備 L1-L3 所有行為指標）</span>
+    <div class="section-header__actions">
+      <button class="btn-add" type="button" (click)="openCreateModal('professional')">
+        <i class="ri-add-line"></i>
+        新增專業職能
+      </button>
     </div>
   </div>
 
@@ -326,6 +351,15 @@
             {{ levelData.level }}
           </span>
           }
+        </div>
+        <div class="hierarchy-item__actions" (click)="$event.stopPropagation()">
+          <button class="btn-action btn-action--edit" title="編輯職能" (click)="openEditModal('professional', competency)">
+            <i class="ri-edit-line"></i>
+          </button>
+          <button class="btn-action btn-action--delete" title="刪除職能"
+            (click)="confirmDeleteCompetency('professional', competency)">
+            <i class="ri-delete-bin-line"></i>
+          </button>
         </div>
       </div>
 
@@ -396,6 +430,10 @@
       <p class="section-subtitle">知識（Knowledge）、技能（Skill）、態度（Attitude），無等級區分，建立 JD 時僅需勾選</p>
     </div>
     <div class="section-actions">
+      <button class="btn-add" type="button" (click)="openCreateKsaModal()">
+        <i class="ri-add-line"></i>
+        新增 KSA 職能
+      </button>
       <app-view-toggle [viewMode]="viewMode()" [moduleColor]="'#D6A28C'" (viewModeChange)="setViewMode($event)" />
     </div>
   </div>
@@ -438,14 +476,22 @@
     <div class="competency-card" (click)="openDetailModal(competency)">
       <div class="competency-card__header">
         <span class="competency-card__code">{{ competency.code }}</span>
-        <span class="competency-card__type" [class]="getTypeClass(competency.type)">
-          {{ getTypeLabel(competency.type) }}
+        <span class="competency-card__type" [class]="getTypeClass(competency.ksaType)">
+          {{ getTypeLabel(competency.ksaType) }}
         </span>
       </div>
       <h4 class="competency-card__name">{{ competency.name }}</h4>
       <p class="competency-card__desc">{{ competency.description }}</p>
       <div class="competency-card__footer">
-        <span class="competency-card__type-full">{{ getTypeName(competency.type) }}</span>
+        <span class="competency-card__type-full">{{ getTypeName(competency.ksaType) }}</span>
+        <div class="competency-card__actions" (click)="$event.stopPropagation()">
+          <button class="btn-action btn-action--edit" title="編輯" (click)="openEditKsaModal(competency)">
+            <i class="ri-edit-line"></i>
+          </button>
+          <button class="btn-action btn-action--delete" title="刪除" (click)="confirmDeleteKsa(competency)">
+            <i class="ri-delete-bin-line"></i>
+          </button>
+        </div>
       </div>
     </div>
     }
@@ -469,15 +515,26 @@
           <td class="td-code">{{ competency.code }}</td>
           <td class="td-name">{{ competency.name }}</td>
           <td>
-            <span class="type-badge" [class]="getTypeClass(competency.type)">
-              {{ getTypeName(competency.type) }}
+            <span class="type-badge" [class]="getTypeClass(competency.ksaType)">
+              {{ getTypeName(competency.ksaType) }}
             </span>
           </td>
           <td class="td-desc">{{ competency.description }}</td>
           <td>
-            <button class="btn-action" (click)="openDetailModal(competency); $event.stopPropagation()" type="button">
-              <i class="ri-eye-line"></i>
-            </button>
+            <div class="table-actions">
+              <button class="btn-action btn-action--view"
+                (click)="openDetailModal(competency); $event.stopPropagation()" type="button" title="查看">
+                <i class="ri-eye-line"></i>
+              </button>
+              <button class="btn-action btn-action--edit"
+                (click)="openEditKsaModal(competency); $event.stopPropagation()" type="button" title="編輯">
+                <i class="ri-edit-line"></i>
+              </button>
+              <button class="btn-action btn-action--delete"
+                (click)="confirmDeleteKsa(competency); $event.stopPropagation()" type="button" title="刪除">
+                <i class="ri-delete-bin-line"></i>
+              </button>
+            </div>
           </td>
         </tr>
         }
@@ -544,5 +601,21 @@
       </button>
     </div>
   </div>
+</div>
+}
+
+<!-- 職能編輯 Modal (核心/管理/專業) -->
+<app-competency-edit-modal [visible]="showEditModal()" [category]="editCategory()" [competency]="editingCompetency()"
+  (close)="closeEditModal()" (saved)="onCompetencySaved($event)" />
+
+<!-- KSA 編輯 Modal -->
+<app-ksa-edit-modal [visible]="showKsaEditModal()" [competency]="editingKsaCompetency()" (close)="closeKsaEditModal()"
+  (saved)="onKsaSaved($event)" />
+
+<!-- Toast 訊息 -->
+@if (toastMessage()) {
+<div class="toast" [class.toast--success]="toastType() === 'success'" [class.toast--error]="toastType() === 'error'">
+  <i [class]="toastType() === 'success' ? 'ri-check-line' : 'ri-error-warning-line'"></i>
+  {{ toastMessage() }}
 </div>
 }

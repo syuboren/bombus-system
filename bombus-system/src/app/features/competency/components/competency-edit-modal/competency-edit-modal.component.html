@@ -1,0 +1,117 @@
+<div class="modal-overlay" [class.visible]="visible()">
+
+    <div class="modal-container" (click)="$event.stopPropagation()">
+        <!-- Header -->
+        <div class="modal-header">
+            <h2 class="modal-title">{{ modalTitle() }}</h2>
+            <button class="close-btn" (click)="onClose()" [disabled]="saving()">
+                <span class="close-icon">×</span>
+            </button>
+        </div>
+
+        <!-- Content -->
+        <div class="modal-content">
+            <!-- Error Message -->
+            @if (error()) {
+            <div class="error-message">
+                <span class="error-icon">⚠️</span>
+                {{ error() }}
+            </div>
+            }
+
+            <!-- Basic Info Section -->
+            <section class="form-section">
+                <h3 class="section-title">基本資訊</h3>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label required">職能代碼</label>
+                        <input type="text" class="form-input" [value]="formData().code"
+                            (input)="updateField('code', $any($event.target).value)" placeholder="例如：CORE-01"
+                            [disabled]="saving()" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label required">職能名稱</label>
+                        <input type="text" class="form-input" [value]="formData().name"
+                            (input)="updateField('name', $any($event.target).value)" placeholder="例如：溝通表達"
+                            [disabled]="saving()" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">職能定義</label>
+                    <textarea class="form-textarea" rows="3" [value]="formData().definition"
+                        (input)="updateField('definition', $any($event.target).value)" placeholder="請輸入職能定義..."
+                        [disabled]="saving()"></textarea>
+                </div>
+            </section>
+
+            <!-- Levels Section -->
+            <section class="form-section">
+                <h3 class="section-title">等級行為指標</h3>
+                <p class="section-desc">設定 L1 至 L6 各等級的行為指標</p>
+
+                <div class="levels-container">
+                    @for (grade of gradeLabels; track grade.level) {
+                    <div class="level-card" [class.expanded]="isLevelExpanded(grade.level)">
+                        <!-- Level Header -->
+                        <div class="level-header" (click)="toggleLevel(grade.level)">
+                            <div class="level-info">
+                                <span class="level-badge">{{ grade.level }}</span>
+                                <span class="level-name">{{ grade.label }}</span>
+                                <span class="indicator-count">
+                                    {{ getLevelIndicators(grade.level).length }} 項指標
+                                </span>
+                            </div>
+                            <span class="expand-icon">
+                                {{ isLevelExpanded(grade.level) ? '▼' : '▶' }}
+                            </span>
+                        </div>
+
+                        <!-- Level Content -->
+                        @if (isLevelExpanded(grade.level)) {
+                        <div class="level-content">
+                            <div class="indicators-list">
+                                @for (indicator of getLevelIndicators(grade.level); track $index) {
+                                <div class="indicator-item">
+                                    <span class="indicator-number">{{ $index + 1 }}.</span>
+                                    <input type="text" class="indicator-input" [value]="indicator"
+                                        (input)="updateIndicator(grade.level, $index, $any($event.target).value)"
+                                        placeholder="輸入行為指標..." [disabled]="saving()" />
+                                    <button class="remove-btn" (click)="removeIndicator(grade.level, $index)"
+                                        [disabled]="saving()" title="移除此指標">
+                                        ✕
+                                    </button>
+                                </div>
+                                }
+                            </div>
+
+                            <button class="add-indicator-btn" (click)="addIndicator(grade.level)" [disabled]="saving()">
+                                <span class="add-icon">+</span>
+                                新增行為指標
+                            </button>
+                        </div>
+                        }
+                    </div>
+                    }
+                </div>
+            </section>
+        </div>
+
+        <!-- Footer -->
+        <div class="modal-footer">
+            <button class="btn btn-secondary" (click)="onClose()" [disabled]="saving()">
+                取消
+            </button>
+            <button class="btn btn-primary" (click)="onSave()" [disabled]="saving()">
+                @if (saving()) {
+                <span class="spinner"></span>
+                儲存中...
+                } @else {
+                {{ isEditMode() ? '更新' : '新增' }}
+                }
+            </button>
+        </div>
+    </div>
+</div>

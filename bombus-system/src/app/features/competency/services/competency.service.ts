@@ -181,12 +181,18 @@ export class CompetencyService {
         ? (typeof ksaDetail.linkedCourses === 'string' ? JSON.parse(ksaDetail.linkedCourses) : ksaDetail.linkedCourses)
         : [];
 
-      // 從 code 推斷 ksaType (K-xx = knowledge, S-xx = skill, A-xx = attitude)
-      let ksaType: CompetencyType = 'knowledge';
-      if (item.code?.startsWith('S-')) {
-        ksaType = 'skill';
-      } else if (item.code?.startsWith('A-')) {
-        ksaType = 'attitude';
+      // 優先使用 API 返回的 ksaType/type，若無則從 code 推斷
+      let ksaType: CompetencyType = item.ksaType || item.type || 'knowledge';
+      // 確保是有效的 KSA 類型
+      if (!['knowledge', 'skill', 'attitude'].includes(ksaType)) {
+        // 從 code 推斷作為備援
+        if (item.code?.includes('-S') || item.code?.startsWith('S-')) {
+          ksaType = 'skill';
+        } else if (item.code?.includes('-A') || item.code?.startsWith('A-') || item.code?.startsWith('ATT')) {
+          ksaType = 'attitude';
+        } else {
+          ksaType = 'knowledge';
+        }
       }
 
       return {
@@ -3419,6 +3425,151 @@ export class CompetencyService {
       { competencyName: '問題解決', required: 4, actual: 4 },
       { competencyName: '溝通表達', required: 4, actual: 3.5 }
     ];
+  }
+
+  // =====================================================
+  // 職能管理 CRUD API
+  // =====================================================
+
+  /**
+   * 新增核心/管理/專業職能
+   * @param category 職能類別：core | management | professional
+   * @param data 職能資料
+   */
+  createCompetency(
+    category: 'core' | 'management' | 'professional',
+    data: Partial<CoreManagementCompetency>
+  ): Observable<CoreManagementCompetency> {
+    return this.http.post<{ success: boolean; data: any }>(
+      `${this.apiUrl}/competency-mgmt/${category}`,
+      {
+        code: data.code,
+        name: data.name,
+        description: data.definition,
+        levels: data.levels?.map(l => ({
+          level: l.level,
+          indicators: l.indicators
+        }))
+      }
+    ).pipe(
+      map(response => {
+        if (response.success) {
+          return this.mapToCoreMgmtCompetencies([response.data], category)[0];
+        }
+        throw new Error('新增職能失敗');
+      })
+    );
+  }
+
+  /**
+   * 更新核心/管理/專業職能
+   * @param category 職能類別：core | management | professional
+   * @param id 職能 ID
+   * @param data 職能資料
+   */
+  updateCompetency(
+    category: 'core' | 'management' | 'professional',
+    id: string,
+    data: Partial<CoreManagementCompetency>
+  ): Observable<CoreManagementCompetency> {
+    return this.http.put<{ success: boolean; data: any }>(
+      `${this.apiUrl}/competency-mgmt/${category}/${id}`,
+      {
+        code: data.code,
+        name: data.name,
+        description: data.definition,
+        levels: data.levels?.map(l => ({
+          level: l.level,
+          indicators: l.indicators
+        }))
+      }
+    ).pipe(
+      map(response => {
+        if (response.success) {
+          return this.mapToCoreMgmtCompetencies([response.data], category)[0];
+        }
+        throw new Error('更新職能失敗');
+      })
+    );
+  }
+
+  /**
+   * 刪除核心/管理/專業職能
+   * @param category 職能類別：core | management | professional
+   * @param id 職能 ID
+   */
+  deleteCompetency(
+    category: 'core' | 'management' | 'professional',
+    id: string
+  ): Observable<{ success: boolean }> {
+    return this.http.delete<{ success: boolean; data: any }>(
+      `${this.apiUrl}/competency-mgmt/${category}/${id}`
+    ).pipe(
+      map(response => ({ success: response.success }))
+    );
+  }
+
+  /**
+   * 新增 KSA 職能
+   * @param data KSA 職能資料
+   */
+  createKSACompetency(data: Partial<KSACompetencyItem>): Observable<KSACompetencyItem> {
+    return this.http.post<{ success: boolean; data: any }>(
+      `${this.apiUrl}/competency-mgmt/ksa`,
+      {
+        code: data.code,
+        name: data.name,
+        type: data.ksaType,
+        description: data.description,
+        behaviorIndicators: data.behaviorIndicators,
+        linkedCourses: data.linkedCourses
+      }
+    ).pipe(
+      map(response => {
+        if (response.success) {
+          return this.mapToKSACompetencies([response.data])[0];
+        }
+        throw new Error('新增 KSA 職能失敗');
+      })
+    );
+  }
+
+  /**
+   * 更新 KSA 職能
+   * @param id 職能 ID
+   * @param data KSA 職能資料
+   */
+  updateKSACompetency(id: string, data: Partial<KSACompetencyItem>): Observable<KSACompetencyItem> {
+    return this.http.put<{ success: boolean; data: any }>(
+      `${this.apiUrl}/competency-mgmt/ksa/${id}`,
+      {
+        code: data.code,
+        name: data.name,
+        type: data.ksaType,
+        description: data.description,
+        behaviorIndicators: data.behaviorIndicators,
+        linkedCourses: data.linkedCourses
+      }
+    ).pipe(
+      map(response => {
+        if (response.success) {
+          return this.mapToKSACompetencies([response.data])[0];
+        }
+        throw new Error('更新 KSA 職能失敗');
+      })
+    );
+  }
+
+  /**
+   * 刪除 KSA 職能
+   * @param id 職能 ID
+   */
+  deleteKSACompetency(id: string): Observable<{ success: boolean }> {
+    return this.http.delete<{ success: boolean; data: any }>(
+      `${this.apiUrl}/competency-mgmt/ksa/${id}`
+    ).pipe(
+      map(response => ({ success: response.success }))
+    );
   }
 }
 

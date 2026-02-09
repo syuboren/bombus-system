@@ -1011,3 +1011,162 @@ $ksa-color: #8DA399;
   padding: $spacing-md $spacing-lg;
   border-top: 1px solid $color-soft-gray;
 }
+
+// ---------------------------------------------------------------
+// Action Buttons
+// ---------------------------------------------------------------
+.btn-add {
+  @include flex-center;
+  gap: $spacing-xs;
+  padding: $spacing-sm $spacing-md;
+  background: $module-color;
+  color: white;
+  border: none;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: all $transition-fast;
+  white-space: nowrap;
+
+  i {
+    font-size: 16px;
+  }
+
+  &:hover {
+    background: $module-color-dark;
+    transform: translateY(-1px);
+    box-shadow: $shadow-md;
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.section-header__actions {
+  @include flex-start;
+  gap: $spacing-sm;
+}
+
+// ---------------------------------------------------------------
+// Toast Notifications
+// ---------------------------------------------------------------
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-md $spacing-lg;
+  background: $color-text-dark;
+  color: white;
+  border-radius: $radius-md;
+  box-shadow: $shadow-lg;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  z-index: 10000;
+  animation: toastSlideIn 0.3s $animation-easing-elastic;
+
+  i {
+    font-size: 18px;
+  }
+
+  &--success {
+    background: $color-success;
+
+    i {
+      color: white;
+    }
+  }
+
+  &--error {
+    background: $color-error;
+
+    i {
+      color: white;
+    }
+  }
+}
+
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(100%) translateY(0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0) translateY(0);
+  }
+}
+
+// ---------------------------------------------------------------
+// Action Buttons for Items
+// ---------------------------------------------------------------
+.hierarchy-item__actions {
+  @include flex-start;
+  gap: $spacing-xs;
+  flex-shrink: 0;
+  margin-left: $spacing-md;
+}
+
+.btn-action {
+  @include flex-center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: $radius-sm;
+  background: transparent;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  i {
+    font-size: 16px;
+  }
+
+  &:hover {
+    background: $color-soft-gray;
+    color: $color-text-dark;
+  }
+
+  &--view {
+    &:hover {
+      background: rgba($color-info, 0.1);
+      color: $color-info;
+    }
+  }
+
+  &--edit {
+    &:hover {
+      background: rgba($module-color, 0.1);
+      color: $module-color;
+    }
+  }
+
+  &--delete {
+    &:hover {
+      background: rgba($color-error, 0.15);
+      color: $color-error;
+    }
+  }
+}
+
+// KSA Card Actions
+.competency-card__footer {
+  @include flex-between;
+}
+
+.competency-card__actions {
+  @include flex-start;
+  gap: $spacing-xs;
+}
+
+// Table Actions
+.table-actions {
+  @include flex-start;
+  gap: $spacing-xs;
+}
