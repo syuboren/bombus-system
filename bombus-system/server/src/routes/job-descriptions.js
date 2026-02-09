@@ -240,6 +240,12 @@ function rowToJobDescription(row) {
     summary: row.summary || '',
     version: row.version || '1.0',
     status: row.status || 'draft',
+    currentVersion: row.current_version || row.version || '1.0',
+    rejectedReason: row.rejected_reason || null,
+    approvedBy: row.approved_by || null,
+    approvedAt: row.approved_at || null,
+    submittedBy: row.submitted_by || null,
+    submittedAt: row.submitted_at || null,
     responsibilities: parse(row.responsibilities),
     jobPurpose: parse(row.job_purpose),
     qualifications: parse(row.qualifications),
@@ -261,6 +267,313 @@ function rowToJobDescription(row) {
     createdAt: row.created_at,
     updatedAt: row.updated_at
   };
+}
+
+// ========================================
+// 狀態轉換 API
+// ========================================
+
+/**
+ * 送出審核：draft/rejected → pending_review
+ */
+router.post('/:id/submit-review', (req, res) => {
+  try {
+    const { actorId, actorName } = req.body;
+    const row = prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
+    if (!row) {
+      return res.status(404).json({ success: false, error: { message: '找不到職務說明書' } });
+    }
+    if (row.status !== 'draft' && row.status !== 'rejected') {
+      return res.status(400).json({ success: false, error: { message: `無法從 ${row.status} 狀態送出審核` } });
+    }
+
+    const now = new Date().toISOString();
+    prepare(`
+      UPDATE job_descriptions 
+      SET status = 'pending_review', submitted_by = ?, submitted_at = ?, rejected_reason = NULL, updated_at = ?
+      WHERE id = ?
+    `).run(actorName || 'HR', now, now, req.params.id);
+
+    // 記錄審核動作
+    logApprovalAction(req.params.id, row.version, 'submit', actorId, actorName, 'hr', null);
+    saveDatabase();
+
+    const updated = prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
+    res.json({ success: true, data: rowToJobDescription(updated) });
+  } catch (error) {
+    console.error('Submit review error:', error);
+    res.status(500).json({ success: false, error: { message: error.message } });
+  }
+});
+
+/**
+ * 審核通過：pending_review → published
+ */
+router.post('/:id/approve', (req, res) => {
+  try {
+    const { actorId, actorName, comment } = req.body;
+    const row = prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
+    if (!row) {
+      return res.status(404).json({ success: false, error: { message: '找不到職務說明書' } });
+    }
+    if (row.status !== 'pending_review') {
+      return res.status(400).json({ success: false, error: { message: `只能審核狀態為「審核中」的職務說明書` } });
+    }
+
+    const now = new Date().toISOString();
+    prepare(`
+      UPDATE job_descriptions 
+      SET status = 'published', approved_by = ?, approved_at = ?, updated_at = ?
+      WHERE id = ?
+    `).run(actorName || 'Manager', now, now, req.params.id);
+
+    // 記錄審核動作
+    logApprovalAction(req.params.id, row.version, 'approve', actorId, actorName, 'manager', comment);
+
+    // 建立版本快照
+    createVersionSnapshot(req.params.id, row.version, 'published', now, null, actorName);
+    saveDatabase();
+
+    const updated = prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
+    res.json({ success: true, data: rowToJobDescription(updated) });
+  } catch (error) {
+    console.error('Approve error:', error);
+    res.status(500).json({ success: false, error: { message: error.message } });
+  }
+});
+
+/**
+ * 退回：pending_review → rejected
+ */
+router.post('/:id/reject', (req, res) => {
+  try {
+    const { actorId, actorName, reason } = req.body;
+    if (!reason) {
+      return res.status(400).json({ success: false, error: { message: '請填寫退回原因' } });
+    }
+    const row = prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
+    if (!row) {
+      return res.status(404).json({ success: false, error: { message: '找不到職務說明書' } });
+    }
+    if (row.status !== 'pending_review') {
+      return res.status(400).json({ success: false, error: { message: `只能退回狀態為「審核中」的職務說明書` } });
+    }
+
+    const now = new Date().toISOString();
+    prepare(`
+      UPDATE job_descriptions 
+      SET status = 'rejected', rejected_reason = ?, updated_at = ?
+      WHERE id = ?
+    `).run(reason, now, req.params.id);
+
+    // 記錄審核動作
+    logApprovalAction(req.params.id, row.version, 'reject', actorId, actorName, 'manager', reason);
+    saveDatabase();
+
+    const updated = prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
+    res.json({ success: true, data: rowToJobDescription(updated) });
+  } catch (error) {
+    console.error('Reject error:', error);
+    res.status(500).json({ success: false, error: { message: error.message } });
+  }
+});
+
+/**
+ * 封存：published → archived
+ */
+router.post('/:id/archive', (req, res) => {
+  try {
+    const { actorId, actorName } = req.body;
+    const row = prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
+    if (!row) {
+      return res.status(404).json({ success: false, error: { message: '找不到職務說明書' } });
+    }
+    if (row.status !== 'published') {
+      return res.status(400).json({ success: false, error: { message: `只能封存狀態為「已發佈」的職務說明書` } });
+    }
+
+    const now = new Date().toISOString();
+    prepare(`
+      UPDATE job_descriptions 
+      SET status = 'archived', updated_at = ?
+      WHERE id = ?
+    `).run(now, req.params.id);
+
+    // 更新版本歷史的 effective_until
+    prepare(`
+      UPDATE job_description_versions 
+      SET effective_until = ?, archived_at = ?
+      WHERE job_description_id = ? AND version = ? AND effective_until IS NULL
+    `).run(now, now, req.params.id, row.version);
+
+    // 記錄審核動作
+    logApprovalAction(req.params.id, row.version, 'archive', actorId, actorName, 'hr', null);
+    saveDatabase();
+
+    const updated = prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
+    res.json({ success: true, data: rowToJobDescription(updated) });
+  } catch (error) {
+    console.error('Archive error:', error);
+    res.status(500).json({ success: false, error: { message: error.message } });
+  }
+});
+
+/**
+ * 建立新版本：published → 新草稿 (原版本歸檔)
+ */
+router.post('/:id/create-new-version', (req, res) => {
+  try {
+    const { actorId, actorName } = req.body;
+    const row = prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
+    if (!row) {
+      return res.status(404).json({ success: false, error: { message: '找不到職務說明書' } });
+    }
+    if (row.status !== 'published') {
+      return res.status(400).json({ success: false, error: { message: `只能從「已發佈」狀態建立新版本` } });
+    }
+
+    const now = new Date().toISOString();
+    const oldVersion = row.version || '1.0';
+    const newVersionNum = parseFloat(oldVersion) + 1;
+    const newVersion = newVersionNum.toFixed(1);
+
+    // 更新舊版本的 effective_until
+    prepare(`
+      UPDATE job_description_versions 
+      SET effective_until = ?
+      WHERE job_description_id = ? AND version = ? AND effective_until IS NULL
+    `).run(now, req.params.id, oldVersion);
+
+    // 更新主記錄為新草稿
+    prepare(`
+      UPDATE job_descriptions 
+      SET status = 'draft', version = ?, current_version = ?, 
+          approved_by = NULL, approved_at = NULL, 
+          submitted_by = NULL, submitted_at = NULL,
+          rejected_reason = NULL, updated_at = ?
+      WHERE id = ?
+    `).run(newVersion, newVersion, now, req.params.id);
+
+    // 記錄審核動作
+    logApprovalAction(req.params.id, newVersion, 'create_new_version', actorId, actorName, 'hr', `從 v${oldVersion} 建立新版本`);
+    saveDatabase();
+
+    const updated = prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
+    res.json({ success: true, data: rowToJobDescription(updated) });
+  } catch (error) {
+    console.error('Create new version error:', error);
+    res.status(500).json({ success: false, error: { message: error.message } });
+  }
+});
+
+// ========================================
+// 版本與審核歷史 API
+// ========================================
+
+/**
+ * 取得版本歷史
+ */
+router.get('/:id/versions', (req, res) => {
+  try {
+    const versions = prepare(`
+      SELECT * FROM job_description_versions 
+      WHERE job_description_id = ? 
+      ORDER BY created_at DESC
+    `).all(req.params.id);
+
+    const data = versions.map(v => ({
+      id: v.id,
+      version: v.version,
+      status: v.status,
+      effectiveFrom: v.effective_from,
+      effectiveUntil: v.effective_until,
+      createdBy: v.created_by,
+      createdAt: v.created_at,
+      publishedAt: v.published_at,
+      archivedAt: v.archived_at
+    }));
+
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error('Get versions error:', error);
+    res.status(500).json({ success: false, error: { message: error.message } });
+  }
+});
+
+/**
+ * 取得特定版本快照
+ */
+router.get('/:id/versions/:versionId', (req, res) => {
+  try {
+    const version = prepare(`
+      SELECT * FROM job_description_versions WHERE id = ?
+    `).get(req.params.versionId);
+
+    if (!version) {
+      return res.status(404).json({ success: false, error: { message: '找不到版本' } });
+    }
+
+    const snapshot = JSON.parse(version.snapshot);
+    res.json({ success: true, data: { ...snapshot, versionInfo: { id: version.id, version: version.version, status: version.status, effectiveFrom: version.effective_from, effectiveUntil: version.effective_until } } });
+  } catch (error) {
+    console.error('Get version snapshot error:', error);
+    res.status(500).json({ success: false, error: { message: error.message } });
+  }
+});
+
+/**
+ * 取得審核記錄
+ */
+router.get('/:id/approvals', (req, res) => {
+  try {
+    const approvals = prepare(`
+      SELECT * FROM job_description_approvals 
+      WHERE job_description_id = ? 
+      ORDER BY created_at DESC
+    `).all(req.params.id);
+
+    const data = approvals.map(a => ({
+      id: a.id,
+      version: a.version,
+      action: a.action,
+      actorId: a.actor_id,
+      actorName: a.actor_name,
+      actorRole: a.actor_role,
+      comment: a.comment,
+      createdAt: a.created_at
+    }));
+
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error('Get approvals error:', error);
+    res.status(500).json({ success: false, error: { message: error.message } });
+  }
+});
+
+// ========================================
+// Helper Functions
+// ========================================
+
+function logApprovalAction(jdId, version, action, actorId, actorName, actorRole, comment) {
+  const id = uuidv4();
+  prepare(`
+    INSERT INTO job_description_approvals (id, job_description_id, version, action, actor_id, actor_name, actor_role, comment)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(id, jdId, version, action, actorId || null, actorName || 'System', actorRole || 'system', comment || null);
+}
+
+function createVersionSnapshot(jdId, version, status, effectiveFrom, effectiveUntil, createdBy) {
+  const row = prepare('SELECT * FROM job_descriptions WHERE id = ?').get(jdId);
+  if (!row) return;
+
+  const snapshot = JSON.stringify(rowToJobDescription(row));
+  const id = uuidv4();
+  const now = new Date().toISOString();
+
+  prepare(`
+    INSERT INTO job_description_versions (id, job_description_id, version, snapshot, status, effective_from, effective_until, created_by, created_at, published_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(id, jdId, version, snapshot, status, effectiveFrom, effectiveUntil || null, createdBy || 'System', now, status === 'published' ? now : null);
 }
 
 module.exports = router;

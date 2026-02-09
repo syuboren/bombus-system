@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, signal, OnInit, computed, WritableSignal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { CompetencyService } from '../../services/competency.service';
 import {
@@ -52,17 +52,22 @@ interface CompetencySelection {
 export class CreateJDPageComponent implements OnInit {
   private competencyService = inject(CompetencyService);
   router = inject(Router);
-
-  // Page Info
-  readonly pageTitle = '新增職務說明書';
-  readonly breadcrumbs = ['首頁', '職能管理', '職務說明書管理'];
+  private route = inject(ActivatedRoute);
 
   // Mode and Step
+  isEditMode = signal(false); // For page mode (Edit vs Create)
+  editingId = signal<string | null>(null);
+  currentVersion = signal('1.0'); // Track current version for edit mode
+
+  // Page Info
+  pageTitle = computed(() => this.isEditMode() ? '編輯職務說明書' : '新增職務說明書');
+  readonly breadcrumbs = ['首頁', '職能管理', '職務說明書管理'];
+
   currentMode = signal<CreateMode>('manual');
   currentStep = signal<Step>('mode');
   isGenerating = signal(false);
   generatedJD = signal<Partial<JobDescription> | null>(null);
-  isEditing = signal(false);
+  isEditing = signal(false); // For review step
 
   // AI 生成動畫狀態
   aiGenerationProgress = signal(0);
@@ -178,10 +183,34 @@ export class CreateJDPageComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    // Check for Edit ID
+    const id = this.route.snapshot.paramMap.get('id');
+    if (id) {
+      this.initEditMode(id);
+    }
+
     this.loadCompetencies();
     this.loadDepartments();
     this.loadGradeLevels();
     this.loadTemplates();
+  }
+
+  initEditMode(id: string): void {
+    this.isEditMode.set(true);
+    this.editingId.set(id);
+    this.currentMode.set('manual');
+    this.isLoadingTemplate.set(true);
+
+    this.competencyService.getJobDescriptionById(id).subscribe({
+      next: (jd) => {
+        if (jd) {
+          this.applyTemplate(jd, true); // true for Edit Mode
+          this.currentStep.set('basic');
+        }
+        this.isLoadingTemplate.set(false);
+      },
+      error: () => this.isLoadingTemplate.set(false)
+    });
   }
 
   loadCompetencies(): void {
@@ -460,21 +489,28 @@ export class CreateJDPageComponent implements OnInit {
   }
 
   // 套用模版資料到各 Signal
-  private applyTemplate(jd: JobDescription): void {
+  private applyTemplate(jd: JobDescription, isEdit: boolean = false): void {
     // 防禦性檢查
     if (!jd) {
       console.warn('applyTemplate: jd is undefined');
       return;
     }
 
-    // 1. 套用基本資訊（清空職位代碼以重新生成）
+    // 0. 保存版本資訊 (僅在編輯模式)
+    if (isEdit) {
+      this.currentVersion.set(jd.version || '1.0');
+    } else {
+      this.currentVersion.set('1.0');
+    }
+
+    // 1. 套用基本資訊
     this.basicInfo.set({
-      positionCode: '', // 清空以重新生成
+      positionCode: isEdit ? (jd.positionCode || '') : '', // 編輯模式保留代碼，模板模式清空
       positionName: jd.positionName || '',
       department: jd.department || '',
       grade: typeof jd.gradeLevel === 'string' ? parseInt(jd.gradeLevel, 10) || 0 : 0,
-      gradeCode: '',
-      positionTitle: ''
+      gradeCode: jd.gradeCode || '',
+      positionTitle: jd.positionTitle || ''
     });
 
     // 載入該部門的職位選項
@@ -556,8 +592,10 @@ export class CreateJDPageComponent implements OnInit {
       monthlyTasks: jd.monthlyTasks?.length ? jd.monthlyTasks : ['']
     });
 
-    // 重新生成職位代碼
-    this.generateCodeIfReady();
+    // 重新生成職位代碼 (僅在非編輯模式或代碼為空時)
+    if (!isEdit || !this.basicInfo().positionCode) {
+      this.generateCodeIfReady();
+    }
   }
 
   saving = signal(false);
@@ -567,15 +605,27 @@ export class CreateJDPageComponent implements OnInit {
     const jd = this.generatedJD();
     if (!jd) return;
     this.saving.set(true);
-    this.competencyService.createJobDescription(jd).subscribe({
-      next: () => {
-        this.saving.set(false);
-        this.router.navigate(['/competency/job-description']);
-      },
-      error: () => {
-        this.saving.set(false);
-      }
-    });
+
+    if (this.isEditMode() && this.editingId()) {
+      const id = this.editingId()!;
+      // Ensure generatedJD has id
+      const jdToUpdate = { ...jd, id };
+      this.competencyService.updateJobDescription(id, jdToUpdate).subscribe({
+        next: () => {
+          this.saving.set(false);
+          this.router.navigate(['/competency/job-description']);
+        },
+        error: () => this.saving.set(false)
+      });
+    } else {
+      this.competencyService.createJobDescription(jd).subscribe({
+        next: () => {
+          this.saving.set(false);
+          this.router.navigate(['/competency/job-description']);
+        },
+        error: () => this.saving.set(false)
+      });
+    }
   }
 
   // 內容編輯方法
@@ -706,7 +756,7 @@ export class CreateJDPageComponent implements OnInit {
         dailyTasks: content.dailyTasks.filter(t => t.trim()),
         weeklyTasks: content.weeklyTasks.filter(t => t.trim()),
         monthlyTasks: content.monthlyTasks.filter(t => t.trim()),
-        version: '1.0',
+        version: this.isEditMode() ? this.currentVersion() : '1.0',
         status: 'draft',
         createdAt: new Date(),
         updatedAt: new Date(),

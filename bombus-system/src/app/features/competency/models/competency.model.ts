@@ -278,7 +278,8 @@ export interface JobDescription {
   // ====== 元資料 ======
   summary: string;
   version: string;
-  status: 'draft' | 'published' | 'archived';
+  status: 'draft' | 'pending_review' | 'rejected' | 'published' | 'archived';
+  rejectedReason?: string;  // 退回原因
   createdAt: Date;
   updatedAt: Date;
   createdBy: string;
@@ -331,10 +332,15 @@ export interface CompetencyRequirement {
 }
 
 export interface JDVersion {
+  id: string;
   version: string;
+  status: string;
+  effectiveFrom: Date;
+  effectiveUntil?: Date;
   updatedAt: Date;
   updatedBy: string;
   changeLog: string;
+  createdBy?: string;
 }
 
 // ---------------------------------------------------------------

@@ -182,7 +182,7 @@ async function initDatabase() {
       FOREIGN KEY (job_id) REFERENCES jobs(id)
     )
   `);
-  
+
   // =====================================================
   // 候選人學歷資料表 (對應 104 education[])
   // =====================================================
@@ -203,7 +203,7 @@ async function initDatabase() {
       FOREIGN KEY (candidate_id) REFERENCES candidates(id) ON DELETE CASCADE
     )
   `);
-  
+
   // =====================================================
   // 候選人工作經歷資料表 (對應 104 experiences[])
   // =====================================================
@@ -231,7 +231,7 @@ async function initDatabase() {
       FOREIGN KEY (candidate_id) REFERENCES candidates(id) ON DELETE CASCADE
     )
   `);
-  
+
   // =====================================================
   // 候選人技能專長資料表 (對應 104 speciality[])
   // =====================================================
@@ -247,7 +247,7 @@ async function initDatabase() {
       FOREIGN KEY (candidate_id) REFERENCES candidates(id) ON DELETE CASCADE
     )
   `);
-  
+
   // =====================================================
   // 候選人語言能力資料表 (對應 104 foreignLanguage[] + localLanguage[])
   // =====================================================
@@ -268,7 +268,7 @@ async function initDatabase() {
       FOREIGN KEY (candidate_id) REFERENCES candidates(id) ON DELETE CASCADE
     )
   `);
-  
+
   // =====================================================
   // 候選人附件資料表 (對應 104 attachFiles[])
   // =====================================================
@@ -286,7 +286,7 @@ async function initDatabase() {
       FOREIGN KEY (candidate_id) REFERENCES candidates(id) ON DELETE CASCADE
     )
   `);
-  
+
   // =====================================================
   // 候選人專案作品資料表 (對應 104 projectDatas[])
   // =====================================================
@@ -306,7 +306,7 @@ async function initDatabase() {
       FOREIGN KEY (candidate_id) REFERENCES candidates(id) ON DELETE CASCADE
     )
   `);
-  
+
   // =====================================================
   // 候選人自訂內容資料表 (對應 104 customContentDatas[])
   // =====================================================
@@ -321,7 +321,7 @@ async function initDatabase() {
       FOREIGN KEY (candidate_id) REFERENCES candidates(id) ON DELETE CASCADE
     )
   `);
-  
+
   // =====================================================
   // 候選人推薦人資料表 (對應 104 recommenders[])
   // =====================================================
@@ -339,7 +339,7 @@ async function initDatabase() {
       FOREIGN KEY (candidate_id) REFERENCES candidates(id) ON DELETE CASCADE
     )
   `);
-  
+
   // =====================================================
   // 候選人應徵紀錄資料表 (對應 104 applyJob[])
   // =====================================================
@@ -355,7 +355,7 @@ async function initDatabase() {
       FOREIGN KEY (candidate_id) REFERENCES candidates(id) ON DELETE CASCADE
     )
   `);
-  
+
   // =====================================================
   // 候選人應徵問答資料表 (對應 104 applyQuestion[])
   // =====================================================
@@ -371,7 +371,7 @@ async function initDatabase() {
       FOREIGN KEY (candidate_id) REFERENCES candidates(id) ON DELETE CASCADE
     )
   `);
-  
+
   // =====================================================
   // 候選人履歷 AI 解析結果資料表
   // =====================================================
@@ -429,7 +429,7 @@ async function initDatabase() {
       UNIQUE(candidate_id, job_id)  -- 每個候選人對每個職缺只有一筆分析
     )
   `);
-  
+
   // =====================================================
   // 擴充既有資料表的欄位 (用於現有資料庫的 migration)
   // =====================================================
@@ -483,7 +483,7 @@ async function initDatabase() {
     { name: 'current_company', type: 'TEXT' },
     { name: 'location', type: 'TEXT' }
   ];
-  
+
   candidateColumns.forEach(col => {
     try {
       db.run(`ALTER TABLE candidates ADD COLUMN ${col.name} ${col.type}`);
@@ -667,7 +667,7 @@ async function initDatabase() {
     { id: 'tag-high-potential', name: '高潛力', color: '#84CC16', category: 'personality' },
     { id: 'tag-referred', name: '內部推薦', color: '#6366F1', category: 'custom' }
   ];
-  
+
   defaultTags.forEach(tag => {
     db.run(`
       INSERT OR IGNORE INTO talent_tags (id, name, color, category)
@@ -761,7 +761,7 @@ async function initDatabase() {
       FOREIGN KEY (interview_id) REFERENCES interviews(id) ON DELETE CASCADE
     )
   `);
-  
+
   // 建立 candidate_interview_forms 索引
   db.run(`CREATE INDEX IF NOT EXISTS idx_interview_forms_token ON candidate_interview_forms(form_token)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_interview_forms_interview ON candidate_interview_forms(interview_id)`);
@@ -816,7 +816,7 @@ async function initDatabase() {
   // ============================================================
   // 員工資料表 (Employee Management)
   // ============================================================
-  
+
   // 1. 員工主表 (擴充版)
   db.run(`
     CREATE TABLE IF NOT EXISTS employees (
@@ -846,19 +846,19 @@ async function initDatabase() {
   try {
     db.run(`ALTER TABLE employees ADD COLUMN candidate_id TEXT`);
   } catch (e) { /* 欄位已存在 */ }
-  
+
   try {
     db.run(`ALTER TABLE employees ADD COLUMN probation_end_date TEXT`);
   } catch (e) { /* 欄位已存在 */ }
-  
+
   try {
     db.run(`ALTER TABLE employees ADD COLUMN probation_months INTEGER DEFAULT 3`);
   } catch (e) { /* 欄位已存在 */ }
-  
+
   try {
     db.run(`ALTER TABLE employees ADD COLUMN onboarding_status TEXT DEFAULT 'pending'`);
   } catch (e) { /* 欄位已存在 */ }
-  
+
   try {
     db.run(`ALTER TABLE employees ADD COLUMN converted_at TEXT`);
   } catch (e) { /* 欄位已存在 */ }
@@ -1532,7 +1532,7 @@ function initFullEmployeeData() {
     const hasFullData = db.prepare(`
       SELECT COUNT(*) as c FROM employees WHERE employee_no IS NOT NULL
     `).get().c;
-    
+
     if (hasFullData > 0) {
       console.log('📋 Employee data already initialized, skipping...');
       return;
@@ -1916,7 +1916,7 @@ function prepare(sql) {
 function clearAllMeetingData() {
   try {
     console.log('🗑️ Clearing all meeting data...');
-    
+
     // 按照外鍵依賴順序刪除
     db.run('DELETE FROM meeting_conclusions');
     db.run('DELETE FROM meeting_attachments');
@@ -1924,7 +1924,7 @@ function clearAllMeetingData() {
     db.run('DELETE FROM meeting_attendees');
     db.run('DELETE FROM meeting_reminders');
     db.run('DELETE FROM meetings');
-    
+
     console.log('✅ All meeting data cleared successfully');
   } catch (error) {
     console.error('Error clearing meeting data:', error.message);
@@ -2177,8 +2177,108 @@ function initJobDescriptionsTable() {
     db.run(`CREATE INDEX IF NOT EXISTS idx_job_descriptions_grade ON job_descriptions(grade)`);
     db.run(`CREATE INDEX IF NOT EXISTS idx_job_descriptions_status ON job_descriptions(status)`);
     console.log('✅ 職務說明書資料表已建立');
+
+    // 遷移：新增審核流程相關欄位
+    migrateJobDescriptionsApprovalColumns();
+
+    // 建立版本歷史資料表
+    initJobDescriptionVersionsTable();
+
+    // 建立審核記錄資料表
+    initJobDescriptionApprovalsTable();
+
   } catch (error) {
     console.error('Error initializing job_descriptions table:', error.message);
+  }
+}
+
+/**
+ * 遷移 job_descriptions 資料表
+ * 為現有資料表新增審核流程相關欄位
+ */
+function migrateJobDescriptionsApprovalColumns() {
+  try {
+    const columnsResult = db.exec(`PRAGMA table_info(job_descriptions)`);
+    const existingColumns = columnsResult.length > 0
+      ? columnsResult[0].values.map(row => row[1])
+      : [];
+
+    const columnsToAdd = [
+      { name: 'current_version', type: 'TEXT DEFAULT \'1.0\'' },
+      { name: 'rejected_reason', type: 'TEXT' },
+      { name: 'approved_by', type: 'TEXT' },
+      { name: 'approved_at', type: 'TEXT' },
+      { name: 'submitted_by', type: 'TEXT' },
+      { name: 'submitted_at', type: 'TEXT' }
+    ];
+
+    for (const col of columnsToAdd) {
+      if (!existingColumns.includes(col.name)) {
+        db.run(`ALTER TABLE job_descriptions ADD COLUMN ${col.name} ${col.type}`);
+        console.log(`📝 Added column '${col.name}' to job_descriptions table`);
+      }
+    }
+  } catch (error) {
+    console.error('Migration error (job_descriptions approval columns):', error.message);
+  }
+}
+
+/**
+ * 職務說明書版本歷史資料表
+ * 用於儲存每個版本的完整快照，支援法遵稽核
+ */
+function initJobDescriptionVersionsTable() {
+  try {
+    db.run(`
+      CREATE TABLE IF NOT EXISTS job_description_versions (
+        id TEXT PRIMARY KEY,
+        job_description_id TEXT NOT NULL,
+        version TEXT NOT NULL,
+        snapshot TEXT NOT NULL,
+        status TEXT NOT NULL,
+        effective_from TEXT,
+        effective_until TEXT,
+        created_by TEXT,
+        created_at TEXT DEFAULT (datetime('now')),
+        published_at TEXT,
+        archived_at TEXT,
+        FOREIGN KEY (job_description_id) REFERENCES job_descriptions(id)
+      )
+    `);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_jd_versions_jd_id ON job_description_versions(job_description_id)`);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_jd_versions_effective ON job_description_versions(effective_from, effective_until)`);
+    console.log('✅ 職務說明書版本歷史資料表已建立');
+  } catch (error) {
+    console.error('Error initializing job_description_versions table:', error.message);
+  }
+}
+
+/**
+ * 職務說明書審核記錄資料表
+ * 記錄所有狀態變更操作，支援完整稽核軌跡
+ */
+function initJobDescriptionApprovalsTable() {
+  try {
+    db.run(`
+      CREATE TABLE IF NOT EXISTS job_description_approvals (
+        id TEXT PRIMARY KEY,
+        job_description_id TEXT NOT NULL,
+        version TEXT NOT NULL,
+        action TEXT NOT NULL,
+        actor_id TEXT,
+        actor_name TEXT,
+        actor_role TEXT,
+        comment TEXT,
+        ip_address TEXT,
+        created_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (job_description_id) REFERENCES job_descriptions(id)
+      )
+    `);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_jd_approvals_jd_id ON job_description_approvals(job_description_id)`);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_jd_approvals_action ON job_description_approvals(action)`);
+    console.log('✅ 職務說明書審核記錄資料表已建立');
+  } catch (error) {
+    console.error('Error initializing job_description_approvals table:', error.message);
   }
 }
 
@@ -2639,7 +2739,7 @@ function migrateEmployeeGradeLevels() {
 
         // 根據舊 level 推斷新的職等職級
         if (oldLevel === 'L6' || oldLevel === 'L5') {
-          mapping = oldRole === 'manager' 
+          mapping = oldRole === 'manager'
             ? { grade: '6', level: 'BS14', position: emp.position }
             : { grade: '5', level: 'BS12', position: emp.position };
         } else if (oldLevel === 'L4') {

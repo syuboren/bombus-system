@@ -148,7 +148,7 @@ export class CompetencyService {
   // =====================================================
   // API 資料轉換方法
   // =====================================================
-  
+
   /**
    * 將 API 資料轉換為 CoreManagementCompetency 格式
    */
@@ -174,13 +174,13 @@ export class CompetencyService {
   private mapToKSACompetencies(data: any[]): KSACompetencyItem[] {
     return data.map(item => {
       const ksaDetail = item.ksaDetail || {};
-      const behaviorIndicators = ksaDetail.behaviorIndicators 
+      const behaviorIndicators = ksaDetail.behaviorIndicators
         ? (typeof ksaDetail.behaviorIndicators === 'string' ? JSON.parse(ksaDetail.behaviorIndicators) : ksaDetail.behaviorIndicators)
         : [];
       const linkedCourses = ksaDetail.linkedCourses
         ? (typeof ksaDetail.linkedCourses === 'string' ? JSON.parse(ksaDetail.linkedCourses) : ksaDetail.linkedCourses)
         : [];
-      
+
       // 從 code 推斷 ksaType (K-xx = knowledge, S-xx = skill, A-xx = attitude)
       let ksaType: CompetencyType = 'knowledge';
       if (item.code?.startsWith('S-')) {
@@ -188,7 +188,7 @@ export class CompetencyService {
       } else if (item.code?.startsWith('A-')) {
         ksaType = 'attitude';
       }
-      
+
       return {
         id: item.id,
         code: item.code,
@@ -1639,6 +1639,8 @@ export class CompetencyService {
       positionName: d.positionName ?? d.position_name ?? '',
       department: d.department ?? '',
       gradeLevel: d.gradeLevel ?? (d.grade != null ? String(d.grade) : '') ?? d.gradeCode ?? '',
+      gradeCode: d.gradeCode ?? d.grade_code ?? '',
+      positionTitle: d.positionTitle ?? d.position_title ?? '',
       responsibilities: arr(d.responsibilities),
       jobPurpose: arr(d.jobPurpose ?? d.job_purpose),
       qualifications: arr(d.qualifications),
@@ -1658,7 +1660,8 @@ export class CompetencyService {
       monthlyTasks: arr(d.monthlyTasks ?? d.monthly_tasks),
       summary: d.summary ?? '',
       version: d.version ?? '1.0',
-      status: (d.status === 'draft' || d.status === 'published' || d.status === 'archived' ? d.status : 'draft') as 'draft' | 'published' | 'archived',
+      status: (['draft', 'pending_review', 'rejected', 'published', 'archived'].includes(d.status) ? d.status : 'draft') as 'draft' | 'pending_review' | 'rejected' | 'published' | 'archived',
+      rejectedReason: d.rejectedReason ?? d.rejected_reason ?? undefined,
       createdAt: d.createdAt ? new Date(d.createdAt) : new Date(),
       updatedAt: d.updatedAt ? new Date(d.updatedAt) : new Date(),
       createdBy: d.createdBy ?? d.created_by ?? ''
@@ -1696,6 +1699,111 @@ export class CompetencyService {
       monthlyTasks: jd.monthlyTasks ?? [],
       createdBy: jd.createdBy
     };
+  }
+
+  // =====================================================
+  // 職務說明書狀態流程 API
+  // =====================================================
+
+  /**
+   * 送出審核：draft/rejected → pending_review
+   */
+  submitJDForReview(id: string, actorName?: string): Observable<any> {
+    return this.http.post<{ success: boolean; data: any }>(
+      `${this.apiUrl}/job-descriptions/${id}/submit-review`,
+      { actorName: actorName || 'HR' }
+    ).pipe(
+      map(res => (res.success && res.data ? this.mapApiToJobDescription(res.data) : null)),
+      catchError(err => { console.error('Submit review error:', err); return of(null); })
+    );
+  }
+
+  /**
+   * 審核通過：pending_review → published
+   */
+  approveJD(id: string, actorName?: string, comment?: string): Observable<any> {
+    return this.http.post<{ success: boolean; data: any }>(
+      `${this.apiUrl}/job-descriptions/${id}/approve`,
+      { actorName, comment }
+    ).pipe(
+      map(res => (res.success && res.data ? this.mapApiToJobDescription(res.data) : null)),
+      catchError(err => { console.error('Approve error:', err); return of(null); })
+    );
+  }
+
+  /**
+   * 退回：pending_review → rejected
+   */
+  rejectJD(id: string, reason: string, actorName?: string): Observable<any> {
+    return this.http.post<{ success: boolean; data: any }>(
+      `${this.apiUrl}/job-descriptions/${id}/reject`,
+      { reason, actorName }
+    ).pipe(
+      map(res => (res.success && res.data ? this.mapApiToJobDescription(res.data) : null)),
+      catchError(err => { console.error('Reject error:', err); return of(null); })
+    );
+  }
+
+  /**
+   * 封存：published → archived
+   */
+  archiveJD(id: string, actorName?: string): Observable<any> {
+    return this.http.post<{ success: boolean; data: any }>(
+      `${this.apiUrl}/job-descriptions/${id}/archive`,
+      { actorName }
+    ).pipe(
+      map(res => (res.success && res.data ? this.mapApiToJobDescription(res.data) : null)),
+      catchError(err => { console.error('Archive error:', err); return of(null); })
+    );
+  }
+
+  /**
+   * 建立新版本：published → 新草稿
+   */
+  createNewJDVersion(id: string, actorName?: string): Observable<any> {
+    return this.http.post<{ success: boolean; data: any }>(
+      `${this.apiUrl}/job-descriptions/${id}/create-new-version`,
+      { actorName }
+    ).pipe(
+      map(res => (res.success && res.data ? this.mapApiToJobDescription(res.data) : null)),
+      catchError(err => { console.error('Create new version error:', err); return of(null); })
+    );
+  }
+
+  /**
+   * 取得版本歷史
+   */
+  getJDVersionHistory(id: string): Observable<any[]> {
+    return this.http.get<{ success: boolean; data: any[] }>(
+      `${this.apiUrl}/job-descriptions/${id}/versions`
+    ).pipe(
+      map(res => (res.success && res.data ? res.data : [])),
+      catchError(() => of([]))
+    );
+  }
+
+  /**
+   * 取得特定版本詳情
+   */
+  getJDVersion(id: string, versionId: string): Observable<JobDescription | null> {
+    return this.http.get<{ success: boolean; data: any }>(
+      `${this.apiUrl}/job-descriptions/${id}/versions/${versionId}`
+    ).pipe(
+      map(res => (res.success && res.data ? this.mapApiToJobDescription(res.data) : null)),
+      catchError(err => { console.error('Get version error:', err); return of(null); })
+    );
+  }
+
+  /**
+   * 取得審核記錄
+   */
+  getJDApprovalHistory(id: string): Observable<any[]> {
+    return this.http.get<{ success: boolean; data: any[] }>(
+      `${this.apiUrl}/job-descriptions/${id}/approvals`
+    ).pipe(
+      map(res => (res.success && res.data ? res.data : [])),
+      catchError(() => of([]))
+    );
   }
 
 

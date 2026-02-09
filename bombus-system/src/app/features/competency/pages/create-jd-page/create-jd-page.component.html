@@ -1,4 +1,4 @@
-<app-header [pageTitle]="pageTitle" [breadcrumbs]="breadcrumbs">
+<app-header [pageTitle]="pageTitle()" [breadcrumbs]="breadcrumbs">
   <div header-actions class="header-actions">
     <button class="btn-secondary" type="button" (click)="router.navigate(['/competency/job-description'])">
       <i class="ri-close-line"></i>
@@ -120,11 +120,12 @@
         </div>
         <div class="form-group">
           <label class="form-label">職位名稱 <span class="required">*</span></label>
-          <input type="text" class="form-input" placeholder="例如：財務長" [(ngModel)]="positionName">
+          <input type="text" class="form-input" placeholder="例如：財務長" [(ngModel)]="positionName"
+            [disabled]="isEditMode()">
         </div>
         <div class="form-group">
           <label class="form-label">部門 <span class="required">*</span></label>
-          <select class="form-select" [(ngModel)]="department">
+          <select class="form-select" [(ngModel)]="department" [disabled]="isEditMode()">
             <option value="">請選擇部門</option>
             @for (d of departments(); track d.id) {
             <option [value]="d.name">{{ d.name }}</option>
@@ -133,7 +134,8 @@
         </div>
         <div class="form-group">
           <label class="form-label">職等 <span class="required">*</span></label>
-          <select class="form-select" [ngModel]="basicInfo().grade" (ngModelChange)="grade=$event">
+          <select class="form-select" [ngModel]="basicInfo().grade" (ngModelChange)="grade=$event"
+            [disabled]="isEditMode()">
             <option [value]="0">請選擇職等</option>
             @for (g of gradeLevels(); track g.grade) {
             <option [value]="g.grade">Grade {{ g.grade }} - {{ g.titleManagement || g.titleProfessional || '' }}
@@ -143,7 +145,7 @@
         </div>
         <div class="form-group">
           <label class="form-label">職位 <span class="required">*</span></label>
-          <select class="form-select" [(ngModel)]="positionTitle">
+          <select class="form-select" [(ngModel)]="positionTitle" [disabled]="isEditMode()">
             <option value="">請選擇職位</option>
             @for (p of positions(); track p.id) {
             <option [value]="p.title">{{ p.title }}</option>
@@ -153,7 +155,9 @@
       </div>
 
       <div class="form-actions">
+        @if (!isEditMode()) {
         <button class="btn-secondary" (click)="prevStep()" type="button">上一步</button>
+        }
         <button class="btn-primary"
           [disabled]="!basicInfo().positionCode || !basicInfo().positionName || !basicInfo().department || !basicInfo().grade"
           (click)="nextStep()" type="button">
@@ -933,9 +937,9 @@
         <button class="btn-secondary" (click)="currentStep.set('content')" type="button">返回編輯</button>
         <button class="btn-primary" (click)="saveJD()" type="button" [disabled]="saving()">
           @if (saving()) {
-          <span>儲存中...</span>
+          <span>{{ isEditMode() ? '更新中...' : '儲存中...' }}</span>
           } @else {
-          <i class="ri-save-line"></i> 儲存職務說明書
+          <i class="ri-save-line"></i> {{ isEditMode() ? '更新職務說明書' : '儲存職務說明書' }}
           }
         </button>
       </div>

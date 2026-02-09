@@ -54,7 +54,7 @@ $module-color-dark: $color-l2-terracotta-dark;
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: $spacing-md;
 
   @include media-max-lg {
@@ -93,9 +93,19 @@ $module-color-dark: $color-l2-terracotta-dark;
     color: $color-success;
   }
 
-  &.draft {
+  &.pending {
     background: rgba($color-warning, 0.15);
     color: $color-warning;
+  }
+
+  &.draft {
+    background: rgba($color-muted-gray, 0.15);
+    color: $color-muted-gray;
+  }
+
+  &.rejected {
+    background: rgba($color-error, 0.15);
+    color: $color-error;
   }
 
   &.archived {
@@ -414,7 +424,54 @@ $module-color-dark: $color-l2-terracotta-dark;
   &--large .modal-content {
     max-width: 800px;
   }
+
+  &--xl .modal-content {
+    max-width: 95vw;
+    width: 95vw;
+  }
 }
+
+.comparison-header-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-md;
+  background: #F8F9FA;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #E9ECEF;
+  margin: 0 $spacing-md;
+  min-width: 280px;
+
+  .comparison-title-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    i {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: $color-text-secondary;
+      font-size: 18px;
+      margin-right: 0;
+      line-height: 1;
+      height: 24px;
+      width: 24px;
+    }
+
+    .comparison-title {
+      display: flex;
+      align-items: center;
+      height: 24px;
+      font-weight: 600;
+      color: $color-text-dark;
+      font-size: 14px;
+      line-height: 1;
+    }
+  }
+}
+
 
 .modal-content {
   background: $color-pure-white;
@@ -427,6 +484,83 @@ $module-color-dark: $color-l2-terracotta-dark;
   display: flex;
   flex-direction: column;
   animation: modalElasticIn 0.4s $animation-easing-elastic;
+}
+
+// Comparison Mode Body Layout
+.modal-body.comparison-mode {
+  display: grid;
+  grid-template-columns: 1fr 1px 1fr;
+  gap: $spacing-lg;
+  overflow-y: hidden;
+
+  .divider {
+    background: $color-soft-gray;
+    height: 100%;
+  }
+
+  .comparison-column {
+    overflow-y: auto;
+    padding-right: $spacing-xs;
+    @include custom-scrollbar;
+  }
+
+  .comparison-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: $spacing-md;
+    border-bottom: 2px solid $color-soft-gray;
+    margin-bottom: $spacing-md;
+    position: sticky;
+    top: 0;
+    background: $color-pure-white;
+    z-index: 10;
+    padding-top: $spacing-xs; // Avoid flush with top edge
+
+    h4 {
+      margin: 0;
+      color: $module-color;
+      font-size: $font-size-md;
+    }
+  }
+}
+
+// History Mode Banner
+.history-mode-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #FFF8E1; // Light warning yellow
+  border: 1px solid #FFE082;
+  color: #F57F17;
+  padding: $spacing-sm $spacing-md;
+  border-radius: $radius-md;
+  margin-bottom: $spacing-md;
+
+  .banner-content {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+
+    i {
+      font-size: 20px;
+    }
+  }
+
+  .btn-outline {
+    background: transparent;
+    border: 1px solid currentColor;
+    color: inherit;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.05);
+    }
+  }
 }
 
 @keyframes modalElasticIn {
@@ -450,6 +584,14 @@ $module-color-dark: $color-l2-terracotta-dark;
   @include flex-between;
   padding: $spacing-md $spacing-lg;
   border-bottom: 1px solid $color-soft-gray;
+
+  &.comparison-mode {
+    justify-content: space-between;
+
+    .modal-header-info {
+      flex: 0 0 auto;
+    }
+  }
 }
 
 .modal-header-info {
@@ -1234,15 +1376,14 @@ $module-color-dark: $color-l2-terracotta-dark;
 
 .history-item {
   display: grid;
-  grid-template-columns: 60px 1fr;
+  grid-template-columns: 60px 1fr auto;
   gap: $spacing-md;
+  align-items: center;
   padding: $spacing-md;
   background: $color-cloud-gray;
   border-radius: $radius-md;
-  border-left: 3px solid $color-soft-gray;
 
   &.current {
-    border-left-color: $module-color;
     background: rgba($module-color, 0.05);
   }
 }
@@ -1287,7 +1428,26 @@ $module-color-dark: $color-l2-terracotta-dark;
 .history-note {
   font-size: $font-size-xs;
   color: $color-text-secondary;
-  grid-column: 2;
+  grid-column: 2 / -1;
+}
+
+.history-actions {
+  display: flex;
+  align-items: center;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  font-size: $font-size-sm;
+  color: $module-color;
+  cursor: pointer;
+  padding: 0;
+
+  &:hover {
+    text-decoration: underline;
+    color: $module-color-dark;
+  }
 }
 
 // PDF Export Loading Animation
@@ -1302,5 +1462,307 @@ $module-color-dark: $color-l2-terracotta-dark;
 
   to {
     transform: rotate(360deg);
+  }
+}
+
+// ---------------------------------------------------------------
+// Status Workflow Buttons
+// ---------------------------------------------------------------
+.btn-success {
+  @include button-primary;
+  background: $color-success;
+
+  &:hover:not(:disabled) {
+    background: darken($color-success, 10%);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.btn-danger {
+  @include button-primary;
+  background: $color-error;
+
+  &:hover:not(:disabled) {
+    background: darken($color-error, 10%);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.btn-warning {
+  @include button-primary;
+  background: $color-warning;
+  color: $color-text-dark;
+
+  &:hover:not(:disabled) {
+    background: darken($color-warning, 10%);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+// Status badges for new states
+.jd-status {
+  &.status-pending_review {
+    @include status-badge-color($color-warning);
+  }
+
+  &.status-rejected {
+    @include status-badge-color($color-error);
+  }
+}
+
+// Rejection notice
+.rejection-notice {
+  display: flex;
+  gap: $spacing-sm;
+  padding: $spacing-md;
+  background: rgba($color-error, 0.1);
+  border: 1px solid rgba($color-error, 0.3);
+  border-radius: $radius-md;
+  margin: 0 $spacing-lg $spacing-md;
+
+  i {
+    color: $color-error;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  .rejection-content {
+    font-size: $font-size-sm;
+    color: $color-text-primary;
+    line-height: $line-height-relaxed;
+
+    strong {
+      color: $color-error;
+    }
+  }
+}
+
+// Archived notice
+.archived-notice {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  padding: $spacing-xs $spacing-sm;
+  background: $color-cloud-gray;
+  border-radius: $radius-sm;
+
+  i {
+    font-size: 16px;
+  }
+}
+
+// Small modal variant
+.modal--small {
+  @include flex-center;
+  position: fixed;
+  inset: 0;
+  z-index: 1002;
+  padding: $spacing-md;
+
+  .modal-content {
+    max-width: 480px;
+  }
+}
+
+// Form label required marker
+.form-label.required::after {
+  content: '*';
+  color: $color-error;
+  margin-left: 4px;
+}
+
+// Empty history state
+.empty-history {
+  padding: $spacing-md;
+  text-align: center;
+  color: $color-muted-gray;
+  font-size: $font-size-sm;
+}
+
+// Approval history styles
+.approval-history {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.approval-item {
+  padding: $spacing-md;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+
+  .approval-action {
+    font-weight: $font-weight-semibold;
+    font-size: $font-size-sm;
+    margin-bottom: $spacing-xs;
+
+    &.action-submit,
+    &.action-submit_review {
+      color: $color-info;
+    }
+
+    &.action-approve,
+    &.action-approved {
+      color: $color-success;
+    }
+
+    &.action-reject,
+    &.action-rejected {
+      color: $color-error;
+    }
+
+    &.action-archive,
+    &.action-archived {
+      color: $color-muted-gray;
+    }
+
+    &.action-new_version,
+    &.action-create_version {
+      color: $module-color;
+    }
+  }
+
+  .approval-info {
+    display: flex;
+    gap: $spacing-sm;
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+  }
+
+  .approval-comment {
+    margin-top: $spacing-xs;
+    font-size: $font-size-sm;
+    color: $color-text-primary;
+    font-style: italic;
+  }
+}
+
+// History badge for archived versions
+.history-badge.archived {
+  background: rgba($color-muted-gray, 0.15);
+  color: $color-muted-gray;
+}
+
+// ---------------------------------------------------------------
+// Version Comparison Side Panel
+// ---------------------------------------------------------------
+.version-panel-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 1100;
+}
+
+.version-comparison-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 450px;
+  max-width: 90vw;
+  height: 100vh;
+  background: white;
+  z-index: 1101;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+  animation: slideInFromRight 0.3s ease-out;
+
+  .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: $spacing-md $spacing-lg;
+    border-bottom: 1px solid $color-soft-gray;
+    background: linear-gradient(135deg, #fff8e1, #ffe0b2);
+  }
+
+  .panel-title {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+    color: #e65100;
+
+    i {
+      font-size: 24px;
+    }
+  }
+
+  .panel-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: $spacing-lg;
+  }
+}
+
+.comparison-block {
+  margin-bottom: $spacing-lg;
+  padding-bottom: $spacing-lg;
+  border-bottom: 1px solid $color-soft-gray;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+
+
+.comparison-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $spacing-sm $spacing-md;
+}
+
+.comparison-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.comparison-label {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.comparison-value {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+}
+
+.comparison-list {
+  margin: 0;
+  padding-left: $spacing-lg;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+
+  li {
+    margin-bottom: $spacing-xs;
+    line-height: 1.5;
+  }
+}
+
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(100%);
+  }
+
+  to {
+    transform: translateX(0);
   }
 }
