@@ -26,7 +26,11 @@ import {
   GradeLevelNew,
   GradeLevelDetail,
   PromotionCriteria,
-  CareerPathNew
+  CareerPathNew,
+  GradeTrackEntity,
+  ChangeResponse,
+  ChangeRecord,
+  SalaryLevel
 } from '../models/competency.model';
 
 @Injectable({ providedIn: 'root' })
@@ -1177,6 +1181,188 @@ export class CompetencyService {
         console.error('Error fetching department positions:', error);
         return of([]);
       })
+    );
+  }
+
+  // =====================================================
+  // 職等職級 CRUD API（審核流程版）
+  // =====================================================
+
+  // --- 軌道 CRUD ---
+
+  /** 取得所有軌道 */
+  getTracks(): Observable<GradeTrackEntity[]> {
+    return this.http.get<{ success: boolean; data: GradeTrackEntity[] }>(`${this.apiUrl}/grade-matrix/tracks`).pipe(
+      map(res => res.data),
+      catchError(error => { console.error('Error fetching tracks:', error); return of([]); })
+    );
+  }
+
+  /** 新增軌道（進入審核流程） */
+  createTrack(data: Partial<GradeTrackEntity>): Observable<ChangeResponse> {
+    return this.http.post<{ success: boolean; data: ChangeResponse }>(`${this.apiUrl}/grade-matrix/tracks`, data).pipe(
+      map(res => res.data),
+      catchError(error => { console.error('Error creating track:', error); throw error; })
+    );
+  }
+
+  /** 更新軌道（進入審核流程） */
+  updateTrack(id: string, data: Partial<GradeTrackEntity>): Observable<ChangeResponse> {
+    return this.http.put<{ success: boolean; data: ChangeResponse }>(`${this.apiUrl}/grade-matrix/tracks/${id}`, data).pipe(
+      map(res => res.data),
+      catchError(error => { console.error('Error updating track:', error); throw error; })
+    );
+  }
+
+  /** 刪除軌道（進入審核流程） */
+  deleteTrack(id: string): Observable<ChangeResponse> {
+    return this.http.delete<{ success: boolean; data: ChangeResponse }>(`${this.apiUrl}/grade-matrix/tracks/${id}`).pipe(
+      map(res => res.data),
+      catchError(error => { console.error('Error deleting track:', error); throw error; })
+    );
+  }
+
+  // --- 職等 CUD ---
+
+  /** 新增職等（進入審核流程） */
+  createGradeLevel(data: Partial<GradeLevelNew>): Observable<ChangeResponse> {
+    return this.http.post<{ success: boolean; data: ChangeResponse }>(`${this.apiUrl}/grade-matrix/grades`, data).pipe(
+      map(res => res.data),
+      catchError(error => { console.error('Error creating grade:', error); throw error; })
+    );
+  }
+
+  /** 更新職等（進入審核流程） */
+  updateGradeLevel(grade: number, data: Partial<GradeLevelNew>): Observable<ChangeResponse> {
+    return this.http.put<{ success: boolean; data: ChangeResponse }>(`${this.apiUrl}/grade-matrix/grades/${grade}`, data).pipe(
+      map(res => res.data),
+      catchError(error => { console.error('Error updating grade:', error); throw error; })
+    );
+  }
+
+  /** 刪除職等（進入審核流程） */
+  deleteGradeLevel(grade: number): Observable<ChangeResponse> {
+    return this.http.delete<{ success: boolean; data: ChangeResponse }>(`${this.apiUrl}/grade-matrix/grades/${grade}`).pipe(
+      map(res => res.data),
+      catchError(error => { console.error('Error deleting grade:', error); throw error; })
+    );
+  }
+
+  // --- 職級薪資 CUD ---
+
+  /** 新增職級薪資（進入審核流程） */
+  createSalaryLevel(grade: number, data: Partial<SalaryLevel>): Observable<ChangeResponse> {
+    return this.http.post<{ success: boolean; data: ChangeResponse }>(`${this.apiUrl}/grade-matrix/grades/${grade}/salaries`, data).pipe(
+      map(res => res.data),
+      catchError(error => { console.error('Error creating salary:', error); throw error; })
+    );
+  }
+
+  /** 更新職級薪資（進入審核流程） */
+  updateSalaryLevel(id: string, data: Partial<SalaryLevel>): Observable<ChangeResponse> {
+    return this.http.put<{ success: boolean; data: ChangeResponse }>(`${this.apiUrl}/grade-matrix/salaries/${id}`, data).pipe(
+      map(res => res.data),
+      catchError(error => { console.error('Error updating salary:', error); throw error; })
+    );
+  }
+
+  /** 刪除職級薪資（進入審核流程） */
+  deleteSalaryLevel(id: string): Observable<ChangeResponse> {
+    return this.http.delete<{ success: boolean; data: ChangeResponse }>(`${this.apiUrl}/grade-matrix/salaries/${id}`).pipe(
+      map(res => res.data),
+      catchError(error => { console.error('Error deleting salary:', error); throw error; })
+    );
+  }
+
+  // --- 部門職位 CUD ---
+
+  /** 新增部門職位（進入審核流程） */
+  createPosition(data: any): Observable<ChangeResponse> {
+    return this.http.post<{ success: boolean; data: ChangeResponse }>(`${this.apiUrl}/grade-matrix/positions`, data).pipe(
+      map(res => res.data),
+      catchError(error => { console.error('Error creating position:', error); throw error; })
+    );
+  }
+
+  /** 更新部門職位（進入審核流程） */
+  updatePosition(id: string, data: any): Observable<ChangeResponse> {
+    return this.http.put<{ success: boolean; data: ChangeResponse }>(`${this.apiUrl}/grade-matrix/positions/${id}`, data).pipe(
+      map(res => res.data),
+      catchError(error => { console.error('Error updating position:', error); throw error; })
+    );
+  }
+
+  /** 刪除部門職位（進入審核流程） */
+  deletePosition(id: string): Observable<ChangeResponse> {
+    return this.http.delete<{ success: boolean; data: ChangeResponse }>(`${this.apiUrl}/grade-matrix/positions/${id}`).pipe(
+      map(res => res.data),
+      catchError(error => { console.error('Error deleting position:', error); throw error; })
+    );
+  }
+
+  // --- 晉升條件 CUD ---
+
+  /** 新增晉升條件（進入審核流程） */
+  createPromotionCriteria(data: Partial<PromotionCriteria>): Observable<ChangeResponse> {
+    return this.http.post<{ success: boolean; data: ChangeResponse }>(`${this.apiUrl}/grade-matrix/promotion/criteria`, data).pipe(
+      map(res => res.data),
+      catchError(error => { console.error('Error creating promotion criteria:', error); throw error; })
+    );
+  }
+
+  /** 更新晉升條件（進入審核流程） */
+  updatePromotionCriteria(id: string, data: Partial<PromotionCriteria>): Observable<ChangeResponse> {
+    return this.http.put<{ success: boolean; data: ChangeResponse }>(`${this.apiUrl}/grade-matrix/promotion/criteria/${id}`, data).pipe(
+      map(res => res.data),
+      catchError(error => { console.error('Error updating promotion criteria:', error); throw error; })
+    );
+  }
+
+  /** 刪除晉升條件（進入審核流程） */
+  deletePromotionCriteria(id: string): Observable<ChangeResponse> {
+    return this.http.delete<{ success: boolean; data: ChangeResponse }>(`${this.apiUrl}/grade-matrix/promotion/criteria/${id}`).pipe(
+      map(res => res.data),
+      catchError(error => { console.error('Error deleting promotion criteria:', error); throw error; })
+    );
+  }
+
+  // --- 審核 & 歷史 ---
+
+  /** 取得待審核清單 */
+  getPendingChanges(): Observable<ChangeRecord[]> {
+    return this.http.get<{ success: boolean; data: ChangeRecord[] }>(`${this.apiUrl}/grade-matrix/changes/pending`).pipe(
+      map(res => res.data),
+      catchError(error => { console.error('Error fetching pending changes:', error); return of([]); })
+    );
+  }
+
+  /** 核准變更 */
+  approveChange(id: string, approvedBy: string): Observable<void> {
+    return this.http.post<{ success: boolean }>(`${this.apiUrl}/grade-matrix/changes/${id}/approve`, { approvedBy }).pipe(
+      map(() => void 0),
+      catchError(error => { console.error('Error approving change:', error); throw error; })
+    );
+  }
+
+  /** 駁回變更 */
+  rejectChange(id: string, reason: string): Observable<void> {
+    return this.http.post<{ success: boolean }>(`${this.apiUrl}/grade-matrix/changes/${id}/reject`, { rejectReason: reason }).pipe(
+      map(() => void 0),
+      catchError(error => { console.error('Error rejecting change:', error); throw error; })
+    );
+  }
+
+  /** 取得變更歷史（支援篩選） */
+  getChangeHistory(filters?: { entityType?: string; dateFrom?: string; dateTo?: string }): Observable<ChangeRecord[]> {
+    let params = new URLSearchParams();
+    if (filters?.entityType) params.append('entityType', filters.entityType);
+    if (filters?.dateFrom) params.append('dateFrom', filters.dateFrom);
+    if (filters?.dateTo) params.append('dateTo', filters.dateTo);
+
+    const url = `${this.apiUrl}/grade-matrix/changes/history${params.toString() ? '?' + params.toString() : ''}`;
+    return this.http.get<{ success: boolean; data: ChangeRecord[] }>(url).pipe(
+      map(res => res.data),
+      catchError(error => { console.error('Error fetching change history:', error); return of([]); })
     );
   }
 

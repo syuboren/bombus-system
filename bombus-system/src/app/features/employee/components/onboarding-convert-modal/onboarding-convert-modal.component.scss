@@ -117,6 +117,12 @@
       font-size: 28px;
       color: white;
     }
+
+    .avatar-text {
+      font-size: 22px;
+      font-weight: 600;
+      color: white;
+    }
   }
 
   .info {
@@ -337,7 +343,8 @@
   background: #8DA399;
   color: white !important;
 
-  i, span {
+  i,
+  span {
     color: white !important;
   }
 
@@ -516,6 +523,7 @@
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }

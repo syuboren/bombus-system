@@ -18,10 +18,11 @@
       <!-- 候選人資訊 -->
       <div class="candidate-info">
         <div class="avatar">
-          @if (candidate().avatar) {
-            <img [src]="candidate().avatar" [alt]="candidate().name">
+          @if (candidate().avatar?.startsWith('http')) {
+          <img [src]="candidate().avatar" [alt]="candidate().name" (error)="$any($event.target).style.display='none'">
+          <span class="avatar-text" style="display:none">{{ candidate().name?.charAt(0) }}</span>
           } @else {
-            <i class="ri-user-line"></i>
+          <span class="avatar-text">{{ candidate().name?.charAt(0) }}</span>
           }
         </div>
         <div class="info">
@@ -29,7 +30,7 @@
           <p class="meta">
             <span><i class="ri-mail-line"></i> {{ candidate().email }}</span>
             @if (candidate().phone) {
-              <span><i class="ri-phone-line"></i> {{ candidate().phone }}</span>
+            <span><i class="ri-phone-line"></i> {{ candidate().phone }}</span>
             }
           </p>
           <p class="position">應徵職位：{{ candidate().position }}</p>
@@ -57,10 +58,11 @@
             </label>
             <div class="input-with-icon">
               <i class="ri-building-line"></i>
-              <select id="department" [ngModel]="department()" (ngModelChange)="onDepartmentChange($event)" [ngModelOptions]="{standalone: true}">
+              <select id="department" [ngModel]="department()" (ngModelChange)="onDepartmentChange($event)"
+                [ngModelOptions]="{standalone: true}">
                 <option value="">請選擇部門</option>
                 @for (dept of departments(); track dept.name) {
-                  <option [value]="dept.name">{{ dept.name }}</option>
+                <option [value]="dept.name">{{ dept.name }}</option>
                 }
               </select>
             </div>
@@ -73,15 +75,16 @@
             </label>
             <div class="input-with-icon">
               <i class="ri-bar-chart-horizontal-line"></i>
-              <select id="gradeSelect" [ngModel]="gradeNumber()" (ngModelChange)="onGradeChange($event ? +$event : null)" [ngModelOptions]="{standalone: true}">
+              <select id="gradeSelect" [ngModel]="gradeNumber()"
+                (ngModelChange)="onGradeChange($event ? +$event : null)" [ngModelOptions]="{standalone: true}">
                 <option [ngValue]="null">請選擇職等</option>
                 @for (g of grades(); track g.grade) {
-                  <option [value]="g.grade">Grade {{ g.grade }} - {{ g.title_management }}</option>
+                <option [value]="g.grade">Grade {{ g.grade }} - {{ g.title_management }}</option>
                 }
               </select>
             </div>
             @if (selectedGradeInfo()) {
-              <span class="hint">{{ selectedGradeInfo()?.education_requirement }}</span>
+            <span class="hint">{{ selectedGradeInfo()?.education_requirement }}</span>
             }
           </div>
         </div>
@@ -92,15 +95,16 @@
             <label for="salaryLevel">職級</label>
             <div class="input-with-icon">
               <i class="ri-medal-line"></i>
-              <select id="salaryLevel" [ngModel]="salaryLevelCode()" (ngModelChange)="salaryLevelCode.set($event)" [ngModelOptions]="{standalone: true}">
+              <select id="salaryLevel" [ngModel]="salaryLevelCode()" (ngModelChange)="salaryLevelCode.set($event)"
+                [ngModelOptions]="{standalone: true}">
                 <option value="">請選擇職級</option>
                 @for (level of filteredSalaryLevels(); track level.code) {
-                  <option [value]="level.code">{{ level.code }} - NT$ {{ level.salary | number }}</option>
+                <option [value]="level.code">{{ level.code }} - NT$ {{ level.salary | number }}</option>
                 }
               </select>
             </div>
             @if (selectedSalaryInfo()) {
-              <span class="hint">薪資：NT$ {{ selectedSalaryInfo()?.salary | number }}</span>
+            <span class="hint">薪資：NT$ {{ selectedSalaryInfo()?.salary | number }}</span>
             }
           </div>
 
@@ -112,26 +116,22 @@
             <div class="input-with-icon">
               <i class="ri-briefcase-line"></i>
               @if (filteredPositions().length > 0) {
-                <select id="position" [ngModel]="position()" (ngModelChange)="onPositionSelect($event)" [ngModelOptions]="{standalone: true}">
-                  <option value="">請選擇職位</option>
-                  @for (pos of filteredPositions(); track pos.id) {
-                    <option [value]="pos.title">{{ pos.title }} ({{ pos.track === 'management' ? '管理職' : '專業職' }})</option>
-                  }
-                </select>
+              <select id="position" [ngModel]="position()" (ngModelChange)="onPositionSelect($event)"
+                [ngModelOptions]="{standalone: true}">
+                <option value="">請選擇職位</option>
+                @for (pos of filteredPositions(); track pos.id) {
+                <option [value]="pos.title">{{ pos.title }} ({{ pos.track === 'management' ? '管理職' : '專業職' }})</option>
+                }
+              </select>
               } @else {
-                <input 
-                  type="text" 
-                  id="position" 
-                  [ngModel]="position()" 
-                  (ngModelChange)="position.set($event)"
-                  [ngModelOptions]="{standalone: true}"
-                  placeholder="請輸入職位名稱">
+              <input type="text" id="position" [ngModel]="position()" (ngModelChange)="position.set($event)"
+                [ngModelOptions]="{standalone: true}" placeholder="請輸入職位名稱">
               }
             </div>
             @if (!department() || !gradeNumber()) {
-              <span class="hint warning">請先選擇部門和職等</span>
+            <span class="hint warning">請先選擇部門和職等</span>
             } @else {
-              <span class="hint">用於職等職級對應</span>
+            <span class="hint">用於職等職級對應</span>
             }
           </div>
         </div>
@@ -142,13 +142,8 @@
             <label for="jobTitle">職務</label>
             <div class="input-with-icon">
               <i class="ri-file-user-line"></i>
-              <input 
-                type="text" 
-                id="jobTitle" 
-                [ngModel]="jobTitle()" 
-                (ngModelChange)="jobTitle.set($event)"
-                [ngModelOptions]="{standalone: true}"
-                placeholder="例如：財務出納、前端工程師">
+              <input type="text" id="jobTitle" [ngModel]="jobTitle()" (ngModelChange)="jobTitle.set($event)"
+                [ngModelOptions]="{standalone: true}" placeholder="例如：財務出納、前端工程師">
             </div>
             <span class="hint">具體工作名稱，從應徵職位帶入</span>
           </div>
@@ -160,17 +155,18 @@
             <label for="role">角色</label>
             <div class="input-with-icon">
               <i class="ri-user-settings-line"></i>
-              <select id="role" [ngModel]="role()" (ngModelChange)="role.set($event)" [ngModelOptions]="{standalone: true}">
+              <select id="role" [ngModel]="role()" (ngModelChange)="role.set($event)"
+                [ngModelOptions]="{standalone: true}">
                 @for (opt of roleOptions; track opt.value) {
-                  <option [value]="opt.value">{{ opt.label }}</option>
+                <option [value]="opt.value">{{ opt.label }}</option>
                 }
               </select>
             </div>
             <span class="hint">
               @if (role() === 'manager') {
-                季度面談使用主管表單（含管理職能區塊）
+              季度面談使用主管表單（含管理職能區塊）
               } @else {
-                季度面談使用員工表單
+              季度面談使用員工表單
               }
             </span>
           </div>
@@ -180,10 +176,11 @@
             <label for="manager">直屬主管</label>
             <div class="input-with-icon">
               <i class="ri-user-star-line"></i>
-              <select id="manager" [ngModel]="managerId()" (ngModelChange)="managerId.set($event)" [ngModelOptions]="{standalone: true}">
+              <select id="manager" [ngModel]="managerId()" (ngModelChange)="managerId.set($event)"
+                [ngModelOptions]="{standalone: true}">
                 <option value="">請選擇主管</option>
                 @for (mgr of filteredManagers(); track mgr.id) {
-                  <option [value]="mgr.id">{{ mgr.name }} - {{ mgr.position }}</option>
+                <option [value]="mgr.id">{{ mgr.name }} - {{ mgr.position }}</option>
                 }
               </select>
             </div>
@@ -196,9 +193,10 @@
             <label for="contractType">合約類型</label>
             <div class="input-with-icon">
               <i class="ri-file-text-line"></i>
-              <select id="contractType" [ngModel]="contractType()" (ngModelChange)="contractType.set($event)" [ngModelOptions]="{standalone: true}">
+              <select id="contractType" [ngModel]="contractType()" (ngModelChange)="contractType.set($event)"
+                [ngModelOptions]="{standalone: true}">
                 @for (opt of contractTypeOptions; track opt.value) {
-                  <option [value]="opt.value">{{ opt.label }}</option>
+                <option [value]="opt.value">{{ opt.label }}</option>
                 }
               </select>
             </div>
@@ -209,13 +207,8 @@
             <label for="workLocation">工作地點</label>
             <div class="input-with-icon">
               <i class="ri-map-pin-line"></i>
-              <input 
-                type="text" 
-                id="workLocation" 
-                [ngModel]="workLocation()" 
-                (ngModelChange)="workLocation.set($event)"
-                [ngModelOptions]="{standalone: true}"
-                placeholder="例如：台北總部">
+              <input type="text" id="workLocation" [ngModel]="workLocation()" (ngModelChange)="workLocation.set($event)"
+                [ngModelOptions]="{standalone: true}" placeholder="例如：台北總部">
             </div>
           </div>
         </div>
@@ -228,11 +221,7 @@
             </label>
             <div class="input-with-icon">
               <i class="ri-calendar-check-line"></i>
-              <input 
-                type="date" 
-                id="hireDate" 
-                [ngModel]="hireDate()" 
-                (ngModelChange)="hireDate.set($event)"
+              <input type="date" id="hireDate" [ngModel]="hireDate()" (ngModelChange)="hireDate.set($event)"
                 [ngModelOptions]="{standalone: true}">
             </div>
           </div>
@@ -242,7 +231,8 @@
             <label for="probationMonths">試用期</label>
             <div class="input-with-icon">
               <i class="ri-time-line"></i>
-              <select id="probationMonths" [ngModel]="probationMonths()" (ngModelChange)="probationMonths.set(+$event)" [ngModelOptions]="{standalone: true}">
+              <select id="probationMonths" [ngModel]="probationMonths()" (ngModelChange)="probationMonths.set(+$event)"
+                [ngModelOptions]="{standalone: true}">
                 <option [value]="1">1 個月</option>
                 <option [value]="2">2 個月</option>
                 <option [value]="3">3 個月</option>
@@ -262,15 +252,11 @@
       <button class="btn-secondary" (click)="closeModal()" type="button">
         取消
       </button>
-      <button 
-        class="btn-primary" 
-        (click)="submit()" 
-        [disabled]="!canSubmit()"
-        type="button">
+      <button class="btn-primary" (click)="submit()" [disabled]="!canSubmit()" type="button">
         @if (loading()) {
-          <i class="ri-loader-4-line spin"></i> 處理中...
+        <i class="ri-loader-4-line spin"></i> 處理中...
         } @else {
-          <i class="ri-check-line"></i> 確認轉入
+        <i class="ri-check-line"></i> 確認轉入
         }
       </button>
     </div>

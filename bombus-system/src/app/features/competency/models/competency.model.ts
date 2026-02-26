@@ -29,6 +29,42 @@ export interface GradeMatrix {
 // ---------------------------------------------------------------
 export type GradeTrack = 'professional' | 'management' | 'both';
 
+// 軌道實體（對應 DB grade_tracks）
+// ⚠️ 不可命名為 GradeTrack，該名稱已被上方 union type 佔用
+export interface GradeTrackEntity {
+  id: string;
+  code: string;           // 'management' | 'professional' | 自訂
+  name: string;           // '管理職' | '專業職' | 自訂
+  icon: string;           // Remix Icon class
+  color?: string;         // Hex color
+  maxGrade: number;       // 預設 7
+  sortOrder: number;
+  isActive: boolean;
+}
+
+// 審核變更回應（CUD 操作返回值）
+export interface ChangeResponse {
+  changeId: string;       // grade_change_history.id
+  status: 'pending' | 'approved' | 'rejected';
+  message: string;
+}
+
+// 審核變更記錄（歷史查詢用）
+export interface ChangeRecord {
+  id: string;
+  entityType: 'track' | 'grade' | 'salary' | 'position' | 'promotion';
+  entityId: string;
+  action: 'create' | 'update' | 'delete';
+  oldData: any;           // 變更前的完整 entity JSON snapshot
+  newData: any;           // 變更後的完整 entity JSON snapshot
+  changedBy: string;
+  approvedBy?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  rejectReason?: string;
+  createdAt: string;
+  approvedAt?: string;
+}
+
 // 職級薪資（對應 DB grade_salary_levels）
 export interface SalaryLevel {
   code: string;     // BS01, BS02...

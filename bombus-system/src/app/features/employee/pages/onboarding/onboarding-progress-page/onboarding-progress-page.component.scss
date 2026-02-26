@@ -170,6 +170,12 @@
         font-size: 20px;
         color: white;
       }
+
+      .avatar-text {
+        font-size: 16px;
+        font-weight: 600;
+        color: white;
+      }
     }
 
     .name-info {
@@ -293,6 +299,12 @@
         font-size: 24px;
         color: white;
       }
+
+      .avatar-text {
+        font-size: 20px;
+        font-weight: 600;
+        color: white;
+      }
     }
 
     .info {
@@ -323,10 +335,8 @@
       width: 52px;
       height: 52px;
       border-radius: 50%;
-      background: conic-gradient(
-        var(--color, #8DA399) var(--progress, 0%),
-        #E8E8EA var(--progress, 0%)
-      );
+      background: conic-gradient(var(--color, #8DA399) var(--progress, 0%),
+          #E8E8EA var(--progress, 0%));
       display: flex;
       align-items: center;
       justify-content: center;

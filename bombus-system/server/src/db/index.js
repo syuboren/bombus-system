@@ -2113,6 +2113,44 @@ function initGradeMatrixTables() {
       )
     `);
 
+    // 7. 建立軌道管理資料表（支援動態多軌道擴展）
+    db.run(`
+      CREATE TABLE IF NOT EXISTS grade_tracks (
+        id TEXT PRIMARY KEY,
+        code TEXT UNIQUE NOT NULL,
+        name TEXT NOT NULL,
+        icon TEXT,
+        color TEXT,
+        max_grade INTEGER DEFAULT 7,
+        sort_order INTEGER DEFAULT 0,
+        is_active INTEGER DEFAULT 1,
+        created_at TEXT DEFAULT (datetime('now'))
+      )
+    `);
+
+    // 8. 建立變更歷史資料表（審核機制核心）
+    db.run(`
+      CREATE TABLE IF NOT EXISTS grade_change_history (
+        id TEXT PRIMARY KEY,
+        entity_type TEXT NOT NULL,
+        entity_id TEXT NOT NULL,
+        action TEXT NOT NULL,
+        old_data TEXT,
+        new_data TEXT,
+        changed_by TEXT NOT NULL,
+        approved_by TEXT,
+        status TEXT DEFAULT 'pending',
+        reject_reason TEXT,
+        created_at TEXT DEFAULT (datetime('now')),
+        approved_at TEXT
+      )
+    `);
+
+    // 9. 建立變更歷史索引（效能優化）
+    db.run(`CREATE INDEX IF NOT EXISTS idx_change_status ON grade_change_history(status)`);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_change_entity ON grade_change_history(entity_type, entity_id)`);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_change_created ON grade_change_history(created_at)`);
+
     // 檢查是否需要 seed data
     const deptCount = prepare('SELECT COUNT(*) as count FROM departments').get();
     if (deptCount.count === 0) {
@@ -2125,7 +2163,13 @@ function initGradeMatrixTables() {
       seedPromotionAndCareerData();
     }
 
-    console.log('✅ 職等職級資料表已建立');
+    // 10. 初始化預設軌道 Seed Data（管理職、專業職）
+    const trackCount = prepare('SELECT COUNT(*) as count FROM grade_tracks').get();
+    if (trackCount.count === 0) {
+      seedGradeTrackData();
+    }
+
+    console.log('✅ 職等職級資料表已建立（含軌道管理與變更歷史）');
   } catch (error) {
     console.error('Error initializing grade matrix tables:', error.message);
   }
@@ -2666,6 +2710,30 @@ function seedPromotionAndCareerData() {
   }
 
   console.log('✅ Seeded promotion criteria (10) and career paths (5)');
+}
+
+/**
+ * 填入預設軌道 Seed Data
+ * 管理職與專業職兩條預設軌道
+ */
+function seedGradeTrackData() {
+  console.log('🌱 Seeding grade track data...');
+
+  const tracks = [
+    { id: 'track-mgmt', code: 'management', name: '管理職', icon: 'ri-briefcase-line', color: '#6B7B8D', maxGrade: 7, sortOrder: 1, isActive: 1 },
+    { id: 'track-prof', code: 'professional', name: '專業職', icon: 'ri-code-s-slash-line', color: '#8B9DAF', maxGrade: 7, sortOrder: 2, isActive: 1 }
+  ];
+
+  const trackStmt = prepare(`
+    INSERT OR IGNORE INTO grade_tracks (id, code, name, icon, color, max_grade, sort_order, is_active)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  for (const t of tracks) {
+    trackStmt.run(t.id, t.code, t.name, t.icon, t.color, t.maxGrade, t.sortOrder, t.isActive);
+  }
+
+  console.log('✅ Seeded grade tracks: 管理職, 專業職');
 }
 
 /**

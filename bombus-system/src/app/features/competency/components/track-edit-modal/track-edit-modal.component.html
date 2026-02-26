@@ -1,0 +1,98 @@
+<div class="modal-overlay" [class.visible]="visible()">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+        <!-- Header -->
+        <div class="modal-header">
+            <h2 class="modal-title">{{ isEditMode() ? '編輯軌道' : '新增軌道' }}</h2>
+            <button class="close-btn" (click)="onClose()" [disabled]="saving()">
+                <span class="close-icon">×</span>
+            </button>
+        </div>
+
+        <!-- Content -->
+        <div class="modal-content">
+            <!-- Error Message -->
+            @if (error()) {
+            <div class="error-message">
+                <span class="error-icon">⚠️</span>
+                {{ error() }}
+            </div>
+            }
+
+            <!-- 基本資訊 -->
+            <section class="form-section">
+                <h3 class="section-title">基本資訊</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label required">軌道代碼</label>
+                        <input type="text" class="form-input" [value]="formData().code"
+                            (input)="updateField('code', $any($event.target).value)" placeholder="例如：expert"
+                            [disabled]="saving() || isEditMode()" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required">軌道名稱</label>
+                        <input type="text" class="form-input" [value]="formData().name"
+                            (input)="updateField('name', $any($event.target).value)" placeholder="例如：專家職"
+                            [disabled]="saving()" />
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label required">最高職等</label>
+                        <input type="number" class="form-input" [value]="formData().maxGrade"
+                            (input)="updateField('maxGrade', +$any($event.target).value)" min="1" max="20"
+                            [disabled]="saving()" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">排序</label>
+                        <input type="number" class="form-input" [value]="formData().sortOrder"
+                            (input)="updateField('sortOrder', +$any($event.target).value)" min="0"
+                            [disabled]="saving()" />
+                    </div>
+                </div>
+            </section>
+
+            <!-- 圖示選擇 -->
+            <section class="form-section">
+                <h3 class="section-title">圖示選擇</h3>
+                <div class="icon-picker">
+                    @for (opt of iconOptions; track opt.icon) {
+                    <button class="icon-option" [class.selected]="formData().icon === opt.icon"
+                        (click)="selectIcon(opt.icon)" [disabled]="saving()" [title]="opt.label">
+                        <i [class]="opt.icon"></i>
+                    </button>
+                    }
+                </div>
+            </section>
+
+            <!-- 顏色選擇 -->
+            <section class="form-section">
+                <h3 class="section-title">顏色選擇</h3>
+                <div class="color-picker">
+                    @for (c of colorOptions; track c) {
+                    <button class="color-option" [class.selected]="formData().color === c" [style.background-color]="c"
+                        (click)="selectColor(c)" [disabled]="saving()">
+                        @if (formData().color === c) {
+                        <span class="check-mark">✓</span>
+                        }
+                    </button>
+                    }
+                </div>
+            </section>
+        </div>
+
+        <!-- Footer -->
+        <div class="modal-footer">
+            <button class="btn btn-secondary" (click)="onClose()" [disabled]="saving()">
+                取消
+            </button>
+            <button class="btn btn-primary" (click)="onSave()" [disabled]="saving()">
+                @if (saving()) {
+                <span class="spinner"></span>
+                儲存中...
+                } @else {
+                {{ isEditMode() ? '更新' : '新增' }}
+                }
+            </button>
+        </div>
+    </div>
+</div>

@@ -2598,7 +2598,8 @@ $module-color-dark: $color-l2-terracotta-dark;
   background: $color-pure-white;
   min-width: 1000px;
 
-  th, td {
+  th,
+  td {
     padding: $spacing-sm $spacing-md;
     text-align: center;
     border: 1px solid $color-soft-gray;
@@ -2814,5 +2815,306 @@ $module-color-dark: $color-l2-terracotta-dark;
         font-size: 14px;
       }
     }
+  }
+}
+
+// =====================================================
+// Phase 5: 編輯模式 & 審核/歷史 Styles
+// =====================================================
+
+// Tab Badge (待審核數量)
+.tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: #E53935;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 9px;
+  margin-left: 4px;
+}
+
+// Filter Actions (編輯模式按鈕群組)
+.filter-actions {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  flex-wrap: wrap;
+}
+
+.btn-edit-mode {
+  @include flex-center;
+  gap: $spacing-xs;
+  padding: $spacing-xs $spacing-md;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  background: $color-pure-white;
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    background: rgba($module-color, 0.08);
+    border-color: $module-color;
+    color: $module-color;
+  }
+
+  &.active {
+    background: rgba($module-color, 0.12);
+    border-color: $module-color;
+    color: $module-color;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+.btn-add {
+  @include flex-center;
+  gap: $spacing-xs;
+  padding: $spacing-xs $spacing-sm;
+  border: 1px dashed $module-color;
+  border-radius: $radius-md;
+  background: transparent;
+  color: $module-color;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    background: rgba($module-color, 0.1);
+  }
+}
+
+// 待審核 & 歷史區塊
+.pending-section,
+.history-section {
+  padding: $spacing-lg;
+
+  .section-header {
+    margin-bottom: $spacing-lg;
+
+    .section-title {
+      font-size: $font-size-xl;
+      font-weight: $font-weight-bold;
+      color: $color-text-dark;
+      margin: 0;
+    }
+
+    .section-subtitle {
+      font-size: $font-size-sm;
+      color: $color-text-secondary;
+      margin: $spacing-xs 0 0;
+    }
+  }
+}
+
+// Changes Table
+.changes-table-wrapper {
+  overflow-x: auto;
+  border-radius: $radius-md;
+  border: 1px solid $color-soft-gray;
+  @include custom-scrollbar;
+}
+
+.changes-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: $color-pure-white;
+
+  th,
+  td {
+    padding: $spacing-sm $spacing-md;
+    text-align: left;
+    border-bottom: 1px solid $color-soft-gray;
+    font-size: $font-size-sm;
+  }
+
+  thead th {
+    background: $color-cloud-gray;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+    white-space: nowrap;
+  }
+
+  tbody tr {
+    transition: background $transition-fast;
+
+    &:hover {
+      background: rgba($module-color, 0.03);
+    }
+  }
+
+  .td-entity-id {
+    font-family: monospace;
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .td-actions {
+    white-space: nowrap;
+    display: flex;
+    gap: $spacing-xs;
+  }
+}
+
+// Badges
+.entity-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  background: rgba($module-color, 0.12);
+  color: $module-color;
+}
+
+.action-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+
+  &.action-create {
+    background: rgba($color-success, 0.12);
+    color: darken($color-success, 10%);
+  }
+
+  &.action-update {
+    background: rgba($color-info, 0.12);
+    color: darken($color-info, 10%);
+  }
+
+  &.action-delete {
+    background: rgba($color-error, 0.12);
+    color: $color-error;
+  }
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+
+  &.status-pending {
+    background: rgba($color-warning, 0.12);
+    color: darken($color-warning, 15%);
+  }
+
+  &.status-approved {
+    background: rgba($color-success, 0.12);
+    color: darken($color-success, 10%);
+  }
+
+  &.status-rejected {
+    background: rgba($color-error, 0.12);
+    color: $color-error;
+  }
+}
+
+// Approve / Reject Buttons
+.btn-approve {
+  @include flex-center;
+  gap: 4px;
+  padding: 4px 12px;
+  background: rgba($color-success, 0.1);
+  border: 1px solid rgba($color-success, 0.3);
+  border-radius: $radius-sm;
+  color: darken($color-success, 10%);
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    background: rgba($color-success, 0.2);
+    border-color: $color-success;
+  }
+}
+
+.btn-reject {
+  @include flex-center;
+  gap: 4px;
+  padding: 4px 12px;
+  background: rgba($color-error, 0.1);
+  border: 1px solid rgba($color-error, 0.3);
+  border-radius: $radius-sm;
+  color: $color-error;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    background: rgba($color-error, 0.2);
+    border-color: $color-error;
+  }
+}
+
+// Inline Edit Buttons (編輯模式中的行內編輯按鈕)
+.btn-edit-inline {
+  @include flex-center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba($module-color, 0.3);
+  border-radius: $radius-sm;
+  background: rgba($module-color, 0.08);
+  color: $module-color;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all $transition-fast;
+  margin-left: auto;
+  flex-shrink: 0;
+
+  &:hover {
+    background: rgba($module-color, 0.18);
+    border-color: $module-color;
+    transform: scale(1.1);
+  }
+}
+
+// Grade Card Edit Button (卡片上的編輯按鈕)
+.btn-edit-card {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  @include flex-center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid rgba($module-color, 0.3);
+  border-radius: $radius-sm;
+  background: rgba(255, 255, 255, 0.9);
+  color: $module-color;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all $transition-fast;
+  opacity: 0;
+  z-index: 2;
+
+  &:hover {
+    background: $module-color;
+    color: white;
+    transform: scale(1.1);
+  }
+}
+
+// 讓 grade-card 在 hover 時顯示編輯按鈕
+.grade-card-new {
+  position: relative;
+
+  &:hover .btn-edit-card {
+    opacity: 1;
   }
 }

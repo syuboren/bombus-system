@@ -14,8 +14,14 @@ import {
   PromotionCriteria,
   CareerPathNew,
   GradeTrack,
-  GRADE_TRACK_OPTIONS
+  GRADE_TRACK_OPTIONS,
+  GradeTrackEntity,
+  ChangeRecord
 } from '../../models/competency.model';
+import { TrackEditModalComponent } from '../../components/track-edit-modal/track-edit-modal.component';
+import { GradeEditModalComponent } from '../../components/grade-edit-modal/grade-edit-modal.component';
+import { PositionEditModalComponent } from '../../components/position-edit-modal/position-edit-modal.component';
+import { PromotionCriteriaEditModalComponent } from '../../components/promotion-criteria-edit-modal/promotion-criteria-edit-modal.component';
 import * as echarts from 'echarts';
 
 // Employee interface for AI assistant
@@ -88,7 +94,7 @@ interface DepartmentPosition {
 @Component({
   selector: 'app-grade-matrix-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, HeaderComponent],
+  imports: [CommonModule, FormsModule, HeaderComponent, TrackEditModalComponent, GradeEditModalComponent, PositionEditModalComponent, PromotionCriteriaEditModalComponent],
   templateUrl: './grade-matrix-page.component.html',
   styleUrl: './grade-matrix-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -120,8 +126,26 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
   departmentPositions = signal<DepartmentPosition[]>([]);
   selectedDepartmentFilter = signal<string>('');
 
-  // Active tab
-  activeTab = signal<'matrix' | 'career' | 'ai-assistant'>('matrix');
+  // Active tab（擴展含 pending / history）
+  activeTab = signal<'matrix' | 'career' | 'ai-assistant' | 'pending' | 'history'>('matrix');
+
+  // --- Phase 5: 編輯模式 & CRUD ---
+  editMode = signal(false);
+  tracks = signal<GradeTrackEntity[]>([]);
+  pendingChanges = signal<ChangeRecord[]>([]);
+  changeHistory = signal<ChangeRecord[]>([]);
+
+  // Modal 顯示狀態
+  showTrackEditModal = signal(false);
+  showGradeEditModal = signal(false);
+  showPositionEditModal = signal(false);
+  showPromotionEditModal = signal(false);
+
+  // Modal 編輯資料（null = 新增模式）
+  editingTrack = signal<GradeTrackEntity | null>(null);
+  editingGrade = signal<GradeLevelNew | null>(null);
+  editingPosition = signal<any>(null);
+  editingPromotion = signal<PromotionCriteria | null>(null);
 
   // Selected items (舊版)
   selectedGrade = signal<GradeLevel | null>(null);
@@ -166,12 +190,12 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
   positionsByDepartment = computed(() => {
     const positions = this.departmentPositions();
     const deptFilter = this.selectedDepartmentFilter();
-    
+
     // 先按部門篩選
-    const filtered = deptFilter 
+    const filtered = deptFilter
       ? positions.filter(p => p.department === deptFilter)
       : positions;
-    
+
     // 按部門分組
     const grouped: Record<string, DepartmentPosition[]> = {};
     for (const pos of filtered) {
@@ -180,12 +204,12 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
       }
       grouped[pos.department].push(pos);
     }
-    
+
     // 每個部門內按職等排序
     for (const dept of Object.keys(grouped)) {
       grouped[dept].sort((a, b) => b.grade - a.grade);
     }
-    
+
     return grouped;
   });
 
@@ -193,27 +217,27 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
   positionsByGrade = computed(() => {
     const positions = this.departmentPositions();
     const grouped: Record<number, DepartmentPosition[]> = {};
-    
+
     for (const pos of positions) {
       if (!grouped[pos.grade]) {
         grouped[pos.grade] = [];
       }
       grouped[pos.grade].push(pos);
     }
-    
+
     return grouped;
   });
 
   // 跨部門高階主管（有管轄部門的職位）
   crossDepartmentExecutives = computed(() => {
-    return this.departmentPositions().filter(p => 
+    return this.departmentPositions().filter(p =>
       p.supervisedDepartments && p.supervisedDepartments.length > 0
     );
   });
 
   // 一般部門職位（不包含跨部門高階主管）
   regularDepartmentPositions = computed(() => {
-    return this.departmentPositions().filter(p => 
+    return this.departmentPositions().filter(p =>
       !p.supervisedDepartments || p.supervisedDepartments.length === 0
     );
   });
@@ -227,6 +251,7 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
     this.loadData();
     this.loadDataNew();
     this.loadEmployees();
+    this.loadTracks();
   }
 
   ngAfterViewInit(): void {
@@ -278,7 +303,7 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
 
   // 取得部門的職位 (按職等)
   getPositionsForDepartment(department: string, grade: number): DepartmentPosition[] {
-    return this.departmentPositions().filter(p => 
+    return this.departmentPositions().filter(p =>
       p.department === department && p.grade === grade
     );
   }
@@ -290,7 +315,7 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
 
   // 取得特定部門、職等、軌道的職位名稱
   getPositionTitle(department: string, grade: number, track: string): string {
-    const pos = this.departmentPositions().find(p => 
+    const pos = this.departmentPositions().find(p =>
       p.department === department && p.grade === grade && p.track === track
     );
     return pos?.title || '';
@@ -308,7 +333,7 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
 
   // 檢查部門在該職等是否有職位
   hasPositions(department: string, grade: number): boolean {
-    return this.departmentPositions().some(p => 
+    return this.departmentPositions().some(p =>
       p.department === department && p.grade === grade
     );
   }
@@ -348,7 +373,7 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
   getCrossDeptColspan(grade: number): number {
     const crossDeptPos = this.getCrossDeptPositionForGrade(grade);
     if (!crossDeptPos || !crossDeptPos.supervisedDepartments) return 1;
-    
+
     // 計算在顯示的部門中有多少被管轄
     const deptFilter = this.selectedDepartmentFilter();
     if (deptFilter) {
@@ -362,13 +387,13 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
   shouldShowCrossDeptCell(department: string, grade: number): boolean {
     const crossDeptPos = this.getCrossDeptPositionForGrade(grade);
     if (!crossDeptPos || !crossDeptPos.supervisedDepartments) return false;
-    
+
     const deptFilter = this.selectedDepartmentFilter();
     if (deptFilter) {
       // 如果有篩選，只有篩選的部門等於第一個管轄部門時才顯示
       return crossDeptPos.supervisedDepartments.includes(deptFilter);
     }
-    
+
     // 取得第一個被管轄的部門
     const firstSupervisedDept = crossDeptPos.supervisedDepartments[0];
     return department === firstSupervisedDept;
@@ -385,8 +410,114 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
     ]);
   }
 
-  setActiveTab(tab: 'matrix' | 'career' | 'ai-assistant'): void {
+  setActiveTab(tab: 'matrix' | 'career' | 'ai-assistant' | 'pending' | 'history'): void {
     this.activeTab.set(tab);
+    // 切換到對應 tab 時載入資料
+    if (tab === 'pending') this.loadPendingChanges();
+    if (tab === 'history') this.loadChangeHistory();
+  }
+
+  // --- 軌道載入 ---
+  loadTracks(): void {
+    this.competencyService.getTracks().subscribe(data => this.tracks.set(data));
+  }
+
+  // --- 待審核載入 ---
+  loadPendingChanges(): void {
+    this.competencyService.getPendingChanges().subscribe(data => this.pendingChanges.set(data));
+  }
+
+  // --- 變更歷史載入 ---
+  loadChangeHistory(): void {
+    this.competencyService.getChangeHistory().subscribe(data => this.changeHistory.set(data));
+  }
+
+  // --- 編輯模式切換 ---
+  toggleEditMode(): void {
+    this.editMode.update(v => !v);
+  }
+
+  // --- 軌道 CRUD ---
+  openEditTrack(track: GradeTrackEntity | null = null): void {
+    this.editingTrack.set(track);
+    this.showTrackEditModal.set(true);
+  }
+  closeTrackModal(): void { this.showTrackEditModal.set(false); this.editingTrack.set(null); }
+  onTrackSaved(): void {
+    this.loadTracks();
+    this.loadDataNew();
+    this.closeTrackModal();
+  }
+
+  // --- 職等 CRUD ---
+  openEditGrade(grade: GradeLevelNew | null = null): void {
+    this.editingGrade.set(grade);
+    this.showGradeEditModal.set(true);
+  }
+  closeGradeEditModal(): void { this.showGradeEditModal.set(false); this.editingGrade.set(null); }
+  onGradeSaved(): void {
+    this.loadDataNew();
+    this.closeGradeEditModal();
+  }
+
+  // --- 部門職位 CRUD ---
+  openEditPosition(position: any = null): void {
+    this.editingPosition.set(position);
+    this.showPositionEditModal.set(true);
+  }
+  closePositionModal(): void { this.showPositionEditModal.set(false); this.editingPosition.set(null); }
+  onPositionSaved(): void {
+    this.loadDataNew();
+    this.closePositionModal();
+  }
+
+  // --- 晉升條件 CRUD ---
+  openEditPromotionCriteria(criteria: PromotionCriteria | null = null): void {
+    this.editingPromotion.set(criteria);
+    this.showPromotionEditModal.set(true);
+  }
+  closePromotionModal(): void { this.showPromotionEditModal.set(false); this.editingPromotion.set(null); }
+  onPromotionCriteriaSaved(): void {
+    this.loadDataNew();
+    this.closePromotionModal();
+  }
+
+  // --- 審核操作 ---
+  approveChange(changeId: string): void {
+    this.competencyService.approveChange(changeId, 'admin').subscribe({
+      next: () => {
+        this.loadPendingChanges();
+        this.loadDataNew();
+        this.loadTracks();
+      },
+      error: (err) => console.error('Approve failed:', err)
+    });
+  }
+
+  rejectChange(changeId: string): void {
+    const reason = prompt('請輸入駁回原因：');
+    if (reason === null) return;
+    this.competencyService.rejectChange(changeId, reason).subscribe({
+      next: () => this.loadPendingChanges(),
+      error: (err) => console.error('Reject failed:', err)
+    });
+  }
+
+  // 取得變更類型中文名稱
+  getEntityTypeLabel(type: string): string {
+    const map: Record<string, string> = { track: '軌道', grade: '職等', salary: '薪資', position: '職位', promotion: '晉升條件' };
+    return map[type] || type;
+  }
+
+  // 取得操作類型中文名稱
+  getActionLabel(action: string): string {
+    const map: Record<string, string> = { create: '新增', update: '更新', delete: '刪除' };
+    return map[action] || action;
+  }
+
+  // 取得狀態 CSS class
+  getStatusClass(status: string): string {
+    return `status-${status}`;
   }
 
   onTypeChange(value: string): void {
@@ -441,8 +572,8 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
   // 取得特定職等的晉升條件
   getPromotionToGrade(grade: number, track?: string): PromotionCriteria | null {
     const criteria = this.promotionCriteria();
-    return criteria.find(c => 
-      c.toGrade === grade && 
+    return criteria.find(c =>
+      c.toGrade === grade &&
       (!track || c.track === track || c.track === 'both')
     ) || null;
   }

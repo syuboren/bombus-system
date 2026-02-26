@@ -33,10 +33,11 @@
         <div class="table-row">
           <div class="col-name">
             <div class="avatar">
-              @if (candidate.avatar) {
-                <img [src]="candidate.avatar" [alt]="candidate.name">
+              @if (candidate.avatar?.startsWith('http')) {
+              <img [src]="candidate.avatar" [alt]="candidate.name" (error)="$any($event.target).style.display='none'">
+              <span class="avatar-text" style="display:none">{{ candidate.name?.charAt(0) }}</span>
               } @else {
-                <i class="ri-user-line"></i>
+              <span class="avatar-text">{{ candidate.name?.charAt(0) }}</span>
               }
             </div>
             <div class="name-info">
@@ -92,10 +93,11 @@
         <div class="employee-card" (click)="goToEmployeeProfile(employee.id)">
           <div class="card-header">
             <div class="avatar">
-              @if (employee.avatar) {
-                <img [src]="employee.avatar" [alt]="employee.name">
+              @if (employee.avatar?.startsWith('http')) {
+              <img [src]="employee.avatar" [alt]="employee.name" (error)="$any($event.target).style.display='none'">
+              <span class="avatar-text" style="display:none">{{ employee.name?.charAt(0) }}</span>
               } @else {
-                <i class="ri-user-line"></i>
+              <span class="avatar-text">{{ employee.name?.charAt(0) }}</span>
               }
             </div>
             <div class="info">
@@ -104,7 +106,7 @@
               <span class="employee-no">{{ employee.employee_no }}</span>
             </div>
             <div class="progress-circle" [style.--progress]="employee.progress.overall + '%'"
-                 [style.--color]="getProgressColor(employee.progress.overall)">
+              [style.--color]="getProgressColor(employee.progress.overall)">
               <span class="percentage">{{ employee.progress.overall }}%</span>
             </div>
           </div>
@@ -128,8 +130,7 @@
                   <span>文件簽署</span>
                 </div>
                 <div class="progress-bar">
-                  <div class="progress-fill" 
-                       [style.width]="(employee.progress.templates.total > 0 ? 
+                  <div class="progress-fill" [style.width]="(employee.progress.templates.total > 0 ? 
                          (employee.progress.templates.approved / employee.progress.templates.total * 100) : 0) + '%'">
                   </div>
                 </div>
@@ -144,8 +145,7 @@
                   <span>文件上傳</span>
                 </div>
                 <div class="progress-bar">
-                  <div class="progress-fill" 
-                       [style.width]="(employee.progress.documents.total > 0 ? 
+                  <div class="progress-fill" [style.width]="(employee.progress.documents.total > 0 ? 
                          (employee.progress.documents.uploaded / employee.progress.documents.total * 100) : 0) + '%'">
                   </div>
                 </div>
@@ -175,11 +175,8 @@
 
 <!-- 入職轉換 Modal -->
 @if (selectedCandidate()) {
-<app-onboarding-convert-modal
-  [candidate]="selectedCandidate()!"
-  [isVisible]="showConvertModal()"
-  (close)="closeConvertModal()"
-  (converted)="onConverted($event)">
+<app-onboarding-convert-modal [candidate]="selectedCandidate()!" [isVisible]="showConvertModal()"
+  (close)="closeConvertModal()" (converted)="onConverted($event)">
 </app-onboarding-convert-modal>
 }
 
@@ -196,7 +193,7 @@
         <i class="ri-close-line"></i>
       </button>
     </div>
-    
+
     <div class="modal-body">
       <!-- 員工資訊 -->
       <div class="employee-info-bar">
@@ -205,7 +202,8 @@
         </div>
         <div class="info">
           <span class="name">{{ selectedEmployeeLinks().employee?.name }}</span>
-          <span class="detail">{{ selectedEmployeeLinks().employee?.department }} / {{ selectedEmployeeLinks().employee?.position }}</span>
+          <span class="detail">{{ selectedEmployeeLinks().employee?.department }} / {{
+            selectedEmployeeLinks().employee?.position }}</span>
         </div>
       </div>
 

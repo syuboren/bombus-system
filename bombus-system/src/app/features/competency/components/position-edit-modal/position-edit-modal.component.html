@@ -1,0 +1,76 @@
+<div class="modal-overlay" [class.visible]="visible()">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h2 class="modal-title">{{ isEditMode() ? '編輯部門職位' : '新增部門職位' }}</h2>
+            <button class="close-btn" (click)="onClose()" [disabled]="saving()">
+                <span class="close-icon">×</span>
+            </button>
+        </div>
+
+        <div class="modal-content">
+            @if (error()) {
+            <div class="error-message">
+                <span class="error-icon">⚠️</span> {{ error() }}
+            </div>
+            }
+
+            <section class="form-section">
+                <h3 class="section-title">職位資訊</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label required">部門</label>
+                        <select class="form-select" [value]="formData().department"
+                            (change)="updateField('department', $any($event.target).value)" [disabled]="saving()">
+                            <option value="">請選擇部門</option>
+                            @for (dept of departments(); track dept.id) {
+                            <option [value]="dept.name">{{ dept.name }}</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required">職等</label>
+                        <select class="form-select" [value]="formData().grade"
+                            (change)="updateField('grade', +$any($event.target).value)" [disabled]="saving()">
+                            @for (g of gradeOptions(); track g) {
+                            <option [value]="g">Grade {{ g }}</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label required">職位名稱</label>
+                        <input type="text" class="form-input" [value]="formData().title"
+                            (input)="updateField('title', $any($event.target).value)" placeholder="例如：資深工程師"
+                            [disabled]="saving()" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required">軌道</label>
+                        <select class="form-select" [value]="formData().track"
+                            (change)="updateField('track', $any($event.target).value)" [disabled]="saving()">
+                            @for (t of tracks(); track t.id) {
+                            <option [value]="t.code">{{ t.name }}</option>
+                            }
+                            <option value="both">雙軌 (管理+專業)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">管轄部門</label>
+                    <input type="text" class="form-input" [value]="getSupervisedDeptsString()"
+                        (input)="updateSupervisedDepts($any($event.target).value)" placeholder="多個部門以逗號分隔，例如：研發部, 品保部"
+                        [disabled]="saving()" />
+                    <span class="form-hint">僅管理職需填寫，以逗號分隔多個部門</span>
+                </div>
+            </section>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn btn-secondary" (click)="onClose()" [disabled]="saving()">取消</button>
+            <button class="btn btn-primary" (click)="onSave()" [disabled]="saving()">
+                @if (saving()) { <span class="spinner"></span> 儲存中... }
+                @else { {{ isEditMode() ? '更新' : '新增' }} }
+            </button>
+        </div>
+    </div>
+</div>

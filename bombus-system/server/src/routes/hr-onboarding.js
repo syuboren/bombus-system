@@ -20,7 +20,7 @@ const { prepare } = require('../db');
 function generateEmployeeNo() {
   const year = new Date().getFullYear();
   const prefix = `E${year}`;
-  
+
   // 查詢該年度最大的員工編號
   const result = prepare(`
     SELECT employee_no FROM employees
@@ -28,14 +28,14 @@ function generateEmployeeNo() {
     ORDER BY employee_no DESC
     LIMIT 1
   `).get(`${prefix}%`);
-  
+
   let nextSeq = 1;
   if (result && result.employee_no) {
     // 取得序號部分（最後3位）
     const currentSeq = parseInt(result.employee_no.slice(-3), 10);
     nextSeq = currentSeq + 1;
   }
-  
+
   // 補零到3位
   const seqStr = nextSeq.toString().padStart(3, '0');
   return `${prefix}${seqStr}`;
@@ -68,6 +68,7 @@ function generateToken() {
 router.get('/pending-conversions', (req, res) => {
   try {
     // 使用子查詢取得每個候選人最新的 invitation_decision 記錄
+    // 職位來源：從 jobs 表取得應徵職缺名稱，而非候選人目前工作職位
     const candidates = prepare(`
       SELECT 
         c.id,
@@ -75,13 +76,14 @@ router.get('/pending-conversions', (req, res) => {
         c.email,
         c.phone,
         c.avatar,
-        c.current_position as position,
+        j.title as position,
         c.status,
         c.stage,
         d.candidate_response as offer_response,
         d.responded_at as offer_accepted_at,
         CAST((julianday('now') - julianday(d.responded_at)) AS INTEGER) as days_since_accepted
       FROM candidates c
+      LEFT JOIN jobs j ON c.job_id = j.id
       LEFT JOIN (
         SELECT candidate_id, candidate_response, responded_at,
                ROW_NUMBER() OVER (PARTITION BY candidate_id ORDER BY responded_at DESC) as rn
@@ -121,8 +123,8 @@ router.post('/convert-candidate', (req, res) => {
 
     // 驗證必填欄位
     if (!candidate_id || !department || !position || !hire_date) {
-      return res.status(400).json({ 
-        error: 'Missing required fields: candidate_id, department, position, hire_date' 
+      return res.status(400).json({
+        error: 'Missing required fields: candidate_id, department, position, hire_date'
       });
     }
 
@@ -136,8 +138,8 @@ router.post('/convert-candidate', (req, res) => {
     }
 
     if (candidate.status !== 'offer_accepted') {
-      return res.status(400).json({ 
-        error: `Invalid candidate status: ${candidate.status}. Expected: offer_accepted` 
+      return res.status(400).json({
+        error: `Invalid candidate status: ${candidate.status}. Expected: offer_accepted`
       });
     }
 
@@ -147,7 +149,7 @@ router.post('/convert-candidate', (req, res) => {
     `).get(candidate_id);
 
     if (existingEmployee) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Candidate has already been converted to employee',
         employee_id: existingEmployee.id
       });
@@ -238,7 +240,7 @@ router.post('/convert-candidate', (req, res) => {
     for (const template of templates) {
       const token = generateToken();
       const submission_id = uuidv4();
-      
+
       prepare(`
         INSERT INTO submissions (id, template_id, employee_id, token, employee_name, employee_email, status, created_at)
         VALUES (?, ?, ?, ?, ?, ?, 'DRAFT', ?)
@@ -573,7 +575,7 @@ router.get('/departments', (req, res) => {
         WHERE department IS NOT NULL AND department != ''
         ORDER BY department
       `).all();
-      
+
       res.json(departments.map(d => ({ name: d.department })));
     }
   } catch (error) {
@@ -600,7 +602,7 @@ router.get('/grades', (req, res) => {
       FROM grade_levels
       ORDER BY grade
     `).all();
-    
+
     res.json(grades);
   } catch (error) {
     console.error('Error fetching grades:', error);
@@ -615,7 +617,7 @@ router.get('/grades', (req, res) => {
 router.get('/salary-levels', (req, res) => {
   try {
     const { grade } = req.query;
-    
+
     let query = `
       SELECT 
         gsl.id,
@@ -628,7 +630,7 @@ router.get('/salary-levels', (req, res) => {
       FROM grade_salary_levels gsl
       JOIN grade_levels gl ON gsl.grade = gl.grade
     `;
-    
+
     if (grade) {
       query += ` WHERE gsl.grade = ? ORDER BY gsl.sort_order`;
       const levels = prepare(query).all(parseInt(grade));
@@ -651,7 +653,7 @@ router.get('/salary-levels', (req, res) => {
 router.get('/positions', (req, res) => {
   try {
     const { department, grade, track } = req.query;
-    
+
     let query = `
       SELECT 
         dp.id,
@@ -666,24 +668,24 @@ router.get('/positions', (req, res) => {
       WHERE 1=1
     `;
     const params = [];
-    
+
     if (department) {
       query += ` AND dp.department = ?`;
       params.push(department);
     }
-    
+
     if (grade) {
       query += ` AND dp.grade = ?`;
       params.push(parseInt(grade));
     }
-    
+
     if (track) {
       query += ` AND (dp.track = ? OR dp.track = 'both')`;
       params.push(track);
     }
-    
+
     query += ` ORDER BY dp.grade DESC, dp.department, dp.track`;
-    
+
     const positions = prepare(query).all(...params);
     res.json(positions);
   } catch (error) {
@@ -705,7 +707,7 @@ router.get('/managers', (req, res) => {
         AND (role = 'manager' OR position LIKE '%主管%' OR position LIKE '%經理%' OR position LIKE '%總監%')
       ORDER BY department, name
     `).all();
-    
+
     res.json(managers);
   } catch (error) {
     console.error('Error fetching managers:', error);
