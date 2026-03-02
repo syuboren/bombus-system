@@ -1,0 +1,63 @@
+schema: spec-driven
+
+context: |
+  Domain: Bombus — HR SaaS 人力資源管理平台
+  語言: 繁體中文（所有文件與 UI 文字）
+
+  模組架構 (L1~L6):
+    - L1 員工管理 (/employee): 招募、員工檔案、入職、會議、人才庫
+    - L2 職能管理 (/competency): 職等職級、職務說明書、職能框架、評估
+    - L3 教育訓練 (/training): 課程、學習地圖、九宮格、人才儀表板
+    - L4 專案管理 (/project): 專案列表、損益、報表
+    - L5 績效管理 (/performance): 毛利、獎金、目標、評核
+    - L6 文化管理 (/culture): 手冊、EAP、獎項、文件
+
+  技術棧:
+    Frontend: Angular 18.2 (Standalone) / TypeScript 5.5 (Strict) / SCSS
+    Backend: Express 4.18 / sql.js (SQLite)
+    部署: GitHub Pages (gh-pages branch)
+
+  Angular 核心規範:
+    - 所有元件必須 standalone: true + ChangeDetectionStrategy.OnPush
+    - 使用 inject() 注入（禁止 constructor injection）
+    - 使用 Signal APIs: input() / output() / model()（禁止 @Input / @Output）
+    - 使用新 Control Flow: @if / @for(track) / @switch（禁止 *ngIf / *ngFor）
+    - 狀態管理: Signals (UI) + RxJS Observables (Data Streams)
+    - 禁止 any 型別、inline HTML/CSS、NgModules
+
+  設計系統:
+    - 莫蘭迪色系 Soft UI 風格（圓角 12px、柔和陰影、充分留白）
+    - 各模組有識別色（L1 鼠尾草綠 #8DA399、L2 陶土橙 #D6A28C 等）
+    - 使用 SCSS Mixins: @include card / data-table / filter-bar / button-module / status-badge
+    - 色彩與間距必須使用 SCSS 變數，禁止硬編碼
+
+  後端規範:
+    - 資料庫操作必須使用 Prepared Statements（禁止字串拼接 SQL）
+    - 多步驟寫入必須使用 db.transaction()
+    - API 回傳統一格式，錯誤回傳通用訊息
+
+  參考文件（變更前務必查閱，路徑相對於 bombus-system/）:
+    - ../PROJECT_RULES.md: 元件結構順序、標準範本、API 範本
+    - ../DESIGN_SYSTEM.md: 色彩變數、排版、Soft UI 風格、SCSS Mixin
+    - ../WEB_GUIDELINES.md: A11y、表單規範、動畫性能、響應式
+    - CLAUDE.md: 模組色 SCSS 變數、Mixin 用法
+
+  開發流程: Discovery → Mapping → Verification → Execution
+
+rules:
+  proposal:
+    - 必須說明此變更影響哪些模組（L1~L6）及對應路由
+    - 必須包含「Non-goals（不在範圍內）」段落
+    - 用商業邏輯或使用者體驗角度描述價值，而非純技術描述
+    - 若涉及新資料表或 API，需在提案中概述資料模型
+  design:
+    - 前端元件必須遵循 Standalone + OnPush + Signal APIs 規範
+    - 涉及畫面時標註所用的模組識別色（$color-lX-xxx）與 SCSS Mixins
+    - 資料庫操作必須使用 Prepared Statements，列出 SQL Schema 變更
+    - 標明需要修改的現有檔案路徑（避免重複建檔）
+    - 列出需要複用的現有服務與元件（如 NotificationService、StatusBadge 等）
+  tasks:
+    - 每個任務拆分為最多 2 小時的工作量
+    - 前端（Angular）與後端（Express API / DB）任務分開列出
+    - 每個任務包含驗證步驟（如何測試、預期結果）
+    - 標註任務之間的依賴順序（如後端 API 須先於前端串接）
