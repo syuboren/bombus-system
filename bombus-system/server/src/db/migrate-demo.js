@@ -46,8 +46,72 @@ const PHASE_A_TABLES = [
   'system_config',
 ];
 
-// ─── Phase B 表清單 (Task 5.1b)：進階業務表（待補充）───
-const PHASE_B_TABLES = [];
+// ─── Phase B 表清單 (Task 5.1b)：進階業務表 ───
+const PHASE_B_TABLES = [
+  // 表單模板系統
+  'templates',
+  'submissions',
+  'template_versions',
+  // 招募管理
+  'jobs',
+  'candidates',
+  'candidate_education',
+  'candidate_experiences',
+  'candidate_specialities',
+  'candidate_languages',
+  'candidate_attachments',
+  'candidate_projects',
+  'candidate_custom_contents',
+  'candidate_recommenders',
+  'candidate_apply_records',
+  'candidate_apply_questions',
+  'candidate_resume_analysis',
+  // 面試評分
+  'interview_evaluations',
+  // 人才庫
+  'talent_pool',
+  'talent_contact_history',
+  'talent_reminders',
+  'talent_tags',
+  'talent_tag_mapping',
+  'talent_job_matches',
+  // 面試管理
+  'interview_invitations',
+  'interviews',
+  'candidate_interview_forms',
+  'invitation_decisions',
+  // 會議管理
+  'meetings',
+  'meeting_reminders',
+  'meeting_attendees',
+  'meeting_agenda_items',
+  'meeting_conclusions',
+  'meeting_attachments',
+  // 績效評估系統
+  'monthly_check_templates',
+  'monthly_checks',
+  'monthly_check_items',
+  'quarterly_reviews',
+  'quarterly_review_sections',
+  'satisfaction_surveys',
+  'satisfaction_questions',
+  'weekly_reports',
+  'weekly_report_items',
+  'weekly_todo_items',
+  'weekly_problem_items',
+  'weekly_training_items',
+  'weekly_project_items',
+  // 通知系統
+  'competency_notifications',
+  // 職能管理
+  'competencies',
+  'competency_levels',
+  'competency_ksa_details',
+  // 職務說明書
+  'job_descriptions',
+  'job_description_versions',
+  'job_description_approvals',
+];
 
 // ═══════════════════════════════════════════
 // 工具函數

@@ -1,0 +1,18 @@
+---
+iteration: 1
+loop: A
+timestamp: 2026-03-03T12:00:00+08:00
+task_id: 5.1a
+task_description: 建立 migrate-demo.js 遷移框架 + 核心業務表遷移（17張表，270筆資料）
+status: SUCCESS
+files_created: [bombus-system/server/src/db/migrate-demo.js]
+files_modified: [bombus-system/openspec/changes/multi-tenant-saas/tasks.md]
+verification_command: node -e "require('./src/db/migrate-demo').migrateDemoData()"
+verification_result: PASS
+error_details: 無
+retry_count: 0
+consecutive_failures: 0
+strategy_change: 無
+progress: 1/14
+git_commit: 93ec5d4 feat(multi-tenant): 5.1a demo tenant migration framework + core business tables
+---
