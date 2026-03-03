@@ -9,11 +9,13 @@
  * 假設：伺服器在 http://localhost:3001，demo 租戶已初始化
  */
 
+require('dotenv').config({ path: require('path').join(__dirname, '../../.env') });
+
 const BASE = 'http://localhost:3001';
 
-// 平台管理員帳號 — 使用 migrate-demo.js 的 fallback 值
-const PLATFORM_EMAIL = 'platform@bombus.com';
-const PLATFORM_PASSWORD = 'platform123';
+// 平台管理員帳號 — 與 migrate-demo.js 使用相同的 .env / fallback 邏輯
+const PLATFORM_EMAIL = process.env.PLATFORM_ADMIN_EMAIL || 'platform@bombus.com';
+const PLATFORM_PASSWORD = process.env.PLATFORM_ADMIN_PASSWORD || 'platform123';
 let passed = 0;
 let failed = 0;
 const results = [];

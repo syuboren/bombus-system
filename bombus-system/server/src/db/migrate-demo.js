@@ -8,6 +8,8 @@
  * Phase C (Task 5.2):  RBAC 種子資料（待補充）
  */
 
+require('dotenv').config({ path: require('path').join(__dirname, '../../.env') });
+
 const initSqlJs = require('sql.js');
 const fs = require('fs');
 const path = require('path');
@@ -544,23 +546,23 @@ async function seedPlatformData(platformDB) {
   );
   console.log('  ✅ Demo 租戶綁定 Enterprise 方案');
 
-  // 3. 建立預設平台管理員帳號
+  // 3. 建立或更新預設平台管理員帳號（idempotent upsert）
   const adminEmail = process.env.PLATFORM_ADMIN_EMAIL || 'platform@bombus.com';
   const adminPassword = process.env.PLATFORM_ADMIN_PASSWORD || 'platform123';
   const adminHash = await bcrypt.hash(adminPassword, 10);
 
-  const existing = platformDB.queryOne(
-    'SELECT id FROM platform_admins WHERE email = ?', [adminEmail]
-  );
-  if (!existing) {
-    platformDB.run(
-      'INSERT INTO platform_admins (id, email, password_hash, name) VALUES (?, ?, ?, ?)',
-      [uuidv4(), adminEmail, adminHash, 'Platform Admin']
-    );
-    console.log(`  ✅ 平台管理員帳號: ${adminEmail}`);
-  } else {
-    console.log(`  ○ 平台管理員帳號已存在: ${adminEmail}`);
+  // 先清除所有既有管理員，確保與 .env 一致
+  const existingAdmins = platformDB.query('SELECT id, email FROM platform_admins');
+  if (existingAdmins.length > 0) {
+    platformDB.run('DELETE FROM platform_admins');
+    console.log(`  ○ 清除 ${existingAdmins.length} 個既有平台管理員帳號`);
   }
+
+  platformDB.run(
+    'INSERT INTO platform_admins (id, email, password_hash, name) VALUES (?, ?, ?, ?)',
+    [uuidv4(), adminEmail, adminHash, 'Platform Admin']
+  );
+  console.log(`  ✅ 平台管理員帳號: ${adminEmail}`);
 
   console.log('\n  ✅ 平台種子資料建立完成');
 }
