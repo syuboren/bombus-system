@@ -1,0 +1,165 @@
+<div class="plan-management-page">
+  <div class="page-header">
+    <h1 class="page-title">訂閱方案管理</h1>
+    <button class="btn-primary" type="button" (click)="openCreateForm()">
+      <i class="ri-add-line"></i> 新增方案
+    </button>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>載入中...</p>
+    </div>
+  } @else if (plans().length === 0) {
+    <div class="empty-state">
+      <i class="ri-price-tag-3-line"></i>
+      <p>尚無訂閱方案</p>
+    </div>
+  } @else {
+    <div class="plan-grid">
+      @for (plan of plans(); track plan.id) {
+        <div class="plan-card" [class.plan-card--inactive]="plan.is_active !== 1">
+          <div class="plan-card__header">
+            <h3 class="plan-card__name">{{ plan.name }}</h3>
+            <span class="status-badge" [class]="getActiveClass(plan.is_active)">
+              {{ getActiveLabel(plan.is_active) }}
+            </span>
+          </div>
+
+          <div class="plan-card__pricing">
+            <div class="price-item">
+              <span class="price-value">NT$ {{ plan.price_monthly | number }}</span>
+              <span class="price-period">/ 月</span>
+            </div>
+            <div class="price-item price-item--yearly">
+              <span class="price-value">NT$ {{ plan.price_yearly | number }}</span>
+              <span class="price-period">/ 年</span>
+            </div>
+          </div>
+
+          <div class="plan-card__limits">
+            <div class="limit-item">
+              <i class="ri-user-line"></i>
+              <span>最多 {{ plan.max_users }} 位使用者</span>
+            </div>
+            <div class="limit-item">
+              <i class="ri-hard-drive-2-line"></i>
+              <span>{{ plan.max_storage_gb }} GB 儲存空間</span>
+            </div>
+          </div>
+
+          @if (formatFeatures(plan.features).length > 0) {
+            <div class="plan-card__features">
+              @for (feature of formatFeatures(plan.features); track $index) {
+                <div class="feature-item">
+                  <i class="ri-check-line"></i>
+                  <span>{{ feature }}</span>
+                </div>
+              }
+            </div>
+          }
+
+          <div class="plan-card__footer">
+            <button class="btn-secondary btn-sm" type="button" (click)="openEditForm(plan)">
+              <i class="ri-edit-line"></i> 編輯
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- 新增/編輯方案 Modal -->
+  @if (showForm()) {
+    <div class="modal-overlay" (click)="closeForm()">
+      <div class="modal-container" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2 class="modal-title">
+            {{ editingPlan() ? '編輯方案' : '新增方案' }}
+          </h2>
+          <button class="modal-close" (click)="closeForm()">
+            <i class="ri-close-line"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">方案名稱</label>
+            <input
+              type="text"
+              class="form-input"
+              placeholder="例：Basic"
+              [value]="formData().name || ''"
+              (input)="updateFormField('name', $any($event.target).value)" />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">月費 (NT$)</label>
+              <input
+                type="number"
+                class="form-input"
+                [value]="formData().price_monthly ?? 0"
+                (input)="updateFormField('price_monthly', +$any($event.target).value)" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">年費 (NT$)</label>
+              <input
+                type="number"
+                class="form-input"
+                [value]="formData().price_yearly ?? 0"
+                (input)="updateFormField('price_yearly', +$any($event.target).value)" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">最大使用者數</label>
+              <input
+                type="number"
+                class="form-input"
+                [value]="formData().max_users ?? 10"
+                (input)="updateFormField('max_users', +$any($event.target).value)" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">儲存空間 (GB)</label>
+              <input
+                type="number"
+                class="form-input"
+                [value]="formData().max_storage_gb ?? 5"
+                (input)="updateFormField('max_storage_gb', +$any($event.target).value)" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">功能特色（以逗號分隔）</label>
+            <textarea
+              class="form-input form-textarea"
+              rows="3"
+              placeholder="例：無限報表, 進階分析, API 存取"
+              [value]="formData().features || ''"
+              (input)="updateFormField('features', $any($event.target).value)">
+            </textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">啟用狀態</label>
+            <select
+              class="form-input"
+              [value]="formData().is_active ?? 1"
+              (change)="updateFormField('is_active', +$any($event.target).value)">
+              <option [value]="1">啟用</option>
+              <option [value]="0">停用</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" type="button" (click)="closeForm()">取消</button>
+          <button class="btn-primary" type="button" (click)="saveForm()">
+            {{ editingPlan() ? '儲存變更' : '建立方案' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>
