@@ -32,7 +32,7 @@ const apiLimiter = rateLimit({
 
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 20, // 認證端點更嚴格
+    max: parseInt(process.env.AUTH_RATE_LIMIT || '100', 10),
     message: { error: 'TooManyRequests', message: '登入嘗試過於頻繁，請稍後再試' }
 });
 

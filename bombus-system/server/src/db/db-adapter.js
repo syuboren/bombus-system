@@ -139,8 +139,9 @@ class SqliteAdapter extends DBAdapter {
       }
       stmt.step();
       stmt.free();
+      const changes = this._db.getRowsModified();
       this.save();
-      return { changes: this._db.getRowsModified() };
+      return { changes };
     } catch (e) {
       console.error('SQL Error (run):', e.message, 'SQL:', sql, 'Params:', params);
       return { changes: 0 };
