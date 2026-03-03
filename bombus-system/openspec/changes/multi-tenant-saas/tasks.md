@@ -54,7 +54,7 @@
 - [x] 6.2 重構 `features/auth/services/auth.service.ts` — Mock 登入改為呼叫 `/api/auth/login`，管理 Access Token 和 Refresh Token（存 localStorage），提供 Signal-based currentUser/isLoggedIn/permissions 狀態。**驗證**：以 demo 帳號登入成功取得 Token、登出清除 Token
 - [x] 6.3 建立 `core/interceptors/auth.interceptor.ts` — AuthInterceptor：自動附加 Authorization Header、401 時自動刷新 Token 並重送請求、Refresh Token 也過期則導向登入頁。**驗證**：API 請求自動帶 Token、Token 過期自動刷新
 - [x] 6.4 在 `app.config.ts` 註冊 AuthInterceptor（provideHttpClient(withInterceptors([authInterceptor]))）。**驗證**：Interceptor 生效
-- [ ] 6.5 更新 `features/auth/pages/login-page/` — 加入 tenant_slug 欄位（或選擇器），支援 email 域名自動建議租戶。**驗證**：可選擇租戶後登入
+- [x] 6.5 更新 `features/auth/pages/login-page/` — 加入 tenant_slug 欄位（或選擇器），支援 email 域名自動建議租戶。**驗證**：可選擇租戶後登入
 
 > 依賴：後端 Phase 2 完成後才能開始；6.1 → 6.2 → 6.3 → 6.4
 

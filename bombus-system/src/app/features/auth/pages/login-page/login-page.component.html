@@ -34,21 +34,40 @@
         </div>
       }
 
-      <!-- 帳號輸入 -->
+      <!-- 組織代碼 -->
       <div class="form-group">
-        <label for="username" class="form-label">
-          <i class="ri-user-line"></i>
-          帳號
+        <label for="tenantSlug" class="form-label">
+          <i class="ri-building-line"></i>
+          組織代碼
         </label>
         <div class="input-wrapper">
           <input
             type="text"
-            id="username"
+            id="tenantSlug"
             class="form-input"
-            placeholder="請輸入帳號"
-            [value]="username()"
-            (input)="username.set($any($event.target).value)"
-            autocomplete="username"
+            placeholder="請輸入組織代碼"
+            [value]="tenantSlug()"
+            (input)="tenantSlug.set($any($event.target).value)"
+            autocomplete="organization"
+            [disabled]="isLoading()" />
+        </div>
+      </div>
+
+      <!-- 電子郵件 -->
+      <div class="form-group">
+        <label for="email" class="form-label">
+          <i class="ri-mail-line"></i>
+          電子郵件
+        </label>
+        <div class="input-wrapper">
+          <input
+            type="email"
+            id="email"
+            class="form-input"
+            placeholder="請輸入電子郵件"
+            [value]="email()"
+            (input)="email.set($any($event.target).value)"
+            autocomplete="email"
             [disabled]="isLoading()" />
         </div>
       </div>
@@ -123,8 +142,9 @@
         測試帳號
       </div>
       <div class="demo-hint__content">
-        <p><strong>管理員：</strong>admin / admin123</p>
-        <p><strong>一般使用者：</strong>user / user123</p>
+        <p><strong>組織代碼：</strong>demo</p>
+        <p><strong>管理員：</strong>admin&#64;demo.com / admin123</p>
+        <p><strong>一般使用者：</strong>user&#64;demo.com / user123</p>
       </div>
     </div>
 

@@ -18,10 +18,14 @@ export class LoginPageComponent implements OnInit {
   private router = inject(Router);
 
   // Form state
-  username = signal('');
+  email = signal('');
   password = signal('');
+  tenantSlug = signal('demo');
   rememberMe = signal(false);
   showPassword = signal(false);
+
+  /** @deprecated 向後相容 alias */
+  username = this.email;
 
   // Forgot password modal
   showForgotModal = signal(false);
@@ -49,7 +53,10 @@ export class LoginPageComponent implements OnInit {
     // 載入記住的帳號
     const remembered = this.authService.getRememberedCredentials();
     if (remembered) {
-      this.username.set(remembered.username || remembered.email || '');
+      this.email.set(remembered.email || '');
+      if (remembered.tenant_slug) {
+        this.tenantSlug.set(remembered.tenant_slug);
+      }
       this.rememberMe.set(remembered.rememberMe);
     }
   }
@@ -68,16 +75,19 @@ export class LoginPageComponent implements OnInit {
     this.errorMessage.set(null);
 
     // 表單驗證
-    if (!this.username() || !this.password()) {
-      this.errorMessage.set('請輸入帳號和密碼');
+    if (!this.email() || !this.password()) {
+      this.errorMessage.set('請輸入電子郵件和密碼');
+      return;
+    }
+    if (!this.tenantSlug()) {
+      this.errorMessage.set('請輸入組織代碼');
       return;
     }
 
     const request: LoginRequest = {
-      email: this.username(),
+      email: this.email(),
       password: this.password(),
-      tenant_slug: '',
-      username: this.username(),
+      tenant_slug: this.tenantSlug(),
       rememberMe: this.rememberMe()
     };
 
