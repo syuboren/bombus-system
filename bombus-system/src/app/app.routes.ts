@@ -66,8 +66,8 @@ export const routes: Routes = [
   {
     path: 'platform',
     canActivate: [authGuard, platformAdminGuard],
-    loadChildren: () => import('./features/platform/platform.routes')
-      .then(m => m.PLATFORM_ROUTES)
+    loadChildren: () => import('./features/platform-admin/platform-admin.routes')
+      .then(m => m.PLATFORM_ADMIN_ROUTES)
   },
   {
     // Public routes (no auth required) - 候選人回覆面試邀約
