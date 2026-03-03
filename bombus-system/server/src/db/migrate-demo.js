@@ -492,6 +492,80 @@ async function seedRBACData(demoAdapter) {
 }
 
 // ═══════════════════════════════════════════
+// Phase D: 平台種子資料 (Task 5.3)
+// ═══════════════════════════════════════════
+
+/**
+ * 建立預設訂閱方案 + 平台管理員帳號（Task 5.3）
+ * @param {import('./db-adapter').SqliteAdapter} platformDB
+ */
+async function seedPlatformData(platformDB) {
+  const bcrypt = require('bcryptjs');
+
+  console.log('\n─── Phase D: 平台種子資料 ───\n');
+
+  // 1. 建立 Free/Basic/Enterprise 訂閱方案
+  const plans = [
+    {
+      id: 'plan-free',
+      name: 'Free',
+      max_users: 10,
+      max_subsidiaries: 1,
+      features: JSON.stringify({ modules: ['L1'], export: false, api: false })
+    },
+    {
+      id: 'plan-basic',
+      name: 'Basic',
+      max_users: 50,
+      max_subsidiaries: 3,
+      features: JSON.stringify({ modules: ['L1', 'L2', 'L3'], export: true, api: false })
+    },
+    {
+      id: 'plan-enterprise',
+      name: 'Enterprise',
+      max_users: 500,
+      max_subsidiaries: 20,
+      features: JSON.stringify({ modules: ['L1', 'L2', 'L3', 'L4', 'L5', 'L6'], export: true, api: true })
+    },
+  ];
+
+  for (const plan of plans) {
+    platformDB.run(
+      'INSERT OR IGNORE INTO subscription_plans (id, name, max_users, max_subsidiaries, features) VALUES (?, ?, ?, ?, ?)',
+      [plan.id, plan.name, plan.max_users, plan.max_subsidiaries, plan.features]
+    );
+  }
+  console.log(`  ✅ subscription_plans: ${plans.length} 筆`);
+
+  // 2. 將 demo 租戶綁定 Enterprise 方案
+  platformDB.run(
+    'UPDATE tenants SET plan_id = ? WHERE slug = ?',
+    ['plan-enterprise', DEMO_TENANT_SLUG]
+  );
+  console.log('  ✅ Demo 租戶綁定 Enterprise 方案');
+
+  // 3. 建立預設平台管理員帳號
+  const adminEmail = process.env.PLATFORM_ADMIN_EMAIL || 'platform@bombus.com';
+  const adminPassword = process.env.PLATFORM_ADMIN_PASSWORD || 'platform123';
+  const adminHash = await bcrypt.hash(adminPassword, 10);
+
+  const existing = platformDB.queryOne(
+    'SELECT id FROM platform_admins WHERE email = ?', [adminEmail]
+  );
+  if (!existing) {
+    platformDB.run(
+      'INSERT INTO platform_admins (id, email, password_hash, name) VALUES (?, ?, ?, ?)',
+      [uuidv4(), adminEmail, adminHash, 'Platform Admin']
+    );
+    console.log(`  ✅ 平台管理員帳號: ${adminEmail}`);
+  } else {
+    console.log(`  ○ 平台管理員帳號已存在: ${adminEmail}`);
+  }
+
+  console.log('\n  ✅ 平台種子資料建立完成');
+}
+
+// ═══════════════════════════════════════════
 // 主遷移流程
 // ═══════════════════════════════════════════
 
@@ -590,6 +664,9 @@ async function migrateDemoData() {
   // 10. 建立 RBAC 種子資料
   const rbacResult = await seedRBACData(demoAdapter);
 
+  // 10b. 建立平台種子資料（方案 + 平台管理員）
+  await seedPlatformData(platformDB);
+
   // 11. 記錄審計日誌
   const migrationDetails = results
     .filter(r => !r.skipped)
@@ -645,4 +722,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { migrateDemoData, migrateTable, seedRBACData, PHASE_A_TABLES, PHASE_B_TABLES };
+module.exports = { migrateDemoData, migrateTable, seedRBACData, seedPlatformData, PHASE_A_TABLES, PHASE_B_TABLES };

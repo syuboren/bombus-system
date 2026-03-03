@@ -35,3 +35,18 @@ strategy_change: 無
 progress: 2/14
 git_commit: e7f1fd6 feat(multi-tenant): 5.1b migrate advanced business tables (53 tables, 3582 rows)
 ---
+
+---
+iteration: 3
+loop: A
+timestamp: 2026-03-03T12:30:00+08:00
+task_id: 5.2
+task_description: RBAC 種子資料（13 users, 5 roles, 80 permissions, 9 org_units）
+status: SUCCESS
+files_modified: [bombus-system/server/src/db/migrate-demo.js, tasks.md]
+verification_result: PASS
+retry_count: 0
+consecutive_failures: 0
+progress: 3/14
+git_commit: 55f4799 feat(multi-tenant): 5.2 RBAC seed data
+---
