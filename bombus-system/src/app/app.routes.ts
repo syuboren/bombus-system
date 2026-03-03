@@ -64,6 +64,13 @@ export const routes: Routes = [
       .then(m => m.CULTURE_ROUTES)
   },
   {
+    path: 'settings',
+    canActivate: [authGuard, permissionGuard],
+    data: { requiredRoles: ['super_admin', 'subsidiary_admin'] },
+    loadChildren: () => import('./features/tenant-admin/tenant-admin.routes')
+      .then(m => m.TENANT_ADMIN_ROUTES)
+  },
+  {
     path: 'platform',
     canActivate: [authGuard, platformAdminGuard],
     loadChildren: () => import('./features/platform-admin/platform-admin.routes')
