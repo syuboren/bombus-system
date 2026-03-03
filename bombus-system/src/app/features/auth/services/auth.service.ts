@@ -92,7 +92,7 @@ export class AuthService {
 
           // 處理記住登入資訊
           if (request.rememberMe) {
-            this.saveCredentials(request.username);
+            this.saveCredentials(request.username || request.email);
           } else {
             this.clearCredentials();
           }
@@ -139,6 +139,7 @@ export class AuthService {
    */
   private saveCredentials(username: string): void {
     const credentials: RememberedCredentials = {
+      email: username,
       username,
       rememberMe: true
     };
@@ -181,6 +182,8 @@ export class AuthService {
           username: 'admin',
           email: 'admin@bombus.com',
           name: '系統管理員',
+          roles: ['super_admin'],
+          scope: null,
           role: 'admin',
           department: '資訊部',
           lastLogin: new Date()
@@ -199,6 +202,8 @@ export class AuthService {
           username: 'user',
           email: 'user@bombus.com',
           name: '一般使用者',
+          roles: ['employee'],
+          scope: null,
           role: 'employee',
           department: '業務部',
           lastLogin: new Date()

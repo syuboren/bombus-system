@@ -49,7 +49,7 @@ export class LoginPageComponent implements OnInit {
     // 載入記住的帳號
     const remembered = this.authService.getRememberedCredentials();
     if (remembered) {
-      this.username.set(remembered.username);
+      this.username.set(remembered.username || remembered.email || '');
       this.rememberMe.set(remembered.rememberMe);
     }
   }
@@ -74,8 +74,10 @@ export class LoginPageComponent implements OnInit {
     }
 
     const request: LoginRequest = {
-      username: this.username(),
+      email: this.username(),
       password: this.password(),
+      tenant_slug: '',
+      username: this.username(),
       rememberMe: this.rememberMe()
     };
 
