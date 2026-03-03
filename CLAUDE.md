@@ -63,7 +63,8 @@ cd bombus-system/server && npm run init-db # 初始化 SQLite 資料庫
 
 ### 開發環境
 - 前端開發時透過 `proxy.conf.json` 將 `/api/*` 和 `/uploads/*` 代理到 `http://localhost:3001`
-- Demo 帳號：`admin/admin123`（管理員）、`user/user123`（一般使用者）
+- Demo 租戶帳號：`admin@demo.com` / `admin123`（super_admin，tenant_slug=demo）
+- 平台管理員帳號：見 `server/.env` 的 `PLATFORM_ADMIN_EMAIL` / `PLATFORM_ADMIN_PASSWORD`
 
 ## 專案架構
 
@@ -86,7 +87,16 @@ features/           → 功能模組（延遲載入）
 | `/public` | 公開路由 | 候選人回覆面試（無需登入） |
 
 ### 後端 API 結構（server/src/routes/）
-所有 API 以 `/api` 為前綴，主要路由：`/api/grade-matrix`, `/api/job-descriptions`, `/api/competency-mgmt`, `/api/recruitment`, `/api/talent-pool`, `/api/jobs`, `/api/meetings`, `/api/onboarding`, `/api/monthly-checks`, `/api/quarterly-reviews`, `/api/export`, `/api/upload`
+所有 API 以 `/api` 為前綴。業務路由需 `authMiddleware + tenantMiddleware`。
+
+| 類別 | 路由 | 保護方式 |
+|------|------|----------|
+| 認證 | `/api/auth` | authLimiter（可透過 `AUTH_RATE_LIMIT` 環境變數設定） |
+| 平台管理 | `/api/platform` | authMiddleware + platformAdminMiddleware |
+| 租戶管理 | `/api/tenant-admin` | authMiddleware + tenantMiddleware + requireRole |
+| 審計日誌 | `/api/audit` | authMiddleware |
+| 組織管理 | `/api/organization` | authMiddleware + tenantMiddleware |
+| 業務 API | `/api/employee`, `/api/grade-matrix`, `/api/competency-mgmt`, `/api/recruitment`, `/api/talent-pool`, `/api/jobs`, `/api/meetings`, `/api/onboarding`, `/api/monthly-checks`, `/api/quarterly-reviews`, `/api/export`, `/api/upload` 等 | authMiddleware + tenantMiddleware |
 
 ### SCSS 樣式系統（src/assets/styles/）
 - `_variables.scss` — 色彩、間距、圓角、陰影、斷點
@@ -110,40 +120,49 @@ features/           → 功能模組（延遲載入）
 3. （涉及互動）是否已檢查 `WEB_GUIDELINES.md` 的 A11y 與體驗規範？
 4. 是否遵循 `PROJECT_RULES.md` 的元件結構順序與命名規範？
 
-## Multi-Tenant SaaS 開發狀態
+## Multi-Tenant SaaS 架構（已完成）
 
-此專案正在進行 multi-tenant SaaS 架構升級（Database-per-Tenant 隔離策略）。
+此專案已完成 multi-tenant SaaS 架構升級（Database-per-Tenant 隔離策略）。**全部 57/57 任務已完成**。
 
-### 進度追蹤
-- **任務進度**：`bombus-system/openspec/changes/multi-tenant-saas/tasks.md`（唯一 source of truth）
-- **迭代日誌**：`.claude/ralph-loop-saas.log`
+### 文件參考
+- **任務進度**：`bombus-system/openspec/changes/multi-tenant-saas/tasks.md`（57/57 ✓）
+- **迭代日誌**：`.claude/ralph-loop-saas.log`（Loop A/B/C 完整記錄）
 - **設計文件**：`bombus-system/openspec/changes/multi-tenant-saas/design.md`
-- **Spec 檔案**：`bombus-system/openspec/changes/multi-tenant-saas/specs/`
 
-### 已完成的後端基礎設施（Group 1-4，21/57 任務）
-- DB 抽象層：`server/src/db/db-adapter.js`（DBAdapter + SqliteAdapter）
-- 平台資料庫：`server/src/db/platform-db.js`（platform.db — tenants/plans/admins/audit_logs）
-- 租戶管理器：`server/src/db/tenant-db-manager.js`（TenantDBManager 單例 + LRU Cache 30min）
-- 租戶 Schema：`server/src/db/tenant-schema.js`（69 業務表 + 7 RBAC 表）
-- 認證中間件：`server/src/middleware/auth.js`（JWT Access Token 15min）
-- 租戶中間件：`server/src/middleware/tenant.js`（注入 req.tenantDB）
-- 權限中間件：`server/src/middleware/permission.js`（requirePermission/requireRole）
-- 認證路由：`server/src/routes/auth.js`（login/refresh/logout/platform-login）
-- 平台管理路由：`server/src/routes/platform.js`（租戶 CRUD + 方案管理）
-- 租戶管理路由：`server/src/routes/tenant-admin.js`（組織/角色/使用者/權限管理）
-- 審計路由：`server/src/routes/audit.js`（日誌查詢 + 405 保護）
-- 組織管理路由：`server/src/routes/organization.js`（公司/部門/統計）
-- 所有 17 個既有路由已遷移至 `req.tenantDB`（helper functions 已補 `req` 參數）
+### 架構概覽
+| 層級 | 元件 | 檔案 |
+|------|------|------|
+| DB 抽象層 | DBAdapter + SqliteAdapter | `server/src/db/db-adapter.js` |
+| 平台資料庫 | platform.db（tenants/plans/admins/audit_logs） | `server/src/db/platform-db.js` |
+| 租戶管理器 | TenantDBManager（LRU Cache 30min） | `server/src/db/tenant-db-manager.js` |
+| 租戶 Schema | 69 業務表 + 7 RBAC 表 | `server/src/db/tenant-schema.js` |
+| Demo 遷移 | onboarding.db → tenant_demo.db | `server/src/db/migrate-demo.js` |
+| 認證中間件 | JWT Access Token 15min + Refresh 7d | `server/src/middleware/auth.js` |
+| 租戶中間件 | 注入 req.tenantDB + 租戶狀態檢查 | `server/src/middleware/tenant.js` |
+| 權限中間件 | requirePermission / requireRole | `server/src/middleware/permission.js` |
 
-### 新增 API 路由（已註冊在 index.js）
-| 路由 | 保護方式 |
+### 前端 Multi-Tenant 元件
+| 功能 | 檔案位置 |
 |------|----------|
-| `/api/auth` | authLimiter（自帶限流） |
-| `/api/platform` | authMiddleware + platformAdminMiddleware（路由內部） |
-| `/api/tenant-admin` | authMiddleware + tenantMiddleware + requireRole（路由內部） |
-| `/api/audit` | authMiddleware（路由內部） |
-| `/api/organization` | authMiddleware + tenantMiddleware |
-| 所有既有 `/api/*` | authMiddleware + tenantMiddleware |
+| Auth 模型 | `features/auth/models/auth.model.ts` |
+| Auth 服務 | `features/auth/services/auth.service.ts` |
+| HTTP 攔截器 | `core/interceptors/auth.interceptor.ts` |
+| 權限服務 | `core/services/permission.service.ts` |
+| Guards | `core/guards/{auth,permission,platform-admin}.guard.ts` |
+| 權限指令 | `shared/directives/has-permission.directive.ts` |
+| 租戶管理頁面 | `features/tenant-admin/pages/` |
+| 平台管理頁面 | `features/platform-admin/pages/` |
 
-### 環境變數
-- `server/.env`：JWT_SECRET、PLATFORM_ADMIN_EMAIL/PASSWORD 等（已在 .gitignore）
+### 整合測試（153/153 passed）
+```bash
+cd bombus-system/server && node src/tests/test-e2e-flow.js              # 11.1 (41/41)
+cd bombus-system/server && node src/tests/test-tenant-isolation.js       # 11.2 (22/22)
+cd bombus-system/server && node src/tests/test-demo-tenant.js            # 11.3 (32/32)
+cd bombus-system/server && node src/tests/test-permission-inheritance.js # 11.4 (24/24)
+cd bombus-system/server && node src/tests/test-audit-logs.js             # 11.5 (34/34)
+```
+
+### 環境變數（server/.env）
+- `JWT_SECRET`、`JWT_ACCESS_EXPIRES`（15m）、`JWT_REFRESH_EXPIRES`（7d）
+- `PLATFORM_ADMIN_EMAIL`、`PLATFORM_ADMIN_PASSWORD`
+- `AUTH_RATE_LIMIT`（認證端點頻率限制，預設 100 次/15 分鐘）
