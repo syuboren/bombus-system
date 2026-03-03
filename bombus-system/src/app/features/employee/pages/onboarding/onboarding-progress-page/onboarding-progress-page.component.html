@@ -35,9 +35,9 @@
             <div class="avatar">
               @if (candidate.avatar?.startsWith('http')) {
               <img [src]="candidate.avatar" [alt]="candidate.name" (error)="$any($event.target).style.display='none'">
-              <span class="avatar-text" style="display:none">{{ candidate.name?.charAt(0) }}</span>
+              <span class="avatar-text" style="display:none">{{ candidate.name.charAt(0) }}</span>
               } @else {
-              <span class="avatar-text">{{ candidate.name?.charAt(0) }}</span>
+              <span class="avatar-text">{{ candidate.name.charAt(0) }}</span>
               }
             </div>
             <div class="name-info">
@@ -95,9 +95,9 @@
             <div class="avatar">
               @if (employee.avatar?.startsWith('http')) {
               <img [src]="employee.avatar" [alt]="employee.name" (error)="$any($event.target).style.display='none'">
-              <span class="avatar-text" style="display:none">{{ employee.name?.charAt(0) }}</span>
+              <span class="avatar-text" style="display:none">{{ employee.name.charAt(0) }}</span>
               } @else {
-              <span class="avatar-text">{{ employee.name?.charAt(0) }}</span>
+              <span class="avatar-text">{{ employee.name.charAt(0) }}</span>
               }
             </div>
             <div class="info">

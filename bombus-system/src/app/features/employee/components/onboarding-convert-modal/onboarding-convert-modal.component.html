@@ -20,9 +20,9 @@
         <div class="avatar">
           @if (candidate().avatar?.startsWith('http')) {
           <img [src]="candidate().avatar" [alt]="candidate().name" (error)="$any($event.target).style.display='none'">
-          <span class="avatar-text" style="display:none">{{ candidate().name?.charAt(0) }}</span>
+          <span class="avatar-text" style="display:none">{{ candidate().name.charAt(0) }}</span>
           } @else {
-          <span class="avatar-text">{{ candidate().name?.charAt(0) }}</span>
+          <span class="avatar-text">{{ candidate().name.charAt(0) }}</span>
           }
         </div>
         <div class="info">
