@@ -1,0 +1,142 @@
+<div class="audit-log-page">
+  <div class="page-header">
+    <h1 class="page-title">平台審計日誌</h1>
+  </div>
+
+  <!-- 篩選列 -->
+  <div class="filter-bar">
+    <div class="filter-group">
+      <label class="filter-label">動作類型</label>
+      <select
+        class="filter-select"
+        [value]="actionFilter()"
+        (change)="actionFilter.set($any($event.target).value); onFilterChange()">
+        <option value="">全部動作</option>
+        <option value="login_success">登入成功</option>
+        <option value="login_failed">登入失敗</option>
+        <option value="tenant_create">建立租戶</option>
+        <option value="tenant_suspend">暫停租戶</option>
+        <option value="tenant_soft_delete">軟刪除租戶</option>
+        <option value="tenant_restore">恢復租戶</option>
+        <option value="tenant_purge">永久刪除租戶</option>
+        <option value="role_create">建立角色</option>
+        <option value="role_update">更新角色</option>
+        <option value="role_delete">刪除角色</option>
+        <option value="user_role_assign">指派角色</option>
+        <option value="user_role_revoke">移除角色</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label class="filter-label">租戶 ID</label>
+      <input
+        type="text"
+        class="filter-input"
+        placeholder="輸入租戶 ID..."
+        [value]="tenantFilter()"
+        (input)="tenantFilter.set($any($event.target).value)"
+        (keydown.enter)="onFilterChange()" />
+    </div>
+
+    <div class="filter-group">
+      <label class="filter-label">開始日期</label>
+      <input
+        type="date"
+        class="filter-input"
+        [value]="startDate()"
+        (change)="startDate.set($any($event.target).value); onFilterChange()" />
+    </div>
+
+    <div class="filter-group">
+      <label class="filter-label">結束日期</label>
+      <input
+        type="date"
+        class="filter-input"
+        [value]="endDate()"
+        (change)="endDate.set($any($event.target).value); onFilterChange()" />
+    </div>
+
+    <div class="filter-actions">
+      <button class="btn-secondary btn-sm" type="button" (click)="clearFilters()">
+        <i class="ri-filter-off-line"></i> 清除
+      </button>
+    </div>
+  </div>
+
+  <!-- 日誌表格 -->
+  @if (loading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>載入中...</p>
+    </div>
+  } @else if (logs().length === 0) {
+    <div class="empty-state">
+      <i class="ri-file-list-3-line"></i>
+      <p>沒有符合條件的日誌記錄</p>
+    </div>
+  } @else {
+    <div class="result-info">
+      共 {{ totalCount() }} 筆記錄
+    </div>
+
+    <div class="data-table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>時間</th>
+            <th>動作</th>
+            <th>資源</th>
+            <th>租戶</th>
+            <th>使用者</th>
+            <th>IP</th>
+            <th>詳情</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (log of logs(); track log.id) {
+            <tr>
+              <td class="col-time">{{ log.created_at | date:'yyyy-MM-dd HH:mm:ss' }}</td>
+              <td>
+                <span class="action-badge" [class]="getActionClass(log.action)">
+                  {{ getActionLabel(log.action) }}
+                </span>
+              </td>
+              <td class="col-resource">{{ log.resource || '-' }}</td>
+              <td class="col-tenant">{{ log.tenant_name || log.tenant_id || '-' }}</td>
+              <td class="col-user">{{ log.user_id || '-' }}</td>
+              <td class="col-ip">{{ log.ip_address || '-' }}</td>
+              <td class="col-details">
+                @if (log.details) {
+                  <span class="details-text" [title]="parseDetails(log.details)">
+                    {{ log.details | slice:0:40 }}{{ log.details.length > 40 ? '...' : '' }}
+                  </span>
+                } @else {
+                  <span class="text-muted">-</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 分頁 -->
+    @if (totalPages() > 1) {
+      <div class="pagination">
+        <button
+          class="page-btn"
+          [disabled]="currentPage() === 1"
+          (click)="onPageChange(currentPage() - 1)">
+          <i class="ri-arrow-left-s-line"></i>
+        </button>
+        <span class="page-info">{{ currentPage() }} / {{ totalPages() }}</span>
+        <button
+          class="page-btn"
+          [disabled]="currentPage() === totalPages()"
+          (click)="onPageChange(currentPage() + 1)">
+          <i class="ri-arrow-right-s-line"></i>
+        </button>
+      </div>
+    }
+  }
+</div>
