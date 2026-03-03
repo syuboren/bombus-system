@@ -234,6 +234,264 @@ function migrateTable(sourceDB, targetDB, tableName) {
 }
 
 // ═══════════════════════════════════════════
+// Phase C: RBAC 種子資料 (Task 5.2)
+// ═══════════════════════════════════════════
+
+// 部門名稱 → org_unit ID 對應
+const DEPT_TO_ORG = {
+  '執行長辦公室': 'org-dept-ceo',
+  '行政部': 'org-dept-admin',
+  '財務部': 'org-dept-fin',
+  '專案部': 'org-dept-proj',
+  '人資部': 'org-dept-hr',
+  '業務部': 'org-dept-sales',
+  '工程部': 'org-dept-eng',
+};
+
+// 權限資源定義（對應既有 L1~L6 路由）
+const PERMISSION_RESOURCES = [
+  { resource: 'employee', actions: ['read', 'create', 'update', 'delete'] },
+  { resource: 'recruitment', actions: ['read', 'create', 'update', 'delete', 'manage'] },
+  { resource: 'talent_pool', actions: ['read', 'create', 'update', 'delete', 'manage'] },
+  { resource: 'meeting', actions: ['read', 'create', 'update', 'delete', 'manage'] },
+  { resource: 'competency', actions: ['read', 'create', 'update', 'delete'] },
+  { resource: 'monthly_check', actions: ['read', 'create', 'update', 'delete'] },
+  { resource: 'weekly_report', actions: ['read', 'create', 'update', 'delete'] },
+  { resource: 'quarterly_review', actions: ['read', 'create', 'update', 'delete'] },
+  { resource: 'template', actions: ['read', 'create', 'update', 'delete', 'manage'] },
+  { resource: 'submission', actions: ['read', 'create', 'update'] },
+  { resource: 'approval', actions: ['read', 'approve', 'reject'] },
+  { resource: 'job_description', actions: ['read', 'create', 'update', 'delete', 'approve'] },
+  { resource: 'grade_matrix', actions: ['read', 'create', 'update', 'delete'] },
+  { resource: 'organization', actions: ['read', 'create', 'update', 'delete', 'manage'] },
+  { resource: 'export', actions: ['read'] },
+  { resource: 'job', actions: ['read', 'create', 'update', 'delete'] },
+  { resource: 'onboarding', actions: ['read', 'create', 'update', 'manage'] },
+  { resource: 'user', actions: ['read', 'create', 'update', 'delete', 'manage'] },
+  { resource: 'role', actions: ['read', 'create', 'update', 'delete', 'manage'] },
+  { resource: 'audit', actions: ['read'] },
+];
+
+/**
+ * 在 raw db 上執行 INSERT OR IGNORE（不觸發 auto-save）
+ */
+function rawInsert(db, sql, params) {
+  try {
+    const stmt = db.prepare(sql);
+    stmt.bind(params.map(p => p === undefined ? null : p));
+    stmt.step();
+    stmt.free();
+  } catch (e) {
+    // INSERT OR IGNORE — 靜默跳過重複
+  }
+}
+
+/**
+ * 建立 RBAC 種子資料（Task 5.2）
+ * @param {import('./db-adapter').SqliteAdapter} demoAdapter
+ */
+async function seedRBACData(demoAdapter) {
+  const bcrypt = require('bcryptjs');
+  const db = demoAdapter.raw;
+
+  console.log('\n─── Phase C: RBAC 種子資料 ───\n');
+
+  db.run('PRAGMA foreign_keys = OFF');
+  db.run('BEGIN TRANSACTION');
+
+  // 1. 建立 org_units（集團根 + 預設子公司 + 7 部門）
+  const orgUnits = [
+    { id: 'org-root', name: 'Demo集團', type: 'group', parent_id: null, level: 0 },
+    { id: 'org-sub-default', name: 'Demo Company', type: 'subsidiary', parent_id: 'org-root', level: 1 },
+    { id: 'org-dept-ceo', name: '執行長辦公室', type: 'department', parent_id: 'org-sub-default', level: 2 },
+    { id: 'org-dept-admin', name: '行政部', type: 'department', parent_id: 'org-sub-default', level: 2 },
+    { id: 'org-dept-fin', name: '財務部', type: 'department', parent_id: 'org-sub-default', level: 2 },
+    { id: 'org-dept-proj', name: '專案部', type: 'department', parent_id: 'org-sub-default', level: 2 },
+    { id: 'org-dept-hr', name: '人資部', type: 'department', parent_id: 'org-sub-default', level: 2 },
+    { id: 'org-dept-sales', name: '業務部', type: 'department', parent_id: 'org-sub-default', level: 2 },
+    { id: 'org-dept-eng', name: '工程部', type: 'department', parent_id: 'org-sub-default', level: 2 },
+  ];
+
+  for (const ou of orgUnits) {
+    rawInsert(db,
+      'INSERT OR IGNORE INTO org_units (id, name, type, parent_id, level) VALUES (?, ?, ?, ?, ?)',
+      [ou.id, ou.name, ou.type, ou.parent_id, ou.level]
+    );
+  }
+  console.log(`  ✅ org_units: ${orgUnits.length} 筆`);
+
+  // 2. 建立 5 個預設角色（is_system=1）
+  const roles = [
+    { id: 'role-super-admin', name: 'super_admin', description: '超級管理員（全權限）', scope_type: 'global', is_system: 1 },
+    { id: 'role-subsidiary-admin', name: 'subsidiary_admin', description: '子公司管理員', scope_type: 'subsidiary', is_system: 1 },
+    { id: 'role-hr-manager', name: 'hr_manager', description: '人資管理員', scope_type: 'global', is_system: 1 },
+    { id: 'role-dept-manager', name: 'dept_manager', description: '部門主管', scope_type: 'department', is_system: 1 },
+    { id: 'role-employee', name: 'employee', description: '一般員工', scope_type: 'department', is_system: 1 },
+  ];
+
+  for (const role of roles) {
+    rawInsert(db,
+      'INSERT OR IGNORE INTO roles (id, name, description, scope_type, is_system) VALUES (?, ?, ?, ?, ?)',
+      [role.id, role.name, role.description, role.scope_type, role.is_system]
+    );
+  }
+  console.log(`  ✅ roles: ${roles.length} 筆`);
+
+  // 3. 建立全部權限定義
+  const allPermissions = [];
+  for (const r of PERMISSION_RESOURCES) {
+    for (const action of r.actions) {
+      allPermissions.push({
+        id: `perm-${r.resource}-${action}`,
+        resource: r.resource,
+        action
+      });
+    }
+  }
+
+  for (const perm of allPermissions) {
+    rawInsert(db,
+      'INSERT OR IGNORE INTO permissions (id, resource, action, description) VALUES (?, ?, ?, ?)',
+      [perm.id, perm.resource, perm.action, `${perm.resource}:${perm.action}`]
+    );
+  }
+  console.log(`  ✅ permissions: ${allPermissions.length} 筆`);
+
+  // 4. 建立角色-權限對應
+  let rpCount = 0;
+
+  // super_admin → 全部權限
+  for (const p of allPermissions) {
+    rawInsert(db, 'INSERT OR IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)',
+      ['role-super-admin', p.id]);
+    rpCount++;
+  }
+
+  // subsidiary_admin → 大部分權限（排除 user/role 的寫入與 audit）
+  for (const p of allPermissions) {
+    const isAdminOnly = ['user', 'role'].includes(p.resource) && p.action !== 'read';
+    if (!isAdminOnly) {
+      rawInsert(db, 'INSERT OR IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)',
+        ['role-subsidiary-admin', p.id]);
+      rpCount++;
+    }
+  }
+
+  // hr_manager → HR 相關全部權限
+  const hrResources = [
+    'employee', 'recruitment', 'talent_pool', 'meeting', 'competency',
+    'monthly_check', 'weekly_report', 'quarterly_review', 'template',
+    'submission', 'approval', 'job_description', 'grade_matrix',
+    'organization', 'export', 'job', 'onboarding'
+  ];
+  for (const p of allPermissions) {
+    if (hrResources.includes(p.resource)) {
+      rawInsert(db, 'INSERT OR IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)',
+        ['role-hr-manager', p.id]);
+      rpCount++;
+    }
+  }
+
+  // dept_manager → 部門級管理權限
+  const deptResources = [
+    'employee', 'meeting', 'monthly_check', 'weekly_report',
+    'quarterly_review', 'submission', 'approval', 'export', 'onboarding'
+  ];
+  for (const p of allPermissions) {
+    if (deptResources.includes(p.resource)) {
+      rawInsert(db, 'INSERT OR IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)',
+        ['role-dept-manager', p.id]);
+      rpCount++;
+    }
+  }
+
+  // employee → 唯讀 + 自身週報/提交
+  const empReadResources = [
+    'employee', 'meeting', 'monthly_check', 'weekly_report',
+    'quarterly_review', 'submission', 'export', 'job_description',
+    'grade_matrix', 'organization', 'competency'
+  ];
+  const empWriteResources = ['weekly_report', 'submission'];
+  for (const p of allPermissions) {
+    const canRead = p.action === 'read' && empReadResources.includes(p.resource);
+    const canWrite = ['create', 'update'].includes(p.action) && empWriteResources.includes(p.resource);
+    if (canRead || canWrite) {
+      rawInsert(db, 'INSERT OR IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)',
+        ['role-employee', p.id]);
+      rpCount++;
+    }
+  }
+  console.log(`  ✅ role_permissions: ${rpCount} 筆`);
+
+  // 5. 建立使用者帳號
+  const adminHash = await bcrypt.hash('admin123', 10);
+  const defaultHash = await bcrypt.hash('pass123', 10);
+
+  // Admin 帳號（無 employee_id）
+  rawInsert(db,
+    'INSERT OR IGNORE INTO users (id, email, password_hash, name, employee_id, status) VALUES (?, ?, ?, ?, ?, ?)',
+    ['user-admin', 'admin@demo.com', adminHash, 'Demo Admin', null, 'active']
+  );
+
+  // 從 employees 表建立使用者帳號
+  const empStmt = db.prepare('SELECT id, name, email, department, role FROM employees');
+  const employees = [];
+  while (empStmt.step()) {
+    employees.push(empStmt.getAsObject());
+  }
+  empStmt.free();
+
+  for (const emp of employees) {
+    const userId = `user-emp-${emp.id}`;
+    rawInsert(db,
+      'INSERT OR IGNORE INTO users (id, email, password_hash, name, employee_id, status) VALUES (?, ?, ?, ?, ?, ?)',
+      [userId, emp.email, defaultHash, emp.name, emp.id, 'active']
+    );
+  }
+  console.log(`  ✅ users: ${1 + employees.length} 筆（1 admin + ${employees.length} 員工）`);
+
+  // 6. 建立使用者-角色對應
+  let urCount = 0;
+
+  // Admin → super_admin（global scope，指向集團根）
+  rawInsert(db,
+    'INSERT OR IGNORE INTO user_roles (user_id, role_id, org_unit_id) VALUES (?, ?, ?)',
+    ['user-admin', 'role-super-admin', 'org-root']
+  );
+  urCount++;
+
+  // 員工角色對應
+  for (const emp of employees) {
+    const userId = `user-emp-${emp.id}`;
+    const orgUnitId = DEPT_TO_ORG[emp.department] || 'org-sub-default';
+
+    if (emp.role === 'manager') {
+      // managers → hr_manager（global scope）
+      rawInsert(db,
+        'INSERT OR IGNORE INTO user_roles (user_id, role_id, org_unit_id) VALUES (?, ?, ?)',
+        [userId, 'role-hr-manager', 'org-root']
+      );
+    } else {
+      // employees → employee（department scope）
+      rawInsert(db,
+        'INSERT OR IGNORE INTO user_roles (user_id, role_id, org_unit_id) VALUES (?, ?, ?)',
+        [userId, 'role-employee', orgUnitId]
+      );
+    }
+    urCount++;
+  }
+  console.log(`  ✅ user_roles: ${urCount} 筆`);
+
+  // 提交交易
+  db.run('COMMIT');
+  db.run('PRAGMA foreign_keys = ON');
+  demoAdapter.save();
+
+  console.log('\n  ✅ RBAC 種子資料建立完成');
+  return { users: 1 + employees.length, roles: roles.length, permissions: allPermissions.length };
+}
+
+// ═══════════════════════════════════════════
 // 主遷移流程
 // ═══════════════════════════════════════════
 
@@ -329,7 +587,10 @@ async function migrateDemoData() {
     console.log('  ✅ 所有表遷移記錄數驗證通過');
   }
 
-  // 10. 記錄審計日誌
+  // 10. 建立 RBAC 種子資料
+  const rbacResult = await seedRBACData(demoAdapter);
+
+  // 11. 記錄審計日誌
   const migrationDetails = results
     .filter(r => !r.skipped)
     .reduce((acc, r) => {
@@ -342,7 +603,7 @@ async function migrateDemoData() {
     action: 'data_migration',
     resource: 'demo_tenant',
     details: {
-      phase: 'A',
+      phase: 'A+B+C',
       tables_migrated: results.filter(r => !r.skipped && r.migrated > 0).length,
       tables_empty: results.filter(r => !r.skipped && r.source === 0).length,
       tables_skipped: results.filter(r => r.skipped).length,
@@ -384,4 +645,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { migrateDemoData, migrateTable, PHASE_A_TABLES, PHASE_B_TABLES };
+module.exports = { migrateDemoData, migrateTable, seedRBACData, PHASE_A_TABLES, PHASE_B_TABLES };

@@ -43,7 +43,7 @@
 
 - [x] 5.1a 建立 `server/src/db/migrate-demo.js`（遷移框架 + 業務表遷移） — 遷移腳本框架：讀取 onboarding.db 的所有 55+ 張業務表資料（departments、employees、grade_levels、grade_salary_levels、department_positions、promotion_criteria、career_paths、grade_tracks 等），逐表遷移至 tenant_demo.db，記錄各表遷移筆數。整合 audit-logger 記錄 action=data_migration 事件。**驗證**：tenant_demo.db 各業務表記錄數與 onboarding.db 一致、audit_logs 有遷移記錄
 - [x] 5.1b 在遷移腳本中遷移進階業務表 — 遷移 job_descriptions、competencies、templates、meetings、talent_pool、submissions、approvals、monthly_check_templates、weekly_reports、quarterly_reviews 等剩餘表。**驗證**：所有 55+ 張表遷移完成且記錄數一致
-- [ ] 5.2 在遷移腳本中建立 RBAC 種子資料 — 根據 employees 表的 12 名員工建立 users 帳號（employees.role='manager' → hr_manager、employees.role='employee' → employee，users.employee_id 關聯對應 employees.id），建立 org_units（集團根 + 預設子公司 + 7 部門），建立 5 個預設角色和全部權限定義。**驗證**：demo 帳號 admin/admin123 可登入取得 super_admin Token、既有員工 email 可登入
+- [x] 5.2 在遷移腳本中建立 RBAC 種子資料 — 根據 employees 表的 12 名員工建立 users 帳號（employees.role='manager' → hr_manager、employees.role='employee' → employee，users.employee_id 關聯對應 employees.id），建立 org_units（集團根 + 預設子公司 + 7 部門），建立 5 個預設角色和全部權限定義。**驗證**：demo 帳號 admin/admin123 可登入取得 super_admin Token、既有員工 email 可登入
 - [ ] 5.3 建立預設訂閱方案種子資料 — 在 platform.db 建立 Free/Basic/Enterprise 三個方案，並建立預設平台管理員帳號。**驗證**：platform API 回傳 3 個方案、平台管理員可登入
 
 > 依賴：Phase 1 (1.x) + Phase 2 (2.1a) 的 bcryptjs 安裝完成後才能開始

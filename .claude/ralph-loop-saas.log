@@ -16,3 +16,22 @@ strategy_change: 無
 progress: 1/14
 git_commit: 93ec5d4 feat(multi-tenant): 5.1a demo tenant migration framework + core business tables
 ---
+
+---
+iteration: 2
+loop: A
+timestamp: 2026-03-03T12:15:00+08:00
+task_id: 5.1b
+task_description: 遷移進階業務表（53張表加入 PHASE_B_TABLES，總計 55 張表 3852 筆資料）
+status: SUCCESS
+files_created: []
+files_modified: [bombus-system/server/src/db/migrate-demo.js, bombus-system/openspec/changes/multi-tenant-saas/tasks.md]
+verification_command: node -e "require('./src/db/migrate-demo').migrateDemoData()" (from server dir)
+verification_result: PASS
+error_details: 無
+retry_count: 0
+consecutive_failures: 0
+strategy_change: 無
+progress: 2/14
+git_commit: e7f1fd6 feat(multi-tenant): 5.1b migrate advanced business tables (53 tables, 3582 rows)
+---
