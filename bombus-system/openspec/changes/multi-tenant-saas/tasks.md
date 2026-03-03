@@ -60,11 +60,11 @@
 
 ## 7. 前端：權限系統
 
-- [ ] 7.1 建立 `core/services/permission.service.ts` — PermissionService（Signal-based），提供 hasPermission(resource, action)/hasRole(role)/getEffectivePermissions() 方法，登入後從 Token 解析並快取權限。**須包含多角色聯集邏輯**：合併所有角色的權限取聯集。**驗證**：登入後 hasPermission 回傳正確結果、多角色聯集正確
-- [ ] 7.2 建立 `core/guards/auth.guard.ts` — AuthGuard（canActivate），未登入導向 /login。**驗證**：未登入存取受保護路由被攔截
-- [ ] 7.3 建立 `core/guards/permission.guard.ts` — PermissionGuard，接受 route data 中的 requiredPermission 參數。另建立 `core/guards/platform-admin.guard.ts` — PlatformAdminGuard，檢查 Token 中 isPlatformAdmin 旗標，非平台管理員導向首頁。**驗證**：無權限使用者被攔截並顯示提示、非平台管理員無法存取 /platform
-- [ ] 7.4 建立 `shared/directives/has-permission.directive.ts` — HasPermissionDirective（Structural Directive），用於元件層控制顯示/隱藏。**驗證**：無權限時 DOM 元素不渲染
-- [ ] 7.5 更新 `app.routes.ts` — 所有功能路由加入 AuthGuard，/platform 路由加入 PlatformAdminGuard，/settings 路由加入 PermissionGuard（需 super_admin 或 subsidiary_admin），其餘管理路由加入對應 PermissionGuard。**驗證**：路由保護生效
+- [x] 7.1 建立 `core/services/permission.service.ts` — PermissionService（Signal-based），提供 hasPermission(resource, action)/hasRole(role)/getEffectivePermissions() 方法，登入後從 Token 解析並快取權限。**須包含多角色聯集邏輯**：合併所有角色的權限取聯集。**驗證**：登入後 hasPermission 回傳正確結果、多角色聯集正確
+- [x] 7.2 建立 `core/guards/auth.guard.ts` — AuthGuard（canActivate），未登入導向 /login。**驗證**：未登入存取受保護路由被攔截
+- [x] 7.3 建立 `core/guards/permission.guard.ts` — PermissionGuard，接受 route data 中的 requiredPermission 參數。另建立 `core/guards/platform-admin.guard.ts` — PlatformAdminGuard，檢查 Token 中 isPlatformAdmin 旗標，非平台管理員導向首頁。**驗證**：無權限使用者被攔截並顯示提示、非平台管理員無法存取 /platform
+- [x] 7.4 建立 `shared/directives/has-permission.directive.ts` — HasPermissionDirective（Structural Directive），用於元件層控制顯示/隱藏。**驗證**：無權限時 DOM 元素不渲染
+- [x] 7.5 更新 `app.routes.ts` — 所有功能路由加入 AuthGuard，/platform 路由加入 PlatformAdminGuard，/settings 路由加入 PermissionGuard（需 super_admin 或 subsidiary_admin），其餘管理路由加入對應 PermissionGuard。**驗證**：路由保護生效
 
 > 依賴：6.2 完成後才能開始；7.1 → 7.2, 7.3, 7.4 → 7.5
 

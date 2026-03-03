@@ -1,4 +1,7 @@
 import { Routes } from '@angular/router';
+import { authGuard } from './core/guards/auth.guard';
+import { permissionGuard } from './core/guards/permission.guard';
+import { platformAdminGuard } from './core/guards/platform-admin.guard';
 
 export const routes: Routes = [
   {
@@ -13,43 +16,58 @@ export const routes: Routes = [
   },
   {
     path: 'dashboard',
+    canActivate: [authGuard],
     loadComponent: () => import('./features/dashboard/pages/dashboard-page/dashboard-page.component')
       .then(m => m.DashboardPageComponent)
   },
   {
     path: 'employee',
+    canActivate: [authGuard],
     loadChildren: () => import('./features/employee/employee.routes')
       .then(m => m.EMPLOYEE_ROUTES)
   },
   {
     path: 'training',
+    canActivate: [authGuard],
     loadChildren: () => import('./features/training/training.routes')
       .then(m => m.TRAINING_ROUTES)
   },
   {
     path: 'project',
+    canActivate: [authGuard],
     loadChildren: () => import('./features/project/project.routes')
       .then(m => m.PROJECT_ROUTES)
   },
   {
     path: 'competency',
+    canActivate: [authGuard],
     loadChildren: () => import('./features/competency/competency.routes')
       .then(m => m.COMPETENCY_ROUTES)
   },
   {
     path: 'organization',
+    canActivate: [authGuard, permissionGuard],
+    data: { requiredPermission: 'organization:read' },
     loadChildren: () => import('./features/organization/organization.routes')
       .then(m => m.organizationRoutes)
   },
   {
     path: 'performance',
+    canActivate: [authGuard],
     loadChildren: () => import('./features/performance/performance.routes')
       .then(m => m.PERFORMANCE_ROUTES)
   },
   {
     path: 'culture',
+    canActivate: [authGuard],
     loadChildren: () => import('./features/culture/culture.routes')
       .then(m => m.CULTURE_ROUTES)
+  },
+  {
+    path: 'platform',
+    canActivate: [authGuard, platformAdminGuard],
+    loadChildren: () => import('./features/platform/platform.routes')
+      .then(m => m.PLATFORM_ROUTES)
   },
   {
     // Public routes (no auth required) - 候選人回覆面試邀約
