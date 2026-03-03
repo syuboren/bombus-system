@@ -1,9 +1,12 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable, of, delay, tap } from 'rxjs';
+import { Observable, of, tap, map, catchError } from 'rxjs';
 import {
   LoginRequest,
   LoginResponse,
+  TokenResponse,
+  RefreshTokenResponse,
   User,
   ForgotPasswordRequest,
   ForgotPasswordResponse,
@@ -11,11 +14,16 @@ import {
 } from '../models/auth.model';
 
 const STORAGE_KEY = 'bombus_remembered_credentials';
-const TOKEN_KEY = 'bombus_auth_token';
+const ACCESS_TOKEN_KEY = 'bombus_access_token';
+const REFRESH_TOKEN_KEY = 'bombus_refresh_token';
 const USER_KEY = 'bombus_user';
+
+/** @deprecated 向後相容 key，6.2 後移除 */
+const LEGACY_TOKEN_KEY = 'bombus_auth_token';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
+  private http = inject(HttpClient);
   private router = inject(Router);
 
   // Signals for reactive state
@@ -39,12 +47,32 @@ export class AuthService {
   }
 
   /**
+   * 取得 Access Token
+   */
+  getAccessToken(): string | null {
+    return localStorage.getItem(ACCESS_TOKEN_KEY)
+      || localStorage.getItem(LEGACY_TOKEN_KEY);
+  }
+
+  /**
+   * 取得 Refresh Token
+   */
+  getRefreshToken(): string | null {
+    return localStorage.getItem(REFRESH_TOKEN_KEY);
+  }
+
+  /**
    * 判斷是否為 HR（可管理員工文件）
-   * 使用 admin 角色或「人資部」部門判斷
+   * 使用 roles 或 deprecated 欄位判斷
    */
   isHR(): boolean {
     const user = this.currentUserSignal();
     if (!user) return false;
+    // 新邏輯：檢查 roles
+    if (user.roles?.some(r => ['super_admin', 'subsidiary_admin', 'hr_manager'].includes(r))) {
+      return true;
+    }
+    // 向後相容
     return user.role === 'admin' || user.department === '人資部';
   }
 
@@ -59,7 +87,8 @@ export class AuthService {
    * 檢查是否有已儲存的登入狀態
    */
   private checkStoredSession(): void {
-    const token = localStorage.getItem(TOKEN_KEY);
+    const token = localStorage.getItem(ACCESS_TOKEN_KEY)
+      || localStorage.getItem(LEGACY_TOKEN_KEY);
     const userJson = localStorage.getItem(USER_KEY);
 
     if (token && userJson) {
@@ -73,30 +102,72 @@ export class AuthService {
   }
 
   /**
-   * 登入
+   * 登入（呼叫後端 /api/auth/login）
    */
   login(request: LoginRequest): Observable<LoginResponse> {
     this.isLoadingSignal.set(true);
 
-    // 模擬 API 呼叫
-    return of(this.mockLogin(request)).pipe(
-      delay(1500),
-      tap(response => {
-        this.isLoadingSignal.set(false);
+    return this.http.post<TokenResponse>('/api/auth/login', {
+      email: request.email,
+      password: request.password,
+      tenant_slug: request.tenant_slug
+    }).pipe(
+      map(tokenRes => {
+        // 儲存 Token
+        localStorage.setItem(ACCESS_TOKEN_KEY, tokenRes.access_token);
+        localStorage.setItem(REFRESH_TOKEN_KEY, tokenRes.refresh_token);
+        localStorage.setItem(USER_KEY, JSON.stringify(tokenRes.user));
 
-        if (response.success && response.user && response.token) {
-          // 儲存登入狀態
-          localStorage.setItem(TOKEN_KEY, response.token);
-          localStorage.setItem(USER_KEY, JSON.stringify(response.user));
-          this.currentUserSignal.set(response.user);
+        // 清除舊版 key
+        localStorage.removeItem(LEGACY_TOKEN_KEY);
 
-          // 處理記住登入資訊
-          if (request.rememberMe) {
-            this.saveCredentials(request.username || request.email);
-          } else {
-            this.clearCredentials();
-          }
+        this.currentUserSignal.set(tokenRes.user);
+
+        // 處理記住登入資訊
+        if (request.rememberMe) {
+          this.saveCredentials(request.email, request.tenant_slug);
+        } else {
+          this.clearCredentials();
         }
+
+        return {
+          success: true,
+          message: '登入成功',
+          user: tokenRes.user,
+          token: tokenRes.access_token
+        } as LoginResponse;
+      }),
+      catchError(err => {
+        const message = err.error?.message || '登入失敗，請稍後再試';
+        return of({
+          success: false,
+          message
+        } as LoginResponse);
+      }),
+      tap(() => this.isLoadingSignal.set(false))
+    );
+  }
+
+  /**
+   * 刷新 Access Token
+   */
+  refreshToken(): Observable<string | null> {
+    const refreshToken = this.getRefreshToken();
+    if (!refreshToken) {
+      return of(null);
+    }
+
+    return this.http.post<RefreshTokenResponse>('/api/auth/refresh', {
+      refresh_token: refreshToken
+    }).pipe(
+      map(res => {
+        localStorage.setItem(ACCESS_TOKEN_KEY, res.access_token);
+        return res.access_token;
+      }),
+      catchError(() => {
+        this.clearSession();
+        this.router.navigate(['/login']);
+        return of(null);
       })
     );
   }
@@ -105,6 +176,14 @@ export class AuthService {
    * 登出
    */
   logout(): void {
+    const refreshToken = this.getRefreshToken();
+
+    // 通知後端撤銷 refresh token
+    if (refreshToken) {
+      this.http.post('/api/auth/logout', { refresh_token: refreshToken })
+        .subscribe({ error: () => {} });
+    }
+
     this.clearSession();
     this.router.navigate(['/login']);
   }
@@ -113,23 +192,23 @@ export class AuthService {
    * 清除登入狀態
    */
   private clearSession(): void {
-    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(ACCESS_TOKEN_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
+    localStorage.removeItem(LEGACY_TOKEN_KEY);
     this.currentUserSignal.set(null);
   }
 
   /**
-   * 忘記密碼
+   * 忘記密碼（目前仍為模擬）
    */
   forgotPassword(request: ForgotPasswordRequest): Observable<ForgotPasswordResponse> {
     this.isLoadingSignal.set(true);
 
-    // 模擬 API 呼叫
     return of({
       success: true,
       message: `密碼重設連結已發送至 ${request.email}`
     }).pipe(
-      delay(1500),
       tap(() => this.isLoadingSignal.set(false))
     );
   }
@@ -137,10 +216,10 @@ export class AuthService {
   /**
    * 儲存記住的帳號
    */
-  private saveCredentials(username: string): void {
+  private saveCredentials(email: string, tenantSlug?: string): void {
     const credentials: RememberedCredentials = {
-      email: username,
-      username,
+      email,
+      tenant_slug: tenantSlug,
       rememberMe: true
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(credentials));
@@ -167,55 +246,4 @@ export class AuthService {
     }
     return null;
   }
-
-  /**
-   * 模擬登入邏輯
-   */
-  private mockLogin(request: LoginRequest): LoginResponse {
-    // Demo 帳號：admin / admin123
-    if (request.username === 'admin' && request.password === 'admin123') {
-      return {
-        success: true,
-        message: '登入成功',
-        user: {
-          id: 'U001',
-          username: 'admin',
-          email: 'admin@bombus.com',
-          name: '系統管理員',
-          roles: ['super_admin'],
-          scope: null,
-          role: 'admin',
-          department: '資訊部',
-          lastLogin: new Date()
-        },
-        token: 'mock-jwt-token-' + Date.now()
-      };
-    }
-
-    // Demo 帳號：user / user123
-    if (request.username === 'user' && request.password === 'user123') {
-      return {
-        success: true,
-        message: '登入成功',
-        user: {
-          id: 'U002',
-          username: 'user',
-          email: 'user@bombus.com',
-          name: '一般使用者',
-          roles: ['employee'],
-          scope: null,
-          role: 'employee',
-          department: '業務部',
-          lastLogin: new Date()
-        },
-        token: 'mock-jwt-token-' + Date.now()
-      };
-    }
-
-    return {
-      success: false,
-      message: '帳號或密碼錯誤'
-    };
-  }
 }
-
