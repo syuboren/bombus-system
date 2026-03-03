@@ -3,7 +3,7 @@
     <button class="btn-secondary" type="button">
       <i class="ri-download-line"></i> 匯出組織圖
     </button>
-    <button class="btn-primary" type="button" (click)="openCreateCompanyForm()">
+    <button *hasPermission="'organization:manage'" class="btn-primary" type="button" (click)="openCreateCompanyForm()">
       <i class="ri-add-line"></i> 新增公司
     </button>
   </div>

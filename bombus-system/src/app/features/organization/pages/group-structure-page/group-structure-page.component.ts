@@ -13,6 +13,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
+import { HasPermissionDirective } from '../../../../shared/directives/has-permission.directive';
 import { OrganizationService } from '../../services/organization.service';
 import { Company, OrganizationStats } from '../../models/organization.model';
 
@@ -34,7 +35,7 @@ interface TreeNode {
 @Component({
   selector: 'app-group-structure-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, HeaderComponent],
+  imports: [CommonModule, FormsModule, HeaderComponent, HasPermissionDirective],
   templateUrl: './group-structure-page.component.html',
   styleUrl: './group-structure-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush

@@ -72,7 +72,7 @@
 
 - [x] 8.1 重構 `features/organization/services/organization.service.ts` — 將所有 mock 方法（getCompanies、getDepartments、getEmployees 等）改為呼叫後端 API（/api/organization/*、/api/employee），移除 mockCompanies/mockDepartments/mockEmployees/mockCollaborations 等靜態資料。**驗證**：組織圖頁面載入顯示 onboarding.db 遷入的真實資料（7 部門、12 員工）
 - [x] 8.2 更新組織管理三個頁面元件 — 確認 group-structure、department-structure、employee-management 正常使用重構後的 OrganizationService，畫布/列表視圖正常運作。**驗證**：頁面無報錯、資料正確顯示、CRUD 操作持久化至 DB
-- [ ] 8.3 加入權限控制 — 組織管理的編輯功能（新增/修改/刪除按鈕）使用 HasPermissionDirective 或 PermissionService 控制顯示，無 organization:manage 權限時隱藏編輯功能。**驗證**：employee 角色看不到編輯按鈕
+- [x] 8.3 加入權限控制 — 組織管理的編輯功能（新增/修改/刪除按鈕）使用 HasPermissionDirective 或 PermissionService 控制顯示，無 organization:manage 權限時隱藏編輯功能。**驗證**：employee 角色看不到編輯按鈕
 
 > 依賴：後端 4.3 + 前端 7.1 完成後才能開始
 
