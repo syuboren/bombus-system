@@ -83,7 +83,7 @@ export class OrganizationService {
   // ============================================================
 
   getEmployees(): Observable<Employee[]> {
-    return this.http.get<any[]>('/api/employee').pipe(
+    return this.http.get<any[]>('/api/employee/list?all=true').pipe(
       map(items => items.map(e => this.mapEmployee(e))),
       catchError(() => of([]))
     );
@@ -91,14 +91,14 @@ export class OrganizationService {
 
   getEmployeesByCompany(companyId: string): Observable<Employee[]> {
     // 透過部門關聯篩選（後端無直接 companyId 篩選 API）
-    return this.http.get<any[]>('/api/employee').pipe(
+    return this.http.get<any[]>('/api/employee/list?all=true').pipe(
       map(items => items.map(e => this.mapEmployee(e))),
       catchError(() => of([]))
     );
   }
 
   getEmployeesByDepartment(departmentId: string): Observable<Employee[]> {
-    return this.http.get<any[]>('/api/employee').pipe(
+    return this.http.get<any[]>('/api/employee/list?all=true').pipe(
       map(items => items
         .filter(e => e.department_id === departmentId || e.departmentId === departmentId)
         .map(e => this.mapEmployee(e))
