@@ -5,7 +5,7 @@
 
 const express = require('express');
 const router = express.Router();
-const { prepare } = require('../db');
+// tenantDB is accessed via req.tenantDB (injected by middleware)
 
 // =====================================================
 // 職等職級矩陣 API
@@ -18,7 +18,7 @@ const { prepare } = require('../db');
 router.get('/', (req, res) => {
   try {
     // 取得所有職等
-    const grades = prepare(`
+    const grades = req.tenantDB.prepare(`
       SELECT 
         id,
         grade,
@@ -32,7 +32,7 @@ router.get('/', (req, res) => {
     `).all();
 
     // 取得所有職級薪資
-    const salaryLevels = prepare(`
+    const salaryLevels = req.tenantDB.prepare(`
       SELECT 
         id,
         grade,
@@ -104,7 +104,7 @@ router.get('/promotion/criteria', (req, res) => {
 
     query += ` ORDER BY from_grade, to_grade`;
 
-    const criteria = prepare(query).all(...params);
+    const criteria = req.tenantDB.prepare(query).all(...params);
 
     const result = criteria.map(p => ({
       id: p.id,
@@ -148,7 +148,7 @@ router.get('/career/paths', (req, res) => {
 
     query += ` ORDER BY id`;
 
-    const paths = prepare(query).all(...params);
+    const paths = req.tenantDB.prepare(query).all(...params);
 
     const result = paths.map(p => ({
       id: p.id,
@@ -176,7 +176,7 @@ router.get('/career/paths/:id', (req, res) => {
   try {
     const { id } = req.params;
 
-    const path = prepare(`
+    const path = req.tenantDB.prepare(`
       SELECT * FROM career_paths WHERE id = ?
     `).get(id);
 
@@ -212,7 +212,7 @@ router.get('/career/paths/:id', (req, res) => {
  */
 router.get('/departments/list', (req, res) => {
   try {
-    const departments = prepare(`
+    const departments = req.tenantDB.prepare(`
       SELECT id, name, code, sort_order
       FROM departments
       ORDER BY sort_order
@@ -264,7 +264,7 @@ router.get('/positions/list', (req, res) => {
 
     query += ` ORDER BY dp.grade DESC, dp.department, dp.track`;
 
-    const positions = prepare(query).all(...params);
+    const positions = req.tenantDB.prepare(query).all(...params);
 
     // 解析 JSON 欄位
     const result = positions.map(p => ({
@@ -303,9 +303,9 @@ function generateId() {
  * @param {string} changedBy - 操作者
  * @returns {{ changeId: string, status: string }}
  */
-function createChangeRecord(entityType, entityId, action, oldData, newData, changedBy) {
+function createChangeRecord(req, entityType, entityId, action, oldData, newData, changedBy) {
   const changeId = `chg-${generateId()}`;
-  prepare(`
+  req.tenantDB.prepare(`
     INSERT INTO grade_change_history (id, entity_type, entity_id, action, old_data, new_data, changed_by, status)
     VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')
   `).run(
@@ -330,7 +330,7 @@ function createChangeRecord(entityType, entityId, action, oldData, newData, chan
  */
 router.get('/tracks', (req, res) => {
   try {
-    const tracks = prepare(`
+    const tracks = req.tenantDB.prepare(`
       SELECT id, code, name, icon, color, max_grade, sort_order, is_active, created_at
       FROM grade_tracks
       ORDER BY sort_order
@@ -369,7 +369,7 @@ router.post('/tracks', (req, res) => {
     }
 
     // 檢查 code 唯一性
-    const existing = prepare('SELECT id FROM grade_tracks WHERE code = ?').get(code);
+    const existing = req.tenantDB.prepare('SELECT id FROM grade_tracks WHERE code = ?').get(code);
     if (existing) {
       return res.status(409).json({ success: false, error: { code: 'DUPLICATE', message: `軌道代碼 '${code}' 已存在` } });
     }
@@ -377,7 +377,7 @@ router.post('/tracks', (req, res) => {
     const entityId = `track-${generateId()}`;
     const newData = { id: entityId, code, name, icon: icon || null, color: color || null, maxGrade: maxGrade || 7, sortOrder: sortOrder || 0, isActive: true };
 
-    const { changeId, status } = createChangeRecord('track', entityId, 'create', null, newData, changedBy || 'system');
+    const { changeId, status } = createChangeRecord(req, 'track', entityId, 'create', null, newData, changedBy || 'system');
 
     res.status(201).json({ success: true, data: { changeId, status, message: '軌道新增申請已送出，等待審核' } });
   } catch (error) {
@@ -396,7 +396,7 @@ router.put('/tracks/:id', (req, res) => {
     const { code, name, icon, color, maxGrade, sortOrder, isActive, changedBy } = req.body;
 
     // 取得現有資料作為 oldData 快照
-    const existing = prepare('SELECT * FROM grade_tracks WHERE id = ?').get(id);
+    const existing = req.tenantDB.prepare('SELECT * FROM grade_tracks WHERE id = ?').get(id);
     if (!existing) {
       return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: '找不到此軌道' } });
     }
@@ -404,7 +404,7 @@ router.put('/tracks/:id', (req, res) => {
     const oldData = { id: existing.id, code: existing.code, name: existing.name, icon: existing.icon, color: existing.color, maxGrade: existing.max_grade, sortOrder: existing.sort_order, isActive: !!existing.is_active };
     const newData = { id, code: code || existing.code, name: name || existing.name, icon: icon !== undefined ? icon : existing.icon, color: color !== undefined ? color : existing.color, maxGrade: maxGrade !== undefined ? maxGrade : existing.max_grade, sortOrder: sortOrder !== undefined ? sortOrder : existing.sort_order, isActive: isActive !== undefined ? isActive : !!existing.is_active };
 
-    const { changeId, status } = createChangeRecord('track', id, 'update', oldData, newData, changedBy || 'system');
+    const { changeId, status } = createChangeRecord(req, 'track', id, 'update', oldData, newData, changedBy || 'system');
 
     res.json({ success: true, data: { changeId, status, message: '軌道更新申請已送出，等待審核' } });
   } catch (error) {
@@ -422,14 +422,14 @@ router.delete('/tracks/:id', (req, res) => {
     const { id } = req.params;
     const { changedBy } = req.body;
 
-    const existing = prepare('SELECT * FROM grade_tracks WHERE id = ?').get(id);
+    const existing = req.tenantDB.prepare('SELECT * FROM grade_tracks WHERE id = ?').get(id);
     if (!existing) {
       return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: '找不到此軌道' } });
     }
 
     // 刪除前保護：檢查關聯資料
-    const posCount = prepare('SELECT COUNT(*) as count FROM department_positions WHERE track = ?').get(existing.code);
-    const promoCount = prepare('SELECT COUNT(*) as count FROM promotion_criteria WHERE track = ?').get(existing.code);
+    const posCount = req.tenantDB.prepare('SELECT COUNT(*) as count FROM department_positions WHERE track = ?').get(existing.code);
+    const promoCount = req.tenantDB.prepare('SELECT COUNT(*) as count FROM promotion_criteria WHERE track = ?').get(existing.code);
 
     if (posCount.count > 0 || promoCount.count > 0) {
       return res.status(409).json({
@@ -444,7 +444,7 @@ router.delete('/tracks/:id', (req, res) => {
 
     const oldData = { id: existing.id, code: existing.code, name: existing.name, icon: existing.icon, color: existing.color, maxGrade: existing.max_grade, sortOrder: existing.sort_order, isActive: !!existing.is_active };
 
-    const { changeId, status } = createChangeRecord('track', id, 'delete', oldData, null, changedBy || 'system');
+    const { changeId, status } = createChangeRecord(req, 'track', id, 'delete', oldData, null, changedBy || 'system');
 
     res.json({ success: true, data: { changeId, status, message: '軌道刪除申請已送出，等待審核' } });
   } catch (error) {
@@ -470,7 +470,7 @@ router.post('/grades', (req, res) => {
     }
 
     // 檢查 grade 唯一性
-    const existing = prepare('SELECT id FROM grade_levels WHERE grade = ?').get(grade);
+    const existing = req.tenantDB.prepare('SELECT id FROM grade_levels WHERE grade = ?').get(grade);
     if (existing) {
       return res.status(409).json({ success: false, error: { code: 'DUPLICATE', message: `職等 ${grade} 已存在` } });
     }
@@ -478,7 +478,7 @@ router.post('/grades', (req, res) => {
     const entityId = `grade-${grade}`;
     const newData = { id: entityId, grade, codeRange, titleManagement, titleProfessional, educationRequirement: educationRequirement || '', responsibilityDescription: responsibilityDescription || '' };
 
-    const { changeId, status } = createChangeRecord('grade', entityId, 'create', null, newData, changedBy || 'system');
+    const { changeId, status } = createChangeRecord(req, 'grade', entityId, 'create', null, newData, changedBy || 'system');
 
     res.status(201).json({ success: true, data: { changeId, status, message: '職等新增申請已送出，等待審核' } });
   } catch (error) {
@@ -496,7 +496,7 @@ router.put('/grades/:grade', (req, res) => {
     const gradeNum = parseInt(req.params.grade);
     const { codeRange, titleManagement, titleProfessional, educationRequirement, responsibilityDescription, changedBy } = req.body;
 
-    const existing = prepare('SELECT * FROM grade_levels WHERE grade = ?').get(gradeNum);
+    const existing = req.tenantDB.prepare('SELECT * FROM grade_levels WHERE grade = ?').get(gradeNum);
     if (!existing) {
       return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: '找不到此職等' } });
     }
@@ -504,7 +504,7 @@ router.put('/grades/:grade', (req, res) => {
     const oldData = { id: existing.id, grade: existing.grade, codeRange: existing.code_range, titleManagement: existing.title_management, titleProfessional: existing.title_professional, educationRequirement: existing.education_requirement, responsibilityDescription: existing.responsibility_description };
     const newData = { ...oldData, codeRange: codeRange || existing.code_range, titleManagement: titleManagement || existing.title_management, titleProfessional: titleProfessional || existing.title_professional, educationRequirement: educationRequirement !== undefined ? educationRequirement : existing.education_requirement, responsibilityDescription: responsibilityDescription !== undefined ? responsibilityDescription : existing.responsibility_description };
 
-    const { changeId, status } = createChangeRecord('grade', existing.id, 'update', oldData, newData, changedBy || 'system');
+    const { changeId, status } = createChangeRecord(req, 'grade', existing.id, 'update', oldData, newData, changedBy || 'system');
 
     res.json({ success: true, data: { changeId, status, message: '職等更新申請已送出，等待審核' } });
   } catch (error) {
@@ -522,16 +522,16 @@ router.delete('/grades/:grade', (req, res) => {
     const gradeNum = parseInt(req.params.grade);
     const { changedBy } = req.body;
 
-    const existing = prepare('SELECT * FROM grade_levels WHERE grade = ?').get(gradeNum);
+    const existing = req.tenantDB.prepare('SELECT * FROM grade_levels WHERE grade = ?').get(gradeNum);
     if (!existing) {
       return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: '找不到此職等' } });
     }
 
     // 刪除前保護：檢查所有關聯表
-    const salaryCount = prepare('SELECT COUNT(*) as count FROM grade_salary_levels WHERE grade = ?').get(gradeNum);
-    const posCount = prepare('SELECT COUNT(*) as count FROM department_positions WHERE grade = ?').get(gradeNum);
-    const promoCount = prepare('SELECT COUNT(*) as count FROM promotion_criteria WHERE from_grade = ? OR to_grade = ?').get(gradeNum, gradeNum);
-    const jdCount = prepare('SELECT COUNT(*) as count FROM job_descriptions WHERE grade = ?').get(gradeNum);
+    const salaryCount = req.tenantDB.prepare('SELECT COUNT(*) as count FROM grade_salary_levels WHERE grade = ?').get(gradeNum);
+    const posCount = req.tenantDB.prepare('SELECT COUNT(*) as count FROM department_positions WHERE grade = ?').get(gradeNum);
+    const promoCount = req.tenantDB.prepare('SELECT COUNT(*) as count FROM promotion_criteria WHERE from_grade = ? OR to_grade = ?').get(gradeNum, gradeNum);
+    const jdCount = req.tenantDB.prepare('SELECT COUNT(*) as count FROM job_descriptions WHERE grade = ?').get(gradeNum);
 
     if (salaryCount.count > 0 || posCount.count > 0 || promoCount.count > 0 || jdCount.count > 0) {
       return res.status(409).json({
@@ -546,7 +546,7 @@ router.delete('/grades/:grade', (req, res) => {
 
     const oldData = { id: existing.id, grade: existing.grade, codeRange: existing.code_range, titleManagement: existing.title_management, titleProfessional: existing.title_professional, educationRequirement: existing.education_requirement, responsibilityDescription: existing.responsibility_description };
 
-    const { changeId, status } = createChangeRecord('grade', existing.id, 'delete', oldData, null, changedBy || 'system');
+    const { changeId, status } = createChangeRecord(req, 'grade', existing.id, 'delete', oldData, null, changedBy || 'system');
 
     res.json({ success: true, data: { changeId, status, message: '職等刪除申請已送出，等待審核' } });
   } catch (error) {
@@ -573,13 +573,13 @@ router.post('/grades/:grade/salaries', (req, res) => {
     }
 
     // 檢查職等是否存在
-    const gradeExists = prepare('SELECT id FROM grade_levels WHERE grade = ?').get(gradeNum);
+    const gradeExists = req.tenantDB.prepare('SELECT id FROM grade_levels WHERE grade = ?').get(gradeNum);
     if (!gradeExists) {
       return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: '找不到此職等' } });
     }
 
     // 檢查 code 唯一性
-    const existing = prepare('SELECT id FROM grade_salary_levels WHERE code = ?').get(code);
+    const existing = req.tenantDB.prepare('SELECT id FROM grade_salary_levels WHERE code = ?').get(code);
     if (existing) {
       return res.status(409).json({ success: false, error: { code: 'DUPLICATE', message: `薪資代碼 '${code}' 已存在` } });
     }
@@ -587,7 +587,7 @@ router.post('/grades/:grade/salaries', (req, res) => {
     const entityId = `sal-${generateId()}`;
     const newData = { id: entityId, grade: gradeNum, code, salary, sortOrder: sortOrder || 0 };
 
-    const { changeId, status } = createChangeRecord('salary', entityId, 'create', null, newData, changedBy || 'system');
+    const { changeId, status } = createChangeRecord(req, 'salary', entityId, 'create', null, newData, changedBy || 'system');
 
     res.status(201).json({ success: true, data: { changeId, status, message: '薪資新增申請已送出，等待審核' } });
   } catch (error) {
@@ -605,7 +605,7 @@ router.put('/salaries/:id', (req, res) => {
     const { id } = req.params;
     const { code, salary, sortOrder, changedBy } = req.body;
 
-    const existing = prepare('SELECT * FROM grade_salary_levels WHERE id = ?').get(id);
+    const existing = req.tenantDB.prepare('SELECT * FROM grade_salary_levels WHERE id = ?').get(id);
     if (!existing) {
       return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: '找不到此薪資記錄' } });
     }
@@ -613,7 +613,7 @@ router.put('/salaries/:id', (req, res) => {
     const oldData = { id: existing.id, grade: existing.grade, code: existing.code, salary: existing.salary, sortOrder: existing.sort_order };
     const newData = { ...oldData, code: code || existing.code, salary: salary !== undefined ? salary : existing.salary, sortOrder: sortOrder !== undefined ? sortOrder : existing.sort_order };
 
-    const { changeId, status } = createChangeRecord('salary', id, 'update', oldData, newData, changedBy || 'system');
+    const { changeId, status } = createChangeRecord(req, 'salary', id, 'update', oldData, newData, changedBy || 'system');
 
     res.json({ success: true, data: { changeId, status, message: '薪資更新申請已送出，等待審核' } });
   } catch (error) {
@@ -631,14 +631,14 @@ router.delete('/salaries/:id', (req, res) => {
     const { id } = req.params;
     const { changedBy } = req.body;
 
-    const existing = prepare('SELECT * FROM grade_salary_levels WHERE id = ?').get(id);
+    const existing = req.tenantDB.prepare('SELECT * FROM grade_salary_levels WHERE id = ?').get(id);
     if (!existing) {
       return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: '找不到此薪資記錄' } });
     }
 
     const oldData = { id: existing.id, grade: existing.grade, code: existing.code, salary: existing.salary, sortOrder: existing.sort_order };
 
-    const { changeId, status } = createChangeRecord('salary', id, 'delete', oldData, null, changedBy || 'system');
+    const { changeId, status } = createChangeRecord(req, 'salary', id, 'delete', oldData, null, changedBy || 'system');
 
     res.json({ success: true, data: { changeId, status, message: '薪資刪除申請已送出，等待審核' } });
   } catch (error) {
@@ -666,7 +666,7 @@ router.post('/positions', (req, res) => {
     const entityId = `pos-${generateId()}`;
     const newData = { id: entityId, department, grade, title, track, supervisedDepartments: supervisedDepartments || null };
 
-    const { changeId, status } = createChangeRecord('position', entityId, 'create', null, newData, changedBy || 'system');
+    const { changeId, status } = createChangeRecord(req, 'position', entityId, 'create', null, newData, changedBy || 'system');
 
     res.status(201).json({ success: true, data: { changeId, status, message: '部門職位新增申請已送出，等待審核' } });
   } catch (error) {
@@ -684,7 +684,7 @@ router.put('/positions/:id', (req, res) => {
     const { id } = req.params;
     const { department, grade, title, track, supervisedDepartments, changedBy } = req.body;
 
-    const existing = prepare('SELECT * FROM department_positions WHERE id = ?').get(id);
+    const existing = req.tenantDB.prepare('SELECT * FROM department_positions WHERE id = ?').get(id);
     if (!existing) {
       return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: '找不到此職位' } });
     }
@@ -692,7 +692,7 @@ router.put('/positions/:id', (req, res) => {
     const oldData = { id: existing.id, department: existing.department, grade: existing.grade, title: existing.title, track: existing.track, supervisedDepartments: existing.supervised_departments ? JSON.parse(existing.supervised_departments) : null };
     const newData = { ...oldData, department: department || existing.department, grade: grade !== undefined ? grade : existing.grade, title: title || existing.title, track: track || existing.track, supervisedDepartments: supervisedDepartments !== undefined ? supervisedDepartments : oldData.supervisedDepartments };
 
-    const { changeId, status } = createChangeRecord('position', id, 'update', oldData, newData, changedBy || 'system');
+    const { changeId, status } = createChangeRecord(req, 'position', id, 'update', oldData, newData, changedBy || 'system');
 
     res.json({ success: true, data: { changeId, status, message: '部門職位更新申請已送出，等待審核' } });
   } catch (error) {
@@ -710,14 +710,14 @@ router.delete('/positions/:id', (req, res) => {
     const { id } = req.params;
     const { changedBy } = req.body;
 
-    const existing = prepare('SELECT * FROM department_positions WHERE id = ?').get(id);
+    const existing = req.tenantDB.prepare('SELECT * FROM department_positions WHERE id = ?').get(id);
     if (!existing) {
       return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: '找不到此職位' } });
     }
 
     const oldData = { id: existing.id, department: existing.department, grade: existing.grade, title: existing.title, track: existing.track, supervisedDepartments: existing.supervised_departments ? JSON.parse(existing.supervised_departments) : null };
 
-    const { changeId, status } = createChangeRecord('position', id, 'delete', oldData, null, changedBy || 'system');
+    const { changeId, status } = createChangeRecord(req, 'position', id, 'delete', oldData, null, changedBy || 'system');
 
     res.json({ success: true, data: { changeId, status, message: '部門職位刪除申請已送出，等待審核' } });
   } catch (error) {
@@ -745,7 +745,7 @@ router.post('/promotion/criteria', (req, res) => {
     const entityId = `promo-${generateId()}`;
     const newData = { id: entityId, fromGrade, toGrade, track, requiredSkills: requiredSkills || [], requiredCourses: requiredCourses || [], performanceThreshold, kpiFocus: kpiFocus || [], additionalCriteria: additionalCriteria || [], promotionProcedure: promotionProcedure || '' };
 
-    const { changeId, status } = createChangeRecord('promotion', entityId, 'create', null, newData, changedBy || 'system');
+    const { changeId, status } = createChangeRecord(req, 'promotion', entityId, 'create', null, newData, changedBy || 'system');
 
     res.status(201).json({ success: true, data: { changeId, status, message: '晉升條件新增申請已送出，等待審核' } });
   } catch (error) {
@@ -763,7 +763,7 @@ router.put('/promotion/criteria/:id', (req, res) => {
     const { id } = req.params;
     const { fromGrade, toGrade, track, requiredSkills, requiredCourses, performanceThreshold, kpiFocus, additionalCriteria, promotionProcedure, changedBy } = req.body;
 
-    const existing = prepare('SELECT * FROM promotion_criteria WHERE id = ?').get(id);
+    const existing = req.tenantDB.prepare('SELECT * FROM promotion_criteria WHERE id = ?').get(id);
     if (!existing) {
       return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: '找不到此晉升條件' } });
     }
@@ -771,7 +771,7 @@ router.put('/promotion/criteria/:id', (req, res) => {
     const oldData = { id: existing.id, fromGrade: existing.from_grade, toGrade: existing.to_grade, track: existing.track, requiredSkills: JSON.parse(existing.required_skills || '[]'), requiredCourses: JSON.parse(existing.required_courses || '[]'), performanceThreshold: existing.performance_threshold, kpiFocus: JSON.parse(existing.kpi_focus || '[]'), additionalCriteria: JSON.parse(existing.additional_criteria || '[]'), promotionProcedure: existing.promotion_procedure };
     const newData = { ...oldData, fromGrade: fromGrade !== undefined ? fromGrade : existing.from_grade, toGrade: toGrade !== undefined ? toGrade : existing.to_grade, track: track || existing.track, requiredSkills: requiredSkills !== undefined ? requiredSkills : oldData.requiredSkills, requiredCourses: requiredCourses !== undefined ? requiredCourses : oldData.requiredCourses, performanceThreshold: performanceThreshold !== undefined ? performanceThreshold : existing.performance_threshold, kpiFocus: kpiFocus !== undefined ? kpiFocus : oldData.kpiFocus, additionalCriteria: additionalCriteria !== undefined ? additionalCriteria : oldData.additionalCriteria, promotionProcedure: promotionProcedure !== undefined ? promotionProcedure : existing.promotion_procedure };
 
-    const { changeId, status } = createChangeRecord('promotion', id, 'update', oldData, newData, changedBy || 'system');
+    const { changeId, status } = createChangeRecord(req, 'promotion', id, 'update', oldData, newData, changedBy || 'system');
 
     res.json({ success: true, data: { changeId, status, message: '晉升條件更新申請已送出，等待審核' } });
   } catch (error) {
@@ -789,14 +789,14 @@ router.delete('/promotion/criteria/:id', (req, res) => {
     const { id } = req.params;
     const { changedBy } = req.body;
 
-    const existing = prepare('SELECT * FROM promotion_criteria WHERE id = ?').get(id);
+    const existing = req.tenantDB.prepare('SELECT * FROM promotion_criteria WHERE id = ?').get(id);
     if (!existing) {
       return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: '找不到此晉升條件' } });
     }
 
     const oldData = { id: existing.id, fromGrade: existing.from_grade, toGrade: existing.to_grade, track: existing.track, requiredSkills: JSON.parse(existing.required_skills || '[]'), requiredCourses: JSON.parse(existing.required_courses || '[]'), performanceThreshold: existing.performance_threshold, kpiFocus: JSON.parse(existing.kpi_focus || '[]'), additionalCriteria: JSON.parse(existing.additional_criteria || '[]'), promotionProcedure: existing.promotion_procedure };
 
-    const { changeId, status } = createChangeRecord('promotion', id, 'delete', oldData, null, changedBy || 'system');
+    const { changeId, status } = createChangeRecord(req, 'promotion', id, 'delete', oldData, null, changedBy || 'system');
 
     res.json({ success: true, data: { changeId, status, message: '晉升條件刪除申請已送出，等待審核' } });
   } catch (error) {
@@ -815,7 +815,7 @@ router.delete('/promotion/criteria/:id', (req, res) => {
  */
 router.get('/changes/pending', (req, res) => {
   try {
-    const records = prepare(`
+    const records = req.tenantDB.prepare(`
       SELECT * FROM grade_change_history
       WHERE status = 'pending'
       ORDER BY created_at DESC
@@ -849,7 +849,7 @@ router.post('/changes/:id/approve', (req, res) => {
     const { id } = req.params;
     const { approvedBy } = req.body;
 
-    const record = prepare('SELECT * FROM grade_change_history WHERE id = ?').get(id);
+    const record = req.tenantDB.prepare('SELECT * FROM grade_change_history WHERE id = ?').get(id);
     if (!record) {
       return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: '找不到此變更記錄' } });
     }
@@ -864,18 +864,18 @@ router.post('/changes/:id/approve', (req, res) => {
 
     switch (action) {
       case 'create':
-        applyCreate(entityType, newData);
+        applyCreate(req, entityType, newData);
         break;
       case 'update':
-        applyUpdate(entityType, record.entity_id, newData);
+        applyUpdate(req, entityType, record.entity_id, newData);
         break;
       case 'delete':
-        applyDelete(entityType, record.entity_id);
+        applyDelete(req, entityType, record.entity_id);
         break;
     }
 
     // 更新變更記錄狀態
-    prepare(`UPDATE grade_change_history SET status = 'approved', approved_by = ?, approved_at = datetime('now') WHERE id = ?`).run(approvedBy || 'system', id);
+    req.tenantDB.prepare(`UPDATE grade_change_history SET status = 'approved', approved_by = ?, approved_at = datetime('now') WHERE id = ?`).run(approvedBy || 'system', id);
 
     res.json({ success: true, data: { message: '變更已核准並套用' } });
   } catch (error) {
@@ -893,7 +893,7 @@ router.post('/changes/:id/reject', (req, res) => {
     const { id } = req.params;
     const { rejectReason, approvedBy } = req.body;
 
-    const record = prepare('SELECT * FROM grade_change_history WHERE id = ?').get(id);
+    const record = req.tenantDB.prepare('SELECT * FROM grade_change_history WHERE id = ?').get(id);
     if (!record) {
       return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: '找不到此變更記錄' } });
     }
@@ -901,7 +901,7 @@ router.post('/changes/:id/reject', (req, res) => {
       return res.status(400).json({ success: false, error: { code: 'INVALID_STATUS', message: `此記錄狀態為 ${record.status}，無法審核` } });
     }
 
-    prepare(`UPDATE grade_change_history SET status = 'rejected', reject_reason = ?, approved_by = ?, approved_at = datetime('now') WHERE id = ?`).run(rejectReason || '', approvedBy || 'system', id);
+    req.tenantDB.prepare(`UPDATE grade_change_history SET status = 'rejected', reject_reason = ?, approved_by = ?, approved_at = datetime('now') WHERE id = ?`).run(rejectReason || '', approvedBy || 'system', id);
 
     res.json({ success: true, data: { message: '變更已駁回' } });
   } catch (error) {
@@ -940,7 +940,7 @@ router.get('/changes/history', (req, res) => {
 
     query += ` ORDER BY created_at DESC LIMIT 100`;
 
-    const records = prepare(query).all(...params);
+    const records = req.tenantDB.prepare(query).all(...params);
 
     const result = records.map(r => ({
       id: r.id,
@@ -971,22 +971,22 @@ router.get('/changes/history', (req, res) => {
 /**
  * 套用 CREATE 操作：將 newData 插入對應原資料表
  */
-function applyCreate(entityType, data) {
+function applyCreate(req, entityType, data) {
   switch (entityType) {
     case 'track':
-      prepare(`INSERT INTO grade_tracks (id, code, name, icon, color, max_grade, sort_order, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(data.id, data.code, data.name, data.icon, data.color, data.maxGrade, data.sortOrder, data.isActive ? 1 : 0);
+      req.tenantDB.prepare(`INSERT INTO grade_tracks (id, code, name, icon, color, max_grade, sort_order, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(data.id, data.code, data.name, data.icon, data.color, data.maxGrade, data.sortOrder, data.isActive ? 1 : 0);
       break;
     case 'grade':
-      prepare(`INSERT INTO grade_levels (id, grade, code_range, title_management, title_professional, education_requirement, responsibility_description) VALUES (?, ?, ?, ?, ?, ?, ?)`).run(data.id, data.grade, data.codeRange, data.titleManagement, data.titleProfessional, data.educationRequirement, data.responsibilityDescription);
+      req.tenantDB.prepare(`INSERT INTO grade_levels (id, grade, code_range, title_management, title_professional, education_requirement, responsibility_description) VALUES (?, ?, ?, ?, ?, ?, ?)`).run(data.id, data.grade, data.codeRange, data.titleManagement, data.titleProfessional, data.educationRequirement, data.responsibilityDescription);
       break;
     case 'salary':
-      prepare(`INSERT INTO grade_salary_levels (id, grade, code, salary, sort_order) VALUES (?, ?, ?, ?, ?)`).run(data.id, data.grade, data.code, data.salary, data.sortOrder);
+      req.tenantDB.prepare(`INSERT INTO grade_salary_levels (id, grade, code, salary, sort_order) VALUES (?, ?, ?, ?, ?)`).run(data.id, data.grade, data.code, data.salary, data.sortOrder);
       break;
     case 'position':
-      prepare(`INSERT INTO department_positions (id, department, grade, title, track, supervised_departments) VALUES (?, ?, ?, ?, ?, ?)`).run(data.id, data.department, data.grade, data.title, data.track, data.supervisedDepartments ? JSON.stringify(data.supervisedDepartments) : null);
+      req.tenantDB.prepare(`INSERT INTO department_positions (id, department, grade, title, track, supervised_departments) VALUES (?, ?, ?, ?, ?, ?)`).run(data.id, data.department, data.grade, data.title, data.track, data.supervisedDepartments ? JSON.stringify(data.supervisedDepartments) : null);
       break;
     case 'promotion':
-      prepare(`INSERT INTO promotion_criteria (id, from_grade, to_grade, track, required_skills, required_courses, performance_threshold, kpi_focus, additional_criteria, promotion_procedure) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(data.id, data.fromGrade, data.toGrade, data.track, JSON.stringify(data.requiredSkills), JSON.stringify(data.requiredCourses), data.performanceThreshold, JSON.stringify(data.kpiFocus), JSON.stringify(data.additionalCriteria), data.promotionProcedure);
+      req.tenantDB.prepare(`INSERT INTO promotion_criteria (id, from_grade, to_grade, track, required_skills, required_courses, performance_threshold, kpi_focus, additional_criteria, promotion_procedure) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(data.id, data.fromGrade, data.toGrade, data.track, JSON.stringify(data.requiredSkills), JSON.stringify(data.requiredCourses), data.performanceThreshold, JSON.stringify(data.kpiFocus), JSON.stringify(data.additionalCriteria), data.promotionProcedure);
       break;
   }
 }
@@ -994,22 +994,22 @@ function applyCreate(entityType, data) {
 /**
  * 套用 UPDATE 操作：用 newData 更新對應原資料表
  */
-function applyUpdate(entityType, entityId, data) {
+function applyUpdate(req, entityType, entityId, data) {
   switch (entityType) {
     case 'track':
-      prepare(`UPDATE grade_tracks SET code = ?, name = ?, icon = ?, color = ?, max_grade = ?, sort_order = ?, is_active = ? WHERE id = ?`).run(data.code, data.name, data.icon, data.color, data.maxGrade, data.sortOrder, data.isActive ? 1 : 0, entityId);
+      req.tenantDB.prepare(`UPDATE grade_tracks SET code = ?, name = ?, icon = ?, color = ?, max_grade = ?, sort_order = ?, is_active = ? WHERE id = ?`).run(data.code, data.name, data.icon, data.color, data.maxGrade, data.sortOrder, data.isActive ? 1 : 0, entityId);
       break;
     case 'grade':
-      prepare(`UPDATE grade_levels SET code_range = ?, title_management = ?, title_professional = ?, education_requirement = ?, responsibility_description = ? WHERE id = ?`).run(data.codeRange, data.titleManagement, data.titleProfessional, data.educationRequirement, data.responsibilityDescription, entityId);
+      req.tenantDB.prepare(`UPDATE grade_levels SET code_range = ?, title_management = ?, title_professional = ?, education_requirement = ?, responsibility_description = ? WHERE id = ?`).run(data.codeRange, data.titleManagement, data.titleProfessional, data.educationRequirement, data.responsibilityDescription, entityId);
       break;
     case 'salary':
-      prepare(`UPDATE grade_salary_levels SET code = ?, salary = ?, sort_order = ? WHERE id = ?`).run(data.code, data.salary, data.sortOrder, entityId);
+      req.tenantDB.prepare(`UPDATE grade_salary_levels SET code = ?, salary = ?, sort_order = ? WHERE id = ?`).run(data.code, data.salary, data.sortOrder, entityId);
       break;
     case 'position':
-      prepare(`UPDATE department_positions SET department = ?, grade = ?, title = ?, track = ?, supervised_departments = ? WHERE id = ?`).run(data.department, data.grade, data.title, data.track, data.supervisedDepartments ? JSON.stringify(data.supervisedDepartments) : null, entityId);
+      req.tenantDB.prepare(`UPDATE department_positions SET department = ?, grade = ?, title = ?, track = ?, supervised_departments = ? WHERE id = ?`).run(data.department, data.grade, data.title, data.track, data.supervisedDepartments ? JSON.stringify(data.supervisedDepartments) : null, entityId);
       break;
     case 'promotion':
-      prepare(`UPDATE promotion_criteria SET from_grade = ?, to_grade = ?, track = ?, required_skills = ?, required_courses = ?, performance_threshold = ?, kpi_focus = ?, additional_criteria = ?, promotion_procedure = ? WHERE id = ?`).run(data.fromGrade, data.toGrade, data.track, JSON.stringify(data.requiredSkills), JSON.stringify(data.requiredCourses), data.performanceThreshold, JSON.stringify(data.kpiFocus), JSON.stringify(data.additionalCriteria), data.promotionProcedure, entityId);
+      req.tenantDB.prepare(`UPDATE promotion_criteria SET from_grade = ?, to_grade = ?, track = ?, required_skills = ?, required_courses = ?, performance_threshold = ?, kpi_focus = ?, additional_criteria = ?, promotion_procedure = ? WHERE id = ?`).run(data.fromGrade, data.toGrade, data.track, JSON.stringify(data.requiredSkills), JSON.stringify(data.requiredCourses), data.performanceThreshold, JSON.stringify(data.kpiFocus), JSON.stringify(data.additionalCriteria), data.promotionProcedure, entityId);
       break;
   }
 }
@@ -1017,7 +1017,7 @@ function applyUpdate(entityType, entityId, data) {
 /**
  * 套用 DELETE 操作：從對應原資料表刪除
  */
-function applyDelete(entityType, entityId) {
+function applyDelete(req, entityType, entityId) {
   const tableMap = {
     track: 'grade_tracks',
     grade: 'grade_levels',
@@ -1027,7 +1027,7 @@ function applyDelete(entityType, entityId) {
   };
   const table = tableMap[entityType];
   if (table) {
-    prepare(`DELETE FROM ${table} WHERE id = ?`).run(entityId);
+    req.tenantDB.prepare(`DELETE FROM ${table} WHERE id = ?`).run(entityId);
   }
 }
 
@@ -1045,7 +1045,7 @@ router.get('/:grade', (req, res) => {
     const gradeNum = parseInt(grade);
 
     // 取得職等基本資料
-    const gradeInfo = prepare(`
+    const gradeInfo = req.tenantDB.prepare(`
       SELECT 
         id,
         grade,
@@ -1063,7 +1063,7 @@ router.get('/:grade', (req, res) => {
     }
 
     // 取得該職等的薪資資料
-    const salaryLevels = prepare(`
+    const salaryLevels = req.tenantDB.prepare(`
       SELECT code, salary, sort_order
       FROM grade_salary_levels
       WHERE grade = ?
@@ -1071,12 +1071,12 @@ router.get('/:grade', (req, res) => {
     `).all(gradeNum);
 
     // 取得晉升到此職等的條件
-    const promotionTo = prepare(`
+    const promotionTo = req.tenantDB.prepare(`
       SELECT * FROM promotion_criteria WHERE to_grade = ?
     `).all(gradeNum);
 
     // 取得從此職等晉升的條件
-    const promotionFrom = prepare(`
+    const promotionFrom = req.tenantDB.prepare(`
       SELECT * FROM promotion_criteria WHERE from_grade = ?
     `).all(gradeNum);
 

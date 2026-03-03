@@ -4,7 +4,7 @@
 
 const express = require('express');
 const router = express.Router();
-const { prepare } = require('../db');
+
 const { v4: uuidv4 } = require('uuid');
 
 // ==================== 特定路由（必須放在通用路由之前） ====================
@@ -21,7 +21,7 @@ router.post('/create', (req, res) => {
         console.log(`[CREATE_LINK] Request for template_id: ${template_id}, employee_id: ${employee_id}`);
 
         // 驗證模板存在並取得當前版本
-        const template = prepare('SELECT id, version FROM templates WHERE id = ?').get(template_id);
+        const template = req.tenantDB.prepare('SELECT id, version FROM templates WHERE id = ?').get(template_id);
         if (!template) {
             console.error('[CREATE_LINK] Template not found');
             return res.status(404).json({ error: 'Template not found' });
@@ -30,7 +30,7 @@ router.post('/create', (req, res) => {
         // 檢查是否已存在該員工對該模板的「待簽署」記錄
         // 只有當 employee_id 存在時才檢查
         if (employee_id) {
-            const existingSubmission = prepare(`
+            const existingSubmission = req.tenantDB.prepare(`
                 SELECT id, token, status, template_version 
                 FROM submissions 
                 WHERE template_id = ? 
@@ -63,7 +63,7 @@ router.post('/create', (req, res) => {
         const safeEmployeeId = employee_id || null;
         const version = template.version;
 
-        prepare(`
+        req.tenantDB.prepare(`
             INSERT INTO submissions (id, template_id, token, employee_name, employee_email, status, template_version, employee_id) 
             VALUES (?, ?, ?, ?, ?, 'DRAFT', ?, ?)
         `).run(id, template_id, token, safeName, safeEmail, version, safeEmployeeId);
@@ -88,7 +88,7 @@ router.post('/create', (req, res) => {
  */
 router.get('/submissions/:templateId', (req, res) => {
     try {
-        const submissions = prepare(`
+        const submissions = req.tenantDB.prepare(`
       SELECT id, token, employee_name, employee_email, status, template_version, signed_at, created_at
       FROM submissions
       WHERE template_id = ?
@@ -113,7 +113,7 @@ router.get('/:token', (req, res) => {
         const { token } = req.params;
 
         // 1. 先查找 submission 基本資料
-        const submission = prepare(`
+        const submission = req.tenantDB.prepare(`
             SELECT s.*, t.name as template_name
             FROM submissions s
             JOIN templates t ON s.template_id = t.id
@@ -135,11 +135,11 @@ router.get('/:token', (req, res) => {
 
         if (isEditable) {
             // --- 讀取最新版 ---
-            const latest = prepare('SELECT version, mapping_config, pdf_base64 FROM templates WHERE id = ?').get(submission.template_id);
+            const latest = req.tenantDB.prepare('SELECT version, mapping_config, pdf_base64 FROM templates WHERE id = ?').get(submission.template_id);
             if (latest) {
                 // 如果版本不同，更新 submission 的版本號，確保簽署時記錄的是當下版本
                 if (latest.version !== submission.template_version) {
-                    prepare('UPDATE submissions SET template_version = ? WHERE token = ?').run(latest.version, token);
+                    req.tenantDB.prepare('UPDATE submissions SET template_version = ? WHERE token = ?').run(latest.version, token);
                     submission.template_version = latest.version; // Update local variable for response
                 }
 
@@ -152,7 +152,7 @@ router.get('/:token', (req, res) => {
         } else {
             // --- 讀取歷史版 (已簽署) ---
             if (submission.template_version) {
-                const versionData = prepare(`
+                const versionData = req.tenantDB.prepare(`
                     SELECT mapping_config, pdf_base64
                     FROM template_versions
                     WHERE template_id = ? AND version = ?
@@ -164,7 +164,7 @@ router.get('/:token', (req, res) => {
                 } else {
                     // Fallback (e.g. version record missing)
                     console.warn(`Version ${submission.template_version} not found, falling back to latest.`);
-                    const latest = prepare('SELECT mapping_config, pdf_base64 FROM templates WHERE id = ?').get(submission.template_id);
+                    const latest = req.tenantDB.prepare('SELECT mapping_config, pdf_base64 FROM templates WHERE id = ?').get(submission.template_id);
                     if (latest) {
                         mappingConfigRaw = latest.mapping_config;
                         pdfBase64 = latest.pdf_base64;
@@ -172,7 +172,7 @@ router.get('/:token', (req, res) => {
                 }
             } else {
                 // No version recorded (legacy data), load latest
-                const latest = prepare('SELECT mapping_config, pdf_base64 FROM templates WHERE id = ?').get(submission.template_id);
+                const latest = req.tenantDB.prepare('SELECT mapping_config, pdf_base64 FROM templates WHERE id = ?').get(submission.template_id);
                 if (latest) {
                     mappingConfigRaw = latest.mapping_config;
                     pdfBase64 = latest.pdf_base64;
@@ -241,7 +241,7 @@ router.post('/:token/submit', (req, res) => {
         const ip_address = req.ip || req.connection?.remoteAddress || 'unknown';
 
         // 查找 submission
-        const submission = prepare('SELECT * FROM submissions WHERE token = ?').get(token);
+        const submission = req.tenantDB.prepare('SELECT * FROM submissions WHERE token = ?').get(token);
 
         if (!submission) {
             return res.status(404).json({ error: 'Invalid or expired token' });
@@ -252,7 +252,7 @@ router.post('/:token/submit', (req, res) => {
         }
 
         // 更新 submission
-        prepare(`
+        req.tenantDB.prepare(`
       UPDATE submissions 
       SET form_data = ?, signature_base64 = ?, status = 'SIGNED', signed_at = datetime('now'), ip_address = ?, approval_status = 'PENDING'
       WHERE token = ?

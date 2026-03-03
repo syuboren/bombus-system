@@ -5,7 +5,7 @@
 const express = require('express');
 const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
-const { prepare } = require('../db');
+
 
 /**
  * GET /api/quarterly-reviews
@@ -43,7 +43,7 @@ router.get('/', (req, res) => {
     const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
     
     // 計算總數
-    const countResult = prepare(`
+    const countResult = req.tenantDB.prepare(`
       SELECT COUNT(*) as total 
       FROM quarterly_reviews qr
       LEFT JOIN employees e ON qr.employee_id = e.id
@@ -53,7 +53,7 @@ router.get('/', (req, res) => {
     
     // 查詢資料
     const offset = (parseInt(page) - 1) * parseInt(pageSize);
-    const rows = prepare(`
+    const rows = req.tenantDB.prepare(`
       SELECT qr.*, e.name as employee_name, e.department, e.position,
              m.name as manager_name
       FROM quarterly_reviews qr
@@ -109,7 +109,7 @@ router.get('/', (req, res) => {
  */
 router.get('/satisfaction-questions', (req, res) => {
   try {
-    const rows = prepare(`SELECT * FROM satisfaction_questions WHERE is_active = 1 ORDER BY order_num`).all();
+    const rows = req.tenantDB.prepare(`SELECT * FROM satisfaction_questions WHERE is_active = 1 ORDER BY order_num`).all();
     
     const questions = rows.map(row => ({
       id: row.id,
@@ -133,7 +133,7 @@ router.get('/:id', (req, res) => {
   try {
     const { id } = req.params;
     
-    const qr = prepare(`
+    const qr = req.tenantDB.prepare(`
       SELECT qr.*, e.name as employee_name, e.department, e.position,
              m.name as manager_name
       FROM quarterly_reviews qr
@@ -147,7 +147,7 @@ router.get('/:id', (req, res) => {
     }
     
     // Get sections
-    const sectionRows = prepare(`
+    const sectionRows = req.tenantDB.prepare(`
       SELECT * FROM quarterly_review_sections WHERE review_id = ? ORDER BY order_num
     `).all(id);
     
@@ -167,7 +167,7 @@ router.get('/:id', (req, res) => {
     });
     
     // Get satisfaction survey answers
-    const surveyRows = prepare(`
+    const surveyRows = req.tenantDB.prepare(`
       SELECT * FROM satisfaction_surveys WHERE review_id = ? ORDER BY question_id
     `).all(id);
     
@@ -183,7 +183,7 @@ router.get('/:id', (req, res) => {
     const monthlyScores = [];
     
     for (let month = startMonth; month <= endMonth; month++) {
-      const monthlyCheck = prepare(`
+      const monthlyCheck = req.tenantDB.prepare(`
         SELECT id, total_score FROM monthly_checks 
         WHERE employee_id = ? AND year = ? AND month = ? AND status = 'completed'
       `).get(qr.employee_id, qr.year, month);
@@ -251,7 +251,7 @@ router.post('/initialize', (req, res) => {
     }
     
     // 取得所有 active 員工 (包含 role 欄位)
-    const employees = prepare(`
+    const employees = req.tenantDB.prepare(`
       SELECT id, name, department, position, manager_id, role 
       FROM employees 
       WHERE status = 'active'
@@ -265,18 +265,18 @@ router.post('/initialize', (req, res) => {
     }
     
     // 刪除該季度現有的所有記錄及關聯資料
-    const existingReviews = prepare(`
+    const existingReviews = req.tenantDB.prepare(`
       SELECT id FROM quarterly_reviews WHERE year = ? AND quarter = ?
     `).all(year, quarter);
     
     let deletedCount = 0;
     for (const review of existingReviews) {
-      prepare(`DELETE FROM quarterly_review_sections WHERE review_id = ?`).run(review.id);
-      prepare(`DELETE FROM satisfaction_surveys WHERE review_id = ?`).run(review.id);
+      req.tenantDB.prepare(`DELETE FROM quarterly_review_sections WHERE review_id = ?`).run(review.id);
+      req.tenantDB.prepare(`DELETE FROM satisfaction_surveys WHERE review_id = ?`).run(review.id);
       deletedCount++;
     }
     
-    prepare(`DELETE FROM quarterly_reviews WHERE year = ? AND quarter = ?`).run(year, quarter);
+    req.tenantDB.prepare(`DELETE FROM quarterly_reviews WHERE year = ? AND quarter = ?`).run(year, quarter);
     
     const now = new Date().toISOString();
     let createdCount = 0;
@@ -291,7 +291,7 @@ router.post('/initialize', (req, res) => {
       const formType = emp.role === 'manager' ? 'manager' : 'employee';
       
       // 計算該員工該季度的月度檢核平均分
-      const avgResult = prepare(`
+      const avgResult = req.tenantDB.prepare(`
         SELECT AVG(total_score) as avg_score
         FROM monthly_checks
         WHERE employee_id = ? AND year = ? AND month BETWEEN ? AND ? AND status = 'completed'
@@ -302,7 +302,7 @@ router.post('/initialize', (req, res) => {
       const id = uuidv4();
       
       // 建立季度面談記錄，初始狀態為 pending (尚未填寫)
-      prepare(`
+      req.tenantDB.prepare(`
         INSERT INTO quarterly_reviews (
           id, employee_id, manager_id, year, quarter, 
           form_type, status, monthly_avg_score, 
@@ -355,7 +355,7 @@ router.post('/', (req, res) => {
     }
     
     // Check duplicate
-    const existing = prepare(`
+    const existing = req.tenantDB.prepare(`
       SELECT id FROM quarterly_reviews WHERE employee_id = ? AND year = ? AND quarter = ? AND form_type = ?
     `).get(employeeId, year, quarter, formType);
     
@@ -367,7 +367,7 @@ router.post('/', (req, res) => {
     }
     
     // Get employee info
-    const employee = prepare(`SELECT id, manager_id FROM employees WHERE id = ?`).get(employeeId);
+    const employee = req.tenantDB.prepare(`SELECT id, manager_id FROM employees WHERE id = ?`).get(employeeId);
     if (!employee?.id) {
       return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: '找不到此員工' } });
     }
@@ -376,7 +376,7 @@ router.post('/', (req, res) => {
     const startMonth = (quarter - 1) * 3 + 1;
     const endMonth = quarter * 3;
     
-    const avgResult = prepare(`
+    const avgResult = req.tenantDB.prepare(`
       SELECT AVG(total_score) as avg_score
       FROM monthly_checks
       WHERE employee_id = ? AND year = ? AND month BETWEEN ? AND ? AND status = 'completed'
@@ -387,7 +387,7 @@ router.post('/', (req, res) => {
     const id = uuidv4();
     const now = new Date().toISOString();
     
-    prepare(`
+    req.tenantDB.prepare(`
       INSERT INTO quarterly_reviews (id, employee_id, manager_id, year, quarter, form_type, status, monthly_avg_score, created_at)
       VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?)
     `).run(id, employeeId, employee.manager_id, year, quarter, formType, monthlyAvgScore, now);
@@ -411,7 +411,7 @@ router.patch('/:id/employee-submit', (req, res) => {
     const { id } = req.params;
     const { sections, satisfactionSurvey } = req.body;
     
-    const qr = prepare(`SELECT * FROM quarterly_reviews WHERE id = ?`).get(id);
+    const qr = req.tenantDB.prepare(`SELECT * FROM quarterly_reviews WHERE id = ?`).get(id);
     if (!qr) {
       return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: '找不到此季度面談' } });
     }
@@ -427,14 +427,14 @@ router.patch('/:id/employee-submit', (req, res) => {
     const now = new Date().toISOString();
     
     // Delete existing sections
-    prepare(`DELETE FROM quarterly_review_sections WHERE review_id = ?`).run(id);
+    req.tenantDB.prepare(`DELETE FROM quarterly_review_sections WHERE review_id = ?`).run(id);
     
     // Insert sections
     if (sections && sections.length > 0) {
       sections.forEach((section, idx) => {
         const sectionId = uuidv4();
         const content = typeof section.content === 'object' ? JSON.stringify(section.content) : section.content;
-        prepare(`
+        req.tenantDB.prepare(`
           INSERT INTO quarterly_review_sections (id, review_id, section_type, content, order_num)
           VALUES (?, ?, ?, ?, ?)
         `).run(sectionId, id, section.sectionType, content, idx + 1);
@@ -442,13 +442,13 @@ router.patch('/:id/employee-submit', (req, res) => {
     }
     
     // Delete existing survey answers
-    prepare(`DELETE FROM satisfaction_surveys WHERE review_id = ?`).run(id);
+    req.tenantDB.prepare(`DELETE FROM satisfaction_surveys WHERE review_id = ?`).run(id);
     
     // Insert satisfaction survey
     if (satisfactionSurvey && satisfactionSurvey.length > 0) {
       satisfactionSurvey.forEach(answer => {
         const answerId = uuidv4();
-        prepare(`
+        req.tenantDB.prepare(`
           INSERT INTO satisfaction_surveys (id, review_id, question_id, score)
           VALUES (?, ?, ?, ?)
         `).run(answerId, id, answer.questionId, answer.score);
@@ -456,7 +456,7 @@ router.patch('/:id/employee-submit', (req, res) => {
     }
     
     // Update status to employee_submitted
-    prepare(`
+    req.tenantDB.prepare(`
       UPDATE quarterly_reviews SET status = 'employee_submitted', updated_at = ?
       WHERE id = ?
     `).run(now, id);
@@ -477,7 +477,7 @@ router.patch('/:id/manager-review', (req, res) => {
     const { id } = req.params;
     const { managerComment, developmentPlan, sections } = req.body;
     
-    const qr = prepare(`SELECT * FROM quarterly_reviews WHERE id = ?`).get(id);
+    const qr = req.tenantDB.prepare(`SELECT * FROM quarterly_reviews WHERE id = ?`).get(id);
     if (!qr) {
       return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: '找不到此季度面談' } });
     }
@@ -496,7 +496,7 @@ router.patch('/:id/manager-review', (req, res) => {
     if (sections && sections.length > 0) {
       sections.forEach((section) => {
         // 檢查是否已存在該區塊
-        const existing = prepare(`
+        const existing = req.tenantDB.prepare(`
           SELECT id FROM quarterly_review_sections 
           WHERE review_id = ? AND section_type = ?
         `).get(id, section.sectionType);
@@ -505,7 +505,7 @@ router.patch('/:id/manager-review', (req, res) => {
         
         if (existing) {
           // 更新現有區塊
-          prepare(`
+          req.tenantDB.prepare(`
             UPDATE quarterly_review_sections 
             SET content = ?
             WHERE id = ?
@@ -513,7 +513,7 @@ router.patch('/:id/manager-review', (req, res) => {
         } else {
           // 新增區塊
           const sectionId = uuidv4();
-          prepare(`
+          req.tenantDB.prepare(`
             INSERT INTO quarterly_review_sections (id, review_id, section_type, content, order_num)
             VALUES (?, ?, ?, ?, ?)
           `).run(sectionId, id, section.sectionType, content, 99);
@@ -522,7 +522,7 @@ router.patch('/:id/manager-review', (req, res) => {
     }
     
     // 更新主管評語和發展建議
-    prepare(`
+    req.tenantDB.prepare(`
       UPDATE quarterly_reviews 
       SET status = 'manager_reviewed', 
           manager_comment = ?, 
@@ -547,7 +547,7 @@ router.patch('/:id/schedule-interview', (req, res) => {
     const { id } = req.params;
     const { interviewDate, location } = req.body;
     
-    const qr = prepare(`SELECT * FROM quarterly_reviews WHERE id = ?`).get(id);
+    const qr = req.tenantDB.prepare(`SELECT * FROM quarterly_reviews WHERE id = ?`).get(id);
     if (!qr) {
       return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: '找不到此季度面談' } });
     }
@@ -562,7 +562,7 @@ router.patch('/:id/schedule-interview', (req, res) => {
     
     const now = new Date().toISOString();
     
-    prepare(`
+    req.tenantDB.prepare(`
       UPDATE quarterly_reviews 
       SET status = 'interview_scheduled', interview_date = ?, interview_location = ?, updated_at = ?
       WHERE id = ?
@@ -584,7 +584,7 @@ router.patch('/:id/complete-interview', (req, res) => {
     const { id } = req.params;
     const { totalScore, managerComment, developmentPlan } = req.body;
     
-    const qr = prepare(`SELECT * FROM quarterly_reviews WHERE id = ?`).get(id);
+    const qr = req.tenantDB.prepare(`SELECT * FROM quarterly_reviews WHERE id = ?`).get(id);
     if (!qr) {
       return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: '找不到此季度面談' } });
     }
@@ -599,7 +599,7 @@ router.patch('/:id/complete-interview', (req, res) => {
     
     const now = new Date().toISOString();
     
-    prepare(`
+    req.tenantDB.prepare(`
       UPDATE quarterly_reviews 
       SET status = 'interview_completed', total_score = ?, manager_comment = ?, development_plan = ?, updated_at = ?
       WHERE id = ?
@@ -621,7 +621,7 @@ router.patch('/:id/hr-close', (req, res) => {
     const { id } = req.params;
     const { hrComment } = req.body;
     
-    const qr = prepare(`SELECT * FROM quarterly_reviews WHERE id = ?`).get(id);
+    const qr = req.tenantDB.prepare(`SELECT * FROM quarterly_reviews WHERE id = ?`).get(id);
     if (!qr) {
       return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: '找不到此季度面談' } });
     }
@@ -636,7 +636,7 @@ router.patch('/:id/hr-close', (req, res) => {
     
     const now = new Date().toISOString();
     
-    prepare(`
+    req.tenantDB.prepare(`
       UPDATE quarterly_reviews 
       SET status = 'completed', hr_comment = ?, updated_at = ?
       WHERE id = ?

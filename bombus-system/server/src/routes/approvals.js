@@ -4,7 +4,7 @@
 
 const express = require('express');
 const router = express.Router();
-const { prepare, saveDatabase } = require('../db');
+
 
 /**
  * GET /api/manager/approvals
@@ -34,7 +34,7 @@ router.get('/', (req, res) => {
 
         query += ` ORDER BY s.signed_at DESC`;
 
-        const submissions = prepare(query).all();
+        const submissions = req.tenantDB.prepare(query).all();
 
         // Parse form_data JSON
         submissions.forEach(s => {
@@ -60,7 +60,7 @@ router.get('/:id', (req, res) => {
     try {
         const { id } = req.params;
 
-        const submission = prepare(`
+        const submission = req.tenantDB.prepare(`
             SELECT s.*, t.name as template_name, t.pdf_base64 as template_pdf,
                    t.mapping_config as template_mapping
             FROM submissions s
@@ -100,7 +100,7 @@ router.post('/:id/approve', (req, res) => {
         const { id } = req.params;
         const { approver_id, approval_note } = req.body;
 
-        const submission = prepare('SELECT id, approval_status FROM submissions WHERE id = ?').get(id);
+        const submission = req.tenantDB.prepare('SELECT id, approval_status FROM submissions WHERE id = ?').get(id);
         if (!submission) {
             return res.status(404).json({ error: 'Submission not found' });
         }
@@ -109,13 +109,13 @@ router.post('/:id/approve', (req, res) => {
             return res.status(400).json({ error: 'Already approved' });
         }
 
-        prepare(`
+        req.tenantDB.prepare(`
             UPDATE submissions
             SET approval_status = 'APPROVED', approver_id = ?, approval_note = ?, approved_at = datetime('now'), status = 'COMPLETED'
             WHERE id = ?
         `).run(approver_id || null, approval_note || null, id);
 
-        saveDatabase();
+        req.tenantDB.save();
 
         res.json({ message: 'Submission approved successfully' });
     } catch (error) {
@@ -137,7 +137,7 @@ router.post('/:id/reject', (req, res) => {
             return res.status(400).json({ error: 'Rejection reason is required' });
         }
 
-        const submission = prepare('SELECT id, approval_status FROM submissions WHERE id = ?').get(id);
+        const submission = req.tenantDB.prepare('SELECT id, approval_status FROM submissions WHERE id = ?').get(id);
         if (!submission) {
             return res.status(404).json({ error: 'Submission not found' });
         }
@@ -146,13 +146,13 @@ router.post('/:id/reject', (req, res) => {
             return res.status(400).json({ error: 'Cannot reject an approved submission' });
         }
 
-        prepare(`
+        req.tenantDB.prepare(`
             UPDATE submissions
             SET approval_status = 'REJECTED', approver_id = ?, approval_note = ?, approved_at = datetime('now')
             WHERE id = ?
         `).run(approver_id || null, approval_note, id);
 
-        saveDatabase();
+        req.tenantDB.save();
 
         res.json({ message: 'Submission rejected successfully' });
     } catch (error) {
@@ -167,17 +167,17 @@ router.post('/:id/reject', (req, res) => {
  */
 router.get('/stats/summary', (req, res) => {
     try {
-        const pending = prepare(`
+        const pending = req.tenantDB.prepare(`
             SELECT COUNT(*) as count FROM submissions
             WHERE status = 'SIGNED' AND approval_status = 'PENDING'
         `).get();
 
-        const approved = prepare(`
+        const approved = req.tenantDB.prepare(`
             SELECT COUNT(*) as count FROM submissions
             WHERE approval_status = 'APPROVED'
         `).get();
 
-        const rejected = prepare(`
+        const rejected = req.tenantDB.prepare(`
             SELECT COUNT(*) as count FROM submissions
             WHERE approval_status = 'REJECTED'
         `).get();

@@ -5,7 +5,7 @@
 const express = require('express');
 const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
-const { prepare } = require('../db');
+
 
 /**
  * GET /api/monthly-check-templates
@@ -33,7 +33,7 @@ router.get('/', (req, res) => {
     
     const whereClause = conditions.join(' AND ');
     
-    const rows = prepare(`
+    const rows = req.tenantDB.prepare(`
       SELECT * FROM monthly_check_templates 
       WHERE ${whereClause}
       ORDER BY department, position, order_num
@@ -78,7 +78,7 @@ router.post('/', (req, res) => {
     const id = uuidv4();
     const now = new Date().toISOString();
     
-    prepare(`
+    req.tenantDB.prepare(`
       INSERT INTO monthly_check_templates (id, department, position, name, points, description, measurement, order_num, is_active, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(id, department, position, name, points || 1, description, measurement, orderNum || 0, isActive ? 1 : 0, now);
@@ -102,7 +102,7 @@ router.patch('/:id', (req, res) => {
     const { id } = req.params;
     const { name, points, description, measurement, orderNum, isActive } = req.body;
     
-    const existing = prepare(`SELECT * FROM monthly_check_templates WHERE id = ?`).get(id);
+    const existing = req.tenantDB.prepare(`SELECT * FROM monthly_check_templates WHERE id = ?`).get(id);
     if (!existing) {
       return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: '找不到此指標模板' } });
     }
@@ -122,7 +122,7 @@ router.patch('/:id', (req, res) => {
       params.push(new Date().toISOString());
       params.push(id);
       
-      prepare(`UPDATE monthly_check_templates SET ${updates.join(', ')} WHERE id = ?`).run(...params);
+      req.tenantDB.prepare(`UPDATE monthly_check_templates SET ${updates.join(', ')} WHERE id = ?`).run(...params);
     }
     
     res.json({ success: true, data: { id } });
@@ -140,13 +140,13 @@ router.delete('/:id', (req, res) => {
   try {
     const { id } = req.params;
     
-    const existing = prepare(`SELECT * FROM monthly_check_templates WHERE id = ?`).get(id);
+    const existing = req.tenantDB.prepare(`SELECT * FROM monthly_check_templates WHERE id = ?`).get(id);
     if (!existing) {
       return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: '找不到此指標模板' } });
     }
     
     // Soft delete
-    prepare(`UPDATE monthly_check_templates SET is_active = 0, updated_at = ? WHERE id = ?`)
+    req.tenantDB.prepare(`UPDATE monthly_check_templates SET is_active = 0, updated_at = ? WHERE id = ?`)
       .run(new Date().toISOString(), id);
     
     res.json({ success: true, data: { id } });
@@ -172,7 +172,7 @@ router.post('/copy', (req, res) => {
     }
     
     // Get source templates
-    const templates = prepare(`
+    const templates = req.tenantDB.prepare(`
       SELECT * FROM monthly_check_templates 
       WHERE department = ? AND position = ? AND is_active = 1
       ORDER BY order_num
@@ -192,7 +192,7 @@ router.post('/copy', (req, res) => {
     templates.forEach(tpl => {
       const id = uuidv4();
       newIds.push(id);
-      prepare(`
+      req.tenantDB.prepare(`
         INSERT INTO monthly_check_templates (id, department, position, name, points, description, measurement, order_num, is_active, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
       `).run(id, targetDepartment, targetPosition, tpl.name, tpl.points, tpl.description, tpl.measurement, tpl.order_num, now);
@@ -235,7 +235,7 @@ router.post('/import', (req, res) => {
         }
         
         const id = tpl.id || uuidv4();
-        prepare(`
+        req.tenantDB.prepare(`
           INSERT OR REPLACE INTO monthly_check_templates (id, department, position, name, points, description, measurement, order_num, is_active, created_at, updated_at)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).run(

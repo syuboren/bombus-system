@@ -5,7 +5,7 @@
 
 const express = require('express');
 const router = express.Router();
-const { prepare, saveDatabase } = require('../db');
+// tenantDB is accessed via req.tenantDB (injected by middleware)
 const job104Service = require('../services/104/job.service');
 
 // 生成職缺 ID
@@ -49,7 +49,7 @@ router.get('/', (req, res) => {
         sql += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
         params.push(parseInt(limit), parseInt(offset));
 
-        const jobs = prepare(sql).all(...params);
+        const jobs = req.tenantDB.prepare(sql).all(...params);
 
         res.json({
             status: 'success',
@@ -75,7 +75,7 @@ router.get('/stats/summary', (req, res) => {
             totalJobs: 0
         };
 
-        const result = prepare(`
+        const result = req.tenantDB.prepare(`
             SELECT 
                 COUNT(*) as total,
                 SUM(CASE WHEN status = 'published' THEN 1 ELSE 0 END) as active,
@@ -102,7 +102,7 @@ router.get('/stats/summary', (req, res) => {
  */
 router.get('/104/jobs', (req, res) => {
     try {
-        const jobs = prepare(`
+        const jobs = req.tenantDB.prepare(`
             SELECT * FROM jobs 
             WHERE job104_no IS NOT NULL 
             ORDER BY created_at DESC
@@ -145,7 +145,7 @@ router.get('/104/jobs', (req, res) => {
 router.get('/:id', (req, res) => {
     try {
         const { id } = req.params;
-        const job = prepare('SELECT * FROM jobs WHERE id = ?').get(id);
+        const job = req.tenantDB.prepare('SELECT * FROM jobs WHERE id = ?').get(id);
 
         if (!job) {
             return res.status(404).json({ status: 'error', message: '職缺不存在' });
@@ -175,7 +175,7 @@ router.get('/:id/candidates', (req, res) => {
     try {
         const { id } = req.params;
 
-        const candidates = prepare(`
+        const candidates = req.tenantDB.prepare(`
             SELECT c.*,
             j.title as job_title,
             ii.response_token, 
@@ -234,7 +234,7 @@ router.patch('/:id/status', async (req, res) => {
         }
 
         // 取得完整職缺資料
-        const job = prepare('SELECT * FROM jobs WHERE id = ?').get(id);
+        const job = req.tenantDB.prepare('SELECT * FROM jobs WHERE id = ?').get(id);
         if (!job) {
             return res.status(404).json({ status: 'error', message: 'Job not found' });
         }
@@ -348,7 +348,7 @@ router.patch('/:id/status', async (req, res) => {
         sql += ' WHERE id = ?';
         params.push(id);
 
-        prepare(sql).run(...params);
+        req.tenantDB.prepare(sql).run(...params);
 
         // 返回結果，包含 104 同步狀態
         res.json({
@@ -388,7 +388,7 @@ router.post('/', (req, res) => {
         const syncStatus = job104Data ? '104_pending' : 'local_only';
 
         // 儲存到資料庫
-        prepare(`
+        req.tenantDB.prepare(`
             INSERT INTO jobs (id, title, department, description, recruiter, status, jd_id, job104_no, sync_status, job104_data, synced_at, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).run(
@@ -444,7 +444,7 @@ router.put('/:id', async (req, res) => {
         } = req.body;
 
         // 先檢查職缺是否存在
-        const job = prepare('SELECT * FROM jobs WHERE id = ?').get(id);
+        const job = req.tenantDB.prepare('SELECT * FROM jobs WHERE id = ?').get(id);
         if (!job) {
             return res.status(404).json({ status: 'error', message: '職缺不存在' });
         }
@@ -452,7 +452,7 @@ router.put('/:id', async (req, res) => {
         const now = new Date().toISOString();
 
         // 更新本地資料庫
-        prepare(`
+        req.tenantDB.prepare(`
             UPDATE jobs 
             SET title = COALESCE(?, title),
                 department = COALESCE(?, department),
@@ -479,7 +479,7 @@ router.put('/:id', async (req, res) => {
         if (job.job104_no && job.status === 'published') {
             try {
                 // 取得更新後的資料
-                const updatedJob = prepare('SELECT * FROM jobs WHERE id = ?').get(id);
+                const updatedJob = req.tenantDB.prepare('SELECT * FROM jobs WHERE id = ?').get(id);
                 const updateData = updatedJob.job104_data ? JSON.parse(updatedJob.job104_data) : {};
 
                 // 構建符合 104 API UpdateJob 規格的 payload
@@ -565,7 +565,7 @@ router.delete('/:id', async (req, res) => {
         console.log('🗑️ Deleting job:', id);
 
         // 先檢查職缺是否存在並取得 104 編號
-        const job = prepare('SELECT * FROM jobs WHERE id = ?').get(id);
+        const job = req.tenantDB.prepare('SELECT * FROM jobs WHERE id = ?').get(id);
         if (!job) {
             return res.status(404).json({ status: 'error', message: '職缺不存在' });
         }
@@ -583,7 +583,7 @@ router.delete('/:id', async (req, res) => {
         }
 
         // 刪除本地資料
-        const deleteResult = prepare('DELETE FROM jobs WHERE id = ?').run(id);
+        const deleteResult = req.tenantDB.prepare('DELETE FROM jobs WHERE id = ?').run(id);
         console.log('🗑️ Delete result:', deleteResult);
 
         res.json({ status: 'success', message: '職缺已刪除' });
@@ -603,7 +603,7 @@ router.post('/:id/sync-104', async (req, res) => {
         const { job104Data } = req.body;
 
         // 取得現有職缺
-        const job = prepare('SELECT * FROM jobs WHERE id = ?').get(id);
+        const job = req.tenantDB.prepare('SELECT * FROM jobs WHERE id = ?').get(id);
         if (!job) {
             return res.status(404).json({ status: 'error', message: '職缺不存在' });
         }
@@ -651,7 +651,7 @@ router.post('/:id/sync-104', async (req, res) => {
         }
 
         // 更新本地資料
-        prepare(`
+        req.tenantDB.prepare(`
             UPDATE jobs 
             SET job104_no = ?, sync_status = '104_synced', job104_data = ?, synced_at = ?, status = 'published', updated_at = ?
             WHERE id = ?
@@ -683,7 +683,7 @@ router.post('/:id/sync-from-104', async (req, res) => {
         const { id } = req.params;
 
         // 取得現有職缺
-        const job = prepare('SELECT * FROM jobs WHERE id = ?').get(id);
+        const job = req.tenantDB.prepare('SELECT * FROM jobs WHERE id = ?').get(id);
         if (!job) {
             return res.status(404).json({ status: 'error', message: '職缺不存在' });
         }
@@ -727,7 +727,7 @@ router.post('/:id/sync-from-104', async (req, res) => {
         const now = new Date().toISOString();
 
         // 更新本地資料庫
-        prepare(`
+        req.tenantDB.prepare(`
             UPDATE jobs 
             SET title = COALESCE(?, title),
                 description = COALESCE(?, description),
@@ -775,7 +775,7 @@ router.post('/debug/reset-candidates', (req, res) => {
     try {
         console.log('🔄 Resetting all candidates...');
         // Reset candidates to initial state
-        prepare(`
+        req.tenantDB.prepare(`
             UPDATE candidates 
             SET status = 'new', 
                 stage = 'Collected', 
@@ -785,9 +785,9 @@ router.post('/debug/reset-candidates', (req, res) => {
         `).run();
 
         // Clear related tables
-        prepare("DELETE FROM interview_invitations").run();
-        prepare("DELETE FROM invitation_decisions").run();
-        prepare("DELETE FROM interviews").run();
+        req.tenantDB.prepare("DELETE FROM interview_invitations").run();
+        req.tenantDB.prepare("DELETE FROM invitation_decisions").run();
+        req.tenantDB.prepare("DELETE FROM interviews").run();
 
         console.log('✅ Candidates reset.');
         res.json({ status: 'success', message: '所有候選人已重置為初始狀態' });
@@ -808,7 +808,7 @@ router.get('/:jobId/candidates/:candidateId/full', (req, res) => {
     const { jobId, candidateId } = req.params;
 
     // 1. 取得候選人主資料（含職缺標題、面試邀請資訊）
-    const candidate = prepare(`
+    const candidate = req.tenantDB.prepare(`
       SELECT 
         c.*,
         j.title as job_title,
@@ -846,70 +846,70 @@ router.get('/:jobId/candidates/:candidateId/full', (req, res) => {
     }
 
     // 2. 取得學歷資料
-    const educationList = prepare(`
+    const educationList = req.tenantDB.prepare(`
       SELECT * FROM candidate_education 
       WHERE candidate_id = ? 
       ORDER BY sort_order ASC
     `).all(candidateId);
 
     // 3. 取得工作經歷
-    const experienceList = prepare(`
+    const experienceList = req.tenantDB.prepare(`
       SELECT * FROM candidate_experiences 
       WHERE candidate_id = ? 
       ORDER BY sort_order ASC
     `).all(candidateId);
 
     // 4. 取得技能專長
-    const specialityList = prepare(`
+    const specialityList = req.tenantDB.prepare(`
       SELECT * FROM candidate_specialities 
       WHERE candidate_id = ? 
       ORDER BY sort_order ASC
     `).all(candidateId);
 
     // 5. 取得語言能力
-    const languageList = prepare(`
+    const languageList = req.tenantDB.prepare(`
       SELECT * FROM candidate_languages 
       WHERE candidate_id = ? 
       ORDER BY sort_order ASC
     `).all(candidateId);
 
     // 6. 取得專案作品
-    const projectList = prepare(`
+    const projectList = req.tenantDB.prepare(`
       SELECT * FROM candidate_projects 
       WHERE candidate_id = ? 
       ORDER BY sort_order ASC
     `).all(candidateId);
 
     // 7. 取得附件
-    const attachmentList = prepare(`
+    const attachmentList = req.tenantDB.prepare(`
       SELECT * FROM candidate_attachments 
       WHERE candidate_id = ? 
       ORDER BY sort_order ASC
     `).all(candidateId);
 
     // 8. 取得推薦人
-    const recommenderList = prepare(`
+    const recommenderList = req.tenantDB.prepare(`
       SELECT * FROM candidate_recommenders 
       WHERE candidate_id = ? 
       ORDER BY sort_order ASC
     `).all(candidateId);
 
     // 9. 取得應徵紀錄
-    const applyRecordList = prepare(`
+    const applyRecordList = req.tenantDB.prepare(`
       SELECT * FROM candidate_apply_records 
       WHERE candidate_id = ? 
       ORDER BY apply_date DESC
     `).all(candidateId);
 
     // 10. 取得應徵問答
-    const applyQuestionList = prepare(`
+    const applyQuestionList = req.tenantDB.prepare(`
       SELECT * FROM candidate_apply_questions 
       WHERE candidate_id = ? 
       ORDER BY sort_order ASC
     `).all(candidateId);
 
     // 11. 取得 AI 履歷解析報告
-    const resumeAnalysis = prepare(`
+    const resumeAnalysis = req.tenantDB.prepare(`
       SELECT * FROM candidate_resume_analysis 
       WHERE candidate_id = ? AND job_id = ?
     `).get(candidateId, candidate.job_id);

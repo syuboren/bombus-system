@@ -6,7 +6,7 @@
 const express = require('express');
 const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
-const { prepare, getDb } = require('../db');
+// tenantDB is accessed via req.tenantDB (injected by middleware)
 
 // =====================================================
 // Helper Functions
@@ -15,8 +15,8 @@ const { prepare, getDb } = require('../db');
 /**
  * 取得員工資訊
  */
-function getEmployeeInfo(employeeId) {
-  return prepare(`
+function getEmployeeInfo(req, employeeId) {
+  return req.tenantDB.prepare(`
     SELECT id, name, email, department, position, manager_id
     FROM employees WHERE id = ?
   `).get(employeeId) || {};
@@ -88,7 +88,7 @@ router.get('/monthly-checks', (req, res) => {
     const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
     
     // 計算總數
-    const countResult = prepare(`
+    const countResult = req.tenantDB.prepare(`
       SELECT COUNT(*) as total 
       FROM monthly_checks mc
       LEFT JOIN employees e ON mc.employee_id = e.id
@@ -98,7 +98,7 @@ router.get('/monthly-checks', (req, res) => {
     
     // 查詢資料
     const offset = (parseInt(page) - 1) * parseInt(pageSize);
-    const rows = prepare(`
+    const rows = req.tenantDB.prepare(`
       SELECT mc.*, e.name as employee_name, e.department, e.position,
              m.name as manager_name
       FROM monthly_checks mc
@@ -155,7 +155,7 @@ router.get('/monthly-checks/:id', (req, res) => {
   try {
     const { id } = req.params;
     
-    const mc = prepare(`
+    const mc = req.tenantDB.prepare(`
       SELECT mc.*, e.name as employee_name, e.department, e.position,
              m.name as manager_name
       FROM monthly_checks mc
@@ -169,7 +169,7 @@ router.get('/monthly-checks/:id', (req, res) => {
     }
     
     // Get items
-    const itemRows = prepare(`
+    const itemRows = req.tenantDB.prepare(`
       SELECT * FROM monthly_check_items WHERE monthly_check_id = ? ORDER BY order_num
     `).all(id);
     
@@ -240,7 +240,7 @@ router.post('/monthly-checks', (req, res) => {
     }
     
     // Check duplicate
-    const existing = prepare(`
+    const existing = req.tenantDB.prepare(`
       SELECT id FROM monthly_checks WHERE employee_id = ? AND year = ? AND month = ?
     `).get(employeeId, year, month);
     
@@ -252,7 +252,7 @@ router.post('/monthly-checks', (req, res) => {
     }
     
     // Get employee info
-    const employee = getEmployeeInfo(employeeId);
+    const employee = getEmployeeInfo(req, employeeId);
     if (!employee.id) {
       return res.status(404).json({ 
         success: false, 
@@ -264,7 +264,7 @@ router.post('/monthly-checks', (req, res) => {
     const now = new Date().toISOString();
     
     // Insert monthly check
-    prepare(`
+    req.tenantDB.prepare(`
       INSERT INTO monthly_checks (id, employee_id, manager_id, year, month, status, created_at)
       VALUES (?, ?, ?, ?, ?, 'self_assessment', ?)
     `).run(id, employeeId, employee.manager_id, year, month, now);
@@ -277,7 +277,7 @@ router.post('/monthly-checks', (req, res) => {
       const prevMonth = month === 1 ? 12 : month - 1;
       const prevYear = month === 1 ? year - 1 : year;
       
-      templates = prepare(`
+      templates = req.tenantDB.prepare(`
         SELECT mci.* FROM monthly_check_items mci
         JOIN monthly_checks mc ON mci.monthly_check_id = mc.id
         WHERE mc.employee_id = ? AND mc.year = ? AND mc.month = ?
@@ -287,7 +287,7 @@ router.post('/monthly-checks', (req, res) => {
     
     // If no previous data, use templates
     if (templates.length === 0) {
-      templates = prepare(`
+      templates = req.tenantDB.prepare(`
         SELECT * FROM monthly_check_templates
         WHERE department = ? AND position = ? AND is_active = 1
         ORDER BY order_num
@@ -297,7 +297,7 @@ router.post('/monthly-checks', (req, res) => {
     // Insert items
     templates.forEach((tpl, idx) => {
       const itemId = uuidv4();
-      prepare(`
+      req.tenantDB.prepare(`
         INSERT INTO monthly_check_items (id, monthly_check_id, template_id, name, points, description, measurement, order_num)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
@@ -326,7 +326,7 @@ router.patch('/monthly-checks/:id/self-assessment', (req, res) => {
     const { items, signature } = req.body;
     
     // Check status
-    const mc = prepare(`SELECT * FROM monthly_checks WHERE id = ?`).get(id);
+    const mc = req.tenantDB.prepare(`SELECT * FROM monthly_checks WHERE id = ?`).get(id);
     if (!mc) {
       return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: '找不到此月度檢核表' } });
     }
@@ -341,12 +341,12 @@ router.patch('/monthly-checks/:id/self-assessment', (req, res) => {
     
     // Update items
     items.forEach(item => {
-      prepare(`UPDATE monthly_check_items SET self_score = ? WHERE id = ?`).run(item.selfScore, item.itemId);
+      req.tenantDB.prepare(`UPDATE monthly_check_items SET self_score = ? WHERE id = ?`).run(item.selfScore, item.itemId);
     });
     
     // Update status with signature
     const now = new Date().toISOString();
-    prepare(`
+    req.tenantDB.prepare(`
       UPDATE monthly_checks 
       SET status = 'manager_review', self_assessment_date = ?, employee_signature = ?, employee_signature_date = ?, updated_at = ?
       WHERE id = ?
@@ -369,7 +369,7 @@ router.patch('/monthly-checks/:id/manager-review', (req, res) => {
     const { action, items, comment, signature } = req.body;
     
     // Check status
-    const mc = prepare(`SELECT * FROM monthly_checks WHERE id = ?`).get(id);
+    const mc = req.tenantDB.prepare(`SELECT * FROM monthly_checks WHERE id = ?`).get(id);
     if (!mc) {
       return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: '找不到此月度檢核表' } });
     }
@@ -387,20 +387,20 @@ router.patch('/monthly-checks/:id/manager-review', (req, res) => {
       
       // Update items with manager scores
       items.forEach(item => {
-        prepare(`UPDATE monthly_check_items SET manager_score = ? WHERE id = ?`).run(item.managerScore, item.itemId);
+        req.tenantDB.prepare(`UPDATE monthly_check_items SET manager_score = ? WHERE id = ?`).run(item.managerScore, item.itemId);
       });
       
       // Calculate weighted scores (for display only, total_score will be calculated on HR close)
-      const allItems = prepare(`SELECT * FROM monthly_check_items WHERE monthly_check_id = ?`).all(id);
+      const allItems = req.tenantDB.prepare(`SELECT * FROM monthly_check_items WHERE monthly_check_id = ?`).all(id);
       
       const totalPoints = allItems.reduce((sum, item) => sum + (item.points || 0), 0);
       allItems.forEach(item => {
         const weightedScore = (item.manager_score || 0) * (item.points / totalPoints);
-        prepare(`UPDATE monthly_check_items SET weighted_score = ? WHERE id = ?`).run(weightedScore, item.id);
+        req.tenantDB.prepare(`UPDATE monthly_check_items SET weighted_score = ? WHERE id = ?`).run(weightedScore, item.id);
       });
       
       // Update status with manager signature (total_score will be calculated when HR closes)
-      prepare(`
+      req.tenantDB.prepare(`
         UPDATE monthly_checks 
         SET status = 'hr_review', manager_review_date = ?, manager_comment = ?, manager_signature = ?, manager_signature_date = ?, updated_at = ?
         WHERE id = ?
@@ -408,7 +408,7 @@ router.patch('/monthly-checks/:id/manager-review', (req, res) => {
       
     } else if (action === 'reject') {
       // Reject - back to self_assessment, clear employee signature (need to re-sign)
-      prepare(`
+      req.tenantDB.prepare(`
         UPDATE monthly_checks 
         SET status = 'self_assessment', manager_comment = ?, employee_signature = NULL, employee_signature_date = NULL, updated_at = ?
         WHERE id = ?
@@ -431,7 +431,7 @@ router.patch('/monthly-checks/:id/hr-close', (req, res) => {
     const { id } = req.params;
     const { action, comment, signature } = req.body;
     
-    const mc = prepare(`SELECT * FROM monthly_checks WHERE id = ?`).get(id);
+    const mc = req.tenantDB.prepare(`SELECT * FROM monthly_checks WHERE id = ?`).get(id);
     if (!mc) {
       return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: '找不到此月度檢核表' } });
     }
@@ -449,17 +449,17 @@ router.patch('/monthly-checks/:id/hr-close', (req, res) => {
       }
       
       // Calculate total score on HR close (final step)
-      const allItems = prepare(`SELECT * FROM monthly_check_items WHERE monthly_check_id = ?`).all(id);
+      const allItems = req.tenantDB.prepare(`SELECT * FROM monthly_check_items WHERE monthly_check_id = ?`).all(id);
       const totalScore = calculateTotalScore(allItems);
       
-      prepare(`
+      req.tenantDB.prepare(`
         UPDATE monthly_checks 
         SET status = 'completed', hr_review_date = ?, hr_comment = ?, total_score = ?, hr_signature = ?, hr_signature_date = ?, updated_at = ?
         WHERE id = ?
       `).run(now, comment || null, totalScore, signature, now, now, id);
     } else if (action === 'reopen') {
       // 退回主管 - 狀態改為 manager_review, 清除主管簽名 (需重新簽名)
-      prepare(`
+      req.tenantDB.prepare(`
         UPDATE monthly_checks 
         SET status = 'manager_review', hr_comment = ?, manager_signature = NULL, manager_signature_date = NULL, updated_at = ?
         WHERE id = ?
@@ -490,9 +490,9 @@ router.get('/competency-stats/overview', (req, res) => {
     // Monthly check stats
     let mcRows;
     if (month) {
-      mcRows = prepare(`SELECT status, COUNT(*) as count FROM monthly_checks WHERE year = ? AND month = ? GROUP BY status`).all(currentYear, parseInt(month));
+      mcRows = req.tenantDB.prepare(`SELECT status, COUNT(*) as count FROM monthly_checks WHERE year = ? AND month = ? GROUP BY status`).all(currentYear, parseInt(month));
     } else {
-      mcRows = prepare(`SELECT status, COUNT(*) as count FROM monthly_checks WHERE year = ? GROUP BY status`).all(currentYear);
+      mcRows = req.tenantDB.prepare(`SELECT status, COUNT(*) as count FROM monthly_checks WHERE year = ? GROUP BY status`).all(currentYear);
     }
     
     const mcStats = { total: 0, completed: 0, inProgress: 0, overdue: 0 };
@@ -507,9 +507,9 @@ router.get('/competency-stats/overview', (req, res) => {
     // Quarterly review stats
     let qrRows;
     if (quarter) {
-      qrRows = prepare(`SELECT status, COUNT(*) as count FROM quarterly_reviews WHERE year = ? AND quarter = ? GROUP BY status`).all(currentYear, parseInt(quarter));
+      qrRows = req.tenantDB.prepare(`SELECT status, COUNT(*) as count FROM quarterly_reviews WHERE year = ? AND quarter = ? GROUP BY status`).all(currentYear, parseInt(quarter));
     } else {
-      qrRows = prepare(`SELECT status, COUNT(*) as count FROM quarterly_reviews WHERE year = ? GROUP BY status`).all(currentYear);
+      qrRows = req.tenantDB.prepare(`SELECT status, COUNT(*) as count FROM quarterly_reviews WHERE year = ? GROUP BY status`).all(currentYear);
     }
     
     const qrStats = { total: 0, completed: 0, inProgress: 0 };
@@ -521,7 +521,7 @@ router.get('/competency-stats/overview', (req, res) => {
     qrStats.completionRate = qrStats.total > 0 ? Math.round((qrStats.completed / qrStats.total) * 100) : 0;
     
     // Weekly report stats
-    const wrRows = prepare(`SELECT status, COUNT(*) as count FROM weekly_reports WHERE year = ? GROUP BY status`).all(currentYear);
+    const wrRows = req.tenantDB.prepare(`SELECT status, COUNT(*) as count FROM weekly_reports WHERE year = ? GROUP BY status`).all(currentYear);
     const wrStats = { total: 0, submitted: 0, approved: 0, submissionRate: 0 };
     wrRows.forEach(row => {
       wrStats.total += row.count;
@@ -554,7 +554,7 @@ router.get('/competency-stats/personal-trend', (req, res) => {
     const currentYear = parseInt(year) || new Date().getFullYear();
     
     // Monthly scores
-    const monthlyScores = prepare(`
+    const monthlyScores = req.tenantDB.prepare(`
       SELECT month, total_score as score
       FROM monthly_checks
       WHERE year = ? AND employee_id = ? AND status = 'completed'
@@ -562,7 +562,7 @@ router.get('/competency-stats/personal-trend', (req, res) => {
     `).all(currentYear, employeeId).map(row => ({ month: row.month, score: row.score }));
     
     // Quarterly scores
-    const quarterlyScores = prepare(`
+    const quarterlyScores = req.tenantDB.prepare(`
       SELECT quarter, total_score as score
       FROM quarterly_reviews
       WHERE year = ? AND employee_id = ? AND status = 'completed'
@@ -602,7 +602,7 @@ router.get('/competency-stats/department', (req, res) => {
     
     const whereClause = 'WHERE ' + conditions.join(' AND ');
     
-    const rows = prepare(`
+    const rows = req.tenantDB.prepare(`
       SELECT 
         e.department,
         COUNT(*) as total,
@@ -644,13 +644,13 @@ router.get('/competency-stats/overdue-list', (req, res) => {
     const currentMonth = parseInt(month) || new Date().getMonth() + 1;
     
     // 取得所有在職員工
-    const employees = prepare(`
+    const employees = req.tenantDB.prepare(`
       SELECT id, name, department, position, manager_id
       FROM employees WHERE status = 'active'
     `).all();
     
     // 取得當月已有檢核表的員工
-    const existingChecks = prepare(`
+    const existingChecks = req.tenantDB.prepare(`
       SELECT employee_id, status, self_assessment_date, manager_review_date
       FROM monthly_checks
       WHERE year = ? AND month = ?
@@ -741,7 +741,7 @@ router.get('/competency-stats/monthly-incomplete', (req, res) => {
     const currentMonth = parseInt(month) || new Date().getMonth() + 1;
     
     // 取得所有未完成的月度檢核
-    const incompleteList = prepare(`
+    const incompleteList = req.tenantDB.prepare(`
       SELECT mc.id, mc.employee_id as employeeId, e.name as employeeName, 
              e.department, e.position, mc.status
       FROM monthly_checks mc
@@ -785,7 +785,7 @@ router.get('/competency-stats/quarterly-incomplete', (req, res) => {
     const currentQuarter = parseInt(quarter) || Math.ceil((new Date().getMonth() + 1) / 3);
     
     // 取得所有未完成的季度面談
-    const incompleteList = prepare(`
+    const incompleteList = req.tenantDB.prepare(`
       SELECT qr.id, qr.employee_id as employeeId, e.name as employeeName, 
              e.department, e.position, qr.status
       FROM quarterly_reviews qr
@@ -826,7 +826,7 @@ router.get('/competency-stats/department-avg', (req, res) => {
     const currentMonth = parseInt(month) || new Date().getMonth() + 1;
     
     // 取得各部門的平均分數
-    const deptStats = prepare(`
+    const deptStats = req.tenantDB.prepare(`
       SELECT 
         e.department,
         COUNT(DISTINCT mc.employee_id) as employeeCount,
@@ -868,7 +868,7 @@ router.get('/competency-stats/personal-history', (req, res) => {
     const currentYear = parseInt(year) || new Date().getFullYear();
     
     // 取得員工資訊
-    const employee = prepare(`
+    const employee = req.tenantDB.prepare(`
       SELECT id, name, department, position FROM employees WHERE id = ?
     `).get(employeeId);
     
@@ -877,7 +877,7 @@ router.get('/competency-stats/personal-history', (req, res) => {
     }
     
     // 取得月度分數歷史 (最近 12 個月)
-    const monthlyScores = prepare(`
+    const monthlyScores = req.tenantDB.prepare(`
       SELECT year, month, total_score as score
       FROM monthly_checks
       WHERE employee_id = ? AND status = 'completed'
@@ -886,7 +886,7 @@ router.get('/competency-stats/personal-history', (req, res) => {
     `).all(employeeId);
     
     // 取得季度分數歷史 (最近 4 季)
-    const quarterlyScores = prepare(`
+    const quarterlyScores = req.tenantDB.prepare(`
       SELECT year, quarter, total_score as score
       FROM quarterly_reviews
       WHERE employee_id = ? AND status = 'completed'
@@ -928,7 +928,7 @@ router.get('/competency-stats/personal-history', (req, res) => {
  */
 router.get('/employees/list', (req, res) => {
   try {
-    const employees = prepare(`
+    const employees = req.tenantDB.prepare(`
       SELECT id, name, department, position
       FROM employees
       WHERE status = 'active'
@@ -954,7 +954,7 @@ router.get('/competency-stats/weekly-incomplete', (req, res) => {
     const currentWeek = parseInt(week) || getWeekNumber(new Date());
     
     // 取得所有未提交的週報 (包含 not_started, draft, rejected)
-    const incompleteList = prepare(`
+    const incompleteList = req.tenantDB.prepare(`
       SELECT wr.id, wr.employee_id as employeeId, e.name as employeeName, 
              e.department, e.position, wr.status
       FROM weekly_reports wr
@@ -993,7 +993,7 @@ router.get('/competency-stats/department-avg-quarterly', (req, res) => {
     const currentQuarter = parseInt(quarter) || Math.ceil((new Date().getMonth() + 1) / 3);
     
     // 取得各部門的季度平均分數（從季度面談）
-    const deptStats = prepare(`
+    const deptStats = req.tenantDB.prepare(`
       SELECT 
         e.department,
         COUNT(DISTINCT qr.employee_id) as employeeCount,
@@ -1059,7 +1059,7 @@ router.get('/competencies', (req, res) => {
     const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
     
     // 查詢職能主表
-    const competencies = prepare(`
+    const competencies = req.tenantDB.prepare(`
       SELECT id, code, name, type, category, description, created_at, updated_at
       FROM competencies
       ${whereClause}
@@ -1071,7 +1071,7 @@ router.get('/competencies', (req, res) => {
       // 核心職能、管理職能、專業職能都有 L1-L6 等級
       if (comp.category === 'core' || comp.category === 'management' || comp.category === 'professional') {
         // 取得等級資料
-        const levels = prepare(`
+        const levels = req.tenantDB.prepare(`
           SELECT id, level, indicators
           FROM competency_levels
           WHERE competency_id = ?
@@ -1088,7 +1088,7 @@ router.get('/competencies', (req, res) => {
         };
       } else if (comp.category === 'ksa') {
         // 取得 KSA 詳細資訊
-        const ksaDetail = prepare(`
+        const ksaDetail = req.tenantDB.prepare(`
           SELECT id, behavior_indicators, linked_courses
           FROM competency_ksa_details
           WHERE competency_id = ?
@@ -1130,7 +1130,7 @@ router.get('/competencies/stats', (req, res) => {
     };
     
     // 按類別統計
-    const categoryStats = prepare(`
+    const categoryStats = req.tenantDB.prepare(`
       SELECT category, COUNT(*) as count
       FROM competencies
       GROUP BY category
@@ -1142,7 +1142,7 @@ router.get('/competencies/stats', (req, res) => {
     });
     
     // 按類型統計
-    const typeStats = prepare(`
+    const typeStats = req.tenantDB.prepare(`
       SELECT type, COUNT(*) as count
       FROM competencies
       GROUP BY type
@@ -1153,8 +1153,8 @@ router.get('/competencies/stats', (req, res) => {
     });
     
     // 額外統計
-    const levelsCount = prepare('SELECT COUNT(*) as count FROM competency_levels').get().count;
-    const ksaDetailsCount = prepare('SELECT COUNT(*) as count FROM competency_ksa_details').get().count;
+    const levelsCount = req.tenantDB.prepare('SELECT COUNT(*) as count FROM competency_levels').get().count;
+    const ksaDetailsCount = req.tenantDB.prepare('SELECT COUNT(*) as count FROM competency_ksa_details').get().count;
     
     stats.levelsCount = levelsCount;
     stats.ksaDetailsCount = ksaDetailsCount;
@@ -1178,7 +1178,7 @@ router.get('/competencies/:id', (req, res) => {
     const { id } = req.params;
     
     // 查詢職能主表
-    const competency = prepare(`
+    const competency = req.tenantDB.prepare(`
       SELECT id, code, name, type, category, description, created_at, updated_at
       FROM competencies
       WHERE id = ?
@@ -1195,7 +1195,7 @@ router.get('/competencies/:id', (req, res) => {
     
     if (competency.type === 'level-based') {
       // 取得等級資料
-      const levels = prepare(`
+      const levels = req.tenantDB.prepare(`
         SELECT id, level, indicators
         FROM competency_levels
         WHERE competency_id = ?
@@ -1209,7 +1209,7 @@ router.get('/competencies/:id', (req, res) => {
       }));
     } else if (competency.type === 'ksa') {
       // 取得 KSA 詳細資訊
-      const ksaDetail = prepare(`
+      const ksaDetail = req.tenantDB.prepare(`
         SELECT id, behavior_indicators, linked_courses
         FROM competency_ksa_details
         WHERE competency_id = ?

@@ -4,7 +4,7 @@
 
 const express = require('express');
 const router = express.Router();
-const { prepare } = require('../db');
+// tenantDB is accessed via req.tenantDB (injected by middleware)
 const { v4: uuidv4 } = require('uuid');
 const multer = require('multer');
 const path = require('path');
@@ -32,15 +32,15 @@ const upload = multer({
 });
 
 // Helper: Get full meeting details
-function getMeetingDetails(meetingId) {
-    const meeting = prepare(`
+function getMeetingDetails(req, meetingId) {
+    const meeting = req.tenantDB.prepare(`
         SELECT * FROM meetings WHERE id = ?
     `).get(meetingId);
 
     if (!meeting) return null;
 
     // Get related data with employee_no from employees table
-    const attendees = prepare(`
+    const attendees = req.tenantDB.prepare(`
         SELECT 
             ma.*,
             e.employee_no
@@ -48,10 +48,10 @@ function getMeetingDetails(meetingId) {
         LEFT JOIN employees e ON ma.employee_id = e.id
         WHERE ma.meeting_id = ?
     `).all(meetingId);
-    const agenda = prepare(`SELECT * FROM meeting_agenda_items WHERE meeting_id = ? ORDER BY order_index ASC`).all(meetingId);
-    const conclusions = prepare(`SELECT * FROM meeting_conclusions WHERE meeting_id = ?`).all(meetingId);
-    const attachments = prepare(`SELECT * FROM meeting_attachments WHERE meeting_id = ?`).all(meetingId);
-    const reminders = prepare(`SELECT * FROM meeting_reminders WHERE meeting_id = ?`).all(meetingId);
+    const agenda = req.tenantDB.prepare(`SELECT * FROM meeting_agenda_items WHERE meeting_id = ? ORDER BY order_index ASC`).all(meetingId);
+    const conclusions = req.tenantDB.prepare(`SELECT * FROM meeting_conclusions WHERE meeting_id = ?`).all(meetingId);
+    const attachments = req.tenantDB.prepare(`SELECT * FROM meeting_attachments WHERE meeting_id = ?`).all(meetingId);
+    const reminders = req.tenantDB.prepare(`SELECT * FROM meeting_reminders WHERE meeting_id = ?`).all(meetingId);
 
     // Parse JSON fields
     agenda.forEach(a => {
@@ -112,7 +112,7 @@ router.get('/conclusions', (req, res) => {
 
         query += ` ORDER BY c.due_date ASC`;
 
-        const conclusions = prepare(query).all(...params);
+        const conclusions = req.tenantDB.prepare(query).all(...params);
 
         // 檢查並標記逾期狀態
         const now = new Date();
@@ -161,14 +161,14 @@ router.get('/', (req, res) => {
 
         if (scope === 'personal' && employeeId) {
             // 個人層級：只顯示該員工參與的會議
-            const attendedMeetings = prepare(`
+            const attendedMeetings = req.tenantDB.prepare(`
                 SELECT DISTINCT meeting_id FROM meeting_attendees WHERE employee_id = ?
             `).all(employeeId);
             meetingIds = attendedMeetings.map(m => m.meeting_id);
         } else if (scope === 'department' && department) {
             // 部門層級：只顯示該部門成員參與的會議
             // 1. 先取得該部門所有員工的 ID
-            const deptEmployees = prepare(`
+            const deptEmployees = req.tenantDB.prepare(`
                 SELECT id FROM employees WHERE department = ?
             `).all(department);
             const employeeIds = deptEmployees.map(e => e.id);
@@ -176,7 +176,7 @@ router.get('/', (req, res) => {
             if (employeeIds.length > 0) {
                 // 2. 取得這些員工參與的會議
                 const placeholders = employeeIds.map(() => '?').join(',');
-                const attendedMeetings = prepare(`
+                const attendedMeetings = req.tenantDB.prepare(`
                     SELECT DISTINCT meeting_id FROM meeting_attendees 
                     WHERE employee_id IN (${placeholders})
                 `).all(...employeeIds);
@@ -216,11 +216,11 @@ router.get('/', (req, res) => {
 
         query += ` ORDER BY start_time ASC`;
 
-        const meetings = prepare(query).all(...params);
+        const meetings = req.tenantDB.prepare(query).all(...params);
 
         // For list view, we might not need all details, but let's include attendees count
         const result = meetings.map(m => {
-            const attendeeCount = prepare(`SELECT COUNT(*) as count FROM meeting_attendees WHERE meeting_id = ?`).get(m.id).count;
+            const attendeeCount = req.tenantDB.prepare(`SELECT COUNT(*) as count FROM meeting_attendees WHERE meeting_id = ?`).get(m.id).count;
             return {
                 ...m,
                 isOnline: Boolean(m.is_online),
@@ -259,7 +259,7 @@ router.post('/', (req, res) => {
         }
 
         // 1. Create Meeting
-        prepare(`
+        req.tenantDB.prepare(`
             INSERT INTO meetings (
                 id, title, type, status, location, is_online, meeting_link,
                 start_time, end_time, duration, recurrence, recurrence_end_date, notes,
@@ -273,7 +273,7 @@ router.post('/', (req, res) => {
 
         // 2. Add Attendees
         attendees.forEach(a => {
-            prepare(`
+            req.tenantDB.prepare(`
                 INSERT INTO meeting_attendees (
                     id, meeting_id, employee_id, name, email, department, position, avatar,
                     is_organizer, is_required, attendance_status
@@ -287,7 +287,7 @@ router.post('/', (req, res) => {
         // 3. Add Agenda
         agenda.forEach((item, index) => {
             const discussionPointsJson = item.discussionPoints ? JSON.stringify(item.discussionPoints) : null;
-            prepare(`
+            req.tenantDB.prepare(`
                 INSERT INTO meeting_agenda_items (
                     id, meeting_id, title, description, discussion_points, presenter, duration,
                     status, order_index, created_by, created_at
@@ -300,7 +300,7 @@ router.post('/', (req, res) => {
 
         // 4. Add Reminders
         reminders.forEach(r => {
-            prepare(`
+            req.tenantDB.prepare(`
                 INSERT INTO meeting_reminders (id, meeting_id, timing, enabled)
                 VALUES (?, ?, ?, ?)
             `).run(uuidv4(), id, r.timing, r.enabled ? 1 : 0);
@@ -310,7 +310,7 @@ router.post('/', (req, res) => {
         // Attachments without URL will be uploaded separately via /upload endpoint
         attachments.forEach(att => {
             if (att.name && att.size && att.url) {
-                prepare(`
+                req.tenantDB.prepare(`
                     INSERT INTO meeting_attachments (
                         id, meeting_id, name, type, size, url, uploaded_by, uploaded_at
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -321,7 +321,7 @@ router.post('/', (req, res) => {
             }
         });
 
-        res.status(201).json(getMeetingDetails(id));
+        res.status(201).json(getMeetingDetails(req, id));
     } catch (error) {
         console.error('Error creating meeting:', error);
         res.status(500).json({ error: 'Failed to create meeting' });
@@ -334,7 +334,7 @@ router.post('/', (req, res) => {
  */
 router.get('/:id', (req, res) => {
     try {
-        const meeting = getMeetingDetails(req.params.id);
+        const meeting = getMeetingDetails(req, req.params.id);
         if (!meeting) {
             return res.status(404).json({ error: 'Meeting not found' });
         }
@@ -359,7 +359,7 @@ router.put('/:id', (req, res) => {
         } = req.body;
 
         // 確認會議存在
-        const existing = prepare(`SELECT id FROM meetings WHERE id = ?`).get(meetingId);
+        const existing = req.tenantDB.prepare(`SELECT id FROM meetings WHERE id = ?`).get(meetingId);
         if (!existing) {
             return res.status(404).json({ error: 'Meeting not found' });
         }
@@ -367,7 +367,7 @@ router.put('/:id', (req, res) => {
         const now = new Date().toISOString();
 
         // 更新會議主資料
-        prepare(`
+        req.tenantDB.prepare(`
             UPDATE meetings SET
                 title = COALESCE(?, title),
                 type = COALESCE(?, type),
@@ -392,11 +392,11 @@ router.put('/:id', (req, res) => {
         // 更新出席者 (若有提供)
         if (attendees && Array.isArray(attendees)) {
             // 刪除現有出席者
-            prepare(`DELETE FROM meeting_attendees WHERE meeting_id = ?`).run(meetingId);
+            req.tenantDB.prepare(`DELETE FROM meeting_attendees WHERE meeting_id = ?`).run(meetingId);
             
             // 新增更新後的出席者
             attendees.forEach(a => {
-                prepare(`
+                req.tenantDB.prepare(`
                     INSERT INTO meeting_attendees (
                         id, meeting_id, employee_id, name, email, department, position, avatar,
                         is_organizer, is_required, attendance_status
@@ -411,12 +411,12 @@ router.put('/:id', (req, res) => {
         // 更新議程 (若有提供)
         if (agenda && Array.isArray(agenda)) {
             // 刪除現有議程
-            prepare(`DELETE FROM meeting_agenda_items WHERE meeting_id = ?`).run(meetingId);
+            req.tenantDB.prepare(`DELETE FROM meeting_agenda_items WHERE meeting_id = ?`).run(meetingId);
             
             // 新增更新後的議程
             agenda.forEach((item, index) => {
                 const discussionPointsJson = item.discussionPoints ? JSON.stringify(item.discussionPoints) : null;
-                prepare(`
+                req.tenantDB.prepare(`
                     INSERT INTO meeting_agenda_items (
                         id, meeting_id, title, description, discussion_points, presenter, duration,
                         status, order_index, created_by, created_at
@@ -431,11 +431,11 @@ router.put('/:id', (req, res) => {
         // 更新提醒 (若有提供)
         if (reminders && Array.isArray(reminders)) {
             // 刪除現有提醒
-            prepare(`DELETE FROM meeting_reminders WHERE meeting_id = ?`).run(meetingId);
+            req.tenantDB.prepare(`DELETE FROM meeting_reminders WHERE meeting_id = ?`).run(meetingId);
             
             // 新增更新後的提醒
             reminders.forEach(r => {
-                prepare(`
+                req.tenantDB.prepare(`
                     INSERT INTO meeting_reminders (id, meeting_id, timing, enabled)
                     VALUES (?, ?, ?, ?)
                 `).run(uuidv4(), meetingId, r.timing, r.enabled ? 1 : 0);
@@ -448,14 +448,14 @@ router.put('/:id', (req, res) => {
             if (attachmentIds.length > 0) {
                 // 刪除不在列表中的附件
                 const placeholders = attachmentIds.map(() => '?').join(',');
-                prepare(`DELETE FROM meeting_attachments WHERE meeting_id = ? AND id NOT IN (${placeholders})`).run(meetingId, ...attachmentIds);
+                req.tenantDB.prepare(`DELETE FROM meeting_attachments WHERE meeting_id = ? AND id NOT IN (${placeholders})`).run(meetingId, ...attachmentIds);
             } else {
                 // 如果附件列表為空，刪除所有附件
-                prepare(`DELETE FROM meeting_attachments WHERE meeting_id = ?`).run(meetingId);
+                req.tenantDB.prepare(`DELETE FROM meeting_attachments WHERE meeting_id = ?`).run(meetingId);
             }
         }
 
-        res.json(getMeetingDetails(meetingId));
+        res.json(getMeetingDetails(req, meetingId));
     } catch (error) {
         console.error('Error updating meeting:', error);
         res.status(500).json({ error: 'Failed to update meeting' });
@@ -472,14 +472,14 @@ router.delete('/:id', (req, res) => {
         const { softDelete } = req.query; // 若 softDelete=true，只更新狀態為 cancelled
 
         // 確認會議存在
-        const existing = prepare(`SELECT id, status FROM meetings WHERE id = ?`).get(meetingId);
+        const existing = req.tenantDB.prepare(`SELECT id, status FROM meetings WHERE id = ?`).get(meetingId);
         if (!existing) {
             return res.status(404).json({ error: 'Meeting not found' });
         }
 
         if (softDelete === 'true') {
             // 軟刪除：將狀態改為 cancelled
-            prepare(`
+            req.tenantDB.prepare(`
                 UPDATE meetings SET status = 'cancelled', updated_at = ?
                 WHERE id = ?
             `).run(new Date().toISOString(), meetingId);
@@ -487,12 +487,12 @@ router.delete('/:id', (req, res) => {
             res.json({ success: true, message: 'Meeting cancelled', id: meetingId });
         } else {
             // 硬刪除：刪除會議及相關資料 (CASCADE 會自動刪除關聯資料)
-            prepare(`DELETE FROM meeting_reminders WHERE meeting_id = ?`).run(meetingId);
-            prepare(`DELETE FROM meeting_attendees WHERE meeting_id = ?`).run(meetingId);
-            prepare(`DELETE FROM meeting_agenda_items WHERE meeting_id = ?`).run(meetingId);
-            prepare(`DELETE FROM meeting_conclusions WHERE meeting_id = ?`).run(meetingId);
-            prepare(`DELETE FROM meeting_attachments WHERE meeting_id = ?`).run(meetingId);
-            prepare(`DELETE FROM meetings WHERE id = ?`).run(meetingId);
+            req.tenantDB.prepare(`DELETE FROM meeting_reminders WHERE meeting_id = ?`).run(meetingId);
+            req.tenantDB.prepare(`DELETE FROM meeting_attendees WHERE meeting_id = ?`).run(meetingId);
+            req.tenantDB.prepare(`DELETE FROM meeting_agenda_items WHERE meeting_id = ?`).run(meetingId);
+            req.tenantDB.prepare(`DELETE FROM meeting_conclusions WHERE meeting_id = ?`).run(meetingId);
+            req.tenantDB.prepare(`DELETE FROM meeting_attachments WHERE meeting_id = ?`).run(meetingId);
+            req.tenantDB.prepare(`DELETE FROM meetings WHERE id = ?`).run(meetingId);
 
             res.json({ success: true, message: 'Meeting deleted', id: meetingId });
         }
@@ -514,16 +514,16 @@ router.post('/:id/check-in', (req, res) => {
 
         let attendee;
         if (employeeId) {
-            attendee = prepare(`SELECT * FROM meeting_attendees WHERE meeting_id = ? AND employee_id = ?`).get(meetingId, employeeId);
+            attendee = req.tenantDB.prepare(`SELECT * FROM meeting_attendees WHERE meeting_id = ? AND employee_id = ?`).get(meetingId, employeeId);
         } else if (name) {
-            attendee = prepare(`SELECT * FROM meeting_attendees WHERE meeting_id = ? AND name = ?`).get(meetingId, name);
+            attendee = req.tenantDB.prepare(`SELECT * FROM meeting_attendees WHERE meeting_id = ? AND name = ?`).get(meetingId, name);
         }
 
         if (!attendee) {
             return res.status(404).json({ error: 'Attendee not found in this meeting' });
         }
 
-        prepare(`
+        req.tenantDB.prepare(`
             UPDATE meeting_attendees 
             SET signed_in = 1, signed_in_time = ?, attendance_status = 'accepted'
             WHERE id = ?
@@ -547,13 +547,13 @@ router.patch('/:id/complete', (req, res) => {
         const now = new Date().toISOString();
 
         // 檢查會議是否存在
-        const meeting = prepare(`SELECT * FROM meetings WHERE id = ?`).get(meetingId);
+        const meeting = req.tenantDB.prepare(`SELECT * FROM meetings WHERE id = ?`).get(meetingId);
         if (!meeting) {
             return res.status(404).json({ error: 'Meeting not found' });
         }
 
         // 更新會議狀態為完成，並儲存會議記錄
-        prepare(`
+        req.tenantDB.prepare(`
             UPDATE meetings 
             SET status = 'completed', notes = ?, updated_at = ?
             WHERE id = ?
@@ -561,7 +561,7 @@ router.patch('/:id/complete', (req, res) => {
 
         // 新增結論/待辦事項
         conclusions.forEach(c => {
-            prepare(`
+            req.tenantDB.prepare(`
                 INSERT INTO meeting_conclusions (
                     id, meeting_id, content, responsible_id, responsible_name, department,
                     due_date, status, progress, created_at
@@ -573,7 +573,7 @@ router.patch('/:id/complete', (req, res) => {
         });
 
         // 回傳更新後的會議詳情
-        res.json(getMeetingDetails(meetingId));
+        res.json(getMeetingDetails(req, meetingId));
     } catch (error) {
         console.error('Error completing meeting:', error);
         res.status(500).json({ error: 'Failed to complete meeting' });
@@ -599,7 +599,7 @@ router.post('/:id/upload', upload.single('file'), (req, res) => {
         // 使用前端傳遞的原始檔名（已正確編碼），若無則使用 multer 提供的
         const fileName = originalName || req.file.originalname;
 
-        prepare(`
+        req.tenantDB.prepare(`
             INSERT INTO meeting_attachments (
                 id, meeting_id, name, type, size, url, uploaded_by, uploaded_at
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -633,7 +633,7 @@ router.post('/:id/conclusions', (req, res) => {
         const id = uuidv4();
         const now = new Date().toISOString();
 
-        prepare(`
+        req.tenantDB.prepare(`
             INSERT INTO meeting_conclusions (
                 id, meeting_id, agenda_item_id, content, responsible_id, responsible_name,
                 department, due_date, status, created_at
@@ -661,7 +661,7 @@ router.patch('/conclusions/:id', (req, res) => {
         const now = new Date().toISOString();
 
         // Get current conclusion
-        const conclusion = prepare(`SELECT * FROM meeting_conclusions WHERE id = ?`).get(id);
+        const conclusion = req.tenantDB.prepare(`SELECT * FROM meeting_conclusions WHERE id = ?`).get(id);
         if (!conclusion) return res.status(404).json({ error: 'Conclusion not found' });
 
         let progressNotes = [];
@@ -687,7 +687,7 @@ router.patch('/conclusions/:id', (req, res) => {
 
         params.push(id);
 
-        prepare(`UPDATE meeting_conclusions SET ${updates.join(', ')} WHERE id = ?`).run(...params);
+        req.tenantDB.prepare(`UPDATE meeting_conclusions SET ${updates.join(', ')} WHERE id = ?`).run(...params);
 
         res.json({ success: true });
     } catch (error) {
@@ -703,11 +703,11 @@ router.patch('/conclusions/:id', (req, res) => {
 router.get('/dashboard/stats', (req, res) => {
     try {
         // Simple aggregation logic
-        const totalMeetings = prepare(`SELECT COUNT(*) as c FROM meetings`).get().c;
-        const completedMeetings = prepare(`SELECT COUNT(*) as c FROM meetings WHERE status = 'completed'`).get().c;
-        const totalDuration = prepare(`SELECT SUM(duration) as s FROM meetings`).get().s || 0;
+        const totalMeetings = req.tenantDB.prepare(`SELECT COUNT(*) as c FROM meetings`).get().c;
+        const completedMeetings = req.tenantDB.prepare(`SELECT COUNT(*) as c FROM meetings WHERE status = 'completed'`).get().c;
+        const totalDuration = req.tenantDB.prepare(`SELECT SUM(duration) as s FROM meetings`).get().s || 0;
 
-        const conclusions = prepare(`SELECT status, due_date FROM meeting_conclusions`).all();
+        const conclusions = req.tenantDB.prepare(`SELECT status, due_date FROM meeting_conclusions`).all();
         const totalConclusions = conclusions.length;
         const completedConclusions = conclusions.filter(c => c.status === 'completed').length;
         const overdueConclusions = conclusions.filter(c => {

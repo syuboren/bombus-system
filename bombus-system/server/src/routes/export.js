@@ -5,7 +5,7 @@
 
 const express = require('express');
 const router = express.Router();
-const { prepare } = require('../db');
+
 
 // 嘗試載入 ExcelJS (若未安裝則提示)
 let ExcelJS;
@@ -56,7 +56,7 @@ router.get('/monthly-checks', async (req, res) => {
     
     sql += ` ORDER BY e.department, e.name`;
     
-    const stmt = prepare(sql);
+    const stmt = req.tenantDB.prepare(sql);
     stmt.bind(params);
     
     const records = [];
@@ -184,7 +184,7 @@ router.get('/quarterly-reviews', async (req, res) => {
     
     sql += ` ORDER BY e.department, e.name`;
     
-    const stmt = prepare(sql);
+    const stmt = req.tenantDB.prepare(sql);
     stmt.bind(params);
     
     const records = [];
@@ -309,7 +309,7 @@ router.get('/weekly-reports', async (req, res) => {
     
     sql += ` ORDER BY wr.year DESC, wr.week DESC, e.department, e.name`;
     
-    const stmt = prepare(sql);
+    const stmt = req.tenantDB.prepare(sql);
     stmt.bind(params);
     
     const records = [];
@@ -317,7 +317,7 @@ router.get('/weekly-reports', async (req, res) => {
       const row = stmt.getAsObject();
       
       // 取得週報項目
-      const itemsStmt = prepare(`SELECT item_type, content FROM weekly_report_items WHERE report_id = ? ORDER BY item_type, order_num`);
+      const itemsStmt = req.tenantDB.prepare(`SELECT item_type, content FROM weekly_report_items WHERE report_id = ? ORDER BY item_type, order_num`);
       itemsStmt.bind([row.id]);
       
       const routineItems = [];
@@ -436,7 +436,7 @@ router.get('/performance-summary', async (req, res) => {
     
     sql += ` ORDER BY e.department, e.name`;
     
-    const stmt = prepare(sql);
+    const stmt = req.tenantDB.prepare(sql);
     stmt.bind(params);
     
     const employees = [];
@@ -452,7 +452,7 @@ router.get('/performance-summary', async (req, res) => {
       
       // 月度分數
       for (let m = 1; m <= 12; m++) {
-        const mcResult = prepare(`
+        const mcResult = req.tenantDB.prepare(`
           SELECT total_score FROM monthly_checks 
           WHERE employee_id = ? AND year = ? AND month = ? AND status = 'completed'
         `).getAsObject([emp.id, targetYear, m]);
@@ -461,7 +461,7 @@ router.get('/performance-summary', async (req, res) => {
       
       // 季度分數
       for (let q = 1; q <= 4; q++) {
-        const qrResult = prepare(`
+        const qrResult = req.tenantDB.prepare(`
           SELECT total_score FROM quarterly_reviews 
           WHERE employee_id = ? AND year = ? AND quarter = ? AND status = 'completed'
         `).getAsObject([emp.id, targetYear, q]);

@@ -6,7 +6,7 @@
 const express = require('express');
 const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
-const { prepare } = require('../db');
+
 
 /**
  * 取得週別的起訖日期
@@ -60,15 +60,15 @@ function getWeeksInMonth(year, month) {
 /**
  * 載入週報所有關聯項目
  */
-function loadReportItems(reportId) {
+function loadReportItems(db, reportId) {
   // 工作項目 (例行/非例行)
-  const workItems = prepare(`
+  const workItems = db.prepare(`
     SELECT * FROM weekly_report_items WHERE report_id = ? ORDER BY item_type, order_num
   `).all(reportId);
-  
+
   const routineItems = [];
   const nonRoutineItems = [];
-  
+
   workItems.forEach(row => {
     const item = {
       id: row.id,
@@ -84,9 +84,9 @@ function loadReportItems(reportId) {
       nonRoutineItems.push(item);
     }
   });
-  
+
   // 代辦事項
-  const todoItems = prepare(`
+  const todoItems = db.prepare(`
     SELECT * FROM weekly_todo_items WHERE report_id = ? ORDER BY order_num
   `).all(reportId).map(row => ({
     id: row.id,
@@ -97,9 +97,9 @@ function loadReportItems(reportId) {
     priority: row.priority,
     status: row.status
   }));
-  
+
   // 問題與解決方案
-  const problemItems = prepare(`
+  const problemItems = db.prepare(`
     SELECT * FROM weekly_problem_items WHERE report_id = ? ORDER BY order_num
   `).all(reportId).map(row => ({
     id: row.id,
@@ -108,9 +108,9 @@ function loadReportItems(reportId) {
     solution: row.solution,
     resolved: row.resolved === 1
   }));
-  
+
   // 教育訓練進度
-  const trainingItems = prepare(`
+  const trainingItems = db.prepare(`
     SELECT * FROM weekly_training_items WHERE report_id = ? ORDER BY order_num
   `).all(reportId).map(row => ({
     id: row.id,
@@ -122,9 +122,9 @@ function loadReportItems(reportId) {
     completionRate: row.total_hours > 0 ? Math.round((row.completed_hours / row.total_hours) * 100) : 0,
     completedDate: row.completed_date
   }));
-  
+
   // 階段性任務進度
-  const projectItems = prepare(`
+  const projectItems = db.prepare(`
     SELECT * FROM weekly_project_items WHERE report_id = ? ORDER BY order_num
   `).all(reportId).map(row => ({
     id: row.id,
@@ -136,97 +136,97 @@ function loadReportItems(reportId) {
     expectedDate: row.expected_date,
     actualDate: row.actual_date
   }));
-  
+
   return { routineItems, nonRoutineItems, todoItems, problemItems, trainingItems, projectItems };
 }
 
 /**
  * 儲存週報所有項目
  */
-function saveReportItems(reportId, data) {
+function saveReportItems(db, reportId, data) {
   const { routineItems, nonRoutineItems, todoItems, problemItems, trainingItems, projectItems } = data;
-  
+
   // 清除現有項目
-  prepare(`DELETE FROM weekly_report_items WHERE report_id = ?`).run(reportId);
-  prepare(`DELETE FROM weekly_todo_items WHERE report_id = ?`).run(reportId);
-  prepare(`DELETE FROM weekly_problem_items WHERE report_id = ?`).run(reportId);
-  prepare(`DELETE FROM weekly_training_items WHERE report_id = ?`).run(reportId);
-  prepare(`DELETE FROM weekly_project_items WHERE report_id = ?`).run(reportId);
-  
+  db.prepare(`DELETE FROM weekly_report_items WHERE report_id = ?`).run(reportId);
+  db.prepare(`DELETE FROM weekly_todo_items WHERE report_id = ?`).run(reportId);
+  db.prepare(`DELETE FROM weekly_problem_items WHERE report_id = ?`).run(reportId);
+  db.prepare(`DELETE FROM weekly_training_items WHERE report_id = ?`).run(reportId);
+  db.prepare(`DELETE FROM weekly_project_items WHERE report_id = ?`).run(reportId);
+
   // 計算總時數
   let routineTotalMinutes = 0;
   let nonRoutineTotalMinutes = 0;
-  
+
   // 儲存例行工作
   if (routineItems && routineItems.length > 0) {
     routineItems.forEach((item, idx) => {
       const itemId = item.id || uuidv4();
       const actualTime = item.actualTime || 0;
       routineTotalMinutes += actualTime;
-      prepare(`
+      db.prepare(`
         INSERT INTO weekly_report_items (id, report_id, item_type, order_num, content, estimated_time, actual_time, completed_date)
         VALUES (?, ?, 'routine', ?, ?, ?, ?, ?)
       `).run(itemId, reportId, idx + 1, item.content, item.estimatedTime || 0, actualTime, item.completedDate || null);
     });
   }
-  
+
   // 儲存非例行工作
   if (nonRoutineItems && nonRoutineItems.length > 0) {
     nonRoutineItems.forEach((item, idx) => {
       const itemId = item.id || uuidv4();
       const actualTime = item.actualTime || 0;
       nonRoutineTotalMinutes += actualTime;
-      prepare(`
+      db.prepare(`
         INSERT INTO weekly_report_items (id, report_id, item_type, order_num, content, estimated_time, actual_time, completed_date)
         VALUES (?, ?, 'non_routine', ?, ?, ?, ?, ?)
       `).run(itemId, reportId, idx + 1, item.content, item.estimatedTime || 0, actualTime, item.completedDate || null);
     });
   }
-  
+
   // 儲存代辦事項
   if (todoItems && todoItems.length > 0) {
     todoItems.forEach((item, idx) => {
       const itemId = item.id || uuidv4();
-      prepare(`
+      db.prepare(`
         INSERT INTO weekly_todo_items (id, report_id, order_num, task, start_date, due_date, priority, status)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `).run(itemId, reportId, idx + 1, item.task, item.startDate || null, item.dueDate || null, item.priority || 'normal', item.status || 'not_started');
     });
   }
-  
+
   // 儲存問題與解決方案
   if (problemItems && problemItems.length > 0) {
     problemItems.forEach((item, idx) => {
       const itemId = item.id || uuidv4();
-      prepare(`
+      db.prepare(`
         INSERT INTO weekly_problem_items (id, report_id, order_num, problem, solution, resolved)
         VALUES (?, ?, ?, ?, ?, ?)
       `).run(itemId, reportId, idx + 1, item.problem, item.solution || '', item.resolved ? 1 : 0);
     });
   }
-  
+
   // 儲存教育訓練進度
   if (trainingItems && trainingItems.length > 0) {
     trainingItems.forEach((item, idx) => {
       const itemId = item.id || uuidv4();
-      prepare(`
+      db.prepare(`
         INSERT INTO weekly_training_items (id, report_id, order_num, course_name, status, total_hours, completed_hours, completed_date)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `).run(itemId, reportId, idx + 1, item.courseName, item.status || 'not_started', item.totalHours || 0, item.completedHours || 0, item.completedDate || null);
     });
   }
-  
+
   // 儲存階段性任務進度
   if (projectItems && projectItems.length > 0) {
     projectItems.forEach((item, idx) => {
       const itemId = item.id || uuidv4();
-      prepare(`
+      db.prepare(`
         INSERT INTO weekly_project_items (id, report_id, order_num, task, progress_rate, collaboration, challenges, expected_date, actual_date)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(itemId, reportId, idx + 1, item.task, item.progressRate || 0, item.collaboration || '', item.challenges || '', item.expectedDate || null, item.actualDate || null);
     });
   }
-  
+
   return { routineTotalMinutes, nonRoutineTotalMinutes };
 }
 
@@ -274,7 +274,7 @@ router.get('/', (req, res) => {
     const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
     
     // 計算統計數據（不受 status 篩選影響）
-    const statsResult = prepare(`
+    const statsResult = req.tenantDB.prepare(`
       SELECT 
         COUNT(*) as total,
         SUM(CASE WHEN wr.status = 'not_started' THEN 1 ELSE 0 END) as not_started,
@@ -299,7 +299,7 @@ router.get('/', (req, res) => {
         : 0
     };
     
-    const countResult = prepare(`
+    const countResult = req.tenantDB.prepare(`
       SELECT COUNT(*) as total 
       FROM weekly_reports wr
       LEFT JOIN employees e ON wr.employee_id = e.id
@@ -308,7 +308,7 @@ router.get('/', (req, res) => {
     const totalItems = countResult?.total || 0;
     
     const offset = (parseInt(page) - 1) * parseInt(pageSize);
-    const rows = prepare(`
+    const rows = req.tenantDB.prepare(`
       SELECT wr.*, e.name as employee_name, e.department, e.position,
              r.name as reviewer_name, m.name as manager_name
       FROM weekly_reports wr
@@ -406,7 +406,7 @@ router.get('/:id', (req, res) => {
   try {
     const { id } = req.params;
     
-    const wr = prepare(`
+    const wr = req.tenantDB.prepare(`
       SELECT wr.*, e.name as employee_name, e.department, e.position,
              r.name as reviewer_name, m.name as manager_name
       FROM weekly_reports wr
@@ -421,7 +421,7 @@ router.get('/:id', (req, res) => {
     }
     
     // 載入所有關聯項目
-    const items = loadReportItems(id);
+    const items = loadReportItems(req.tenantDB, id);
     
     res.json({
       success: true,
@@ -476,7 +476,7 @@ router.post('/', (req, res) => {
       });
     }
     
-    const existing = prepare(`
+    const existing = req.tenantDB.prepare(`
       SELECT id FROM weekly_reports WHERE employee_id = ? AND year = ? AND week = ?
     `).get(employeeId, year, week);
     
@@ -487,7 +487,7 @@ router.post('/', (req, res) => {
       });
     }
     
-    const employee = prepare(`SELECT id, manager_id FROM employees WHERE id = ?`).get(employeeId);
+    const employee = req.tenantDB.prepare(`SELECT id, manager_id FROM employees WHERE id = ?`).get(employeeId);
     if (!employee?.id) {
       return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: '找不到此員工' } });
     }
@@ -496,7 +496,7 @@ router.post('/', (req, res) => {
     const now = new Date().toISOString();
     const weekDates = getWeekDates(year, week);
     
-    prepare(`
+    req.tenantDB.prepare(`
       INSERT INTO weekly_reports (id, employee_id, reviewer_id, year, week, week_start, week_end, status, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, 'not_started', ?)
     `).run(id, employeeId, employee.manager_id, year, week, weekDates.start, weekDates.end, now);
@@ -528,7 +528,7 @@ router.post('/generate', (req, res) => {
     }
     
     // 取得所有在職員工
-    const employees = prepare(`
+    const employees = req.tenantDB.prepare(`
       SELECT id, manager_id FROM employees WHERE status = 'active' OR status IS NULL
     `).all();
     
@@ -540,7 +540,7 @@ router.post('/generate', (req, res) => {
     
     employees.forEach(emp => {
       // 檢查是否已存在
-      const existing = prepare(`
+      const existing = req.tenantDB.prepare(`
         SELECT id FROM weekly_reports WHERE employee_id = ? AND year = ? AND week = ?
       `).get(emp.id, parseInt(year), parseInt(week));
       
@@ -550,7 +550,7 @@ router.post('/generate', (req, res) => {
       }
       
       const id = uuidv4();
-      prepare(`
+      req.tenantDB.prepare(`
         INSERT INTO weekly_reports (id, employee_id, reviewer_id, year, week, week_start, week_end, status, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, 'not_started', ?)
       `).run(id, emp.id, emp.manager_id, parseInt(year), parseInt(week), weekDates.start, weekDates.end, now);
@@ -589,7 +589,7 @@ router.patch('/:id', (req, res) => {
       nextWeekPlan, weeklySummary 
     } = req.body;
     
-    const wr = prepare(`SELECT * FROM weekly_reports WHERE id = ?`).get(id);
+    const wr = req.tenantDB.prepare(`SELECT * FROM weekly_reports WHERE id = ?`).get(id);
     if (!wr) {
       return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: '找不到此週報' } });
     }
@@ -600,12 +600,12 @@ router.patch('/:id', (req, res) => {
     const now = new Date().toISOString();
     // not_started 開始編輯後轉為 draft
     const newStatus = wr.status === 'not_started' ? 'draft' : wr.status;
-    
+
     // 儲存所有項目
-    const totals = saveReportItems(id, { routineItems, nonRoutineItems, todoItems, problemItems, trainingItems, projectItems });
+    const totals = saveReportItems(req.tenantDB, id, { routineItems, nonRoutineItems, todoItems, problemItems, trainingItems, projectItems });
     
     // 更新主表
-    prepare(`
+    req.tenantDB.prepare(`
       UPDATE weekly_reports 
       SET status = ?, next_week_plan = ?, weekly_summary = ?, routine_total_minutes = ?, non_routine_total_minutes = ?, updated_at = ?
       WHERE id = ?
@@ -630,7 +630,7 @@ router.patch('/:id/submit', (req, res) => {
       nextWeekPlan, weeklySummary, employeeSignature 
     } = req.body;
     
-    const wr = prepare(`SELECT * FROM weekly_reports WHERE id = ?`).get(id);
+    const wr = req.tenantDB.prepare(`SELECT * FROM weekly_reports WHERE id = ?`).get(id);
     if (!wr) {
       return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: '找不到此週報' } });
     }
@@ -647,12 +647,12 @@ router.patch('/:id/submit', (req, res) => {
     }
     
     const now = new Date().toISOString();
-    
+
     // 儲存所有項目
-    const totals = saveReportItems(id, { routineItems, nonRoutineItems, todoItems, problemItems, trainingItems, projectItems });
-    
+    const totals = saveReportItems(req.tenantDB, id, { routineItems, nonRoutineItems, todoItems, problemItems, trainingItems, projectItems });
+
     // 更新主表並提交
-    prepare(`
+    req.tenantDB.prepare(`
       UPDATE weekly_reports 
       SET status = 'submitted', 
           next_week_plan = ?, 
@@ -692,7 +692,7 @@ router.patch('/:id/review', (req, res) => {
     const { id } = req.params;
     const { action, comment, managerSignature } = req.body;
     
-    const wr = prepare(`SELECT * FROM weekly_reports WHERE id = ?`).get(id);
+    const wr = req.tenantDB.prepare(`SELECT * FROM weekly_reports WHERE id = ?`).get(id);
     if (!wr) {
       return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: '找不到此週報' } });
     }
@@ -703,7 +703,7 @@ router.patch('/:id/review', (req, res) => {
     const now = new Date().toISOString();
     const newStatus = action === 'approve' ? 'approved' : 'rejected';
     
-    prepare(`
+    req.tenantDB.prepare(`
       UPDATE weekly_reports 
       SET status = ?, 
           review_date = ?, 

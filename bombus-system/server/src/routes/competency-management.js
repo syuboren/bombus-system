@@ -6,7 +6,7 @@
 const express = require('express');
 const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
-const { prepare, getDb } = require('../db');
+// tenantDB is accessed via req.tenantDB (injected by middleware)
 
 // =====================================================
 // Helper Functions
@@ -17,8 +17,8 @@ const { prepare, getDb } = require('../db');
  * @param {string} competencyId 職能 ID
  * @returns {Array} 等級列表
  */
-function getCompetencyLevels(competencyId) {
-    const rows = prepare(`
+function getCompetencyLevels(req, competencyId) {
+    const rows = req.tenantDB.prepare(`
     SELECT level, indicators
     FROM competency_levels
     WHERE competency_id = ?
@@ -36,8 +36,8 @@ function getCompetencyLevels(competencyId) {
  * @param {string} competencyId 職能 ID
  * @returns {Object} KSA 詳情
  */
-function getKSADetails(competencyId) {
-    const row = prepare(`
+function getKSADetails(req, competencyId) {
+    const row = req.tenantDB.prepare(`
     SELECT behavior_indicators, linked_courses
     FROM competency_ksa_details
     WHERE competency_id = ?
@@ -74,7 +74,7 @@ router.get('/:category', (req, res) => {
         }
 
         // 取得職能列表
-        const rows = prepare(`
+        const rows = req.tenantDB.prepare(`
       SELECT id, code, name, type, category, description, created_at, updated_at
       FROM competencies
       WHERE category = ?
@@ -96,7 +96,7 @@ router.get('/:category', (req, res) => {
 
             if (category === 'ksa') {
                 // KSA 職能：取得行為指標
-                const details = getKSADetails(row.id);
+                const details = getKSADetails(req, row.id);
                 return {
                     ...base,
                     ksaType: row.type,
@@ -105,7 +105,7 @@ router.get('/:category', (req, res) => {
                 };
             } else {
                 // 核心/管理/專業職能：取得等級指標
-                const levels = getCompetencyLevels(row.id);
+                const levels = getCompetencyLevels(req, row.id);
                 return {
                     ...base,
                     definition: row.description,
@@ -132,7 +132,7 @@ router.get('/:category/:id', (req, res) => {
     try {
         const { category, id } = req.params;
 
-        const row = prepare(`
+        const row = req.tenantDB.prepare(`
       SELECT id, code, name, type, category, description, created_at, updated_at
       FROM competencies
       WHERE id = ? AND category = ?
@@ -157,7 +157,7 @@ router.get('/:category/:id', (req, res) => {
         };
 
         if (category === 'ksa') {
-            const details = getKSADetails(row.id);
+            const details = getKSADetails(req, row.id);
             competency = {
                 ...competency,
                 ksaType: row.type,
@@ -165,7 +165,7 @@ router.get('/:category/:id', (req, res) => {
                 linkedCourses: details?.linkedCourses || []
             };
         } else {
-            const levels = getCompetencyLevels(row.id);
+            const levels = getCompetencyLevels(req, row.id);
             competency = {
                 ...competency,
                 definition: row.description,
@@ -201,7 +201,7 @@ router.post('/:category', (req, res) => {
         }
 
         // 檢查代碼是否重複
-        const existing = prepare(`SELECT id FROM competencies WHERE code = ?`).get(code);
+        const existing = req.tenantDB.prepare(`SELECT id FROM competencies WHERE code = ?`).get(code);
         if (existing) {
             return res.status(409).json({
                 success: false,
@@ -214,7 +214,7 @@ router.post('/:category', (req, res) => {
         const competencyType = category === 'ksa' ? (type || 'knowledge') : category;
 
         // 新增職能主資料
-        prepare(`
+        req.tenantDB.prepare(`
       INSERT INTO competencies (id, code, name, type, category, description, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `).run(id, code, name, competencyType, category, description || '', now, now);
@@ -222,7 +222,7 @@ router.post('/:category', (req, res) => {
         if (category === 'ksa') {
             // 新增 KSA 詳細資訊
             const ksaId = uuidv4();
-            prepare(`
+            req.tenantDB.prepare(`
         INSERT INTO competency_ksa_details (id, competency_id, behavior_indicators, linked_courses)
         VALUES (?, ?, ?, ?)
       `).run(
@@ -236,7 +236,7 @@ router.post('/:category', (req, res) => {
             if (levels && Array.isArray(levels)) {
                 levels.forEach(levelData => {
                     const levelId = uuidv4();
-                    prepare(`
+                    req.tenantDB.prepare(`
             INSERT INTO competency_levels (id, competency_id, level, indicators)
             VALUES (?, ?, ?, ?)
           `).run(levelId, id, levelData.level, JSON.stringify(levelData.indicators || []));
@@ -267,7 +267,7 @@ router.put('/:category/:id', (req, res) => {
         const { code, name, type, description, levels, behaviorIndicators, linkedCourses } = req.body;
 
         // 檢查職能是否存在
-        const existing = prepare(`SELECT id, code FROM competencies WHERE id = ? AND category = ?`).get(id, category);
+        const existing = req.tenantDB.prepare(`SELECT id, code FROM competencies WHERE id = ? AND category = ?`).get(id, category);
         if (!existing) {
             return res.status(404).json({
                 success: false,
@@ -277,7 +277,7 @@ router.put('/:category/:id', (req, res) => {
 
         // 檢查代碼是否與其他職能重複
         if (code && code !== existing.code) {
-            const duplicate = prepare(`SELECT id FROM competencies WHERE code = ? AND id != ?`).get(code, id);
+            const duplicate = req.tenantDB.prepare(`SELECT id FROM competencies WHERE code = ? AND id != ?`).get(code, id);
             if (duplicate) {
                 return res.status(409).json({
                     success: false,
@@ -290,7 +290,7 @@ router.put('/:category/:id', (req, res) => {
         const competencyType = category === 'ksa' ? (type || 'knowledge') : category;
 
         // 更新職能主資料
-        prepare(`
+        req.tenantDB.prepare(`
       UPDATE competencies
       SET code = ?, name = ?, type = ?, description = ?, updated_at = ?
       WHERE id = ?
@@ -298,9 +298,9 @@ router.put('/:category/:id', (req, res) => {
 
         if (category === 'ksa') {
             // 更新 KSA 詳細資訊
-            const ksaExists = prepare(`SELECT id FROM competency_ksa_details WHERE competency_id = ?`).get(id);
+            const ksaExists = req.tenantDB.prepare(`SELECT id FROM competency_ksa_details WHERE competency_id = ?`).get(id);
             if (ksaExists) {
-                prepare(`
+                req.tenantDB.prepare(`
           UPDATE competency_ksa_details
           SET behavior_indicators = ?, linked_courses = ?
           WHERE competency_id = ?
@@ -311,7 +311,7 @@ router.put('/:category/:id', (req, res) => {
                 );
             } else {
                 const ksaId = uuidv4();
-                prepare(`
+                req.tenantDB.prepare(`
           INSERT INTO competency_ksa_details (id, competency_id, behavior_indicators, linked_courses)
           VALUES (?, ?, ?, ?)
         `).run(
@@ -323,12 +323,12 @@ router.put('/:category/:id', (req, res) => {
             }
         } else {
             // 更新等級指標：先刪除再新增
-            prepare(`DELETE FROM competency_levels WHERE competency_id = ?`).run(id);
+            req.tenantDB.prepare(`DELETE FROM competency_levels WHERE competency_id = ?`).run(id);
 
             if (levels && Array.isArray(levels)) {
                 levels.forEach(levelData => {
                     const levelId = uuidv4();
-                    prepare(`
+                    req.tenantDB.prepare(`
             INSERT INTO competency_levels (id, competency_id, level, indicators)
             VALUES (?, ?, ?, ?)
           `).run(levelId, id, levelData.level, JSON.stringify(levelData.indicators || []));
@@ -358,7 +358,7 @@ router.delete('/:category/:id', (req, res) => {
         const { category, id } = req.params;
 
         // 檢查職能是否存在
-        const existing = prepare(`SELECT id FROM competencies WHERE id = ? AND category = ?`).get(id, category);
+        const existing = req.tenantDB.prepare(`SELECT id FROM competencies WHERE id = ? AND category = ?`).get(id, category);
         if (!existing) {
             return res.status(404).json({
                 success: false,
@@ -368,13 +368,13 @@ router.delete('/:category/:id', (req, res) => {
 
         // 刪除關聯資料 (ON DELETE CASCADE 應自動處理，但確保安全)
         if (category === 'ksa') {
-            prepare(`DELETE FROM competency_ksa_details WHERE competency_id = ?`).run(id);
+            req.tenantDB.prepare(`DELETE FROM competency_ksa_details WHERE competency_id = ?`).run(id);
         } else {
-            prepare(`DELETE FROM competency_levels WHERE competency_id = ?`).run(id);
+            req.tenantDB.prepare(`DELETE FROM competency_levels WHERE competency_id = ?`).run(id);
         }
 
         // 刪除職能主資料
-        prepare(`DELETE FROM competencies WHERE id = ?`).run(id);
+        req.tenantDB.prepare(`DELETE FROM competencies WHERE id = ?`).run(id);
 
         res.json({ success: true, data: { deleted: true, id } });
     } catch (error) {

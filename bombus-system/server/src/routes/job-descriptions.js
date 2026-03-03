@@ -6,7 +6,7 @@
 const express = require('express');
 const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
-const { prepare, saveDatabase } = require('../db');
+// tenantDB is accessed via req.tenantDB (injected by middleware)
 
 // 將 GET /generate-code 放在 /:id 之前，避免被當成 id
 router.get('/generate-code', (req, res) => {
@@ -20,7 +20,7 @@ router.get('/generate-code', (req, res) => {
       });
     }
     const prefix = `JD-${department}-${grade}-`;
-    const rows = prepare(`
+    const rows = req.tenantDB.prepare(`
       SELECT position_code FROM job_descriptions
       WHERE position_code LIKE ?
     `).all(prefix + '%');
@@ -53,7 +53,7 @@ router.get('/', (req, res) => {
       params.push(department);
     }
     sql += ' ORDER BY created_at DESC';
-    const list = prepare(sql).all(...params);
+    const list = req.tenantDB.prepare(sql).all(...params);
     const data = list.map(rowToJobDescription);
     res.json({ success: true, data });
   } catch (error) {
@@ -64,7 +64,7 @@ router.get('/', (req, res) => {
 
 router.get('/:id', (req, res) => {
   try {
-    const row = prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
+    const row = req.tenantDB.prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
     if (!row) {
       return res.status(404).json({ success: false, error: { message: '找不到職務說明書' } });
     }
@@ -112,7 +112,7 @@ router.post('/', (req, res) => {
       return typeof val === 'string' ? val : JSON.stringify(val);
     });
 
-    prepare(`
+    req.tenantDB.prepare(`
       INSERT INTO job_descriptions (
         id, position_code, position_name, department, grade, grade_code, position_title,
         summary, version, status,
@@ -125,9 +125,9 @@ router.post('/', (req, res) => {
       ...jsonValues,
       createdBy
     );
-    saveDatabase();
+    req.tenantDB.save();
 
-    const row = prepare('SELECT * FROM job_descriptions WHERE id = ?').get(id);
+    const row = req.tenantDB.prepare('SELECT * FROM job_descriptions WHERE id = ?').get(id);
     res.status(201).json({ success: true, data: rowToJobDescription(row) });
   } catch (error) {
     console.error('Create job description error:', error);
@@ -137,7 +137,7 @@ router.post('/', (req, res) => {
 
 router.put('/:id', (req, res) => {
   try {
-    const existing = prepare('SELECT id FROM job_descriptions WHERE id = ?').get(req.params.id);
+    const existing = req.tenantDB.prepare('SELECT id FROM job_descriptions WHERE id = ?').get(req.params.id);
     if (!existing) {
       return res.status(404).json({ success: false, error: { message: '找不到職務說明書' } });
     }
@@ -180,9 +180,9 @@ router.put('/:id', (req, res) => {
     });
     updates.push("updated_at = datetime('now')");
     values.push(req.params.id);
-    prepare(`UPDATE job_descriptions SET ${updates.join(', ')} WHERE id = ?`).run(...values);
-    saveDatabase();
-    const row = prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
+    req.tenantDB.prepare(`UPDATE job_descriptions SET ${updates.join(', ')} WHERE id = ?`).run(...values);
+    req.tenantDB.save();
+    const row = req.tenantDB.prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
     res.json({ success: true, data: rowToJobDescription(row) });
   } catch (error) {
     console.error('Update job description error:', error);
@@ -192,12 +192,12 @@ router.put('/:id', (req, res) => {
 
 router.delete('/:id', (req, res) => {
   try {
-    const existing = prepare('SELECT id FROM job_descriptions WHERE id = ?').get(req.params.id);
+    const existing = req.tenantDB.prepare('SELECT id FROM job_descriptions WHERE id = ?').get(req.params.id);
     if (!existing) {
       return res.status(404).json({ success: false, error: { message: '找不到職務說明書' } });
     }
-    prepare('DELETE FROM job_descriptions WHERE id = ?').run(req.params.id);
-    saveDatabase();
+    req.tenantDB.prepare('DELETE FROM job_descriptions WHERE id = ?').run(req.params.id);
+    req.tenantDB.save();
     res.json({ success: true });
   } catch (error) {
     console.error('Delete job description error:', error);
@@ -279,7 +279,7 @@ function rowToJobDescription(row) {
 router.post('/:id/submit-review', (req, res) => {
   try {
     const { actorId, actorName } = req.body;
-    const row = prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
+    const row = req.tenantDB.prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
     if (!row) {
       return res.status(404).json({ success: false, error: { message: '找不到職務說明書' } });
     }
@@ -288,17 +288,17 @@ router.post('/:id/submit-review', (req, res) => {
     }
 
     const now = new Date().toISOString();
-    prepare(`
+    req.tenantDB.prepare(`
       UPDATE job_descriptions 
       SET status = 'pending_review', submitted_by = ?, submitted_at = ?, rejected_reason = NULL, updated_at = ?
       WHERE id = ?
     `).run(actorName || 'HR', now, now, req.params.id);
 
     // 記錄審核動作
-    logApprovalAction(req.params.id, row.version, 'submit', actorId, actorName, 'hr', null);
-    saveDatabase();
+    logApprovalAction(req, req.params.id, row.version, 'submit', actorId, actorName, 'hr', null);
+    req.tenantDB.save();
 
-    const updated = prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
+    const updated = req.tenantDB.prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
     res.json({ success: true, data: rowToJobDescription(updated) });
   } catch (error) {
     console.error('Submit review error:', error);
@@ -312,7 +312,7 @@ router.post('/:id/submit-review', (req, res) => {
 router.post('/:id/approve', (req, res) => {
   try {
     const { actorId, actorName, comment } = req.body;
-    const row = prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
+    const row = req.tenantDB.prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
     if (!row) {
       return res.status(404).json({ success: false, error: { message: '找不到職務說明書' } });
     }
@@ -321,20 +321,20 @@ router.post('/:id/approve', (req, res) => {
     }
 
     const now = new Date().toISOString();
-    prepare(`
+    req.tenantDB.prepare(`
       UPDATE job_descriptions 
       SET status = 'published', approved_by = ?, approved_at = ?, updated_at = ?
       WHERE id = ?
     `).run(actorName || 'Manager', now, now, req.params.id);
 
     // 記錄審核動作
-    logApprovalAction(req.params.id, row.version, 'approve', actorId, actorName, 'manager', comment);
+    logApprovalAction(req, req.params.id, row.version, 'approve', actorId, actorName, 'manager', comment);
 
     // 建立版本快照
-    createVersionSnapshot(req.params.id, row.version, 'published', now, null, actorName);
-    saveDatabase();
+    createVersionSnapshot(req, req.params.id, row.version, 'published', now, null, actorName);
+    req.tenantDB.save();
 
-    const updated = prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
+    const updated = req.tenantDB.prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
     res.json({ success: true, data: rowToJobDescription(updated) });
   } catch (error) {
     console.error('Approve error:', error);
@@ -351,7 +351,7 @@ router.post('/:id/reject', (req, res) => {
     if (!reason) {
       return res.status(400).json({ success: false, error: { message: '請填寫退回原因' } });
     }
-    const row = prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
+    const row = req.tenantDB.prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
     if (!row) {
       return res.status(404).json({ success: false, error: { message: '找不到職務說明書' } });
     }
@@ -360,17 +360,17 @@ router.post('/:id/reject', (req, res) => {
     }
 
     const now = new Date().toISOString();
-    prepare(`
+    req.tenantDB.prepare(`
       UPDATE job_descriptions 
       SET status = 'rejected', rejected_reason = ?, updated_at = ?
       WHERE id = ?
     `).run(reason, now, req.params.id);
 
     // 記錄審核動作
-    logApprovalAction(req.params.id, row.version, 'reject', actorId, actorName, 'manager', reason);
-    saveDatabase();
+    logApprovalAction(req, req.params.id, row.version, 'reject', actorId, actorName, 'manager', reason);
+    req.tenantDB.save();
 
-    const updated = prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
+    const updated = req.tenantDB.prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
     res.json({ success: true, data: rowToJobDescription(updated) });
   } catch (error) {
     console.error('Reject error:', error);
@@ -384,7 +384,7 @@ router.post('/:id/reject', (req, res) => {
 router.post('/:id/archive', (req, res) => {
   try {
     const { actorId, actorName } = req.body;
-    const row = prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
+    const row = req.tenantDB.prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
     if (!row) {
       return res.status(404).json({ success: false, error: { message: '找不到職務說明書' } });
     }
@@ -393,24 +393,24 @@ router.post('/:id/archive', (req, res) => {
     }
 
     const now = new Date().toISOString();
-    prepare(`
+    req.tenantDB.prepare(`
       UPDATE job_descriptions 
       SET status = 'archived', updated_at = ?
       WHERE id = ?
     `).run(now, req.params.id);
 
     // 更新版本歷史的 effective_until
-    prepare(`
+    req.tenantDB.prepare(`
       UPDATE job_description_versions 
       SET effective_until = ?, archived_at = ?
       WHERE job_description_id = ? AND version = ? AND effective_until IS NULL
     `).run(now, now, req.params.id, row.version);
 
     // 記錄審核動作
-    logApprovalAction(req.params.id, row.version, 'archive', actorId, actorName, 'hr', null);
-    saveDatabase();
+    logApprovalAction(req, req.params.id, row.version, 'archive', actorId, actorName, 'hr', null);
+    req.tenantDB.save();
 
-    const updated = prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
+    const updated = req.tenantDB.prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
     res.json({ success: true, data: rowToJobDescription(updated) });
   } catch (error) {
     console.error('Archive error:', error);
@@ -424,7 +424,7 @@ router.post('/:id/archive', (req, res) => {
 router.post('/:id/create-new-version', (req, res) => {
   try {
     const { actorId, actorName } = req.body;
-    const row = prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
+    const row = req.tenantDB.prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
     if (!row) {
       return res.status(404).json({ success: false, error: { message: '找不到職務說明書' } });
     }
@@ -438,14 +438,14 @@ router.post('/:id/create-new-version', (req, res) => {
     const newVersion = newVersionNum.toFixed(1);
 
     // 更新舊版本的 effective_until
-    prepare(`
+    req.tenantDB.prepare(`
       UPDATE job_description_versions 
       SET effective_until = ?
       WHERE job_description_id = ? AND version = ? AND effective_until IS NULL
     `).run(now, req.params.id, oldVersion);
 
     // 更新主記錄為新草稿
-    prepare(`
+    req.tenantDB.prepare(`
       UPDATE job_descriptions 
       SET status = 'draft', version = ?, current_version = ?, 
           approved_by = NULL, approved_at = NULL, 
@@ -455,10 +455,10 @@ router.post('/:id/create-new-version', (req, res) => {
     `).run(newVersion, newVersion, now, req.params.id);
 
     // 記錄審核動作
-    logApprovalAction(req.params.id, newVersion, 'create_new_version', actorId, actorName, 'hr', `從 v${oldVersion} 建立新版本`);
-    saveDatabase();
+    logApprovalAction(req, req.params.id, newVersion, 'create_new_version', actorId, actorName, 'hr', `從 v${oldVersion} 建立新版本`);
+    req.tenantDB.save();
 
-    const updated = prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
+    const updated = req.tenantDB.prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
     res.json({ success: true, data: rowToJobDescription(updated) });
   } catch (error) {
     console.error('Create new version error:', error);
@@ -475,7 +475,7 @@ router.post('/:id/create-new-version', (req, res) => {
  */
 router.get('/:id/versions', (req, res) => {
   try {
-    const versions = prepare(`
+    const versions = req.tenantDB.prepare(`
       SELECT * FROM job_description_versions 
       WHERE job_description_id = ? 
       ORDER BY created_at DESC
@@ -505,7 +505,7 @@ router.get('/:id/versions', (req, res) => {
  */
 router.get('/:id/versions/:versionId', (req, res) => {
   try {
-    const version = prepare(`
+    const version = req.tenantDB.prepare(`
       SELECT * FROM job_description_versions WHERE id = ?
     `).get(req.params.versionId);
 
@@ -526,7 +526,7 @@ router.get('/:id/versions/:versionId', (req, res) => {
  */
 router.get('/:id/approvals', (req, res) => {
   try {
-    const approvals = prepare(`
+    const approvals = req.tenantDB.prepare(`
       SELECT * FROM job_description_approvals 
       WHERE job_description_id = ? 
       ORDER BY created_at DESC
@@ -554,23 +554,23 @@ router.get('/:id/approvals', (req, res) => {
 // Helper Functions
 // ========================================
 
-function logApprovalAction(jdId, version, action, actorId, actorName, actorRole, comment) {
+function logApprovalAction(req, jdId, version, action, actorId, actorName, actorRole, comment) {
   const id = uuidv4();
-  prepare(`
+  req.tenantDB.prepare(`
     INSERT INTO job_description_approvals (id, job_description_id, version, action, actor_id, actor_name, actor_role, comment)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `).run(id, jdId, version, action, actorId || null, actorName || 'System', actorRole || 'system', comment || null);
 }
 
-function createVersionSnapshot(jdId, version, status, effectiveFrom, effectiveUntil, createdBy) {
-  const row = prepare('SELECT * FROM job_descriptions WHERE id = ?').get(jdId);
+function createVersionSnapshot(req, jdId, version, status, effectiveFrom, effectiveUntil, createdBy) {
+  const row = req.tenantDB.prepare('SELECT * FROM job_descriptions WHERE id = ?').get(jdId);
   if (!row) return;
 
   const snapshot = JSON.stringify(rowToJobDescription(row));
   const id = uuidv4();
   const now = new Date().toISOString();
 
-  prepare(`
+  req.tenantDB.prepare(`
     INSERT INTO job_description_versions (id, job_description_id, version, snapshot, status, effective_from, effective_until, created_by, created_at, published_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(id, jdId, version, snapshot, status, effectiveFrom, effectiveUntil || null, createdBy || 'System', now, status === 'published' ? now : null);

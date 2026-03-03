@@ -4,7 +4,7 @@
 
 const express = require('express');
 const router = express.Router();
-const { prepare, saveDatabase } = require('../db');
+
 const { v4: uuidv4 } = require('uuid');
 
 /**
@@ -13,7 +13,7 @@ const { v4: uuidv4 } = require('uuid');
  */
 router.get('/', (req, res) => {
     try {
-        const templates = prepare(`
+        const templates = req.tenantDB.prepare(`
       SELECT id, name, version, is_active, is_public, is_required, description, has_draft, created_at, updated_at
       FROM templates
       ORDER BY created_at DESC
@@ -32,7 +32,7 @@ router.get('/', (req, res) => {
  */
 router.get('/:id', (req, res) => {
     try {
-        const template = prepare(`
+        const template = req.tenantDB.prepare(`
       SELECT * FROM templates WHERE id = ?
     `).get(req.params.id);
 
@@ -69,19 +69,19 @@ router.post('/', (req, res) => {
         const initialVersion = 1;
 
         // 1. 建立模板 (Version 1)
-        prepare(`
+        req.tenantDB.prepare(`
       INSERT INTO templates (id, name, pdf_base64, mapping_config, version, is_public, is_required, description)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `).run(id, name, pdf_base64, mappingJson, initialVersion, is_public ? 1 : 0, is_required ? 1 : 0, description || null);
 
         // 2. 立即建立 V1 快照
         const versionId = uuidv4();
-        prepare(`
+        req.tenantDB.prepare(`
       INSERT INTO template_versions (id, template_id, version, mapping_config, pdf_base64)
       VALUES (?, ?, ?, ?, ?)
     `).run(versionId, id, initialVersion, mappingJson, pdf_base64);
 
-        const template = prepare('SELECT * FROM templates WHERE id = ?').get(id);
+        const template = req.tenantDB.prepare('SELECT * FROM templates WHERE id = ?').get(id);
 
         res.status(201).json(template);
     } catch (error) {
@@ -99,14 +99,14 @@ router.put('/:id', (req, res) => {
         const { name, pdf_base64, mapping_config, is_active, is_public, is_required, description } = req.body;
         const { id } = req.params;
 
-        const existing = prepare('SELECT * FROM templates WHERE id = ?').get(id);
+        const existing = req.tenantDB.prepare('SELECT * FROM templates WHERE id = ?').get(id);
         if (!existing) {
             return res.status(404).json({ error: 'Template not found' });
         }
 
         const mappingJson = mapping_config ? JSON.stringify(mapping_config) : existing.mapping_config;
 
-        prepare(`
+        req.tenantDB.prepare(`
       UPDATE templates 
       SET name = ?, pdf_base64 = ?, mapping_config = ?, is_active = ?, is_public = ?, is_required = ?, description = ?, updated_at = datetime('now')
       WHERE id = ?
@@ -121,7 +121,7 @@ router.put('/:id', (req, res) => {
             id
         );
 
-        const updated = prepare('SELECT * FROM templates WHERE id = ?').get(id);
+        const updated = req.tenantDB.prepare('SELECT * FROM templates WHERE id = ?').get(id);
         if (updated && updated.mapping_config) {
             updated.mapping_config = JSON.parse(updated.mapping_config);
         }
@@ -142,10 +142,10 @@ router.delete('/:id', (req, res) => {
         const { id } = req.params;
 
         // 手動級聯刪除 (Manual Cascade Delete)
-        prepare('DELETE FROM submissions WHERE template_id = ?').run(id);
-        prepare('DELETE FROM template_versions WHERE template_id = ?').run(id);
+        req.tenantDB.prepare('DELETE FROM submissions WHERE template_id = ?').run(id);
+        req.tenantDB.prepare('DELETE FROM template_versions WHERE template_id = ?').run(id);
 
-        const result = prepare('DELETE FROM templates WHERE id = ?').run(id);
+        const result = req.tenantDB.prepare('DELETE FROM templates WHERE id = ?').run(id);
 
         if (result.changes === 0) {
             return res.status(404).json({ error: 'Template not found' });
@@ -173,7 +173,7 @@ router.post('/:id/new-version', (req, res) => {
         }
 
         // 查詢原模板
-        const template = prepare('SELECT * FROM templates WHERE id = ?').get(id);
+        const template = req.tenantDB.prepare('SELECT * FROM templates WHERE id = ?').get(id);
         if (!template) {
             return res.status(404).json({ error: 'Template not found' });
         }
@@ -193,20 +193,20 @@ router.post('/:id/new-version', (req, res) => {
 
         // 1. 建立版本快照
         const versionId = uuidv4();
-        prepare(`
+        req.tenantDB.prepare(`
             INSERT INTO template_versions (id, template_id, version, mapping_config, pdf_base64)
             VALUES (?, ?, ?, ?, ?)
         `).run(versionId, id, nextVersion, newMappingConfig, pdf_base64);
 
         // 2. 更新主表為新版本
-        prepare(`
+        req.tenantDB.prepare(`
             UPDATE templates 
             SET version = ?, pdf_base64 = ?, mapping_config = ?, updated_at = datetime('now')
             WHERE id = ?
         `).run(nextVersion, pdf_base64, newMappingConfig, id);
 
         // 回傳新版本資訊
-        const updated = prepare('SELECT * FROM templates WHERE id = ?').get(id);
+        const updated = req.tenantDB.prepare('SELECT * FROM templates WHERE id = ?').get(id);
         if (updated && updated.mapping_config) {
             updated.mapping_config = JSON.parse(updated.mapping_config);
         }
@@ -233,7 +233,7 @@ router.post('/:id/draft', (req, res) => {
         const { id } = req.params;
         const { pdf_base64, mapping_config, inherit_fields } = req.body;
 
-        const template = prepare('SELECT * FROM templates WHERE id = ?').get(id);
+        const template = req.tenantDB.prepare('SELECT * FROM templates WHERE id = ?').get(id);
         if (!template) {
             return res.status(404).json({ error: 'Template not found' });
         }
@@ -251,7 +251,7 @@ router.post('/:id/draft', (req, res) => {
         }
 
         // 更新草稿欄位
-        prepare(`
+        req.tenantDB.prepare(`
             UPDATE templates 
             SET draft_pdf_base64 = ?, draft_mapping_config = ?, has_draft = 1, updated_at = datetime('now')
             WHERE id = ?
@@ -272,7 +272,7 @@ router.get('/:id/draft', (req, res) => {
     try {
         const { id } = req.params;
 
-        const template = prepare(`
+        const template = req.tenantDB.prepare(`
             SELECT id, name, version, has_draft, draft_pdf_base64, draft_mapping_config
             FROM templates WHERE id = ?
         `).get(id);
@@ -316,7 +316,7 @@ router.post('/:id/publish-draft', (req, res) => {
     try {
         const { id } = req.params;
 
-        const template = prepare('SELECT * FROM templates WHERE id = ?').get(id);
+        const template = req.tenantDB.prepare('SELECT * FROM templates WHERE id = ?').get(id);
         if (!template) {
             return res.status(404).json({ error: 'Template not found' });
         }
@@ -334,13 +334,13 @@ router.post('/:id/publish-draft', (req, res) => {
 
         // 1. 建立版本快照
         const versionId = uuidv4();
-        prepare(`
+        req.tenantDB.prepare(`
             INSERT INTO template_versions (id, template_id, version, mapping_config, pdf_base64)
             VALUES (?, ?, ?, ?, ?)
         `).run(versionId, id, nextVersion, template.draft_mapping_config, template.draft_pdf_base64);
 
         // 2. 更新主表為新版本並清除草稿
-        prepare(`
+        req.tenantDB.prepare(`
             UPDATE templates 
             SET version = ?, pdf_base64 = ?, mapping_config = ?, 
                 draft_pdf_base64 = NULL, draft_mapping_config = NULL, has_draft = 0,
@@ -366,13 +366,13 @@ router.delete('/:id/draft', (req, res) => {
     try {
         const { id } = req.params;
 
-        const template = prepare('SELECT id FROM templates WHERE id = ?').get(id);
+        const template = req.tenantDB.prepare('SELECT id FROM templates WHERE id = ?').get(id);
         if (!template) {
             return res.status(404).json({ error: 'Template not found' });
         }
 
         // 清除草稿欄位
-        prepare(`
+        req.tenantDB.prepare(`
             UPDATE templates 
             SET draft_pdf_base64 = NULL, draft_mapping_config = NULL, has_draft = 0, updated_at = datetime('now')
             WHERE id = ?

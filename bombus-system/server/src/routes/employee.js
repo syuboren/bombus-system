@@ -8,7 +8,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
-const { prepare } = require('../db');
+// tenantDB is accessed via req.tenantDB (injected by middleware)
 
 // 確保上傳目錄存在
 const uploadDir = path.join(__dirname, '../../uploads/documents');
@@ -61,7 +61,7 @@ const TYPE_LABELS = {
  */
 router.get('/templates', (req, res) => {
     try {
-        const templates = prepare(`
+        const templates = req.tenantDB.prepare(`
             SELECT id, name, version, is_required, description, created_at
             FROM templates
             WHERE is_public = 1 AND is_active = 1
@@ -97,7 +97,7 @@ router.get('/submissions', (req, res) => {
 
         query += ` ORDER BY s.created_at DESC`;
 
-        const submissions = prepare(query).all(...params);
+        const submissions = req.tenantDB.prepare(query).all(...params);
 
         // Parse form_data JSON
         submissions.forEach(s => {
@@ -128,7 +128,7 @@ router.get('/progress', (req, res) => {
         }
 
         // 1. 取得所有必填的公開模版
-        const requiredTemplates = prepare(`
+        const requiredTemplates = req.tenantDB.prepare(`
             SELECT id, name, version
             FROM templates
             WHERE is_public = 1 AND is_active = 1 AND is_required = 1
@@ -136,7 +136,7 @@ router.get('/progress', (req, res) => {
 
         // 2. 取得該員工所有的提交記錄（包括待簽署、已簽署、已完成）
         // 為每個模板取得最新的記錄
-        const allSubmissions = prepare(`
+        const allSubmissions = req.tenantDB.prepare(`
             SELECT template_id, status, approval_status, token
             FROM submissions
             WHERE employee_id = ?
@@ -245,13 +245,13 @@ router.get('/list', (req, res) => {
 
         query += ` ORDER BY department, name`;
 
-        const employees = prepare(query).all(...params);
+        const employees = req.tenantDB.prepare(query).all(...params);
 
         // 取得主管名稱
         const managerIds = employees.map(e => e.manager_id).filter(Boolean);
         const managersMap = new Map();
         if (managerIds.length > 0) {
-            const managers = prepare(`
+            const managers = req.tenantDB.prepare(`
                 SELECT id, name FROM employees WHERE id IN (${managerIds.map(() => '?').join(',')})
             `).all(...managerIds);
             managers.forEach(m => managersMap.set(m.id, m.name));
@@ -276,7 +276,7 @@ router.get('/list', (req, res) => {
  */
 router.get('/departments', (req, res) => {
     try {
-        const departments = prepare(`
+        const departments = req.tenantDB.prepare(`
             SELECT DISTINCT department
             FROM employees
             WHERE department IS NOT NULL
@@ -304,7 +304,7 @@ router.get('/documents', (req, res) => {
             return res.status(400).json({ error: 'employee_id is required' });
         }
 
-        const documents = prepare(`
+        const documents = req.tenantDB.prepare(`
             SELECT id, employee_id, type, label, custom_name as customName,
                    file_name as fileName, file_url as fileUrl, file_size as fileSize,
                    mime_type as mimeType, status, reject_reason as rejectReason,
@@ -338,7 +338,7 @@ router.get('/documents/progress', (req, res) => {
         const total = fixedTypes.length;
 
         // 取得已上傳的固定類型文件
-        const uploadedDocs = prepare(`
+        const uploadedDocs = req.tenantDB.prepare(`
             SELECT type, status
             FROM employee_documents
             WHERE employee_id = ? AND type != 'other'
@@ -402,14 +402,14 @@ router.post('/documents', upload.single('file'), (req, res) => {
 
         // 如果不是 'other' 類型，檢查是否已存在，若存在則更新
         if (type !== 'other') {
-            const existing = prepare(`
+            const existing = req.tenantDB.prepare(`
                 SELECT id FROM employee_documents
                 WHERE employee_id = ? AND type = ?
             `).get(employee_id, type);
 
             if (existing) {
                 // 更新現有記錄
-                prepare(`
+                req.tenantDB.prepare(`
                     UPDATE employee_documents
                     SET file_name = ?, file_url = ?, file_size = ?, mime_type = ?,
                         status = 'uploaded', reject_reason = NULL, uploaded_at = CURRENT_TIMESTAMP,
@@ -423,7 +423,7 @@ router.post('/documents', upload.single('file'), (req, res) => {
                     existing.id
                 );
 
-                const updatedDoc = prepare(`
+                const updatedDoc = req.tenantDB.prepare(`
                     SELECT id, employee_id, type, label, custom_name as customName,
                            file_name as fileName, file_url as fileUrl, file_size as fileSize,
                            mime_type as mimeType, status, reject_reason as rejectReason,
@@ -436,7 +436,7 @@ router.post('/documents', upload.single('file'), (req, res) => {
         }
 
         // 新增記錄
-        prepare(`
+        req.tenantDB.prepare(`
             INSERT INTO employee_documents (id, employee_id, type, label, custom_name, file_name, file_url, file_size, mime_type, status)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'uploaded')
         `).run(
@@ -451,7 +451,7 @@ router.post('/documents', upload.single('file'), (req, res) => {
             req.file.mimetype
         );
 
-        const newDoc = prepare(`
+        const newDoc = req.tenantDB.prepare(`
             SELECT id, employee_id, type, label, custom_name as customName,
                    file_name as fileName, file_url as fileUrl, file_size as fileSize,
                    mime_type as mimeType, status, reject_reason as rejectReason,
@@ -479,7 +479,7 @@ router.put('/documents/:id', upload.single('file'), (req, res) => {
         }
 
         // 檢查文件是否存在
-        const existing = prepare(`
+        const existing = req.tenantDB.prepare(`
             SELECT * FROM employee_documents WHERE id = ?
         `).get(id);
 
@@ -500,7 +500,7 @@ router.put('/documents/:id', upload.single('file'), (req, res) => {
         }
 
         // 更新記錄
-        prepare(`
+        req.tenantDB.prepare(`
             UPDATE employee_documents
             SET file_name = ?, file_url = ?, file_size = ?, mime_type = ?,
                 status = 'uploaded', reject_reason = NULL, uploaded_at = CURRENT_TIMESTAMP,
@@ -514,7 +514,7 @@ router.put('/documents/:id', upload.single('file'), (req, res) => {
             id
         );
 
-        const updatedDoc = prepare(`
+        const updatedDoc = req.tenantDB.prepare(`
             SELECT id, employee_id, type, label, custom_name as customName,
                    file_name as fileName, file_url as fileUrl, file_size as fileSize,
                    mime_type as mimeType, status, reject_reason as rejectReason,
@@ -538,7 +538,7 @@ router.delete('/documents/:id', (req, res) => {
         const { id } = req.params;
 
         // 檢查文件是否存在
-        const existing = prepare(`
+        const existing = req.tenantDB.prepare(`
             SELECT * FROM employee_documents WHERE id = ?
         `).get(id);
 
@@ -555,7 +555,7 @@ router.delete('/documents/:id', (req, res) => {
         }
 
         // 刪除資料庫記錄
-        prepare(`DELETE FROM employee_documents WHERE id = ?`).run(id);
+        req.tenantDB.prepare(`DELETE FROM employee_documents WHERE id = ?`).run(id);
 
         res.json({ message: 'Document deleted successfully' });
     } catch (error) {
@@ -572,7 +572,7 @@ router.get('/documents/:id/download', (req, res) => {
     try {
         const { id } = req.params;
 
-        const doc = prepare(`
+        const doc = req.tenantDB.prepare(`
             SELECT file_name, file_url FROM employee_documents WHERE id = ?
         `).get(id);
 
@@ -603,22 +603,22 @@ router.get('/documents/:id/download', (req, res) => {
 router.get('/stats', (req, res) => {
     try {
         // 員工總數
-        const totalEmployees = prepare(`
+        const totalEmployees = req.tenantDB.prepare(`
             SELECT COUNT(*) as count FROM employees
         `).get().count;
 
         // 在職人數
-        const activeCount = prepare(`
+        const activeCount = req.tenantDB.prepare(`
             SELECT COUNT(*) as count FROM employees WHERE status = 'active'
         `).get().count;
 
         // 試用期人數
-        const probationCount = prepare(`
+        const probationCount = req.tenantDB.prepare(`
             SELECT COUNT(*) as count FROM employees WHERE status = 'probation'
         `).get().count;
 
         // 平均年資（月）
-        const avgTenureResult = prepare(`
+        const avgTenureResult = req.tenantDB.prepare(`
             SELECT AVG(
                 (julianday('now') - julianday(hire_date)) / 30.44
             ) as avgMonths
@@ -629,7 +629,7 @@ router.get('/stats', (req, res) => {
 
         // 30天內到期文件數（從 employee_documents 表或 employee_certifications 表）
         // 這裡先查證照到期數
-        const expiringDocuments = prepare(`
+        const expiringDocuments = req.tenantDB.prepare(`
             SELECT COUNT(*) as count
             FROM employee_certifications
             WHERE expiry_date IS NOT NULL
@@ -637,7 +637,7 @@ router.get('/stats', (req, res) => {
         `).get().count;
 
         // 即將到職週年的員工（30天內）
-        const upcomingAnniversaries = prepare(`
+        const upcomingAnniversaries = req.tenantDB.prepare(`
             SELECT 
                 id as employeeId,
                 name,
@@ -673,7 +673,7 @@ router.get('/stats', (req, res) => {
 // GET /api/employee/expiring-documents - 30天內到期文件列表
 router.get('/expiring-documents', (req, res) => {
     try {
-        const expiringCerts = prepare(`
+        const expiringCerts = req.tenantDB.prepare(`
             SELECT 
                 ec.id,
                 ec.employee_id as employeeId,
@@ -730,7 +730,7 @@ router.get('/:id', (req, res) => {
         const { id } = req.params;
 
         // 取得員工主資料
-        const employee = prepare(`
+        const employee = req.tenantDB.prepare(`
             SELECT * FROM employees WHERE id = ?
         `).get(id);
 
@@ -740,14 +740,14 @@ router.get('/:id', (req, res) => {
 
         // 取得主管名稱
         if (employee.manager_id) {
-            const manager = prepare(`
+            const manager = req.tenantDB.prepare(`
                 SELECT name FROM employees WHERE id = ?
             `).get(employee.manager_id);
             employee.managerName = manager ? manager.name : null;
         }
 
         // 取得學歷
-        const education = prepare(`
+        const education = req.tenantDB.prepare(`
             SELECT id, degree, school, major, graduation_year
             FROM employee_education
             WHERE employee_id = ?
@@ -755,12 +755,12 @@ router.get('/:id', (req, res) => {
         `).all(id);
 
         // 取得技能
-        const skills = prepare(`
+        const skills = req.tenantDB.prepare(`
             SELECT skill_name FROM employee_skills WHERE employee_id = ?
         `).all(id);
 
         // 取得證照
-        const certifications = prepare(`
+        const certifications = req.tenantDB.prepare(`
             SELECT id, cert_name, issued_date, expiry_date
             FROM employee_certifications
             WHERE employee_id = ?
@@ -768,7 +768,7 @@ router.get('/:id', (req, res) => {
         `).all(id);
 
         // 取得職務異動記錄
-        const workHistory = prepare(`
+        const workHistory = req.tenantDB.prepare(`
             SELECT 
                 id,
                 effective_date as effectiveDate,
@@ -789,7 +789,7 @@ router.get('/:id', (req, res) => {
         `).all(id);
 
         // 取得當前薪資（最新一筆且 end_date 為 NULL 或未來日期）
-        const salaryRecord = prepare(`
+        const salaryRecord = req.tenantDB.prepare(`
             SELECT base_salary, allowances, bonus
             FROM employee_salaries
             WHERE employee_id = ?
@@ -803,7 +803,7 @@ router.get('/:id', (req, res) => {
             : null;
 
         // 取得培訓記錄
-        const training = prepare(`
+        const training = req.tenantDB.prepare(`
             SELECT 
                 id,
                 course_name as courseName,
@@ -822,7 +822,7 @@ router.get('/:id', (req, res) => {
         `).all(id);
 
         // 取得文件列表
-        const documents = prepare(`
+        const documents = req.tenantDB.prepare(`
             SELECT 
                 id,
                 employee_id as employeeId,
@@ -842,7 +842,7 @@ router.get('/:id', (req, res) => {
         `).all(id);
 
         // 取得績效記錄
-        const performanceRaw = prepare(`
+        const performanceRaw = req.tenantDB.prepare(`
             SELECT 
                 id,
                 employee_id as employeeId,
@@ -902,7 +902,7 @@ router.get('/:id', (req, res) => {
         });
 
         // 取得 ROI 數據
-        const roiRecords = prepare(`
+        const roiRecords = req.tenantDB.prepare(`
             SELECT 
                 id,
                 employee_id as employeeId,
@@ -982,7 +982,7 @@ router.get('/:id', (req, res) => {
         // 取得候選人追溯資訊（如果有 candidate_id）
         let candidateSource = null;
         if (employee.candidate_id) {
-            const candidate = prepare(`
+            const candidate = req.tenantDB.prepare(`
                 SELECT id, name, email, current_position, status, stage
                 FROM candidates
                 WHERE id = ?
@@ -1004,7 +1004,7 @@ router.get('/:id', (req, res) => {
         let onboardingProgress = null;
         if (employee.onboarding_status && employee.status === 'probation') {
             // 模板簽署進度
-            const templateProgress = prepare(`
+            const templateProgress = req.tenantDB.prepare(`
                 SELECT 
                     COUNT(*) as total,
                     SUM(CASE WHEN status = 'SIGNED' OR status = 'COMPLETED' THEN 1 ELSE 0 END) as signed,
@@ -1014,7 +1014,7 @@ router.get('/:id', (req, res) => {
             `).get(id);
 
             // 文件上傳進度
-            const docProgress = prepare(`
+            const docProgress = req.tenantDB.prepare(`
                 SELECT COUNT(DISTINCT type) as uploaded
                 FROM employee_documents
                 WHERE employee_id = ? AND type != 'other'

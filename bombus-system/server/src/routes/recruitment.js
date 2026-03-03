@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { prepare } = require('../db');
+// tenantDB is accessed via req.tenantDB (injected by middleware)
 const { v4: uuidv4 } = require('uuid');
 const QRCode = require('qrcode');
 
@@ -16,25 +16,25 @@ const QRCode = require('qrcode');
  * @param {string} talentId - 人才庫 ID
  * @returns {string[]} - 匹配到的標籤名稱列表
  */
-function autoTagTalent(candidateId, talentId) {
+function autoTagTalent(req, candidateId, talentId) {
     const matchedTags = [];
     
     try {
         // 取得所有標籤
-        const allTags = prepare('SELECT id, name, category FROM talent_tags').all();
+        const allTags = req.tenantDB.prepare('SELECT id, name, category FROM talent_tags').all();
         const tagMap = {};
         allTags.forEach(tag => {
             tagMap[tag.name] = tag.id;
         });
         
         // 取得候選人基本資料
-        const candidate = prepare(`
+        const candidate = req.tenantDB.prepare(`
             SELECT experience_years, reg_source, skills as skills_json, education as main_education
             FROM candidates WHERE id = ?
         `).get(candidateId);
         
         // 取得候選人技能
-        let skills = prepare(`
+        let skills = req.tenantDB.prepare(`
             SELECT skill FROM candidate_specialities WHERE candidate_id = ?
         `).all(candidateId).map(s => s.skill.toLowerCase());
         
@@ -51,7 +51,7 @@ function autoTagTalent(candidateId, talentId) {
         }
         
         // 取得候選人學歷
-        let education = prepare(`
+        let education = req.tenantDB.prepare(`
             SELECT school_name, degree_level, major 
             FROM candidate_education WHERE candidate_id = ?
         `).all(candidateId);
@@ -71,13 +71,13 @@ function autoTagTalent(candidateId, talentId) {
         }
         
         // 取得候選人工作經驗
-        const experiences = prepare(`
+        const experiences = req.tenantDB.prepare(`
             SELECT firm_name, job_name, industry_category, management 
             FROM candidate_experiences WHERE candidate_id = ?
         `).all(candidateId);
         
         // 取得候選人語言能力
-        const languages = prepare(`
+        const languages = req.tenantDB.prepare(`
             SELECT lang_type, degree, listen_degree, speak_degree 
             FROM candidate_languages WHERE candidate_id = ?
         `).all(candidateId);
@@ -218,12 +218,12 @@ function autoTagTalent(candidateId, talentId) {
         
         // ===== 寫入標籤映射 =====
         if (matchedTags.length > 0) {
-            const insertTagMapping = prepare(`
+            const insertTagMapping = req.tenantDB.prepare(`
                 INSERT OR IGNORE INTO talent_tag_mapping (id, talent_id, tag_id, created_at)
                 VALUES (?, ?, ?, datetime('now'))
             `);
             
-            const updateTagUsage = prepare(`
+            const updateTagUsage = req.tenantDB.prepare(`
                 UPDATE talent_tags SET usage_count = usage_count + 1 WHERE id = ?
             `);
             
@@ -251,10 +251,10 @@ function autoTagTalent(candidateId, talentId) {
  * @param {string} declineStage - 婉拒階段: 'invited', 'interview', 'offer'
  * @param {string} declineReason - 婉拒原因 (可選)
  */
-function importToTalentPool(candidateId, declineStage, declineReason = null) {
+function importToTalentPool(req, candidateId, declineStage, declineReason = null) {
     try {
         // 取得候選人資料
-        const candidate = prepare(`
+        const candidate = req.tenantDB.prepare(`
             SELECT c.*, j.title as job_title
             FROM candidates c
             LEFT JOIN jobs j ON c.job_id = j.id
@@ -267,7 +267,7 @@ function importToTalentPool(candidateId, declineStage, declineReason = null) {
         }
 
         // 檢查是否已在人才庫中
-        const existing = prepare(`SELECT id FROM talent_pool WHERE candidate_id = ?`).get(candidateId);
+        const existing = req.tenantDB.prepare(`SELECT id FROM talent_pool WHERE candidate_id = ?`).get(candidateId);
         if (existing) {
             console.log(`[TalentPool] Candidate ${candidateId} already in talent pool`);
             return;
@@ -289,7 +289,7 @@ function importToTalentPool(candidateId, declineStage, declineReason = null) {
         // 判斷來源
         const source = candidate.reg_source?.includes('104') ? '104' : 'website';
 
-        prepare(`
+        req.tenantDB.prepare(`
             INSERT INTO talent_pool (
                 id, candidate_id, name, email, phone, avatar,
                 current_position, current_company, experience_years, education,
@@ -324,7 +324,7 @@ function importToTalentPool(candidateId, declineStage, declineReason = null) {
         );
 
         // 自動標籤匹配
-        const matchedTags = autoTagTalent(candidateId, id);
+        const matchedTags = autoTagTalent(req, candidateId, id);
 
         console.log(`[TalentPool] ✅ Imported candidate ${candidate.name} (${candidateId}) - decline stage: ${declineStage}, tags: ${matchedTags.length}`);
     } catch (error) {
@@ -332,59 +332,7 @@ function importToTalentPool(candidateId, declineStage, declineReason = null) {
     }
 }
 
-// --- 初始化面試評分表格 (如果不存在) ---
-try {
-    prepare(`
-        CREATE TABLE IF NOT EXISTS interview_evaluations (
-            id TEXT PRIMARY KEY,
-            candidate_id TEXT NOT NULL,
-            interview_id TEXT,
-            evaluator_id TEXT,
-            performance_description TEXT,
-            dimension_scores TEXT,
-            overall_comment TEXT,
-            total_score INTEGER DEFAULT 0,
-            transcript_text TEXT,
-            media_url TEXT,
-            media_size INTEGER DEFAULT 0,
-            ai_analysis_result TEXT,
-            status TEXT DEFAULT 'draft',
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME,
-            -- 新版面試官評分欄位 (2026-01)
-            scoring_items TEXT,
-            process_checklist TEXT,
-            comprehensive_assessment TEXT,
-            pros_comment TEXT,
-            cons_comment TEXT,
-            recommendation TEXT,
-            FOREIGN KEY (candidate_id) REFERENCES candidates(id)
-        )
-    `).run();
-    console.log('✅ interview_evaluations table ready');
-} catch (err) {
-    console.log('interview_evaluations table already exists or error:', err.message);
-}
-
-// --- 新增欄位 migration (向後相容) ---
-const newColumns = [
-    { name: 'scoring_items', type: 'TEXT' },
-    { name: 'process_checklist', type: 'TEXT' },
-    { name: 'comprehensive_assessment', type: 'TEXT' },
-    { name: 'pros_comment', type: 'TEXT' },
-    { name: 'cons_comment', type: 'TEXT' },
-    { name: 'recommendation', type: 'TEXT' },
-    { name: 'media_size', type: 'INTEGER DEFAULT 0' }
-];
-
-newColumns.forEach(col => {
-    try {
-        prepare(`ALTER TABLE interview_evaluations ADD COLUMN ${col.name} ${col.type}`).run();
-        console.log(`✅ Added column ${col.name} to interview_evaluations`);
-    } catch (err) {
-        // 欄位已存在，忽略錯誤
-    }
-});
+// interview_evaluations 表已在 tenant-schema.js 中定義，無需模組層級初始化
 
 // --- 面試評分完整 API ---
 
@@ -426,7 +374,7 @@ router.post('/candidates/:candidateId/evaluation', (req, res) => {
             (typeof comprehensiveAssessment === 'object' ? JSON.stringify(comprehensiveAssessment) : comprehensiveAssessment) : null;
 
         // 檢查是否已存在評分記錄
-        const existing = prepare(`
+        const existing = req.tenantDB.prepare(`
             SELECT id FROM interview_evaluations WHERE candidate_id = ? ORDER BY created_at DESC LIMIT 1
         `).get(candidateId);
 
@@ -435,7 +383,7 @@ router.post('/candidates/:candidateId/evaluation', (req, res) => {
         if (existing) {
             // 更新現有記錄
             evaluationId = existing.id;
-            const stmt = prepare(`
+            const stmt = req.tenantDB.prepare(`
                 UPDATE interview_evaluations SET
                     interview_id = COALESCE(?, interview_id),
                     evaluator_id = COALESCE(?, evaluator_id),
@@ -469,7 +417,7 @@ router.post('/candidates/:candidateId/evaluation', (req, res) => {
         } else {
             // 創建新記錄
             evaluationId = uuidv4();
-            const stmt = prepare(`
+            const stmt = req.tenantDB.prepare(`
                 INSERT INTO interview_evaluations (
                     id, candidate_id, interview_id, evaluator_id, 
                     performance_description, overall_comment, total_score,
@@ -495,7 +443,7 @@ router.post('/candidates/:candidateId/evaluation', (req, res) => {
             newStatus = 'pending_decision'; // 有 AI 結果：待決策
         }
 
-        const updateCand = prepare(`
+        const updateCand = req.tenantDB.prepare(`
             UPDATE candidates SET status = ?, scoring_status = 'Scored', updated_at = ? WHERE id = ?
         `);
         updateCand.run(newStatus, now, candidateId);
@@ -519,7 +467,7 @@ router.get('/candidates/:candidateId/evaluation', (req, res) => {
     try {
         const { candidateId } = req.params;
 
-        const evaluation = prepare(`
+        const evaluation = req.tenantDB.prepare(`
             SELECT * FROM interview_evaluations 
             WHERE candidate_id = ? 
             ORDER BY created_at DESC 
@@ -573,7 +521,7 @@ router.patch('/candidates/:candidateId/evaluation', (req, res) => {
         const now = new Date().toISOString();
 
         // 取得現有評分
-        const existing = prepare(`
+        const existing = req.tenantDB.prepare(`
             SELECT id FROM interview_evaluations WHERE candidate_id = ? ORDER BY created_at DESC LIMIT 1
         `).get(candidateId);
 
@@ -591,7 +539,7 @@ router.patch('/candidates/:candidateId/evaluation', (req, res) => {
         const comprehensiveAssessmentJson = comprehensiveAssessment ?
             (typeof comprehensiveAssessment === 'object' ? JSON.stringify(comprehensiveAssessment) : comprehensiveAssessment) : null;
 
-        const stmt = prepare(`
+        const stmt = req.tenantDB.prepare(`
             UPDATE interview_evaluations SET
                 performance_description = COALESCE(?, performance_description),
                 overall_comment = COALESCE(?, overall_comment),
@@ -629,12 +577,12 @@ router.patch('/candidates/:candidateId/evaluation', (req, res) => {
 
         // Update Candidate Status based on AI Analysis
         if (aiResultJson) {
-            const updateCand = prepare(`
+            const updateCand = req.tenantDB.prepare(`
                 UPDATE candidates SET status = 'pending_decision', scoring_status = 'Scored', updated_at = ? WHERE id = ?
             `);
             updateCand.run(now, candidateId);
         } else {
-            const updateCand = prepare(`
+            const updateCand = req.tenantDB.prepare(`
                 UPDATE candidates SET scoring_status = 'Scored', updated_at = ? WHERE id = ?
             `);
             updateCand.run(now, candidateId);
@@ -652,7 +600,7 @@ router.patch('/candidates/:candidateId/evaluation', (req, res) => {
 // GET /api/recruitment/candidates
 router.get('/candidates', (req, res) => {
     try {
-        const candidates = prepare(`
+        const candidates = req.tenantDB.prepare(`
             SELECT c.*, j.title as job_title,
             (SELECT ie.ai_analysis_result FROM interview_evaluations ie WHERE ie.candidate_id = c.id LIMIT 1) as ai_analysis_result
             FROM candidates c
@@ -687,7 +635,7 @@ router.post('/candidates/:candidateId/invitations', (req, res) => {
         const replyDeadline = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
         // 1. Create Invitation with response_token
-        const stmt = prepare(`
+        const stmt = req.tenantDB.prepare(`
             INSERT INTO interview_invitations (
                 id, candidate_id, job_id, status, proposed_slots, message, reply_deadline, response_token, created_at, updated_at
             ) VALUES (?, ?, ?, 'Pending', ?, ?, ?, ?, ?, ?)
@@ -695,7 +643,7 @@ router.post('/candidates/:candidateId/invitations', (req, res) => {
         stmt.run(invitationId, candidateId, jobId, slotsJson, message, replyDeadline, responseToken, now, now);
 
         // 2. Update Candidate Stage & Status
-        const updateStmt = prepare(`
+        const updateStmt = req.tenantDB.prepare(`
             UPDATE candidates 
             SET stage = 'Invited', status = 'invited', updated_at = ? 
             WHERE id = ?
@@ -732,7 +680,7 @@ router.post('/interviews', (req, res) => {
         const now = new Date().toISOString();
 
         // 1. Create Interview Record with meeting_link, address and cancel_token
-        const stmt = prepare(`
+        const stmt = req.tenantDB.prepare(`
             INSERT INTO interviews (
                 id, candidate_id, job_id, interviewer_id, round, interview_at, location, meeting_link, address, cancel_token, result, created_at, updated_at
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending', ?, ?)
@@ -740,7 +688,7 @@ router.post('/interviews', (req, res) => {
         stmt.run(interviewId, candidateId, jobId, interviewerId, round || 1, interviewAt, location, meetingLink || null, address || null, cancelToken, now, now);
 
         // 2. Update Candidate Status to interview
-        const updateCand = prepare(`
+        const updateCand = req.tenantDB.prepare(`
             UPDATE candidates 
             SET status = 'interview', updated_at = ?
             WHERE id = ?
@@ -775,7 +723,7 @@ router.patch('/interviews/:interviewId/evaluation', (req, res) => {
         const now = new Date().toISOString();
         const evalStr = typeof evaluationJson === 'object' ? JSON.stringify(evaluationJson) : evaluationJson;
 
-        const stmt = prepare(`
+        const stmt = req.tenantDB.prepare(`
             UPDATE interviews 
             SET evaluation_json = ?, result = ?, remark = ?, updated_at = ?
             WHERE id = ?
@@ -788,9 +736,9 @@ router.patch('/interviews/:interviewId/evaluation', (req, res) => {
 
         // Also update Candidate Scoring Status if this is the final round
         // For now, we update scoring_status only if result is Pass or Fail
-        const getInterview = prepare('SELECT candidate_id FROM interviews WHERE id = ?').get(interviewId);
+        const getInterview = req.tenantDB.prepare('SELECT candidate_id FROM interviews WHERE id = ?').get(interviewId);
         if (getInterview) {
-            const updateCand = prepare(`
+            const updateCand = req.tenantDB.prepare(`
                 UPDATE candidates SET scoring_status = 'Scored', updated_at = ? WHERE id = ?
             `);
             updateCand.run(now, getInterview.candidate_id);
@@ -831,7 +779,7 @@ router.post('/candidates/:candidateId/decision', (req, res) => {
         }
 
         // 1. Record Decision (含 Offer 回覆相關欄位)
-        const stmt = prepare(`
+        const stmt = req.tenantDB.prepare(`
             INSERT INTO invitation_decisions (
                 id, candidate_id, decision, decided_by, reason, decided_at,
                 response_token, reply_deadline
@@ -846,12 +794,12 @@ router.post('/candidates/:candidateId/decision', (req, res) => {
             newStatus = 'offered';
         } else if (decision === 'Rejected') {
             // 檢查是否有面試記錄來決定狀態
-            const interviewCount = prepare('SELECT COUNT(*) as count FROM interviews WHERE candidate_id = ?').get(candidateId);
+            const interviewCount = req.tenantDB.prepare('SELECT COUNT(*) as count FROM interviews WHERE candidate_id = ?').get(candidateId);
             // 有面試 → not_hired（未錄取），無面試 → not_invited（不邀請）
             newStatus = (interviewCount?.count > 0) ? 'not_hired' : 'not_invited';
         }
 
-        const updateStmt = prepare(`
+        const updateStmt = req.tenantDB.prepare(`
             UPDATE candidates 
             SET stage = ?, status = ?, updated_at = ? 
             WHERE id = ?
@@ -885,7 +833,7 @@ router.get('/candidates/:candidateId', (req, res) => {
         const { candidateId } = req.params;
 
         // Get basic info with Job Title
-        const candidate = prepare(`
+        const candidate = req.tenantDB.prepare(`
             SELECT c.*, j.title as job_title,
             (SELECT ai_analysis_result FROM interview_evaluations WHERE candidate_id = c.id ORDER BY created_at DESC LIMIT 1) as ai_analysis_json
             FROM candidates c
@@ -897,17 +845,17 @@ router.get('/candidates/:candidateId', (req, res) => {
         }
 
         // Get Interviews
-        const interviews = prepare('SELECT * FROM interviews WHERE candidate_id = ? ORDER BY created_at DESC').all(candidateId);
+        const interviews = req.tenantDB.prepare('SELECT * FROM interviews WHERE candidate_id = ? ORDER BY created_at DESC').all(candidateId);
 
         // Get Invitation
-        const invitation = prepare('SELECT * FROM interview_invitations WHERE candidate_id = ? ORDER BY created_at DESC LIMIT 1').get(candidateId);
+        const invitation = req.tenantDB.prepare('SELECT * FROM interview_invitations WHERE candidate_id = ? ORDER BY created_at DESC LIMIT 1').get(candidateId);
 
         // Get Decision
-        const decision = prepare('SELECT * FROM invitation_decisions WHERE candidate_id = ? ORDER BY decided_at DESC LIMIT 1').get(candidateId);
+        const decision = req.tenantDB.prepare('SELECT * FROM invitation_decisions WHERE candidate_id = ? ORDER BY decided_at DESC LIMIT 1').get(candidateId);
 
         // Get Evaluation
         // Get Evaluation (Latest)
-        const evaluation = prepare('SELECT * FROM interview_evaluations WHERE candidate_id = ? ORDER BY created_at DESC LIMIT 1').get(candidateId);
+        const evaluation = req.tenantDB.prepare('SELECT * FROM interview_evaluations WHERE candidate_id = ? ORDER BY created_at DESC LIMIT 1').get(candidateId);
 
         res.json({
             ...candidate,
@@ -933,7 +881,7 @@ router.get('/invitations/:token', (req, res) => {
     try {
         const { token } = req.params;
 
-        const invitation = prepare(`
+        const invitation = req.tenantDB.prepare(`
             SELECT ii.*, c.name as candidate_name, j.title as job_title
             FROM interview_invitations ii
             JOIN candidates c ON ii.candidate_id = c.id
@@ -992,7 +940,7 @@ router.post('/invitations/:token/respond', (req, res) => {
         }
 
         // Get invitation
-        const invitation = prepare('SELECT * FROM interview_invitations WHERE response_token = ?').get(token);
+        const invitation = req.tenantDB.prepare('SELECT * FROM interview_invitations WHERE response_token = ?').get(token);
 
         if (!invitation) {
             return res.status(404).json({ error: 'Invitation not found' });
@@ -1025,7 +973,7 @@ router.post('/invitations/:token/respond', (req, res) => {
         }
 
         // Update invitation (include reschedule_note if applicable)
-        const stmt = prepare(`
+        const stmt = req.tenantDB.prepare(`
             UPDATE interview_invitations 
             SET candidate_response = ?, selected_slots = ?, responded_at = ?, status = ?, updated_at = ?,
                 reschedule_note = COALESCE(?, reschedule_note)
@@ -1035,7 +983,7 @@ router.post('/invitations/:token/respond', (req, res) => {
 
         // Update candidate status
         if (candidateStatus) {
-            const updateCand = prepare(`
+            const updateCand = req.tenantDB.prepare(`
                 UPDATE candidates 
                 SET stage = ?, status = ?, updated_at = ?
                 WHERE id = ?
@@ -1045,7 +993,7 @@ router.post('/invitations/:token/respond', (req, res) => {
 
             // 自動將婉拒的候選人加入人才庫
             if (response === 'declined') {
-                importToTalentPool(invitation.candidate_id, 'invited', '面試邀請婉拒');
+                importToTalentPool(req, invitation.candidate_id, 'invited', '面試邀請婉拒');
             }
         }
 
@@ -1082,7 +1030,7 @@ router.get('/offers/:token', (req, res) => {
 
         // 從 invitation_decisions 查詢 Offer 資訊
         // 使用 LEFT JOIN 以允許 job_id 為空或無效的情況
-        const offer = prepare(`
+        const offer = req.tenantDB.prepare(`
             SELECT 
                 id.*, 
                 c.name as candidate_name, 
@@ -1138,7 +1086,7 @@ router.post('/offers/:token/respond', (req, res) => {
         }
 
         // 取得 Offer 資訊
-        const offer = prepare('SELECT * FROM invitation_decisions WHERE response_token = ?').get(token);
+        const offer = req.tenantDB.prepare('SELECT * FROM invitation_decisions WHERE response_token = ?').get(token);
 
         if (!offer) {
             return res.status(404).json({ error: 'Offer not found' });
@@ -1157,7 +1105,7 @@ router.post('/offers/:token/respond', (req, res) => {
         const now = new Date().toISOString();
 
         // 1. 更新 invitation_decisions
-        const updateOffer = prepare(`
+        const updateOffer = req.tenantDB.prepare(`
             UPDATE invitation_decisions 
             SET candidate_response = ?, responded_at = ?
             WHERE response_token = ?
@@ -1170,7 +1118,7 @@ router.post('/offers/:token/respond', (req, res) => {
         const newStatus = response === 'accepted' ? 'offer_accepted' : 'offer_declined';
         const newStage = response === 'accepted' ? 'Hired' : 'OfferDeclined';
 
-        const updateCandidate = prepare(`
+        const updateCandidate = req.tenantDB.prepare(`
             UPDATE candidates 
             SET status = ?, stage = ?, updated_at = ?
             WHERE id = ?
@@ -1179,7 +1127,7 @@ router.post('/offers/:token/respond', (req, res) => {
 
         // 自動將婉拒 Offer 的候選人加入人才庫
         if (response === 'declined') {
-            importToTalentPool(offer.candidate_id, 'offer', '錄取通知婉拒');
+            importToTalentPool(req, offer.candidate_id, 'offer', '錄取通知婉拒');
         }
 
         // 回覆訊息
@@ -1211,7 +1159,7 @@ router.get('/interviews/cancel/:token', (req, res) => {
     try {
         const { token } = req.params;
 
-        const interview = prepare(`
+        const interview = req.tenantDB.prepare(`
             SELECT i.*, c.name as candidate_name, j.title as job_title
             FROM interviews i
             JOIN candidates c ON i.candidate_id = c.id
@@ -1261,7 +1209,7 @@ router.post('/interviews/cancel/:token', (req, res) => {
         const { reason } = req.body; // 取消原因 (可選)
 
         // 取得面試資訊
-        const interview = prepare(`
+        const interview = req.tenantDB.prepare(`
             SELECT i.*, c.name as candidate_name
             FROM interviews i
             JOIN candidates c ON i.candidate_id = c.id
@@ -1280,7 +1228,7 @@ router.post('/interviews/cancel/:token', (req, res) => {
         const now = new Date().toISOString();
 
         // 1. 更新面試狀態為 Cancelled
-        const updateInterview = prepare(`
+        const updateInterview = req.tenantDB.prepare(`
             UPDATE interviews 
             SET result = 'Cancelled', cancelled_at = ?, cancel_reason = ?, updated_at = ?
             WHERE id = ?
@@ -1288,7 +1236,7 @@ router.post('/interviews/cancel/:token', (req, res) => {
         updateInterview.run(now, reason || '候選人婉拒', now, interview.id);
 
         // 2. 更新候選人狀態
-        const updateCandidate = prepare(`
+        const updateCandidate = req.tenantDB.prepare(`
             UPDATE candidates 
             SET status = 'interview_declined', stage = 'Rejected', updated_at = ?
             WHERE id = ?
@@ -1296,7 +1244,7 @@ router.post('/interviews/cancel/:token', (req, res) => {
         updateCandidate.run(now, interview.candidate_id);
 
         // 3. 自動將婉拒的候選人加入人才庫
-        importToTalentPool(interview.candidate_id, 'interview', reason || '已安排面試但婉拒');
+        importToTalentPool(req, interview.candidate_id, 'interview', reason || '已安排面試但婉拒');
 
         res.json({
             success: true,
@@ -1316,7 +1264,7 @@ router.get('/candidates/:candidateId/response-link', (req, res) => {
     try {
         const { candidateId } = req.params;
 
-        const invitation = prepare(`
+        const invitation = req.tenantDB.prepare(`
             SELECT response_token, reply_deadline, status, candidate_response, selected_slots
             FROM interview_invitations 
             WHERE candidate_id = ? 
@@ -1349,7 +1297,7 @@ router.get('/candidates/:candidateId/offer-response-link', (req, res) => {
     try {
         const { candidateId } = req.params;
 
-        const decision = prepare(`
+        const decision = req.tenantDB.prepare(`
             SELECT response_token, reply_deadline, candidate_response, responded_at
             FROM invitation_decisions 
             WHERE candidate_id = ? AND decision = 'Offered' AND response_token IS NOT NULL
@@ -1416,7 +1364,7 @@ router.post('/interviews/:id/generate-form', async (req, res) => {
         const { timeLimitMinutes, forceRegenerate } = req.body; // forceRegenerate: 強制重新產生 token
 
         // 檢查面試是否存在
-        const interview = prepare(`
+        const interview = req.tenantDB.prepare(`
             SELECT i.*, c.name as candidate_name, j.title as job_title, j.department
             FROM interviews i
             JOIN candidates c ON i.candidate_id = c.id
@@ -1429,7 +1377,7 @@ router.post('/interviews/:id/generate-form', async (req, res) => {
         }
 
         // 檢查是否已有表單
-        let existingForm = prepare(`
+        let existingForm = req.tenantDB.prepare(`
             SELECT * FROM candidate_interview_forms WHERE interview_id = ?
         `).get(interviewId);
 
@@ -1462,7 +1410,7 @@ router.post('/interviews/:id/generate-form', async (req, res) => {
 
         if (existingForm) {
             // 強制重新產生：更新現有表單的 Token，重置狀態
-            prepare(`
+            req.tenantDB.prepare(`
                 UPDATE candidate_interview_forms 
                 SET form_token = ?, time_limit_minutes = ?, status = 'Pending', 
                     started_at = NULL, submitted_at = NULL, locked_at = NULL, 
@@ -1472,7 +1420,7 @@ router.post('/interviews/:id/generate-form', async (req, res) => {
         } else {
             // 建立新表單
             const formId = uuidv4();
-            prepare(`
+            req.tenantDB.prepare(`
                 INSERT INTO candidate_interview_forms (
                     id, interview_id, form_token, status, time_limit_minutes, 
                     current_step, created_at
@@ -1481,7 +1429,7 @@ router.post('/interviews/:id/generate-form', async (req, res) => {
         }
 
         // 同時更新 interviews 表的 form_token 欄位
-        prepare(`
+        req.tenantDB.prepare(`
             UPDATE interviews SET form_token = ?, updated_at = ? WHERE id = ?
         `).run(formToken, now, interviewId);
 
@@ -1514,7 +1462,7 @@ router.get('/interviews/:id/form-status', (req, res) => {
     try {
         const { id: interviewId } = req.params;
 
-        const form = prepare(`
+        const form = req.tenantDB.prepare(`
             SELECT cif.*, i.interview_at, c.name as candidate_name
             FROM candidate_interview_forms cif
             JOIN interviews i ON cif.interview_id = i.id
@@ -1565,7 +1513,7 @@ router.get('/interviews/:id/form-data', (req, res) => {
     try {
         const { id: interviewId } = req.params;
 
-        const form = prepare(`
+        const form = req.tenantDB.prepare(`
             SELECT cif.*, i.interview_at, i.location, i.round,
                    c.name as candidate_name, c.email, c.phone,
                    j.title as job_title, j.department
@@ -1621,7 +1569,7 @@ router.get('/interview-form/:token', (req, res) => {
     try {
         const { token } = req.params;
 
-        const form = prepare(`
+        const form = req.tenantDB.prepare(`
             SELECT cif.*, i.interview_at, i.location, i.round,
                    c.id as candidate_id, c.name as candidate_name, c.email, c.phone,
                    c.education, c.expected_salary, c.experience_years,
@@ -1669,7 +1617,7 @@ router.get('/interview-form/:token', (req, res) => {
         if (form.status === 'InProgress' && isFormExpired(form)) {
             // 更新狀態為鎖定
             const now_ts = new Date().toISOString();
-            prepare(`
+            req.tenantDB.prepare(`
                 UPDATE candidate_interview_forms 
                 SET status = 'Locked', locked_at = ?
                 WHERE form_token = ?
@@ -1693,13 +1641,13 @@ router.get('/interview-form/:token', (req, res) => {
         }
 
         // 取得候選人完整資料（工作經歷、駕照等）
-        const candidateFull = prepare(`
+        const candidateFull = req.tenantDB.prepare(`
             SELECT c.*, c.driving_licenses, c.birthday
             FROM candidates c WHERE c.id = ?
         `).get(form.candidate_id);
 
         // 取得候選人工作經歷
-        const experiences = prepare(`
+        const experiences = req.tenantDB.prepare(`
             SELECT firm_name, job_name, start_date, end_date
             FROM candidate_experiences 
             WHERE candidate_id = ?
@@ -1788,7 +1736,7 @@ router.post('/interview-form/:token/start', (req, res) => {
     try {
         const { token } = req.params;
 
-        const form = prepare(`
+        const form = req.tenantDB.prepare(`
             SELECT * FROM candidate_interview_forms WHERE form_token = ?
         `).get(token);
 
@@ -1832,7 +1780,7 @@ router.post('/interview-form/:token/start', (req, res) => {
 
         // 記錄開始時間
         const now = new Date().toISOString();
-        prepare(`
+        req.tenantDB.prepare(`
             UPDATE candidate_interview_forms 
             SET status = 'InProgress', started_at = ?
             WHERE form_token = ?
@@ -1859,7 +1807,7 @@ router.patch('/interview-form/:token/save', (req, res) => {
         const { token } = req.params;
         const { formData, currentStep } = req.body;
 
-        const form = prepare(`
+        const form = req.tenantDB.prepare(`
             SELECT * FROM candidate_interview_forms WHERE form_token = ?
         `).get(token);
 
@@ -1888,7 +1836,7 @@ router.patch('/interview-form/:token/save', (req, res) => {
         // 檢查是否超時
         if (form.started_at && isFormExpired(form)) {
             const now_ts = new Date().toISOString();
-            prepare(`
+            req.tenantDB.prepare(`
                 UPDATE candidate_interview_forms 
                 SET status = 'Locked', locked_at = ?
                 WHERE form_token = ?
@@ -1904,7 +1852,7 @@ router.patch('/interview-form/:token/save', (req, res) => {
         const now = new Date().toISOString();
         const formDataJson = formData ? JSON.stringify(formData) : form.form_data;
 
-        prepare(`
+        req.tenantDB.prepare(`
             UPDATE candidate_interview_forms 
             SET form_data = ?, current_step = COALESCE(?, current_step), 
                 last_saved_at = ?, status = COALESCE(NULLIF(status, 'Pending'), 'InProgress')
@@ -1930,7 +1878,7 @@ router.post('/interview-form/:token/submit', (req, res) => {
         const { token } = req.params;
         const { formData } = req.body;
 
-        const form = prepare(`
+        const form = req.tenantDB.prepare(`
             SELECT cif.*, i.candidate_id
             FROM candidate_interview_forms cif
             JOIN interviews i ON cif.interview_id = i.id
@@ -1960,7 +1908,7 @@ router.post('/interview-form/:token/submit', (req, res) => {
         const isExpired = form.started_at && isFormExpired(form);
         const finalStatus = isExpired ? 'Locked' : 'Submitted';
 
-        prepare(`
+        req.tenantDB.prepare(`
             UPDATE candidate_interview_forms 
             SET form_data = ?, status = ?, submitted_at = ?, 
                 locked_at = CASE WHEN ? = 'Locked' THEN ? ELSE locked_at END,
@@ -1969,7 +1917,7 @@ router.post('/interview-form/:token/submit', (req, res) => {
         `).run(formDataJson, finalStatus, now, finalStatus, now, now, token);
 
         // 更新候選人評分狀態為 Scoring（待評分）
-        prepare(`
+        req.tenantDB.prepare(`
             UPDATE candidates 
             SET scoring_status = 'Scoring', updated_at = ?
             WHERE id = ?
@@ -1996,7 +1944,7 @@ router.get('/interview-form/:token/status', (req, res) => {
     try {
         const { token } = req.params;
 
-        const form = prepare(`
+        const form = req.tenantDB.prepare(`
             SELECT status, time_limit_minutes, started_at, submitted_at, locked_at, current_step
             FROM candidate_interview_forms
             WHERE form_token = ?
@@ -2024,7 +1972,7 @@ router.get('/interview-form/:token/status', (req, res) => {
         // 如果已超時但狀態尚未更新，自動更新為鎖定
         if (isExpired && form.status === 'InProgress') {
             const now = new Date().toISOString();
-            prepare(`
+            req.tenantDB.prepare(`
                 UPDATE candidate_interview_forms 
                 SET status = 'Locked', locked_at = ?
                 WHERE form_token = ?
@@ -2055,7 +2003,7 @@ router.post('/interviews/:id/regenerate-qrcode', async (req, res) => {
     try {
         const { id: interviewId } = req.params;
 
-        const form = prepare(`
+        const form = req.tenantDB.prepare(`
             SELECT form_token FROM candidate_interview_forms WHERE interview_id = ?
         `).get(interviewId);
 
@@ -2093,13 +2041,13 @@ router.post('/reset-demo', (req, res) => {
         const now = new Date().toISOString();
 
         // 1. Clear related tables
-        prepare('DELETE FROM interview_evaluations').run();
-        prepare('DELETE FROM invitation_decisions').run();
-        prepare('DELETE FROM interviews').run();
-        prepare('DELETE FROM interview_invitations').run();
+        req.tenantDB.prepare('DELETE FROM interview_evaluations').run();
+        req.tenantDB.prepare('DELETE FROM invitation_decisions').run();
+        req.tenantDB.prepare('DELETE FROM interviews').run();
+        req.tenantDB.prepare('DELETE FROM interview_invitations').run();
 
         // 2. Reset Candidates
-        prepare(`
+        req.tenantDB.prepare(`
             UPDATE candidates 
             SET stage = 'Applied', status = 'new', scoring_status = 'Pending', 
                 ai_summary = NULL, updated_at = ?

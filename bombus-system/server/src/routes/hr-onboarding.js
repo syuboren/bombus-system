@@ -6,7 +6,7 @@
 const express = require('express');
 const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
-const { prepare } = require('../db');
+// tenantDB is accessed via req.tenantDB (injected by middleware)
 
 // ============================================================
 // Helper Functions
@@ -17,12 +17,12 @@ const { prepare } = require('../db');
  * 格式：E + 年份(4位) + 序號(3位，補零)
  * 例如：E2026001, E2026002
  */
-function generateEmployeeNo() {
+function generateEmployeeNo(req) {
   const year = new Date().getFullYear();
   const prefix = `E${year}`;
 
   // 查詢該年度最大的員工編號
-  const result = prepare(`
+  const result = req.tenantDB.prepare(`
     SELECT employee_no FROM employees
     WHERE employee_no LIKE ?
     ORDER BY employee_no DESC
@@ -69,7 +69,7 @@ router.get('/pending-conversions', (req, res) => {
   try {
     // 使用子查詢取得每個候選人最新的 invitation_decision 記錄
     // 職位來源：從 jobs 表取得應徵職缺名稱，而非候選人目前工作職位
-    const candidates = prepare(`
+    const candidates = req.tenantDB.prepare(`
       SELECT 
         c.id,
         c.name,
@@ -129,7 +129,7 @@ router.post('/convert-candidate', (req, res) => {
     }
 
     // 檢查候選人是否存在且狀態正確
-    const candidate = prepare(`
+    const candidate = req.tenantDB.prepare(`
       SELECT * FROM candidates WHERE id = ?
     `).get(candidate_id);
 
@@ -144,7 +144,7 @@ router.post('/convert-candidate', (req, res) => {
     }
 
     // 檢查是否已經轉換過
-    const existingEmployee = prepare(`
+    const existingEmployee = req.tenantDB.prepare(`
       SELECT id FROM employees WHERE candidate_id = ?
     `).get(candidate_id);
 
@@ -156,13 +156,13 @@ router.post('/convert-candidate', (req, res) => {
     }
 
     // 產生員工編號
-    const employee_no = generateEmployeeNo();
+    const employee_no = generateEmployeeNo(req);
     const employee_id = uuidv4();
     const probation_end_date = calculateProbationEndDate(hire_date, probation_months);
     const now = new Date().toISOString();
 
     // 建立員工記錄
-    prepare(`
+    req.tenantDB.prepare(`
       INSERT INTO employees (
         id, employee_no, name, email, phone, avatar,
         department, job_title, position, level, grade, role, manager_id,
@@ -195,12 +195,12 @@ router.post('/convert-candidate', (req, res) => {
     );
 
     // 複製候選人學歷到員工學歷
-    const candidateEducation = prepare(`
+    const candidateEducation = req.tenantDB.prepare(`
       SELECT * FROM candidate_education WHERE candidate_id = ?
     `).all(candidate_id);
 
     for (const edu of candidateEducation) {
-      prepare(`
+      req.tenantDB.prepare(`
         INSERT INTO employee_education (id, employee_id, degree, school, major, graduation_year)
         VALUES (?, ?, ?, ?, ?, ?)
       `).run(
@@ -214,24 +214,24 @@ router.post('/convert-candidate', (req, res) => {
     }
 
     // 複製候選人技能到員工技能
-    const candidateSkills = prepare(`
+    const candidateSkills = req.tenantDB.prepare(`
       SELECT * FROM candidate_specialities WHERE candidate_id = ?
     `).all(candidate_id);
 
     for (const skill of candidateSkills) {
-      prepare(`
+      req.tenantDB.prepare(`
         INSERT INTO employee_skills (id, employee_id, skill_name)
         VALUES (?, ?, ?)
       `).run(uuidv4(), employee_id, skill.skill || skill.skill_name || '');
     }
 
     // 更新候選人狀態
-    prepare(`
+    req.tenantDB.prepare(`
       UPDATE candidates SET status = 'onboarded', updated_at = ? WHERE id = ?
     `).run(now, candidate_id);
 
     // 為所有公開且必填的模板建立 submissions 記錄
-    const templates = prepare(`
+    const templates = req.tenantDB.prepare(`
       SELECT id, name FROM templates
       WHERE is_public = 1 AND is_active = 1 AND is_required = 1
     `).all();
@@ -241,7 +241,7 @@ router.post('/convert-candidate', (req, res) => {
       const token = generateToken();
       const submission_id = uuidv4();
 
-      prepare(`
+      req.tenantDB.prepare(`
         INSERT INTO submissions (id, template_id, employee_id, token, employee_name, employee_email, status, created_at)
         VALUES (?, ?, ?, ?, ?, ?, 'DRAFT', ?)
       `).run(
@@ -263,7 +263,7 @@ router.post('/convert-candidate', (req, res) => {
     }
 
     // 記錄職務異動（入職）
-    prepare(`
+    req.tenantDB.prepare(`
       INSERT INTO employee_job_changes (
         id, employee_id, effective_date, change_type,
         to_position, to_department, reason, created_at
@@ -304,7 +304,7 @@ router.post('/convert-candidate', (req, res) => {
  */
 router.get('/in-progress', (req, res) => {
   try {
-    const employees = prepare(`
+    const employees = req.tenantDB.prepare(`
       SELECT 
         e.id,
         e.employee_no,
@@ -330,7 +330,7 @@ router.get('/in-progress', (req, res) => {
     // 取得每個員工的入職進度
     const result = employees.map(emp => {
       // 模板簽署進度
-      const templateProgress = prepare(`
+      const templateProgress = req.tenantDB.prepare(`
         SELECT 
           COUNT(*) as total,
           SUM(CASE WHEN status = 'SIGNED' OR status = 'COMPLETED' THEN 1 ELSE 0 END) as signed,
@@ -340,7 +340,7 @@ router.get('/in-progress', (req, res) => {
       `).get(emp.id);
 
       // 文件上傳進度（固定5種必填類型）
-      const docProgress = prepare(`
+      const docProgress = req.tenantDB.prepare(`
         SELECT 
           COUNT(DISTINCT type) as uploaded
         FROM employee_documents
@@ -391,7 +391,7 @@ router.get('/progress/:employeeId', (req, res) => {
     const { employeeId } = req.params;
 
     // 取得員工資料
-    const employee = prepare(`
+    const employee = req.tenantDB.prepare(`
       SELECT 
         e.id,
         e.employee_no,
@@ -412,7 +412,7 @@ router.get('/progress/:employeeId', (req, res) => {
     }
 
     // 取得模板簽署狀態
-    const submissions = prepare(`
+    const submissions = req.tenantDB.prepare(`
       SELECT 
         s.id,
         s.template_id,
@@ -430,7 +430,7 @@ router.get('/progress/:employeeId', (req, res) => {
     `).all(employeeId);
 
     // 取得文件上傳狀態
-    const documents = prepare(`
+    const documents = req.tenantDB.prepare(`
       SELECT 
         id,
         type,
@@ -500,7 +500,7 @@ router.get('/progress/:employeeId', (req, res) => {
     }
 
     if (newStatus !== employee.onboarding_status) {
-      prepare(`UPDATE employees SET onboarding_status = ? WHERE id = ?`).run(newStatus, employeeId);
+      req.tenantDB.prepare(`UPDATE employees SET onboarding_status = ? WHERE id = ?`).run(newStatus, employeeId);
     }
 
     res.json({
@@ -546,7 +546,7 @@ router.get('/progress/:employeeId', (req, res) => {
  */
 router.get('/next-employee-no', (req, res) => {
   try {
-    const employeeNo = generateEmployeeNo();
+    const employeeNo = generateEmployeeNo(req);
     res.json({ employee_no: employeeNo });
   } catch (error) {
     console.error('Error generating employee no:', error);
@@ -561,7 +561,7 @@ router.get('/next-employee-no', (req, res) => {
 router.get('/departments', (req, res) => {
   try {
     // 優先從 departments 資料表取得
-    const deptFromTable = prepare(`
+    const deptFromTable = req.tenantDB.prepare(`
       SELECT id, name, code, sort_order FROM departments
       ORDER BY sort_order
     `).all();
@@ -570,7 +570,7 @@ router.get('/departments', (req, res) => {
       res.json(deptFromTable);
     } else {
       // 向後相容：從員工資料取得
-      const departments = prepare(`
+      const departments = req.tenantDB.prepare(`
         SELECT DISTINCT department FROM employees
         WHERE department IS NOT NULL AND department != ''
         ORDER BY department
@@ -590,7 +590,7 @@ router.get('/departments', (req, res) => {
  */
 router.get('/grades', (req, res) => {
   try {
-    const grades = prepare(`
+    const grades = req.tenantDB.prepare(`
       SELECT 
         id,
         grade,
@@ -633,11 +633,11 @@ router.get('/salary-levels', (req, res) => {
 
     if (grade) {
       query += ` WHERE gsl.grade = ? ORDER BY gsl.sort_order`;
-      const levels = prepare(query).all(parseInt(grade));
+      const levels = req.tenantDB.prepare(query).all(parseInt(grade));
       res.json(levels);
     } else {
       query += ` ORDER BY gsl.grade, gsl.sort_order`;
-      const levels = prepare(query).all();
+      const levels = req.tenantDB.prepare(query).all();
       res.json(levels);
     }
   } catch (error) {
@@ -686,7 +686,7 @@ router.get('/positions', (req, res) => {
 
     query += ` ORDER BY dp.grade DESC, dp.department, dp.track`;
 
-    const positions = prepare(query).all(...params);
+    const positions = req.tenantDB.prepare(query).all(...params);
     res.json(positions);
   } catch (error) {
     console.error('Error fetching positions:', error);
@@ -700,7 +700,7 @@ router.get('/positions', (req, res) => {
  */
 router.get('/managers', (req, res) => {
   try {
-    const managers = prepare(`
+    const managers = req.tenantDB.prepare(`
       SELECT id, name, department, position
       FROM employees
       WHERE status IN ('active', 'probation')

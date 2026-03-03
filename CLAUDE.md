@@ -109,3 +109,41 @@ features/           → 功能模組（延遲載入）
 2. （涉及畫面）是否已讀取 `DESIGN_SYSTEM.md`？
 3. （涉及互動）是否已檢查 `WEB_GUIDELINES.md` 的 A11y 與體驗規範？
 4. 是否遵循 `PROJECT_RULES.md` 的元件結構順序與命名規範？
+
+## Multi-Tenant SaaS 開發狀態
+
+此專案正在進行 multi-tenant SaaS 架構升級（Database-per-Tenant 隔離策略）。
+
+### 進度追蹤
+- **任務進度**：`bombus-system/openspec/changes/multi-tenant-saas/tasks.md`（唯一 source of truth）
+- **迭代日誌**：`.claude/ralph-loop-saas.log`
+- **設計文件**：`bombus-system/openspec/changes/multi-tenant-saas/design.md`
+- **Spec 檔案**：`bombus-system/openspec/changes/multi-tenant-saas/specs/`
+
+### 已完成的後端基礎設施（Group 1-4，21/57 任務）
+- DB 抽象層：`server/src/db/db-adapter.js`（DBAdapter + SqliteAdapter）
+- 平台資料庫：`server/src/db/platform-db.js`（platform.db — tenants/plans/admins/audit_logs）
+- 租戶管理器：`server/src/db/tenant-db-manager.js`（TenantDBManager 單例 + LRU Cache 30min）
+- 租戶 Schema：`server/src/db/tenant-schema.js`（69 業務表 + 7 RBAC 表）
+- 認證中間件：`server/src/middleware/auth.js`（JWT Access Token 15min）
+- 租戶中間件：`server/src/middleware/tenant.js`（注入 req.tenantDB）
+- 權限中間件：`server/src/middleware/permission.js`（requirePermission/requireRole）
+- 認證路由：`server/src/routes/auth.js`（login/refresh/logout/platform-login）
+- 平台管理路由：`server/src/routes/platform.js`（租戶 CRUD + 方案管理）
+- 租戶管理路由：`server/src/routes/tenant-admin.js`（組織/角色/使用者/權限管理）
+- 審計路由：`server/src/routes/audit.js`（日誌查詢 + 405 保護）
+- 組織管理路由：`server/src/routes/organization.js`（公司/部門/統計）
+- 所有 17 個既有路由已遷移至 `req.tenantDB`（helper functions 已補 `req` 參數）
+
+### 新增 API 路由（已註冊在 index.js）
+| 路由 | 保護方式 |
+|------|----------|
+| `/api/auth` | authLimiter（自帶限流） |
+| `/api/platform` | authMiddleware + platformAdminMiddleware（路由內部） |
+| `/api/tenant-admin` | authMiddleware + tenantMiddleware + requireRole（路由內部） |
+| `/api/audit` | authMiddleware（路由內部） |
+| `/api/organization` | authMiddleware + tenantMiddleware |
+| 所有既有 `/api/*` | authMiddleware + tenantMiddleware |
+
+### 環境變數
+- `server/.env`：JWT_SECRET、PLATFORM_ADMIN_EMAIL/PASSWORD 等（已在 .gitignore）

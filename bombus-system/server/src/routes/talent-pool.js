@@ -27,7 +27,7 @@
 const express = require('express');
 const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
-const { prepare } = require('../db');
+// tenantDB is accessed via req.tenantDB (injected by middleware)
 
 // =====================================================
 // 自動標籤匹配功能
@@ -39,25 +39,25 @@ const { prepare } = require('../db');
  * @param {string} talentId - 人才庫 ID
  * @returns {string[]} - 匹配到的標籤名稱列表
  */
-function autoTagTalent(candidateId, talentId) {
+function autoTagTalent(req, candidateId, talentId) {
     const matchedTags = [];
     
     try {
         // 取得所有標籤
-        const allTags = prepare('SELECT id, name, category FROM talent_tags').all();
+        const allTags = req.tenantDB.prepare('SELECT id, name, category FROM talent_tags').all();
         const tagMap = {};
         allTags.forEach(tag => {
             tagMap[tag.name] = tag.id;
         });
         
         // 取得候選人基本資料（包含 skills 和 education 欄位作為備選）
-        const candidate = prepare(`
+        const candidate = req.tenantDB.prepare(`
             SELECT experience_years, reg_source, skills as skills_json, education as main_education
             FROM candidates WHERE id = ?
         `).get(candidateId);
         
         // 取得候選人技能 - 優先從 candidate_specialities 表，備選從 candidates.skills
-        let skills = prepare(`
+        let skills = req.tenantDB.prepare(`
             SELECT skill FROM candidate_specialities WHERE candidate_id = ?
         `).all(candidateId).map(s => s.skill.toLowerCase());
         
@@ -75,7 +75,7 @@ function autoTagTalent(candidateId, talentId) {
         }
         
         // 取得候選人學歷 - 優先從 candidate_education 表
-        let education = prepare(`
+        let education = req.tenantDB.prepare(`
             SELECT school_name, degree_level, major 
             FROM candidate_education WHERE candidate_id = ?
         `).all(candidateId);
@@ -101,13 +101,13 @@ function autoTagTalent(candidateId, talentId) {
         }
         
         // 取得候選人工作經驗
-        const experiences = prepare(`
+        const experiences = req.tenantDB.prepare(`
             SELECT firm_name, job_name, industry_category, management 
             FROM candidate_experiences WHERE candidate_id = ?
         `).all(candidateId);
         
         // 取得候選人語言能力
-        const languages = prepare(`
+        const languages = req.tenantDB.prepare(`
             SELECT lang_type, degree, listen_degree, speak_degree 
             FROM candidate_languages WHERE candidate_id = ?
         `).all(candidateId);
@@ -292,12 +292,12 @@ function autoTagTalent(candidateId, talentId) {
         
         // ===== 寫入標籤映射 =====
         if (matchedTags.length > 0) {
-            const insertTagMapping = prepare(`
+            const insertTagMapping = req.tenantDB.prepare(`
                 INSERT OR IGNORE INTO talent_tag_mapping (id, talent_id, tag_id, created_at)
                 VALUES (?, ?, ?, datetime('now'))
             `);
             
-            const updateTagUsage = prepare(`
+            const updateTagUsage = req.tenantDB.prepare(`
                 UPDATE talent_tags SET usage_count = usage_count + 1 WHERE id = ?
             `);
             
@@ -416,7 +416,7 @@ router.get('/', (req, res) => {
         query += ` LIMIT ? OFFSET ?`;
         params.push(parseInt(limit), offset);
 
-        const talents = prepare(query).all(...params);
+        const talents = req.tenantDB.prepare(query).all(...params);
 
         // 轉換標籤格式並計算聯繫狀態
         const formattedTalents = talents.map(talent => {
@@ -454,7 +454,7 @@ router.get('/', (req, res) => {
             // 自動關閉超時的提醒
             if (shouldAutoDisableReminder) {
                 try {
-                    prepare(`
+                    req.tenantDB.prepare(`
                         UPDATE talent_pool SET 
                             contact_reminder_enabled = 0, 
                             contact_reminder_date = NULL,
@@ -489,7 +489,7 @@ router.get('/', (req, res) => {
             countQuery += ` LEFT JOIN talent_tag_mapping ttm ON tp.id = ttm.talent_id WHERE ttm.tag_id IN (${tags.split(',').map(() => '?').join(',')})`;
         }
         const countParams = tags ? tags.split(',') : [];
-        const { total } = prepare(countQuery).get(...countParams);
+        const { total } = req.tenantDB.prepare(countQuery).get(...countParams);
 
         res.json({
             status: 'success',
@@ -517,14 +517,14 @@ router.get('/stats', (req, res) => {
     try {
 
         // 總人數與狀態分佈
-        const statusStats = prepare(`
+        const statusStats = req.tenantDB.prepare(`
             SELECT status, COUNT(*) as count
             FROM talent_pool
             GROUP BY status
         `).all();
 
         // 來源分佈
-        const sourceStats = prepare(`
+        const sourceStats = req.tenantDB.prepare(`
             SELECT source, COUNT(*) as count
             FROM talent_pool
             GROUP BY source
@@ -533,7 +533,7 @@ router.get('/stats', (req, res) => {
         // 本月聯繫數
         const thisMonth = new Date();
         const monthStart = new Date(thisMonth.getFullYear(), thisMonth.getMonth(), 1).toISOString();
-        const { contactedThisMonth } = prepare(`
+        const { contactedThisMonth } = req.tenantDB.prepare(`
             SELECT COUNT(*) as contactedThisMonth
             FROM talent_contact_history
             WHERE contact_date >= ?
@@ -541,14 +541,14 @@ router.get('/stats', (req, res) => {
 
         // 今年錄用數
         const yearStart = new Date(thisMonth.getFullYear(), 0, 1).toISOString();
-        const { hiredThisYear } = prepare(`
+        const { hiredThisYear } = req.tenantDB.prepare(`
             SELECT COUNT(*) as hiredThisYear
             FROM talent_pool
             WHERE status = 'hired' AND updated_at >= ?
         `).get(yearStart);
 
         // 平均媒合分數
-        const { avgMatchScore } = prepare(`
+        const { avgMatchScore } = req.tenantDB.prepare(`
             SELECT AVG(match_score) as avgMatchScore
             FROM talent_pool
             WHERE match_score > 0
@@ -559,7 +559,7 @@ router.get('/stats', (req, res) => {
         oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
         const oneMonthAgoStr = oneMonthAgo.toISOString();
 
-        const { pendingContactCount } = prepare(`
+        const { pendingContactCount } = req.tenantDB.prepare(`
             SELECT COUNT(*) as pendingContactCount
             FROM talent_pool tp
             WHERE tp.contact_reminder_enabled = 1
@@ -606,7 +606,7 @@ router.get('/:id', (req, res) => {
     try {
         const { id } = req.params;
 
-        const talent = prepare(`
+        const talent = req.tenantDB.prepare(`
             SELECT tp.*,
                    GROUP_CONCAT(DISTINCT tt.id) as tag_ids,
                    GROUP_CONCAT(DISTINCT tt.name) as tag_names,
@@ -624,14 +624,14 @@ router.get('/:id', (req, res) => {
         }
 
         // 取得聯繫紀錄
-        const contactHistory = prepare(`
+        const contactHistory = req.tenantDB.prepare(`
             SELECT * FROM talent_contact_history
             WHERE talent_id = ?
             ORDER BY contact_date DESC
         `).all(id);
 
         // 取得提醒事項
-        const reminders = prepare(`
+        const reminders = req.tenantDB.prepare(`
             SELECT * FROM talent_reminders
             WHERE talent_id = ?
             ORDER BY reminder_date ASC
@@ -695,7 +695,7 @@ router.post('/', (req, res) => {
         const id = uuidv4();
         const now = new Date().toISOString();
 
-        prepare(`
+        req.tenantDB.prepare(`
             INSERT INTO talent_pool (
                 id, candidate_id, name, email, phone, avatar,
                 current_position, current_company, experience_years, education,
@@ -714,7 +714,7 @@ router.post('/', (req, res) => {
 
         // 設定標籤
         if (tags && Array.isArray(tags) && tags.length > 0) {
-            const insertTag = prepare(`
+            const insertTag = req.tenantDB.prepare(`
                 INSERT OR IGNORE INTO talent_tag_mapping (id, talent_id, tag_id)
                 VALUES (?, ?, ?)
             `);
@@ -723,7 +723,7 @@ router.post('/', (req, res) => {
             });
 
             // 更新標籤使用次數
-            prepare(`
+            req.tenantDB.prepare(`
                 UPDATE talent_tags SET usage_count = usage_count + 1
                 WHERE id IN (${tags.map(() => '?').join(',')})
             `).run(...tags);
@@ -751,7 +751,7 @@ router.put('/:id', (req, res) => {
         const now = new Date().toISOString();
 
         // 檢查人才是否存在
-        const existing = prepare(`SELECT id FROM talent_pool WHERE id = ?`).get(id);
+        const existing = req.tenantDB.prepare(`SELECT id FROM talent_pool WHERE id = ?`).get(id);
         if (!existing) {
             return res.status(404).json({ status: 'error', message: 'Talent not found' });
         }
@@ -784,17 +784,17 @@ router.put('/:id', (req, res) => {
         params.push(now);
         params.push(id);
 
-        prepare(`
+        req.tenantDB.prepare(`
             UPDATE talent_pool SET ${setClauses.join(', ')} WHERE id = ?
         `).run(...params);
 
         // 處理標籤更新
         if (updates.tags && Array.isArray(updates.tags)) {
             // 先移除舊標籤
-            prepare(`DELETE FROM talent_tag_mapping WHERE talent_id = ?`).run(id);
+            req.tenantDB.prepare(`DELETE FROM talent_tag_mapping WHERE talent_id = ?`).run(id);
             
             // 新增新標籤
-            const insertTag = prepare(`
+            const insertTag = req.tenantDB.prepare(`
                 INSERT OR IGNORE INTO talent_tag_mapping (id, talent_id, tag_id)
                 VALUES (?, ?, ?)
             `);
@@ -824,15 +824,15 @@ router.put('/:id', (req, res) => {
 router.delete('/clear-all', (req, res) => {
     try {
         // 刪除關聯的標籤映射
-        prepare(`DELETE FROM talent_tag_mapping`).run();
+        req.tenantDB.prepare(`DELETE FROM talent_tag_mapping`).run();
         // 刪除聯繫紀錄
-        prepare(`DELETE FROM talent_contact_history`).run();
+        req.tenantDB.prepare(`DELETE FROM talent_contact_history`).run();
         // 刪除提醒
-        prepare(`DELETE FROM talent_reminders`).run();
+        req.tenantDB.prepare(`DELETE FROM talent_reminders`).run();
         // 刪除職缺媒合記錄
-        prepare(`DELETE FROM talent_job_matches`).run();
+        req.tenantDB.prepare(`DELETE FROM talent_job_matches`).run();
         // 刪除人才庫主表
-        const result = prepare(`DELETE FROM talent_pool`).run();
+        const result = req.tenantDB.prepare(`DELETE FROM talent_pool`).run();
         
         res.json({
             status: 'success',
@@ -848,7 +848,7 @@ router.delete('/:id', (req, res) => {
     try {
         const { id } = req.params;
 
-        const result = prepare(`DELETE FROM talent_pool WHERE id = ?`).run(id);
+        const result = req.tenantDB.prepare(`DELETE FROM talent_pool WHERE id = ?`).run(id);
 
         if (result.changes === 0) {
             return res.status(404).json({ status: 'error', message: 'Talent not found' });
@@ -876,7 +876,7 @@ router.get('/:id/contacts', (req, res) => {
     try {
         const { id } = req.params;
 
-        const contacts = prepare(`
+        const contacts = req.tenantDB.prepare(`
             SELECT * FROM talent_contact_history
             WHERE talent_id = ?
             ORDER BY contact_date DESC
@@ -912,7 +912,7 @@ router.post('/:id/contacts', (req, res) => {
         const id = uuidv4();
         const now = new Date().toISOString();
 
-        prepare(`
+        req.tenantDB.prepare(`
             INSERT INTO talent_contact_history (
                 id, talent_id, contact_date, contact_method, contact_by,
                 summary, outcome, next_action, next_action_date, created_at
@@ -923,7 +923,7 @@ router.post('/:id/contacts', (req, res) => {
         );
 
         // 更新人才的聯繫資訊
-        prepare(`
+        req.tenantDB.prepare(`
             UPDATE talent_pool SET
                 last_contact_date = ?,
                 next_contact_date = ?,
@@ -957,7 +957,7 @@ router.put('/:id/contact-reminder', (req, res) => {
 
         const now = new Date().toISOString();
 
-        prepare(`
+        req.tenantDB.prepare(`
             UPDATE talent_pool SET
                 contact_reminder_enabled = ?,
                 contact_reminder_date = CASE WHEN ? = 1 THEN ? ELSE NULL END,
@@ -1012,7 +1012,7 @@ router.get('/reminders/list', (req, res) => {
 
         query += ` ORDER BY tr.reminder_date ASC`;
 
-        const reminders = prepare(query).all(...params);
+        const reminders = req.tenantDB.prepare(query).all(...params);
 
         res.json({
             status: 'success',
@@ -1041,14 +1041,14 @@ router.post('/:id/reminders', (req, res) => {
         const id = uuidv4();
         const now = new Date().toISOString();
 
-        prepare(`
+        req.tenantDB.prepare(`
             INSERT INTO talent_reminders (
                 id, talent_id, reminder_date, reminder_type, message, assigned_to, created_at
             ) VALUES (?, ?, ?, ?, ?, ?, ?)
         `).run(id, talentId, reminderDate, reminderType, message, assignedTo, now);
 
         // 更新人才的下次聯繫日期
-        prepare(`
+        req.tenantDB.prepare(`
             UPDATE talent_pool SET next_contact_date = ?, updated_at = ?
             WHERE id = ? AND (next_contact_date IS NULL OR next_contact_date > ?)
         `).run(reminderDate, now, talentId, reminderDate);
@@ -1104,7 +1104,7 @@ router.put('/reminders/:reminderId', (req, res) => {
 
         params.push(reminderId);
 
-        prepare(`
+        req.tenantDB.prepare(`
             UPDATE talent_reminders SET ${setClauses.join(', ')} WHERE id = ?
         `).run(...params);
 
@@ -1126,7 +1126,7 @@ router.delete('/reminders/:reminderId', (req, res) => {
     try {
         const { reminderId } = req.params;
 
-        prepare(`DELETE FROM talent_reminders WHERE id = ?`).run(reminderId);
+        req.tenantDB.prepare(`DELETE FROM talent_reminders WHERE id = ?`).run(reminderId);
 
         res.json({
             status: 'success',
@@ -1160,7 +1160,7 @@ router.get('/tags/list', (req, res) => {
 
         query += ` ORDER BY usage_count DESC, name ASC`;
 
-        const tags = prepare(query).all(...params);
+        const tags = req.tenantDB.prepare(query).all(...params);
 
         res.json({
             status: 'success',
@@ -1187,7 +1187,7 @@ router.post('/tags', (req, res) => {
         const id = uuidv4();
         const now = new Date().toISOString();
 
-        prepare(`
+        req.tenantDB.prepare(`
             INSERT INTO talent_tags (id, name, color, category, description, created_at)
             VALUES (?, ?, ?, ?, ?, ?)
         `).run(id, name, color || '#3B82F6', category || 'custom', description, now);
@@ -1216,7 +1216,7 @@ router.put('/tags/:tagId', (req, res) => {
         const { name, color, category, description } = req.body;
         const now = new Date().toISOString();
 
-        prepare(`
+        req.tenantDB.prepare(`
             UPDATE talent_tags
             SET name = COALESCE(?, name),
                 color = COALESCE(?, color),
@@ -1244,7 +1244,7 @@ router.delete('/tags/:tagId', (req, res) => {
     try {
         const { tagId } = req.params;
 
-        prepare(`DELETE FROM talent_tags WHERE id = ?`).run(tagId);
+        req.tenantDB.prepare(`DELETE FROM talent_tags WHERE id = ?`).run(tagId);
 
         res.json({
             status: 'success',
@@ -1270,11 +1270,11 @@ router.post('/:id/tags', (req, res) => {
         }
 
         // 移除舊標籤
-        prepare(`DELETE FROM talent_tag_mapping WHERE talent_id = ?`).run(talentId);
+        req.tenantDB.prepare(`DELETE FROM talent_tag_mapping WHERE talent_id = ?`).run(talentId);
 
         // 新增新標籤
         if (tagIds.length > 0) {
-            const insertTag = prepare(`
+            const insertTag = req.tenantDB.prepare(`
                 INSERT OR IGNORE INTO talent_tag_mapping (id, talent_id, tag_id)
                 VALUES (?, ?, ?)
             `);
@@ -1283,7 +1283,7 @@ router.post('/:id/tags', (req, res) => {
             });
 
             // 更新標籤使用次數
-            prepare(`
+            req.tenantDB.prepare(`
                 UPDATE talent_tags SET usage_count = usage_count + 1
                 WHERE id IN (${tagIds.map(() => '?').join(',')})
             `).run(...tagIds);
@@ -1316,7 +1316,7 @@ router.post('/import-from-candidate', (req, res) => {
         } = req.body;
 
         // 取得候選人資料
-        const candidate = prepare(`
+        const candidate = req.tenantDB.prepare(`
             SELECT c.*, j.title as job_title
             FROM candidates c
             LEFT JOIN jobs j ON c.job_id = j.id
@@ -1328,7 +1328,7 @@ router.post('/import-from-candidate', (req, res) => {
         }
 
         // 檢查是否已在人才庫中
-        const existing = prepare(`
+        const existing = req.tenantDB.prepare(`
             SELECT id FROM talent_pool WHERE candidate_id = ?
         `).get(candidateId);
 
@@ -1353,7 +1353,7 @@ router.post('/import-from-candidate', (req, res) => {
             }
         }
 
-        prepare(`
+        req.tenantDB.prepare(`
             INSERT INTO talent_pool (
                 id, candidate_id, name, email, phone, avatar,
                 current_position, current_company, experience_years, education,
@@ -1388,7 +1388,7 @@ router.post('/import-from-candidate', (req, res) => {
         );
 
         // 自動標籤匹配
-        const matchedTags = autoTagTalent(candidateId, id);
+        const matchedTags = autoTagTalent(req, candidateId, id);
 
         res.json({
             status: 'success',
@@ -1415,7 +1415,7 @@ router.post('/import-declined', (req, res) => {
 
         // 找出所有已婉拒但尚未在人才庫中的候選人
         // 只包含三種婉拒狀態：invite_declined, interview_declined, offer_declined
-        const declinedCandidates = prepare(`
+        const declinedCandidates = req.tenantDB.prepare(`
             SELECT c.*, j.title as job_title,
                    CASE 
                        WHEN c.status = 'offer_declined' THEN 'offer'
@@ -1470,7 +1470,7 @@ router.post('/import-declined', (req, res) => {
                     declineReason = '招募流程婉拒';
                 }
 
-                prepare(`
+                req.tenantDB.prepare(`
                     INSERT INTO talent_pool (
                         id, candidate_id, name, email, phone, avatar,
                         current_position, current_company, experience_years, education,
@@ -1505,7 +1505,7 @@ router.post('/import-declined', (req, res) => {
                 );
 
                 // 自動標籤匹配
-                const matchedTags = autoTagTalent(candidate.id, id);
+                const matchedTags = autoTagTalent(req, candidate.id, id);
 
                 imported++;
                 importedIds.push({ id, name: candidate.name, candidateId: candidate.id, tags: matchedTags });
@@ -1537,7 +1537,7 @@ router.post('/import-declined', (req, res) => {
 router.post('/retag-all', (req, res) => {
     try {
         // 取得所有人才庫成員
-        const talents = prepare(`
+        const talents = req.tenantDB.prepare(`
             SELECT id, candidate_id, name FROM talent_pool
         `).all();
 
@@ -1546,10 +1546,10 @@ router.post('/retag-all', (req, res) => {
         talents.forEach(talent => {
             try {
                 // 先清除現有標籤
-                prepare(`DELETE FROM talent_tag_mapping WHERE talent_id = ?`).run(talent.id);
+                req.tenantDB.prepare(`DELETE FROM talent_tag_mapping WHERE talent_id = ?`).run(talent.id);
                 
                 // 重新執行自動標籤
-                const matchedTags = autoTagTalent(talent.candidate_id, talent.id);
+                const matchedTags = autoTagTalent(req, talent.candidate_id, talent.id);
                 
                 results.push({
                     name: talent.name,
@@ -1595,13 +1595,13 @@ router.get('/:id/job-matches', (req, res) => {
         const { id } = req.params;
         
         // 確認人才存在
-        const talent = prepare('SELECT id, name, skills FROM talent_pool WHERE id = ?').get(id);
+        const talent = req.tenantDB.prepare('SELECT id, name, skills FROM talent_pool WHERE id = ?').get(id);
         if (!talent) {
             return res.status(404).json({ status: 'error', message: 'Talent not found' });
         }
         
         // 取得所有已發布的職缺及其媒合度
-        const matches = prepare(`
+        const matches = req.tenantDB.prepare(`
             SELECT 
                 j.id,
                 j.title,
@@ -1647,7 +1647,7 @@ router.post('/:id/analyze-jobs', async (req, res) => {
         const { id } = req.params;
         
         // 取得人才資料及其技能
-        const talent = prepare(`
+        const talent = req.tenantDB.prepare(`
             SELECT tp.*, c.skills as candidate_skills
             FROM talent_pool tp
             LEFT JOIN candidates c ON c.id = tp.candidate_id
@@ -1679,7 +1679,7 @@ router.post('/:id/analyze-jobs', async (req, res) => {
         
         // 取得人才的專長資料
         if (talent.candidate_id) {
-            const specialities = prepare(`
+            const specialities = req.tenantDB.prepare(`
                 SELECT skill FROM candidate_specialities WHERE candidate_id = ?
             `).all(talent.candidate_id);
             specialities.forEach(s => {
@@ -1693,7 +1693,7 @@ router.post('/:id/analyze-jobs', async (req, res) => {
         const normalizedTalentSkills = talentSkills.map(s => s.toLowerCase().trim());
         
         // 取得所有已發布的職缺
-        const jobs = prepare(`
+        const jobs = req.tenantDB.prepare(`
             SELECT id, title, department, description, job104_data 
             FROM jobs 
             WHERE status = 'published'
@@ -1777,19 +1777,19 @@ router.post('/:id/analyze-jobs', async (req, res) => {
                 : '建議進一步了解候選人背景';
             
             // 更新或新增媒合記錄
-            const existing = prepare(`
+            const existing = req.tenantDB.prepare(`
                 SELECT id FROM talent_job_matches WHERE talent_id = ? AND job_id = ?
             `).get(id, job.id);
             
             if (existing) {
-                prepare(`
+                req.tenantDB.prepare(`
                     UPDATE talent_job_matches 
                     SET match_score = ?, match_details = ?, analysis_summary = ?, analyzed_at = ?, updated_at = ?
                     WHERE id = ?
                 `).run(matchScore, JSON.stringify(matchDetails), analysisSummary, now, now, existing.id);
             } else {
                 const matchId = uuidv4();
-                prepare(`
+                req.tenantDB.prepare(`
                     INSERT INTO talent_job_matches (id, talent_id, job_id, match_score, match_details, analysis_summary, analyzed_at)
                     VALUES (?, ?, ?, ?, ?, ?, ?)
                 `).run(matchId, id, job.id, matchScore, JSON.stringify(matchDetails), analysisSummary, now);
@@ -1833,7 +1833,7 @@ router.post('/:id/apply-to-job', (req, res) => {
         }
         
         // 確認人才存在，並取得關聯的原始候選人資料
-        const talent = prepare(`
+        const talent = req.tenantDB.prepare(`
             SELECT tp.*, c.email as candidate_email, c.phone as candidate_phone
             FROM talent_pool tp
             LEFT JOIN candidates c ON c.id = tp.candidate_id
@@ -1845,13 +1845,13 @@ router.post('/:id/apply-to-job', (req, res) => {
         }
         
         // 確認職缺存在
-        const job = prepare('SELECT * FROM jobs WHERE id = ?').get(jobId);
+        const job = req.tenantDB.prepare('SELECT * FROM jobs WHERE id = ?').get(jobId);
         if (!job) {
             return res.status(404).json({ status: 'error', message: 'Job not found' });
         }
         
         // 檢查是否已經是該職缺的候選人
-        const existingCandidate = prepare(`
+        const existingCandidate = req.tenantDB.prepare(`
             SELECT id FROM candidates WHERE job_id = ? AND (
                 (email = ? AND email IS NOT NULL) OR
                 (phone = ? AND phone IS NOT NULL) OR
@@ -1871,11 +1871,11 @@ router.post('/:id/apply-to-job', (req, res) => {
             
             // 如果人才庫有關聯的原始候選人，從該候選人複製完整資料
             if (talent.candidate_id) {
-                const originalCandidate = prepare('SELECT * FROM candidates WHERE id = ?').get(talent.candidate_id);
+                const originalCandidate = req.tenantDB.prepare('SELECT * FROM candidates WHERE id = ?').get(talent.candidate_id);
                 
                 if (originalCandidate) {
                     // 複製原始候選人的完整資料到新職缺
-                    prepare(`
+                    req.tenantDB.prepare(`
                         INSERT INTO candidates (
                             id, job_id, status, stage, scoring_status, score, apply_date, resume_url, ai_summary,
                             resume_104_id, name, name_en, gender, email, phone, sub_phone, tel, contact_info,
@@ -1921,9 +1921,9 @@ router.post('/:id/apply-to-job', (req, res) => {
                     );
                     
                     // 複製學歷資料
-                    const educations = prepare('SELECT * FROM candidate_education WHERE candidate_id = ?').all(talent.candidate_id);
+                    const educations = req.tenantDB.prepare('SELECT * FROM candidate_education WHERE candidate_id = ?').all(talent.candidate_id);
                     for (const edu of educations) {
-                        prepare(`
+                        req.tenantDB.prepare(`
                             INSERT INTO candidate_education (
                                 id, candidate_id, school_name, degree_level, major, major_category,
                                 degree_status, school_country, start_date, end_date, sort_order
@@ -1933,9 +1933,9 @@ router.post('/:id/apply-to-job', (req, res) => {
                     }
                     
                     // 複製工作經歷
-                    const experiences = prepare('SELECT * FROM candidate_experiences WHERE candidate_id = ?').all(talent.candidate_id);
+                    const experiences = req.tenantDB.prepare('SELECT * FROM candidate_experiences WHERE candidate_id = ?').all(talent.candidate_id);
                     for (const exp of experiences) {
-                        prepare(`
+                        req.tenantDB.prepare(`
                             INSERT INTO candidate_experiences (
                                 id, candidate_id, firm_name, industry_category, company_size, work_place,
                                 job_name, job_role, job_category, start_date, end_date, job_desc, skills, sort_order
@@ -1945,18 +1945,18 @@ router.post('/:id/apply-to-job', (req, res) => {
                     }
                     
                     // 複製技能專長
-                    const specialities = prepare('SELECT * FROM candidate_specialities WHERE candidate_id = ?').all(talent.candidate_id);
+                    const specialities = req.tenantDB.prepare('SELECT * FROM candidate_specialities WHERE candidate_id = ?').all(talent.candidate_id);
                     for (const spec of specialities) {
-                        prepare(`
+                        req.tenantDB.prepare(`
                             INSERT INTO candidate_specialities (id, candidate_id, skill, description, tags, sort_order)
                             VALUES (?, ?, ?, ?, ?, ?)
                         `).run(uuidv4(), candidateId, spec.skill, spec.description, spec.tags, spec.sort_order || 0);
                     }
                     
                     // 複製語言能力
-                    const languages = prepare('SELECT * FROM candidate_languages WHERE candidate_id = ?').all(talent.candidate_id);
+                    const languages = req.tenantDB.prepare('SELECT * FROM candidate_languages WHERE candidate_id = ?').all(talent.candidate_id);
                     for (const lang of languages) {
-                        prepare(`
+                        req.tenantDB.prepare(`
                             INSERT INTO candidate_languages (
                                 id, candidate_id, lang_type, language_category, listen_degree, speak_degree, 
                                 read_degree, write_degree, degree, certificates, sort_order
@@ -1969,9 +1969,9 @@ router.post('/:id/apply-to-job', (req, res) => {
                     }
                     
                     // 複製作品集
-                    const projects = prepare('SELECT * FROM candidate_projects WHERE candidate_id = ?').all(talent.candidate_id);
+                    const projects = req.tenantDB.prepare('SELECT * FROM candidate_projects WHERE candidate_id = ?').all(talent.candidate_id);
                     for (const proj of projects) {
-                        prepare(`
+                        req.tenantDB.prepare(`
                             INSERT INTO candidate_projects (
                                 id, candidate_id, title, start_date, end_date, description, 
                                 type, resource_link, website, sort_order
@@ -1994,7 +1994,7 @@ router.post('/:id/apply-to-job', (req, res) => {
             
             // 建立基本候選人記錄的內部函數
             function createBasicCandidate() {
-                prepare(`
+                req.tenantDB.prepare(`
                     INSERT INTO candidates (
                         id, job_id, name, email, phone, 
                         current_position, current_company, experience_years, education, skills,
@@ -2040,7 +2040,7 @@ router.post('/:id/apply-to-job', (req, res) => {
             const slotsJson = proposedSlots && proposedSlots.length > 0 ? JSON.stringify(proposedSlots) : null;
             
             // 建立面試邀請記錄 (使用正確的欄位名稱)
-            prepare(`
+            req.tenantDB.prepare(`
                 INSERT INTO interview_invitations (
                     id, candidate_id, job_id, status, response_token, reply_deadline, 
                     message, proposed_slots, created_at, updated_at
@@ -2058,7 +2058,7 @@ router.post('/:id/apply-to-job', (req, res) => {
             );
             
             // 更新候選人狀態為已邀請
-            prepare(`
+            req.tenantDB.prepare(`
                 UPDATE candidates SET stage = 'Invited', status = 'invited', updated_at = ?
                 WHERE id = ?
             `).run(now, candidateId);
