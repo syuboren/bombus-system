@@ -12,9 +12,38 @@ import { PlatformAdminService } from '../../services/platform-admin.service';
 import {
   Tenant,
   TenantStatus,
+  TenantAdmin,
   SubscriptionPlan,
   CreateTenantRequest
 } from '../../models/platform.model';
+
+interface IndustryOption {
+  value: string;
+  label: string;
+}
+
+const INDUSTRY_OPTIONS: IndustryOption[] = [
+  { value: 'technology', label: '科技業' },
+  { value: 'manufacturing', label: '製造業' },
+  { value: 'finance', label: '金融保險業' },
+  { value: 'healthcare', label: '醫療保健業' },
+  { value: 'retail', label: '零售業' },
+  { value: 'food-beverage', label: '餐飲業' },
+  { value: 'education', label: '教育業' },
+  { value: 'construction', label: '營建業' },
+  { value: 'logistics', label: '物流運輸業' },
+  { value: 'consulting', label: '顧問服務業' },
+  { value: 'media', label: '媒體傳播業' },
+  { value: 'real-estate', label: '不動產業' },
+  { value: 'energy', label: '能源業' },
+  { value: 'agriculture', label: '農林漁牧業' },
+  { value: 'other', label: '其他' }
+];
+
+const INDUSTRY_LABEL_MAP = new Map<string, string>();
+for (const opt of INDUSTRY_OPTIONS) {
+  INDUSTRY_LABEL_MAP.set(opt.value, opt.label);
+}
 
 @Component({
   standalone: true,
@@ -26,6 +55,8 @@ import {
 })
 export class TenantManagementPageComponent implements OnInit {
   private platformService = inject(PlatformAdminService);
+
+  readonly industryOptions = INDUSTRY_OPTIONS;
 
   // Data
   tenants = signal<Tenant[]>([]);
@@ -43,6 +74,12 @@ export class TenantManagementPageComponent implements OnInit {
   showForm = signal(false);
   editingTenant = signal<Tenant | null>(null);
   formData = signal<Partial<CreateTenantRequest>>({});
+  logoPreview = signal<string | null>(null);
+  logoUploading = signal(false);
+
+  // Admin management (edit mode)
+  tenantAdmins = signal<TenantAdmin[]>([]);
+  adminEdits = signal<Record<string, { name?: string; email?: string; password?: string }>>({});
 
   // Confirm dialog
   showConfirmDialog = signal(false);
@@ -117,10 +154,13 @@ export class TenantManagementPageComponent implements OnInit {
       name: '',
       slug: '',
       plan_id: '',
+      logo_url: '',
+      industry: '',
       admin_email: '',
       admin_name: '',
       admin_password: ''
     });
+    this.logoPreview.set(null);
     this.showForm.set(true);
   }
 
@@ -129,14 +169,61 @@ export class TenantManagementPageComponent implements OnInit {
     this.formData.set({
       name: tenant.name,
       slug: tenant.slug,
-      plan_id: tenant.plan_id
+      plan_id: tenant.plan_id,
+      logo_url: tenant.logo_url || '',
+      industry: tenant.industry || ''
     });
+    this.logoPreview.set(tenant.logo_url || null);
+    this.tenantAdmins.set([]);
+    this.adminEdits.set({});
     this.showForm.set(true);
+
+    // 載入租戶管理員
+    this.platformService.getTenantAdmins(tenant.id).subscribe({
+      next: (admins) => this.tenantAdmins.set(admins),
+      error: () => this.tenantAdmins.set([])
+    });
   }
 
   closeForm(): void {
     this.showForm.set(false);
     this.editingTenant.set(null);
+    this.logoPreview.set(null);
+    this.tenantAdmins.set([]);
+    this.adminEdits.set({});
+  }
+
+  onLogoSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    // 檔案大小檢查 (2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      alert('檔案大小不可超過 2MB');
+      return;
+    }
+
+    this.logoUploading.set(true);
+    this.platformService.uploadTenantLogo(file).subscribe({
+      next: (res) => {
+        this.formData.update(d => ({ ...d, logo_url: res.url }));
+        this.logoPreview.set(res.url);
+        this.logoUploading.set(false);
+      },
+      error: () => {
+        this.logoUploading.set(false);
+        alert('Logo 上傳失敗，請確認格式為 JPEG、PNG 或 WebP');
+      }
+    });
+
+    // 清空 input 以允許重複選擇同一檔案
+    input.value = '';
+  }
+
+  removeLogo(): void {
+    this.formData.update(d => ({ ...d, logo_url: '' }));
+    this.logoPreview.set(null);
   }
 
   saveForm(): void {
@@ -144,11 +231,16 @@ export class TenantManagementPageComponent implements OnInit {
     const data = this.formData();
 
     if (editing) {
+      // 先更新租戶基本資料
       this.platformService.updateTenant(editing.id, {
         name: data.name,
-        plan_id: data.plan_id
+        plan_id: data.plan_id,
+        logo_url: data.logo_url || null,
+        industry: data.industry || null
       } as Partial<Tenant>).subscribe({
         next: () => {
+          // 接著更新管理員（如有變更）
+          this.saveAdminEdits(editing.id);
           this.closeForm();
           this.loadTenants();
         }
@@ -160,6 +252,27 @@ export class TenantManagementPageComponent implements OnInit {
           this.loadTenants();
         }
       });
+    }
+  }
+
+  updateAdminField(userId: string, field: string, value: string): void {
+    this.adminEdits.update(edits => ({
+      ...edits,
+      [userId]: { ...(edits[userId] || {}), [field]: value }
+    }));
+  }
+
+  private saveAdminEdits(tenantId: string): void {
+    const edits = this.adminEdits();
+    for (const [userId, changes] of Object.entries(edits)) {
+      const hasChanges = Object.values(changes).some(v => v && v.trim());
+      if (hasChanges) {
+        const updates: { name?: string; email?: string; password?: string } = {};
+        if (changes.name?.trim()) updates.name = changes.name.trim();
+        if (changes.email?.trim()) updates.email = changes.email.trim();
+        if (changes.password?.trim()) updates.password = changes.password.trim();
+        this.platformService.updateTenantAdmin(tenantId, userId, updates).subscribe();
+      }
     }
   }
 
@@ -238,6 +351,10 @@ export class TenantManagementPageComponent implements OnInit {
 
   totalPages(): number {
     return Math.ceil(this.totalCount() / this.pageSize);
+  }
+
+  getIndustryLabel(value: string): string {
+    return INDUSTRY_LABEL_MAP.get(value) || value || '-';
   }
 
   updateFormField(field: string, value: string): void {

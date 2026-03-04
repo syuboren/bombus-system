@@ -39,7 +39,7 @@ router.post('/login', async (req, res) => {
 
   // 查詢租戶
   const tenant = platformDB.queryOne(
-    'SELECT id, status FROM tenants WHERE slug = ?',
+    'SELECT id, status, plan_id FROM tenants WHERE slug = ?',
     [tenant_slug]
   );
 
@@ -188,6 +188,21 @@ router.post('/login', async (req, res) => {
       ip
     });
 
+    // 查詢租戶訂閱方案的啟用功能
+    let enabledFeatures = [];
+    if (tenant.plan_id) {
+      const plan = platformDB.queryOne(
+        'SELECT features FROM subscription_plans WHERE id = ? AND is_active = 1',
+        [tenant.plan_id]
+      );
+      if (plan && plan.features) {
+        try {
+          const parsed = JSON.parse(plan.features);
+          if (Array.isArray(parsed)) enabledFeatures = parsed;
+        } catch (e) { /* ignore invalid JSON */ }
+      }
+    }
+
     res.json({
       access_token: accessToken,
       refresh_token: refreshTokenValue,
@@ -200,7 +215,8 @@ router.post('/login', async (req, res) => {
         avatar: user.avatar,
         roles,
         scope,
-        tenant_id: tenant.id
+        tenant_id: tenant.id,
+        enabled_features: enabledFeatures
       }
     });
   } catch (err) {
@@ -230,7 +246,7 @@ router.post('/refresh', (req, res) => {
   // 需要在所有活躍租戶中查找此 token
   // 先遍歷所有活躍租戶
   const tenants = platformDB.query(
-    "SELECT id FROM tenants WHERE status = 'active'"
+    "SELECT id, plan_id FROM tenants WHERE status = 'active'"
   );
 
   for (const tenant of tenants) {
@@ -291,10 +307,35 @@ router.post('/refresh', (req, res) => {
         { expiresIn: JWT_ACCESS_EXPIRES }
       );
 
+      // 查詢租戶訂閱方案的啟用功能
+      let enabledFeatures = [];
+      if (tenant.plan_id) {
+        const plan = platformDB.queryOne(
+          'SELECT features FROM subscription_plans WHERE id = ? AND is_active = 1',
+          [tenant.plan_id]
+        );
+        if (plan && plan.features) {
+          try {
+            const parsed = JSON.parse(plan.features);
+            if (Array.isArray(parsed)) enabledFeatures = parsed;
+          } catch (e) { /* ignore */ }
+        }
+      }
+
       return res.json({
         access_token: accessToken,
         token_type: 'Bearer',
-        expires_in: JWT_ACCESS_EXPIRES
+        expires_in: JWT_ACCESS_EXPIRES,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          avatar: user.avatar,
+          roles,
+          scope,
+          tenant_id: tenant.id,
+          enabled_features: enabledFeatures
+        }
       });
     } catch (err) {
       // DB 載入失敗，繼續下一個租戶

@@ -10,6 +10,8 @@ export interface Tenant {
   slug: string;
   plan_id: string;
   plan_name?: string;
+  logo_url?: string;
+  industry?: string;
   status: TenantStatus;
   created_at: string;
   updated_at: string;
@@ -26,6 +28,8 @@ export interface CreateTenantRequest {
   name: string;
   slug: string;
   plan_id: string;
+  logo_url?: string;
+  industry?: string;
   admin_email: string;
   admin_name: string;
   admin_password: string;
@@ -40,6 +44,15 @@ export interface SubscriptionPlan {
   price_monthly: number;
   price_yearly: number;
   is_active: number;
+  created_at: string;
+}
+
+export interface TenantAdmin {
+  id: string;
+  email: string;
+  name: string;
+  status: string;
+  role_names?: string;
   created_at: string;
 }
 

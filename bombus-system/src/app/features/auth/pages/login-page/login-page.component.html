@@ -24,6 +24,26 @@
       <p class="login-subtitle">請登入您的帳號以繼續</p>
     </div>
 
+    <!-- 登入模式切換 -->
+    <div class="login-mode-tabs">
+      <button
+        type="button"
+        class="mode-tab"
+        [class.mode-tab--active]="loginMode() === 'tenant'"
+        (click)="switchMode('tenant')">
+        <i class="ri-building-line"></i>
+        <span>租戶登入</span>
+      </button>
+      <button
+        type="button"
+        class="mode-tab"
+        [class.mode-tab--active]="loginMode() === 'platform'"
+        (click)="switchMode('platform')">
+        <i class="ri-shield-star-line"></i>
+        <span>平台管理</span>
+      </button>
+    </div>
+
     <!-- 登入表單 -->
     <form class="login-form" (keydown)="onKeyDown($event)">
       <!-- 錯誤訊息 -->
@@ -34,24 +54,26 @@
         </div>
       }
 
-      <!-- 組織代碼 -->
-      <div class="form-group">
-        <label for="tenantSlug" class="form-label">
-          <i class="ri-building-line"></i>
-          組織代碼
-        </label>
-        <div class="input-wrapper">
-          <input
-            type="text"
-            id="tenantSlug"
-            class="form-input"
-            placeholder="請輸入組織代碼"
-            [value]="tenantSlug()"
-            (input)="tenantSlug.set($any($event.target).value)"
-            autocomplete="organization"
-            [disabled]="isLoading()" />
+      <!-- 組織代碼（僅租戶模式） -->
+      @if (loginMode() === 'tenant') {
+        <div class="form-group">
+          <label for="tenantSlug" class="form-label">
+            <i class="ri-building-line"></i>
+            組織代碼
+          </label>
+          <div class="input-wrapper">
+            <input
+              type="text"
+              id="tenantSlug"
+              class="form-input"
+              placeholder="請輸入組織代碼"
+              [value]="tenantSlug()"
+              (input)="tenantSlug.set($any($event.target).value)"
+              autocomplete="organization"
+              [disabled]="isLoading()" />
+          </div>
         </div>
-      </div>
+      }
 
       <!-- 電子郵件 -->
       <div class="form-group">
@@ -142,9 +164,13 @@
         測試帳號
       </div>
       <div class="demo-hint__content">
-        <p><strong>組織代碼：</strong>demo</p>
-        <p><strong>管理員：</strong>admin&#64;demo.com / admin123</p>
-        <p><strong>一般使用者：</strong>user&#64;demo.com / user123</p>
+        @if (loginMode() === 'tenant') {
+          <p><strong>組織代碼：</strong>demo</p>
+          <p><strong>管理員：</strong>admin&#64;demo.com / admin123</p>
+          <p><strong>一般使用者：</strong>user&#64;demo.com / user123</p>
+        } @else {
+          <p><strong>平台管理員：</strong>platform&#64;bombus.dev / Admin&#64;123456</p>
+        }
       </div>
     </div>
 

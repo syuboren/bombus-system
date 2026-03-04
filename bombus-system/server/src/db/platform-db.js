@@ -69,10 +69,21 @@ function createPlatformTables(adapter) {
       status TEXT DEFAULT 'active' CHECK(status IN ('active','suspended','deleted')),
       plan_id TEXT REFERENCES subscription_plans(id),
       db_file TEXT NOT NULL,
+      logo_url TEXT,
+      industry TEXT,
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now'))
     )
   `);
+
+  // 遷移：為既有 tenants 表補齊新欄位
+  const tenantCols = db.exec('PRAGMA table_info(tenants)')[0]?.values?.map(r => r[1]) || [];
+  if (!tenantCols.includes('logo_url')) {
+    db.run('ALTER TABLE tenants ADD COLUMN logo_url TEXT');
+  }
+  if (!tenantCols.includes('industry')) {
+    db.run('ALTER TABLE tenants ADD COLUMN industry TEXT');
+  }
 
   db.run(`
     CREATE TABLE IF NOT EXISTS subscription_plans (
@@ -80,10 +91,29 @@ function createPlatformTables(adapter) {
       name TEXT NOT NULL,
       max_users INTEGER DEFAULT 50,
       max_subsidiaries INTEGER DEFAULT 5,
+      max_storage_gb INTEGER DEFAULT 5,
       features TEXT DEFAULT '{}',
+      price_monthly REAL DEFAULT 0,
+      price_yearly REAL DEFAULT 0,
+      is_active INTEGER DEFAULT 1,
       created_at TEXT DEFAULT (datetime('now'))
     )
   `);
+
+  // 遷移：為既有 subscription_plans 表補齊新欄位
+  const planCols = db.exec('PRAGMA table_info(subscription_plans)')[0]?.values?.map(r => r[1]) || [];
+  if (!planCols.includes('max_storage_gb')) {
+    db.run('ALTER TABLE subscription_plans ADD COLUMN max_storage_gb INTEGER DEFAULT 5');
+  }
+  if (!planCols.includes('price_monthly')) {
+    db.run('ALTER TABLE subscription_plans ADD COLUMN price_monthly REAL DEFAULT 0');
+  }
+  if (!planCols.includes('price_yearly')) {
+    db.run('ALTER TABLE subscription_plans ADD COLUMN price_yearly REAL DEFAULT 0');
+  }
+  if (!planCols.includes('is_active')) {
+    db.run('ALTER TABLE subscription_plans ADD COLUMN is_active INTEGER DEFAULT 1');
+  }
 
   db.run(`
     CREATE TABLE IF NOT EXISTS platform_admins (

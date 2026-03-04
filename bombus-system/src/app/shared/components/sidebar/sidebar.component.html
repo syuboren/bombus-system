@@ -20,7 +20,7 @@
   <!-- Menu -->
   <nav class="sidebar__menu">
     <div class="menu-wrapper">
-      @for (section of menuSections; track section.title) {
+      @for (section of activeMenuSections(); track section.title) {
       <!-- Section Title -->
       @if (section.title) {
       <div class="menu-section">
@@ -78,7 +78,7 @@
       </div>
       <div class="user-info__details">
         <div class="user-info__name">{{ currentUser()?.name || '使用者' }}</div>
-        <div class="user-info__role">{{ currentUser()?.department || '部門' }}</div>
+        <div class="user-info__role">{{ isPlatformAdmin() ? '平台管理員' : (currentUser()?.department || '部門') }}</div>
       </div>
     </div>
     <button class="logout-btn" type="button" (click)="onLogout()">

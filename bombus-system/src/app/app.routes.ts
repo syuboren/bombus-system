@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { permissionGuard } from './core/guards/permission.guard';
 import { platformAdminGuard } from './core/guards/platform-admin.guard';
+import { featureGateGuard } from './core/guards/feature-gate.guard';
 
 export const routes: Routes = [
   {
@@ -22,25 +23,29 @@ export const routes: Routes = [
   },
   {
     path: 'employee',
-    canActivate: [authGuard],
+    canActivate: [authGuard, featureGateGuard],
+    data: { requiredFeaturePrefix: 'L1' },
     loadChildren: () => import('./features/employee/employee.routes')
       .then(m => m.EMPLOYEE_ROUTES)
   },
   {
     path: 'training',
-    canActivate: [authGuard],
+    canActivate: [authGuard, featureGateGuard],
+    data: { requiredFeaturePrefix: 'L3' },
     loadChildren: () => import('./features/training/training.routes')
       .then(m => m.TRAINING_ROUTES)
   },
   {
     path: 'project',
-    canActivate: [authGuard],
+    canActivate: [authGuard, featureGateGuard],
+    data: { requiredFeaturePrefix: 'L4' },
     loadChildren: () => import('./features/project/project.routes')
       .then(m => m.PROJECT_ROUTES)
   },
   {
     path: 'competency',
-    canActivate: [authGuard],
+    canActivate: [authGuard, featureGateGuard],
+    data: { requiredFeaturePrefix: 'L2' },
     loadChildren: () => import('./features/competency/competency.routes')
       .then(m => m.COMPETENCY_ROUTES)
   },
@@ -53,13 +58,15 @@ export const routes: Routes = [
   },
   {
     path: 'performance',
-    canActivate: [authGuard],
+    canActivate: [authGuard, featureGateGuard],
+    data: { requiredFeaturePrefix: 'L5' },
     loadChildren: () => import('./features/performance/performance.routes')
       .then(m => m.PERFORMANCE_ROUTES)
   },
   {
     path: 'culture',
-    canActivate: [authGuard],
+    canActivate: [authGuard, featureGateGuard],
+    data: { requiredFeaturePrefix: 'L6' },
     loadChildren: () => import('./features/culture/culture.routes')
       .then(m => m.CULTURE_ROUTES)
   },

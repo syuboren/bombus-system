@@ -145,6 +145,42 @@ $module-color: $color-brand-main;
   @include data-table($module-color);
 }
 
+// ---------------------------------------------------------------
+// Tenant Identity (Table Cell)
+// ---------------------------------------------------------------
+.tenant-name-cell {
+  min-width: 160px;
+}
+
+.tenant-identity {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.tenant-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: $radius-md;
+  object-fit: cover;
+  border: 1px solid $color-soft-gray;
+  flex-shrink: 0;
+}
+
+.tenant-logo-placeholder {
+  width: 32px;
+  height: 32px;
+  border-radius: $radius-md;
+  background: $color-cloud-gray;
+  @include flex-center;
+  flex-shrink: 0;
+
+  i {
+    font-size: 16px;
+    color: $color-text-secondary;
+  }
+}
+
 .tenant-name {
   font-weight: $font-weight-medium;
   color: $color-text-dark;
@@ -268,8 +304,11 @@ $module-color: $color-brand-main;
 }
 
 .modal-container {
-  @include modal-container(560px);
+  @include modal-container(600px);
   @include fade-in;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
 
   &--sm {
     max-width: 440px;
@@ -302,6 +341,9 @@ $module-color: $color-brand-main;
 
 .modal-body {
   @include modal-body;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
 }
 
 .modal-footer {
@@ -356,8 +398,161 @@ $module-color: $color-brand-main;
 }
 
 // ---------------------------------------------------------------
+// Logo Upload
+// ---------------------------------------------------------------
+.logo-upload-area {
+  display: flex;
+  align-items: center;
+}
+
+.logo-upload-trigger {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-xs;
+  width: 120px;
+  height: 120px;
+  border: 2px dashed $color-soft-gray;
+  border-radius: $radius-lg;
+  cursor: pointer;
+  transition: border-color 200ms ease, background 200ms ease;
+  background: rgba($color-cloud-gray, 0.3);
+
+  &:hover {
+    border-color: $color-brand-light;
+    background: rgba($color-brand-main, 0.04);
+  }
+
+  &--loading {
+    pointer-events: none;
+    opacity: 0.7;
+  }
+
+  i {
+    font-size: 28px;
+    color: $color-text-secondary;
+  }
+
+  span {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    text-align: center;
+  }
+
+  .logo-hint {
+    font-size: 11px;
+    color: $color-muted-gray;
+    padding: 0 $spacing-sm;
+  }
+}
+
+.logo-file-input {
+  display: none;
+}
+
+.logo-preview-wrapper {
+  position: relative;
+  width: 120px;
+  height: 120px;
+}
+
+.logo-preview {
+  width: 120px;
+  height: 120px;
+  border-radius: $radius-lg;
+  object-fit: cover;
+  border: 2px solid $color-soft-gray;
+}
+
+.logo-remove-btn {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: white;
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+  @include flex-center;
+  box-shadow: $shadow-sm;
+
+  i {
+    font-size: 18px;
+    color: $color-error;
+  }
+
+  &:hover i {
+    color: darken($color-error, 10%);
+  }
+}
+
+.spinner-sm {
+  width: 20px;
+  height: 20px;
+  border: 2px solid $color-soft-gray;
+  border-top-color: $module-color;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+// ---------------------------------------------------------------
 // Danger Confirm Dialog
 // ---------------------------------------------------------------
+// ---------------------------------------------------------------
+// Admin Card (Edit Mode)
+// ---------------------------------------------------------------
+.admin-card {
+  background: rgba($color-cloud-gray, 0.3);
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  margin-bottom: $spacing-md;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.admin-card-header {
+  @include flex-between;
+  margin-bottom: $spacing-sm;
+}
+
+.admin-role-badge {
+  font-family: $font-family-mono;
+  font-size: $font-size-xs;
+  background: rgba($module-color, 0.1);
+  color: $module-color;
+  padding: 2px $spacing-sm;
+  border-radius: $radius-full;
+}
+
+.admin-status {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+
+  &--active {
+    color: $color-success;
+  }
+}
+
+.admin-empty-hint {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  text-align: center;
+  padding: $spacing-md 0;
+  margin: 0;
+}
+
+.form-hint {
+  font-weight: $font-weight-normal;
+  color: $color-muted-gray;
+  font-size: $font-size-xs;
+}
+
 .danger-text {
   font-size: $font-size-sm;
   color: $color-text-primary;

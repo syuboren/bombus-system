@@ -10,7 +10,8 @@ import {
   User,
   ForgotPasswordRequest,
   ForgotPasswordResponse,
-  RememberedCredentials
+  RememberedCredentials,
+  PlatformLoginRequest
 } from '../models/auth.model';
 
 const STORAGE_KEY = 'bombus_remembered_credentials';
@@ -149,11 +150,45 @@ export class AuthService {
   }
 
   /**
+   * 平台管理員登入（呼叫後端 /api/auth/platform-login）
+   */
+  platformLogin(request: PlatformLoginRequest): Observable<LoginResponse> {
+    this.isLoadingSignal.set(true);
+
+    return this.http.post<{ access_token: string; token_type: string; expires_in: string; user: User }>(
+      '/api/auth/platform-login',
+      { email: request.email, password: request.password }
+    ).pipe(
+      map(res => {
+        localStorage.setItem(ACCESS_TOKEN_KEY, res.access_token);
+        localStorage.removeItem(REFRESH_TOKEN_KEY);
+        localStorage.setItem(USER_KEY, JSON.stringify(res.user));
+        localStorage.removeItem(LEGACY_TOKEN_KEY);
+
+        this.currentUserSignal.set(res.user);
+
+        return {
+          success: true,
+          message: '登入成功',
+          user: res.user,
+          token: res.access_token
+        } as LoginResponse;
+      }),
+      catchError(err => {
+        const message = err.error?.message || '登入失敗，請稍後再試';
+        return of({ success: false, message } as LoginResponse);
+      }),
+      tap(() => this.isLoadingSignal.set(false))
+    );
+  }
+
+  /**
    * 刷新 Access Token
    */
   refreshToken(): Observable<string | null> {
     const refreshToken = this.getRefreshToken();
     if (!refreshToken) {
+      this.clearSession();
       return of(null);
     }
 
@@ -162,6 +197,10 @@ export class AuthService {
     }).pipe(
       map(res => {
         localStorage.setItem(ACCESS_TOKEN_KEY, res.access_token);
+        if (res.user) {
+          localStorage.setItem(USER_KEY, JSON.stringify(res.user));
+          this.currentUserSignal.set(res.user);
+        }
         return res.access_token;
       }),
       catchError(() => {

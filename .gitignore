@@ -19,3 +19,5 @@ ai-marketing-dashboard-v4.html
 *.env
 .env.*
 bombus-system/server/.env
+.spectra/
+openspec/.vector-search.db*

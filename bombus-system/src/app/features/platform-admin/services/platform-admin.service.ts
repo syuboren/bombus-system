@@ -5,6 +5,7 @@ import {
   Tenant,
   TenantListResponse,
   CreateTenantRequest,
+  TenantAdmin,
   SubscriptionPlan,
   AuditLogListResponse
 } from '../models/platform.model';
@@ -53,6 +54,24 @@ export class PlatformAdminService {
       `/api/platform/tenants/${id}/purge`,
       { body: { confirm } }
     );
+  }
+
+  uploadTenantLogo(file: File): Observable<{ success: boolean; url: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<{ success: boolean; url: string }>('/api/platform/upload-logo', formData);
+  }
+
+  getTenantAdmins(tenantId: string): Observable<TenantAdmin[]> {
+    return this.http.get<TenantAdmin[]>(`/api/platform/tenants/${tenantId}/admins`);
+  }
+
+  updateTenantAdmin(tenantId: string, userId: string, updates: {
+    name?: string;
+    email?: string;
+    password?: string;
+  }): Observable<TenantAdmin> {
+    return this.http.put<TenantAdmin>(`/api/platform/tenants/${tenantId}/admins/${userId}`, updates);
   }
 
   // ============================================================

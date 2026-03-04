@@ -95,7 +95,10 @@ export class AuditLogPageComponent implements OnInit {
       'role_delete': '刪除角色',
       'user_role_assign': '指派角色',
       'user_role_revoke': '移除角色',
-      'data_migration': '資料遷移'
+      'data_migration': '資料遷移',
+      'plan_create': '建立方案',
+      'plan_update': '更新方案',
+      'tenant_update': '更新租戶'
     };
     return labels[action] || action;
   }

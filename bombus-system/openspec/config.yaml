@@ -1,4 +1,5 @@
 schema: spec-driven
+tdd: true
 
 context: |
   Domain: Bombus — HR SaaS 人力資源管理平台

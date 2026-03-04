@@ -20,6 +20,10 @@
 const express = require('express');
 const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+const bcrypt = require('bcryptjs');
 
 const { authMiddleware, platformAdminMiddleware } = require('../middleware/auth');
 const { getPlatformDB } = require('../db/platform-db');
@@ -27,8 +31,181 @@ const { tenantDBManager } = require('../db/tenant-db-manager');
 const { initTenantSchema } = require('../db/tenant-schema');
 const { logAudit, getClientIP } = require('../utils/audit-logger');
 
+// ══════════════════════════════════════════════════════════
+//  RBAC 種子資料（新租戶初始化用）
+// ══════════════════════════════════════════════════════════
+
+const PERMISSION_RESOURCES = [
+  { resource: 'employee', actions: ['read', 'create', 'update', 'delete'] },
+  { resource: 'recruitment', actions: ['read', 'create', 'update', 'delete', 'manage'] },
+  { resource: 'talent_pool', actions: ['read', 'create', 'update', 'delete', 'manage'] },
+  { resource: 'meeting', actions: ['read', 'create', 'update', 'delete', 'manage'] },
+  { resource: 'competency', actions: ['read', 'create', 'update', 'delete'] },
+  { resource: 'monthly_check', actions: ['read', 'create', 'update', 'delete'] },
+  { resource: 'weekly_report', actions: ['read', 'create', 'update', 'delete'] },
+  { resource: 'quarterly_review', actions: ['read', 'create', 'update', 'delete'] },
+  { resource: 'template', actions: ['read', 'create', 'update', 'delete', 'manage'] },
+  { resource: 'submission', actions: ['read', 'create', 'update'] },
+  { resource: 'approval', actions: ['read', 'approve', 'reject'] },
+  { resource: 'job_description', actions: ['read', 'create', 'update', 'delete', 'approve'] },
+  { resource: 'grade_matrix', actions: ['read', 'create', 'update', 'delete'] },
+  { resource: 'organization', actions: ['read', 'create', 'update', 'delete', 'manage'] },
+  { resource: 'export', actions: ['read'] },
+  { resource: 'job', actions: ['read', 'create', 'update', 'delete'] },
+  { resource: 'onboarding', actions: ['read', 'create', 'update', 'manage'] },
+  { resource: 'user', actions: ['read', 'create', 'update', 'delete', 'manage'] },
+  { resource: 'role', actions: ['read', 'create', 'update', 'delete', 'manage'] },
+  { resource: 'audit', actions: ['read'] },
+];
+
+/**
+ * 在新租戶 DB 建立 RBAC 種子資料
+ */
+function seedTenantRBAC(tenantAdapter, tenantName, adminEmail, adminName, passwordHash) {
+  const db = tenantAdapter.raw;
+
+  function rawExec(sql, params) {
+    try {
+      const stmt = db.prepare(sql);
+      stmt.bind(params.map(p => p === undefined ? null : p));
+      stmt.step();
+      stmt.free();
+    } catch (e) { /* INSERT OR IGNORE */ }
+  }
+
+  db.run('PRAGMA foreign_keys = OFF');
+  db.run('BEGIN TRANSACTION');
+
+  // 1. 組織根節點
+  const orgRootId = uuidv4();
+  rawExec('INSERT OR IGNORE INTO org_units (id, name, type, parent_id, level) VALUES (?, ?, ?, ?, ?)',
+    [orgRootId, tenantName, 'group', null, 0]);
+
+  // 2. 系統角色
+  const roleIds = {};
+  const roles = [
+    { key: 'super_admin', name: 'super_admin', desc: '超級管理員（全權限）', scope: 'global' },
+    { key: 'subsidiary_admin', name: 'subsidiary_admin', desc: '子公司管理員', scope: 'subsidiary' },
+    { key: 'hr_manager', name: 'hr_manager', desc: '人資管理員', scope: 'global' },
+    { key: 'dept_manager', name: 'dept_manager', desc: '部門主管', scope: 'department' },
+    { key: 'employee', name: 'employee', desc: '一般員工', scope: 'department' },
+  ];
+  for (const r of roles) {
+    roleIds[r.key] = uuidv4();
+    rawExec('INSERT OR IGNORE INTO roles (id, name, description, scope_type, is_system) VALUES (?, ?, ?, ?, 1)',
+      [roleIds[r.key], r.name, r.desc, r.scope]);
+  }
+
+  // 3. 權限定義
+  const allPerms = [];
+  for (const r of PERMISSION_RESOURCES) {
+    for (const action of r.actions) {
+      const id = `perm-${r.resource}-${action}`;
+      allPerms.push({ id, resource: r.resource, action });
+      rawExec('INSERT OR IGNORE INTO permissions (id, resource, action, description) VALUES (?, ?, ?, ?)',
+        [id, r.resource, action, `${r.resource}:${action}`]);
+    }
+  }
+
+  // 4. 角色-權限對應
+  for (const p of allPerms) {
+    rawExec('INSERT OR IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)',
+      [roleIds.super_admin, p.id]);
+  }
+  for (const p of allPerms) {
+    const isAdminOnly = ['user', 'role'].includes(p.resource) && p.action !== 'read';
+    if (!isAdminOnly) {
+      rawExec('INSERT OR IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)',
+        [roleIds.subsidiary_admin, p.id]);
+    }
+  }
+  const hrRes = ['employee', 'recruitment', 'talent_pool', 'meeting', 'competency',
+    'monthly_check', 'weekly_report', 'quarterly_review', 'template', 'submission',
+    'approval', 'job_description', 'grade_matrix', 'organization', 'export', 'job', 'onboarding'];
+  for (const p of allPerms) {
+    if (hrRes.includes(p.resource)) {
+      rawExec('INSERT OR IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)',
+        [roleIds.hr_manager, p.id]);
+    }
+  }
+  const deptRes = ['employee', 'meeting', 'monthly_check', 'weekly_report',
+    'quarterly_review', 'submission', 'approval', 'export', 'onboarding'];
+  for (const p of allPerms) {
+    if (deptRes.includes(p.resource)) {
+      rawExec('INSERT OR IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)',
+        [roleIds.dept_manager, p.id]);
+    }
+  }
+  const empRead = ['employee', 'meeting', 'monthly_check', 'weekly_report',
+    'quarterly_review', 'submission', 'export', 'job_description', 'grade_matrix',
+    'organization', 'competency'];
+  const empWrite = ['weekly_report', 'submission'];
+  for (const p of allPerms) {
+    const canRead = p.action === 'read' && empRead.includes(p.resource);
+    const canWrite = ['create', 'update'].includes(p.action) && empWrite.includes(p.resource);
+    if (canRead || canWrite) {
+      rawExec('INSERT OR IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)',
+        [roleIds.employee, p.id]);
+    }
+  }
+
+  // 5. 管理員帳號
+  const userId = uuidv4();
+  rawExec('INSERT OR IGNORE INTO users (id, email, password_hash, name, status) VALUES (?, ?, ?, ?, ?)',
+    [userId, adminEmail, passwordHash, adminName, 'active']);
+
+  // 6. 指派 super_admin
+  rawExec('INSERT OR IGNORE INTO user_roles (user_id, role_id, org_unit_id) VALUES (?, ?, ?)',
+    [userId, roleIds.super_admin, orgRootId]);
+
+  db.run('COMMIT');
+  db.run('PRAGMA foreign_keys = ON');
+  tenantAdapter.save();
+}
+
+// Logo 上傳設定
+const logoDir = path.join(__dirname, '../../uploads/logos');
+if (!fs.existsSync(logoDir)) {
+  fs.mkdirSync(logoDir, { recursive: true });
+}
+
+const logoStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, logoDir),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `tenant-logo-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`);
+  }
+});
+
+const logoUpload = multer({
+  storage: logoStorage,
+  limits: { fileSize: 2 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+    if (allowed.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('僅支援 JPEG、PNG、WebP 格式'), false);
+    }
+  }
+});
+
 // 所有路由需 Platform Admin
 router.use(authMiddleware, platformAdminMiddleware);
+
+// ══════════════════════════════════════════════════════════
+//  Logo 上傳
+// ══════════════════════════════════════════════════════════
+
+router.post('/upload-logo', logoUpload.single('file'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'BadRequest', message: '未上傳檔案' });
+  }
+  res.json({
+    success: true,
+    url: `/uploads/logos/${req.file.filename}`
+  });
+});
 
 // ══════════════════════════════════════════════════════════
 //  租戶管理
@@ -75,12 +252,9 @@ router.get('/tenants', (req, res) => {
 
   res.json({
     data: tenants,
-    pagination: {
-      page: parseInt(page),
-      limit: parseInt(limit),
-      total,
-      totalPages: Math.ceil(total / parseInt(limit))
-    }
+    total,
+    page: parseInt(page),
+    limit: parseInt(limit)
   });
 });
 
@@ -124,8 +298,8 @@ router.get('/tenants/:id', (req, res) => {
 
 // ─── 新增租戶 ───
 
-router.post('/tenants', (req, res) => {
-  const { name, slug, plan_id } = req.body;
+router.post('/tenants', async (req, res) => {
+  const { name, slug, plan_id, logo_url, industry, admin_email, admin_name, admin_password } = req.body;
   const ip = getClientIP(req);
   const platformDB = getPlatformDB();
 
@@ -133,6 +307,21 @@ router.post('/tenants', (req, res) => {
     return res.status(400).json({
       error: 'BadRequest',
       message: '缺少必要欄位：name, slug'
+    });
+  }
+
+  // 管理員欄位驗證
+  if (!admin_email || !admin_name || !admin_password) {
+    return res.status(400).json({
+      error: 'BadRequest',
+      message: '缺少管理員帳號欄位：admin_email, admin_name, admin_password'
+    });
+  }
+
+  if (admin_password.length < 6) {
+    return res.status(400).json({
+      error: 'BadRequest',
+      message: '管理員密碼至少 6 個字元'
     });
   }
 
@@ -176,19 +365,23 @@ router.post('/tenants', (req, res) => {
   try {
     // 在 platform.db 註冊租戶
     platformDB.run(
-      `INSERT INTO tenants (id, name, slug, status, plan_id, db_file)
-       VALUES (?, ?, ?, 'active', ?, ?)`,
-      [tenantId, name, slug, plan_id || null, dbFile]
+      `INSERT INTO tenants (id, name, slug, status, plan_id, db_file, logo_url, industry)
+       VALUES (?, ?, ?, 'active', ?, ?, ?, ?)`,
+      [tenantId, name, slug, plan_id || null, dbFile, logo_url || null, industry || null]
     );
 
     // 建立租戶資料庫並初始化 schema
-    tenantDBManager.createTenantDB(tenantId, initTenantSchema);
+    const tenantAdapter = tenantDBManager.createTenantDB(tenantId, initTenantSchema);
+
+    // 建立 RBAC 種子資料 + 管理員帳號
+    const passwordHash = await bcrypt.hash(admin_password, 10);
+    seedTenantRBAC(tenantAdapter, name, admin_email, admin_name, passwordHash);
 
     logAudit(platformDB, {
       user_id: req.user.userId,
       action: 'tenant_create',
       resource: 'tenant',
-      details: { tenant_id: tenantId, name, slug },
+      details: { tenant_id: tenantId, name, slug, admin_email },
       ip
     });
 
@@ -210,7 +403,7 @@ router.post('/tenants', (req, res) => {
 // ─── 更新租戶（狀態/方案/恢復） ───
 
 router.put('/tenants/:id', (req, res) => {
-  const { name, status, plan_id } = req.body;
+  const { name, status, plan_id, logo_url, industry } = req.body;
   const ip = getClientIP(req);
   const platformDB = getPlatformDB();
 
@@ -263,6 +456,16 @@ router.put('/tenants/:id', (req, res) => {
     params.push(plan_id || null);
   }
 
+  if (logo_url !== undefined) {
+    updates.push('logo_url = ?');
+    params.push(logo_url || null);
+  }
+
+  if (industry !== undefined) {
+    updates.push('industry = ?');
+    params.push(industry || null);
+  }
+
   if (updates.length === 0) {
     return res.status(400).json({
       error: 'BadRequest',
@@ -299,6 +502,111 @@ router.put('/tenants/:id', (req, res) => {
   );
 
   res.json(updated);
+});
+
+// ─── 租戶管理員列表 ───
+
+router.get('/tenants/:id/admins', (req, res) => {
+  const platformDB = getPlatformDB();
+  const tenant = platformDB.queryOne('SELECT * FROM tenants WHERE id = ?', [req.params.id]);
+
+  if (!tenant) {
+    return res.status(404).json({ error: 'NotFound', message: '租戶不存在' });
+  }
+
+  if (tenant.status === 'deleted' || !tenantDBManager.exists(tenant.id)) {
+    return res.json([]);
+  }
+
+  try {
+    const tenantDB = tenantDBManager.getDB(tenant.id);
+    const admins = tenantDB.query(
+      `SELECT u.id, u.email, u.name, u.status, u.created_at,
+              GROUP_CONCAT(r.name, ', ') as role_names
+       FROM users u
+       JOIN user_roles ur ON ur.user_id = u.id
+       JOIN roles r ON r.id = ur.role_id
+       WHERE r.name IN ('super_admin', 'subsidiary_admin')
+       GROUP BY u.id
+       ORDER BY u.created_at ASC`
+    );
+    res.json(admins);
+  } catch (err) {
+    console.error('Get tenant admins error:', err);
+    res.json([]);
+  }
+});
+
+// ─── 更新租戶管理員 ───
+
+router.put('/tenants/:id/admins/:userId', async (req, res) => {
+  const { name, email, password } = req.body;
+  const platformDB = getPlatformDB();
+  const tenant = platformDB.queryOne('SELECT * FROM tenants WHERE id = ?', [req.params.id]);
+
+  if (!tenant) {
+    return res.status(404).json({ error: 'NotFound', message: '租戶不存在' });
+  }
+
+  if (!tenantDBManager.exists(tenant.id)) {
+    return res.status(400).json({ error: 'BadRequest', message: '租戶資料庫不存在' });
+  }
+
+  try {
+    const tenantDB = tenantDBManager.getDB(tenant.id);
+    const user = tenantDB.queryOne('SELECT * FROM users WHERE id = ?', [req.params.userId]);
+
+    if (!user) {
+      return res.status(404).json({ error: 'NotFound', message: '使用者不存在' });
+    }
+
+    const updates = [];
+    const params = [];
+
+    if (name) {
+      updates.push('name = ?');
+      params.push(name);
+    }
+    if (email) {
+      // 檢查 email 是否被其他使用者佔用
+      const emailExists = tenantDB.queryOne(
+        'SELECT id FROM users WHERE email = ? AND id != ?',
+        [email, req.params.userId]
+      );
+      if (emailExists) {
+        return res.status(409).json({ error: 'Conflict', message: `email '${email}' 已被使用` });
+      }
+      updates.push('email = ?');
+      params.push(email);
+    }
+    if (password) {
+      if (password.length < 6) {
+        return res.status(400).json({ error: 'BadRequest', message: '密碼至少 6 個字元' });
+      }
+      const passwordHash = await bcrypt.hash(password, 10);
+      updates.push('password_hash = ?');
+      params.push(passwordHash);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'BadRequest', message: '沒有提供任何更新欄位' });
+    }
+
+    updates.push("updated_at = datetime('now')");
+    params.push(req.params.userId);
+
+    tenantDB.run(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, params);
+
+    const updated = tenantDB.queryOne(
+      'SELECT id, email, name, status, created_at FROM users WHERE id = ?',
+      [req.params.userId]
+    );
+
+    res.json(updated);
+  } catch (err) {
+    console.error('Update tenant admin error:', err);
+    return res.status(500).json({ error: 'InternalError', message: '更新管理員失敗' });
+  }
 });
 
 // ─── 軟刪除租戶 ───
@@ -436,7 +744,7 @@ router.get('/plans', (req, res) => {
 // ─── 新增方案 ───
 
 router.post('/plans', (req, res) => {
-  const { name, max_users, max_subsidiaries, features } = req.body;
+  const { name, max_users, max_subsidiaries, max_storage_gb, features, price_monthly, price_yearly, is_active } = req.body;
   const ip = getClientIP(req);
   const platformDB = getPlatformDB();
 
@@ -451,9 +759,9 @@ router.post('/plans', (req, res) => {
   const featuresStr = typeof features === 'object' ? JSON.stringify(features) : (features || '{}');
 
   platformDB.run(
-    `INSERT INTO subscription_plans (id, name, max_users, max_subsidiaries, features)
-     VALUES (?, ?, ?, ?, ?)`,
-    [id, name, max_users || 50, max_subsidiaries || 5, featuresStr]
+    `INSERT INTO subscription_plans (id, name, max_users, max_subsidiaries, max_storage_gb, features, price_monthly, price_yearly, is_active)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [id, name, max_users || 50, max_subsidiaries || 5, max_storage_gb || 5, featuresStr, price_monthly || 0, price_yearly || 0, is_active !== undefined ? is_active : 1]
   );
 
   logAudit(platformDB, {
@@ -475,7 +783,7 @@ router.post('/plans', (req, res) => {
 // ─── 更新方案 ───
 
 router.put('/plans/:id', (req, res) => {
-  const { name, max_users, max_subsidiaries, features } = req.body;
+  const { name, max_users, max_subsidiaries, max_storage_gb, features, price_monthly, price_yearly, is_active } = req.body;
   const ip = getClientIP(req);
   const platformDB = getPlatformDB();
 
@@ -506,10 +814,26 @@ router.put('/plans/:id', (req, res) => {
     updates.push('max_subsidiaries = ?');
     params.push(max_subsidiaries);
   }
+  if (max_storage_gb !== undefined) {
+    updates.push('max_storage_gb = ?');
+    params.push(max_storage_gb);
+  }
   if (features !== undefined) {
     const featuresStr = typeof features === 'object' ? JSON.stringify(features) : features;
     updates.push('features = ?');
     params.push(featuresStr);
+  }
+  if (price_monthly !== undefined) {
+    updates.push('price_monthly = ?');
+    params.push(price_monthly);
+  }
+  if (price_yearly !== undefined) {
+    updates.push('price_yearly = ?');
+    params.push(price_yearly);
+  }
+  if (is_active !== undefined) {
+    updates.push('is_active = ?');
+    params.push(is_active);
   }
 
   if (updates.length === 0) {

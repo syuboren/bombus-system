@@ -69,8 +69,9 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th>租戶名稱</th>
+            <th>租戶</th>
             <th>代碼</th>
+            <th>產業別</th>
             <th>方案</th>
             <th>狀態</th>
             <th>建立時間</th>
@@ -80,8 +81,20 @@
         <tbody>
           @for (tenant of tenants(); track tenant.id) {
             <tr>
-              <td class="tenant-name">{{ tenant.name }}</td>
+              <td class="tenant-name-cell">
+                <div class="tenant-identity">
+                  @if (tenant.logo_url) {
+                    <img class="tenant-logo" [src]="tenant.logo_url" [alt]="tenant.name" />
+                  } @else {
+                    <div class="tenant-logo-placeholder">
+                      <i class="ri-building-line"></i>
+                    </div>
+                  }
+                  <span class="tenant-name">{{ tenant.name }}</span>
+                </div>
+              </td>
               <td class="tenant-slug">{{ tenant.slug }}</td>
+              <td>{{ getIndustryLabel(tenant.industry || '') }}</td>
               <td>{{ getPlanName(tenant.plan_id) }}</td>
               <td>
                 <span class="status-badge" [class]="getStatusClass(tenant.status)">
@@ -143,8 +156,8 @@
 
   <!-- 新增/編輯表單 Modal -->
   @if (showForm()) {
-    <div class="modal-overlay" (click)="closeForm()">
-      <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-overlay">
+      <div class="modal-container">
         <div class="modal-header">
           <h2 class="modal-title">
             {{ editingTenant() ? '編輯租戶' : '新增租戶' }}
@@ -176,24 +189,68 @@
             </div>
           }
 
+          <!-- Logo 上傳 -->
           <div class="form-group">
-            <label class="form-label">訂閱方案</label>
+            <label class="form-label">公司 Logo</label>
+            <div class="logo-upload-area">
+              @if (logoPreview()) {
+                <div class="logo-preview-wrapper">
+                  <img class="logo-preview" [src]="logoPreview()" alt="Logo 預覽" />
+                  <button class="logo-remove-btn" type="button" (click)="removeLogo()" title="移除 Logo">
+                    <i class="ri-close-circle-fill"></i>
+                  </button>
+                </div>
+              } @else {
+                <label class="logo-upload-trigger" [class.logo-upload-trigger--loading]="logoUploading()">
+                  @if (logoUploading()) {
+                    <div class="spinner-sm"></div>
+                    <span>上傳中...</span>
+                  } @else {
+                    <i class="ri-image-add-line"></i>
+                    <span>點擊上傳 Logo</span>
+                    <span class="logo-hint">支援 JPEG、PNG、WebP，最大 2MB</span>
+                  }
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    class="logo-file-input"
+                    (change)="onLogoSelected($event)" />
+                </label>
+              }
+            </div>
+          </div>
+
+          <!-- 產業別 -->
+          <div class="form-group">
+            <label class="form-label">產業別</label>
             <select
               class="form-input"
-              [value]="formData().plan_id || ''"
-              (change)="updateFormField('plan_id', $any($event.target).value)">
-              <option value="">請選擇方案</option>
-              @for (plan of plans(); track plan.id) {
-                <option [value]="plan.id">{{ plan.name }}</option>
+              (change)="updateFormField('industry', $any($event.target).value)">
+              <option value="" [selected]="!formData().industry">請選擇產業別</option>
+              @for (opt of industryOptions; track opt.value) {
+                <option [value]="opt.value" [selected]="formData().industry === opt.value">{{ opt.label }}</option>
               }
             </select>
           </div>
 
-          @if (!editingTenant()) {
-            <div class="form-divider">
-              <span>管理員帳號</span>
-            </div>
+          <div class="form-group">
+            <label class="form-label">訂閱方案</label>
+            <select
+              class="form-input"
+              (change)="updateFormField('plan_id', $any($event.target).value)">
+              <option value="" [selected]="!formData().plan_id">請選擇方案</option>
+              @for (plan of plans(); track plan.id) {
+                <option [value]="plan.id" [selected]="formData().plan_id === plan.id">{{ plan.name }}</option>
+              }
+            </select>
+          </div>
 
+          <div class="form-divider">
+            <span>管理員帳號</span>
+          </div>
+
+          @if (!editingTenant()) {
+            <!-- 新增模式：建立管理員 -->
             <div class="form-group">
               <label class="form-label">管理員名稱</label>
               <input
@@ -223,6 +280,46 @@
                 [value]="formData().admin_password || ''"
                 (input)="updateFormField('admin_password', $any($event.target).value)" />
             </div>
+          } @else {
+            <!-- 編輯模式：管理現有管理員 -->
+            @if (tenantAdmins().length === 0) {
+              <p class="admin-empty-hint">載入中...</p>
+            } @else {
+              @for (admin of tenantAdmins(); track admin.id) {
+                <div class="admin-card">
+                  <div class="admin-card-header">
+                    <span class="admin-role-badge">{{ admin.role_names || 'user' }}</span>
+                    <span class="admin-status" [class.admin-status--active]="admin.status === 'active'">
+                      {{ admin.status === 'active' ? '啟用' : admin.status }}
+                    </span>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">名稱</label>
+                    <input
+                      type="text"
+                      class="form-input"
+                      [value]="admin.name"
+                      (input)="updateAdminField(admin.id, 'name', $any($event.target).value)" />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">信箱</label>
+                    <input
+                      type="email"
+                      class="form-input"
+                      [value]="admin.email"
+                      (input)="updateAdminField(admin.id, 'email', $any($event.target).value)" />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">重設密碼 <span class="form-hint">（留空不變更）</span></label>
+                    <input
+                      type="password"
+                      class="form-input"
+                      placeholder="輸入新密碼（至少 6 字元）"
+                      (input)="updateAdminField(admin.id, 'password', $any($event.target).value)" />
+                  </div>
+                </div>
+              }
+            }
           }
         </div>
         <div class="modal-footer">
@@ -237,8 +334,8 @@
 
   <!-- 硬刪除確認對話框 -->
   @if (showConfirmDialog()) {
-    <div class="modal-overlay" (click)="closeConfirm()">
-      <div class="modal-container modal-container--sm" (click)="$event.stopPropagation()">
+    <div class="modal-overlay">
+      <div class="modal-container modal-container--sm">
         <div class="modal-header modal-header--danger">
           <h2 class="modal-title">
             <i class="ri-error-warning-fill"></i> 永久刪除租戶

@@ -72,8 +72,8 @@
 
   <!-- 新增/編輯方案 Modal -->
   @if (showForm()) {
-    <div class="modal-overlay" (click)="closeForm()">
-      <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-overlay">
+      <div class="modal-container">
         <div class="modal-header">
           <h2 class="modal-title">
             {{ editingPlan() ? '編輯方案' : '新增方案' }}
@@ -131,25 +131,47 @@
             </div>
           </div>
 
+          <!-- 功能模組勾選 -->
           <div class="form-group">
-            <label class="form-label">功能特色（以逗號分隔）</label>
-            <textarea
-              class="form-input form-textarea"
-              rows="3"
-              placeholder="例：無限報表, 進階分析, API 存取"
-              [value]="formData().features || ''"
-              (input)="updateFormField('features', $any($event.target).value)">
-            </textarea>
+            <label class="form-label">功能模組</label>
+            <div class="feature-selector">
+              @for (mod of moduleRegistry; track mod.id) {
+                <div class="module-group">
+                  <label class="module-header">
+                    <input
+                      type="checkbox"
+                      class="module-checkbox"
+                      [checked]="isModuleFullySelected(mod.id)"
+                      [indeterminate]="isModulePartiallySelected(mod.id)"
+                      (change)="toggleModule(mod.id)" />
+                    <i [class]="mod.icon"></i>
+                    <span class="module-label">{{ mod.label }}</span>
+                    <span class="module-count">{{ getSelectedCount(mod.id) }}/{{ mod.children.length }}</span>
+                  </label>
+                  <div class="module-children">
+                    @for (child of mod.children; track child.id) {
+                      <label class="child-item">
+                        <input
+                          type="checkbox"
+                          class="child-checkbox"
+                          [checked]="isFeatureSelected(child.id)"
+                          (change)="toggleFeature(child.id)" />
+                        <span>{{ child.label }}</span>
+                      </label>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
           </div>
 
           <div class="form-group">
             <label class="form-label">啟用狀態</label>
             <select
               class="form-input"
-              [value]="formData().is_active ?? 1"
               (change)="updateFormField('is_active', +$any($event.target).value)">
-              <option [value]="1">啟用</option>
-              <option [value]="0">停用</option>
+              <option value="1" [selected]="(formData().is_active ?? 1) === 1">啟用</option>
+              <option value="0" [selected]="(formData().is_active ?? 1) === 0">停用</option>
             </select>
           </div>
         </div>

@@ -95,20 +95,17 @@ router.get('/logs', (req, res) => {
     [...params, parseInt(limit), offset]
   );
 
-  // 解析 details JSON 字串
+  // 保持 details 為字串（前端自行解析顯示），ip → ip_address
   const data = logs.map(log => ({
     ...log,
-    details: log.details ? JSON.parse(log.details) : null
+    ip_address: log.ip || null
   }));
 
   res.json({
     data,
-    pagination: {
-      page: parseInt(page),
-      limit: parseInt(limit),
-      total,
-      totalPages: Math.ceil(total / parseInt(limit))
-    }
+    total,
+    page: parseInt(page),
+    limit: parseInt(limit)
   });
 });
 

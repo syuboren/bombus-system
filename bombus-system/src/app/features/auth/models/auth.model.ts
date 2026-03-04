@@ -32,6 +32,7 @@ export interface RefreshTokenResponse {
   access_token: string;
   token_type: string;
   expires_in: string;
+  user?: User;
 }
 
 /**
@@ -57,6 +58,7 @@ export interface User {
   permissions?: string[];
   tenant_id?: string;
   isPlatformAdmin?: boolean;
+  enabled_features?: string[];
   /** @deprecated 向後相容，6.2 移除 */
   username?: string;
   /** @deprecated 向後相容，6.2 移除 */

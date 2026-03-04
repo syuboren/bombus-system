@@ -218,6 +218,51 @@ $transition-fast: 150ms ease;
 }
 
 // ---------------------------------------------------------------
+// Login Mode Tabs
+// ---------------------------------------------------------------
+.login-mode-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  padding: 4px;
+  background: $color-cloud-gray;
+  border-radius: $radius-full;
+}
+
+.mode-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  background: transparent;
+  border: none;
+  border-radius: $radius-full;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: all $transition-normal;
+
+  &:hover:not(&--active) {
+    color: $color-text-primary;
+    background: rgba(white, 0.5);
+  }
+
+  &--active {
+    background: white;
+    color: $color-brand-dark;
+    box-shadow: $shadow-soft;
+    font-weight: 600;
+  }
+
+  i {
+    font-size: 1.125rem;
+  }
+}
+
+// ---------------------------------------------------------------
 // Form Elements
 // ---------------------------------------------------------------
 .login-form {
