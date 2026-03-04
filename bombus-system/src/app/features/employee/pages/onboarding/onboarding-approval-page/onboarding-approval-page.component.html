@@ -1,0 +1,91 @@
+<app-header pageTitle="簽核管理" [breadcrumbs]="['首頁', '員工管理', '簽核管理']">
+</app-header>
+
+<div class="approval-page">
+    <!-- 統計卡片 -->
+    <div class="stats-row">
+        <div class="stat-card" [class.active]="filterStatus() === 'PENDING'" (click)="setFilter('PENDING')">
+            <div class="stat-icon pending">
+                <i class="ri-time-line"></i>
+            </div>
+            <div class="stat-info">
+                <div class="stat-label">待審核</div>
+                <div class="stat-value">{{ stats()?.pending || 0 }}</div>
+            </div>
+        </div>
+        <div class="stat-card" [class.active]="filterStatus() === 'APPROVED'" (click)="setFilter('APPROVED')">
+            <div class="stat-icon approved">
+                <i class="ri-check-double-line"></i>
+            </div>
+            <div class="stat-info">
+                <div class="stat-label">已核准</div>
+                <div class="stat-value">{{ stats()?.approved || 0 }}</div>
+            </div>
+        </div>
+        <div class="stat-card" [class.active]="filterStatus() === 'REJECTED'" (click)="setFilter('REJECTED')">
+            <div class="stat-icon rejected">
+                <i class="ri-close-circle-line"></i>
+            </div>
+            <div class="stat-info">
+                <div class="stat-label">已退回</div>
+                <div class="stat-value">{{ stats()?.rejected || 0 }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 列表區域 -->
+    <div class="list-section">
+        <div class="section-header">
+            <h3>{{ filterStatus() === 'PENDING' ? '待審核文件' : (filterStatus() === 'APPROVED' ? '已核准記錄' : '退回記錄') }}</h3>
+            <button class="btn btn--secondary btn--sm" (click)="loadSubmissions()">
+                <i class="ri-refresh-line"></i> 重新整理
+            </button>
+        </div>
+
+        @if (loading()) {
+        <div class="loading-state">
+            <i class="ri-loader-4-line spinner"></i>
+            <span>載入中...</span>
+        </div>
+        } @else if (submissions().length === 0) {
+        <div class="empty-state">
+            <i class="ri-inbox-line"></i>
+            <p>目前沒有{{ filterStatus() === 'PENDING' ? '待審核' : '相關' }}的文件</p>
+        </div>
+        } @else {
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>員工姓名</th>
+                    <th>文件名稱</th>
+                    <th>提交時間</th>
+                    <th>版本</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (item of submissions(); track item.id) {
+                <!-- Navigate to detail page on click -->
+                <tr [routerLink]="['/employee/onboarding/approval', item.id]" style="cursor: pointer;">
+                    <td>
+                        <div class="employee-info">
+                            <span class="name">{{ item.employee_name || '未知員工' }}</span>
+                            <span class="email">{{ item.employee_email }}</span>
+                        </div>
+                    </td>
+                    <td>{{ item.template_name || '未命名文件' }}</td>
+                    <td>{{ formatDate(item.signed_at || item.created_at) }}</td>
+                    <td>v{{ item.template_version }}</td>
+                    <td>
+                        <button class="btn btn--secondary btn--sm">
+                            查看詳情
+                        </button>
+                    </td>
+                </tr>
+                }
+            </tbody>
+        </table>
+        }
+    </div>
+</div>
+<!-- Modal removed, switched to full page view -->

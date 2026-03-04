@@ -1,6 +1,9 @@
 @import '../../../../../assets/styles/variables';
 @import '../../../../../assets/styles/mixins';
 
+// 模組色變數
+$module-color: $color-l3-petrol;
+
 .effectiveness-page {
   padding: $spacing-xl;
   padding-top: calc(var(--header-height, 70px) + 20px);
@@ -41,7 +44,7 @@
   margin: 0;
 
   i {
-    color: $color-l3-petrol;
+    color: $module-color;
   }
 }
 
@@ -105,10 +108,21 @@
     height: 4px;
   }
 
-  &--completion::before { background: $color-l1-sage; }
-  &--budget::before { background: $color-l2-terracotta; }
-  &--roi::before { background: $color-l3-petrol; }
-  &--satisfaction::before { background: $color-l4-mauve; }
+  &--completion::before {
+    background: $color-l1-sage;
+  }
+
+  &--budget::before {
+    background: $color-l2-terracotta;
+  }
+
+  &--roi::before {
+    background: $color-l3-petrol;
+  }
+
+  &--satisfaction::before {
+    background: $color-l4-mauve;
+  }
 
   &__icon {
     width: 48px;
@@ -120,10 +134,25 @@
     font-size: 24px;
   }
 
-  &--completion &__icon { background: rgba($color-l1-sage, 0.15); color: $color-l1-sage; }
-  &--budget &__icon { background: rgba($color-l2-terracotta, 0.15); color: $color-l2-terracotta; }
-  &--roi &__icon { background: rgba($color-l3-petrol, 0.15); color: $color-l3-petrol; }
-  &--satisfaction &__icon { background: rgba($color-l4-mauve, 0.15); color: $color-l4-mauve; }
+  &--completion &__icon {
+    background: rgba($color-l1-sage, 0.15);
+    color: $color-l1-sage;
+  }
+
+  &--budget &__icon {
+    background: rgba($color-l2-terracotta, 0.15);
+    color: $color-l2-terracotta;
+  }
+
+  &--roi &__icon {
+    background: rgba($color-l3-petrol, 0.15);
+    color: $color-l3-petrol;
+  }
+
+  &--satisfaction &__icon {
+    background: rgba($color-l4-mauve, 0.15);
+    color: $color-l4-mauve;
+  }
 
   &__content {
     display: flex;
@@ -173,7 +202,7 @@
   &__value {
     font-size: 1.75rem;
     font-weight: $font-weight-bold;
-    color: $color-l3-petrol;
+    color: $module-color;
   }
 
   &__max {
@@ -228,10 +257,21 @@
     font-weight: $font-weight-bold;
   }
 
-  &.ttqs-status--excellent &__score { color: $color-l1-sage; }
-  &.ttqs-status--good &__score { color: $color-l3-petrol; }
-  &.ttqs-status--warning &__score { color: $color-warning; }
-  &.ttqs-status--danger &__score { color: $color-error; }
+  &.ttqs-status--excellent &__score {
+    color: $color-l1-sage;
+  }
+
+  &.ttqs-status--good &__score {
+    color: $color-l3-petrol;
+  }
+
+  &.ttqs-status--warning &__score {
+    color: $color-warning;
+  }
+
+  &.ttqs-status--danger &__score {
+    color: $color-error;
+  }
 
   &__progress {
     margin-bottom: $spacing-md;
@@ -250,10 +290,21 @@
     transition: width 0.6s ease;
   }
 
-  &.ttqs-status--excellent &__fill { background: $color-l1-sage; }
-  &.ttqs-status--good &__fill { background: $color-l3-petrol; }
-  &.ttqs-status--warning &__fill { background: $color-warning; }
-  &.ttqs-status--danger &__fill { background: $color-error; }
+  &.ttqs-status--excellent &__fill {
+    background: $color-l1-sage;
+  }
+
+  &.ttqs-status--good &__fill {
+    background: $color-l3-petrol;
+  }
+
+  &.ttqs-status--warning &__fill {
+    background: $color-warning;
+  }
+
+  &.ttqs-status--danger &__fill {
+    background: $color-error;
+  }
 
   &__items {
     list-style: none;
@@ -293,19 +344,34 @@
 
   &.ttqs-status--excellent &__icon-circle {
     background: rgba($color-l1-sage, 0.15);
-    i { color: $color-l1-sage; }
+
+    i {
+      color: $color-l1-sage;
+    }
   }
+
   &.ttqs-status--good &__icon-circle {
     background: rgba($color-l3-petrol, 0.15);
-    i { color: $color-l3-petrol; }
+
+    i {
+      color: $color-l3-petrol;
+    }
   }
+
   &.ttqs-status--warning &__icon-circle {
     background: rgba($color-warning, 0.15);
-    i { color: $color-warning; }
+
+    i {
+      color: $color-warning;
+    }
   }
+
   &.ttqs-status--danger &__icon-circle {
     background: rgba($color-error, 0.15);
-    i { color: $color-error; }
+
+    i {
+      color: $color-error;
+    }
   }
 }
 
@@ -351,10 +417,21 @@
     color: $color-pure-white;
   }
 
-  &.effectiveness--excellent &__level { background: $color-l1-sage; }
-  &.effectiveness--good &__level { background: $color-l3-petrol; }
-  &.effectiveness--warning &__level { background: $color-warning; }
-  &.effectiveness--danger &__level { background: $color-error; }
+  &.effectiveness--excellent &__level {
+    background: $color-l1-sage;
+  }
+
+  &.effectiveness--good &__level {
+    background: $color-l3-petrol;
+  }
+
+  &.effectiveness--warning &__level {
+    background: $color-warning;
+  }
+
+  &.effectiveness--danger &__level {
+    background: $color-error;
+  }
 
   &__info {
     display: flex;
@@ -401,15 +478,37 @@
     transition: width 0.6s ease;
   }
 
-  &.effectiveness--excellent &__score-fill { background: $color-l1-sage; }
-  &.effectiveness--good &__score-fill { background: $color-l3-petrol; }
-  &.effectiveness--warning &__score-fill { background: $color-warning; }
-  &.effectiveness--danger &__score-fill { background: $color-error; }
+  &.effectiveness--excellent &__score-fill {
+    background: $color-l1-sage;
+  }
 
-  &.effectiveness--excellent &__score-value { color: $color-l1-sage; }
-  &.effectiveness--good &__score-value { color: $color-l3-petrol; }
-  &.effectiveness--warning &__score-value { color: $color-warning; }
-  &.effectiveness--danger &__score-value { color: $color-error; }
+  &.effectiveness--good &__score-fill {
+    background: $color-l3-petrol;
+  }
+
+  &.effectiveness--warning &__score-fill {
+    background: $color-warning;
+  }
+
+  &.effectiveness--danger &__score-fill {
+    background: $color-error;
+  }
+
+  &.effectiveness--excellent &__score-value {
+    color: $color-l1-sage;
+  }
+
+  &.effectiveness--good &__score-value {
+    color: $color-l3-petrol;
+  }
+
+  &.effectiveness--warning &__score-value {
+    color: $color-warning;
+  }
+
+  &.effectiveness--danger &__score-value {
+    color: $color-error;
+  }
 }
 
 // Feedback Section
@@ -449,42 +548,14 @@
 
 .feedback-table-wrapper,
 .roi-table-wrapper {
-  background: $color-pure-white;
-  border-radius: $radius-lg;
-  box-shadow: $shadow-sm;
+  @include card;
+  padding: 0;
   overflow: hidden;
 }
 
 .feedback-table,
 .roi-table {
-  width: 100%;
-  border-collapse: collapse;
-
-  th {
-    background: $color-pure-white;
-    padding: 14px 16px;
-    text-align: left;
-    font-size: $font-size-sm;
-    font-weight: $font-weight-semibold;
-    color: $color-text-dark;
-    border-bottom: 2px solid $color-l3-petrol;
-    white-space: nowrap;
-  }
-
-  td {
-    padding: 14px 16px;
-    border-bottom: 1px solid $color-soft-gray;
-    font-size: $font-size-sm;
-    background: $color-pure-white;
-  }
-
-  tr:last-child td {
-    border-bottom: none;
-  }
-
-  tr:hover td {
-    background: rgba($color-l3-petrol, 0.05);
-  }
+  @include data-table($module-color);
 }
 
 .course-name {
@@ -505,8 +576,8 @@
   }
 
   &.session-status--scheduled {
-    background: rgba($color-l3-petrol, 0.15);
-    color: $color-l3-petrol;
+    background: rgba($module-color, 0.15);
+    color: $module-color;
   }
 
   &.session-status--completed {
@@ -565,16 +636,16 @@
   transition: all 0.2s;
 
   &:hover {
-    background: $color-l3-petrol;
+    background: $module-color;
     color: $color-pure-white;
   }
 
   &--primary {
-    background: $color-l3-petrol;
+    background: $module-color;
     color: $color-pure-white;
 
     &:hover {
-      background: darken($color-l3-petrol, 10%);
+      background: darken($module-color, 10%);
     }
   }
 }
@@ -637,7 +708,7 @@
   top: 0;
   left: 0;
   height: 100%;
-  background: $color-l3-petrol;
+  background: $module-color;
   border-radius: $radius-full;
   max-width: 100%;
 }
@@ -663,8 +734,8 @@
   }
 
   &.roi-rec--optimize {
-    background: rgba($color-l3-petrol, 0.15);
-    color: $color-l3-petrol;
+    background: rgba($module-color, 0.15);
+    color: $module-color;
   }
 
   &.roi-rec--review {
@@ -704,8 +775,15 @@
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .improvement-cards {
@@ -817,4 +895,3 @@
   background: rgba($color-l1-sage, 0.15);
   color: $color-l1-sage;
 }
-

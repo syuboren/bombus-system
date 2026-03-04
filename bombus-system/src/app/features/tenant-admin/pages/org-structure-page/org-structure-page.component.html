@@ -1,0 +1,167 @@
+<div class="org-structure-page">
+  <div class="page-header">
+    <h1 class="page-title">組織架構管理</h1>
+    <button class="btn-primary" type="button" (click)="openCreateForm()">
+      <i class="ri-add-line"></i> 新增節點
+    </button>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>載入中...</p>
+    </div>
+  } @else if (tree().length === 0) {
+    <div class="empty-state">
+      <i class="ri-organization-chart"></i>
+      <p>尚無組織架構資料</p>
+      <button class="btn-primary" type="button" (click)="openCreateForm()">
+        <i class="ri-add-line"></i> 建立根節點
+      </button>
+    </div>
+  } @else {
+    <div class="tree-container">
+      <ng-container *ngTemplateOutlet="treeNodes; context: { $implicit: tree() }"></ng-container>
+    </div>
+  }
+
+  <!-- Tree Node Template (recursive) -->
+  <ng-template #treeNodes let-nodes>
+    <ul class="tree-list">
+      @for (node of nodes; track node.id) {
+        <li class="tree-item">
+          <div class="tree-node" [class]="getTypeClass(node.type)">
+            <div class="node-toggle" (click)="toggleNode(node.id)">
+              @if (hasChildren(node)) {
+                <i [class]="isExpanded(node.id) ? 'ri-arrow-down-s-fill' : 'ri-arrow-right-s-fill'"></i>
+              } @else {
+                <span class="toggle-spacer"></span>
+              }
+            </div>
+
+            <div class="node-icon">
+              <i [class]="getTypeIcon(node.type)"></i>
+            </div>
+
+            <div class="node-info">
+              <span class="node-name">{{ node.name }}</span>
+              <span class="node-type-badge">{{ getTypeLabel(node.type) }}</span>
+            </div>
+
+            <div class="node-actions">
+              @if (node.type !== 'department') {
+                <button
+                  class="action-btn"
+                  title="新增子節點"
+                  type="button"
+                  (click)="openCreateForm(node); $event.stopPropagation()">
+                  <i class="ri-add-circle-line"></i>
+                </button>
+              }
+              <button
+                class="action-btn"
+                title="編輯"
+                type="button"
+                (click)="openEditForm(node); $event.stopPropagation()">
+                <i class="ri-edit-line"></i>
+              </button>
+              <button
+                class="action-btn action-btn--danger"
+                title="刪除"
+                type="button"
+                (click)="confirmDelete(node); $event.stopPropagation()">
+                <i class="ri-delete-bin-line"></i>
+              </button>
+            </div>
+          </div>
+
+          @if (hasChildren(node) && isExpanded(node.id)) {
+            <ng-container *ngTemplateOutlet="treeNodes; context: { $implicit: node.children }"></ng-container>
+          }
+        </li>
+      }
+    </ul>
+  </ng-template>
+
+  <!-- 新增/編輯表單 Modal -->
+  @if (showForm()) {
+    <div class="modal-overlay" (click)="closeForm()">
+      <div class="modal-container" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2 class="modal-title">
+            {{ editingUnit() ? '編輯組織單位' : '新增組織單位' }}
+          </h2>
+          <button class="modal-close" (click)="closeForm()">
+            <i class="ri-close-line"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">名稱</label>
+            <input
+              type="text"
+              class="form-input"
+              placeholder="例：行政管理部"
+              [value]="formData().name || ''"
+              (input)="updateFormField('name', $any($event.target).value)" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">類型</label>
+            <select
+              class="form-input"
+              [value]="formData().type || ''"
+              (change)="updateFormField('type', $any($event.target).value)">
+              <option value="group">集團</option>
+              <option value="subsidiary">子公司</option>
+              <option value="department">部門</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">上級單位</label>
+            <select
+              class="form-input"
+              [value]="formData().parent_id || ''"
+              (change)="updateFormField('parent_id', $any($event.target).value || null)">
+              <option value="">無（根節點）</option>
+              @for (parent of getParentOptions(); track parent.id) {
+                <option [value]="parent.id">{{ getTypeLabel(parent.type) }} - {{ parent.name }}</option>
+              }
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" type="button" (click)="closeForm()">取消</button>
+          <button class="btn-primary" type="button" (click)="saveForm()">
+            {{ editingUnit() ? '儲存變更' : '建立' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- 刪除確認 -->
+  @if (showDeleteConfirm()) {
+    <div class="modal-overlay" (click)="closeDeleteConfirm()">
+      <div class="modal-container modal-container--sm" (click)="$event.stopPropagation()">
+        <div class="modal-header modal-header--danger">
+          <h2 class="modal-title">
+            <i class="ri-error-warning-fill"></i> 刪除確認
+          </h2>
+        </div>
+        <div class="modal-body">
+          <p class="danger-text">
+            確定要刪除 <strong>{{ deletingUnit()?.name }}</strong> 嗎？此操作可能影響其子單位。
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" type="button" (click)="closeDeleteConfirm()">取消</button>
+          <button class="btn-danger" type="button" (click)="executeDelete()">
+            <i class="ri-delete-bin-line"></i> 確認刪除
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

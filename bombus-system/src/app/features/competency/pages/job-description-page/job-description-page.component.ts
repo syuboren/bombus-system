@@ -1,7 +1,8 @@
-import { Component, ChangeDetectionStrategy, inject, signal, OnInit, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, ChangeDetectorRef, inject, signal, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { ViewToggleComponent } from '../../../../shared/components/view-toggle/view-toggle.component';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { CompetencyService } from '../../services/competency.service';
 import { PdfExportService } from '../../services/pdf-export.service';
@@ -15,13 +16,14 @@ import {
   CompetencyType,
   CompetencyGradeLevel,
   COMPETENCY_TYPE_OPTIONS,
-  COMPETENCY_GRADE_LEVEL_OPTIONS
+  COMPETENCY_GRADE_LEVEL_OPTIONS,
+  JDVersion
 } from '../../models/competency.model';
 
 @Component({
   selector: 'app-job-description-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, HeaderComponent],
+  imports: [CommonModule, FormsModule, HeaderComponent, ViewToggleComponent],
   templateUrl: './job-description-page.component.html',
   styleUrl: './job-description-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -29,6 +31,7 @@ import {
 export class JobDescriptionPageComponent implements OnInit {
   private competencyService = inject(CompetencyService);
   private pdfExportService = inject(PdfExportService);
+  private cdr = inject(ChangeDetectorRef);
   router = inject(Router);
 
   // PDF Export state
@@ -42,7 +45,7 @@ export class JobDescriptionPageComponent implements OnInit {
   jobDescriptions = signal<JobDescription[]>([]);
   loading = signal(true);
 
-  // 職能基準庫資料
+  // 職能模型基準資料
   coreCompetencies = signal<CoreManagementCompetency[]>([]);
   managementCompetencies = signal<CoreManagementCompetency[]>([]);
   ksaCompetencies = signal<KSACompetencyItem[]>([]);
@@ -62,7 +65,22 @@ export class JobDescriptionPageComponent implements OnInit {
   showDetailModal = signal(false);
   showCreateModal = signal(false);
   showAIAssistantModal = signal(false);
-  selectedJD = signal<JobDescription | null>(null);
+  selectedJD = signal<JobDescription>({} as JobDescription);
+
+  // Computed signal for reactive template binding
+  currentJD = computed(() => this.selectedJD());
+
+  // 版本比對側邊面板狀態
+  showVersionPanel = signal(false);
+  comparisonVersion = signal<JobDescription | null>(null);
+
+  // 審核流程狀態
+  showApprovalModal = signal(false);
+  approvalAction = signal<'approve' | 'reject' | null>(null);
+  rejectReason = signal('');
+  processingAction = signal(false);
+  versionHistory = signal<JDVersion[]>([]);
+  approvalHistory = signal<any[]>([]);
 
   // AI Assistant state
   aiInputText = signal('');
@@ -92,6 +110,8 @@ export class JobDescriptionPageComponent implements OnInit {
   readonly statusOptions = [
     { value: '', label: '全部狀態' },
     { value: 'draft', label: '草稿' },
+    { value: 'pending_review', label: '審核中' },
+    { value: 'rejected', label: '已退回' },
     { value: 'published', label: '已發布' },
     { value: 'archived', label: '已封存' }
   ];
@@ -126,6 +146,8 @@ export class JobDescriptionPageComponent implements OnInit {
       total: all.length,
       published: all.filter(j => j.status === 'published').length,
       draft: all.filter(j => j.status === 'draft').length,
+      pendingReview: all.filter(j => j.status === 'pending_review').length,
+      rejected: all.filter(j => j.status === 'rejected').length,
       archived: all.filter(j => j.status === 'archived').length
     };
   });
@@ -136,7 +158,7 @@ export class JobDescriptionPageComponent implements OnInit {
 
   loadData(): void {
     this.loading.set(true);
-    
+
     // Load job descriptions
     this.competencyService.getJobDescriptions().subscribe(data => {
       this.jobDescriptions.set(data);
@@ -180,11 +202,15 @@ export class JobDescriptionPageComponent implements OnInit {
   openDetailModal(jd: JobDescription): void {
     this.selectedJD.set(jd);
     this.showDetailModal.set(true);
+    this.closeVersionPanel(); // 關閉版本比對面板
+    // 載入版本歷史和審核記錄
+    this.loadVersionHistory(jd.id);
   }
 
   closeDetailModal(): void {
     this.showDetailModal.set(false);
-    this.selectedJD.set(null);
+    this.selectedJD.set({} as JobDescription);
+    this.closeVersionPanel(); // 關閉版本比對面板
   }
 
   // Create Modal
@@ -254,6 +280,8 @@ export class JobDescriptionPageComponent implements OnInit {
   getStatusLabel(status: string): string {
     const map: Record<string, string> = {
       draft: '草稿',
+      pending_review: '審核中',
+      rejected: '已退回',
       published: '已發布',
       archived: '已封存'
     };
@@ -286,13 +314,13 @@ export class JobDescriptionPageComponent implements OnInit {
   }
 
   // PDF 匯出方法
-  async exportToPdf(): Promise<void> {
-    const jd = this.selectedJD();
-    if (!jd) return;
+  async exportToPdf(jd?: JobDescription): Promise<void> {
+    const targetJD = jd || this.selectedJD();
+    if (!targetJD) return;
 
     this.isExporting.set(true);
     try {
-      await this.pdfExportService.exportJobDescription(jd);
+      await this.pdfExportService.exportJobDescription(targetJD);
     } catch (error) {
       console.error('PDF 匯出失敗:', error);
     } finally {
@@ -307,22 +335,27 @@ export class JobDescriptionPageComponent implements OnInit {
   // 計算所有職能需求的總權重 (核心 + 管理 + KSA)
   getAllCompetenciesTotalWeight(jd: JobDescription): number {
     let total = 0;
-    
+
     // 核心職能權重
     if (jd.coreCompetencyRequirements) {
       total += jd.coreCompetencyRequirements.reduce((sum, c) => sum + c.weight, 0);
     }
-    
+
     // 管理職能權重
     if (jd.managementCompetencyRequirements) {
       total += jd.managementCompetencyRequirements.reduce((sum, c) => sum + c.weight, 0);
     }
-    
+
+    // 專業職能權重
+    if (jd.professionalCompetencyRequirements) {
+      total += jd.professionalCompetencyRequirements.reduce((sum, c) => sum + c.weight, 0);
+    }
+
     // KSA 職能權重
     if (jd.ksaCompetencyRequirements) {
       total += jd.ksaCompetencyRequirements.reduce((sum, c) => sum + c.weight, 0);
     }
-    
+
     return total;
   }
 
@@ -379,12 +412,12 @@ export class JobDescriptionPageComponent implements OnInit {
 
   getLevelLabel(level: CompetencyGradeLevel): string {
     const levelMap: Record<CompetencyGradeLevel, string> = {
-      'L1': 'L1 - 基礎執行',
-      'L2': 'L2 - 獨立作業',
-      'L3': 'L3 - 帶領團隊',
-      'L4': 'L4 - 策略規劃',
-      'L5': 'L5 - 高階領導',
-      'L6': 'L6 - 戰略引領'
+      'L1': 'L1',
+      'L2': 'L2',
+      'L3': 'L3',
+      'L4': 'L4',
+      'L5': 'L5',
+      'L6': 'L6'
     };
     return levelMap[level] || level;
   }
@@ -415,5 +448,178 @@ export class JobDescriptionPageComponent implements OnInit {
     }
     return items;
   });
+
+  // =====================================================
+  // 狀態流程操作方法
+  // =====================================================
+
+  /**
+   * 送出審核：draft/rejected → pending_review
+   */
+  submitForReview(jd?: JobDescription): void {
+    const targetJD = jd || this.selectedJD();
+    if (!targetJD) return;
+    this.processingAction.set(true);
+    this.competencyService.submitJDForReview(targetJD.id).subscribe(result => {
+      this.processingAction.set(false);
+      if (result) {
+        if (this.selectedJD()?.id === targetJD.id) {
+          this.selectedJD.set(result);
+        }
+        this.loadData();
+      }
+    });
+  }
+
+  /**
+   * 開啟審核彈窗
+   */
+  openApprovalModal(action: 'approve' | 'reject'): void {
+    this.approvalAction.set(action);
+    this.rejectReason.set('');
+    this.showApprovalModal.set(true);
+  }
+
+  /**
+   * 關閉審核彈窗
+   */
+  closeApprovalModal(): void {
+    this.showApprovalModal.set(false);
+    this.approvalAction.set(null);
+    this.rejectReason.set('');
+  }
+
+  /**
+   * 確認審核動作
+   */
+  confirmApproval(): void {
+    const jd = this.selectedJD();
+    const action = this.approvalAction();
+    if (!jd || !action) return;
+
+    this.processingAction.set(true);
+    if (action === 'approve') {
+      this.competencyService.approveJD(jd.id).subscribe(result => {
+        this.processingAction.set(false);
+        this.closeApprovalModal();
+        if (result) {
+          this.selectedJD.set(result);
+          this.loadData();
+        }
+      });
+    } else {
+      const reason = this.rejectReason();
+      if (!reason) return;
+      this.competencyService.rejectJD(jd.id, reason).subscribe(result => {
+        this.processingAction.set(false);
+        this.closeApprovalModal();
+        if (result) {
+          this.selectedJD.set(result);
+          this.loadData();
+        }
+      });
+    }
+  }
+
+  /**
+   * 封存職務說明書
+   */
+  archiveJD(jd?: JobDescription): void {
+    const targetJD = jd || this.selectedJD();
+    if (!targetJD) return;
+    this.processingAction.set(true);
+    this.competencyService.archiveJD(targetJD.id).subscribe(result => {
+      this.processingAction.set(false);
+      if (result) {
+        if (this.selectedJD()?.id === targetJD.id) {
+          this.selectedJD.set(result);
+        }
+        this.loadData();
+      }
+    });
+  }
+
+  /**
+   * 建立新版本
+   */
+  createNewVersion(jd?: JobDescription): void {
+    const targetJD = jd || this.selectedJD();
+    if (!targetJD) return;
+
+    if (!confirm('建立新版本將會複製當前職務說明書內容並轉為草稿狀態，是否確定建立？')) {
+      return;
+    }
+
+    this.processingAction.set(true);
+    this.competencyService.createNewJDVersion(targetJD.id).subscribe(result => {
+      this.processingAction.set(false);
+      if (result) {
+        if (this.selectedJD()?.id === targetJD.id) {
+          this.selectedJD.set(result);
+        }
+        this.loadData();
+      }
+    });
+  }
+
+  /**
+   * 載入版本歷史
+   */
+  loadVersionHistory(jdId: string): void {
+    this.competencyService.getJDVersionHistory(jdId).subscribe(data => {
+      this.versionHistory.set(data);
+    });
+    this.competencyService.getJDApprovalHistory(jdId).subscribe(data => {
+      this.approvalHistory.set(data);
+    });
+  }
+
+  /**
+   * 編輯職務說明書
+   */
+  editJD(jd: JobDescription): void {
+    if (!jd || !jd.id) return;
+    this.closeDetailModal();
+    this.router.navigate(['/competency/job-description/edit', jd.id]);
+  }
+
+  /**
+   * 開啟版本比對側邊面板
+   */
+  viewVersion(version: JDVersion): void {
+    console.log('Opening comparison panel for version:', version);
+    if (version.id) {
+      this.competencyService.getJDVersion(this.selectedJD().id, version.id).subscribe(jd => {
+        if (jd) {
+          console.log('Loaded history JD for comparison:', jd);
+          this.comparisonVersion.set(jd);
+          this.showVersionPanel.set(true);
+          this.cdr.markForCheck();
+        }
+      });
+    }
+  }
+
+  /**
+   * 關閉版本比對側邊面板
+   */
+  closeVersionPanel(): void {
+    this.showVersionPanel.set(false);
+    this.comparisonVersion.set(null);
+  }
+
+  /**
+   * 取得動作標籤
+   */
+  getActionLabel(action: string): string {
+    const map: Record<string, string> = {
+      submit: '送出審核',
+      approve: '審核通過',
+      reject: '退回',
+      archive: '封存',
+      create_new_version: '建立新版本'
+    };
+    return map[action] || action;
+  }
 }
 

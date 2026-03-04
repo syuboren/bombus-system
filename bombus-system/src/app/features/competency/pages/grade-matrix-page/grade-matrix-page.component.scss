@@ -78,8 +78,13 @@ $module-color-dark: $color-l2-terracotta-dark;
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 // ---------------------------------------------------------------
@@ -93,27 +98,11 @@ $module-color-dark: $color-l2-terracotta-dark;
 }
 
 .filter-bar {
-  @include flex-between;
-  margin-bottom: $spacing-lg;
-  padding-bottom: $spacing-md;
-  border-bottom: 1px solid $color-soft-gray;
+  @include filter-bar($module-color);
+  justify-content: space-between; // Override default
 }
 
-.filter-group {
-  @include flex-start;
-  gap: $spacing-sm;
-}
 
-.filter-label {
-  font-size: $font-size-sm;
-  font-weight: $font-weight-medium;
-  color: $color-text-secondary;
-}
-
-.filter-select {
-  @include input-base;
-  min-width: 150px;
-}
 
 .filter-info {
   font-size: $font-size-sm;
@@ -252,10 +241,7 @@ $module-color-dark: $color-l2-terracotta-dark;
   box-shadow: $shadow-soft;
 }
 
-.section-header {
-  text-align: center;
-  margin-bottom: $spacing-xl;
-}
+// .section-header 樣式已移至新版職涯路徑卡片區塊
 
 .section-title {
   font-size: $font-size-xl;
@@ -292,20 +278,41 @@ $module-color-dark: $color-l2-terracotta-dark;
 
   &.path-vertical {
     border-top: 4px solid $color-l1-sage;
-    &:hover { border-color: $color-l1-sage; }
-    .path-icon { background: rgba($color-l1-sage, 0.15); color: $color-l1-sage; }
+
+    &:hover {
+      border-color: $color-l1-sage;
+    }
+
+    .path-icon {
+      background: rgba($color-l1-sage, 0.15);
+      color: $color-l1-sage;
+    }
   }
 
   &.path-horizontal {
     border-top: 4px solid $color-l3-petrol;
-    &:hover { border-color: $color-l3-petrol; }
-    .path-icon { background: rgba($color-l3-petrol, 0.15); color: $color-l3-petrol; }
+
+    &:hover {
+      border-color: $color-l3-petrol;
+    }
+
+    .path-icon {
+      background: rgba($color-l3-petrol, 0.15);
+      color: $color-l3-petrol;
+    }
   }
 
   &.path-cross-department {
     border-top: 4px solid $color-l4-mauve;
-    &:hover { border-color: $color-l4-mauve; }
-    .path-icon { background: rgba($color-l4-mauve, 0.15); color: $color-l4-mauve; }
+
+    &:hover {
+      border-color: $color-l4-mauve;
+    }
+
+    .path-icon {
+      background: rgba($color-l4-mauve, 0.15);
+      color: $color-l4-mauve;
+    }
   }
 }
 
@@ -512,8 +519,13 @@ $module-color-dark: $color-l2-terracotta-dark;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .section-title {
@@ -682,9 +694,17 @@ $module-color-dark: $color-l2-terracotta-dark;
     font-size: $font-size-sm;
     font-weight: $font-weight-semibold;
 
-    &.score-good { color: $color-success; }
-    &.score-warning { color: $color-warning; }
-    &.score-danger { color: $color-error; }
+    &.score-good {
+      color: $color-success;
+    }
+
+    &.score-warning {
+      color: $color-warning;
+    }
+
+    &.score-danger {
+      color: $color-error;
+    }
   }
 }
 
@@ -731,17 +751,29 @@ $module-color-dark: $color-l2-terracotta-dark;
 
   &.path-vertical {
     border-color: $color-l1-sage;
-    .path-icon { background: rgba($color-l1-sage, 0.15); color: $color-l1-sage; }
+
+    .path-icon {
+      background: rgba($color-l1-sage, 0.15);
+      color: $color-l1-sage;
+    }
   }
 
   &.path-horizontal {
     border-color: $color-l3-petrol;
-    .path-icon { background: rgba($color-l3-petrol, 0.15); color: $color-l3-petrol; }
+
+    .path-icon {
+      background: rgba($color-l3-petrol, 0.15);
+      color: $color-l3-petrol;
+    }
   }
 
   &.path-cross {
     border-color: $color-l4-mauve;
-    .path-icon { background: rgba($color-l4-mauve, 0.15); color: $color-l4-mauve; }
+
+    .path-icon {
+      background: rgba($color-l4-mauve, 0.15);
+      color: $color-l4-mauve;
+    }
   }
 }
 
@@ -768,24 +800,18 @@ $module-color-dark: $color-l2-terracotta-dark;
 }
 
 .feasibility-badge {
-  font-size: $font-size-xs;
-  font-weight: $font-weight-medium;
-  padding: 4px 8px;
-  border-radius: $radius-full;
+  @include status-badge;
 
   &.feasibility-high {
-    background: rgba($color-success, 0.15);
-    color: $color-success;
+    @include status-badge-color($color-success);
   }
 
   &.feasibility-medium {
-    background: rgba($color-warning, 0.15);
-    color: $color-warning;
+    @include status-badge-color($color-warning);
   }
 
   &.feasibility-low {
-    background: rgba($color-error, 0.15);
-    color: $color-error;
+    @include status-badge-color($color-error);
   }
 }
 
@@ -919,17 +945,26 @@ $module-color-dark: $color-l2-terracotta-dark;
 
   &.priority-high {
     border-color: $color-error;
-    .course-priority { color: $color-error; }
+
+    .course-priority {
+      color: $color-error;
+    }
   }
 
   &.priority-medium {
     border-color: $color-warning;
-    .course-priority { color: $color-warning; }
+
+    .course-priority {
+      color: $color-warning;
+    }
   }
 
   &.priority-low {
     border-color: $color-muted-gray;
-    .course-priority { color: $color-muted-gray; }
+
+    .course-priority {
+      color: $color-muted-gray;
+    }
   }
 }
 
@@ -1083,7 +1118,9 @@ $module-color-dark: $color-l2-terracotta-dark;
   }
 
   &.milestone-completed {
-    .milestone-marker i { color: $color-success; }
+    .milestone-marker i {
+      color: $color-success;
+    }
   }
 
   &.milestone-in_progress {
@@ -1094,8 +1131,13 @@ $module-color-dark: $color-l2-terracotta-dark;
   }
 
   &.milestone-pending {
-    .milestone-marker i { color: $color-muted-gray; }
-    .milestone-content { opacity: 0.6; }
+    .milestone-marker i {
+      color: $color-muted-gray;
+    }
+
+    .milestone-content {
+      opacity: 0.6;
+    }
   }
 }
 
@@ -1349,6 +1391,7 @@ $module-color-dark: $color-l2-terracotta-dark;
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1574,6 +1617,7 @@ $module-color-dark: $color-l2-terracotta-dark;
     .step-marker i {
       color: $module-color;
     }
+
     .step-content {
       background: rgba($module-color, 0.05);
       border-color: $module-color;
@@ -1636,3 +1680,1441 @@ $module-color-dark: $color-l2-terracotta-dark;
   border-top: 1px solid $color-soft-gray;
 }
 
+// ---------------------------------------------------------------
+// 新版雙軌制職等職級矩陣 Styles
+// ---------------------------------------------------------------
+.filter-info {
+  @include flex-start;
+  gap: $spacing-md;
+
+  .info-text {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-bold;
+    color: $color-text-dark;
+  }
+
+  .info-count {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    background: $color-cloud-gray;
+    padding: 4px 12px;
+    border-radius: $radius-full;
+
+    strong {
+      color: $module-color;
+      font-weight: $font-weight-bold;
+    }
+  }
+}
+
+.matrix-dual-track {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xl;
+}
+
+.track-section {
+  &.track-management {
+    .track-header.management {
+      .track-icon {
+        background: linear-gradient(135deg, $color-l4-mauve 0%, darken($color-l4-mauve, 10%) 100%);
+      }
+    }
+
+    .grade-card-new:hover {
+      border-color: $color-l4-mauve;
+    }
+
+    .grade-badge {
+      background: rgba($color-l4-mauve, 0.15);
+      color: $color-l4-mauve;
+    }
+  }
+
+  &.track-professional {
+    .track-header.professional {
+      .track-icon {
+        background: linear-gradient(135deg, $color-l1-sage 0%, darken($color-l1-sage, 10%) 100%);
+      }
+    }
+
+    .grade-card-new:hover {
+      border-color: $color-l1-sage;
+    }
+
+    .grade-badge {
+      background: rgba($color-l1-sage, 0.15);
+      color: $color-l1-sage;
+    }
+  }
+}
+
+.grade-card-new {
+  flex: 0 0 160px;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  cursor: pointer;
+  position: relative;
+  transition: all $transition-normal;
+  border: 2px solid transparent;
+  text-align: center;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: $shadow-md;
+  }
+
+  .grade-badge {
+    font-size: $font-size-xs;
+    font-weight: $font-weight-bold;
+    padding: 2px 8px;
+    border-radius: $radius-full;
+    display: inline-block;
+    margin-bottom: $spacing-xs;
+  }
+
+  .grade-code {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    margin-bottom: $spacing-xs;
+  }
+
+  .grade-title {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+    margin-bottom: $spacing-sm;
+    min-height: 40px;
+    @include flex-center;
+  }
+
+  .grade-salary {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    line-height: 1.4;
+  }
+
+  .grade-arrow {
+    position: absolute;
+    right: -12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 24px;
+    background: $color-pure-white;
+    border-radius: $radius-full;
+    @include flex-center;
+    color: $module-color;
+    z-index: 1;
+    box-shadow: $shadow-sm;
+  }
+}
+
+// 職級薪資對照表
+.salary-reference {
+  margin-top: $spacing-xl;
+  background: $color-cloud-gray;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+}
+
+.reference-header {
+  margin-bottom: $spacing-md;
+
+  .reference-title {
+    @include flex-start;
+    gap: $spacing-sm;
+    font-size: $font-size-base;
+    font-weight: $font-weight-bold;
+    color: $color-text-dark;
+    margin: 0;
+
+    i {
+      color: $module-color;
+    }
+  }
+}
+
+.reference-table {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.salary-group {
+  background: $color-pure-white;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+
+  .group-header {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-bold;
+    color: $module-color;
+    margin-bottom: $spacing-sm;
+    padding-bottom: $spacing-xs;
+    border-bottom: 1px solid $color-soft-gray;
+  }
+
+  .salary-levels {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $spacing-sm;
+  }
+
+  .salary-level {
+    @include flex-center;
+    gap: $spacing-xs;
+    padding: $spacing-xs $spacing-sm;
+    background: $color-cloud-gray;
+    border-radius: $radius-sm;
+    font-size: $font-size-xs;
+
+    .level-code {
+      font-weight: $font-weight-semibold;
+      color: $color-text-dark;
+    }
+
+    .level-salary {
+      color: $color-text-secondary;
+    }
+  }
+}
+
+// ---------------------------------------------------------------
+// 新版職涯路徑卡片 Styles
+// ---------------------------------------------------------------
+.section-header {
+  @include flex-between;
+  align-items: flex-start;
+  margin-bottom: $spacing-lg;
+
+  .header-left {
+    .section-title {
+      font-size: $font-size-xl;
+      font-weight: $font-weight-bold;
+      color: $color-text-dark;
+      margin: 0 0 $spacing-xs;
+    }
+
+    .section-subtitle {
+      font-size: $font-size-sm;
+      color: $color-text-secondary;
+      margin: 0;
+    }
+  }
+
+  .header-right {
+    .filter-item {
+      display: flex;
+      flex-direction: column;
+      gap: $spacing-xs;
+      align-items: flex-end;
+
+      .filter-label {
+        font-size: $font-size-xs;
+        color: $color-text-secondary;
+      }
+
+      .filter-select {
+        @include input-base;
+        min-width: 150px;
+      }
+    }
+  }
+}
+
+.career-path-card-new {
+  &.type-vertical {
+    border-top: 4px solid $color-l1-sage;
+
+    &:hover {
+      border-color: $color-l1-sage;
+    }
+
+    .path-icon {
+      background: rgba($color-l1-sage, 0.15);
+      color: $color-l1-sage;
+    }
+  }
+
+  &.type-horizontal {
+    border-top: 4px solid $color-l3-petrol;
+
+    &:hover {
+      border-color: $color-l3-petrol;
+    }
+
+    .path-icon {
+      background: rgba($color-l3-petrol, 0.15);
+      color: $color-l3-petrol;
+    }
+  }
+
+  &.type-cross {
+    border-top: 4px solid $color-l4-mauve;
+
+    &:hover {
+      border-color: $color-l4-mauve;
+    }
+
+    .path-icon {
+      background: rgba($color-l4-mauve, 0.15);
+      color: $color-l4-mauve;
+    }
+  }
+}
+
+.empty-state {
+  @include flex-center;
+  flex-direction: column;
+  gap: $spacing-md;
+  padding: $spacing-2xl;
+  color: $color-text-secondary;
+
+  i {
+    font-size: 48px;
+    opacity: 0.5;
+  }
+
+  p {
+    margin: 0;
+  }
+}
+
+// ---------------------------------------------------------------
+// 新版職等詳情 Modal (7 個區塊) Styles
+// ---------------------------------------------------------------
+.modal--xlarge .modal-content {
+  max-width: 900px;
+}
+
+.grade-badge-large {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $module-color;
+  background: rgba($module-color, 0.1);
+  padding: $spacing-xs $spacing-md;
+  border-radius: $radius-md;
+}
+
+.detail-section {
+  margin-bottom: $spacing-lg;
+  padding-bottom: $spacing-lg;
+  border-bottom: 1px solid $color-soft-gray;
+
+  &:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+}
+
+.detail-header {
+  @include flex-start;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-md;
+
+  i {
+    font-size: 20px;
+    color: $module-color;
+  }
+
+  h4 {
+    font-size: $font-size-base;
+    font-weight: $font-weight-bold;
+    color: $color-text-dark;
+    margin: 0;
+  }
+}
+
+// 區塊1: 基本資訊
+.basic-info-section {
+  .basic-info-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: $spacing-md;
+
+    @include media-max-sm {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .info-card {
+    background: $color-cloud-gray;
+    border-radius: $radius-md;
+    padding: $spacing-md;
+    text-align: center;
+
+    .info-label {
+      font-size: $font-size-xs;
+      color: $color-text-secondary;
+      display: block;
+      margin-bottom: $spacing-xs;
+    }
+
+    .info-value {
+      font-size: $font-size-base;
+      font-weight: $font-weight-semibold;
+      color: $color-text-dark;
+    }
+  }
+}
+
+// 區塊2: 薪資職級對照
+.salary-section {
+  .salary-overview {
+    margin-bottom: $spacing-md;
+  }
+
+  .salary-range-display {
+    @include flex-between;
+    padding: $spacing-md;
+    background: linear-gradient(135deg, rgba($module-color, 0.1) 0%, rgba($module-color, 0.05) 100%);
+    border-radius: $radius-md;
+    border-left: 4px solid $module-color;
+
+    .range-label {
+      font-size: $font-size-sm;
+      color: $color-text-secondary;
+    }
+
+    .range-value {
+      font-size: $font-size-lg;
+      font-weight: $font-weight-bold;
+      color: $module-color;
+    }
+  }
+
+  .salary-levels-table {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $spacing-sm;
+
+    .level-item {
+      @include flex-between;
+      min-width: 140px;
+      padding: $spacing-xs $spacing-sm;
+      background: $color-cloud-gray;
+      border-radius: $radius-sm;
+      font-size: $font-size-xs;
+
+      .level-code {
+        font-weight: $font-weight-semibold;
+        color: $module-color;
+      }
+
+      .level-salary {
+        color: $color-text-secondary;
+      }
+    }
+  }
+}
+
+// 區塊3: 學歷與資格要求
+.education-section {
+  .education-content {
+    background: $color-cloud-gray;
+    border-radius: $radius-md;
+    padding: $spacing-md;
+  }
+
+  .education-item {
+    @include flex-start;
+    gap: $spacing-sm;
+    font-size: $font-size-sm;
+    color: $color-text-primary;
+
+    i {
+      color: $color-l1-sage;
+      font-size: 18px;
+    }
+  }
+}
+
+// 區塊4: 工作職責說明
+.responsibility-section {
+  .responsibility-content {
+    background: $color-cloud-gray;
+    border-radius: $radius-md;
+    padding: $spacing-md;
+
+    p {
+      font-size: $font-size-sm;
+      color: $color-text-primary;
+      line-height: $line-height-relaxed;
+      margin: 0;
+    }
+  }
+}
+
+// 區塊5: 晉升條件 (雙軌)
+.promotion-section {
+  .empty-promotion {
+    @include flex-center;
+    gap: $spacing-sm;
+    padding: $spacing-lg;
+    background: $color-cloud-gray;
+    border-radius: $radius-md;
+    color: $color-text-secondary;
+    font-size: $font-size-sm;
+  }
+
+  .promotion-direction {
+    margin-bottom: $spacing-lg;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .promotion-direction-title {
+    @include flex-start;
+    gap: $spacing-xs;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-bold;
+    color: $color-text-dark;
+    margin: 0 0 $spacing-md;
+
+    i {
+      color: $module-color;
+    }
+  }
+
+  .promotion-tracks {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: $spacing-md;
+
+    @include media-max-md {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .promotion-track-card {
+    background: $color-cloud-gray;
+    border-radius: $radius-md;
+    padding: $spacing-md;
+    border-top: 3px solid;
+
+    &.track-management {
+      border-color: $color-l4-mauve;
+
+      .track-badge {
+        background: rgba($color-l4-mauve, 0.15);
+        color: $color-l4-mauve;
+      }
+    }
+
+    &.track-professional {
+      border-color: $color-l1-sage;
+
+      .track-badge {
+        background: rgba($color-l1-sage, 0.15);
+        color: $color-l1-sage;
+      }
+    }
+
+    &.track-both {
+      border-color: $module-color;
+
+      .track-badge {
+        background: rgba($module-color, 0.15);
+        color: $module-color;
+      }
+    }
+
+    .track-badge {
+      @include flex-center;
+      gap: $spacing-xs;
+      width: fit-content;
+      font-size: $font-size-xs;
+      font-weight: $font-weight-semibold;
+      padding: 4px 10px;
+      border-radius: $radius-full;
+      margin-bottom: $spacing-md;
+    }
+
+    .promo-item {
+      margin-bottom: $spacing-sm;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      .promo-label {
+        font-size: $font-size-xs;
+        color: $color-text-secondary;
+        display: block;
+        margin-bottom: $spacing-xs;
+      }
+
+      .promo-value {
+        font-size: $font-size-sm;
+        font-weight: $font-weight-semibold;
+        color: $color-text-dark;
+
+        &.threshold-high {
+          color: $color-error;
+        }
+
+        &.threshold-medium {
+          color: $color-warning;
+        }
+
+        &.threshold-normal {
+          color: $color-success;
+        }
+      }
+
+      .promo-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: $spacing-xs;
+      }
+
+      .tag {
+        font-size: $font-size-xs;
+        padding: 2px 8px;
+        border-radius: $radius-sm;
+
+        &.skill-tag {
+          background: rgba($color-l1-sage, 0.15);
+          color: darken($color-l1-sage, 10%);
+        }
+
+        &.course-tag {
+          background: rgba($color-l3-petrol, 0.15);
+          color: darken($color-l3-petrol, 10%);
+        }
+
+        &.kpi-tag {
+          background: rgba($module-color, 0.15);
+          color: $module-color;
+        }
+      }
+
+      .criteria-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+
+        li {
+          @include flex-start;
+          gap: $spacing-xs;
+          font-size: $font-size-xs;
+          color: $color-text-primary;
+          padding: $spacing-xs 0;
+
+          i {
+            color: $color-success;
+            font-size: 14px;
+          }
+        }
+      }
+    }
+  }
+
+  .promotion-from {
+    background: $color-cloud-gray;
+    border-radius: $radius-md;
+    padding: $spacing-md;
+
+    .promotion-from-note {
+      font-size: $font-size-xs;
+      color: $color-text-secondary;
+      margin: 0;
+    }
+  }
+}
+
+// 區塊6: 所需技能/培訓
+.skills-section {
+  .skills-summary {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-md;
+  }
+
+  .skill-track {
+    background: $color-cloud-gray;
+    border-radius: $radius-md;
+    padding: $spacing-md;
+
+    .skill-track-label {
+      font-size: $font-size-xs;
+      font-weight: $font-weight-semibold;
+      color: $color-text-dark;
+      margin-bottom: $spacing-sm;
+      display: block;
+    }
+
+    .skill-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: $spacing-xs;
+    }
+
+    .skill-chip {
+      font-size: $font-size-xs;
+      padding: 4px 10px;
+      background: rgba($color-l1-sage, 0.15);
+      color: darken($color-l1-sage, 10%);
+      border-radius: $radius-full;
+    }
+
+    .course-chip {
+      font-size: $font-size-xs;
+      padding: 4px 10px;
+      background: rgba($color-l3-petrol, 0.15);
+      color: darken($color-l3-petrol, 10%);
+      border-radius: $radius-full;
+    }
+  }
+}
+
+// 區塊7: 晉升程序說明
+.procedure-section {
+  .procedure-content {
+    background: $color-cloud-gray;
+    border-radius: $radius-md;
+    padding: $spacing-md;
+
+    p {
+      font-size: $font-size-sm;
+      color: $color-text-primary;
+      line-height: $line-height-relaxed;
+      margin: 0;
+    }
+  }
+}
+
+// ---------------------------------------------------------------
+// 新版職涯路徑 Modal Styles
+// ---------------------------------------------------------------
+.steps-timeline-new {
+  &::before {
+    background: $module-color;
+  }
+
+  .timeline-step {
+    .step-marker {
+      background: $module-color;
+      color: white;
+      width: 28px;
+      height: 28px;
+      font-size: 12px;
+
+      .step-order {
+        font-weight: $font-weight-bold;
+      }
+    }
+
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: $spacing-sm;
+      flex-wrap: wrap;
+
+      .step-grade {
+        font-size: $font-size-xs;
+        font-weight: $font-weight-medium;
+        color: $module-color;
+        background: rgba($module-color, 0.1);
+        padding: 2px 8px;
+        border-radius: $radius-full;
+      }
+    }
+
+    .step-requirements {
+      margin-top: $spacing-sm;
+      @include flex-start;
+      flex-wrap: wrap;
+      gap: $spacing-xs;
+
+      .req-label {
+        font-size: $font-size-xs;
+        color: $color-text-secondary;
+      }
+
+      .req-tag {
+        font-size: $font-size-xs;
+        padding: 2px 6px;
+        background: rgba($color-l3-petrol, 0.15);
+        color: darken($color-l3-petrol, 10%);
+        border-radius: $radius-sm;
+      }
+    }
+
+    .step-threshold {
+      margin-top: $spacing-xs;
+      font-size: $font-size-xs;
+
+      .threshold-label {
+        color: $color-text-secondary;
+      }
+
+      .threshold-value {
+        font-weight: $font-weight-semibold;
+        color: $color-success;
+      }
+    }
+  }
+}
+
+// ---------------------------------------------------------------
+// 部門職位對照表 Styles (合併版)
+// ---------------------------------------------------------------
+.department-positions-section {
+  margin-top: $spacing-xl;
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-soft;
+}
+
+.section-header-inline {
+  @include flex-between;
+  margin-bottom: $spacing-lg;
+
+  .section-title-inline {
+    @include flex-start;
+    gap: $spacing-sm;
+    font-size: $font-size-lg;
+    font-weight: $font-weight-bold;
+    color: $color-text-dark;
+    margin: 0;
+
+    i {
+      color: $module-color;
+      font-size: 22px;
+    }
+  }
+
+  .section-filter {
+    .filter-select-sm {
+      @include input-base;
+      padding: $spacing-xs $spacing-sm;
+      font-size: $font-size-sm;
+      min-width: 140px;
+    }
+  }
+}
+
+// 跨部門高階主管區塊
+.cross-department-executives {
+  background: linear-gradient(135deg, rgba($color-warning, 0.08) 0%, rgba($color-warning, 0.03) 100%);
+  border: 1px solid rgba($color-warning, 0.2);
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  margin-bottom: $spacing-lg;
+
+  .executives-header {
+    @include flex-start;
+    gap: $spacing-sm;
+    font-size: $font-size-base;
+    font-weight: $font-weight-bold;
+    color: darken($color-warning, 15%);
+    margin-bottom: $spacing-md;
+
+    i {
+      font-size: 20px;
+      color: $color-warning;
+    }
+  }
+
+  .executives-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $spacing-md;
+  }
+
+  .executive-card {
+    background: $color-pure-white;
+    border-radius: $radius-md;
+    padding: $spacing-md;
+    border: 1px solid rgba($color-warning, 0.15);
+    min-width: 280px;
+    flex: 1;
+    max-width: 400px;
+
+    .exec-info {
+      @include flex-between;
+      margin-bottom: $spacing-sm;
+
+      .exec-title {
+        font-size: $font-size-base;
+        font-weight: $font-weight-bold;
+        color: $color-text-dark;
+      }
+
+      .exec-grade {
+        font-size: $font-size-xs;
+        background: rgba($color-warning, 0.15);
+        color: darken($color-warning, 20%);
+        padding: 2px 8px;
+        border-radius: $radius-sm;
+        font-weight: $font-weight-medium;
+      }
+    }
+
+    .exec-supervised {
+      .supervised-label {
+        font-size: $font-size-xs;
+        color: $color-text-secondary;
+        display: block;
+        margin-bottom: $spacing-xs;
+      }
+
+      .supervised-depts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+
+        .dept-tag {
+          font-size: $font-size-xs;
+          background: rgba($module-color, 0.1);
+          color: $module-color;
+          padding: 2px 8px;
+          border-radius: $radius-sm;
+          border: 1px solid rgba($module-color, 0.2);
+        }
+      }
+    }
+  }
+}
+
+.positions-matrix {
+  overflow-x: auto;
+  @include custom-scrollbar;
+  border-radius: $radius-md;
+  border: 1px solid $color-soft-gray;
+}
+
+// 合併版表格樣式
+.positions-table-combined {
+  width: 100%;
+  border-collapse: collapse;
+  background: $color-pure-white;
+  min-width: 1000px;
+
+  th,
+  td {
+    padding: $spacing-sm $spacing-md;
+    text-align: center;
+    border: 1px solid $color-soft-gray;
+    vertical-align: middle;
+  }
+
+  thead {
+    background: linear-gradient(135deg, $module-color 0%, $module-color-dark 100%);
+
+    th {
+      color: white;
+      font-weight: $font-weight-semibold;
+      font-size: $font-size-sm;
+      white-space: nowrap;
+    }
+
+    .th-grade {
+      width: 60px;
+      min-width: 60px;
+    }
+
+    .th-code {
+      width: 100px;
+      min-width: 100px;
+    }
+
+    .th-salary {
+      width: 130px;
+      min-width: 130px;
+    }
+
+    .th-department {
+      min-width: 100px;
+    }
+  }
+
+  tbody {
+    tr {
+      transition: background-color $transition-fast;
+
+      &:hover {
+        background: rgba($module-color, 0.03);
+      }
+
+      &.row-odd {
+        background: rgba($color-cloud-gray, 0.3);
+
+        &:hover {
+          background: rgba($module-color, 0.05);
+        }
+      }
+    }
+
+    .td-grade {
+      background: rgba($module-color, 0.08);
+      font-weight: $font-weight-bold;
+
+      .grade-num {
+        font-size: $font-size-lg;
+        color: $module-color;
+      }
+    }
+
+    .td-code {
+      font-size: $font-size-sm;
+      color: $color-text-secondary;
+      font-weight: $font-weight-medium;
+    }
+
+    .td-salary {
+      background: rgba($color-l1-sage, 0.05);
+
+      .salary-range-text {
+        font-size: $font-size-xs;
+        color: $color-text-primary;
+        font-weight: $font-weight-medium;
+        white-space: nowrap;
+      }
+    }
+
+    .td-positions {
+      min-height: 40px;
+      padding: $spacing-xs $spacing-sm;
+
+      .position-tag {
+        display: inline-block;
+        padding: 4px 10px;
+        margin: 2px;
+        border-radius: $radius-md;
+        font-size: $font-size-xs;
+        font-weight: $font-weight-medium;
+        white-space: nowrap;
+
+        &.tag-management {
+          background: rgba($color-l4-mauve, 0.12);
+          color: darken($color-l4-mauve, 15%);
+          border: 1px solid rgba($color-l4-mauve, 0.4);
+        }
+
+        &.tag-professional {
+          background: rgba($color-l1-sage, 0.12);
+          color: darken($color-l1-sage, 15%);
+          border: 1px solid rgba($color-l1-sage, 0.4);
+        }
+
+        &.tag-cross-dept {
+          background: linear-gradient(135deg, rgba($color-warning, 0.15) 0%, rgba($color-warning, 0.08) 100%);
+          color: darken($color-warning, 20%);
+          border: 1px solid rgba($color-warning, 0.4);
+          padding: 6px 16px;
+          font-size: $font-size-sm;
+
+          i {
+            margin-right: 4px;
+            color: $color-warning;
+          }
+        }
+      }
+
+      .no-position {
+        color: $color-muted-gray;
+        font-size: $font-size-sm;
+      }
+    }
+
+    // 跨部門合併格樣式
+    .td-cross-dept {
+      background: linear-gradient(135deg, rgba($color-warning, 0.08) 0%, rgba($color-warning, 0.03) 100%);
+      text-align: center;
+      padding: $spacing-sm;
+
+      .cross-dept-primary {
+        margin-bottom: $spacing-xs;
+      }
+
+      .cross-dept-secondary {
+        margin-top: $spacing-xs;
+        padding-top: $spacing-xs;
+        border-top: 1px dashed rgba($color-warning, 0.3);
+
+        .secondary-pos-item {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 2px;
+        }
+
+        .tag-cross-dept-secondary {
+          display: inline-block;
+          padding: 3px 10px;
+          border-radius: $radius-md;
+          font-size: $font-size-xs;
+          font-weight: $font-weight-medium;
+          background: rgba($color-l4-mauve, 0.12);
+          color: darken($color-l4-mauve, 15%);
+          border: 1px solid rgba($color-l4-mauve, 0.3);
+        }
+
+        .supervised-info {
+          font-size: 10px;
+          color: $color-text-secondary;
+          white-space: nowrap;
+        }
+      }
+    }
+  }
+}
+
+.positions-legend {
+  @include flex-start;
+  gap: $spacing-lg;
+  margin-top: $spacing-md;
+  padding-top: $spacing-md;
+  border-top: 1px dashed $color-soft-gray;
+
+  .legend-item {
+    @include flex-center;
+    gap: $spacing-xs;
+  }
+
+  .legend-label {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+  }
+
+  .legend-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: $radius-md;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-medium;
+
+    &.tag-management {
+      background: rgba($color-l4-mauve, 0.12);
+      border: 1px solid rgba($color-l4-mauve, 0.4);
+      color: darken($color-l4-mauve, 15%);
+    }
+
+    &.tag-professional {
+      background: rgba($color-l1-sage, 0.12);
+      border: 1px solid rgba($color-l1-sage, 0.4);
+      color: darken($color-l1-sage, 15%);
+    }
+
+    &.tag-cross-dept {
+      background: linear-gradient(135deg, rgba($color-warning, 0.15) 0%, rgba($color-warning, 0.08) 100%);
+      border: 1px solid rgba($color-warning, 0.4);
+      color: $color-warning;
+      padding: 4px 8px;
+
+      i {
+        font-size: 14px;
+      }
+    }
+  }
+}
+
+// =====================================================
+// Phase 5: 編輯模式 & 審核/歷史 Styles
+// =====================================================
+
+// Tab Badge (待審核數量)
+.tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: #E53935;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 9px;
+  margin-left: 4px;
+}
+
+// Filter Actions (編輯模式按鈕群組)
+.filter-actions {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  flex-wrap: wrap;
+}
+
+.btn-edit-mode {
+  @include flex-center;
+  gap: $spacing-xs;
+  padding: $spacing-xs $spacing-md;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  background: $color-pure-white;
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    background: rgba($module-color, 0.08);
+    border-color: $module-color;
+    color: $module-color;
+  }
+
+  &.active {
+    background: rgba($module-color, 0.12);
+    border-color: $module-color;
+    color: $module-color;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+.btn-add {
+  @include flex-center;
+  gap: $spacing-xs;
+  padding: $spacing-xs $spacing-sm;
+  border: 1px dashed $module-color;
+  border-radius: $radius-md;
+  background: transparent;
+  color: $module-color;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    background: rgba($module-color, 0.1);
+  }
+}
+
+// 待審核 & 歷史區塊
+.pending-section,
+.history-section {
+  padding: $spacing-lg;
+
+  .section-header {
+    margin-bottom: $spacing-lg;
+
+    .section-title {
+      font-size: $font-size-xl;
+      font-weight: $font-weight-bold;
+      color: $color-text-dark;
+      margin: 0;
+    }
+
+    .section-subtitle {
+      font-size: $font-size-sm;
+      color: $color-text-secondary;
+      margin: $spacing-xs 0 0;
+    }
+  }
+}
+
+// Changes Table
+.changes-table-wrapper {
+  overflow-x: auto;
+  border-radius: $radius-md;
+  border: 1px solid $color-soft-gray;
+  @include custom-scrollbar;
+}
+
+.changes-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: $color-pure-white;
+
+  th,
+  td {
+    padding: $spacing-sm $spacing-md;
+    text-align: left;
+    border-bottom: 1px solid $color-soft-gray;
+    font-size: $font-size-sm;
+  }
+
+  thead th {
+    background: $color-cloud-gray;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+    white-space: nowrap;
+  }
+
+  tbody tr {
+    transition: background $transition-fast;
+
+    &:hover {
+      background: rgba($module-color, 0.03);
+    }
+  }
+
+  .td-entity-id {
+    font-family: monospace;
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .td-actions {
+    white-space: nowrap;
+    display: flex;
+    gap: $spacing-xs;
+  }
+}
+
+// Badges
+.entity-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  background: rgba($module-color, 0.12);
+  color: $module-color;
+}
+
+.action-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+
+  &.action-create {
+    background: rgba($color-success, 0.12);
+    color: darken($color-success, 10%);
+  }
+
+  &.action-update {
+    background: rgba($color-info, 0.12);
+    color: darken($color-info, 10%);
+  }
+
+  &.action-delete {
+    background: rgba($color-error, 0.12);
+    color: $color-error;
+  }
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+
+  &.status-pending {
+    background: rgba($color-warning, 0.12);
+    color: darken($color-warning, 15%);
+  }
+
+  &.status-approved {
+    background: rgba($color-success, 0.12);
+    color: darken($color-success, 10%);
+  }
+
+  &.status-rejected {
+    background: rgba($color-error, 0.12);
+    color: $color-error;
+  }
+}
+
+// Approve / Reject Buttons
+.btn-approve {
+  @include flex-center;
+  gap: 4px;
+  padding: 4px 12px;
+  background: rgba($color-success, 0.1);
+  border: 1px solid rgba($color-success, 0.3);
+  border-radius: $radius-sm;
+  color: darken($color-success, 10%);
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    background: rgba($color-success, 0.2);
+    border-color: $color-success;
+  }
+}
+
+.btn-reject {
+  @include flex-center;
+  gap: 4px;
+  padding: 4px 12px;
+  background: rgba($color-error, 0.1);
+  border: 1px solid rgba($color-error, 0.3);
+  border-radius: $radius-sm;
+  color: $color-error;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    background: rgba($color-error, 0.2);
+    border-color: $color-error;
+  }
+}
+
+// Inline Edit Buttons (編輯模式中的行內編輯按鈕)
+.btn-edit-inline {
+  @include flex-center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba($module-color, 0.3);
+  border-radius: $radius-sm;
+  background: rgba($module-color, 0.08);
+  color: $module-color;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all $transition-fast;
+  margin-left: auto;
+  flex-shrink: 0;
+
+  &:hover {
+    background: rgba($module-color, 0.18);
+    border-color: $module-color;
+    transform: scale(1.1);
+  }
+}
+
+// Grade Card Edit Button (卡片上的編輯按鈕)
+.btn-edit-card {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  @include flex-center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid rgba($module-color, 0.3);
+  border-radius: $radius-sm;
+  background: rgba(255, 255, 255, 0.9);
+  color: $module-color;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all $transition-fast;
+  opacity: 0;
+  z-index: 2;
+
+  &:hover {
+    background: $module-color;
+    color: white;
+    transform: scale(1.1);
+  }
+}
+
+// 讓 grade-card 在 hover 時顯示編輯按鈕
+.grade-card-new {
+  position: relative;
+
+  &:hover .btn-edit-card {
+    opacity: 1;
+  }
+}

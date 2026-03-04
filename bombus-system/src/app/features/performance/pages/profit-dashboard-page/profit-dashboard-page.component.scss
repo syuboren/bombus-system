@@ -21,7 +21,7 @@ $color-bg-card: #FFFFFF;
 // Status Colors
 $color-success: #7FB095;
 $color-warning: #E3C088;
-$color-danger: #C77F7F;
+$color-error: #C77F7F;
 
 .profit-dashboard-page {
   padding: 24px;
@@ -206,8 +206,8 @@ $color-danger: #C77F7F;
     }
 
     &.trend--down {
-      color: $color-danger;
-      background: rgba($color-danger, 0.12);
+      color: $color-error;
+      background: rgba($color-error, 0.12);
     }
 
     &.trend--flat {
@@ -309,7 +309,7 @@ $color-danger: #C77F7F;
     font-size: 12px;
     font-weight: 600;
     color: $color-bg-card;
-    background: $color-danger;
+    background: $color-error;
     border-radius: 12px;
   }
 }
@@ -395,11 +395,11 @@ $color-danger: #C77F7F;
   background: $color-bg-light;
 
   &.alert--high {
-    border-left-color: $color-danger;
-    background: rgba($color-danger, 0.06);
+    border-left-color: $color-error;
+    background: rgba($color-error, 0.06);
 
     .alert-icon {
-      color: $color-danger;
+      color: $color-error;
     }
   }
 
@@ -446,7 +446,7 @@ $color-danger: #C77F7F;
   .alert-value {
     font-size: 12px;
     font-weight: 700;
-    color: $color-danger;
+    color: $color-error;
   }
 
   .alert-message {

@@ -3,7 +3,7 @@
     <button class="btn-secondary" type="button">
       <i class="ri-download-line"></i> 匯出員工資料
     </button>
-    <button class="btn-primary" type="button">
+    <button *hasPermission="'organization:manage'" class="btn-primary" type="button">
       <i class="ri-add-line"></i> 新增員工
     </button>
   </div>
@@ -303,7 +303,7 @@
 
 <!-- Employee Detail Modal -->
 @if (showEmployeeModal() && selectedEmployee(); as emp) {
-  <div class="modal-overlay" (click)="closeEmployeeModal()">
+  <div class="modal-overlay">
     <div class="modal-container modal-container--lg" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <div class="modal-title-group">

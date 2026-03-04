@@ -1,0 +1,1183 @@
+@if (visible()) {
+  <div class="modal-backdrop" (click)="onBackdropClick($event)">
+    <div class="modal-container modal-container--lg">
+      <!-- Header -->
+      <div class="modal-header">
+        <div class="header-content">
+          <h2>
+            @if (review()) {
+              {{ review()?.formType === 'manager' ? '主管' : '員工' }}績效面談表
+              <span class="header-period">{{ review()?.year }}年 {{ getQuarterLabel(review()?.quarter || 1) }}</span>
+            } @else {
+              季度面談詳情
+            }
+          </h2>
+          <!-- 狀態流程指示器 -->
+          @if (review()) {
+            <div class="status-flow">
+              <div class="flow-step" [class.active]="review()?.status === 'pending'" [class.completed]="['employee_submitted','manager_reviewed','interview_scheduled','interview_completed','completed'].includes(review()?.status || '')">
+                <span class="flow-dot"></span>
+                <span class="flow-label">尚未填寫</span>
+              </div>
+              <div class="flow-line" [class.completed]="['employee_submitted','manager_reviewed','interview_scheduled','interview_completed','completed'].includes(review()?.status || '')"></div>
+              <div class="flow-step" [class.active]="review()?.status === 'employee_submitted'" [class.completed]="['manager_reviewed','interview_scheduled','interview_completed','completed'].includes(review()?.status || '')">
+                <span class="flow-dot"></span>
+                <span class="flow-label">員工已提交</span>
+              </div>
+              <div class="flow-line" [class.completed]="['manager_reviewed','interview_scheduled','interview_completed','completed'].includes(review()?.status || '')"></div>
+              <div class="flow-step" [class.active]="review()?.status === 'manager_reviewed'" [class.completed]="['interview_scheduled','interview_completed','completed'].includes(review()?.status || '')">
+                <span class="flow-dot"></span>
+                <span class="flow-label">主管已評核</span>
+              </div>
+              <div class="flow-line" [class.completed]="['interview_scheduled','interview_completed','completed'].includes(review()?.status || '')"></div>
+              <div class="flow-step" [class.active]="review()?.status === 'interview_scheduled'" [class.completed]="['interview_completed','completed'].includes(review()?.status || '')">
+                <span class="flow-dot"></span>
+                <span class="flow-label">已預約面談</span>
+              </div>
+              <div class="flow-line" [class.completed]="['interview_completed','completed'].includes(review()?.status || '')"></div>
+              <div class="flow-step" [class.active]="review()?.status === 'interview_completed'" [class.completed]="review()?.status === 'completed'">
+                <span class="flow-dot"></span>
+                <span class="flow-label">面談完成</span>
+              </div>
+              <div class="flow-line" [class.completed]="review()?.status === 'completed'"></div>
+              <div class="flow-step" [class.active]="review()?.status === 'completed'">
+                <span class="flow-dot"></span>
+                <span class="flow-label">已結案</span>
+              </div>
+            </div>
+          }
+        </div>
+        <button class="btn-close" (click)="onClose()" type="button">
+          <i class="ri-close-line"></i>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="modal-body">
+        @if (loading()) {
+          <div class="loading-state">
+            <i class="ri-loader-4-line spinner"></i>
+            <span>載入中...</span>
+          </div>
+        } @else if (error()) {
+          <div class="error-state">
+            <i class="ri-error-warning-line"></i>
+            <span>{{ error() }}</span>
+            <button class="btn-retry" (click)="loadReview()" type="button">重試</button>
+          </div>
+        } @else if (review()) {
+          <!-- 員工資訊區 -->
+          <div class="info-section">
+            <div class="info-grid">
+              <div class="info-item">
+                <label>員工姓名</label>
+                <span>{{ review()?.employeeName }}</span>
+              </div>
+              <div class="info-item">
+                <label>部門 / 職位</label>
+                <span>{{ review()?.department }} / {{ review()?.position }}</span>
+              </div>
+              <div class="info-item">
+                <label>表單類型</label>
+                <span class="form-type-tag" [class.manager]="isManagerForm()">
+                  <i [class]="isManagerForm() ? 'ri-user-star-line' : 'ri-user-line'"></i>
+                  {{ isManagerForm() ? '主管表單' : '員工表單' }}
+                </span>
+              </div>
+              <div class="info-item">
+                <label>月度均分</label>
+                <span class="score-highlight">{{ review()?.monthlyAvgScore?.toFixed(1) || '-' }}</span>
+              </div>
+              @if (review()?.interviewDate) {
+                <div class="info-item">
+                  <label>面談日期</label>
+                  <span>{{ formatDate(review()?.interviewDate) }}</span>
+                </div>
+              }
+              @if (review()?.totalScore) {
+                <div class="info-item">
+                  <label>總分</label>
+                  <span class="score-highlight">{{ review()?.totalScore?.toFixed(1) }}</span>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- ========================================== -->
+          <!-- 員工填寫模式 (pending 狀態) -->
+          <!-- ========================================== -->
+          @if ((isEditing() && canEmployeeEdit()) || (!isEditing() && !isManagerEditing() && !canScheduleInterview() && !canConductInterview() && !canHrClose())) {
+            <!-- 步驟導航 -->
+            @if (isEditing() && canEmployeeEdit()) {
+              <div class="steps-nav">
+                @for (step of steps(); track step.id) {
+                  <button 
+                    class="step-btn"
+                    [class.active]="activeStep() === step.id"
+                    [class.completed]="activeStep() > step.id"
+                    (click)="setStep(step.id)"
+                    type="button">
+                    <i [class]="step.icon"></i>
+                    <span>{{ step.label }}</span>
+                  </button>
+                }
+              </div>
+            }
+
+            <!-- Step 1: 自我評估 -->
+            @if (!isEditing() || activeStep() === 1) {
+              <div class="form-section" [class.hidden]="isEditing() && activeStep() !== 1">
+                <h3><i class="ri-user-line"></i> 一、員工自評：階段性績效目標設定確認</h3>
+                @if (isEditing() && canEmployeeEdit()) {
+                  <textarea
+                    class="form-textarea"
+                    [ngModel]="selfAssessment()"
+                    (ngModelChange)="updateSelfAssessment($event)"
+                    placeholder="請描述本季度的工作表現、達成目標及自我評估..."
+                    rows="6">
+                  </textarea>
+                } @else {
+                  <div class="content-block">{{ selfAssessment() || '(尚未填寫)' }}</div>
+                }
+              </div>
+            }
+
+            <!-- Step 2: 貢獻與學習 -->
+            @if (!isEditing() || activeStep() === 2) {
+              <div class="form-section" [class.hidden]="isEditing() && activeStep() !== 2">
+                <!-- 貢獻價值 -->
+                <div class="section-header">
+                  <h3><i class="ri-award-line"></i> 二、員工自評：最有貢獻價值的三件事</h3>
+                  @if (isEditing() && canEmployeeEdit()) {
+                    <button class="btn-add" (click)="addContributionItem()" type="button">
+                      <i class="ri-add-line"></i> 新增
+                    </button>
+                  }
+                </div>
+
+                @if (isEditing() && canEmployeeEdit()) {
+                  <div class="list-items">
+                    @for (item of contributionItems(); track $index; let i = $index) {
+                      <div class="list-item list-item--contribution">
+                        <div class="item-header">
+                          <span class="item-number">第 {{ i + 1 }} 項</span>
+                          @if (contributionItems().length > 1) {
+                            <button class="btn-remove" (click)="removeContributionItem(i)" type="button">
+                              <i class="ri-delete-bin-line"></i>
+                            </button>
+                          }
+                        </div>
+                        <div class="item-fields">
+                          <div class="field-group">
+                            <label>工作描述</label>
+                            <input type="text" [value]="item.description"
+                              (input)="updateContributionItem(i, 'description', $any($event.target).value)"
+                              placeholder="描述具體工作內容...">
+                          </div>
+                          <div class="field-group">
+                            <label>交付結果/衡量指標</label>
+                            <textarea rows="3" [value]="item.result"
+                              (input)="updateContributionItem(i, 'result', $any($event.target).value)"
+                              placeholder="具體的產出或成果..."></textarea>
+                          </div>
+                          <div class="field-group">
+                            <label>對公司的價值</label>
+                            <textarea rows="3" [value]="item.value"
+                              (input)="updateContributionItem(i, 'value', $any($event.target).value)"
+                              placeholder="對團隊/公司的價值..."></textarea>
+                          </div>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                } @else {
+                  <div class="list-items readonly">
+                    @for (item of contributionItems(); track $index; let i = $index) {
+                      @if (item.description) {
+                        <div class="list-item-readonly">
+                          <div class="item-number">第 {{ i + 1 }} 項</div>
+                          <div class="item-row"><span class="label">工作描述：</span><span>{{ item.description }}</span></div>
+                          <div class="item-row"><span class="label">交付結果：</span><span>{{ item.result }}</span></div>
+                          <div class="item-row"><span class="label">對公司價值：</span><span>{{ item.value }}</span></div>
+                        </div>
+                      }
+                    } @empty {
+                      <div class="empty-content">(尚未填寫)</div>
+                    }
+                  </div>
+                }
+
+                <!-- 學習成長 -->
+                <div class="section-header section-header--spaced">
+                  <h3><i class="ri-book-open-line"></i> 三、員工自評：學習成長</h3>
+                  @if (isEditing() && canEmployeeEdit()) {
+                    <button class="btn-add" (click)="addLearningItem()" type="button">
+                      <i class="ri-add-line"></i> 新增
+                    </button>
+                  }
+                </div>
+
+                @if (isEditing() && canEmployeeEdit()) {
+                  <div class="list-items">
+                    @for (item of learningItems(); track $index; let i = $index) {
+                      <div class="list-item list-item--learning">
+                        <div class="item-header">
+                          <span class="item-number">第 {{ i + 1 }} 項</span>
+                          @if (learningItems().length > 1) {
+                            <button class="btn-remove" (click)="removeLearningItem(i)" type="button">
+                              <i class="ri-delete-bin-line"></i>
+                            </button>
+                          }
+                        </div>
+                        <div class="item-fields">
+                          <div class="field-group">
+                            <label>學習內容</label>
+                            <input type="text" [value]="item.content"
+                              (input)="updateLearningItem(i, 'content', $any($event.target).value)"
+                              placeholder="學習的內容或技能...">
+                          </div>
+                          <div class="field-group">
+                            <label>收穫與啟發</label>
+                            <textarea rows="3" [value]="item.insights"
+                              (input)="updateLearningItem(i, 'insights', $any($event.target).value)"
+                              placeholder="學習後的心得..."></textarea>
+                          </div>
+                          <div class="field-group">
+                            <label>落實情況</label>
+                            <textarea rows="3" [value]="item.implementation"
+                              (input)="updateLearningItem(i, 'implementation', $any($event.target).value)"
+                              placeholder="在工作中如何應用..."></textarea>
+                          </div>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                } @else {
+                  <div class="list-items readonly">
+                    @for (item of learningItems(); track $index; let i = $index) {
+                      @if (item.content) {
+                        <div class="list-item-readonly">
+                          <div class="item-number">第 {{ i + 1 }} 項</div>
+                          <div class="item-row"><span class="label">學習內容：</span><span>{{ item.content }}</span></div>
+                          <div class="item-row"><span class="label">收穫與啟發：</span><span>{{ item.insights }}</span></div>
+                          <div class="item-row"><span class="label">落實情況：</span><span>{{ item.implementation }}</span></div>
+                        </div>
+                      }
+                    } @empty {
+                      <div class="empty-content">(尚未填寫)</div>
+                    }
+                  </div>
+                }
+              </div>
+            }
+
+            <!-- Step 3: 目標檢核 (JD + OKR) -->
+            @if (!isEditing() || activeStep() === 3) {
+              <div class="form-section" [class.hidden]="isEditing() && activeStep() !== 3">
+                <!-- JD 指標季檢核 -->
+                <h3><i class="ri-bar-chart-line"></i> 四、工作目標季檢核 (JD指標)</h3>
+                <p class="section-desc">對應本季度三個月的 JD 指標達成狀況</p>
+
+                <div class="score-table">
+                  <div class="score-table-header">
+                    <span class="col-month">月份</span>
+                    <span class="col-desc">達成狀況說明</span>
+                    <span class="col-score">員工自評</span>
+                    <span class="col-score">主管評分</span>
+                  </div>
+                  @for (item of jdReviewItems(); track $index; let i = $index) {
+                    <div class="score-table-row">
+                      <span class="col-month">{{ getMonthLabel(item.month) }}</span>
+                      <div class="col-desc">
+                        @if (isEditing() && canEmployeeEdit()) {
+                          <input type="text" [value]="item.description"
+                            (input)="updateJdReviewItem(i, 'description', $any($event.target).value)"
+                            placeholder="達成狀況說明...">
+                        } @else {
+                          {{ item.description || '-' }}
+                        }
+                      </div>
+                      <div class="col-score">
+                        <span class="score-display">{{ item.selfScore || '-' }}</span>
+                      </div>
+                      <div class="col-score">
+                        <span class="score-display score-display--manager">{{ item.managerScore || '-' }}</span>
+                      </div>
+                    </div>
+                  }
+                </div>
+
+                <!-- OKR 目標季檢核 -->
+                <div class="section-header section-header--spaced">
+                  <h3><i class="ri-target-line"></i> 五、OKR 目標季檢核</h3>
+                  @if (isEditing() && canEmployeeEdit()) {
+                    <button class="btn-add" (click)="addOkrReviewItem()" type="button">
+                      <i class="ri-add-line"></i> 新增
+                    </button>
+                  }
+                </div>
+                <p class="section-desc">本季度設定的 OKR 目標達成狀況</p>
+
+                <div class="score-table">
+                  <div class="score-table-header">
+                    <span class="col-order">#</span>
+                    <span class="col-objective">工作目標</span>
+                    <span class="col-desc">達成狀況說明</span>
+                    <span class="col-score">員工自評</span>
+                    <span class="col-score">主管評分</span>
+                  </div>
+                  @for (item of okrReviewItems(); track $index; let i = $index) {
+                    <div class="score-table-row">
+                      <span class="col-order">{{ i + 1 }}</span>
+                      <div class="col-objective">
+                        @if (isEditing() && canEmployeeEdit()) {
+                          <input type="text" [value]="item.objective"
+                            (input)="updateOkrReviewItem(i, 'objective', $any($event.target).value)"
+                            placeholder="工作目標...">
+                        } @else {
+                          {{ item.objective || '-' }}
+                        }
+                      </div>
+                      <div class="col-desc">
+                        @if (isEditing() && canEmployeeEdit()) {
+                          <textarea rows="2" [value]="item.description"
+                            (input)="updateOkrReviewItem(i, 'description', $any($event.target).value)"
+                            placeholder="達成狀況說明..."></textarea>
+                        } @else {
+                          <div class="desc-content">{{ item.description || '-' }}</div>
+                        }
+                      </div>
+                      <div class="col-score">
+                        @if (isEditing() && canEmployeeEdit()) {
+                          <div class="score-select">
+                            @for (s of scoreOptions; track s) {
+                              <label class="score-radio" [class.selected]="item.selfScore === s">
+                                <input type="radio" [name]="'okr_self_' + i" [value]="s"
+                                  [checked]="item.selfScore === s"
+                                  (change)="updateOkrReviewItem(i, 'selfScore', s)">
+                                <span>{{ s }}</span>
+                              </label>
+                            }
+                          </div>
+                        } @else {
+                          <span class="score-display">{{ item.selfScore || '-' }}</span>
+                        }
+                      </div>
+                      <div class="col-score">
+                        <span class="score-display score-display--manager">{{ item.managerScore || '-' }}</span>
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- Step 4: 核心職能自評 (員工表單) / 核心職能 (主管表單) -->
+            @if (!isEditing() || activeStep() === 4) {
+              <div class="form-section" [class.hidden]="isEditing() && activeStep() !== 4">
+                <h3><i class="ri-focus-3-line"></i> 六、核心職能</h3>
+                <p class="section-desc">請針對各項核心職能進行自評，並列舉重要事件 (1-5分)</p>
+
+                <div class="competency-list">
+                  @for (comp of coreCompetencies(); track $index; let i = $index) {
+                    <div class="competency-card">
+                      <div class="competency-header">
+                        <span class="competency-name">{{ comp.name }}</span>
+                        <div class="competency-scores">
+                          <div class="score-group">
+                            <span class="score-label">員工自評</span>
+                            @if (isEditing() && canEmployeeEdit()) {
+                              <div class="score-select">
+                                @for (s of scoreOptions; track s) {
+                                  <label class="score-radio" [class.selected]="comp.selfScore === s">
+                                    <input type="radio" [name]="'core_self_' + i" [value]="s"
+                                      [checked]="comp.selfScore === s"
+                                      (change)="updateCoreCompetency(i, 'selfScore', s)">
+                                    <span>{{ s }}</span>
+                                  </label>
+                                }
+                              </div>
+                            } @else {
+                              <span class="score-display">{{ comp.selfScore || '-' }}</span>
+                            }
+                          </div>
+                          <div class="score-group">
+                            <span class="score-label">主管評分</span>
+                            <span class="score-display score-display--manager">{{ comp.managerScore || '-' }}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="competency-behavior">
+                        <span class="behavior-label">應展現職能指標行為：</span>
+                        {{ comp.behavior }}
+                      </div>
+                      <div class="competency-event">
+                        <label>員工列舉重要事件：</label>
+                        @if (isEditing() && canEmployeeEdit()) {
+                          <textarea rows="2" [value]="comp.event"
+                            (input)="updateCoreCompetency(i, 'event', $any($event.target).value)"
+                            placeholder="請描述能夠展現此職能的重要事件..."></textarea>
+                        } @else {
+                          <div class="event-content">{{ comp.event || '(尚未填寫)' }}</div>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- Step 5: 管理職能 (僅主管表單) -->
+            @if (isManagerForm()) {
+              @if (!isEditing() || activeStep() === 5) {
+                <div class="form-section" [class.hidden]="isEditing() && activeStep() !== 5">
+                  <h3><i class="ri-team-line"></i> 七、管理職能</h3>
+                  <p class="section-desc">請針對各項管理職能進行自評，並列舉重要事件 (1-5分)</p>
+
+                  <div class="competency-list">
+                    @for (comp of managementCompetencies(); track $index; let i = $index) {
+                      <div class="competency-card">
+                        <div class="competency-header">
+                          <span class="competency-name">{{ comp.name }}</span>
+                          <div class="competency-scores">
+                            <div class="score-group">
+                              <span class="score-label">員工自評</span>
+                              @if (isEditing() && canEmployeeEdit()) {
+                                <div class="score-select">
+                                  @for (s of scoreOptions; track s) {
+                                    <label class="score-radio" [class.selected]="comp.selfScore === s">
+                                      <input type="radio" [name]="'mgmt_self_' + i" [value]="s"
+                                        [checked]="comp.selfScore === s"
+                                        (change)="updateManagementCompetency(i, 'selfScore', s)">
+                                      <span>{{ s }}</span>
+                                    </label>
+                                  }
+                                </div>
+                              } @else {
+                                <span class="score-display">{{ comp.selfScore || '-' }}</span>
+                              }
+                            </div>
+                            <div class="score-group">
+                              <span class="score-label">主管評分</span>
+                              <span class="score-display score-display--manager">{{ comp.managerScore || '-' }}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="competency-behavior">
+                          <span class="behavior-label">應展現職能指標行為：</span>
+                          {{ comp.behavior }}
+                        </div>
+                        <div class="competency-event">
+                          <label>員工列舉重要事件：</label>
+                          @if (isEditing() && canEmployeeEdit()) {
+                            <textarea rows="2" [value]="comp.event"
+                              (input)="updateManagementCompetency(i, 'event', $any($event.target).value)"
+                              placeholder="請描述能夠展現此職能的重要事件..."></textarea>
+                          } @else {
+                            <div class="event-content">{{ comp.event || '(尚未填寫)' }}</div>
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            }
+
+            <!-- Step 5/6: 直屬主管評價 (員工自評部分) -->
+            @if (!isEditing() || activeStep() === (isManagerForm() ? 6 : 5)) {
+              <div class="form-section" [class.hidden]="isEditing() && activeStep() !== (isManagerForm() ? 6 : 5)">
+                <div class="section-header">
+                  <h3><i class="ri-star-line"></i> {{ isManagerForm() ? '八' : '七' }}、直屬主管評價</h3>
+                  @if (isEditing() && canEmployeeEdit()) {
+                    <span class="survey-status" [class.completed]="isSupervisorEvalComplete()">
+                      @if (isSupervisorEvalComplete()) {
+                        <i class="ri-checkbox-circle-fill"></i> 已完成
+                      } @else {
+                        <i class="ri-error-warning-line"></i> 尚未完成
+                      }
+                    </span>
+                  }
+                </div>
+                <p class="section-desc">請針對各項評價進行自評 (1-5分，4大類共20題)</p>
+
+                @for (category of supervisorEvaluation(); track $index; let catIndex = $index) {
+                  <div class="eval-category">
+                    <div class="category-header">
+                      <span class="category-name">{{ category.category }}</span>
+                      <div class="category-scores">
+                        <span class="score-col-label">員工自評</span>
+                        <span class="score-col-label">主管評分</span>
+                      </div>
+                    </div>
+                    <div class="category-items">
+                      @for (item of category.items; track $index; let itemIndex = $index) {
+                        <div class="eval-item">
+                          <span class="eval-desc">{{ itemIndex + 1 }}. {{ item.description }}</span>
+                          <div class="eval-scores">
+                            @if (isEditing() && canEmployeeEdit()) {
+                              <div class="score-select score-select--compact">
+                                @for (s of scoreOptions; track s) {
+                                  <label class="score-radio score-radio--sm" [class.selected]="item.selfScore === s">
+                                    <input type="radio" [name]="'eval_self_' + catIndex + '_' + itemIndex" [value]="s"
+                                      [checked]="item.selfScore === s"
+                                      (change)="updateSupervisorEvalItem(catIndex, itemIndex, 'selfScore', s)">
+                                    <span>{{ s }}</span>
+                                  </label>
+                                }
+                              </div>
+                            } @else {
+                              <span class="score-display score-display--sm">{{ item.selfScore || '-' }}</span>
+                            }
+                            <span class="score-display score-display--sm score-display--manager">{{ item.managerScore || '-' }}</span>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+
+                <!-- 平均分顯示 -->
+                <div class="eval-summary">
+                  <span>自評平均分：<strong>{{ getSupervisorEvalSelfAvg() || '-' }}</strong></span>
+                  <span>主管評分平均：<strong>{{ getSupervisorEvalManagerAvg() || '-' }}</strong></span>
+                </div>
+              </div>
+            }
+
+            <!-- Step 6/7: 滿意度調查 -->
+            @if (!isEditing() || activeStep() === (isManagerForm() ? 7 : 6)) {
+              <div class="form-section" [class.hidden]="isEditing() && activeStep() !== (isManagerForm() ? 7 : 6)">
+                <div class="section-header">
+                  <h3><i class="ri-questionnaire-line"></i> 員工滿意度調查</h3>
+                  @if (isEditing() && canEmployeeEdit()) {
+                    <span class="survey-status" [class.completed]="isSatisfactionSurveyComplete()">
+                      @if (isSatisfactionSurveyComplete()) {
+                        <i class="ri-checkbox-circle-fill"></i> 已完成
+                      } @else {
+                        <i class="ri-error-warning-line"></i> 尚未完成
+                      }
+                    </span>
+                  }
+                </div>
+                <p class="section-desc">請根據您的實際感受，對以下各項進行評分 (1-5分)</p>
+
+                <div class="survey-list">
+                  @for (question of satisfactionQuestions(); track question.id; let i = $index) {
+                    <div class="survey-item">
+                      <div class="survey-question">
+                        <span class="q-num">{{ i + 1 }}.</span>
+                        {{ question.questionText }}
+                      </div>
+                      @if (isEditing() && canEmployeeEdit()) {
+                        <div class="survey-options">
+                          @for (opt of satisfactionScoreOptions; track opt.value) {
+                            <label class="radio-option">
+                              <input type="radio" [name]="'q_' + question.id" [value]="opt.value"
+                                [checked]="getSatisfactionScore(question.id) === opt.value"
+                                (change)="updateSatisfactionAnswer(question.id, opt.value)">
+                              <span class="radio-label">{{ opt.value }}</span>
+                            </label>
+                          }
+                        </div>
+                      } @else {
+                        <div class="survey-score">
+                          @if (getSatisfactionScore(question.id) > 0) {
+                            <span class="score-value">{{ getSatisfactionScore(question.id) }}</span>
+                            <span class="score-label">/ 5</span>
+                          } @else {
+                            <span class="score-pending">未填寫</span>
+                          }
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          }
+
+          <!-- ========================================== -->
+          <!-- 主管評核模式 (employee_submitted 狀態) -->
+          <!-- ========================================== -->
+          @if (isManagerEditing() && canManagerReview()) {
+            <!-- 步驟導航 -->
+            <div class="steps-nav">
+              @for (step of steps(); track step.id) {
+                <button 
+                  class="step-btn"
+                  [class.active]="activeStep() === step.id"
+                  [class.completed]="activeStep() > step.id"
+                  (click)="setStep(step.id)"
+                  type="button">
+                  <i [class]="step.icon"></i>
+                  <span>{{ step.label }}</span>
+                </button>
+              }
+            </div>
+
+            <!-- Manager Step 1: 目標與職能評分 -->
+            @if (activeStep() === 1) {
+              <div class="form-section">
+                <h3><i class="ri-edit-line"></i> 目標與職能評分</h3>
+                <p class="section-desc">請針對員工的 JD/OKR 目標及各項職能進行主管評分 (1-5分)</p>
+
+                <!-- JD 指標主管評分 (自動帶入月度檢核分數) -->
+                <div class="subsection">
+                  <h4>JD 指標季檢核</h4>
+                  <p class="section-desc section-desc--sm">分數已自動帶入月度檢核結果</p>
+                  <div class="score-table">
+                    <div class="score-table-header">
+                      <span class="col-month">月份</span>
+                      <span class="col-desc">達成狀況說明</span>
+                      <span class="col-score">員工自評</span>
+                      <span class="col-score">主管評分</span>
+                    </div>
+                    @for (item of jdReviewItems(); track $index; let i = $index) {
+                      <div class="score-table-row">
+                        <span class="col-month">{{ getMonthLabel(item.month) }}</span>
+                        <div class="col-desc">{{ item.description || '-' }}</div>
+                        <div class="col-score">
+                          <span class="score-display">{{ item.selfScore || '-' }}</span>
+                        </div>
+                        <div class="col-score">
+                          <span class="score-display score-display--manager">{{ item.managerScore || '-' }}</span>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+
+                <!-- OKR 目標主管評分 -->
+                <div class="subsection">
+                  <h4>OKR 目標季檢核</h4>
+                  <div class="score-table">
+                    <div class="score-table-header">
+                      <span class="col-order">#</span>
+                      <span class="col-objective">工作目標</span>
+                      <span class="col-desc">達成狀況說明</span>
+                      <span class="col-score">員工自評</span>
+                      <span class="col-score">主管評分</span>
+                    </div>
+                    @for (item of okrReviewItems(); track $index; let i = $index) {
+                    <div class="score-table-row">
+                      <span class="col-order">{{ i + 1 }}</span>
+                      <div class="col-objective">{{ item.objective || '-' }}</div>
+                      <div class="col-desc">
+                        <div class="desc-content">{{ item.description || '-' }}</div>
+                      </div>
+                      <div class="col-score">
+                        <span class="score-display">{{ item.selfScore || '-' }}</span>
+                      </div>
+                      <div class="col-score">
+                        <div class="score-select">
+                          @for (s of scoreOptions; track s) {
+                            <label class="score-radio score-radio--manager" [class.selected]="item.managerScore === s">
+                              <input type="radio" [name]="'okr_mgr_' + i" [value]="s"
+                                [checked]="item.managerScore === s"
+                                (change)="updateOkrReviewItem(i, 'managerScore', s)">
+                              <span>{{ s }}</span>
+                            </label>
+                          }
+                        </div>
+                      </div>
+                    </div>
+                    }
+                  </div>
+                </div>
+
+                <!-- 核心職能主管評分 -->
+                <div class="subsection">
+                  <h4>核心職能</h4>
+                  <div class="competency-list competency-list--compact">
+                    @for (comp of coreCompetencies(); track $index; let i = $index) {
+                      <div class="competency-row">
+                        <div class="competency-info">
+                          <span class="competency-name">{{ comp.name }}</span>
+                          <span class="competency-event-preview">{{ comp.event || '(無事件描述)' }}</span>
+                        </div>
+                        <div class="competency-scores">
+                          <div class="score-group">
+                            <span class="score-label">員工自評</span>
+                            <span class="score-display">{{ comp.selfScore || '-' }}</span>
+                          </div>
+                          <div class="score-group">
+                            <span class="score-label">主管評分</span>
+                            <div class="score-select">
+                              @for (s of scoreOptions; track s) {
+                                <label class="score-radio score-radio--manager" [class.selected]="comp.managerScore === s">
+                                  <input type="radio" [name]="'core_mgr_' + i" [value]="s"
+                                    [checked]="comp.managerScore === s"
+                                    (change)="updateCoreCompetency(i, 'managerScore', s)">
+                                  <span>{{ s }}</span>
+                                </label>
+                              }
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+
+                <!-- 管理職能主管評分 (僅主管表單) -->
+                @if (isManagerForm()) {
+                  <div class="subsection">
+                    <h4>管理職能</h4>
+                    <div class="competency-list competency-list--compact">
+                      @for (comp of managementCompetencies(); track $index; let i = $index) {
+                        <div class="competency-row">
+                          <div class="competency-info">
+                            <span class="competency-name">{{ comp.name }}</span>
+                            <span class="competency-event-preview">{{ comp.event || '(無事件描述)' }}</span>
+                          </div>
+                          <div class="competency-scores">
+                            <div class="score-group">
+                              <span class="score-label">員工自評</span>
+                              <span class="score-display">{{ comp.selfScore || '-' }}</span>
+                            </div>
+                            <div class="score-group">
+                              <span class="score-label">主管評分</span>
+                              <div class="score-select">
+                                @for (s of scoreOptions; track s) {
+                                  <label class="score-radio score-radio--manager" [class.selected]="comp.managerScore === s">
+                                    <input type="radio" [name]="'mgmt_mgr_' + i" [value]="s"
+                                      [checked]="comp.managerScore === s"
+                                      (change)="updateManagementCompetency(i, 'managerScore', s)">
+                                    <span>{{ s }}</span>
+                                  </label>
+                                }
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+
+            <!-- Manager Step 2: 直屬主管評價 -->
+            @if (activeStep() === 2) {
+              <div class="form-section">
+                <h3><i class="ri-star-line"></i> 直屬主管評價</h3>
+                <p class="section-desc">請針對員工的各項評價進行主管評分 (1-5分)</p>
+
+                @for (category of supervisorEvaluation(); track $index; let catIndex = $index) {
+                  <div class="eval-category">
+                    <div class="category-header">
+                      <span class="category-name">{{ category.category }}</span>
+                      <div class="category-scores">
+                        <span class="score-col-label">員工自評</span>
+                        <span class="score-col-label">主管評分</span>
+                      </div>
+                    </div>
+                    <div class="category-items">
+                      @for (item of category.items; track $index; let itemIndex = $index) {
+                        <div class="eval-item">
+                          <span class="eval-desc">{{ itemIndex + 1 }}. {{ item.description }}</span>
+                          <div class="eval-scores">
+                            <span class="score-display score-display--sm">{{ item.selfScore || '-' }}</span>
+                            <div class="score-select score-select--compact">
+                              @for (s of scoreOptions; track s) {
+                                <label class="score-radio score-radio--sm score-radio--manager" [class.selected]="item.managerScore === s">
+                                  <input type="radio" [name]="'eval_mgr_' + catIndex + '_' + itemIndex" [value]="s"
+                                    [checked]="item.managerScore === s"
+                                    (change)="updateSupervisorEvalItem(catIndex, itemIndex, 'managerScore', s)">
+                                  <span>{{ s }}</span>
+                                </label>
+                              }
+                            </div>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+
+                <!-- 主管評語區 -->
+                <div class="supervisor-comment-section">
+                  <h4>主管評語</h4>
+                  <div class="comment-fields">
+                    <div class="field-group">
+                      <label>最佳評價</label>
+                      <textarea rows="2" [ngModel]="supervisorComment().bestEvaluation"
+                        (ngModelChange)="updateSupervisorComment('bestEvaluation', $event)"
+                        placeholder="員工表現最佳的地方..."></textarea>
+                    </div>
+                    <div class="field-group">
+                      <label>最差評價</label>
+                      <textarea rows="2" [ngModel]="supervisorComment().worstEvaluation"
+                        (ngModelChange)="updateSupervisorComment('worstEvaluation', $event)"
+                        placeholder="員工需要改善的地方..."></textarea>
+                    </div>
+                    <div class="field-group">
+                      <label>補充敘述</label>
+                      <textarea rows="2" [ngModel]="supervisorComment().supplement"
+                        (ngModelChange)="updateSupervisorComment('supplement', $event)"
+                        placeholder="其他補充..."></textarea>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            }
+
+            <!-- Manager Step 3: 主管評語與發展建議 -->
+            @if (activeStep() === 3) {
+              <div class="form-section">
+                <h3><i class="ri-chat-4-line"></i> 主管評語與發展建議</h3>
+                <div class="manager-fields">
+                  <div class="field-group">
+                    <label>主管評語</label>
+                    <textarea class="form-textarea" rows="4"
+                      [ngModel]="managerComment()"
+                      (ngModelChange)="managerComment.set($event)"
+                      placeholder="請輸入對員工本季度表現的評語..."></textarea>
+                  </div>
+                  <div class="field-group">
+                    <label>發展建議</label>
+                    <textarea class="form-textarea" rows="3"
+                      [ngModel]="developmentPlan()"
+                      (ngModelChange)="developmentPlan.set($event)"
+                      placeholder="請輸入對員工未來發展的建議..."></textarea>
+                  </div>
+                </div>
+              </div>
+            }
+          }
+
+          <!-- ========================================== -->
+          <!-- 預約面談 (manager_reviewed 狀態) -->
+          <!-- ========================================== -->
+          @if (canScheduleInterview()) {
+            <div class="form-section">
+              <h3><i class="ri-calendar-schedule-line"></i> 預約面談</h3>
+              <div class="schedule-fields">
+                <div class="field-group">
+                  <label>面談日期時間</label>
+                  <input type="datetime-local" class="form-input"
+                    [ngModel]="interviewDate()"
+                    (ngModelChange)="updateInterviewDate($event)">
+                </div>
+                <div class="field-group">
+                  <label>面談地點</label>
+                  <input type="text" class="form-input"
+                    [ngModel]="interviewLocation()"
+                    (ngModelChange)="updateInterviewLocation($event)"
+                    placeholder="會議室名稱或線上會議連結...">
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- ========================================== -->
+          <!-- 面談進行中 (interview_scheduled 狀態) -->
+          <!-- ========================================== -->
+          @if (canConductInterview()) {
+            @if (isEditing()) {
+              <!-- 步驟導航 -->
+              <div class="steps-nav">
+                @for (step of steps(); track step.id) {
+                  <button 
+                    class="step-btn"
+                    [class.active]="activeStep() === step.id"
+                    [class.completed]="activeStep() > step.id"
+                    (click)="setStep(step.id)"
+                    type="button">
+                    <i [class]="step.icon"></i>
+                    <span>{{ step.label }}</span>
+                  </button>
+                }
+              </div>
+
+              <!-- Interview Step 1: 改善計劃 -->
+              @if (activeStep() === 1) {
+                <div class="form-section">
+                  <div class="section-header">
+                    <h3><i class="ri-file-list-3-line"></i> 改善計劃</h3>
+                    <button class="btn-add" (click)="addImprovementPlanItem()" type="button">
+                      <i class="ri-add-line"></i> 新增
+                    </button>
+                  </div>
+                  <p class="section-desc">針對未達成指標制定改善計劃</p>
+
+                  <div class="list-items">
+                    @for (item of improvementPlanItems(); track $index; let i = $index) {
+                      <div class="list-item list-item--improvement">
+                        <div class="item-header">
+                          <span class="item-number">第 {{ i + 1 }} 項</span>
+                          @if (improvementPlanItems().length > 1) {
+                            <button class="btn-remove" (click)="removeImprovementPlanItem(i)" type="button">
+                              <i class="ri-delete-bin-line"></i>
+                            </button>
+                          }
+                        </div>
+                        <div class="item-fields item-fields--grid">
+                          <div class="field-group">
+                            <label>指標</label>
+                            <textarea rows="2" [value]="item.indicator"
+                              (input)="updateImprovementPlanItem(i, 'indicator', $any($event.target).value)"
+                              placeholder="需改善的指標..."></textarea>
+                          </div>
+                          <div class="field-group">
+                            <label>改善措施</label>
+                            <textarea rows="2" [value]="item.measure"
+                              (input)="updateImprovementPlanItem(i, 'measure', $any($event.target).value)"
+                              placeholder="具體改善措施..."></textarea>
+                          </div>
+                          <div class="field-group">
+                            <label>完成時間</label>
+                            <input type="date" [value]="item.deadline"
+                              (input)="updateImprovementPlanItem(i, 'deadline', $any($event.target).value)">
+                          </div>
+                          <div class="field-group">
+                            <label>所需資源</label>
+                            <textarea rows="2" [value]="item.resource"
+                              (input)="updateImprovementPlanItem(i, 'resource', $any($event.target).value)"
+                              placeholder="需要的支援資源..."></textarea>
+                          </div>
+                        </div>
+                      </div>
+                    }
+                  </div>
+
+                  <!-- 其他面談內容 -->
+                  <div class="field-group field-group--spaced">
+                    <label>其他面談內容</label>
+                    <textarea class="form-textarea" rows="3"
+                      [ngModel]="otherContent()"
+                      (ngModelChange)="otherContent.set($event)"
+                      placeholder="其他需要記錄的面談內容..."></textarea>
+                  </div>
+                </div>
+              }
+
+              <!-- Interview Step 2: 下階段目標 -->
+              @if (activeStep() === 2) {
+                <div class="form-section">
+                  <div class="section-header">
+                    <h3><i class="ri-flag-line"></i> 重申下階段考核目標</h3>
+                    <button class="btn-add" (click)="addNextGoalItem()" type="button">
+                      <i class="ri-add-line"></i> 新增
+                    </button>
+                  </div>
+                  <p class="section-desc">明確下一季度的工作目標</p>
+
+                  <div class="list-items">
+                    @for (item of nextGoalItems(); track $index; let i = $index) {
+                      <div class="list-item list-item--next-goal">
+                        <div class="item-header">
+                          <span class="item-number">目標 {{ i + 1 }}</span>
+                          @if (nextGoalItems().length > 1) {
+                            <button class="btn-remove" (click)="removeNextGoalItem(i)" type="button">
+                              <i class="ri-delete-bin-line"></i>
+                            </button>
+                          }
+                        </div>
+                        <div class="item-fields">
+                          <div class="field-group">
+                            <label>工作任務/目標</label>
+                            <input type="text" [value]="item.task"
+                              (input)="updateNextGoalItem(i, 'task', $any($event.target).value)"
+                              placeholder="下階段要達成的目標...">
+                          </div>
+                          <div class="field-row">
+                            <div class="field-group field-group--half">
+                              <label>需要甚麼支持</label>
+                              <input type="text" [value]="item.support"
+                                (input)="updateNextGoalItem(i, 'support', $any($event.target).value)"
+                                placeholder="需要的資源或支援...">
+                            </div>
+                            <div class="field-group field-group--half">
+                              <label>達成時限</label>
+                              <input type="date" [value]="item.deadline"
+                                (input)="updateNextGoalItem(i, 'deadline', $any($event.target).value)">
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            } @else {
+              <!-- 面談資訊顯示 -->
+              <div class="form-section">
+                <h3><i class="ri-calendar-check-line"></i> 面談資訊</h3>
+                <div class="info-grid info-grid--compact">
+                  <div class="info-item">
+                    <label>面談日期</label>
+                    <span>{{ formatDate(review()?.interviewDate) }}</span>
+                  </div>
+                  <div class="info-item">
+                    <label>面談地點</label>
+                    <span>{{ review()?.interviewLocation || '-' }}</span>
+                  </div>
+                </div>
+              </div>
+            }
+          }
+
+          <!-- ========================================== -->
+          <!-- HR 結案 / 已完成狀態 -->
+          <!-- ========================================== -->
+          @if (canHrClose() || isReadOnly()) {
+            @if (review()?.managerComment) {
+              <div class="form-section">
+                <h3><i class="ri-user-star-line"></i> 主管評語與發展建議</h3>
+                <div class="content-block">
+                  <div class="block-label">主管評語</div>
+                  <div class="block-content">{{ review()?.managerComment }}</div>
+                </div>
+                @if (review()?.developmentPlan) {
+                  <div class="content-block">
+                    <div class="block-label">發展建議</div>
+                    <div class="block-content">{{ review()?.developmentPlan }}</div>
+                  </div>
+                }
+              </div>
+            }
+
+            @if (review()?.totalScore) {
+              <div class="form-section">
+                <h3><i class="ri-award-fill"></i> 評核結果</h3>
+                <div class="result-summary">
+                  <div class="result-item">
+                    <span class="result-label">月度均分</span>
+                    <span class="result-value">{{ review()?.monthlyAvgScore?.toFixed(1) || '-' }}</span>
+                  </div>
+                  <div class="result-item result-item--highlight">
+                    <span class="result-label">總分</span>
+                    <span class="result-value">{{ review()?.totalScore?.toFixed(1) }}</span>
+                  </div>
+                </div>
+              </div>
+            }
+          }
+        }
+      </div>
+
+      <!-- Footer -->
+      <div class="modal-footer">
+        @if (review()) {
+          <!-- pending 狀態：員工填寫 -->
+          @if (canEmployeeEdit()) {
+            @if (isEditing()) {
+              <button class="btn-cancel" (click)="cancelEditing()" type="button" [disabled]="saving()">
+                <i class="ri-close-line"></i> 取消
+              </button>
+              <div class="footer-spacer"></div>
+              @if (activeStep() > 1) {
+                <button class="btn-secondary" (click)="prevStep()" type="button">
+                  <i class="ri-arrow-left-line"></i> 上一步
+                </button>
+              }
+              @if (activeStep() < lastStep()) {
+                <button class="btn-primary" (click)="nextStep()" type="button">
+                  下一步 <i class="ri-arrow-right-line"></i>
+                </button>
+              }
+              @if (activeStep() === lastStep()) {
+                <button class="btn-primary" (click)="submitEmployeeForm()" type="button" [disabled]="saving()">
+                  @if (saving()) { <i class="ri-loader-4-line spinner"></i> }
+                  提交表單
+                </button>
+              }
+            } @else {
+              <button class="btn-secondary" (click)="onClose()" type="button">關閉</button>
+              <button class="btn-primary" (click)="startEditing()" type="button">
+                <i class="ri-edit-line"></i> 填寫表單
+              </button>
+            }
+          }
+
+          <!-- employee_submitted 狀態：主管評核 -->
+          @if (canManagerReview()) {
+            @if (isManagerEditing()) {
+              <button class="btn-cancel" (click)="cancelManagerEditing()" type="button" [disabled]="saving()">
+                <i class="ri-close-line"></i> 取消
+              </button>
+              <div class="footer-spacer"></div>
+              @if (activeStep() > 1) {
+                <button class="btn-secondary" (click)="prevStep()" type="button">
+                  <i class="ri-arrow-left-line"></i> 上一步
+                </button>
+              }
+              @if (activeStep() < lastStep()) {
+                <button class="btn-primary" (click)="nextStep()" type="button">
+                  下一步 <i class="ri-arrow-right-line"></i>
+                </button>
+              }
+              @if (activeStep() === lastStep()) {
+                <button class="btn-primary" (click)="submitManagerReview()" type="button" [disabled]="saving()">
+                  @if (saving()) { <i class="ri-loader-4-line spinner"></i> }
+                  提交評核
+                </button>
+              }
+            } @else {
+              <button class="btn-secondary" (click)="onClose()" type="button">關閉</button>
+              <button class="btn-primary" (click)="startManagerEditing()" type="button">
+                <i class="ri-edit-line"></i> 開始評核
+              </button>
+            }
+          }
+
+          <!-- manager_reviewed 狀態：預約面談 -->
+          @if (canScheduleInterview()) {
+            <button class="btn-secondary" (click)="onClose()" type="button">關閉</button>
+            <button class="btn-primary" (click)="scheduleInterview()" type="button" [disabled]="saving() || !interviewDate()">
+              @if (saving()) { <i class="ri-loader-4-line spinner"></i> }
+              確認預約
+            </button>
+          }
+
+          <!-- interview_scheduled 狀態：面談中 -->
+          @if (canConductInterview()) {
+            @if (isEditing()) {
+              <button class="btn-cancel" (click)="cancelEditing()" type="button" [disabled]="saving()">
+                <i class="ri-close-line"></i> 取消
+              </button>
+              <div class="footer-spacer"></div>
+              @if (activeStep() > 1) {
+                <button class="btn-secondary" (click)="prevStep()" type="button">
+                  <i class="ri-arrow-left-line"></i> 上一步
+                </button>
+              }
+              @if (activeStep() < lastStep()) {
+                <button class="btn-primary" (click)="nextStep()" type="button">
+                  下一步 <i class="ri-arrow-right-line"></i>
+                </button>
+              }
+              @if (activeStep() === lastStep()) {
+                <button class="btn-primary" (click)="completeInterview()" type="button" [disabled]="saving()">
+                  @if (saving()) { <i class="ri-loader-4-line spinner"></i> }
+                  完成面談
+                </button>
+              }
+            } @else {
+              <button class="btn-secondary" (click)="onClose()" type="button">關閉</button>
+              <button class="btn-primary" (click)="startEditing()" type="button">
+                <i class="ri-edit-line"></i> 進行面談
+              </button>
+            }
+          }
+
+          <!-- interview_completed 狀態：HR 結案 -->
+          @if (canHrClose()) {
+            <button class="btn-secondary" (click)="onClose()" type="button">關閉</button>
+            <button class="btn-primary" (click)="hrClose()" type="button" [disabled]="saving()">
+              @if (saving()) { <i class="ri-loader-4-line spinner"></i> }
+              HR 結案
+            </button>
+          }
+
+          <!-- completed 狀態：唯讀 -->
+          @if (isReadOnly()) {
+            <button class="btn-secondary" (click)="onClose()" type="button">關閉</button>
+          }
+        }
+      </div>
+    </div>
+  </div>
+}

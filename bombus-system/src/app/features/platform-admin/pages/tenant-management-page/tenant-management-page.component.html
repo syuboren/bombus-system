@@ -1,0 +1,371 @@
+<div class="tenant-management-page">
+  <div class="page-header">
+    <h1 class="page-title">租戶管理</h1>
+    <button class="btn-primary" type="button" (click)="openCreateForm()">
+      <i class="ri-add-line"></i> 新增租戶
+    </button>
+  </div>
+
+  <!-- 統計卡片 -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <span class="stat-value">{{ stats().total }}</span>
+      <span class="stat-label">總租戶數</span>
+    </div>
+    <div class="stat-card stat-card--active">
+      <span class="stat-value">{{ stats().active }}</span>
+      <span class="stat-label">啟用中</span>
+    </div>
+    <div class="stat-card stat-card--warning">
+      <span class="stat-value">{{ stats().suspended }}</span>
+      <span class="stat-label">已暫停</span>
+    </div>
+  </div>
+
+  <!-- 篩選列 -->
+  <div class="filter-bar">
+    <div class="search-box">
+      <i class="ri-search-line"></i>
+      <input
+        type="text"
+        placeholder="搜尋租戶名稱或代碼..."
+        [value]="searchKeyword()"
+        (input)="searchKeyword.set($any($event.target).value)"
+        (keydown.enter)="onSearch()" />
+    </div>
+    <div class="status-tabs">
+      <button
+        class="tab"
+        [class.tab--active]="statusFilter() === ''"
+        (click)="onStatusFilter('')">全部</button>
+      <button
+        class="tab"
+        [class.tab--active]="statusFilter() === 'active'"
+        (click)="onStatusFilter('active')">啟用中</button>
+      <button
+        class="tab"
+        [class.tab--active]="statusFilter() === 'suspended'"
+        (click)="onStatusFilter('suspended')">已暫停</button>
+      <button
+        class="tab"
+        [class.tab--active]="statusFilter() === 'deleted'"
+        (click)="onStatusFilter('deleted')">已刪除</button>
+    </div>
+  </div>
+
+  <!-- 租戶列表 -->
+  @if (loading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>載入中...</p>
+    </div>
+  } @else if (tenants().length === 0) {
+    <div class="empty-state">
+      <i class="ri-building-line"></i>
+      <p>尚無租戶資料</p>
+    </div>
+  } @else {
+    <div class="data-table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>租戶</th>
+            <th>代碼</th>
+            <th>產業別</th>
+            <th>方案</th>
+            <th>狀態</th>
+            <th>建立時間</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (tenant of tenants(); track tenant.id) {
+            <tr>
+              <td class="tenant-name-cell">
+                <div class="tenant-identity">
+                  @if (tenant.logo_url) {
+                    <img class="tenant-logo" [src]="tenant.logo_url" [alt]="tenant.name" />
+                  } @else {
+                    <div class="tenant-logo-placeholder">
+                      <i class="ri-building-line"></i>
+                    </div>
+                  }
+                  <span class="tenant-name">{{ tenant.name }}</span>
+                </div>
+              </td>
+              <td class="tenant-slug">{{ tenant.slug }}</td>
+              <td>{{ getIndustryLabel(tenant.industry || '') }}</td>
+              <td>{{ getPlanName(tenant.plan_id) }}</td>
+              <td>
+                <span class="status-badge" [class]="getStatusClass(tenant.status)">
+                  {{ getStatusLabel(tenant.status) }}
+                </span>
+              </td>
+              <td>{{ tenant.created_at | date:'yyyy-MM-dd' }}</td>
+              <td class="actions-cell">
+                <button class="action-btn" title="編輯" (click)="openEditForm(tenant)">
+                  <i class="ri-edit-line"></i>
+                </button>
+                @if (tenant.status === 'active') {
+                  <button class="action-btn action-btn--warning" title="暫停" (click)="suspendTenant(tenant)">
+                    <i class="ri-pause-circle-line"></i>
+                  </button>
+                }
+                @if (tenant.status === 'suspended') {
+                  <button class="action-btn action-btn--success" title="恢復" (click)="restoreTenant(tenant)">
+                    <i class="ri-play-circle-line"></i>
+                  </button>
+                  <button class="action-btn action-btn--danger" title="軟刪除" (click)="softDelete(tenant)">
+                    <i class="ri-delete-bin-line"></i>
+                  </button>
+                }
+                @if (tenant.status === 'deleted') {
+                  <button class="action-btn action-btn--success" title="恢復" (click)="restoreTenant(tenant)">
+                    <i class="ri-refresh-line"></i>
+                  </button>
+                  <button class="action-btn action-btn--danger" title="永久刪除" (click)="openPurgeConfirm(tenant)">
+                    <i class="ri-delete-bin-2-fill"></i>
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 分頁 -->
+    @if (totalPages() > 1) {
+      <div class="pagination">
+        <button
+          class="page-btn"
+          [disabled]="currentPage() === 1"
+          (click)="onPageChange(currentPage() - 1)">
+          <i class="ri-arrow-left-s-line"></i>
+        </button>
+        <span class="page-info">{{ currentPage() }} / {{ totalPages() }}</span>
+        <button
+          class="page-btn"
+          [disabled]="currentPage() === totalPages()"
+          (click)="onPageChange(currentPage() + 1)">
+          <i class="ri-arrow-right-s-line"></i>
+        </button>
+      </div>
+    }
+  }
+
+  <!-- 新增/編輯表單 Modal -->
+  @if (showForm()) {
+    <div class="modal-overlay">
+      <div class="modal-container">
+        <div class="modal-header">
+          <h2 class="modal-title">
+            {{ editingTenant() ? '編輯租戶' : '新增租戶' }}
+          </h2>
+          <button class="modal-close" (click)="closeForm()">
+            <i class="ri-close-line"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">租戶名稱</label>
+            <input
+              type="text"
+              class="form-input"
+              placeholder="例：Acme 公司"
+              [value]="formData().name || ''"
+              (input)="updateFormField('name', $any($event.target).value)" />
+          </div>
+
+          @if (!editingTenant()) {
+            <div class="form-group">
+              <label class="form-label">代碼 (slug)</label>
+              <input
+                type="text"
+                class="form-input"
+                placeholder="例：acme（僅限小寫英文與連字號）"
+                [value]="formData().slug || ''"
+                (input)="updateFormField('slug', $any($event.target).value)" />
+            </div>
+          }
+
+          <!-- Logo 上傳 -->
+          <div class="form-group">
+            <label class="form-label">公司 Logo</label>
+            <div class="logo-upload-area">
+              @if (logoPreview()) {
+                <div class="logo-preview-wrapper">
+                  <img class="logo-preview" [src]="logoPreview()" alt="Logo 預覽" />
+                  <button class="logo-remove-btn" type="button" (click)="removeLogo()" title="移除 Logo">
+                    <i class="ri-close-circle-fill"></i>
+                  </button>
+                </div>
+              } @else {
+                <label class="logo-upload-trigger" [class.logo-upload-trigger--loading]="logoUploading()">
+                  @if (logoUploading()) {
+                    <div class="spinner-sm"></div>
+                    <span>上傳中...</span>
+                  } @else {
+                    <i class="ri-image-add-line"></i>
+                    <span>點擊上傳 Logo</span>
+                    <span class="logo-hint">支援 JPEG、PNG、WebP，最大 2MB</span>
+                  }
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    class="logo-file-input"
+                    (change)="onLogoSelected($event)" />
+                </label>
+              }
+            </div>
+          </div>
+
+          <!-- 產業別 -->
+          <div class="form-group">
+            <label class="form-label">產業別</label>
+            <select
+              class="form-input"
+              (change)="updateFormField('industry', $any($event.target).value)">
+              <option value="" [selected]="!formData().industry">請選擇產業別</option>
+              @for (opt of industryOptions; track opt.value) {
+                <option [value]="opt.value" [selected]="formData().industry === opt.value">{{ opt.label }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">訂閱方案</label>
+            <select
+              class="form-input"
+              (change)="updateFormField('plan_id', $any($event.target).value)">
+              <option value="" [selected]="!formData().plan_id">請選擇方案</option>
+              @for (plan of plans(); track plan.id) {
+                <option [value]="plan.id" [selected]="formData().plan_id === plan.id">{{ plan.name }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-divider">
+            <span>管理員帳號</span>
+          </div>
+
+          @if (!editingTenant()) {
+            <!-- 新增模式：建立管理員 -->
+            <div class="form-group">
+              <label class="form-label">管理員名稱</label>
+              <input
+                type="text"
+                class="form-input"
+                placeholder="例：王大明"
+                [value]="formData().admin_name || ''"
+                (input)="updateFormField('admin_name', $any($event.target).value)" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">管理員信箱</label>
+              <input
+                type="email"
+                class="form-input"
+                placeholder="例：admin@acme.com"
+                [value]="formData().admin_email || ''"
+                (input)="updateFormField('admin_email', $any($event.target).value)" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">初始密碼</label>
+              <input
+                type="password"
+                class="form-input"
+                placeholder="至少 6 個字元"
+                [value]="formData().admin_password || ''"
+                (input)="updateFormField('admin_password', $any($event.target).value)" />
+            </div>
+          } @else {
+            <!-- 編輯模式：管理現有管理員 -->
+            @if (tenantAdmins().length === 0) {
+              <p class="admin-empty-hint">載入中...</p>
+            } @else {
+              @for (admin of tenantAdmins(); track admin.id) {
+                <div class="admin-card">
+                  <div class="admin-card-header">
+                    <span class="admin-role-badge">{{ admin.role_names || 'user' }}</span>
+                    <span class="admin-status" [class.admin-status--active]="admin.status === 'active'">
+                      {{ admin.status === 'active' ? '啟用' : admin.status }}
+                    </span>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">名稱</label>
+                    <input
+                      type="text"
+                      class="form-input"
+                      [value]="admin.name"
+                      (input)="updateAdminField(admin.id, 'name', $any($event.target).value)" />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">信箱</label>
+                    <input
+                      type="email"
+                      class="form-input"
+                      [value]="admin.email"
+                      (input)="updateAdminField(admin.id, 'email', $any($event.target).value)" />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">重設密碼 <span class="form-hint">（留空不變更）</span></label>
+                    <input
+                      type="password"
+                      class="form-input"
+                      placeholder="輸入新密碼（至少 6 字元）"
+                      (input)="updateAdminField(admin.id, 'password', $any($event.target).value)" />
+                  </div>
+                </div>
+              }
+            }
+          }
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" type="button" (click)="closeForm()">取消</button>
+          <button class="btn-primary" type="button" (click)="saveForm()">
+            {{ editingTenant() ? '儲存變更' : '建立租戶' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- 硬刪除確認對話框 -->
+  @if (showConfirmDialog()) {
+    <div class="modal-overlay">
+      <div class="modal-container modal-container--sm">
+        <div class="modal-header modal-header--danger">
+          <h2 class="modal-title">
+            <i class="ri-error-warning-fill"></i> 永久刪除租戶
+          </h2>
+        </div>
+        <div class="modal-body">
+          <p class="danger-text">
+            此操作將永久刪除租戶 <strong>{{ confirmAction().tenant?.name }}</strong> 及其所有資料，且無法復原。
+          </p>
+          <div class="form-group">
+            <label class="form-label">請輸入 "CONFIRM" 確認刪除</label>
+            <input
+              type="text"
+              class="form-input"
+              placeholder="CONFIRM"
+              [value]="confirmInput()"
+              (input)="confirmInput.set($any($event.target).value)" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" type="button" (click)="closeConfirm()">取消</button>
+          <button
+            class="btn-danger"
+            type="button"
+            [disabled]="confirmInput() !== 'CONFIRM'"
+            (click)="executePurge()">
+            <i class="ri-delete-bin-2-fill"></i> 永久刪除
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

@@ -6,20 +6,20 @@
 // ---------------------------------------------------------------
 // 1. 基礎色調 (Morandi Neutral)
 // ---------------------------------------------------------------
-$color-cloud-gray: #F5F5F7;          // 雲霧灰 - 背景色
-$color-pure-white: #FCFCFD;          // 極致灰白 - 卡片背景
-$color-soft-gray: #E8E8EA;           // 柔霧灰 - 邊框
-$color-muted-gray: #C4C4C6;          // 淺灰 - 次要文字
-$color-text-secondary: #6B7280;      // 中性灰 - 次要文字
-$color-text-primary: #464E56;        // 深灰 - 主要文字
-$color-text-dark: #1F2937;           // 暗灰 - 標題
+$color-cloud-gray: #F5F5F7; // 雲霧灰 - 背景色
+$color-pure-white: #FCFCFD; // 極致灰白 - 卡片背景
+$color-soft-gray: #E8E8EA; // 柔霧灰 - 邊框
+$color-muted-gray: #C4C4C6; // 淺灰 - 次要文字
+$color-text-secondary: #6B7280; // 中性灰 - 次要文字
+$color-text-primary: #464E56; // 深灰 - 主要文字
+$color-text-dark: #1F2937; // 暗灰 - 標題
 
 // ---------------------------------------------------------------
 // 2. 品牌色 (Brand Colors)
 // ---------------------------------------------------------------
-$color-brand-main: #64748B;          // 板岩藍 - 主品牌色
-$color-brand-light: #94A3B8;         // 塵藍 - 次要品牌色
-$color-brand-dark: #475569;          // 深板岩藍 - 強調
+$color-brand-main: #64748B; // 板岩藍 - 主品牌色
+$color-brand-light: #94A3B8; // 塵藍 - 次要品牌色
+$color-brand-dark: #475569; // 深板岩藍 - 強調
 
 // ---------------------------------------------------------------
 // 3. 模組色 (Module Colors)
@@ -57,13 +57,13 @@ $color-l6-rose-dark: #A6867E;
 // ---------------------------------------------------------------
 // 4. 功能色 (Functional Colors)
 // ---------------------------------------------------------------
-$color-success: #7FB095;             // 成功 - 莫蘭迪綠
+$color-success: #7FB095; // 成功 - 莫蘭迪綠
 $color-success-light: #E8F5EE;
-$color-warning: #E3C088;             // 警告 - 莫蘭迪黃
+$color-warning: #E3C088; // 警告 - 莫蘭迪黃
 $color-warning-light: #FFF8E7;
-$color-error: #C77F7F;               // 錯誤 - 莫蘭迪紅
+$color-error: #C77F7F; // 錯誤 - 莫蘭迪紅
 $color-error-light: #FDEAEA;
-$color-info: #8DA8BE;                // 資訊 - 莫蘭迪藍
+$color-info: #8DA8BE; // 資訊 - 莫蘭迪藍
 $color-info-light: #EDF4F9;
 
 // ---------------------------------------------------------------
@@ -86,14 +86,15 @@ $chart-colors: (
 $font-family-base: 'Microsoft JhengHei', 'PingFang TC', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
 $font-family-mono: 'SF Mono', 'Consolas', 'Liberation Mono', monospace;
 
-$font-size-xs: 0.75rem;              // 12px
-$font-size-sm: 0.875rem;             // 14px
-$font-size-base: 1rem;               // 16px
-$font-size-lg: 1.125rem;             // 18px
-$font-size-xl: 1.25rem;              // 20px
-$font-size-2xl: 1.5rem;              // 24px
-$font-size-3xl: 1.875rem;            // 30px
-$font-size-4xl: 2.25rem;             // 36px
+$font-size-xs: 0.75rem; // 12px
+$font-size-sm: 0.875rem; // 14px
+$font-size-md: 1rem; // 16px (Added)
+$font-size-base: 1rem; // 16px
+$font-size-lg: 1.125rem; // 18px
+$font-size-xl: 1.25rem; // 20px
+$font-size-2xl: 1.5rem; // 24px
+$font-size-3xl: 1.875rem; // 30px
+$font-size-4xl: 2.25rem; // 36px
 
 $font-weight-normal: 400;
 $font-weight-medium: 500;
@@ -107,12 +108,12 @@ $line-height-relaxed: 1.75;
 // ---------------------------------------------------------------
 // 7. 間距 (Spacing)
 // ---------------------------------------------------------------
-$spacing-xs: 0.25rem;                // 4px
-$spacing-sm: 0.5rem;                 // 8px
-$spacing-md: 1rem;                   // 16px
-$spacing-lg: 1.5rem;                 // 24px
-$spacing-xl: 2rem;                   // 32px
-$spacing-2xl: 3rem;                  // 48px
+$spacing-xs: 0.25rem; // 4px
+$spacing-sm: 0.5rem; // 8px
+$spacing-md: 1rem; // 16px
+$spacing-lg: 1.5rem; // 24px
+$spacing-xl: 2rem; // 32px
+$spacing-2xl: 3rem; // 48px
 
 // ---------------------------------------------------------------
 // 8. 圓角 (Border Radius)
@@ -204,4 +205,3 @@ $header-height: 70px;
   // 過渡
   --transition-normal: #{$transition-normal};
 }
-

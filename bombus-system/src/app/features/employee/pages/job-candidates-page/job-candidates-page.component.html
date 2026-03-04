@@ -1,6 +1,4 @@
-<app-header
-  [pageTitle]="'職缺候選人列表'"
-  [breadcrumbs]="['招募職缺管理', jobTitle()]" />
+<app-header [pageTitle]="'職缺候選人列表'" [breadcrumbs]="['招募職缺管理', jobTitle()]" />
 
 <main class="main-content">
   <div class="content-container">
@@ -14,72 +12,44 @@
 
     <!-- Stats Cards -->
     @if (stats(); as s) {
-      <div class="stats-grid">
-        <app-stat-card
-          icon="ri-group-line"
-          label="總應徵人數"
-          [value]="s.total"
-          moduleType="l1" />
-        <app-stat-card
-          icon="ri-time-line"
-          label="待審核"
-          [value]="s.pending"
-          moduleType="l1" />
-        <app-stat-card
-          icon="ri-check-double-line"
-          label="AI 推薦"
-          [value]="s.aiRecommended"
-          moduleType="l1" />
-        <app-stat-card
-          icon="ri-calendar-event-line"
-          label="已安排面試"
-          [value]="s.scheduled"
-          moduleType="l1" />
-      </div>
+    <div class="stats-grid">
+      <app-stat-card icon="ri-group-line" label="總應徵人數" [value]="s.total" moduleType="l1" />
+      <app-stat-card icon="ri-time-line" label="待審核" [value]="s.pending" moduleType="l1" />
+      <app-stat-card icon="ri-check-double-line" label="AI 推薦" [value]="s.aiRecommended" moduleType="l1" />
+      <app-stat-card icon="ri-calendar-event-line" label="已安排面試" [value]="s.scheduled" moduleType="l1" />
+    </div>
     }
 
-    <!-- Filter Bar -->
+    <!-- Status Tabs (L1 Module Style) -->
+    <div class="status-tabs">
+      @for (tab of statusTabs; track tab.key) {
+      <button class="status-tab" [class.active]="statusFilter() === tab.key" (click)="statusFilter.set(tab.key)"
+        type="button">
+        <i [class]="tab.icon"></i>
+        <span class="tab-label">{{ tab.label }}</span>
+        <span class="tab-count">{{ getTabCount(tab.key) }}</span>
+      </button>
+      }
+    </div>
+
+    <!-- Filter Bar (Search + Score only) -->
     <div class="filter-bar">
-      <div class="filter-item">
-        <label class="filter-label">關鍵字搜尋</label>
-        <input
-          type="text"
-          class="filter-input"
-          placeholder="姓名 / 學校 / 技能"
-          [value]="searchQuery()"
+      <div class="filter-item filter-item--search">
+        <i class="ri-search-line"></i>
+        <input type="text" placeholder="搜尋姓名、職位、公司、技能…" [value]="searchQuery()"
           (input)="searchQuery.set($any($event.target).value)">
       </div>
+      <div class="filter-divider"></div>
       <div class="filter-item">
-        <label class="filter-label">AI 匹配度</label>
-        <select
-          class="filter-select"
-          [value]="scoreFilter()"
-          (change)="scoreFilter.set($any($event.target).value)">
+        <select class="filter-select" [value]="scoreFilter()" (change)="scoreFilter.set($any($event.target).value)">
           <option value="">所有分數</option>
           <option value="90">90分以上</option>
           <option value="80">80分以上</option>
           <option value="70">70分以上</option>
         </select>
       </div>
-      <div class="filter-item">
-        <label class="filter-label">應徵狀態</label>
-        <select
-          class="filter-select"
-          [value]="statusFilter()"
-          (change)="statusFilter.set($any($event.target).value)">
-          <option value="">所有狀態</option>
-          <option value="new">新進履歷</option>
-          <option value="interview">已安排面試</option>
-          <option value="rejected">已婉拒</option>
-        </select>
-      </div>
-      <div class="filter-item filter-item--action">
-        <button class="btn-filter" type="button">
-          <i class="ri-filter-line"></i>
-          篩選
-        </button>
-      </div>
     </div>
+    <!-- End Filter Bar -->
 
     <!-- AI Scoring Action Bar -->
     <div class="ai-action-bar">
@@ -96,279 +66,233 @@
     <!-- Candidate Grid -->
     <div class="candidate-grid">
       @for (candidate of filteredCandidates(); track candidate.id) {
-        <article class="candidate-card">
-          <div class="card__header">
-            <div class="candidate-info">
-              <div
-                class="candidate-avatar"
-                [style.background-color]="candidate.avatarColor">
-                {{ getInitial(candidate.name) }}
-              </div>
-              <div class="candidate-details">
-                <h3 class="candidate-name">{{ candidate.name }} ({{ candidate.nameEn }})</h3>
-                <p class="candidate-email">{{ candidate.email }}</p>
-                <p class="candidate-date">應徵日期：{{ candidate.applyDate }}</p>
-              </div>
+      <article class="candidate-card" tabindex="0" (keydown.enter)="viewProfile(candidate)">
+        <div class="card__header">
+          <div class="candidate-info">
+            <div class="candidate-avatar" [style.background-color]="candidate.avatarColor">
+              {{ getInitial(candidate.name) }}
             </div>
-            <div class="score-section">
-              <!-- AI 評分狀態 -->
-              <span class="scoring-status {{ getScoringStatusClass(candidate.aiScoringStatus) }}">
-                @if (candidate.aiScoringStatus === 'pending') {
-                  <i class="ri-time-line"></i>
-                } @else {
-                  <i class="ri-checkbox-circle-fill"></i>
-                }
-                {{ getScoringStatusLabel(candidate.aiScoringStatus) }}
-              </span>
-              <!-- AI 匹配分數 -->
-              @if (candidate.aiScoringStatus === 'scored') {
-                <app-circular-progress
-                  [value]="candidate.displayScore"
-                  [size]="52"
-                  [strokeWidth]="5"
-                  [progressColor]="getScoreColor(candidate.scoreLevel)"
-                  [animationDuration]="1000"
-                />
-              } @else if (candidate.aiScoringStatus === 'scoring') {
-                <div class="match-badge match-badge--scoring" title="評分中">
-                  <i class="ri-loader-4-line spinning"></i>
-                </div>
+            <div class="candidate-details">
+              <h3 class="candidate-name">{{ candidate.name }} ({{ candidate.nameEn }})</h3>
+              <p class="candidate-email">{{ candidate.email }}</p>
+              <p class="candidate-date">應徵日期：{{ candidate.applyDate }}</p>
+            </div>
+          </div>
+          <div class="score-section">
+            <!-- AI 評分狀態 -->
+            <span class="scoring-status {{ getScoringStatusClass(candidate.aiScoringStatus) }}">
+              @if (candidate.aiScoringStatus === 'pending') {
+              <i class="ri-time-line"></i>
               } @else {
-                <div class="match-badge match-badge--pending" title="待評分">
-                  --
-                </div>
+              <i class="ri-checkbox-circle-fill"></i>
               }
+              {{ getScoringStatusLabel(candidate.aiScoringStatus) }}
+            </span>
+            <!-- AI 匹配分數 -->
+            @if (candidate.aiScoringStatus === 'scored') {
+            <app-circular-progress [value]="candidate.displayScore" [size]="52" [strokeWidth]="5"
+              [progressColor]="getScoreColor(candidate.scoreLevel)" [animationDuration]="1000" />
+            } @else if (candidate.aiScoringStatus === 'scoring') {
+            <div class="match-badge match-badge--scoring" title="評分中">
+              <i class="ri-loader-4-line spinning"></i>
             </div>
+            } @else {
+            <div class="match-badge match-badge--pending" title="待評分">
+              --
+            </div>
+            }
           </div>
-
-          <div class="card__body">
-            <div class="info-row">
-              <i class="ri-graduation-cap-line"></i>
-              <span>{{ candidate.education }}</span>
-            </div>
-            <div class="info-row">
-              <i class="ri-briefcase-line"></i>
-              <span>{{ candidate.experienceYears }}年工作經驗 • {{ candidate.experience }}</span>
-            </div>
-            <div class="skill-tags">
-              @for (skill of candidate.skills; track skill) {
-                <span class="skill-tag">{{ skill }}</span>
-              }
-            </div>
-          </div>
-
-          <div class="card__footer">
-            <div class="footer-left">
-              <span class="status-badge {{ getStatusClass(candidate.status) }}">
-                {{ getStatusLabel(candidate.status) }}
-              </span>
-            </div>
-            <div class="footer-actions">
-              <!-- O/X 決策按鈕 -->
-              @if (candidate.status === 'new') {
-                <div class="decision-buttons">
-                  <button
-                    class="decision-btn decision-btn--reject"
-                    title="婉拒"
-                    (click)="rejectCandidate(candidate, $event)"
-                    type="button">
-                    <i class="ri-close-line"></i>
-                  </button>
-                  <button
-                    class="decision-btn decision-btn--accept"
-                    title="邀請面試"
-                    (click)="inviteCandidate(candidate, $event)"
-                    type="button">
-                    <i class="ri-check-line"></i>
-                  </button>
-                </div>
-              }
-              <button
-                class="btn-action"
-                (click)="viewProfile(candidate)"
-                type="button">
-                查看詳情
-                <i class="ri-arrow-right-line"></i>
-              </button>
-            </div>
-          </div>
-        </article>
-      } @empty {
-        <div class="empty-state">
-          <i class="ri-user-search-line"></i>
-          <h3>目前沒有候選人</h3>
-          <p>尚無符合條件的候選人資料</p>
         </div>
+
+        <div class="card__body">
+          <div class="info-row">
+            <i class="ri-graduation-cap-line"></i>
+            <span>{{ candidate.education }}</span>
+          </div>
+          <div class="info-row">
+            <i class="ri-briefcase-line"></i>
+            <span>{{ candidate.experienceYears }}年工作經驗 • {{ candidate.experience }}</span>
+          </div>
+          <div class="skill-tags">
+            @for (skill of candidate.skills; track skill) {
+            <span class="skill-tag">{{ skill }}</span>
+            }
+          </div>
+        </div>
+
+
+        <div class="card__footer">
+          <div class="footer-left">
+            <span class="status-badge {{ getStatusClass(candidate) }}">
+              {{ getStatusLabel(candidate) }}
+            </span>
+          </div>
+          <div class="footer-actions">
+            <div class="decision-buttons">
+              <!-- New: Invite or Reject -->
+              @if (candidate.status === 'new') {
+              <button class="decision-btn decision-btn--reject" title="不邀請" (click)="rejectCandidate(candidate, $event)"
+                type="button">
+                <i class="ri-close-line"></i>
+              </button>
+              <button class="decision-btn decision-btn--accept" title="邀請面試"
+                (click)="inviteCandidate(candidate, $event)" type="button">
+                <i class="ri-mail-send-line"></i>
+              </button>
+              }
+
+              <!-- Invited: Copy link (等待候選人回覆，尚未接受) -->
+              @if (candidate.status === 'invited' && candidate.candidateResponse !== 'accepted') {
+              <button class="decision-btn decision-btn--link" title="複製回覆連結"
+                (click)="copyResponseLink(candidate, $event)" type="button">
+                <i class="ri-link"></i>
+              </button>
+              }
+
+              <!-- Pending Schedule: 候選人已接受邀請，待安排面試 -->
+              @if (candidate.status === 'invited' && candidate.candidateResponse === 'accepted') {
+              <button class="decision-btn decision-btn--schedule" title="安排面試"
+                (click)="openInterviewModal(candidate, $event)" type="button">
+                <i class="ri-calendar-event-line"></i>
+              </button>
+              }
+
+              <!-- Reschedule: Show resend invitation option -->
+              @if (candidate.status === 'reschedule') {
+              <button class="decision-btn decision-btn--invite" title="重新邀約"
+                (click)="openInviteModal(candidate, $event)" type="button">
+                <i class="ri-mail-send-line"></i>
+              </button>
+              }
+
+              <!-- Interview: Already Scheduled (Show Info and Cancel Link buttons) -->
+              @if (candidate.status === 'interview') {
+              <button class="decision-btn decision-btn--info" title="查看面試資訊"
+                (click)="showInterviewInfo(candidate, $event)" type="button">
+                <i class="ri-calendar-check-line"></i>
+              </button>
+              <button class="decision-btn decision-btn--link" title="複製取消面試連結"
+                (click)="copyInterviewCancelLink(candidate, $event)" type="button">
+                <i class="ri-link"></i>
+              </button>
+              }
+
+              <!-- Offered: 待回覆 Offer - 顯示複製連結按鈕 -->
+              @if (candidate.status === 'offered') {
+              <button class="decision-btn decision-btn--offer-link" title="複製 Offer 回覆連結"
+                (click)="copyOfferResponseLink(candidate, $event)" type="button">
+                <i class="ri-link"></i>
+              </button>
+              }
+
+              <!-- Offer Accepted: 已錄取同意 -->
+              @if (candidate.status === 'offer_accepted') {
+              <div class="scheduled-badge scheduled-badge--success" title="已錄取同意">
+                <i class="ri-trophy-line"></i>
+              </div>
+              }
+
+              <!-- Offer Declined: 已錄取拒絕 -->
+              @if (candidate.status === 'offer_declined') {
+              <div class="scheduled-badge scheduled-badge--declined" title="已錄取拒絕">
+                <i class="ri-user-unfollow-line"></i>
+              </div>
+              }
+            </div>
+
+            <button class="btn-action" (click)="viewProfile(candidate)" type="button">
+              查看詳情
+              <i class="ri-arrow-right-line"></i>
+            </button>
+          </div>
+        </div>
+      </article>
+      } @empty {
+      <div class="empty-state">
+        <i class="ri-user-search-line"></i>
+        <h3>目前沒有候選人</h3>
+        <p>尚無符合條件的候選人資料</p>
+      </div>
       }
     </div>
   </div>
 </main>
 
-<!-- AI 評分全畫面動畫 -->
+<!-- AI 評分全畫面動畫 (Existing) -->
 @if (isAIScoring()) {
-  <div class="ai-scoring-overlay">
-    <div class="ai-scoring-content">
-      <div class="ai-scoring-icon">
-        <i class="ri-robot-2-line"></i>
-        <div class="pulse-ring"></div>
-        <div class="pulse-ring delay-1"></div>
-        <div class="pulse-ring delay-2"></div>
+<div class="ai-scoring-overlay">
+  <div class="ai-scoring-content">
+    <div class="ai-scoring-icon">
+      <i class="ri-robot-2-line"></i>
+      <div class="pulse-ring"></div>
+      <div class="pulse-ring delay-1"></div>
+      <div class="pulse-ring delay-2"></div>
+    </div>
+    <h2 class="ai-scoring-title">AI 智能評分進行中</h2>
+    <p class="ai-scoring-message">{{ aiScoringMessage() }}</p>
+    <div class="ai-scoring-progress">
+      <div class="progress-bar">
+        <div class="progress-fill" [style.width.%]="aiScoringProgress()"></div>
       </div>
-      <h2 class="ai-scoring-title">AI 智能評分進行中</h2>
-      <p class="ai-scoring-message">{{ aiScoringMessage() }}</p>
-      <div class="ai-scoring-progress">
-        <div class="progress-bar">
-          <div class="progress-fill" [style.width.%]="aiScoringProgress()"></div>
-        </div>
-        <span class="progress-text">{{ aiScoringProgress() | number:'1.0-0' }}%</span>
+      <span class="progress-text">{{ aiScoringProgress() | number:'1.0-0' }}%</span>
+    </div>
+    <div class="ai-scoring-steps">
+      <div class="step" [class.active]="aiScoringProgress() >= 20">
+        <i class="ri-file-search-line"></i>
+        <span>分析需求</span>
       </div>
-      <div class="ai-scoring-steps">
-        <div class="step" [class.active]="aiScoringProgress() >= 20">
-          <i class="ri-file-search-line"></i>
-          <span>分析需求</span>
-        </div>
-        <div class="step" [class.active]="aiScoringProgress() >= 40">
-          <i class="ri-file-user-line"></i>
-          <span>解析履歷</span>
-        </div>
-        <div class="step" [class.active]="aiScoringProgress() >= 60">
-          <i class="ri-bar-chart-line"></i>
-          <span>匹配計算</span>
-        </div>
-        <div class="step" [class.active]="aiScoringProgress() >= 80">
-          <i class="ri-file-chart-line"></i>
-          <span>生成報告</span>
-        </div>
-        <div class="step" [class.active]="aiScoringProgress() >= 100">
-          <i class="ri-check-double-line"></i>
-          <span>完成</span>
-        </div>
+      <div class="step" [class.active]="aiScoringProgress() >= 40">
+        <i class="ri-file-user-line"></i>
+        <span>解析履歷</span>
+      </div>
+      <div class="step" [class.active]="aiScoringProgress() >= 60">
+        <i class="ri-bar-chart-line"></i>
+        <span>匹配計算</span>
+      </div>
+      <div class="step" [class.active]="aiScoringProgress() >= 80">
+        <i class="ri-file-chart-line"></i>
+        <span>生成報告</span>
+      </div>
+      <div class="step" [class.active]="aiScoringProgress() >= 100">
+        <i class="ri-check-double-line"></i>
+        <span>完成</span>
       </div>
     </div>
   </div>
+</div>
 }
 
-<!-- 面試邀約 Modal -->
-@if (showInterviewModal()) {
-  <div class="modal-backdrop" (click)="closeInterviewModal()"></div>
-  <div class="modal interview-modal">
-    <div class="modal-header">
-      <h3 class="modal-title">
-        <i class="ri-calendar-event-line"></i>
-        安排面試邀約
-      </h3>
-      <button class="btn-close" (click)="closeInterviewModal()" type="button">
-        <i class="ri-close-line"></i>
-      </button>
-    </div>
-    <div class="modal-body">
-      @if (selectedCandidateForInterview(); as candidate) {
-        <div class="candidate-preview">
-          <div class="candidate-avatar" [style.background-color]="candidate.avatarColor">
-            {{ getInitial(candidate.name) }}
-          </div>
-          <div class="candidate-info">
-            <h4>{{ candidate.name }}</h4>
-            <p>{{ candidate.email }}</p>
-          </div>
-        </div>
-      }
-      
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">面試日期 <span class="required">*</span></label>
-          <input 
-            type="date" 
-            class="form-input"
-            [min]="getTodayDate()"
-            [value]="interviewDate()"
-            (input)="interviewDate.set($any($event.target).value)">
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">面試時間 <span class="required">*</span></label>
-          <input 
-            type="time" 
-            class="form-input"
-            [value]="interviewTime()"
-            (input)="interviewTime.set($any($event.target).value)">
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">面試官 <span class="required">*</span></label>
-        <select 
-          class="form-select"
-          [value]="selectedInterviewer()"
-          (change)="selectedInterviewer.set($any($event.target).value)">
-          <option value="">請選擇面試官</option>
-          @for (interviewer of interviewerOptions; track interviewer.id) {
-            <option [value]="interviewer.id">
-              {{ interviewer.name }} - {{ interviewer.title }} ({{ interviewer.department }})
-            </option>
-          }
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">面試方式</label>
-        <div class="radio-group">
-          <label class="radio-item">
-            <input 
-              type="radio" 
-              name="interviewType" 
-              value="onsite"
-              [checked]="interviewType() === 'onsite'"
-              (change)="interviewType.set('onsite')">
-            <span class="radio-label">
-              <i class="ri-building-line"></i>
-              現場面試
-            </span>
-          </label>
-          <label class="radio-item">
-            <input 
-              type="radio" 
-              name="interviewType" 
-              value="online"
-              [checked]="interviewType() === 'online'"
-              (change)="interviewType.set('online')">
-            <span class="radio-label">
-              <i class="ri-video-chat-line"></i>
-              線上面試
-            </span>
-          </label>
-          <label class="radio-item">
-            <input 
-              type="radio" 
-              name="interviewType" 
-              value="phone"
-              [checked]="interviewType() === 'phone'"
-              (change)="interviewType.set('phone')">
-            <span class="radio-label">
-              <i class="ri-phone-line"></i>
-              電話面試
-            </span>
-          </label>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">備註說明</label>
-        <textarea 
-          class="form-textarea"
-          rows="3"
-          placeholder="輸入面試相關備註..."
-          [value]="interviewNotes()"
-          (input)="interviewNotes.set($any($event.target).value)"></textarea>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" (click)="closeInterviewModal()" type="button">取消</button>
-      <button class="btn btn-primary" (click)="confirmInterview()" type="button">
-        <i class="ri-send-plane-line"></i>
-        發送邀請
-      </button>
-    </div>
-  </div>
+<!-- 安排面試 Modal -->
+@if (selectedCandidateForInterview()) {
+  <app-schedule-interview-modal
+    [candidate]="selectedCandidateForInterview()!"
+    [isVisible]="showInterviewModal()"
+    [jobId]="jobId()"
+    (close)="showInterviewModal.set(false); selectedCandidateForInterview.set(null)"
+    (scheduled)="onInterviewScheduled()"
+  />
 }
 
+<!-- NEW MODALS -->
+@if (selectedCandidate()) {
+<app-invite-candidate-modal [isVisible]="showInviteModal()" [candidate]="selectedCandidate()!"
+  (close)="showInviteModal.set(false)" (invited)="onInvited()">
+</app-invite-candidate-modal>
+
+<app-hiring-decision-modal [isVisible]="showDecisionModal()" [candidate]="selectedCandidate()!"
+  (close)="showDecisionModal.set(false)" (decided)="onDecided()">
+</app-hiring-decision-modal>
+
+<app-interview-scoring-modal [isVisible]="showScoringModal()" [candidate]="selectedCandidate()!"
+  (close)="showScoringModal.set(false)" (scored)="onScored()">
+</app-interview-scoring-modal>
+}
+
+<!-- 面試資訊 Modal -->
+@if (interviewInfoCandidate()) {
+  <app-interview-info-modal
+    [candidate]="interviewInfoCandidate()!"
+    [isVisible]="showInterviewInfoModal()"
+    (close)="closeInterviewInfoModal()"
+  />
+}

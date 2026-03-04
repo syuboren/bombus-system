@@ -16,13 +16,17 @@ import {
   COMPETENCY_CATEGORY_OPTIONS,
   COMPETENCY_LEVEL_OPTIONS
 } from '../../models/competency.model';
+import { CompetencyEditModalComponent } from '../../components/competency-edit-modal/competency-edit-modal.component';
+import { KsaEditModalComponent } from '../../components/ksa-edit-modal/ksa-edit-modal.component';
 
-type ActiveTab = 'core' | 'management' | 'ksa';
+type ActiveTab = 'core' | 'management' | 'professional' | 'ksa';
+
+import { ViewToggleComponent } from '../../../../shared/components/view-toggle/view-toggle.component';
 
 @Component({
   selector: 'app-framework-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, HeaderComponent],
+  imports: [CommonModule, FormsModule, HeaderComponent, ViewToggleComponent, CompetencyEditModalComponent, KsaEditModalComponent],
   templateUrl: './framework-page.component.html',
   styleUrl: './framework-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -31,17 +35,18 @@ export class FrameworkPageComponent implements OnInit {
   private competencyService = inject(CompetencyService);
 
   // Page Info
-  readonly pageTitle = '職能基準庫';
-  readonly breadcrumbs = ['首頁', '職能管理'];
+  readonly pageTitle = '職能模型基準';
+  readonly breadcrumbs = ['首頁', '職能管理', '職能模型基準'];
 
   // Data signals
   stats = signal<CompetencyStats | null>(null);
   frameworks = signal<CompetencyFramework[]>([]);
   loading = signal(true);
 
-  // 三類職能資料（完全獨立）
+  // 四類職能資料（完全獨立）
   coreCompetencies = signal<CoreManagementCompetency[]>([]);
   managementCompetencies = signal<CoreManagementCompetency[]>([]);
+  professionalCompetencies = signal<CoreManagementCompetency[]>([]);
   ksaCompetencies = signal<KSACompetencyItem[]>([]);
 
   // 舊版 KSA 資料（供列表顯示）
@@ -65,6 +70,19 @@ export class FrameworkPageComponent implements OnInit {
   showDetailModal = signal(false);
   selectedCompetency = signal<CompetencyItem | null>(null);
 
+  // 編輯 Modal 狀態
+  showEditModal = signal(false);
+  editCategory = signal<'core' | 'management' | 'professional'>('core');
+  editingCompetency = signal<CoreManagementCompetency | null>(null);
+
+  // KSA 編輯 Modal 狀態
+  showKsaEditModal = signal(false);
+  editingKsaCompetency = signal<KSACompetencyItem | null>(null);
+
+  // Toast 狀態
+  toastMessage = signal<string | null>(null);
+  toastType = signal<'success' | 'error'>('success');
+
   // Options
   readonly typeOptions = COMPETENCY_TYPE_OPTIONS;
   readonly categoryOptions = COMPETENCY_CATEGORY_OPTIONS;
@@ -72,26 +90,26 @@ export class FrameworkPageComponent implements OnInit {
 
   // Level labels
   readonly levelLabels: Record<string, string> = {
-    'L1': 'L1 - 基礎執行',
-    'L2': 'L2 - 獨立作業',
-    'L3': 'L3 - 帶領團隊',
-    'L4': 'L4 - 策略規劃',
-    'L5': 'L5 - 高階領導',
-    'L6': 'L6 - 戰略引領'
+    'L1': 'L1',
+    'L2': 'L2',
+    'L3': 'L3',
+    'L4': 'L4',
+    'L5': 'L5',
+    'L6': 'L6'
   };
 
-  // Filtered KSA competencies
+  // Filtered KSA competencies (使用真正的 API 資料)
   filteredKsaCompetencies = computed(() => {
-    let result = this.legacyCompetencies();
+    let result = this.ksaCompetencies();
 
     if (this.selectedKsaType()) {
-      result = result.filter(c => c.type === this.selectedKsaType());
+      result = result.filter(c => c.ksaType === this.selectedKsaType());
     }
     if (this.searchKeyword()) {
       const keyword = this.searchKeyword().toLowerCase();
       result = result.filter(c =>
         c.name.toLowerCase().includes(keyword) ||
-        c.description.toLowerCase().includes(keyword) ||
+        (c.description || '').toLowerCase().includes(keyword) ||
         c.code.toLowerCase().includes(keyword)
       );
     }
@@ -124,6 +142,11 @@ export class FrameworkPageComponent implements OnInit {
     // Load management competencies (L1-L6)
     this.competencyService.getManagementCompetenciesWithLevels().subscribe(data => {
       this.managementCompetencies.set(data);
+    });
+
+    // Load professional competencies (L1-L6)
+    this.competencyService.getProfessionalCompetenciesWithLevels().subscribe(data => {
+      this.professionalCompetencies.set(data);
     });
 
     // Load KSA competencies (no levels)
@@ -187,7 +210,7 @@ export class FrameworkPageComponent implements OnInit {
       if (currentExpanded.has(`${competencyId}-${levels[i]}`)) {
         currentMaxIndex = i;
         break;
-  }
+      }
     }
 
     // Clear all levels for this competency first
@@ -252,8 +275,22 @@ export class FrameworkPageComponent implements OnInit {
   }
 
   // Modal methods
-  openDetailModal(competency: CompetencyItem): void {
-    this.selectedCompetency.set(competency);
+  openDetailModal(competency: CompetencyItem | KSACompetencyItem): void {
+    // 將 KSACompetencyItem 轉換為 CompetencyItem 格式以供 detail modal 使用
+    const item: CompetencyItem = {
+      id: competency.id,
+      code: competency.code,
+      name: competency.name,
+      description: competency.description || '',
+      type: 'ksaType' in competency ? competency.ksaType : (competency as CompetencyItem).type,
+      category: 'category' in competency ? (competency as CompetencyItem).category : 'ksa',
+      level: 'level' in competency && (competency as CompetencyItem).level ? (competency as CompetencyItem).level : 'basic',
+      behaviorIndicators: competency.behaviorIndicators || [],
+      linkedCourses: 'linkedCourses' in competency ? (competency.linkedCourses || []) : [],
+      createdAt: 'createdAt' in competency ? competency.createdAt : new Date(),
+      updatedAt: 'updatedAt' in competency ? competency.updatedAt : new Date()
+    };
+    this.selectedCompetency.set(item);
     this.showDetailModal.set(true);
   }
 
@@ -285,13 +322,14 @@ export class FrameworkPageComponent implements OnInit {
     return `type-${type}`;
   }
 
-  getCategoryName(category: CompetencyCategory): string {
-    const categoryMap: Record<CompetencyCategory, string> = {
+  getCategoryName(category: CompetencyCategory | 'professional'): string {
+    const categoryMap: Record<string, string> = {
       core: '核心職能',
       management: '管理職能',
+      professional: '專業職能',
       ksa: 'KSA職能'
     };
-    return categoryMap[category];
+    return categoryMap[category] || category;
   }
 
   getLevelName(level: CompetencyLevel): string {
@@ -336,5 +374,139 @@ export class FrameworkPageComponent implements OnInit {
       'L6': '#5D4E6D'    // 深紫
     };
     return colorMap[level] || '#6B7280';
+  }
+
+  // =====================================================
+  // 編輯功能方法
+  // =====================================================
+
+  /**
+   * 開啟新增職能 Modal
+   */
+  openCreateModal(category: 'core' | 'management' | 'professional'): void {
+    this.editCategory.set(category);
+    this.editingCompetency.set(null);
+    this.showEditModal.set(true);
+  }
+
+  /**
+   * 開啟編輯職能 Modal
+   */
+  openEditModal(category: 'core' | 'management' | 'professional', competency: CoreManagementCompetency): void {
+    this.editCategory.set(category);
+    this.editingCompetency.set(competency);
+    this.showEditModal.set(true);
+  }
+
+  /**
+   * 關閉職能編輯 Modal
+   */
+  closeEditModal(): void {
+    this.showEditModal.set(false);
+    this.editingCompetency.set(null);
+  }
+
+  /**
+   * 職能儲存成功處理
+   */
+  onCompetencySaved(result: CoreManagementCompetency): void {
+    this.showToast('職能儲存成功', 'success');
+    this.loadData(); // 重新載入資料
+  }
+
+  /**
+   * 刪除職能確認
+   */
+  confirmDeleteCompetency(category: 'core' | 'management' | 'professional', competency: CoreManagementCompetency): void {
+    if (confirm(`確定要刪除職能「${competency.name}」嗎？此操作無法復原。`)) {
+      this.competencyService.deleteCompetency(category, competency.id).subscribe({
+        next: () => {
+          this.showToast('職能刪除成功', 'success');
+          this.loadData();
+        },
+        error: (err) => {
+          this.showToast(err.message || '刪除失敗', 'error');
+        }
+      });
+    }
+  }
+
+  /**
+   * 開啟新增 KSA 職能 Modal
+   */
+  openCreateKsaModal(): void {
+    this.editingKsaCompetency.set(null);
+    this.showKsaEditModal.set(true);
+  }
+
+  /**
+   * 開啟編輯 KSA 職能 Modal
+   * 支援 KSACompetencyItem 和 CompetencyItem 兩種類型
+   */
+  openEditKsaModal(competency: KSACompetencyItem | CompetencyItem): void {
+    // 轉換 CompetencyItem 到 KSACompetencyItem 格式
+    const ksaCompetency: KSACompetencyItem = {
+      id: competency.id,
+      code: competency.code,
+      name: competency.name,
+      ksaType: 'type' in competency ? (competency as CompetencyItem).type : (competency as KSACompetencyItem).ksaType,
+      description: 'description' in competency ? competency.description : '',
+      behaviorIndicators: 'behaviorIndicators' in competency
+        ? competency.behaviorIndicators
+        : [],
+      linkedCourses: 'linkedCourses' in competency
+        ? (competency as KSACompetencyItem).linkedCourses || []
+        : [],
+      createdAt: 'createdAt' in competency ? competency.createdAt : new Date(),
+      updatedAt: 'updatedAt' in competency ? competency.updatedAt : new Date()
+    };
+    this.editingKsaCompetency.set(ksaCompetency);
+    this.showKsaEditModal.set(true);
+  }
+
+  /**
+   * 關閉 KSA 編輯 Modal
+   */
+  closeKsaEditModal(): void {
+    this.showKsaEditModal.set(false);
+    this.editingKsaCompetency.set(null);
+  }
+
+  /**
+   * KSA 儲存成功處理
+   */
+  onKsaSaved(result: KSACompetencyItem): void {
+    this.showToast('KSA 職能儲存成功', 'success');
+    this.loadData();
+  }
+
+  /**
+   * 刪除 KSA 職能確認
+   * 支援 KSACompetencyItem 和 CompetencyItem 兩種類型
+   */
+  confirmDeleteKsa(competency: KSACompetencyItem | CompetencyItem): void {
+    if (confirm(`確定要刪除 KSA 職能「${competency.name}」嗎？此操作無法復原。`)) {
+      this.competencyService.deleteKSACompetency(competency.id).subscribe({
+        next: () => {
+          this.showToast('KSA 職能刪除成功', 'success');
+          this.loadData();
+        },
+        error: (err) => {
+          this.showToast(err.message || '刪除失敗', 'error');
+        }
+      });
+    }
+  }
+
+  /**
+   * 顯示 Toast 訊息
+   */
+  private showToast(message: string, type: 'success' | 'error'): void {
+    this.toastMessage.set(message);
+    this.toastType.set(type);
+    // 3 秒後自動消失
+    setTimeout(() => {
+      this.toastMessage.set(null);
+    }, 3000);
   }
 }

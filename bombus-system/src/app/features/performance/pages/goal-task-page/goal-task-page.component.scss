@@ -18,7 +18,7 @@ $color-bg-card: #FFFFFF;
 
 $color-success: #7FB095;
 $color-warning: #E3C088;
-$color-danger: #C77F7F;
+$color-error: #C77F7F;
 
 .goal-task-page {
   padding: 24px;
@@ -71,7 +71,7 @@ $color-danger: #C77F7F;
   &--total .stat-icon { background: linear-gradient(135deg, $color-mauve, darken($color-mauve, 10%)); }
   &--success .stat-icon { background: linear-gradient(135deg, $color-success, darken($color-success, 10%)); }
   &--warning .stat-icon { background: linear-gradient(135deg, $color-warning, darken($color-warning, 10%)); }
-  &--danger .stat-icon { background: linear-gradient(135deg, $color-danger, darken($color-danger, 10%)); }
+  &--danger .stat-icon { background: linear-gradient(135deg, $color-error, darken($color-error, 10%)); }
   &--task .stat-icon { background: linear-gradient(135deg, $color-petrol, darken($color-petrol, 10%)); }
   &--overdue .stat-icon { background: linear-gradient(135deg, $color-l5, darken($color-l5, 10%)); }
 
@@ -312,8 +312,8 @@ $color-danger: #C77F7F;
   }
 
   &.status--behind {
-    color: $color-danger;
-    background: rgba($color-danger, 0.12);
+    color: $color-error;
+    background: rgba($color-error, 0.12);
   }
 
   &.status--completed {
@@ -457,7 +457,7 @@ $color-danger: #C77F7F;
 
     &--active { color: $color-petrol; }
     &--success { color: $color-success; }
-    &--danger { color: $color-danger; }
+    &--danger { color: $color-error; }
   }
 }
 
@@ -799,13 +799,13 @@ $color-danger: #C77F7F;
   }
 
   &.task-status--overdue {
-    color: $color-danger;
-    background: rgba($color-danger, 0.12);
+    color: $color-error;
+    background: rgba($color-error, 0.12);
   }
 }
 
 .priority--high {
-  color: $color-danger;
+  color: $color-error;
   font-weight: 600;
 }
 

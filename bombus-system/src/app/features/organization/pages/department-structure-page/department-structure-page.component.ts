@@ -13,6 +13,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
+import { HasPermissionDirective } from '../../../../shared/directives/has-permission.directive';
 import { OrganizationService } from '../../services/organization.service';
 import {
   Company,
@@ -38,7 +39,7 @@ interface DepartmentNode {
 @Component({
   selector: 'app-department-structure-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, HeaderComponent],
+  imports: [CommonModule, FormsModule, HeaderComponent, HasPermissionDirective],
   templateUrl: './department-structure-page.component.html',
   styleUrl: './department-structure-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush

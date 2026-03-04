@@ -1,0 +1,10 @@
+<span 
+  class="status-badge" 
+  [class.status-badge--sm]="size() === 'sm'"
+  [class.status-badge--lg]="size() === 'lg'"
+  [ngStyle]="badgeStyle()">
+  @if (showDot()) {
+    <span class="status-badge__dot" [ngStyle]="dotStyle()"></span>
+  }
+  <span class="status-badge__text">{{ displayLabel() }}</span>
+</span>

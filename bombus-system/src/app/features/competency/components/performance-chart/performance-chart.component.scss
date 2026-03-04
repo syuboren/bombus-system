@@ -1,0 +1,21 @@
+@import '../../../../../assets/styles/variables';
+
+.performance-chart {
+  width: 100%;
+}
+
+.chart-container {
+  width: 100%;
+  min-height: 200px;
+}
+
+.chart-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+}

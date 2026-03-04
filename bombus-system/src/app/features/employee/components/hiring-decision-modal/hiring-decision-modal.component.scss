@@ -1,0 +1,408 @@
+@import '../../../../../assets/styles/variables';
+@import '../../../../../assets/styles/mixins';
+
+// Scoped to prevent style bleeding with ViewEncapsulation.None
+app-hiring-decision-modal {
+    .modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        backdrop-filter: blur(2px);
+    }
+
+    .modal {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        width: 90%;
+        max-width: 500px;
+        border-radius: $radius-lg;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        z-index: 1001;
+        display: flex;
+        flex-direction: column;
+        max-height: 90vh;
+        animation: decisionModalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes decisionModalSlideUp {
+        from {
+            transform: translate(-50%, -40%);
+            opacity: 0;
+        }
+
+        to {
+            transform: translate(-50%, -50%);
+            opacity: 1;
+        }
+    }
+
+    .modal-header {
+        @include flex-between;
+        padding: $spacing-lg;
+        border-bottom: 1px solid $color-soft-gray;
+
+        .modal-title {
+            @include flex-center;
+            gap: $spacing-sm;
+            font-size: $font-size-lg;
+            font-weight: $font-weight-bold;
+            color: $color-text-dark;
+            margin: 0;
+
+            i {
+                color: $color-l1-sage;
+            }
+        }
+    }
+
+    .modal-body {
+        padding: $spacing-lg;
+    }
+
+    .candidate-preview {
+        margin-bottom: $spacing-lg;
+        padding: $spacing-md;
+        background: $color-cloud-gray;
+        border-radius: $radius-md;
+        display: flex;
+        align-items: center;
+        gap: $spacing-sm;
+
+        h4 {
+            margin: 0;
+            font-size: $font-size-md;
+        }
+
+        .position-badge {
+            font-size: $font-size-xs;
+            background: white;
+            padding: 2px 8px;
+            border-radius: $radius-full;
+            color: $color-text-secondary;
+        }
+
+        .score-badge {
+            font-size: $font-size-xs;
+            margin-left: auto;
+            font-weight: bold;
+            color: $color-l1-sage;
+        }
+    }
+
+    .decision-selector {
+        display: flex;
+        gap: $spacing-md;
+        margin-bottom: $spacing-lg;
+    }
+
+    .decision-option {
+        flex: 1;
+        border: 2px solid $color-soft-gray;
+        border-radius: $radius-md;
+        padding: $spacing-md;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        transition: all 0.2s;
+
+        input {
+            display: none;
+        }
+
+        i {
+            font-size: 2rem;
+            margin-bottom: $spacing-xs;
+            color: $color-muted-gray;
+        }
+
+        .title {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .desc {
+            font-size: $font-size-xs;
+            color: $color-text-secondary;
+        }
+
+        &:hover {
+            border-color: darken($color-soft-gray, 10%);
+        }
+
+        &.option-reject.selected {
+            border-color: $color-error;
+            background: rgba($color-error, 0.05);
+
+            i {
+                color: $color-error;
+            }
+        }
+
+        &.option-offer.selected {
+            border-color: $color-success;
+            background: rgba($color-success, 0.05);
+
+            i {
+                color: $color-success;
+            }
+        }
+    }
+
+    .form-group {
+        margin-bottom: $spacing-lg;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: $spacing-xs;
+        font-weight: $font-weight-semibold;
+        color: $color-text-primary;
+    }
+
+    .form-textarea {
+        width: 100%;
+        padding: $spacing-sm;
+        border: 1px solid $color-soft-gray;
+        border-radius: $radius-md;
+        resize: vertical;
+
+        &:focus {
+            border-color: $color-l1-sage;
+            outline: none;
+        }
+    }
+
+    .modal-footer {
+        padding: $spacing-lg;
+        border-top: 1px solid $color-soft-gray;
+        display: flex;
+        justify-content: flex-end;
+        gap: $spacing-md;
+    }
+
+    .btn {
+        @include button-base;
+        gap: $spacing-xs;
+    }
+
+    .btn-primary {
+        background: $color-l1-sage;
+        color: white;
+
+        &:hover {
+            background: darken($color-l1-sage, 5%);
+        }
+
+        &:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+    }
+
+    .btn-secondary {
+        background: $color-cloud-gray;
+        color: $color-text-primary;
+
+        &:hover {
+            background: darken($color-cloud-gray, 5%);
+        }
+    }
+
+    .btn-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: $color-text-secondary;
+    }
+
+    // ---------------------------------------------------------------
+    // AI 分析摘要樣式
+    // ---------------------------------------------------------------
+
+    .ai-summary-panel {
+        margin-bottom: $spacing-lg;
+        padding: $spacing-md;
+        background: $color-cloud-gray;
+        border-radius: $radius-md;
+    }
+
+    .ai-summary-header {
+        margin-bottom: $spacing-md;
+    }
+
+    .ai-recommendation {
+        display: flex;
+        align-items: center;
+        gap: $spacing-md;
+        padding: $spacing-md;
+        background: white;
+        border-radius: $radius-md;
+        border-left: 4px solid;
+
+        >i {
+            font-size: 28px;
+            flex-shrink: 0;
+        }
+
+        .rec-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+
+            .rec-label {
+                font-size: $font-size-xs;
+                color: $color-text-secondary;
+            }
+
+            .rec-value {
+                font-size: $font-size-md;
+                font-weight: $font-weight-bold;
+            }
+        }
+
+        .rec-score {
+            text-align: center;
+            padding: $spacing-xs $spacing-md;
+            background: $color-cloud-gray;
+            border-radius: $radius-md;
+
+            .score-value {
+                display: block;
+                font-size: $font-size-xl;
+                font-weight: $font-weight-bold;
+                color: $color-text-dark;
+            }
+
+            .score-label {
+                font-size: $font-size-xs;
+                color: $color-text-secondary;
+            }
+        }
+    }
+
+    .ai-score-breakdown {
+        display: flex;
+        flex-direction: column;
+        gap: $spacing-sm;
+        margin-bottom: $spacing-md;
+    }
+
+    .score-item {
+        display: flex;
+        align-items: center;
+        gap: $spacing-sm;
+
+        .item-label {
+            width: 80px;
+            font-size: $font-size-xs;
+            color: $color-text-secondary;
+        }
+
+        .progress-bar {
+            flex: 1;
+            height: 6px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: $color-l1-sage;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        .item-value {
+            width: 30px;
+            text-align: right;
+            font-size: $font-size-xs;
+            font-weight: $font-weight-semibold;
+            color: $color-text-dark;
+        }
+    }
+
+    .ai-insights {
+        margin-bottom: $spacing-sm;
+
+        h5 {
+            font-size: $font-size-xs;
+            color: $color-text-secondary;
+            margin: 0 0 $spacing-xs 0;
+        }
+    }
+
+    .insight-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 10px;
+        margin-right: $spacing-xs;
+        margin-bottom: $spacing-xs;
+        font-size: $font-size-xs;
+        border-radius: $radius-full;
+        background: rgba(0, 0, 0, 0.05);
+
+        i {
+            font-size: 12px;
+        }
+
+        &.strength {
+            background: rgba($color-success, 0.1);
+            color: $color-success;
+        }
+
+        &.concern {
+            background: rgba($color-warning, 0.1);
+            color: darken($color-warning, 15%);
+        }
+    }
+
+    .ai-missing-skills {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: $spacing-xs;
+
+        .label {
+            font-size: $font-size-xs;
+            color: $color-text-secondary;
+        }
+
+        .skill-chip {
+            padding: 2px 8px;
+            font-size: $font-size-xs;
+            background: rgba($color-error, 0.1);
+            color: $color-error;
+            border-radius: $radius-sm;
+        }
+    }
+
+    .no-ai-analysis {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: $spacing-sm;
+        padding: $spacing-md;
+        margin-bottom: $spacing-lg;
+        background: $color-cloud-gray;
+        border-radius: $radius-md;
+        color: $color-muted-gray;
+        font-size: $font-size-sm;
+
+        i {
+            font-size: 20px;
+        }
+    }
+}

@@ -1,0 +1,132 @@
+@import '../../../../../../assets/styles/variables';
+@import '../../../../../../assets/styles/mixins';
+
+// Module color - L1 模組色（鼠尾草綠）
+$module-color: $color-l1-sage;
+$module-color-light: rgba($module-color, 0.1);
+$module-color-dark: darken($module-color, 10%);
+
+.onboarding-page {
+  padding: 1.5rem;
+  padding-top: calc(var(--header-height, 70px) + 1.5rem);
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+// Tab 導航
+.tab-navigation {
+  display: flex;
+  gap: 0.5rem;
+  background: white;
+  padding: 0.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  margin-bottom: 1.5rem;
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  i {
+    font-size: 1.125rem;
+  }
+
+  &:hover {
+    background: $module-color-light;
+    color: $module-color-dark;
+  }
+
+  &.active {
+    background: $module-color;
+    color: white;
+
+    &:hover {
+      background: $module-color-dark;
+    }
+  }
+}
+
+// Tab 內容區
+.tab-content {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+
+  // 重置子組件的外層容器樣式
+  ::ng-deep {
+    .page-container,
+    .onboarding-templates-page,
+    .onboarding-documents-page,
+    .onboarding-approval-page {
+      padding: 0;
+      min-height: auto;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    // 重置子頁面的 padding-top（移除 header 偏移）
+    .templates-page,
+    .documents-page,
+    .approval-page {
+      padding: 0 1.5rem 1.5rem;
+      padding-top: 1.5rem !important; // 減少上方間距
+      min-height: auto;
+      background: transparent;
+    }
+
+    // 移除子頁面的 page-header 額外間距
+    .page-header {
+      margin-bottom: 1rem;
+    }
+  }
+}
+
+// 響應式設計
+@media (max-width: 768px) {
+  .onboarding-page {
+    padding: 1rem;
+  }
+
+  .tab-navigation {
+    flex-wrap: wrap;
+  }
+
+  .tab-btn {
+    flex: 1;
+    min-width: calc(50% - 0.25rem);
+    justify-content: center;
+    padding: 0.625rem 0.75rem;
+    font-size: 0.875rem;
+
+    span {
+      display: none;
+    }
+
+    i {
+      font-size: 1.25rem;
+    }
+  }
+
+  @media (min-width: 480px) {
+    .tab-btn {
+      min-width: auto;
+      flex: 1;
+
+      span {
+        display: inline;
+      }
+    }
+  }
+}

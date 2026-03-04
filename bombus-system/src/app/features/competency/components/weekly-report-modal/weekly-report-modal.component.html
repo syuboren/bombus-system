@@ -1,0 +1,1027 @@
+@if (visible()) {
+  <div class="modal-backdrop" (click)="onBackdropClick($event)">
+    <div class="modal-container modal-container--large">
+      <!-- Header -->
+      <div class="modal-header">
+        <h2>
+          @if (report()) {
+            第 {{ report()?.week }} 週工作週報
+            <span class="header-period">{{ report()?.weekStart }} ~ {{ report()?.weekEnd }}</span>
+          } @else {
+            工作週報詳情
+          }
+        </h2>
+        <div class="header-actions">
+          @if (report()) {
+            <app-status-badge [status]="report()?.status || ''"></app-status-badge>
+          }
+          <button class="btn-close" (click)="onClose()" type="button">
+            <i class="ri-close-line"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div class="modal-body">
+        @if (loading()) {
+          <div class="loading-state">
+            <i class="ri-loader-4-line spinner"></i>
+            <span>載入中...</span>
+          </div>
+        } @else if (report()) {
+          <!-- Error Alert -->
+          @if (error()) {
+            <div class="alert alert--error">
+              <i class="ri-error-warning-line"></i>
+              <span>{{ error() }}</span>
+              <button class="btn-dismiss" (click)="dismissError()" type="button">
+                <i class="ri-close-line"></i>
+              </button>
+            </div>
+          }
+
+          <!-- Employee Info Card -->
+          <div class="info-card">
+            <div class="info-grid">
+              <div class="info-item">
+                <label>員工姓名</label>
+                <span>{{ report()?.employeeName }}</span>
+              </div>
+              <div class="info-item">
+                <label>部門</label>
+                <span>{{ report()?.department }}</span>
+              </div>
+              <div class="info-item">
+                <label>職位</label>
+                <span>{{ report()?.position }}</span>
+              </div>
+              <div class="info-item">
+                <label>直屬主管</label>
+                <span>{{ report()?.managerName || '-' }}</span>
+              </div>
+              <div class="info-item">
+                <label>提交日期</label>
+                <span>{{ formatDate(report()?.submitDate) }}</span>
+              </div>
+              <div class="info-item">
+                <label>審核日期</label>
+                <span>{{ formatDate(report()?.reviewDate) }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 1: 例行工作 -->
+          <div class="form-section">
+            <div class="section-header" (click)="toggleSection('routine')">
+              <h3>
+                <i class="ri-arrow-{{ isSectionExpanded('routine') ? 'down' : 'right' }}-s-line"></i>
+                一、例行工作
+                <span class="section-time">
+                  總計：{{ formatMinutesToTime(routineTotalMinutes()) }}
+                </span>
+              </h3>
+              @if (isEditing() && canEdit()) {
+                <button class="btn-add" (click)="addRoutineItem(); $event.stopPropagation()" type="button">
+                  <i class="ri-add-line"></i>
+                  新增
+                </button>
+              }
+            </div>
+
+            @if (isSectionExpanded('routine')) {
+              <div class="section-content">
+                @if (isEditing() && canEdit()) {
+                  <table class="work-table">
+                    <thead>
+                      <tr>
+                        <th class="col-num">#</th>
+                        <th class="col-content">工作內容</th>
+                        <th class="col-time">預計時間(分)</th>
+                        <th class="col-time">實際時間(分)</th>
+                        <th class="col-date">完成日期</th>
+                        <th class="col-action"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (item of editedRoutineItems(); track $index; let i = $index) {
+                        <tr>
+                          <td class="col-num">{{ i + 1 }}</td>
+                          <td class="col-content">
+                            <input type="text" [value]="item.content"
+                              (input)="updateRoutineItem(i, 'content', $any($event.target).value)"
+                              placeholder="工作內容...">
+                          </td>
+                          <td class="col-time">
+                            <input type="number" [value]="item.estimatedTime" min="0"
+                              (input)="updateRoutineItem(i, 'estimatedTime', +$any($event.target).value)">
+                          </td>
+                          <td class="col-time">
+                            <input type="number" [value]="item.actualTime" min="0"
+                              (input)="updateRoutineItem(i, 'actualTime', +$any($event.target).value)">
+                          </td>
+                          <td class="col-date">
+                            <input type="date" [value]="item.completedDate"
+                              (input)="updateRoutineItem(i, 'completedDate', $any($event.target).value)">
+                          </td>
+                          <td class="col-action">
+                            @if (editedRoutineItems().length > 1) {
+                              <button class="btn-remove" (click)="removeRoutineItem(i)" type="button">
+                                <i class="ri-delete-bin-line"></i>
+                              </button>
+                            }
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                } @else {
+                  <table class="work-table readonly">
+                    <thead>
+                      <tr>
+                        <th class="col-num">#</th>
+                        <th class="col-content">工作內容</th>
+                        <th class="col-time">預計時間</th>
+                        <th class="col-time">實際時間</th>
+                        <th class="col-date">完成日期</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (item of report()?.routineItems; track item.id; let i = $index) {
+                        <tr>
+                          <td class="col-num">{{ i + 1 }}</td>
+                          <td class="col-content">{{ item.content }}</td>
+                          <td class="col-time">{{ item.estimatedTime }} 分</td>
+                          <td class="col-time">{{ item.actualTime }} 分</td>
+                          <td class="col-date">{{ formatDate(item.completedDate) }}</td>
+                        </tr>
+                      } @empty {
+                        <tr>
+                          <td colspan="5" class="empty-row">尚無例行工作項目</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Section 2: 非例行工作 -->
+          <div class="form-section">
+            <div class="section-header" (click)="toggleSection('nonRoutine')">
+              <h3>
+                <i class="ri-arrow-{{ isSectionExpanded('nonRoutine') ? 'down' : 'right' }}-s-line"></i>
+                二、非例行工作
+                <span class="section-time">
+                  總計：{{ formatMinutesToTime(nonRoutineTotalMinutes()) }}
+                </span>
+              </h3>
+              @if (isEditing() && canEdit()) {
+                <button class="btn-add" (click)="addNonRoutineItem(); $event.stopPropagation()" type="button">
+                  <i class="ri-add-line"></i>
+                  新增
+                </button>
+              }
+            </div>
+
+            @if (isSectionExpanded('nonRoutine')) {
+              <div class="section-content">
+                @if (isEditing() && canEdit()) {
+                  <table class="work-table">
+                    <thead>
+                      <tr>
+                        <th class="col-num">#</th>
+                        <th class="col-content">工作內容</th>
+                        <th class="col-time">預計時間(分)</th>
+                        <th class="col-time">實際時間(分)</th>
+                        <th class="col-date">完成日期</th>
+                        <th class="col-action"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (item of editedNonRoutineItems(); track $index; let i = $index) {
+                        <tr>
+                          <td class="col-num">{{ i + 1 }}</td>
+                          <td class="col-content">
+                            <input type="text" [value]="item.content"
+                              (input)="updateNonRoutineItem(i, 'content', $any($event.target).value)"
+                              placeholder="工作內容...">
+                          </td>
+                          <td class="col-time">
+                            <input type="number" [value]="item.estimatedTime" min="0"
+                              (input)="updateNonRoutineItem(i, 'estimatedTime', +$any($event.target).value)">
+                          </td>
+                          <td class="col-time">
+                            <input type="number" [value]="item.actualTime" min="0"
+                              (input)="updateNonRoutineItem(i, 'actualTime', +$any($event.target).value)">
+                          </td>
+                          <td class="col-date">
+                            <input type="date" [value]="item.completedDate"
+                              (input)="updateNonRoutineItem(i, 'completedDate', $any($event.target).value)">
+                          </td>
+                          <td class="col-action">
+                            <button class="btn-remove" (click)="removeNonRoutineItem(i)" type="button">
+                              <i class="ri-delete-bin-line"></i>
+                            </button>
+                          </td>
+                        </tr>
+                      } @empty {
+                        <tr>
+                          <td colspan="6" class="empty-row">
+                            <button class="btn-add-first" (click)="addNonRoutineItem()" type="button">
+                              <i class="ri-add-line"></i> 新增非例行工作
+                            </button>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                } @else {
+                  <table class="work-table readonly">
+                    <thead>
+                      <tr>
+                        <th class="col-num">#</th>
+                        <th class="col-content">工作內容</th>
+                        <th class="col-time">預計時間</th>
+                        <th class="col-time">實際時間</th>
+                        <th class="col-date">完成日期</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (item of report()?.nonRoutineItems; track item.id; let i = $index) {
+                        <tr>
+                          <td class="col-num">{{ i + 1 }}</td>
+                          <td class="col-content">{{ item.content }}</td>
+                          <td class="col-time">{{ item.estimatedTime }} 分</td>
+                          <td class="col-time">{{ item.actualTime }} 分</td>
+                          <td class="col-date">{{ formatDate(item.completedDate) }}</td>
+                        </tr>
+                      } @empty {
+                        <tr>
+                          <td colspan="5" class="empty-row">尚無非例行工作項目</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Section 3: 下週代辦事項 -->
+          <div class="form-section">
+            <div class="section-header" (click)="toggleSection('todo')">
+              <h3>
+                <i class="ri-arrow-{{ isSectionExpanded('todo') ? 'down' : 'right' }}-s-line"></i>
+                三、下週代辦事項
+              </h3>
+              @if (isEditing() && canEdit()) {
+                <button class="btn-add" (click)="addTodoItem(); $event.stopPropagation()" type="button">
+                  <i class="ri-add-line"></i>
+                  新增
+                </button>
+              }
+            </div>
+
+            @if (isSectionExpanded('todo')) {
+              <div class="section-content">
+                @if (isEditing() && canEdit()) {
+                  <table class="work-table">
+                    <thead>
+                      <tr>
+                        <th class="col-num">#</th>
+                        <th class="col-content">工作任務</th>
+                        <th class="col-date">開始日期</th>
+                        <th class="col-date">到期日</th>
+                        <th class="col-select">優先順序</th>
+                        <th class="col-select">狀態</th>
+                        <th class="col-action"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (item of editedTodoItems(); track $index; let i = $index) {
+                        <tr>
+                          <td class="col-num">{{ i + 1 }}</td>
+                          <td class="col-content">
+                            <input type="text" [value]="item.task"
+                              (input)="updateTodoItem(i, 'task', $any($event.target).value)"
+                              placeholder="任務內容...">
+                          </td>
+                          <td class="col-date">
+                            <input type="date" [value]="item.startDate"
+                              (input)="updateTodoItem(i, 'startDate', $any($event.target).value)">
+                          </td>
+                          <td class="col-date">
+                            <input type="date" [value]="item.dueDate"
+                              (input)="updateTodoItem(i, 'dueDate', $any($event.target).value)">
+                          </td>
+                          <td class="col-select">
+                            <select [value]="item.priority"
+                              (change)="updateTodoItem(i, 'priority', $any($event.target).value)">
+                              <option value="high">高</option>
+                              <option value="medium">中</option>
+                              <option value="normal">一般</option>
+                            </select>
+                          </td>
+                          <td class="col-select">
+                            <select [value]="item.status"
+                              (change)="updateTodoItem(i, 'status', $any($event.target).value)">
+                              <option value="not_started">尚未開始</option>
+                              <option value="in_progress">進行中</option>
+                              <option value="completed">已完成</option>
+                            </select>
+                          </td>
+                          <td class="col-action">
+                            <button class="btn-remove" (click)="removeTodoItem(i)" type="button">
+                              <i class="ri-delete-bin-line"></i>
+                            </button>
+                          </td>
+                        </tr>
+                      } @empty {
+                        <tr>
+                          <td colspan="7" class="empty-row">
+                            <button class="btn-add-first" (click)="addTodoItem()" type="button">
+                              <i class="ri-add-line"></i> 新增代辦事項
+                            </button>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                } @else {
+                  <table class="work-table readonly">
+                    <thead>
+                      <tr>
+                        <th class="col-num">#</th>
+                        <th class="col-content">工作任務</th>
+                        <th class="col-date">開始日期</th>
+                        <th class="col-date">到期日</th>
+                        <th class="col-select">優先順序</th>
+                        <th class="col-select">狀態</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (item of report()?.todoItems; track item.id; let i = $index) {
+                        <tr>
+                          <td class="col-num">{{ i + 1 }}</td>
+                          <td class="col-content">{{ item.task }}</td>
+                          <td class="col-date">{{ formatDate(item.startDate) }}</td>
+                          <td class="col-date">{{ formatDate(item.dueDate) }}</td>
+                          <td class="col-select">
+                            <span class="priority-badge priority-badge--{{ item.priority }}">
+                              {{ getPriorityLabel(item.priority) }}
+                            </span>
+                          </td>
+                          <td class="col-select">{{ getTaskStatusLabel(item.status) }}</td>
+                        </tr>
+                      } @empty {
+                        <tr>
+                          <td colspan="6" class="empty-row">尚無代辦事項</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Section 4: 問題與解決方案 -->
+          <div class="form-section">
+            <div class="section-header" (click)="toggleSection('problem')">
+              <h3>
+                <i class="ri-arrow-{{ isSectionExpanded('problem') ? 'down' : 'right' }}-s-line"></i>
+                四、問題與解決方案
+              </h3>
+              @if (isEditing() && canEdit()) {
+                <button class="btn-add" (click)="addProblemItem(); $event.stopPropagation()" type="button">
+                  <i class="ri-add-line"></i>
+                  新增
+                </button>
+              }
+            </div>
+
+            @if (isSectionExpanded('problem')) {
+              <div class="section-content">
+                @if (isEditing() && canEdit()) {
+                  <table class="work-table">
+                    <thead>
+                      <tr>
+                        <th class="col-num">#</th>
+                        <th class="col-content">存在問題</th>
+                        <th class="col-content">提議解決辦法</th>
+                        <th class="col-check">已解決</th>
+                        <th class="col-action"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (item of editedProblemItems(); track $index; let i = $index) {
+                        <tr>
+                          <td class="col-num">{{ i + 1 }}</td>
+                          <td class="col-content">
+                            <input type="text" [value]="item.problem"
+                              (input)="updateProblemItem(i, 'problem', $any($event.target).value)"
+                              placeholder="問題描述...">
+                          </td>
+                          <td class="col-content">
+                            <input type="text" [value]="item.solution"
+                              (input)="updateProblemItem(i, 'solution', $any($event.target).value)"
+                              placeholder="解決方案...">
+                          </td>
+                          <td class="col-check">
+                            <input type="checkbox" [checked]="item.resolved"
+                              (change)="updateProblemItem(i, 'resolved', $any($event.target).checked)">
+                          </td>
+                          <td class="col-action">
+                            <button class="btn-remove" (click)="removeProblemItem(i)" type="button">
+                              <i class="ri-delete-bin-line"></i>
+                            </button>
+                          </td>
+                        </tr>
+                      } @empty {
+                        <tr>
+                          <td colspan="5" class="empty-row">
+                            <button class="btn-add-first" (click)="addProblemItem()" type="button">
+                              <i class="ri-add-line"></i> 新增問題
+                            </button>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                } @else {
+                  <table class="work-table readonly">
+                    <thead>
+                      <tr>
+                        <th class="col-num">#</th>
+                        <th class="col-content">存在問題</th>
+                        <th class="col-content">提議解決辦法</th>
+                        <th class="col-check">已解決</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (item of report()?.problemItems; track item.id; let i = $index) {
+                        <tr>
+                          <td class="col-num">{{ i + 1 }}</td>
+                          <td class="col-content">{{ item.problem }}</td>
+                          <td class="col-content">{{ item.solution }}</td>
+                          <td class="col-check">
+                            @if (item.resolved) {
+                              <i class="ri-checkbox-circle-fill resolved-icon"></i>
+                            } @else {
+                              <i class="ri-close-circle-line unresolved-icon"></i>
+                            }
+                          </td>
+                        </tr>
+                      } @empty {
+                        <tr>
+                          <td colspan="4" class="empty-row">尚無問題記錄</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Section 5: 教育訓練進度 -->
+          <div class="form-section">
+            <div class="section-header" (click)="toggleSection('training')">
+              <h3>
+                <i class="ri-arrow-{{ isSectionExpanded('training') ? 'down' : 'right' }}-s-line"></i>
+                五、教育訓練進度
+              </h3>
+              @if (isEditing() && canEdit()) {
+                <button class="btn-add" (click)="addTrainingItem(); $event.stopPropagation()" type="button">
+                  <i class="ri-add-line"></i>
+                  新增
+                </button>
+              }
+            </div>
+
+            @if (isSectionExpanded('training')) {
+              <div class="section-content">
+                @if (isEditing() && canEdit()) {
+                  <table class="work-table">
+                    <thead>
+                      <tr>
+                        <th class="col-num">#</th>
+                        <th class="col-content">課程名稱</th>
+                        <th class="col-select">狀態</th>
+                        <th class="col-time">總時數</th>
+                        <th class="col-time">已完成</th>
+                        <th class="col-time">完成率</th>
+                        <th class="col-date">完成日</th>
+                        <th class="col-action"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (item of editedTrainingItems(); track $index; let i = $index) {
+                        <tr>
+                          <td class="col-num">{{ i + 1 }}</td>
+                          <td class="col-content">
+                            <input type="text" [value]="item.courseName"
+                              (input)="updateTrainingItem(i, 'courseName', $any($event.target).value)"
+                              placeholder="課程名稱...">
+                          </td>
+                          <td class="col-select">
+                            <select [value]="item.status"
+                              (change)="updateTrainingItem(i, 'status', $any($event.target).value)">
+                              <option value="not_started">尚未開始</option>
+                              <option value="in_progress">進行中</option>
+                              <option value="completed">已完成</option>
+                            </select>
+                          </td>
+                          <td class="col-time">
+                            <input type="number" [value]="item.totalHours" min="0" step="0.5"
+                              (input)="updateTrainingItem(i, 'totalHours', +$any($event.target).value)">
+                          </td>
+                          <td class="col-time">
+                            <input type="number" [value]="item.completedHours" min="0" step="0.5"
+                              (input)="updateTrainingItem(i, 'completedHours', +$any($event.target).value)">
+                          </td>
+                          <td class="col-time">{{ getTrainingCompletionRate(item) }}%</td>
+                          <td class="col-date">
+                            <input type="date" [value]="item.completedDate"
+                              (input)="updateTrainingItem(i, 'completedDate', $any($event.target).value)">
+                          </td>
+                          <td class="col-action">
+                            <button class="btn-remove" (click)="removeTrainingItem(i)" type="button">
+                              <i class="ri-delete-bin-line"></i>
+                            </button>
+                          </td>
+                        </tr>
+                      } @empty {
+                        <tr>
+                          <td colspan="8" class="empty-row">
+                            <button class="btn-add-first" (click)="addTrainingItem()" type="button">
+                              <i class="ri-add-line"></i> 新增教育訓練
+                            </button>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                } @else {
+                  <table class="work-table readonly">
+                    <thead>
+                      <tr>
+                        <th class="col-num">#</th>
+                        <th class="col-content">課程名稱</th>
+                        <th class="col-select">狀態</th>
+                        <th class="col-time">總時數</th>
+                        <th class="col-time">已完成</th>
+                        <th class="col-time">完成率</th>
+                        <th class="col-date">完成日</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (item of report()?.trainingItems; track item.id; let i = $index) {
+                        <tr>
+                          <td class="col-num">{{ i + 1 }}</td>
+                          <td class="col-content">{{ item.courseName }}</td>
+                          <td class="col-select">{{ getTaskStatusLabel(item.status) }}</td>
+                          <td class="col-time">{{ item.totalHours }} 小時</td>
+                          <td class="col-time">{{ item.completedHours }} 小時</td>
+                          <td class="col-time">
+                            <div class="progress-bar">
+                              <div class="progress-fill" [style.width.%]="item.completionRate"></div>
+                              <span class="progress-text">{{ item.completionRate }}%</span>
+                            </div>
+                          </td>
+                          <td class="col-date">{{ formatDate(item.completedDate) }}</td>
+                        </tr>
+                      } @empty {
+                        <tr>
+                          <td colspan="7" class="empty-row">尚無教育訓練記錄</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Section 6: 階段性任務進度 -->
+          <div class="form-section">
+            <div class="section-header" (click)="toggleSection('project')">
+              <h3>
+                <i class="ri-arrow-{{ isSectionExpanded('project') ? 'down' : 'right' }}-s-line"></i>
+                六、階段性任務進度
+              </h3>
+              @if (isEditing() && canEdit()) {
+                <button class="btn-add" (click)="addProjectItem(); $event.stopPropagation()" type="button">
+                  <i class="ri-add-line"></i>
+                  新增
+                </button>
+              }
+            </div>
+
+            @if (isSectionExpanded('project')) {
+              <div class="section-content">
+                @if (isEditing() && canEdit()) {
+                  <table class="work-table work-table--wide">
+                    <thead>
+                      <tr>
+                        <th class="col-num">#</th>
+                        <th class="col-content">工作任務</th>
+                        <th class="col-time">進度%</th>
+                        <th class="col-content">部門協作</th>
+                        <th class="col-content">困難挑戰</th>
+                        <th class="col-date">預計完成</th>
+                        <th class="col-date">實際完成</th>
+                        <th class="col-action"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (item of editedProjectItems(); track $index; let i = $index) {
+                        <tr>
+                          <td class="col-num">{{ i + 1 }}</td>
+                          <td class="col-content">
+                            <input type="text" [value]="item.task"
+                              (input)="updateProjectItem(i, 'task', $any($event.target).value)"
+                              placeholder="任務名稱...">
+                          </td>
+                          <td class="col-time">
+                            <input type="number" [value]="item.progressRate" min="0" max="100"
+                              (input)="updateProjectItem(i, 'progressRate', +$any($event.target).value)">
+                          </td>
+                          <td class="col-content">
+                            <input type="text" [value]="item.collaboration"
+                              (input)="updateProjectItem(i, 'collaboration', $any($event.target).value)"
+                              placeholder="協作部門...">
+                          </td>
+                          <td class="col-content">
+                            <input type="text" [value]="item.challenges"
+                              (input)="updateProjectItem(i, 'challenges', $any($event.target).value)"
+                              placeholder="困難與挑戰...">
+                          </td>
+                          <td class="col-date">
+                            <input type="date" [value]="item.expectedDate"
+                              (input)="updateProjectItem(i, 'expectedDate', $any($event.target).value)">
+                          </td>
+                          <td class="col-date">
+                            <input type="date" [value]="item.actualDate"
+                              (input)="updateProjectItem(i, 'actualDate', $any($event.target).value)">
+                          </td>
+                          <td class="col-action">
+                            <button class="btn-remove" (click)="removeProjectItem(i)" type="button">
+                              <i class="ri-delete-bin-line"></i>
+                            </button>
+                          </td>
+                        </tr>
+                      } @empty {
+                        <tr>
+                          <td colspan="8" class="empty-row">
+                            <button class="btn-add-first" (click)="addProjectItem()" type="button">
+                              <i class="ri-add-line"></i> 新增階段性任務
+                            </button>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                } @else {
+                  <table class="work-table work-table--wide readonly">
+                    <thead>
+                      <tr>
+                        <th class="col-num">#</th>
+                        <th class="col-content">工作任務</th>
+                        <th class="col-time">進度</th>
+                        <th class="col-content">部門協作</th>
+                        <th class="col-content">困難挑戰</th>
+                        <th class="col-date">預計完成</th>
+                        <th class="col-date">實際完成</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (item of report()?.projectItems; track item.id; let i = $index) {
+                        <tr>
+                          <td class="col-num">{{ i + 1 }}</td>
+                          <td class="col-content">{{ item.task }}</td>
+                          <td class="col-time">
+                            <div class="progress-bar">
+                              <div class="progress-fill" [style.width.%]="item.progressRate"></div>
+                              <span class="progress-text">{{ item.progressRate }}%</span>
+                            </div>
+                          </td>
+                          <td class="col-content">{{ item.collaboration || '-' }}</td>
+                          <td class="col-content">{{ item.challenges || '-' }}</td>
+                          <td class="col-date">{{ formatDate(item.expectedDate) }}</td>
+                          <td class="col-date">{{ formatDate(item.actualDate) }}</td>
+                        </tr>
+                      } @empty {
+                        <tr>
+                          <td colspan="7" class="empty-row">尚無階段性任務</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Section 7: 本周工作總結 -->
+          <div class="form-section">
+            <div class="section-header" (click)="toggleSection('summary')">
+              <h3>
+                <i class="ri-arrow-{{ isSectionExpanded('summary') ? 'down' : 'right' }}-s-line"></i>
+                七、本周工作總結
+                <span class="required-mark">*</span>
+              </h3>
+            </div>
+
+            @if (isSectionExpanded('summary')) {
+              <div class="section-content">
+                @if (isEditing() && canEdit()) {
+                  <textarea class="summary-textarea"
+                    [ngModel]="editedWeeklySummary()"
+                    (ngModelChange)="editedWeeklySummary.set($event)"
+                    placeholder="請填寫本周工作總結..."
+                    rows="5"></textarea>
+                } @else {
+                  <div class="summary-content">
+                    {{ report()?.weeklySummary || '(尚未填寫)' }}
+                  </div>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Section 8: 簽核紀錄 -->
+          <div class="form-section">
+            <div class="section-header" (click)="toggleSection('signature')">
+              <h3>
+                <i class="ri-arrow-{{ isSectionExpanded('signature') ? 'down' : 'right' }}-s-line"></i>
+                八、簽核紀錄
+              </h3>
+            </div>
+
+            @if (isSectionExpanded('signature')) {
+              <div class="section-content">
+                <div class="signature-grid">
+                  <div class="signature-item">
+                    <label>員工簽章</label>
+                    @if (report()?.employeeSignature) {
+                      <div class="signature-display">
+                        <img [src]="report()?.employeeSignature" alt="員工簽章">
+                        <span class="signature-date">{{ formatDate(report()?.employeeSignatureDate) }}</span>
+                      </div>
+                    } @else {
+                      <div class="signature-empty">尚未簽章</div>
+                    }
+                  </div>
+                  <div class="signature-item">
+                    <label>主管簽章</label>
+                    @if (report()?.managerSignature) {
+                      <div class="signature-display">
+                        <img [src]="report()?.managerSignature" alt="主管簽章">
+                        <span class="signature-date">{{ formatDate(report()?.managerSignatureDate) }}</span>
+                      </div>
+                    } @else {
+                      <div class="signature-empty">尚未簽章</div>
+                    }
+                  </div>
+                </div>
+
+                @if (report()?.reviewerComment) {
+                  <div class="reviewer-comment">
+                    <label>主管評語</label>
+                    <div class="comment-content">{{ report()?.reviewerComment }}</div>
+                  </div>
+                }
+
+                @if (canReview()) {
+                  <div class="reviewer-hint">
+                    <i class="ri-information-line"></i>
+                    請點擊下方按鈕進行審核操作
+                  </div>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- 時數統計摘要 -->
+          <div class="time-summary">
+            <div class="summary-item">
+              <span class="summary-label">例行工作總時數</span>
+              <span class="summary-value">{{ formatMinutesToTime(routineTotalMinutes()) }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">非例行工作總時數</span>
+              <span class="summary-value">{{ formatMinutesToTime(nonRoutineTotalMinutes()) }}</span>
+            </div>
+            <div class="summary-item summary-item--total">
+              <span class="summary-label">本週工作總時數</span>
+              <span class="summary-value">{{ formatMinutesToTime(totalMinutes()) }}</span>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Footer -->
+      <div class="modal-footer">
+        @if (report()) {
+          @if (canEdit()) {
+            @if (isEditing()) {
+              <button class="btn-cancel" (click)="cancelEditing()" type="button" [disabled]="saving()">
+                取消
+              </button>
+              <button class="btn-secondary" (click)="saveDraft()" type="button" [disabled]="saving()">
+                @if (saving()) {
+                  <i class="ri-loader-4-line spinner"></i>
+                }
+                儲存草稿
+              </button>
+              <button class="btn-primary" (click)="submitReport()" type="button" [disabled]="saving() || !isFormValid()">
+                @if (saving()) {
+                  <i class="ri-loader-4-line spinner"></i>
+                }
+                提交週報
+              </button>
+            } @else {
+              <button class="btn-primary" (click)="startEditing()" type="button">
+                <i class="ri-edit-line"></i>
+                編輯週報
+              </button>
+            }
+          }
+
+          @if (canReview()) {
+            <button class="btn-danger" (click)="rejectReport()" type="button" [disabled]="saving()">
+              <i class="ri-close-circle-line"></i>
+              退回修改
+            </button>
+            <button class="btn-primary" (click)="approveReport()" type="button" [disabled]="saving()">
+              @if (saving()) {
+                <i class="ri-loader-4-line spinner"></i>
+              } @else {
+                <i class="ri-checkbox-circle-line"></i>
+              }
+              核准通過
+            </button>
+          }
+
+          @if (isReadOnly()) {
+            <button class="btn-secondary" (click)="onClose()" type="button">
+              關閉
+            </button>
+          }
+        }
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Signature Dialog Modal (員工提交用) -->
+@if (showSignaturePad()) {
+  <app-signature-dialog
+    title="員工簽章"
+    (confirm)="onEmployeeSignatureComplete($event)"
+    (cancel)="onSignatureCancel()">
+  </app-signature-dialog>
+}
+
+<!-- 核准 Modal (含簽章+評語) -->
+@if (showApproveModal()) {
+  <div class="review-modal-backdrop">
+    <div class="review-modal">
+      <div class="review-modal__header">
+        <h3>
+          <i class="ri-checkbox-circle-line"></i>
+          核准週報
+        </h3>
+        <button class="btn-close" (click)="closeApproveModal()" type="button">
+          <i class="ri-close-line"></i>
+        </button>
+      </div>
+
+      <div class="review-modal__body">
+        @if (error()) {
+          <div class="alert alert--error">
+            <i class="ri-error-warning-line"></i>
+            <span>{{ error() }}</span>
+            <button class="btn-dismiss" (click)="dismissError()" type="button">
+              <i class="ri-close-line"></i>
+            </button>
+          </div>
+        }
+
+        <div class="form-group">
+          <label>主管評語 <span class="optional">(選填)</span></label>
+          <textarea
+            class="form-textarea"
+            [ngModel]="approveComment()"
+            (ngModelChange)="approveComment.set($event)"
+            placeholder="請輸入對員工的評語或建議..."
+            rows="3"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>主管簽章 <span class="required">*</span></label>
+          <div class="signature-area signature-area--clickable">
+            @if (managerSignature()) {
+              <div class="signature-preview">
+                <img [src]="managerSignature()" alt="主管簽章">
+                <div class="signature-preview__actions">
+                  <button class="btn-clear-signature" (click)="clearManagerSignature()" type="button">
+                    <i class="ri-delete-bin-line"></i>
+                    重新簽章
+                  </button>
+                </div>
+              </div>
+            } @else {
+              <div class="signature-placeholder" (click)="openManagerSignatureDialog()">
+                <i class="ri-edit-line"></i>
+                <span>點擊此處進行簽章</span>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="review-modal__footer">
+        <button class="btn-cancel" (click)="closeApproveModal()" type="button" [disabled]="saving()">
+          取消
+        </button>
+        <button class="btn-primary" (click)="confirmApprove()" type="button" [disabled]="saving() || !managerSignature()">
+          @if (saving()) {
+            <i class="ri-loader-4-line spinner"></i>
+          } @else {
+            <i class="ri-checkbox-circle-line"></i>
+          }
+          確認核准
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- 主管簽章 Dialog -->
+@if (showManagerSignatureDialog()) {
+  <app-signature-dialog
+    title="主管簽章"
+    (confirm)="onManagerSignatureComplete($event)"
+    (cancel)="onManagerSignatureCancel()">
+  </app-signature-dialog>
+}
+
+<!-- 退回 Modal (含退回原因) -->
+@if (showRejectModal()) {
+  <div class="review-modal-backdrop">
+    <div class="review-modal review-modal--reject">
+      <div class="review-modal__header review-modal__header--reject">
+        <h3>
+          <i class="ri-close-circle-line"></i>
+          退回週報
+        </h3>
+        <button class="btn-close" (click)="closeRejectModal()" type="button">
+          <i class="ri-close-line"></i>
+        </button>
+      </div>
+
+      <div class="review-modal__body">
+        @if (error()) {
+          <div class="alert alert--error">
+            <i class="ri-error-warning-line"></i>
+            <span>{{ error() }}</span>
+            <button class="btn-dismiss" (click)="dismissError()" type="button">
+              <i class="ri-close-line"></i>
+            </button>
+          </div>
+        }
+
+        <div class="form-group">
+          <label>退回原因 <span class="required">*</span></label>
+          <textarea
+            class="form-textarea"
+            [ngModel]="rejectReason()"
+            (ngModelChange)="rejectReason.set($event)"
+            placeholder="請說明退回修改的原因，讓員工了解需要調整的內容..."
+            rows="4"></textarea>
+          <p class="form-hint">
+            <i class="ri-information-line"></i>
+            退回後，員工將收到通知並可重新編輯週報
+          </p>
+        </div>
+      </div>
+
+      <div class="review-modal__footer">
+        <button class="btn-cancel" (click)="closeRejectModal()" type="button" [disabled]="saving()">
+          取消
+        </button>
+        <button class="btn-danger" (click)="confirmReject()" type="button" [disabled]="saving() || !rejectReason().trim()">
+          @if (saving()) {
+            <i class="ri-loader-4-line spinner"></i>
+          } @else {
+            <i class="ri-close-circle-line"></i>
+          }
+          確認退回
+        </button>
+      </div>
+    </div>
+  </div>
+}

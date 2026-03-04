@@ -22,6 +22,11 @@ export const COMPETENCY_ROUTES: Routes = [
       .then(m => m.CreateJDPageComponent)
   },
   {
+    path: 'job-description/edit/:id',
+    loadComponent: () => import('./pages/create-jd-page/create-jd-page.component')
+      .then(m => m.CreateJDPageComponent)
+  },
+  {
     path: 'framework',
     loadComponent: () => import('./pages/framework-page/framework-page.component')
       .then(m => m.FrameworkPageComponent)
@@ -35,5 +40,10 @@ export const COMPETENCY_ROUTES: Routes = [
     path: 'assessment',
     loadComponent: () => import('./pages/assessment-page/assessment-page.component')
       .then(m => m.AssessmentPageComponent)
+  },
+  {
+    path: 'templates',
+    loadComponent: () => import('./pages/template-manage-page/template-manage-page.component')
+      .then(m => m.TemplateManagePageComponent)
   }
 ];

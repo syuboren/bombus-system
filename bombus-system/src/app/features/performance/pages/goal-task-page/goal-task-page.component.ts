@@ -271,7 +271,7 @@ export class GoalTaskPageComponent implements OnInit, AfterViewInit, OnDestroy {
         progress: 35,
         status: 'behind',
         keyResults: [
-          { id: 'KR1', title: '完成職能基準庫', target: 100, current: 80, unit: '%', weight: 30, progress: 80 },
+          { id: 'KR1', title: '完成職能模型基準', target: 100, current: 80, unit: '%', weight: 30, progress: 80 },
           { id: 'KR2', title: '設計 20 門內訓課程', target: 20, current: 8, unit: '門', weight: 40, progress: 40 },
           { id: 'KR3', title: '建立導師制度', target: 100, current: 0, unit: '%', weight: 30, progress: 0 }
         ]

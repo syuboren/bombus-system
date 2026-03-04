@@ -1,132 +1,532 @@
 <app-header [pageTitle]="pageTitle" [breadcrumbs]="breadcrumbs"></app-header>
 
 <div class="assessment-page">
-  <!-- Stats Cards -->
-  <section class="stats-section">
-    <div class="stats-grid">
-      <div class="stat-card stat-card--total">
-        <div class="stat-card__icon">
-          <i class="ri-group-line"></i>
-        </div>
-        <div class="stat-card__content">
-          <div class="stat-card__value">{{ stats().totalEmployees }}</div>
-          <div class="stat-card__label">評估總人數</div>
-        </div>
-      </div>
-
-      <div class="stat-card stat-card--completed">
-        <div class="stat-card__icon">
-          <i class="ri-checkbox-circle-line"></i>
-        </div>
-        <div class="stat-card__content">
-          <div class="stat-card__value">{{ stats().completed }}</div>
-          <div class="stat-card__label">已完成</div>
-        </div>
-      </div>
-
-      <div class="stat-card stat-card--progress">
-        <div class="stat-card__icon">
-          <i class="ri-loader-4-line"></i>
-        </div>
-        <div class="stat-card__content">
-          <div class="stat-card__value">{{ stats().inProgress }}</div>
-          <div class="stat-card__label">進行中</div>
-        </div>
-      </div>
-
-      <div class="stat-card stat-card--rate">
-        <div class="stat-card__icon">
-          <i class="ri-pie-chart-line"></i>
-        </div>
-        <div class="stat-card__content">
-          <div class="stat-card__value">{{ stats().completionRate }}%</div>
-          <div class="stat-card__label">完成率</div>
-        </div>
-        <div class="stat-card__progress">
-          <div class="mini-progress-bar">
-            <div class="mini-progress-fill" [style.width.%]="stats().completionRate"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Tabs -->
+  <!-- Tabs Header -->
   <section class="tabs-section">
     <div class="tabs-header">
-      <button
-        class="tab-btn"
-        [class.active]="activeTab() === 'schedules'"
-        (click)="setActiveTab('schedules')"
-        type="button">
-        <i class="ri-calendar-schedule-line"></i>
-        評估週期
-      </button>
-      <button
-        class="tab-btn"
-        [class.active]="activeTab() === 'assessments'"
-        (click)="setActiveTab('assessments')"
-        type="button">
-        <i class="ri-file-list-3-line"></i>
-        評估列表
-      </button>
+      @for (tab of tabs(); track tab.id) {
+        <button 
+          class="tab-btn" 
+          [class.active]="activeTab() === tab.id" 
+          (click)="setActiveTab(tab.id)"
+          type="button">
+          <i [class]="tab.icon"></i>
+          {{ tab.label }}
+        </button>
+      }
     </div>
 
-    <!-- Schedules Tab -->
-    @if (activeTab() === 'schedules') {
+    <!-- =====================================================
+         Overview Tab - HR 儀表板 (Bento UI)
+         ===================================================== -->
+    @if (activeTab() === 'overview') {
       <div class="tab-content">
-        <div class="schedules-list">
-          @for (schedule of schedules(); track schedule.id) {
-            <div class="schedule-card">
-              <div class="schedule-card__header">
-                <h3 class="schedule-card__title">{{ schedule.name }}</h3>
-                <span class="schedule-card__status" [class]="getScheduleStatusClass(schedule.status)">
-                  {{ getScheduleStatusLabel(schedule.status) }}
-                </span>
+        <!-- 篩選區 -->
+        <div class="filter-bar filter-bar--simple">
+          <div class="filter-item">
+            <label class="filter-label">年度</label>
+            <select class="filter-select" [ngModel]="currentYear()" (ngModelChange)="onOverviewYearChange($event)">
+              @for (opt of yearOptions; track opt.value) {
+                <option [value]="opt.value">{{ opt.label }}</option>
+              }
+            </select>
+          </div>
+          <div class="filter-item">
+            <label class="filter-label">月份</label>
+            <select class="filter-select" [ngModel]="currentMonth()" (ngModelChange)="onOverviewMonthChange($event)">
+              @for (opt of monthOptions; track opt.value) {
+                <option [value]="opt.value">{{ opt.label }}</option>
+              }
+            </select>
+          </div>
+          <div class="filter-item">
+            <label class="filter-label">週別</label>
+            <select class="filter-select filter-select--wide" [ngModel]="overviewWeek()" (ngModelChange)="onOverviewWeekChange($event)">
+              @for (opt of overviewWeekOptions(); track opt.value) {
+                <option [value]="opt.value">
+                  {{ opt.label }}{{ opt.dateRange ? ' (' + opt.dateRange + ')' : '' }}
+                </option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <!-- Bento Grid Layout -->
+        <div class="bento-grid">
+          <!-- 區塊 1：月度檢核完成率 (大卡) -->
+          <div class="bento-card bento-card--highlight bento-span-2">
+            <div class="bento-card__header">
+              <div class="bento-card__icon">
+                <i class="ri-calendar-check-line"></i>
               </div>
-              <div class="schedule-card__body">
-                <div class="schedule-info">
-                  <div class="info-item">
-                    <i class="ri-calendar-line"></i>
-                    <span>{{ formatDate(schedule.startDate) }} - {{ formatDate(schedule.endDate) }}</span>
-                  </div>
-                  <div class="info-item">
-                    <i class="ri-building-line"></i>
-                    <span>{{ schedule.targetDepartments.join(', ') }}</span>
-                  </div>
-                </div>
-                <div class="schedule-progress">
-                  <div class="progress-header">
-                    <span>完成進度</span>
-                    <span class="progress-value">{{ schedule.completionRate }}%</span>
-                  </div>
-                  <div class="progress-bar">
-                    <div class="progress-fill" [style.width.%]="schedule.completionRate"></div>
-                  </div>
-                </div>
+              <h3>月度檢核 <span class="bento-card__time-badge bento-card__time-badge--light">{{ currentMonth() }}月</span></h3>
+            </div>
+            <div class="bento-card__stats">
+              <div class="stat-circle">
+                <svg viewBox="0 0 100 100">
+                  <circle class="stat-circle__bg" cx="50" cy="50" r="45"/>
+                  <circle class="stat-circle__fill" cx="50" cy="50" r="45" 
+                    [style.stroke-dasharray]="(overview()?.monthlyCheck?.completionRate || 0) * 2.83 + ' 283'"/>
+                </svg>
+                <span class="stat-circle__value">{{ overview()?.monthlyCheck?.completionRate || 0 }}%</span>
               </div>
-              <div class="schedule-card__actions">
-                <button class="btn-outline" type="button">
-                  <i class="ri-eye-line"></i> 查看詳情
-                </button>
-                @if (schedule.status === 'in_progress') {
-                  <button class="btn-primary" type="button">
-                    <i class="ri-send-plane-line"></i> 發送提醒
-                  </button>
-                }
+              <div class="stat-details">
+                <div class="stat-row">
+                  <span class="stat-label">總人數</span>
+                  <span class="stat-value">{{ overview()?.monthlyCheck?.total || 0 }}</span>
+                </div>
+                <div class="stat-row">
+                  <span class="stat-label">已完成</span>
+                  <span class="stat-value text-success">{{ overview()?.monthlyCheck?.completed || 0 }}</span>
+                </div>
+                <div class="stat-row">
+                  <span class="stat-label">進行中</span>
+                  <span class="stat-value text-warning">{{ overview()?.monthlyCheck?.inProgress || 0 }}</span>
+                </div>
+                <div class="stat-row">
+                  <span class="stat-label">逾期</span>
+                  <span class="stat-value text-error">{{ overview()?.monthlyCheck?.overdue || 0 }}</span>
+                </div>
               </div>
             </div>
-          }
+          </div>
+
+          <!-- 區塊 2：季度面談完成率 -->
+          <div class="bento-card bento-card--secondary">
+            <div class="bento-card__header">
+              <div class="bento-card__icon bento-card__icon--secondary">
+                <i class="ri-discuss-line"></i>
+              </div>
+              <h3>季度面談 <span class="bento-card__time-badge bento-card__time-badge--secondary">Q{{ currentQuarter() }}</span></h3>
+            </div>
+            <div class="bento-card__mini-stats">
+              <div class="mini-stat">
+                <span class="mini-stat__value">{{ overview()?.quarterlyReview?.completionRate || 0 }}%</span>
+                <span class="mini-stat__label">完成率</span>
+              </div>
+              <div class="mini-stat-divider"></div>
+              <div class="mini-stat">
+                <span class="mini-stat__value">{{ overview()?.quarterlyReview?.completed || 0 }}/{{ overview()?.quarterlyReview?.total || 0 }}</span>
+                <span class="mini-stat__label">已完成</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 區塊 3：週報提交率 (根據選擇的週別) -->
+          <div class="bento-card bento-card--tertiary">
+            <div class="bento-card__header">
+              <div class="bento-card__icon bento-card__icon--tertiary">
+                <i class="ri-file-list-3-line"></i>
+              </div>
+              <h3>工作週報 <span class="bento-card__week-badge">第 {{ overviewWeek() }} 週</span></h3>
+            </div>
+            <div class="bento-card__mini-stats">
+              <div class="mini-stat">
+                <span class="mini-stat__value">{{ overviewWeeklyStats().submissionRate }}%</span>
+                <span class="mini-stat__label">提交率</span>
+              </div>
+              <div class="mini-stat-divider"></div>
+              <div class="mini-stat">
+                <span class="mini-stat__value">{{ overviewWeeklyStats().submitted + overviewWeeklyStats().approved }}/{{ overviewWeeklyStats().total }}</span>
+                <span class="mini-stat__label">已提交</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 區塊 4：月度未完成清單 -->
+          <div class="bento-card bento-card--list bento-span-2">
+            <div class="bento-card__header">
+              <h3><i class="ri-error-warning-line"></i> 月度未完成清單 <span class="bento-card__time-badge bento-card__time-badge--highlight">{{ currentMonth() }}月</span></h3>
+              <span class="badge-count">{{ monthlyIncompleteList().length }}</span>
+            </div>
+            <div class="bento-card__body">
+              @if (monthlyIncompleteList().length === 0) {
+                <div class="empty-state-mini">
+                  @if (isMonthInFuture()) {
+                    <i class="ri-time-line"></i>
+                    <p>該月份尚未開始</p>
+                  } @else {
+                    <i class="ri-checkbox-circle-line"></i>
+                    <p>本月所有人員皆已完成</p>
+                  }
+                </div>
+              } @else {
+                <div class="incomplete-list">
+                  @for (item of monthlyIncompleteList().slice(0, 6); track item.id) {
+                    <div class="incomplete-item" (click)="goToIncompleteItem(item, 'monthly')">
+                      <div class="incomplete-avatar">{{ getAvatarInitial(item.employeeName) }}</div>
+                      <div class="incomplete-info">
+                        <span class="incomplete-name">{{ item.employeeName }}</span>
+                        <span class="incomplete-dept">{{ item.department }} / {{ item.position }}</span>
+                      </div>
+                      <div class="incomplete-status">
+                        <app-status-badge [status]="item.status"></app-status-badge>
+                      </div>
+                    </div>
+                  }
+                  @if (monthlyIncompleteList().length > 6) {
+                    <div class="incomplete-more">
+                      <button class="btn-more" (click)="setActiveTab('monthly')" type="button">
+                        查看全部 {{ monthlyIncompleteList().length }} 筆
+                        <i class="ri-arrow-right-s-line"></i>
+                      </button>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- 區塊 5：季度未完成清單 -->
+          <div class="bento-card bento-card--list">
+            <div class="bento-card__header">
+              <h3><i class="ri-discuss-line"></i> 季度未完成 <span class="bento-card__time-badge bento-card__time-badge--secondary">Q{{ currentQuarter() }}</span></h3>
+              <span class="badge-count badge-count--secondary">{{ quarterlyIncompleteList().length }}</span>
+            </div>
+            <div class="bento-card__body">
+              @if (quarterlyIncompleteList().length === 0) {
+                <div class="empty-state-mini empty-state-mini--compact">
+                  @if (isQuarterInFuture()) {
+                    <i class="ri-time-line"></i>
+                    <p>該季度尚未開始</p>
+                  } @else {
+                    <i class="ri-checkbox-circle-line"></i>
+                    <p>本季皆已完成</p>
+                  }
+                </div>
+              } @else {
+                <div class="incomplete-list incomplete-list--compact">
+                  @for (item of quarterlyIncompleteList().slice(0, 10); track item.id) {
+                    <div class="incomplete-item incomplete-item--compact" (click)="goToIncompleteItem(item, 'quarterly')">
+                      <div class="incomplete-avatar incomplete-avatar--sm">{{ getAvatarInitial(item.employeeName) }}</div>
+                      <div class="incomplete-info">
+                        <span class="incomplete-name">{{ item.employeeName }}</span>
+                      </div>
+                      <app-status-badge [status]="item.status" size="sm"></app-status-badge>
+                    </div>
+                  }
+                  @if (quarterlyIncompleteList().length > 10) {
+                    <button class="btn-more btn-more--compact" (click)="setActiveTab('quarterly')" type="button">
+                      +{{ quarterlyIncompleteList().length - 10 }} 更多
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- 區塊 6：週報未完成清單 -->
+          <div class="bento-card bento-card--list">
+            <div class="bento-card__header">
+              <h3><i class="ri-file-list-3-line"></i> 週報未提交 <span class="bento-card__time-badge bento-card__time-badge--tertiary">第{{ overviewWeek() }}週</span></h3>
+              <span class="badge-count badge-count--tertiary">{{ weeklyIncompleteList().length }}</span>
+            </div>
+            <div class="bento-card__body">
+              @if (weeklyIncompleteList().length === 0) {
+                <div class="empty-state-mini empty-state-mini--compact">
+                  @if (isWeekInFuture()) {
+                    <i class="ri-time-line"></i>
+                    <p>該週尚未開始</p>
+                  } @else {
+                    <i class="ri-checkbox-circle-line"></i>
+                    <p>本週皆已提交</p>
+                  }
+                </div>
+              } @else {
+                <div class="incomplete-list incomplete-list--compact">
+                  @for (item of weeklyIncompleteList().slice(0, 10); track item.id) {
+                    <div class="incomplete-item incomplete-item--compact" (click)="goToIncompleteItem(item, 'weekly')">
+                      <div class="incomplete-avatar incomplete-avatar--sm incomplete-avatar--tertiary">{{ getAvatarInitial(item.employeeName) }}</div>
+                      <div class="incomplete-info">
+                        <span class="incomplete-name">{{ item.employeeName }}</span>
+                      </div>
+                      <app-status-badge [status]="item.status" size="sm"></app-status-badge>
+                    </div>
+                  }
+                  @if (weeklyIncompleteList().length > 10) {
+                    <button class="btn-more btn-more--compact" (click)="setActiveTab('weekly')" type="button">
+                      +{{ weeklyIncompleteList().length - 10 }} 更多
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- 區塊 7：各部門平均分數 + 績效分析儀表板 (同一行 1/4 + 3/4) -->
+          <div class="bento-card bento-card--chart bento-card--dept-score">
+            <div class="bento-card__header">
+              <h3><i class="ri-bar-chart-grouped-line"></i> 各部門平均分數</h3>
+              <div class="dept-score-toggle">
+                <button class="toggle-btn toggle-btn--sm" [class.active]="deptScoreSource() === 'monthly'" 
+                  (click)="setDeptScoreSource('monthly')" type="button">
+                  月度
+                </button>
+                <button class="toggle-btn toggle-btn--sm" [class.active]="deptScoreSource() === 'quarterly'" 
+                  (click)="setDeptScoreSource('quarterly')" type="button">
+                  季度
+                </button>
+              </div>
+            </div>
+            <div class="bento-card__body">
+              @if (departmentAvgScores().length === 0) {
+                <div class="empty-state-mini">
+                  <i class="ri-bar-chart-box-line"></i>
+                  <p>尚無部門分數資料</p>
+                </div>
+              } @else {
+                <div class="dept-score-source">
+                  <span class="source-label">
+                    資料來源：{{ deptScoreSource() === 'monthly' ? '月度檢核 (' + currentYear() + '/' + currentMonth() + ')' : '季度面談 (' + currentYear() + ' Q' + currentQuarter() + ')' }}
+                  </span>
+                </div>
+                <div class="dept-score-list">
+                  @for (dept of departmentAvgScores(); track dept.department) {
+                    <div class="dept-score-item">
+                      <div class="dept-score-header">
+                        <span class="dept-name">{{ dept.department }}</span>
+                        <span class="dept-score" [class]="'score-' + getScoreLevel(dept.avgScore)">
+                          {{ dept.avgScore.toFixed(1) }}
+                        </span>
+                      </div>
+                      <div class="dept-score-bar">
+                        <div class="dept-score-fill" [class]="'fill-' + getScoreLevel(dept.avgScore)" 
+                          [style.width.%]="(dept.avgScore / 5) * 100"></div>
+                      </div>
+                      <div class="dept-meta">
+                        <span>{{ dept.completedCount }}/{{ dept.employeeCount }} 人完成</span>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- 績效分析儀表板 -->
+          <div class="bento-card bento-card--chart bento-card--performance bento-span-3">
+            <div class="bento-card__header">
+              <h3><i class="ri-line-chart-line"></i> 績效分析儀表板</h3>
+              <div class="performance-controls">
+                <!-- 視圖切換 -->
+                <div class="view-toggle">
+                  <button class="toggle-btn" [class.active]="performanceViewMode() === 'monthly'" 
+                    (click)="setPerformanceViewMode('monthly')" type="button">
+                    <i class="ri-calendar-line"></i> 月度趨勢
+                  </button>
+                  <button class="toggle-btn" [class.active]="performanceViewMode() === 'quarterly'" 
+                    (click)="setPerformanceViewMode('quarterly')" type="button">
+                    <i class="ri-calendar-2-line"></i> 季度總覽
+                  </button>
+                </div>
+                <!-- 比較模式 -->
+                <div class="compare-toggle">
+                  <button class="toggle-btn toggle-btn--sm" [class.active]="compareMode() === 'individual'" 
+                    (click)="setCompareMode('individual')" type="button">
+                    個人
+                  </button>
+                  <button class="toggle-btn toggle-btn--sm" [class.active]="compareMode() === 'yoy'" 
+                    (click)="setCompareMode('yoy')" type="button">
+                    同期比較
+                  </button>
+                  <button class="toggle-btn toggle-btn--sm" [class.active]="compareMode() === 'department'" 
+                    (click)="setCompareMode('department')" type="button">
+                    部門比較
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="bento-card__body">
+              <div class="performance-dashboard">
+                <!-- 左側：員工選擇與摘要 -->
+                <div class="performance-sidebar">
+                  <div class="employee-selector">
+                    <label>選擇員工</label>
+                    <select class="employee-select" [ngModel]="historyEmployeeId()" (ngModelChange)="loadPersonalHistory($event)">
+                      <option value="">-- 請選擇 --</option>
+                      @for (emp of allEmployeesList(); track emp.id) {
+                        <option [value]="emp.id">{{ emp.name }} ({{ emp.department }})</option>
+                      }
+                    </select>
+                  </div>
+                  @if (selectedEmployeeHistory()) {
+                    <div class="employee-summary">
+                      <div class="summary-avatar">{{ getAvatarInitial(selectedEmployeeHistory()?.employeeName || '') }}</div>
+                      <div class="summary-info">
+                        <span class="summary-name">{{ selectedEmployeeHistory()?.employeeName }}</span>
+                        <span class="summary-dept">{{ selectedEmployeeHistory()?.department }} / {{ selectedEmployeeHistory()?.position }}</span>
+                      </div>
+                    </div>
+                    <div class="summary-stats">
+                      <div class="summary-stat">
+                        <span class="summary-stat__label">平均分數</span>
+                        <span class="summary-stat__value">{{ getAvgScore() }}</span>
+                      </div>
+                      <div class="summary-stat">
+                        <span class="summary-stat__label">最高分數</span>
+                        <span class="summary-stat__value text-success">{{ getMaxScore() }}</span>
+                      </div>
+                      <div class="summary-stat">
+                        <span class="summary-stat__label">最低分數</span>
+                        <span class="summary-stat__value text-warning">{{ getMinScore() }}</span>
+                      </div>
+                    </div>
+                  }
+                </div>
+                
+                <!-- 右側：圖表區域 -->
+                <div class="performance-chart-area">
+                  @if (!selectedEmployeeHistory()) {
+                    <div class="empty-state-chart">
+                      <i class="ri-bar-chart-grouped-line"></i>
+                      <p>請選擇員工以查看績效分析</p>
+                    </div>
+                  } @else {
+                    <!-- 月度趨勢視圖 -->
+                    @if (performanceViewMode() === 'monthly') {
+                      <div class="chart-container">
+                        <div class="chart-title">
+                          <span>{{ currentYear() }}年 月度績效趨勢</span>
+                          <span class="chart-source">資料來源：月度檢核</span>
+                        </div>
+                        <div class="chart-bars">
+                          @for (month of [1,2,3,4,5,6,7,8,9,10,11,12]; track month) {
+                            @let score = getMonthlyScore(month);
+                            @let compareScore = getCompareScore(month);
+                            <div class="chart-bar-group">
+                              <div class="chart-bar-wrapper">
+                                @if (compareMode() !== 'individual' && compareScore > 0) {
+                                  <div class="chart-bar chart-bar--compare" 
+                                    [style.height.%]="(compareScore / 100) * 100"
+                                    [title]="compareMode() === 'yoy' ? '去年同期: ' + compareScore : '部門平均: ' + compareScore">
+                                  </div>
+                                }
+                                <div class="chart-bar chart-bar--primary" 
+                                  [style.height.%]="score > 0 ? (score / 100) * 100 : 0"
+                                  [class.no-data]="score === 0">
+                                  @if (score > 0) {
+                                    <span class="bar-value">{{ score }}</span>
+                                  }
+                                </div>
+                              </div>
+                              <span class="chart-bar-label">{{ month }}月</span>
+                            </div>
+                          }
+                        </div>
+                        @if (compareMode() !== 'individual') {
+                          <div class="chart-legend">
+                            <span class="legend-item"><span class="legend-color legend-color--primary"></span> 個人分數</span>
+                            <span class="legend-item"><span class="legend-color legend-color--compare"></span> 
+                              {{ compareMode() === 'yoy' ? '去年同期' : '部門平均' }}
+                            </span>
+                          </div>
+                        }
+                      </div>
+                    }
+                    
+                    <!-- 季度總覽視圖 -->
+                    @if (performanceViewMode() === 'quarterly') {
+                      <div class="chart-container">
+                        <div class="chart-title">
+                          <span>{{ currentYear() }}年 季度績效總覽</span>
+                          <span class="chart-source">資料來源：季度面談</span>
+                        </div>
+                        <div class="quarterly-grid">
+                          @for (q of [1,2,3,4]; track q) {
+                            @let qScore = getQuarterlyScore(q);
+                            @let qCompare = getQuarterlyCompareScore(q);
+                            <div class="quarterly-card" [class.no-data]="qScore === 0">
+                              <div class="quarterly-header">
+                                <span class="quarterly-label">Q{{ q }}</span>
+                                <span class="quarterly-months">{{ getQuarterMonths(q) }}</span>
+                              </div>
+                              <div class="quarterly-score">
+                                @if (qScore > 0) {
+                                  <span class="score-value">{{ qScore }}</span>
+                                  @if (compareMode() !== 'individual' && qCompare > 0) {
+                                    <span class="score-compare" [class.up]="qScore > qCompare" [class.down]="qScore < qCompare">
+                                      <i [class]="qScore >= qCompare ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'"></i>
+                                      {{ compareMode() === 'yoy' ? '去年' : '部門' }}: {{ qCompare }}
+                                    </span>
+                                  }
+                                } @else {
+                                  <span class="score-pending">尚未評核</span>
+                                }
+                              </div>
+                              <div class="quarterly-progress">
+                                <div class="progress-bar">
+                                  <div class="progress-fill" [style.width.%]="qScore > 0 ? (qScore / 100) * 100 : 0"></div>
+                                </div>
+                              </div>
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    }
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     }
 
-    <!-- Assessments Tab -->
-    @if (activeTab() === 'assessments') {
+    <!-- =====================================================
+         Monthly Check Tab
+         ===================================================== -->
+    @if (activeTab() === 'monthly') {
       <div class="tab-content">
+        <!-- KPI Stats Cards -->
+        <div class="stats-grid stats-grid--4">
+          <app-stats-card
+            icon="ri-group-line"
+            [value]="overview()?.monthlyCheck?.total || 0"
+            label="評估總人數"
+            color="primary">
+          </app-stats-card>
+          <app-stats-card
+            icon="ri-checkbox-circle-line"
+            [value]="overview()?.monthlyCheck?.completed || 0"
+            label="已完成"
+            color="success">
+          </app-stats-card>
+          <app-stats-card
+            icon="ri-loader-4-line"
+            [value]="overview()?.monthlyCheck?.inProgress || 0"
+            label="進行中"
+            color="warning">
+          </app-stats-card>
+          <app-stats-card
+            icon="ri-pie-chart-line"
+            [value]="(overview()?.monthlyCheck?.completionRate || 0) + '%'"
+            label="完成率"
+            color="info"
+            [showProgress]="true"
+            [progressValue]="overview()?.monthlyCheck?.completionRate || 0">
+          </app-stats-card>
+        </div>
+
         <!-- Filters -->
-        <div class="filters-bar">
-          <div class="filter-group">
+        <div class="filter-bar">
+          <div class="filter-item">
+            <label class="filter-label">年度</label>
+            <select class="filter-select" [ngModel]="currentYear()" (ngModelChange)="onYearChange($event)">
+              @for (opt of yearOptions; track opt.value) {
+                <option [value]="opt.value">{{ opt.label }}</option>
+              }
+            </select>
+          </div>
+          <div class="filter-item">
+            <label class="filter-label">月份</label>
+            <select class="filter-select" [ngModel]="currentMonth()" (ngModelChange)="onMonthChange($event)">
+              @for (opt of monthOptions; track opt.value) {
+                <option [value]="opt.value">{{ opt.label }}</option>
+              }
+            </select>
+          </div>
+          <div class="filter-divider"></div>
+          <div class="filter-item">
             <label class="filter-label">部門</label>
             <select class="filter-select" [ngModel]="selectedDepartment()" (ngModelChange)="onDepartmentChange($event)">
               @for (opt of departmentOptions; track opt.value) {
@@ -134,79 +534,82 @@
               }
             </select>
           </div>
-          <div class="filter-group">
+          <div class="filter-item">
             <label class="filter-label">狀態</label>
             <select class="filter-select" [ngModel]="selectedStatus()" (ngModelChange)="onStatusChange($event)">
-              @for (opt of statusOptions; track opt.value) {
+              @for (opt of monthlyStatusOptions; track opt.value) {
                 <option [value]="opt.value">{{ opt.label }}</option>
               }
             </select>
           </div>
+          <div class="filter-spacer"></div>
+          <button class="btn-export" (click)="exportMonthlyChecks()" type="button">
+            <i class="ri-download-2-line"></i>
+            匯出 Excel
+          </button>
         </div>
 
-        @if (loading()) {
+        @if (loadingMonthly()) {
           <div class="loading-container">
             <i class="ri-loader-4-line spinner"></i>
             <span>載入中...</span>
           </div>
         } @else {
-          <!-- Assessment Table -->
+          <!-- Monthly Check Table -->
           <div class="table-wrapper">
-            <table class="assessment-table">
+            <table class="data-table">
               <thead>
                 <tr>
                   <th>員工</th>
                   <th>部門 / 職位</th>
-                  <th>評估期間</th>
+                  <th>年月</th>
                   <th>自評日期</th>
                   <th>主管審核日期</th>
                   <th>狀態</th>
-                  <th>分數</th>
+                  <th>總分</th>
                   <th>操作</th>
                 </tr>
               </thead>
               <tbody>
-                @for (assessment of getFilteredAssessments(); track assessment.id) {
-                  <tr>
+                @for (item of monthlyChecks(); track trackByMonthly($index, item)) {
+                  <tr [class.overdue]="item.isOverdue">
                     <td>
                       <div class="employee-cell">
-                        <div class="employee-avatar">
-                          {{ getAvatarInitial(assessment.employeeName) }}
-                        </div>
-                        <span class="employee-name">{{ assessment.employeeName }}</span>
+                        <div class="employee-avatar">{{ getAvatarInitial(item.employeeName) }}</div>
+                        <span class="employee-name">{{ item.employeeName }}</span>
                       </div>
                     </td>
                     <td>
                       <div class="dept-position">
-                        <span class="dept">{{ assessment.department }}</span>
-                        <span class="position">{{ assessment.position }}</span>
+                        <span class="dept">{{ item.department }}</span>
+                        <span class="position">{{ item.position }}</span>
                       </div>
                     </td>
-                    <td>{{ assessment.assessmentPeriod }}</td>
-                    <td>{{ formatDate(assessment.selfAssessmentDate) }}</td>
-                    <td>{{ formatDate(assessment.managerReviewDate) }}</td>
+                    <td>{{ item.year }}年{{ item.month }}月</td>
+                    <td>{{ formatDate(item.selfAssessmentDate) }}</td>
+                    <td>{{ formatDate(item.managerReviewDate) }}</td>
                     <td>
-                      <span class="status-badge" [class]="getStatusClass(assessment.status)">
-                        {{ getStatusLabel(assessment.status) }}
+                      <app-status-badge [status]="item.status"></app-status-badge>
+                    </td>
+                    <td>
+                      <span class="score-badge" [class.score-pending]="!item.totalScore">
+                        {{ formatScore(item.totalScore) }}
                       </span>
                     </td>
                     <td>
-                      @if (assessment.overallScore > 0) {
-                        <span class="score-badge">{{ assessment.overallScore.toFixed(1) }}</span>
-                      } @else {
-                        <span class="score-pending">-</span>
-                      }
+                      <button class="btn-action" (click)="openMonthlyDetail(item)" type="button">
+                        <i class="ri-eye-line"></i>
+                        查看
+                      </button>
                     </td>
-                    <td>
-                      @if (assessment.status === 'not_started') {
-                        <button class="btn-action btn-action--start" (click)="startAssessment(assessment)" type="button">
-                          <i class="ri-play-circle-line"></i> 開始評估
-                        </button>
-                      } @else {
-                        <button class="btn-action" (click)="viewAssessment(assessment)" type="button">
-                          <i class="ri-eye-line"></i> 查看
-                        </button>
-                      }
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="8">
+                      <div class="empty-state">
+                        <i class="ri-file-search-line"></i>
+                        <p>沒有符合條件的月度檢核記錄</p>
+                      </div>
                     </td>
                   </tr>
                 }
@@ -214,11 +617,374 @@
             </table>
           </div>
 
-          @if (getFilteredAssessments().length === 0) {
-            <div class="empty-state">
-              <i class="ri-file-search-line"></i>
-              <p>沒有符合條件的評估記錄</p>
+          @if (monthlyChecks().length > 0) {
+            <app-pagination
+              [currentPage]="monthlyPagination().page"
+              [totalPages]="monthlyPagination().totalPages"
+              [totalItems]="monthlyPagination().totalItems"
+              [pageSize]="monthlyPagination().pageSize"
+              (pageChange)="onPageChange($event)">
+            </app-pagination>
+          }
+        }
+      </div>
+    }
+
+    <!-- =====================================================
+         Quarterly Review Tab
+         ===================================================== -->
+    @if (activeTab() === 'quarterly') {
+      <div class="tab-content">
+        <!-- KPI Stats Cards -->
+        <div class="stats-grid stats-grid--3">
+          <app-stats-card
+            icon="ri-discuss-line"
+            [value]="overview()?.quarterlyReview?.total || 0"
+            label="預計面談總數"
+            color="primary">
+          </app-stats-card>
+          <app-stats-card
+            icon="ri-checkbox-circle-line"
+            [value]="overview()?.quarterlyReview?.completed || 0"
+            label="已完成"
+            color="success">
+          </app-stats-card>
+          <app-stats-card
+            icon="ri-pie-chart-line"
+            [value]="(overview()?.quarterlyReview?.completionRate || 0) + '%'"
+            label="完成率"
+            color="info"
+            [showProgress]="true"
+            [progressValue]="overview()?.quarterlyReview?.completionRate || 0">
+          </app-stats-card>
+        </div>
+
+        <!-- Filters -->
+        <div class="filter-bar">
+          <div class="filter-item">
+            <label class="filter-label">年度</label>
+            <select class="filter-select" [ngModel]="currentYear()" (ngModelChange)="onYearChange($event)">
+              @for (opt of yearOptions; track opt.value) {
+                <option [value]="opt.value">{{ opt.label }}</option>
+              }
+            </select>
+          </div>
+          <div class="filter-item">
+            <label class="filter-label">季度</label>
+            <select class="filter-select" [ngModel]="currentQuarter()" (ngModelChange)="onQuarterChange($event)">
+              @for (opt of quarterOptions; track opt.value) {
+                <option [value]="opt.value">{{ opt.label }} ({{ opt.months }})</option>
+              }
+            </select>
+          </div>
+          <div class="filter-divider"></div>
+          <div class="filter-item">
+            <label class="filter-label">部門</label>
+            <select class="filter-select" [ngModel]="selectedDepartment()" (ngModelChange)="onDepartmentChange($event)">
+              @for (opt of departmentOptions; track opt.value) {
+                <option [value]="opt.value">{{ opt.label }}</option>
+              }
+            </select>
+          </div>
+          <div class="filter-item">
+            <label class="filter-label">狀態</label>
+            <select class="filter-select" [ngModel]="selectedStatus()" (ngModelChange)="onStatusChange($event)">
+              @for (opt of quarterlyStatusOptions; track opt.value) {
+                <option [value]="opt.value">{{ opt.label }}</option>
+              }
+            </select>
+          </div>
+          <div class="filter-spacer"></div>
+          <button 
+            class="btn-initialize" 
+            (click)="initializeQuarterlyReviews()" 
+            type="button"
+            [disabled]="initializingQuarterly()">
+            @if (initializingQuarterly()) {
+              <i class="ri-loader-4-line spinner"></i>
+            } @else {
+              <i class="ri-add-circle-line"></i>
+            }
+            初始化本季面談
+          </button>
+          <button class="btn-export" (click)="exportQuarterlyReviews()" type="button">
+            <i class="ri-download-2-line"></i>
+            匯出 Excel
+          </button>
+        </div>
+
+        @if (loadingQuarterly()) {
+          <div class="loading-container">
+            <i class="ri-loader-4-line spinner"></i>
+            <span>載入中...</span>
+          </div>
+        } @else {
+          <!-- Quarterly Review Table -->
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>員工</th>
+                  <th>部門 / 職位</th>
+                  <th>表單類型</th>
+                  <th>年度季度</th>
+                  <th>月度均分</th>
+                  <th>面談日期</th>
+                  <th>狀態</th>
+                  <th>總分</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of quarterlyReviews(); track trackByQuarterly($index, item)) {
+                  <tr>
+                    <td>
+                      <div class="employee-cell">
+                        <div class="employee-avatar">{{ getAvatarInitial(item.employeeName) }}</div>
+                        <span class="employee-name">{{ item.employeeName }}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="dept-position">
+                        <span class="dept">{{ item.department }}</span>
+                        <span class="position">{{ item.position }}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="form-type-badge" [class.form-type-badge--manager]="item.formType === 'manager'">
+                        <i [class]="item.formType === 'manager' ? 'ri-user-star-line' : 'ri-user-line'"></i>
+                        {{ item.formType === 'manager' ? '主管表單' : '員工表單' }}
+                      </span>
+                    </td>
+                    <td>{{ item.year }}年 Q{{ item.quarter }}</td>
+                    <td>{{ formatScore(item.monthlyAvgScore) }}</td>
+                    <td>{{ formatDate(item.interviewDate) }}</td>
+                    <td>
+                      <app-status-badge [status]="item.status"></app-status-badge>
+                    </td>
+                    <td>
+                      <span class="score-badge" [class.score-pending]="!item.totalScore">
+                        {{ formatScore(item.totalScore) }}
+                      </span>
+                    </td>
+                    <td>
+                      <button class="btn-action" (click)="openQuarterlyDetail(item)" type="button">
+                        <i class="ri-eye-line"></i>
+                        查看
+                      </button>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="9">
+                      <div class="empty-state">
+                        <i class="ri-file-search-line"></i>
+                        <p>沒有符合條件的季度面談記錄</p>
+                        <button 
+                          class="btn-initialize-empty" 
+                          (click)="initializeQuarterlyReviews()" 
+                          type="button"
+                          [disabled]="initializingQuarterly()">
+                          @if (initializingQuarterly()) {
+                            <i class="ri-loader-4-line spinner"></i>
+                          } @else {
+                            <i class="ri-add-circle-line"></i>
+                          }
+                          初始化 {{ currentYear() }}年 Q{{ currentQuarter() }} 季度面談清單
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          @if (quarterlyReviews().length > 0) {
+            <app-pagination
+              [currentPage]="quarterlyPagination().page"
+              [totalPages]="quarterlyPagination().totalPages"
+              [totalItems]="quarterlyPagination().totalItems"
+              [pageSize]="quarterlyPagination().pageSize"
+              (pageChange)="onPageChange($event)">
+            </app-pagination>
+          }
+        }
+      </div>
+    }
+
+    <!-- =====================================================
+         Weekly Report Tab
+         ===================================================== -->
+    @if (activeTab() === 'weekly') {
+      <div class="tab-content">
+        <!-- KPI Stats Cards (根據篩選條件動態計算) -->
+        <div class="stats-grid stats-grid--3">
+          <app-stats-card
+            icon="ri-file-list-3-line"
+            [value]="weeklyStats().total"
+            label="週報總數"
+            color="primary">
+          </app-stats-card>
+          <app-stats-card
+            icon="ri-send-plane-line"
+            [value]="weeklyStats().submitted + weeklyStats().approved"
+            label="已提交"
+            color="success">
+          </app-stats-card>
+          <app-stats-card
+            icon="ri-pie-chart-line"
+            [value]="weeklyStats().submissionRate + '%'"
+            label="提交率"
+            color="info"
+            [showProgress]="true"
+            [progressValue]="weeklyStats().submissionRate">
+          </app-stats-card>
+        </div>
+
+        <!-- Filters -->
+        <div class="filter-bar">
+          <div class="filter-item">
+            <label class="filter-label">年度</label>
+            <select class="filter-select" [ngModel]="currentYear()" (ngModelChange)="onYearChange($event)">
+              @for (opt of yearOptions; track opt.value) {
+                <option [value]="opt.value">{{ opt.label }}</option>
+              }
+            </select>
+          </div>
+          <div class="filter-item">
+            <label class="filter-label">月份</label>
+            <select class="filter-select" [ngModel]="selectedWeeklyMonth()" (ngModelChange)="onWeeklyMonthChange($event)">
+              <option [value]="0">全部月份</option>
+              @for (opt of monthOptions; track opt.value) {
+                <option [value]="opt.value">{{ opt.label }}</option>
+              }
+            </select>
+          </div>
+          <div class="filter-item">
+            <label class="filter-label">週別</label>
+            <select class="filter-select filter-select--wide" [ngModel]="selectedWeek()" (ngModelChange)="onWeeklyWeekChange($event)">
+              @for (opt of weekOptions(); track opt.value) {
+                <option [value]="opt.value">
+                  {{ opt.label }}{{ opt.dateRange ? ' (' + opt.dateRange + ')' : '' }}
+                </option>
+              }
+            </select>
+          </div>
+          <div class="filter-divider"></div>
+          <div class="filter-item">
+            <label class="filter-label">狀態</label>
+            <select class="filter-select" [ngModel]="selectedStatus()" (ngModelChange)="onStatusChange($event)">
+              @for (opt of weeklyStatusOptions; track opt.value) {
+                <option [value]="opt.value">{{ opt.label }}</option>
+              }
+            </select>
+          </div>
+          <div class="filter-actions">
+            <button 
+              class="btn btn--secondary" 
+              (click)="generateCurrentWeekReports()"
+              [disabled]="generatingWeekly()"
+              type="button">
+              @if (generatingWeekly()) {
+                <i class="ri-loader-4-line spinner"></i>
+                生成中...
+              } @else {
+                <i class="ri-add-line"></i>
+                生成本週週報
+              }
+            </button>
+          </div>
+        </div>
+
+        <!-- 截止日提醒 -->
+        @if (currentWeekInfo() && selectedWeek() > 0) {
+          <div class="deadline-reminder">
+            <div class="deadline-reminder__info">
+              <i class="ri-calendar-schedule-line"></i>
+              <span>
+                第 {{ selectedWeek() }} 週週報截止日：
+                <strong>{{ currentWeekInfo()?.weekEnd }} (週五) 18:00 前</strong>
+              </span>
             </div>
+            <div class="deadline-reminder__hint">
+              主管檢核日：下週一
+            </div>
+          </div>
+        }
+
+        @if (loadingWeekly()) {
+          <div class="loading-container">
+            <i class="ri-loader-4-line spinner"></i>
+            <span>載入中...</span>
+          </div>
+        } @else {
+          <!-- Weekly Report Table -->
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>員工</th>
+                  <th>部門 / 職位</th>
+                  <th>週別</th>
+                  <th>週期</th>
+                  <th>提交日期</th>
+                  <th>狀態</th>
+                  <th>審核人</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of weeklyReports(); track trackByWeekly($index, item)) {
+                  <tr>
+                    <td>
+                      <div class="employee-cell">
+                        <div class="employee-avatar">{{ getAvatarInitial(item.employeeName) }}</div>
+                        <span class="employee-name">{{ item.employeeName }}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="dept-position">
+                        <span class="dept">{{ item.department }}</span>
+                        <span class="position">{{ item.position }}</span>
+                      </div>
+                    </td>
+                    <td>第 {{ item.week }} 週</td>
+                    <td>{{ item.weekStart }} ~ {{ item.weekEnd }}</td>
+                    <td>{{ formatDate(item.submitDate) }}</td>
+                    <td>
+                      <app-status-badge [status]="item.status"></app-status-badge>
+                    </td>
+                    <td>{{ item.reviewerName || '-' }}</td>
+                    <td>
+                      <button class="btn-action" (click)="openWeeklyDetail(item)" type="button">
+                        <i class="ri-eye-line"></i>
+                        查看
+                      </button>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="8">
+                      <div class="empty-state">
+                        <i class="ri-file-search-line"></i>
+                        <p>沒有符合條件的週報記錄</p>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          @if (weeklyReports().length > 0) {
+            <app-pagination
+              [currentPage]="weeklyPagination().page"
+              [totalPages]="weeklyPagination().totalPages"
+              [totalItems]="weeklyPagination().totalItems"
+              [pageSize]="weeklyPagination().pageSize"
+              (pageChange)="onPageChange($event)">
+            </app-pagination>
           }
         }
       </div>
@@ -226,3 +992,26 @@
   </section>
 </div>
 
+<!-- Monthly Check Modal -->
+<app-monthly-check-modal
+  [checkId]="selectedItemId()"
+  [visible]="showMonthlyModal()"
+  (close)="closeMonthlyModal()"
+  (saved)="onMonthlyModalSaved()">
+</app-monthly-check-modal>
+
+<!-- Weekly Report Modal -->
+<app-weekly-report-modal
+  [reportId]="selectedItemId()"
+  [visible]="showWeeklyModal()"
+  (close)="closeWeeklyModal()"
+  (saved)="onWeeklyModalSaved()">
+</app-weekly-report-modal>
+
+<!-- Quarterly Review Modal -->
+<app-quarterly-review-modal
+  [reviewId]="selectedItemId()"
+  [visible]="showQuarterlyModal()"
+  (close)="closeQuarterlyModal()"
+  (saved)="onQuarterlyModalSaved()">
+</app-quarterly-review-modal>

@@ -1,0 +1,426 @@
+// Public Offer Response Page Styles
+// 莫蘭迪配色，簡潔專業風格
+
+.response-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #F5F5F7 0%, #E8E8EA 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    font-family: 'Microsoft JhengHei', 'PingFang TC', sans-serif;
+}
+
+// Offer specific - golden accent
+.offer-page {
+    background: linear-gradient(135deg, #FFF9E6 0%, #F5F0E0 100%);
+}
+
+// Loading State
+.loading-container {
+    text-align: center;
+    color: #6B7280;
+
+    .spinner {
+        width: 48px;
+        height: 48px;
+        border: 4px solid #E8E8EA;
+        border-top-color: #B8860B;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 1rem;
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+}
+
+// Error State
+.error-container {
+    text-align: center;
+    background: white;
+    padding: 3rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+
+    .error-icon {
+        font-size: 4rem;
+        color: #C77F7F;
+        margin-bottom: 1rem;
+    }
+
+    h2 {
+        margin: 0 0 0.5rem;
+        color: #1F2937;
+    }
+
+    p {
+        color: #6B7280;
+        margin: 0;
+    }
+}
+
+// Success State
+.success-container {
+    text-align: center;
+    background: white;
+    padding: 3rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+    max-width: 420px;
+
+    .success-icon {
+        font-size: 4rem;
+        color: #B8860B;
+        margin-bottom: 1rem;
+    }
+
+    h2 {
+        margin: 0 0 0.5rem;
+        color: #1F2937;
+    }
+
+    p {
+        color: #6B7280;
+        margin: 0;
+        line-height: 1.7;
+    }
+}
+
+// Main Card
+.response-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+    max-width: 560px;
+    width: 100%;
+    overflow: hidden;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #8DA399 0%, #6B8577 100%);
+    color: white;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    .company-logo {
+        width: 64px;
+        height: 64px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+
+        i {
+            font-size: 2rem;
+        }
+    }
+
+    h1 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: white !important;
+        text-align: center;
+    }
+}
+
+// Offer specific header - golden theme
+.offer-header {
+    background: linear-gradient(135deg, #D4A03E 0%, #B8860B 100%);
+}
+
+.candidate-info {
+    padding: 1.5rem 2rem 0.5rem;
+
+    .greeting {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .label {
+        color: #6B7280;
+        font-size: 1rem;
+    }
+
+    .name-highlight {
+        color: #1F2937;
+        font-weight: 600;
+        font-size: 1.125rem;
+    }
+}
+
+.congrats-section {
+    padding: 1.5rem 2rem;
+    text-align: center;
+
+    .congrats-icon {
+        width: 56px;
+        height: 56px;
+        background: linear-gradient(135deg, #FFF4D4 0%, #FFE9A8 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+
+        i {
+            font-size: 1.75rem;
+            color: #B8860B;
+        }
+    }
+
+    h2 {
+        margin: 0 0 0.5rem;
+        color: #B8860B;
+        font-size: 1.5rem;
+    }
+
+    p {
+        margin: 0;
+        color: #464E56;
+        line-height: 1.7;
+    }
+}
+
+.job-info-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 0 2rem;
+    padding: 1.25rem;
+    background: linear-gradient(135deg, #FFFBF0 0%, #FFF8E7 100%);
+    border: 1px solid #F0E4C8;
+    border-radius: 12px;
+
+    .job-icon {
+        width: 48px;
+        height: 48px;
+        background: white;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+
+        i {
+            font-size: 1.5rem;
+            color: #B8860B;
+        }
+    }
+
+    .job-details {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+
+        .job-label {
+            font-size: 0.75rem;
+            color: #9A8C70;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .job-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #1F2937;
+        }
+    }
+}
+
+.message-section {
+    padding: 1.5rem 2rem;
+    margin-top: 1rem;
+    border-top: 1px solid #F0F0F0;
+
+    h4 {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 0 0 0.75rem;
+        font-size: 0.9375rem;
+        color: #6B7280;
+        font-weight: 500;
+
+        i {
+            color: #B8860B;
+        }
+    }
+
+    p {
+        margin: 0;
+        color: #464E56;
+        line-height: 1.7;
+        white-space: pre-line;
+        background: #FAFAFA;
+        padding: 1rem;
+        border-radius: 8px;
+        border-left: 3px solid #D4A03E;
+    }
+}
+
+.deadline-notice {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 1rem 2rem;
+    background: #FFF8E7;
+    color: #92710f;
+    font-size: 0.875rem;
+    margin-top: 1rem;
+
+    i {
+        font-size: 1.25rem;
+    }
+
+    strong {
+        color: #6B5300;
+    }
+
+    .deadline-date {
+        color: #A08A50;
+        font-size: 0.8125rem;
+    }
+}
+
+.notice-section {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem 2rem;
+    margin: 0;
+    background: #F8F9FA;
+    font-size: 0.8125rem;
+    color: #6B7280;
+
+    i {
+        flex-shrink: 0;
+        font-size: 1rem;
+        color: #9CA3AF;
+        margin-top: 2px;
+    }
+
+    p {
+        margin: 0;
+        line-height: 1.6;
+    }
+}
+
+.actions {
+    display: flex;
+    gap: 1rem;
+    padding: 1.5rem 2rem;
+    border-top: 1px solid #E8E8EA;
+    justify-content: flex-end;
+}
+
+.offer-actions {
+    background: #FAFAFA;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.75rem;
+    border-radius: 8px;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+}
+
+.btn-primary {
+    background: #8DA399;
+    color: white;
+
+    &:hover:not(:disabled) {
+        background: #6B8577;
+    }
+}
+
+.btn-accept {
+    background: linear-gradient(135deg, #D4A03E 0%, #B8860B 100%);
+    padding: 0.875rem 2rem;
+    font-size: 1rem;
+
+    &:hover:not(:disabled) {
+        background: linear-gradient(135deg, #C4902E 0%, #A8760B 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(184, 134, 11, 0.3);
+    }
+}
+
+.btn-secondary {
+    background: #F5F5F7;
+    color: #6B7280;
+
+    &:hover:not(:disabled) {
+        background: #E8E8EA;
+    }
+}
+
+// Spin animation
+.spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+// Responsive
+@media (max-width: 640px) {
+    .response-page {
+        padding: 1rem;
+    }
+
+    .card-header,
+    .candidate-info,
+    .congrats-section,
+    .message-section,
+    .actions {
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+    }
+
+    .job-info-card {
+        margin-left: 1.5rem;
+        margin-right: 1.5rem;
+    }
+
+    .deadline-notice,
+    .notice-section {
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+    }
+
+    .actions {
+        flex-direction: column-reverse;
+
+        .btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+}

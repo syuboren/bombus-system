@@ -1,0 +1,9 @@
+<div class="signature-pad-wrapper">
+    <canvas #canvas (mousedown)="onMouseDown($event)" (mousemove)="onMouseMove($event)" (mouseup)="onMouseUp()"
+        (mouseleave)="onMouseLeave()" (touchstart)="onTouchStart($event)" (touchmove)="onTouchMove($event)"
+        (touchend)="onTouchEnd($event)">
+    </canvas>
+    @if (isEmpty()) {
+    <div class="placeholder-text">請在此區域簽名</div>
+    }
+</div>

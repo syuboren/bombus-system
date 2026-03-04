@@ -3,7 +3,7 @@
 // =====================================================
 
 // ---------------------------------------------------------------
-// 職等職級相關
+// 職等職級相關 (舊版 - 保留相容性)
 // ---------------------------------------------------------------
 export type GradeType = 'professional' | 'management' | 'specialist';
 
@@ -25,10 +25,93 @@ export interface GradeMatrix {
 }
 
 // ---------------------------------------------------------------
+// 職等職級相關 (新版 - 雙軌制 Grade 1-7)
+// ---------------------------------------------------------------
+export type GradeTrack = 'professional' | 'management' | 'both';
+
+// 軌道實體（對應 DB grade_tracks）
+// ⚠️ 不可命名為 GradeTrack，該名稱已被上方 union type 佔用
+export interface GradeTrackEntity {
+  id: string;
+  code: string;           // 'management' | 'professional' | 自訂
+  name: string;           // '管理職' | '專業職' | 自訂
+  icon: string;           // Remix Icon class
+  color?: string;         // Hex color
+  maxGrade: number;       // 預設 7
+  sortOrder: number;
+  isActive: boolean;
+}
+
+// 審核變更回應（CUD 操作返回值）
+export interface ChangeResponse {
+  changeId: string;       // grade_change_history.id
+  status: 'pending' | 'approved' | 'rejected';
+  message: string;
+}
+
+// 審核變更記錄（歷史查詢用）
+export interface ChangeRecord {
+  id: string;
+  entityType: 'track' | 'grade' | 'salary' | 'position' | 'promotion';
+  entityId: string;
+  action: 'create' | 'update' | 'delete';
+  oldData: any;           // 變更前的完整 entity JSON snapshot
+  newData: any;           // 變更後的完整 entity JSON snapshot
+  changedBy: string;
+  approvedBy?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  rejectReason?: string;
+  createdAt: string;
+  approvedAt?: string;
+}
+
+// 職級薪資（對應 DB grade_salary_levels）
+export interface SalaryLevel {
+  code: string;     // BS01, BS02...
+  salary: number;   // 35000, 38000...
+  order: number;
+}
+
+// 職等（對應 DB grade_levels）
+export interface GradeLevelNew {
+  id: string;
+  grade: number;                    // 1-7
+  codeRange: string;                // BS01-BS04
+  titleManagement: string;          // 管理職稱
+  titleProfessional: string;        // 專業職稱
+  educationRequirement: string;     // 學歷要求
+  responsibilityDescription: string;// 職責描述
+  salaryLevels: SalaryLevel[];      // 職級薪資清單
+  minSalary: number;                // 薪資下限
+  maxSalary: number;                // 薪資上限
+}
+
+// 晉升條件（對應 DB promotion_criteria）
+export interface PromotionCriteria {
+  id: string;
+  fromGrade: number;
+  toGrade: number;
+  track: GradeTrack;
+  requiredSkills: string[];
+  requiredCourses: string[];
+  performanceThreshold: number;
+  kpiFocus: string[];
+  additionalCriteria: string[];
+  promotionProcedure: string;
+}
+
+// 職等詳情（含晉升條件）
+export interface GradeLevelDetail extends GradeLevelNew {
+  promotionTo: PromotionCriteria[];   // 晉升到此職等的條件
+  promotionFrom: PromotionCriteria[]; // 從此職等晉升的條件
+}
+
+// ---------------------------------------------------------------
 // 職涯路徑相關
 // ---------------------------------------------------------------
 export type CareerPathType = 'vertical' | 'horizontal' | 'cross-department';
 
+// 舊版 CareerStep (保留相容性)
 export interface CareerStep {
   order: number;
   title: string;
@@ -38,6 +121,18 @@ export interface CareerStep {
   status: 'completed' | 'current' | 'pending';
 }
 
+// 新版 CareerStep (含 grade 和課程資訊)
+export interface CareerStepNew {
+  order: number;
+  title: string;
+  grade: number;
+  description: string;
+  duration: string;
+  required_courses: string[];
+  performance_threshold: number;
+}
+
+// 舊版 CareerPath (保留相容性)
 export interface CareerPath {
   id: string;
   type: CareerPathType;
@@ -48,6 +143,18 @@ export interface CareerPath {
   estimatedTime: string;
   steps: CareerStep[];
   requiredCompetencies: CompetencyItem[];
+}
+
+// 新版 CareerPath (對應 DB career_paths)
+export interface CareerPathNew {
+  id: string;
+  type: CareerPathType;
+  name: string;
+  description: string;
+  fromPosition: string;
+  toPosition: string;
+  estimatedTime: string;
+  steps: CareerStepNew[];
 }
 
 // ---------------------------------------------------------------
@@ -134,7 +241,7 @@ export interface CompetencyFramework {
 export interface CoreMgmtCompetencyRequirement {
   competencyId: string;
   competencyName: string;
-  type: 'core' | 'management';
+  type: 'core' | 'management' | 'professional';
   requiredLevel: CompetencyGradeLevel;  // L1-L6
   weight: number;  // 權重百分比
 }
@@ -156,6 +263,9 @@ export interface JobDescription {
   positionName: string;
   department: string;
   gradeLevel: string;
+  grade?: number;           // 職等數字 (如 1-7)
+  gradeCode?: string;       // 職等代碼 (如 M3)
+  positionTitle?: string;   // 職位 (如 Controller)
 
   // ====== 11 個區塊 ======
   // 1. 主要職責
@@ -177,6 +287,7 @@ export interface JobDescription {
   // 5.1 職能需求 (分類含權重)
   coreCompetencyRequirements?: CoreMgmtCompetencyRequirement[];      // 核心職能需求
   managementCompetencyRequirements?: CoreMgmtCompetencyRequirement[]; // 管理職能需求
+  professionalCompetencyRequirements?: CoreMgmtCompetencyRequirement[]; // 專業職能需求
   ksaCompetencyRequirements?: KSACompetencyRequirement[];            // KSA 職能需求
 
   // 5.2 職能內涵 (K/S/A 詳細內容)
@@ -203,7 +314,8 @@ export interface JobDescription {
   // ====== 元資料 ======
   summary: string;
   version: string;
-  status: 'draft' | 'published' | 'archived';
+  status: 'draft' | 'pending_review' | 'rejected' | 'published' | 'archived';
+  rejectedReason?: string;  // 退回原因
   createdAt: Date;
   updatedAt: Date;
   createdBy: string;
@@ -256,10 +368,15 @@ export interface CompetencyRequirement {
 }
 
 export interface JDVersion {
+  id: string;
   version: string;
+  status: string;
+  effectiveFrom: Date;
+  effectiveUntil?: Date;
   updatedAt: Date;
   updatedBy: string;
   changeLog: string;
+  createdBy?: string;
 }
 
 // ---------------------------------------------------------------
@@ -381,9 +498,10 @@ export interface CompetencyStats {
     attitude: number;
   };
   byCategory: {
-    core: number;        // 核心職能
-    management: number;  // 管理職能
-    ksa: number;         // KSA職能 (K/S/A)
+    core: number;           // 核心職能
+    management: number;     // 管理職能
+    professional?: number;  // 專業職能
+    ksa: number;            // KSA職能 (K/S/A)
   };
   recentlyUpdated: number;
 }
@@ -431,17 +549,23 @@ export const COMPETENCY_LEVEL_OPTIONS: SelectOption[] = [
 
 // 核心職能/管理職能等級選項 (L1-L6)
 export const COMPETENCY_GRADE_LEVEL_OPTIONS: SelectOption[] = [
-  { value: 'L1', label: 'L1 - 基礎執行' },
-  { value: 'L2', label: 'L2 - 獨立作業' },
-  { value: 'L3', label: 'L3 - 帶領團隊' },
-  { value: 'L4', label: 'L4 - 策略規劃' },
-  { value: 'L5', label: 'L5 - 高階領導' },
-  { value: 'L6', label: 'L6 - 戰略引領' }
+  { value: 'L1', label: 'L1' },
+  { value: 'L2', label: 'L2' },
+  { value: 'L3', label: 'L3' },
+  { value: 'L4', label: 'L4' },
+  { value: 'L5', label: 'L5' },
+  { value: 'L6', label: 'L6' }
 ];
 
 export const GRADE_TYPE_OPTIONS: SelectOption[] = [
   { value: 'professional', label: '專業職' },
   { value: 'management', label: '管理職' },
   { value: 'specialist', label: '專家職' }
+];
+
+// 新版雙軌制選項 (移除專家職)
+export const GRADE_TRACK_OPTIONS: SelectOption[] = [
+  { value: 'professional', label: '專業職' },
+  { value: 'management', label: '管理職' }
 ];
 

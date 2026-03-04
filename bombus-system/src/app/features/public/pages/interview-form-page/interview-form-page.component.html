@@ -1,0 +1,582 @@
+<div class="interview-form-container">
+  <!-- Header -->
+  <header class="form-header">
+    <div class="header-content">
+      <h1 class="form-title">面試記錄表</h1>
+      @if (formInfo()?.interview) {
+        <p class="form-subtitle">
+          {{ formInfo()?.interview?.jobTitle }} - {{ formInfo()?.interview?.department }}
+        </p>
+      }
+    </div>
+
+    <!-- Timer -->
+    @if (isFormStarted()) {
+      <div class="timer-container" [class.warning]="isTimeWarning()" [class.critical]="isTimeCritical()">
+        <i class="ri-timer-line timer-icon"></i>
+        <span class="timer-value">{{ formattedTime() }}</span>
+        @if (isLocked()) {
+          <span class="locked-badge">已鎖定</span>
+        }
+      </div>
+    }
+  </header>
+
+  <!-- Loading State -->
+  @if (loading()) {
+    <div class="loading-container">
+      <div class="spinner"></div>
+      <p>載入表單中...</p>
+    </div>
+  }
+
+  <!-- Success Page (表單提交成功) -->
+  @if (isSuccessPage()) {
+    <div class="success-container">
+      <div class="success-card">
+        <div class="success-icon-wrapper">
+          <i class="ri-checkbox-circle-line"></i>
+        </div>
+        <h2 class="success-title">表單已完成送出</h2>
+        <p class="success-message">感謝您填寫面試記錄表，我們已收到您的資料。</p>
+        <div class="success-info">
+          <p>人資部門將會審閱您的資料，並盡快與您聯繫。</p>
+          <p>如有任何問題，請聯繫人資部門。</p>
+        </div>
+        <div class="success-actions">
+          <a href="/" class="btn btn-primary">
+            <i class="ri-home-line"></i>
+            返回首頁
+          </a>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Error State -->
+  @if (error()) {
+    <div class="error-container">
+      <div class="error-card" [class.submitted]="errorType() === 'ALREADY_SUBMITTED'" [class.not-found]="errorType() === 'NOT_FOUND'">
+        <!-- Submitted Icon -->
+        @if (errorType() === 'ALREADY_SUBMITTED') {
+          <div class="error-icon-wrapper submitted">
+            <i class="ri-checkbox-circle-line"></i>
+          </div>
+          <h2 class="error-title">表單已完成送出</h2>
+        }
+        <!-- Not Found / Invalid Token Icon -->
+        @else if (errorType() === 'NOT_FOUND') {
+          <div class="error-icon-wrapper not-found">
+            <i class="ri-file-unknow-line"></i>
+          </div>
+          <h2 class="error-title">找不到表單</h2>
+        }
+        <!-- Locked / Time Exceeded Icon -->
+        @else if (errorType() === 'LOCKED' || errorType() === 'TIME_EXCEEDED') {
+          <div class="error-icon-wrapper locked">
+            <i class="ri-lock-line"></i>
+          </div>
+          <h2 class="error-title">表單已鎖定</h2>
+        }
+        <!-- Not Available Icon -->
+        @else if (errorType() === 'NOT_AVAILABLE') {
+          <div class="error-icon-wrapper not-available">
+            <i class="ri-time-line"></i>
+          </div>
+          <h2 class="error-title">尚未開放填寫</h2>
+        }
+        <!-- Default Error Icon -->
+        @else {
+          <div class="error-icon-wrapper">
+            <i class="ri-error-warning-line"></i>
+          </div>
+          <h2 class="error-title">無法載入表單</h2>
+        }
+        
+        <p class="error-message">{{ error() }}</p>
+        
+        @if (errorType() !== 'ALREADY_SUBMITTED') {
+          <div class="error-actions">
+            <button class="btn-retry" (click)="loadForm()">
+              <i class="ri-refresh-line"></i>
+              重新載入
+            </button>
+          </div>
+        }
+        
+        <p class="error-hint">
+          @if (errorType() === 'ALREADY_SUBMITTED') {
+            感謝您完成面試表單填寫
+          } @else if (errorType() === 'NOT_FOUND') {
+            請確認連結是否正確，或聯繫人資部門
+          } @else if (errorType() === 'NOT_AVAILABLE') {
+            此表單僅在面試當天開放
+          } @else {
+            如果問題持續發生，請聯繫人資部門
+          }
+        </p>
+      </div>
+    </div>
+  }
+
+  <!-- Start Form Screen -->
+  @if (!loading() && !error() && !isFormStarted()) {
+    <div class="start-screen">
+      <div class="start-card">
+        <div class="welcome-icon">
+          <i class="ri-file-text-line"></i>
+        </div>
+        <h2>歡迎，{{ formInfo()?.candidate?.name }}</h2>
+        <p class="welcome-desc">
+          感謝您參加我們的面試。請在開始前閱讀以下說明：
+        </p>
+        <ul class="instructions">
+          <li>本表單共有 {{ totalSteps() }} 個部分，包含約 50 題問答</li>
+          <li>填寫時間限制為 <strong>{{ formInfo()?.timeLimitMinutes }} 分鐘</strong></li>
+          <li>系統會自動儲存您的填寫進度</li>
+          <li>時間到後表單將自動鎖定，但仍可送出</li>
+          <li>請確保網路連線穩定</li>
+        </ul>
+        <button class="btn-start" (click)="startForm()">
+          開始填寫
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- Form Content -->
+  @if (!loading() && !error() && isFormStarted()) {
+    <div class="form-content">
+      <!-- Progress Bar -->
+      <div class="progress-section">
+        <div class="progress-bar">
+          <div class="progress-fill" [style.width.%]="progressPercentage()"></div>
+        </div>
+        <div class="step-indicators">
+          @for (title of stepTitles; track $index) {
+            <div
+              class="step-indicator"
+              [class.active]="currentStep() === $index + 1"
+              [class.completed]="currentStep() > $index + 1"
+              (click)="goToStep($index + 1)"
+            >
+              <span class="step-number">{{ $index + 1 }}</span>
+              <span class="step-title">{{ title }}</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Auto-save indicator -->
+      <div class="save-indicator" [class.saving]="isSaving()">
+        @if (isSaving()) {
+          <span>儲存中...</span>
+        } @else if (lastSavedAt()) {
+          <span>已自動儲存</span>
+        }
+      </div>
+
+      <!-- Step Content -->
+      <div class="step-content" [class.locked]="isLocked()">
+        <!-- Step 1: Basic Info & Work Experience -->
+        @if (currentStep() === 1) {
+          <div class="form-section">
+            <h2 class="section-title">基本資料</h2>
+            
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label required">填表日期</label>
+                <input
+                  type="date"
+                  class="form-input readonly-field"
+                  [value]="basicInfo().fillDate"
+                  readonly
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label required">應徵姓名</label>
+                <input
+                  type="text"
+                  class="form-input readonly-field"
+                  [value]="basicInfo().candidateName"
+                  readonly
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label required">應徵部門</label>
+                <input
+                  type="text"
+                  class="form-input readonly-field"
+                  [value]="basicInfo().applyDept"
+                  readonly
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label required">應徵職務</label>
+                <input
+                  type="text"
+                  class="form-input readonly-field"
+                  [value]="basicInfo().applyJob"
+                  readonly
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label required">聯絡方式</label>
+                <input
+                  type="text"
+                  class="form-input"
+                  [value]="basicInfo().contactInfo"
+                  (input)="updateBasicInfo('contactInfo', $any($event.target).value)"
+                  [disabled]="isLocked()"
+                  placeholder="電話/手機"
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label required">出生日期</label>
+                <input
+                  type="date"
+                  class="form-input"
+                  [value]="basicInfo().birthDate"
+                  (change)="updateBasicInfo('birthDate', $any($event.target).value)"
+                  [disabled]="isLocked()"
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label required">教育程度</label>
+                <select
+                  class="form-select"
+                  [value]="basicInfo().educationLevel"
+                  (change)="updateBasicInfo('educationLevel', $any($event.target).value)"
+                  [disabled]="isLocked()"
+                >
+                  @for (level of educationLevels; track level.value) {
+                    <option [value]="level.value">{{ level.label }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+
+            <h3 class="subsection-title">薪資資訊</h3>
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">目前薪資(月薪)</label>
+                <input
+                  type="number"
+                  class="form-input"
+                  [value]="basicInfo().currentSalaryMonth"
+                  (input)="updateBasicInfo('currentSalaryMonth', +$any($event.target).value)"
+                  [disabled]="isLocked()"
+                  placeholder="新台幣"
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">目前薪資(年薪)</label>
+                <input
+                  type="number"
+                  class="form-input"
+                  [value]="basicInfo().currentSalaryYear"
+                  (input)="updateBasicInfo('currentSalaryYear', +$any($event.target).value)"
+                  [disabled]="isLocked()"
+                  placeholder="新台幣"
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label required">期望薪資(月薪)</label>
+                <input
+                  type="number"
+                  class="form-input"
+                  [value]="basicInfo().expectedSalaryMonth"
+                  (input)="updateBasicInfo('expectedSalaryMonth', +$any($event.target).value)"
+                  [disabled]="isLocked()"
+                  placeholder="新台幣"
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label required">期望薪資(年薪)</label>
+                <input
+                  type="number"
+                  class="form-input"
+                  [value]="basicInfo().expectedSalaryYear"
+                  (input)="updateBasicInfo('expectedSalaryYear', +$any($event.target).value)"
+                  [disabled]="isLocked()"
+                  placeholder="新台幣"
+                />
+              </div>
+            </div>
+
+            <!-- 駕照區塊 -->
+            <div class="license-section">
+              <label class="form-label">駕照</label>
+              <div class="license-options">
+                <label class="license-option">
+                  <input
+                    type="checkbox"
+                    [checked]="basicInfo().licenses.includes('汽車')"
+                    (change)="toggleLicense('汽車')"
+                    [disabled]="isLocked()"
+                  />
+                  <span class="option-box">
+                    <i class="ri-car-line"></i>
+                    <span>汽車</span>
+                  </span>
+                </label>
+                <label class="license-option">
+                  <input
+                    type="checkbox"
+                    [checked]="basicInfo().licenses.includes('機車')"
+                    (change)="toggleLicense('機車')"
+                    [disabled]="isLocked()"
+                  />
+                  <span class="option-box">
+                    <i class="ri-motorbike-line"></i>
+                    <span>機車</span>
+                  </span>
+                </label>
+                <label class="license-option">
+                  <input
+                    type="checkbox"
+                    [checked]="basicInfo().licenses.includes('其他')"
+                    (change)="toggleLicense('其他')"
+                    [disabled]="isLocked()"
+                  />
+                  <span class="option-box">
+                    <i class="ri-file-list-3-line"></i>
+                    <span>其他</span>
+                  </span>
+                </label>
+              </div>
+              @if (basicInfo().licenses.includes('其他')) {
+              <div class="other-license-input">
+                <input
+                  type="text"
+                  class="form-input"
+                  [value]="basicInfo().otherLicense"
+                  (input)="updateBasicInfo('otherLicense', $any($event.target).value)"
+                  [disabled]="isLocked()"
+                  placeholder="請說明其他駕照類型"
+                />
+              </div>
+              }
+            </div>
+
+            <h2 class="section-title">工作經歷</h2>
+            <p class="section-desc">請填寫您的主要工作經歷</p>
+
+            @for (exp of workExperiences(); track $index) {
+              <div class="work-experience-card">
+                <div class="card-header">
+                  <span class="card-title">工作經歷 {{ $index + 1 }}</span>
+                  @if (workExperiences().length > 1) {
+                    <button
+                      class="btn-remove"
+                      (click)="removeWorkExperience($index)"
+                      [disabled]="isLocked()"
+                    >
+                      移除
+                    </button>
+                  }
+                </div>
+                <div class="form-grid three-cols">
+                  <div class="form-group">
+                    <label class="form-label required">公司名稱</label>
+                    <input
+                      type="text"
+                      class="form-input"
+                      [value]="exp.companyName"
+                      (input)="updateWorkExperience($index, 'companyName', $any($event.target).value)"
+                      [disabled]="isLocked()"
+                      placeholder="公司名稱"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label required">工作職務</label>
+                    <input
+                      type="text"
+                      class="form-input"
+                      [value]="exp.jobTitle"
+                      (input)="updateWorkExperience($index, 'jobTitle', $any($event.target).value)"
+                      [disabled]="isLocked()"
+                      placeholder="職務名稱"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label required">年資</label>
+                    <input
+                      type="text"
+                      class="form-input"
+                      [value]="exp.yearsOfService"
+                      (input)="updateWorkExperience($index, 'yearsOfService', $any($event.target).value)"
+                      [disabled]="isLocked()"
+                      placeholder="如：2年3個月"
+                    />
+                  </div>
+                </div>
+              </div>
+            }
+
+            <button
+              class="btn-add"
+              (click)="addWorkExperience()"
+              [disabled]="isLocked()"
+            >
+              + 新增工作經歷
+            </button>
+          </div>
+        }
+
+        <!-- Step 2: General Impression -->
+        @if (currentStep() === 2) {
+          <div class="form-section">
+            <h2 class="section-title">一般印象</h2>
+            <p class="section-desc">請詳細回答以下問題</p>
+
+            @for (question of step2Questions(); track question.code) {
+              <div class="question-card">
+                <label class="question-label" [class.required]="question.required">
+                  {{ question.question }}
+                </label>
+                <textarea
+                  class="form-textarea"
+                  [value]="interviewAnswers()[question.code] || ''"
+                  (input)="updateAnswer(question.code, $any($event.target).value)"
+                  [disabled]="isLocked()"
+                  rows="4"
+                  placeholder="請輸入您的回答..."
+                ></textarea>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Step 3: Experience & Attitude -->
+        @if (currentStep() === 3) {
+          <div class="form-section">
+            @for (entry of groupQuestionsByCategory(step3Questions()) | keyvalue; track entry.key) {
+              <div class="category-section">
+                <h2 class="section-title">{{ getCategoryTitle(entry.key) }}</h2>
+                
+                @for (question of entry.value; track question.code) {
+                  <div class="question-card">
+                    <label class="question-label" [class.required]="question.required">
+                      {{ question.question }}
+                    </label>
+                    <textarea
+                      class="form-textarea"
+                      [value]="interviewAnswers()[question.code] || ''"
+                      (input)="updateAnswer(question.code, $any($event.target).value)"
+                      [disabled]="isLocked()"
+                      rows="4"
+                      placeholder="請輸入您的回答..."
+                    ></textarea>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Step 4: Interpersonal & Conflict -->
+        @if (currentStep() === 4) {
+          <div class="form-section">
+            @for (entry of groupQuestionsByCategory(step4Questions()) | keyvalue; track entry.key) {
+              <div class="category-section">
+                <h2 class="section-title">{{ getCategoryTitle(entry.key) }}</h2>
+                
+                @for (question of entry.value; track question.code) {
+                  <div class="question-card">
+                    <label class="question-label" [class.required]="question.required">
+                      {{ question.question }}
+                    </label>
+                    <textarea
+                      class="form-textarea"
+                      [value]="interviewAnswers()[question.code] || ''"
+                      (input)="updateAnswer(question.code, $any($event.target).value)"
+                      [disabled]="isLocked()"
+                      rows="4"
+                      placeholder="請輸入您的回答..."
+                    ></textarea>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Step 5: Career Vision -->
+        @if (currentStep() === 5) {
+          <div class="form-section">
+            @for (entry of groupQuestionsByCategory(step5Questions()) | keyvalue; track entry.key) {
+              <div class="category-section">
+                <h2 class="section-title">{{ getCategoryTitle(entry.key) }}</h2>
+                
+                @for (question of entry.value; track question.code) {
+                  <div class="question-card">
+                    <label class="question-label" [class.required]="question.required">
+                      {{ question.question }}
+                    </label>
+                    <textarea
+                      class="form-textarea"
+                      [value]="interviewAnswers()[question.code] || ''"
+                      (input)="updateAnswer(question.code, $any($event.target).value)"
+                      [disabled]="isLocked()"
+                      rows="4"
+                      placeholder="請輸入您的回答..."
+                    ></textarea>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Navigation Buttons -->
+      <div class="navigation-buttons">
+        <button
+          class="btn-prev"
+          (click)="prevStep()"
+          [disabled]="currentStep() === 1"
+        >
+          上一步
+        </button>
+
+        <div class="nav-center">
+          <button
+            class="btn-save"
+            (click)="saveFormData()"
+            [disabled]="isLocked() || isSaving()"
+          >
+            {{ isSaving() ? '儲存中...' : '暫存' }}
+          </button>
+        </div>
+
+        @if (currentStep() < totalSteps()) {
+          <button
+            class="btn-next"
+            (click)="nextStep()"
+            [disabled]="isLocked()"
+          >
+            下一步
+          </button>
+        } @else {
+          <button
+            class="btn-submit"
+            (click)="submitForm()"
+            [disabled]="isSubmitting()"
+          >
+            {{ isSubmitting() ? '送出中...' : '送出表單' }}
+          </button>
+        }
+      </div>
+    </div>
+  }
+</div>

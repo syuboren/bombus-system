@@ -1,0 +1,303 @@
+// Public Interview Cancel Page Styles
+// 莫蘭迪配色，簡潔專業風格
+
+.cancel-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #F5F5F7 0%, #E8E8EA 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    font-family: 'Microsoft JhengHei', 'PingFang TC', sans-serif;
+}
+
+.cancel-container {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+    max-width: 500px;
+    width: 100%;
+    overflow: hidden;
+}
+
+// Loading State
+.loading-state {
+    text-align: center;
+    padding: 3rem;
+    color: #6B7280;
+
+    .spinner {
+        width: 48px;
+        height: 48px;
+        border: 4px solid #E8E8EA;
+        border-top-color: #8DA399;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 1rem;
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+}
+
+// Error State
+.error-state {
+    text-align: center;
+    padding: 3rem;
+
+    .error-icon {
+        font-size: 4rem;
+        color: #C77F7F;
+        margin-bottom: 1rem;
+
+        i {
+            display: block;
+        }
+    }
+
+    h2 {
+        margin: 0 0 0.5rem;
+        color: #1F2937;
+        font-size: 1.25rem;
+    }
+
+    p {
+        color: #6B7280;
+        margin: 0;
+    }
+}
+
+// Success State
+.success-state {
+    text-align: center;
+    padding: 3rem;
+
+    .success-icon {
+        font-size: 4rem;
+        color: #8DA399;
+        margin-bottom: 1rem;
+
+        i {
+            display: block;
+        }
+    }
+
+    h2 {
+        margin: 0 0 0.5rem;
+        color: #1F2937;
+        font-size: 1.25rem;
+    }
+
+    p {
+        color: #6B7280;
+        margin: 0;
+        line-height: 1.6;
+    }
+}
+
+// Main Content
+.cancel-content {
+    padding: 2rem;
+}
+
+.cancel-header {
+    text-align: center;
+    margin-bottom: 2rem;
+
+    .warning-icon {
+        width: 64px;
+        height: 64px;
+        background: rgba(199, 127, 127, 0.1);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+
+        i {
+            font-size: 2rem;
+            color: #C77F7F;
+        }
+    }
+
+    h1 {
+        margin: 0 0 0.5rem;
+        font-size: 1.5rem;
+        color: #1F2937;
+    }
+
+    .subtitle {
+        margin: 0;
+        color: #6B7280;
+        font-size: 0.9375rem;
+    }
+}
+
+.interview-details {
+    background: #F9FAFB;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.detail-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1rem;
+
+    &:last-child {
+        margin-bottom: 0;
+    }
+
+    > i {
+        font-size: 1.25rem;
+        color: #8DA399;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+    .detail-content {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+
+        .label {
+            font-size: 0.75rem;
+            color: #9CA3AF;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .value {
+            color: #1F2937;
+            font-weight: 500;
+        }
+
+        .meeting-link {
+            color: #8DA8BE;
+            text-decoration: none;
+            word-break: break-all;
+
+            &:hover {
+                text-decoration: underline;
+            }
+        }
+    }
+}
+
+.reason-section {
+    margin-bottom: 1.5rem;
+
+    label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-size: 0.875rem;
+        color: #4B5563;
+        font-weight: 500;
+    }
+
+    textarea {
+        width: 100%;
+        padding: 0.875rem 1rem;
+        border: 2px solid #E5E7EB;
+        border-radius: 8px;
+        font-size: 0.9375rem;
+        font-family: inherit;
+        resize: vertical;
+        transition: border-color 0.2s;
+
+        &:focus {
+            outline: none;
+            border-color: #8DA399;
+        }
+
+        &::placeholder {
+            color: #9CA3AF;
+        }
+    }
+}
+
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.5rem;
+    border-radius: 8px;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    i {
+        font-size: 1.125rem;
+    }
+}
+
+.btn-cancel {
+    background: #C77F7F;
+    color: white;
+
+    &:hover:not(:disabled) {
+        background: #B56B6B;
+    }
+}
+
+.spinner-small {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.note {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin: 1.5rem 0 0;
+    padding: 1rem;
+    background: rgba(141, 163, 153, 0.08);
+    border-radius: 8px;
+    font-size: 0.8125rem;
+    color: #6B8577;
+    line-height: 1.5;
+
+    i {
+        flex-shrink: 0;
+        font-size: 1rem;
+        margin-top: 1px;
+    }
+}
+
+// Responsive
+@media (max-width: 640px) {
+    .cancel-page {
+        padding: 1rem;
+    }
+
+    .cancel-content {
+        padding: 1.5rem;
+    }
+
+    .cancel-header h1 {
+        font-size: 1.25rem;
+    }
+}

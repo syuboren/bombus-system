@@ -1,0 +1,106 @@
+<div class="modal-overlay" [class.visible]="visible()">
+
+    <div class="modal-container" (click)="$event.stopPropagation()">
+        <!-- Header -->
+        <div class="modal-header">
+            <h2 class="modal-title">{{ modalTitle() }}</h2>
+            <button class="close-btn" (click)="onClose()" [disabled]="saving()">
+                <span class="close-icon">×</span>
+            </button>
+        </div>
+
+        <!-- Content -->
+        <div class="modal-content">
+            <!-- Error Message -->
+            @if (error()) {
+            <div class="error-message">
+                <span class="error-icon">⚠️</span>
+                {{ error() }}
+            </div>
+            }
+
+            <!-- Basic Info Section -->
+            <section class="form-section">
+                <h3 class="section-title">基本資訊</h3>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label required">職能代碼</label>
+                        <input type="text" class="form-input" [value]="formData().code"
+                            (input)="updateField('code', $any($event.target).value)" placeholder="例如：K-FIN-01"
+                            [disabled]="saving()" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label required">職能名稱</label>
+                        <input type="text" class="form-input" [value]="formData().name"
+                            (input)="updateField('name', $any($event.target).value)" placeholder="例如：財務報表知識"
+                            [disabled]="saving()" />
+                    </div>
+                </div>
+
+                <!-- KSA Type Selection -->
+                <div class="form-group">
+                    <label class="form-label required">KSA 類型</label>
+                    <div class="ksa-type-selector">
+                        @for (type of ksaTypes; track type.value) {
+                        <button type="button" class="ksa-type-btn" [class.active]="formData().ksaType === type.value"
+                            (click)="updateField('ksaType', type.value)" [disabled]="saving()">
+                            <i class="type-icon" [class]="type.icon"></i>
+                            <span class="type-label">{{ type.label }}</span>
+                        </button>
+                        }
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">職能描述</label>
+                    <textarea class="form-textarea" rows="3" [value]="formData().description"
+                        (input)="updateField('description', $any($event.target).value)" placeholder="請輸入職能描述..."
+                        [disabled]="saving()"></textarea>
+                </div>
+            </section>
+
+            <!-- Behavior Indicators Section -->
+            <section class="form-section">
+                <h3 class="section-title">行為指標</h3>
+                <p class="section-desc">定義具體的行為表現</p>
+
+                <div class="indicators-container">
+                    @for (indicator of formData().behaviorIndicators; track $index) {
+                    <div class="indicator-item">
+                        <span class="indicator-number">{{ $index + 1 }}.</span>
+                        <input type="text" class="indicator-input" [value]="indicator"
+                            (input)="updateIndicator($index, $any($event.target).value)" placeholder="輸入行為指標..."
+                            [disabled]="saving()" />
+                        <button class="remove-btn" (click)="removeIndicator($index)" [disabled]="saving()"
+                            title="移除此指標">
+                            ✕
+                        </button>
+                    </div>
+                    }
+
+                    <button class="add-indicator-btn" (click)="addIndicator()" [disabled]="saving()">
+                        <span class="add-icon">+</span>
+                        新增行為指標
+                    </button>
+                </div>
+            </section>
+        </div>
+
+        <!-- Footer -->
+        <div class="modal-footer">
+            <button class="btn btn-secondary" (click)="onClose()" [disabled]="saving()">
+                取消
+            </button>
+            <button class="btn btn-primary" (click)="onSave()" [disabled]="saving()">
+                @if (saving()) {
+                <span class="spinner"></span>
+                儲存中...
+                } @else {
+                {{ isEditMode() ? '更新' : '新增' }}
+                }
+            </button>
+        </div>
+    </div>
+</div>

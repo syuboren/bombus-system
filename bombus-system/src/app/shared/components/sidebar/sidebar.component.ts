@@ -4,6 +4,8 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { SidebarService } from '../../../core/services/sidebar.service';
 import { AuthService } from '../../../features/auth/services/auth.service';
 import { NotificationService } from '../../../core/services/notification.service';
+import { PermissionService } from '../../../core/services/permission.service';
+import { FeatureGateService } from '../../../core/services/feature-gate.service';
 
 interface MenuItem {
   label: string;
@@ -11,6 +13,7 @@ interface MenuItem {
   route?: string;
   badge?: string;
   moduleClass?: string;
+  featureId?: string;
   children?: MenuItem[];
 }
 
@@ -31,9 +34,12 @@ export class SidebarComponent {
   private sidebarService = inject(SidebarService);
   private authService = inject(AuthService);
   private notificationService = inject(NotificationService);
+  private permissionService = inject(PermissionService);
+  private featureGateService = inject(FeatureGateService);
 
   // Get current user from auth service
   readonly currentUser = this.authService.currentUser;
+  readonly isPlatformAdmin = this.permissionService.isPlatformAdmin;
 
   readonly isMinimized = this.sidebarService.isMinimized;
   readonly isMobileOpen = this.sidebarService.isMobileOpen;
@@ -59,11 +65,12 @@ export class SidebarComponent {
           icon: 'ri-team-line',
           moduleClass: 'module-l1',
           children: [
-            { label: '招募職缺管理', icon: '', route: '/employee/jobs' },
-            { label: 'AI智能面試', icon: '', route: '/employee/recruitment' },
-            { label: '員工檔案管理', icon: '', route: '/employee/profile' },
-            { label: '人才庫管理', icon: '', route: '/employee/talent-pool' },
-            { label: '會議管理', icon: '', route: '/employee/meeting' }
+            { label: '招募職缺管理', icon: '', route: '/employee/jobs', featureId: 'L1.jobs' },
+            { label: 'AI智能面試', icon: '', route: '/employee/recruitment', featureId: 'L1.recruitment' },
+            { label: '人才庫與再接觸管理', icon: '', route: '/employee/talent-pool', featureId: 'L1.talent-pool' },
+            { label: '員工檔案與歷程管理', icon: '', route: '/employee/profile', featureId: 'L1.profile' },
+            { label: '會議管理', icon: '', route: '/employee/meeting', featureId: 'L1.meeting' },
+            { label: '入職管理', icon: '', route: '/employee/onboarding', featureId: 'L1.onboarding' }
           ]
         },
         {
@@ -71,11 +78,11 @@ export class SidebarComponent {
           icon: 'ri-medal-line',
           moduleClass: 'module-l2',
           children: [
-            { label: '職等職級管理', icon: '', route: '/competency/grade-matrix' },
-            { label: '職務說明書', icon: '', route: '/competency/job-description' },
-            { label: '職能基準庫', icon: '', route: '/competency/framework' },
-            { label: '職能評估系統', icon: '', route: '/competency/assessment' },
-            { label: '職能落差分析', icon: '', route: '/competency/gap-analysis' }
+            { label: '職等職級管理', icon: '', route: '/competency/grade-matrix', featureId: 'L2.grade-matrix' },
+            { label: '職能模型基準', icon: '', route: '/competency/framework', featureId: 'L2.framework' },
+            { label: '職務說明書', icon: '', route: '/competency/job-description', featureId: 'L2.job-description' },
+            { label: '職能評估系統', icon: '', route: '/competency/assessment', featureId: 'L2.assessment' },
+            { label: '職能落差分析', icon: '', route: '/competency/gap-analysis', featureId: 'L2.gap-analysis' }
           ]
         },
         {
@@ -83,13 +90,13 @@ export class SidebarComponent {
           icon: 'ri-book-open-line',
           moduleClass: 'module-l3',
           children: [
-            { label: '課程與報名管理', icon: '', route: '/training/course-management' },
-            { label: '學習地圖', icon: '', route: '/training/learning-map' },
-            { label: '培訓成效追蹤', icon: '', route: '/training/effectiveness' },
-            { label: '組織職能熱力圖', icon: '', route: '/training/competency-heatmap' },
-            { label: '人才九宮格', icon: '', route: '/training/nine-box' },
-            { label: '學習發展路徑圖', icon: '', route: '/training/learning-path' },
-            { label: '關鍵人才儀表板', icon: '', route: '/training/key-talent' }
+            { label: '課程與報名管理', icon: '', route: '/training/course-management', featureId: 'L3.course-management' },
+            { label: '學習地圖', icon: '', route: '/training/learning-map', featureId: 'L3.learning-map' },
+            { label: '培訓成效追蹤', icon: '', route: '/training/effectiveness', featureId: 'L3.effectiveness' },
+            { label: '組織職能熱力圖', icon: '', route: '/training/competency-heatmap', featureId: 'L3.competency-heatmap' },
+            { label: '人才九宮格', icon: '', route: '/training/nine-box', featureId: 'L3.nine-box' },
+            { label: '學習發展路徑圖', icon: '', route: '/training/learning-path', featureId: 'L3.learning-path' },
+            { label: '關鍵人才儀表板', icon: '', route: '/training/key-talent', featureId: 'L3.key-talent' }
           ]
         },
         {
@@ -97,10 +104,10 @@ export class SidebarComponent {
           icon: 'ri-folder-chart-line',
           moduleClass: 'module-l4',
           children: [
-            { label: '專案列表', icon: '', route: '/project/list' },
-            { label: 'AI損益預測', icon: '', route: '/project/profit-prediction' },
-            { label: 'Forecast追蹤', icon: '', route: '/project/forecast' },
-            { label: '專案報表', icon: '', route: '/project/report' }
+            { label: '專案列表', icon: '', route: '/project/list', featureId: 'L4.list' },
+            { label: 'AI損益預測', icon: '', route: '/project/profit-prediction', featureId: 'L4.profit-prediction' },
+            { label: 'Forecast追蹤', icon: '', route: '/project/forecast', featureId: 'L4.forecast' },
+            { label: '專案報表', icon: '', route: '/project/report', featureId: 'L4.report' }
           ]
         },
         {
@@ -108,12 +115,12 @@ export class SidebarComponent {
           icon: 'ri-line-chart-line',
           moduleClass: 'module-l5',
           children: [
-            { label: '毛利監控儀表板', icon: '', route: '/performance/profit-dashboard' },
-            { label: '獎金分配計算', icon: '', route: '/performance/bonus-distribution' },
-            { label: '目標與任務管理', icon: '', route: '/performance/goal-task' },
-            { label: '毛利計算參數設定', icon: '', route: '/performance/profit-settings' },
-            { label: '績效考核', icon: '', route: '/performance/review' },
-            { label: '360度回饋', icon: '', route: '/performance/360-feedback' }
+            { label: '毛利監控儀表板', icon: '', route: '/performance/profit-dashboard', featureId: 'L5.profit-dashboard' },
+            { label: '獎金分配計算', icon: '', route: '/performance/bonus-distribution', featureId: 'L5.bonus-distribution' },
+            { label: '目標與任務管理', icon: '', route: '/performance/goal-task', featureId: 'L5.goal-task' },
+            { label: '毛利計算參數設定', icon: '', route: '/performance/profit-settings', featureId: 'L5.profit-settings' },
+            { label: '績效考核', icon: '', route: '/performance/review', featureId: 'L5.review' },
+            { label: '360度回饋', icon: '', route: '/performance/360-feedback', featureId: 'L5.360-feedback' }
           ]
         },
         {
@@ -121,13 +128,13 @@ export class SidebarComponent {
           icon: 'ri-heart-line',
           moduleClass: 'module-l6',
           children: [
-            { label: '企業文化手冊', icon: '', route: '/culture/handbook' },
-            { label: 'EAP員工協助', icon: '', route: '/culture/eap' },
-            { label: '獎項資料庫', icon: '', route: '/culture/awards' },
-            { label: '文件儲存庫', icon: '', route: '/culture/documents' },
-            { label: 'AI申請助理', icon: '', route: '/culture/ai-assistant' },
-            { label: '智慧文件分析', icon: '', route: '/culture/analysis' },
-            { label: '影響力評估', icon: '', route: '/culture/impact' }
+            { label: '企業文化手冊', icon: '', route: '/culture/handbook', featureId: 'L6.handbook' },
+            { label: 'EAP員工協助', icon: '', route: '/culture/eap', featureId: 'L6.eap' },
+            { label: '獎項資料庫', icon: '', route: '/culture/awards', featureId: 'L6.awards' },
+            { label: '文件儲存庫', icon: '', route: '/culture/documents', featureId: 'L6.documents' },
+            { label: 'AI申請助理', icon: '', route: '/culture/ai-assistant', featureId: 'L6.ai-assistant' },
+            { label: '智慧文件分析', icon: '', route: '/culture/analysis', featureId: 'L6.analysis' },
+            { label: '影響力評估', icon: '', route: '/culture/impact', featureId: 'L6.impact' }
           ]
         }
       ]
@@ -136,14 +143,15 @@ export class SidebarComponent {
       title: '系統設定',
       items: [
         {
-          label: '權限管理',
-          icon: 'ri-shield-user-line',
-          route: '/settings/permissions'
-        },
-        {
-          label: '備份管理',
-          icon: 'ri-database-2-line',
-          route: '/settings/backup'
+          label: '租戶管理',
+          icon: 'ri-settings-3-line',
+          children: [
+            { label: '組織架構管理', icon: '', route: '/settings/org-structure' },
+            { label: '使用者管理', icon: '', route: '/settings/users' },
+            { label: '角色權限管理', icon: '', route: '/settings/roles' },
+            { label: '權限可視化', icon: '', route: '/settings/permissions' },
+            { label: '審計日誌', icon: '', route: '/settings/audit' }
+          ]
         }
       ]
     },
@@ -168,6 +176,70 @@ export class SidebarComponent {
       ]
     }
   ];
+
+  readonly platformMenuSections: MenuSection[] = [
+    {
+      items: [
+        {
+          label: '平台總覽',
+          icon: 'ri-dashboard-line',
+          route: '/platform/tenants'
+        }
+      ]
+    },
+    {
+      title: '平台管理',
+      items: [
+        {
+          label: '租戶管理',
+          icon: 'ri-building-line',
+          route: '/platform/tenants'
+        },
+        {
+          label: '方案管理',
+          icon: 'ri-vip-crown-line',
+          route: '/platform/plans'
+        },
+        {
+          label: '審計日誌',
+          icon: 'ri-file-list-3-line',
+          route: '/platform/audit'
+        }
+      ]
+    }
+  ];
+
+  readonly activeMenuSections = computed(() => {
+    if (this.isPlatformAdmin()) {
+      return this.platformMenuSections;
+    }
+
+    // 觸發 signal 依賴以便功能變更時自動更新
+    this.featureGateService.enabledFeatures();
+
+    return this.menuSections
+      .map(section => ({
+        ...section,
+        items: section.items
+          .map(item => {
+            if (!item.children || item.children.length === 0) {
+              if (!item.featureId || this.featureGateService.isFeatureEnabled(item.featureId)) {
+                return item;
+              }
+              return null;
+            }
+
+            const visibleChildren = item.children.filter(
+              child => !child.featureId || this.featureGateService.isFeatureEnabled(child.featureId)
+            );
+
+            if (visibleChildren.length === 0) return null;
+            return { ...item, children: visibleChildren };
+          })
+          .filter((item): item is MenuItem => item !== null)
+      }))
+      .filter(section => section.items.length > 0);
+  });
 
   toggleSidebar(): void {
     this.sidebarService.toggle();

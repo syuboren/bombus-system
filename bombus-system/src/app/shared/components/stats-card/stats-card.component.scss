@@ -1,0 +1,84 @@
+.stat-card {
+  background: var(--color-bg-card, #ffffff);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
+  }
+
+  &__icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+  }
+
+  &__content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__value {
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--color-text-primary, #2d3748);
+    line-height: 1.2;
+  }
+
+  &__label {
+    font-size: 14px;
+    color: var(--color-text-secondary, #718096);
+    margin-top: 4px;
+  }
+
+  &__progress {
+    width: 60px;
+    flex-shrink: 0;
+  }
+}
+
+.mini-progress-bar {
+  height: 6px;
+  background: var(--color-bg-secondary, #edf2f7);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.mini-progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+// 響應式調整
+@media (max-width: 768px) {
+  .stat-card {
+    padding: 16px 20px;
+    gap: 12px;
+
+    &__icon {
+      width: 40px;
+      height: 40px;
+      font-size: 20px;
+    }
+
+    &__value {
+      font-size: 24px;
+    }
+
+    &__label {
+      font-size: 13px;
+    }
+  }
+}

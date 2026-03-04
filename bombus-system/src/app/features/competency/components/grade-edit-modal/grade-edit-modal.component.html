@@ -1,0 +1,112 @@
+<div class="modal-overlay" [class.visible]="visible()">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+        <!-- Header -->
+        <div class="modal-header">
+            <h2 class="modal-title">{{ isEditMode() ? '編輯職等' : '新增職等' }}</h2>
+            <button class="close-btn" (click)="onClose()" [disabled]="saving()">
+                <span class="close-icon">×</span>
+            </button>
+        </div>
+
+        <!-- Content -->
+        <div class="modal-content">
+            @if (error()) {
+            <div class="error-message">
+                <span class="error-icon">⚠️</span>
+                {{ error() }}
+            </div>
+            }
+
+            <!-- 基本資訊 -->
+            <section class="form-section">
+                <h3 class="section-title">基本資訊</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label required">職等</label>
+                        <input type="number" class="form-input" [value]="formData().grade"
+                            (input)="updateField('grade', +$any($event.target).value)" min="1" max="20"
+                            [disabled]="saving() || isEditMode()" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required">職等代碼範圍</label>
+                        <input type="text" class="form-input" [value]="formData().codeRange"
+                            (input)="updateField('codeRange', $any($event.target).value)" placeholder="例如：BS01-BS03"
+                            [disabled]="saving()" />
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label required">管理職稱謂</label>
+                        <input type="text" class="form-input" [value]="formData().titleManagement"
+                            (input)="updateField('titleManagement', $any($event.target).value)" placeholder="例如：新人級"
+                            [disabled]="saving()" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required">專業職稱謂</label>
+                        <input type="text" class="form-input" [value]="formData().titleProfessional"
+                            (input)="updateField('titleProfessional', $any($event.target).value)" placeholder="例如：新人級"
+                            [disabled]="saving()" />
+                    </div>
+                </div>
+            </section>
+
+            <!-- 學歷與職責 -->
+            <section class="form-section">
+                <h3 class="section-title">學歷與職責</h3>
+                <div class="form-group">
+                    <label class="form-label">學歷要求</label>
+                    <input type="text" class="form-input" [value]="formData().educationRequirement"
+                        (input)="updateField('educationRequirement', $any($event.target).value)" placeholder="例如：大學以上"
+                        [disabled]="saving()" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">工作職責描述</label>
+                    <textarea class="form-textarea" rows="3" [value]="formData().responsibilityDescription"
+                        (input)="updateField('responsibilityDescription', $any($event.target).value)"
+                        placeholder="請描述該職等的工作職責..." [disabled]="saving()"></textarea>
+                </div>
+            </section>
+
+            <!-- 職級薪資列表 -->
+            <section class="form-section">
+                <h3 class="section-title">
+                    職級薪資列表
+                    <span class="salary-count">（{{ formData().salaryLevels.length }} 筆）</span>
+                </h3>
+
+                <div class="salary-list">
+                    @for (sal of formData().salaryLevels; track $index) {
+                    <div class="salary-row">
+                        <span class="salary-index">{{ $index + 1 }}.</span>
+                        <input type="text" class="salary-code-input" [value]="sal.code"
+                            (input)="updateSalaryLevel($index, 'code', $any($event.target).value)"
+                            placeholder="代碼 (BS01)" [disabled]="saving()" />
+                        <input type="number" class="salary-amount-input" [value]="sal.salary"
+                            (input)="updateSalaryLevel($index, 'salary', +$any($event.target).value)" placeholder="薪資"
+                            [disabled]="saving()" />
+                        <button class="remove-btn" (click)="removeSalaryLevel($index)" [disabled]="saving()"
+                            title="移除">✕</button>
+                    </div>
+                    }
+                </div>
+
+                <button class="add-salary-btn" (click)="addSalaryLevel()" [disabled]="saving()">
+                    <span class="add-icon">+</span>
+                    新增薪資級別
+                </button>
+            </section>
+        </div>
+
+        <!-- Footer -->
+        <div class="modal-footer">
+            <button class="btn btn-secondary" (click)="onClose()" [disabled]="saving()">取消</button>
+            <button class="btn btn-primary" (click)="onSave()" [disabled]="saving()">
+                @if (saving()) {
+                <span class="spinner"></span> 儲存中...
+                } @else {
+                {{ isEditMode() ? '更新' : '新增' }}
+                }
+            </button>
+        </div>
+    </div>
+</div>

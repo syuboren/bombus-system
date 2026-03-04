@@ -1,0 +1,681 @@
+<!-- 參考資料面板 -->
+<div class="reference-panel" [class.expanded]="isExpanded()" [class.collapsed]="!isExpanded()">
+  <!-- 展開/收合按鈕 -->
+  <button class="toggle-btn" (click)="onToggleExpand()" type="button" [title]="isExpanded() ? '收合' : '展開'">
+    <i [class]="isExpanded() ? 'ri-arrow-right-s-line' : 'ri-arrow-left-s-line'"></i>
+  </button>
+
+  @if (isExpanded()) {
+  <div class="panel-content">
+    <!-- Tab 切換 -->
+    <div class="tab-header">
+      <button class="tab-btn" [class.active]="activeTab() === 'resume'" (click)="setActiveTab('resume')" type="button">
+        <i class="ri-file-user-line"></i>
+        履歷
+      </button>
+      <button class="tab-btn" [class.active]="activeTab() === 'ai'" (click)="setActiveTab('ai')" type="button">
+        <i class="ri-robot-line"></i>
+        AI 報告
+      </button>
+      <button class="tab-btn" [class.active]="activeTab() === 'form'" (click)="setActiveTab('form')" type="button">
+        <i class="ri-survey-line"></i>
+        記錄表
+      </button>
+    </div>
+
+    <!-- Tab 內容 -->
+    <div class="tab-content">
+      <!-- 履歷 Tab -->
+      @if (activeTab() === 'resume') {
+      <div class="tab-pane">
+        @if (candidateFull(); as full) {
+        <div class="resume-content">
+          <!-- 基本資料 -->
+          <section class="info-section">
+            <h4 class="section-title">
+              <i class="ri-user-line"></i>
+              基本資料
+            </h4>
+            <div class="info-grid">
+              <div class="info-item">
+                <span class="label">姓名</span>
+                <span class="value">{{ full.name }}</span>
+              </div>
+              @if (full.email) {
+              <div class="info-item">
+                <span class="label">Email</span>
+                <span class="value">{{ full.email }}</span>
+              </div>
+              }
+              @if (full.phone) {
+              <div class="info-item">
+                <span class="label">電話</span>
+                <span class="value">{{ full.phone }}</span>
+              </div>
+              }
+              @if (full.location) {
+              <div class="info-item">
+                <span class="label">地區</span>
+                <span class="value">{{ full.location }}</span>
+              </div>
+              }
+              @if (full.experienceYears) {
+              <div class="info-item">
+                <span class="label">經驗年資</span>
+                <span class="value">{{ full.experienceYears }} 年</span>
+              </div>
+              }
+            </div>
+          </section>
+
+          <!-- 自我介紹 -->
+          @if (full.introduction || full.biography) {
+          <section class="info-section">
+            <h4 class="section-title">
+              <i class="ri-chat-quote-line"></i>
+              自我介紹
+            </h4>
+            <p class="intro-text">{{ full.introduction || full.biography }}</p>
+            @if (full.motto) {
+            <div class="motto-block">
+              <i class="ri-double-quotes-l"></i>
+              <span>{{ full.motto }}</span>
+            </div>
+            }
+          </section>
+          }
+
+          <!-- 學歷 -->
+          @if (full.educationList && full.educationList.length) {
+          <section class="info-section">
+            <h4 class="section-title">
+              <i class="ri-graduation-cap-line"></i>
+              學歷
+            </h4>
+            <div class="timeline-list">
+              @for (edu of full.educationList; track $index) {
+              <div class="timeline-item">
+                <div class="timeline-header">
+                  <span class="title">{{ edu.schoolName }}</span>
+                  <span class="period">{{ formatDate(edu.startDate) }} - {{ formatDate(edu.endDate) }}</span>
+                </div>
+                <div class="timeline-sub">
+                  @if (edu.degreeLevel) {
+                  <span class="degree-badge">{{ edu.degreeLevel }}</span>
+                  }
+                  {{ edu.major }}
+                  @if (edu.degreeStatus) {
+                  <span class="status-text">· {{ edu.degreeStatus }}</span>
+                  }
+                </div>
+              </div>
+              }
+            </div>
+          </section>
+          }
+
+          <!-- 工作經歷 -->
+          @if (full.experienceList && full.experienceList.length) {
+          <section class="info-section">
+            <h4 class="section-title">
+              <i class="ri-briefcase-line"></i>
+              工作經歷
+            </h4>
+            <div class="experience-list">
+              @for (exp of full.experienceList; track $index) {
+              <div class="experience-card">
+                <div class="exp-header">
+                  <span class="exp-company">{{ exp.firmName }}</span>
+                  <span class="exp-period">{{ formatDate(exp.startDate) }} - {{ exp.endDate ? formatDate(exp.endDate) : '至今' }}</span>
+                </div>
+                <div class="exp-title">{{ exp.jobName }}</div>
+                @if (exp.industryCategory || exp.companySize || exp.workPlace) {
+                <div class="exp-meta">
+                  @if (exp.industryCategory) {
+                  <span><i class="ri-building-line"></i> {{ exp.industryCategory }}</span>
+                  }
+                  @if (exp.companySize) {
+                  <span><i class="ri-team-line"></i> {{ exp.companySize }}</span>
+                  }
+                  @if (exp.workPlace) {
+                  <span><i class="ri-map-pin-line"></i> {{ exp.workPlace }}</span>
+                  }
+                </div>
+                }
+                @if (exp.jobDesc) {
+                <div class="exp-desc">{{ exp.jobDesc }}</div>
+                }
+                @if (exp.skills) {
+                <div class="exp-skills">
+                  @for (skill of exp.skills.split(','); track $index) {
+                  <span class="skill-tag-sm">{{ skill }}</span>
+                  }
+                </div>
+                }
+              </div>
+              }
+            </div>
+          </section>
+          }
+
+          <!-- 技能專長 -->
+          @if (full.specialityList && full.specialityList.length) {
+          <section class="info-section">
+            <h4 class="section-title">
+              <i class="ri-tools-line"></i>
+              技能專長
+            </h4>
+            <div class="skills-grid">
+              @for (spec of full.specialityList; track $index) {
+              <div class="skill-card">
+                <div class="skill-name">{{ spec.skill }}</div>
+                @if (spec.description) {
+                <div class="skill-desc">{{ spec.description }}</div>
+                }
+                @if (spec.tags) {
+                <div class="skill-tags-row">
+                  @for (tag of spec.tags.split(','); track $index) {
+                  <span class="tag-mini">{{ tag }}</span>
+                  }
+                </div>
+                }
+              </div>
+              }
+            </div>
+          </section>
+          }
+
+          <!-- 語言能力 -->
+          @if (full.languageList && full.languageList.length) {
+          <section class="info-section">
+            <h4 class="section-title">
+              <i class="ri-global-line"></i>
+              語言能力
+            </h4>
+            <div class="language-list">
+              @for (lang of full.languageList; track $index) {
+              <div class="language-item">
+                <span class="lang-name">{{ lang.langType }}</span>
+                @if (lang.certificates) {
+                <span class="lang-cert">{{ lang.certificates }}</span>
+                }
+                @if (lang.degree) {
+                <span class="lang-degree">{{ lang.degree }}</span>
+                }
+              </div>
+              }
+            </div>
+          </section>
+          }
+
+          <!-- 專案作品 -->
+          @if (full.projectList && full.projectList.length) {
+          <section class="info-section">
+            <h4 class="section-title">
+              <i class="ri-folder-line"></i>
+              專案作品
+            </h4>
+            <div class="project-list">
+              @for (proj of full.projectList; track $index) {
+              <div class="project-card">
+                <div class="proj-title">{{ proj.title }}</div>
+                <div class="proj-period">{{ formatDate(proj.startDate) }} - {{ formatDate(proj.endDate) }}</div>
+                @if (proj.description) {
+                <div class="proj-desc">{{ proj.description }}</div>
+                }
+              </div>
+              }
+            </div>
+          </section>
+          }
+
+          <!-- 求職條件 -->
+          @if (full.preferredJobName || full.expectedSalary || full.startDateOpt) {
+          <section class="info-section">
+            <h4 class="section-title">
+              <i class="ri-file-list-line"></i>
+              求職條件
+            </h4>
+            <div class="info-grid">
+              @if (full.preferredJobName) {
+              <div class="info-item">
+                <span class="label">希望職稱</span>
+                <span class="value">{{ full.preferredJobName }}</span>
+              </div>
+              }
+              @if (full.expectedSalary) {
+              <div class="info-item">
+                <span class="label">期望待遇</span>
+                <span class="value">{{ full.expectedSalary }}</span>
+              </div>
+              }
+              @if (full.startDateOpt) {
+              <div class="info-item">
+                <span class="label">可上班日</span>
+                <span class="value">{{ full.startDateOpt }}</span>
+              </div>
+              }
+              @if (full.preferredLocation) {
+              <div class="info-item">
+                <span class="label">希望地點</span>
+                <span class="value">{{ full.preferredLocation }}</span>
+              </div>
+              }
+            </div>
+          </section>
+          }
+        </div>
+        } @else {
+        <div class="empty-state">
+          <i class="ri-file-user-line"></i>
+          <p>尚無履歷資料</p>
+        </div>
+        }
+      </div>
+      }
+
+      <!-- AI 報告 Tab -->
+      @if (activeTab() === 'ai') {
+      <div class="tab-pane">
+        @if (resumeAnalysis(); as analysis) {
+        <div class="ai-content">
+          <!-- 履歷-JD 吻合度總覽 -->
+          <section class="info-section match-overview">
+            <h4 class="section-title">
+              <i class="ri-bar-chart-box-line"></i>
+              履歷-JD 吻合度
+            </h4>
+            <div class="score-display" [class]="getRecommendationClass(analysis.overallMatchScore)">
+              <span class="score-value">{{ analysis.overallMatchScore }}</span>
+              <span class="score-label">/ 100</span>
+            </div>
+            <div class="recommendation-badge" [class]="getRecommendationClass(analysis.overallMatchScore)">
+              {{ getRecommendationText(analysis.overallMatchScore) }}
+            </div>
+          </section>
+
+          <!-- 三維分析分數 -->
+          <section class="info-section">
+            <h4 class="section-title">
+              <i class="ri-pie-chart-line"></i>
+              分數明細
+            </h4>
+            <div class="score-breakdown">
+              <div class="breakdown-item">
+                <span class="breakdown-label">需求條件匹配</span>
+                <div class="breakdown-bar">
+                  <div class="bar-fill" [style.width.%]="analysis.requirementMatchScore"></div>
+                </div>
+                <span class="breakdown-value">{{ analysis.requirementMatchScore }}分</span>
+              </div>
+              <div class="breakdown-item">
+                <span class="breakdown-label">技能關鍵字</span>
+                <div class="breakdown-bar">
+                  <div class="bar-fill" [style.width.%]="analysis.keywordMatchScore"></div>
+                </div>
+                <span class="breakdown-value">{{ analysis.keywordMatchScore }}分</span>
+              </div>
+              <div class="breakdown-item">
+                <span class="breakdown-label">經歷相關性</span>
+                <div class="breakdown-bar">
+                  <div class="bar-fill" [style.width.%]="analysis.experienceRelevanceScore"></div>
+                </div>
+                <span class="breakdown-value">{{ analysis.experienceRelevanceScore }}分</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- JD 需求條件對照 -->
+          @if (analysis.matchedRequirements.length || analysis.unmatchedRequirements.length) {
+          <section class="info-section">
+            <h4 class="section-title">
+              <i class="ri-checkbox-circle-line"></i>
+              JD 需求條件對照
+            </h4>
+            
+            @if (analysis.matchedRequirements.length) {
+            <div class="requirement-group">
+              <div class="group-label matched-label">
+                <i class="ri-check-line"></i> 符合的條件
+              </div>
+              @for (req of analysis.matchedRequirements; track $index) {
+              <div class="requirement-item matched">
+                <span class="req-text">{{ req.requirement }}</span>
+                @if (req.evidence) {
+                <span class="req-evidence">{{ req.evidence }}</span>
+                }
+              </div>
+              }
+            </div>
+            }
+
+            @if (analysis.unmatchedRequirements.length) {
+            <div class="requirement-group">
+              <div class="group-label unmatched-label">
+                <i class="ri-radio-button-line"></i> 未提及的條件
+              </div>
+              @for (req of analysis.unmatchedRequirements; track $index) {
+              <div class="requirement-item unmatched">
+                <span class="req-text">{{ req.requirement }}</span>
+                @if (req.note) {
+                <span class="req-note">{{ req.note }}</span>
+                }
+              </div>
+              }
+            </div>
+            }
+          </section>
+          }
+
+          <!-- 技能關鍵字 -->
+          @if (analysis.extractedTechSkills.length || analysis.extractedSoftSkills.length) {
+          <section class="info-section">
+            <h4 class="section-title">
+              <i class="ri-key-2-line"></i>
+              技能關鍵字提取
+            </h4>
+            
+            @if (analysis.extractedTechSkills.length) {
+            <div class="skill-category">
+              <div class="category-label">技術技能</div>
+              <div class="skill-tags">
+                @for (skill of analysis.extractedTechSkills; track $index) {
+                <span class="skill-tag tech">{{ skill }}</span>
+                }
+              </div>
+            </div>
+            }
+
+            @if (analysis.extractedSoftSkills.length) {
+            <div class="skill-category">
+              <div class="category-label">軟性技能</div>
+              <div class="skill-tags">
+                @for (skill of analysis.extractedSoftSkills; track $index) {
+                <span class="skill-tag soft">{{ skill }}</span>
+                }
+              </div>
+            </div>
+            }
+
+            <!-- 技能匹配統計 -->
+            <div class="match-stats">
+              <div class="stat-row">
+                <span class="stat-label">必備技能</span>
+                <div class="stat-bar-wrapper">
+                  <div class="stat-bar">
+                    <div class="stat-bar-fill" [style.width.%]="getMatchPercentage(analysis.jdRequiredMatchCount, analysis.jdRequiredTotalCount)"></div>
+                  </div>
+                  <span class="stat-value">{{ analysis.jdRequiredMatchCount }}/{{ analysis.jdRequiredTotalCount }} 項</span>
+                </div>
+              </div>
+              <div class="stat-row">
+                <span class="stat-label">加分技能</span>
+                <div class="stat-bar-wrapper">
+                  <div class="stat-bar">
+                    <div class="stat-bar-fill bonus" [style.width.%]="getMatchPercentage(analysis.jdBonusMatchCount, analysis.jdBonusTotalCount)"></div>
+                  </div>
+                  <span class="stat-value">{{ analysis.jdBonusMatchCount }}/{{ analysis.jdBonusTotalCount }} 項</span>
+                </div>
+              </div>
+            </div>
+          </section>
+          }
+
+          <!-- 經歷相關性 -->
+          @if (analysis.experienceAnalysis.length) {
+          <section class="info-section">
+            <h4 class="section-title">
+              <i class="ri-briefcase-4-line"></i>
+              經歷相關性分析
+            </h4>
+            <div class="experience-relevance-list">
+              @for (exp of analysis.experienceAnalysis; track $index) {
+              <div class="relevance-card">
+                <div class="rel-header">
+                  <span class="rel-firm">{{ exp.firm }}</span>
+                  <span class="rel-duration">{{ exp.duration }}</span>
+                </div>
+                <div class="rel-job">{{ exp.job }}</div>
+                <div class="rel-level">
+                  <span class="rel-level-label">相關性</span>
+                  <div class="rel-dots">
+                    @for (i of [1,2,3,4,5]; track i) {
+                    <span class="rel-dot" [class.active]="i <= exp.relevance_level"></span>
+                    }
+                  </div>
+                  <span class="rel-level-text">{{ getRelevanceLevelText(exp.relevance_level) }}</span>
+                </div>
+              </div>
+              }
+            </div>
+
+            <div class="years-summary">
+              <div class="years-item">
+                <span class="years-label">總相關年資</span>
+                <span class="years-value total">{{ analysis.totalRelevantYears }} 年</span>
+              </div>
+              <div class="years-divider"></div>
+              <div class="years-item">
+                <span class="years-label">JD 要求年資</span>
+                <span class="years-value">{{ analysis.jdRequiredYears }} 年</span>
+              </div>
+              <div class="years-check">
+                @if (analysis.totalRelevantYears >= analysis.jdRequiredYears) {
+                <i class="ri-check-line pass"></i>
+                } @else {
+                <i class="ri-close-line fail"></i>
+                }
+              </div>
+            </div>
+          </section>
+          }
+
+          <!-- 履歷內容品質評估 -->
+          @if (analysis.writingStyle || analysis.contentFeatures.length || analysis.areasToClarify.length) {
+          <section class="info-section quality-section">
+            <h4 class="section-title">
+              <i class="ri-article-line"></i>
+              履歷內容品質評估
+            </h4>
+            
+            <div class="quality-meta">
+              @if (analysis.writingStyle) {
+              <div class="quality-item">
+                <span class="quality-label">書寫風格</span>
+                <span class="quality-value">{{ analysis.writingStyle }}</span>
+              </div>
+              }
+              @if (analysis.analysisConfidence) {
+              <div class="quality-item">
+                <span class="quality-label">分析信心度</span>
+                <span class="quality-value">{{ analysis.analysisConfidence }}%</span>
+              </div>
+              }
+            </div>
+
+            @if (analysis.contentFeatures.length) {
+            <div class="features-block">
+              <div class="features-title">內容特點</div>
+              @for (feature of analysis.contentFeatures; track $index) {
+              <div class="feature-item">
+                <div class="feature-icon">
+                  <i class="ri-check-double-line"></i>
+                </div>
+                <div class="feature-content">
+                  <div class="feature-type">{{ feature.type }}</div>
+                  <div class="feature-desc">{{ feature.description }}</div>
+                </div>
+              </div>
+              }
+            </div>
+            }
+
+            @if (analysis.areasToClarify.length) {
+            <div class="clarify-block">
+              <div class="clarify-title">需進一步了解的部分</div>
+              <ul class="clarify-list">
+                @for (item of analysis.areasToClarify; track $index) {
+                <li>{{ item }}</li>
+                }
+              </ul>
+            </div>
+            }
+          </section>
+          }
+
+          <!-- 面試關注點建議 -->
+          @if (analysis.techVerificationPoints.length || analysis.experienceSupplementPoints.length) {
+          <section class="info-section">
+            <h4 class="section-title">
+              <i class="ri-question-answer-line"></i>
+              面試關注點建議
+            </h4>
+
+            @if (analysis.techVerificationPoints.length) {
+            <div class="focus-block">
+              <div class="focus-header">
+                <i class="ri-code-s-slash-line"></i>
+                <span>技術驗證</span>
+              </div>
+              <ul class="focus-list">
+                @for (point of analysis.techVerificationPoints; track $index) {
+                <li>{{ point }}</li>
+                }
+              </ul>
+            </div>
+            }
+
+            @if (analysis.experienceSupplementPoints.length) {
+            <div class="focus-block">
+              <div class="focus-header">
+                <i class="ri-briefcase-4-line"></i>
+                <span>經歷補充</span>
+              </div>
+              <ul class="focus-list">
+                @for (point of analysis.experienceSupplementPoints; track $index) {
+                <li>{{ point }}</li>
+                }
+              </ul>
+            </div>
+            }
+
+            <!-- 分析元資訊 -->
+            <div class="ai-meta">
+              @if (analysis.analyzedAt) {
+              <div class="meta-item">
+                <i class="ri-time-line"></i>
+                <span>分析時間：{{ formatDate(analysis.analyzedAt) }}</span>
+              </div>
+              }
+              @if (analysis.analysisEngineVersion) {
+              <div class="meta-item">
+                <i class="ri-robot-line"></i>
+                <span>{{ analysis.analysisEngineVersion }}</span>
+              </div>
+              }
+              @if (analysis.resumeWordCount) {
+              <div class="meta-item">
+                <i class="ri-file-text-line"></i>
+                <span>履歷字數：{{ analysis.resumeWordCount }} 字</span>
+              </div>
+              }
+            </div>
+          </section>
+          }
+        </div>
+        } @else {
+        <div class="empty-state">
+          <i class="ri-robot-line"></i>
+          <p>尚未進行履歷解析</p>
+        </div>
+        }
+      </div>
+      }
+
+      <!-- 記錄表 Tab -->
+      @if (activeTab() === 'form') {
+      <div class="tab-pane">
+        @if (candidateFormData(); as formData) {
+        <div class="form-content">
+          <!-- 基本資料 -->
+          <section class="info-section">
+            <h4 class="section-title">
+              <i class="ri-profile-line"></i>
+              填寫資料
+            </h4>
+            <div class="info-grid">
+              <div class="info-item">
+                <span class="label">填表日期</span>
+                <span class="value">{{ formData.basicInfo.fillDate }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">應徵部門</span>
+                <span class="value">{{ formData.basicInfo.applyDept }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">應徵職務</span>
+                <span class="value">{{ formData.basicInfo.applyJob }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">期望月薪</span>
+                <span class="value">{{ formData.basicInfo.expectedSalaryMonth | number }} 元</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- 工作經歷 -->
+          @if (formData.workExperiences && formData.workExperiences.length) {
+          <section class="info-section">
+            <h4 class="section-title">
+              <i class="ri-briefcase-line"></i>
+              工作經歷
+            </h4>
+            <div class="timeline-list">
+              @for (exp of formData.workExperiences; track $index) {
+              <div class="timeline-item">
+                <div class="timeline-header">
+                  <span class="title">{{ exp.companyName }}</span>
+                  <span class="period">{{ exp.yearsOfService }}</span>
+                </div>
+                <div class="timeline-sub">{{ exp.jobTitle }}</div>
+              </div>
+              }
+            </div>
+          </section>
+          }
+
+          <!-- 面試問答 -->
+          @if (groupedQuestions().length) {
+          <section class="info-section">
+            <h4 class="section-title">
+              <i class="ri-questionnaire-line"></i>
+              面試問答
+            </h4>
+            <div class="qa-groups">
+              @for (group of groupedQuestions(); track group.category) {
+              <div class="qa-group">
+                <h5 class="group-title">{{ group.label }}</h5>
+                @for (qa of group.questions; track $index) {
+                <div class="qa-item">
+                  <div class="qa-question">{{ qa.question }}</div>
+                  <div class="qa-answer">{{ qa.answer }}</div>
+                </div>
+                }
+              </div>
+              }
+            </div>
+          </section>
+          }
+        </div>
+        } @else {
+        <div class="empty-state">
+          <i class="ri-survey-line"></i>
+          <p>候選人尚未填寫記錄表</p>
+        </div>
+        }
+      </div>
+      }
+    </div>
+  </div>
+  }
+</div>

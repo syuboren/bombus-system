@@ -33,11 +33,11 @@ $ksa-color: #8DA399;
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: $spacing-md;
 
   @include media-max-lg {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
   }
 
   @include media-max-sm {
@@ -53,7 +53,7 @@ $ksa-color: #8DA399;
   padding: $spacing-lg;
   box-shadow: $shadow-soft;
   transition: transform 0.3s $animation-easing-elastic,
-              box-shadow 0.3s $animation-easing-standard;
+    box-shadow 0.3s $animation-easing-standard;
   animation: fadeInUp 0.5s $animation-easing-decelerate both;
   @include stagger-animation(80ms, 4);
 
@@ -106,6 +106,7 @@ $ksa-color: #8DA399;
       background: rgba($core-color, 0.15);
       color: $core-color;
     }
+
     .stat-card__value {
       color: $core-color;
     }
@@ -116,8 +117,20 @@ $ksa-color: #8DA399;
       background: rgba($management-color, 0.15);
       color: $management-color;
     }
+
     .stat-card__value {
       color: $management-color;
+    }
+  }
+
+  &--professional {
+    .stat-card__icon {
+      background: rgba(#4A7C6F, 0.15);
+      color: #4A7C6F;
+    }
+
+    .stat-card__value {
+      color: #4A7C6F;
     }
   }
 
@@ -126,6 +139,7 @@ $ksa-color: #8DA399;
       background: rgba($ksa-color, 0.15);
       color: $ksa-color;
     }
+
     .stat-card__value {
       color: $ksa-color;
     }
@@ -318,7 +332,7 @@ $ksa-color: #8DA399;
   border-radius: $radius-lg;
   overflow: hidden;
   transition: all 0.3s $animation-easing-standard,
-              transform 0.3s $animation-easing-elastic;
+    transform 0.3s $animation-easing-elastic;
   animation: fadeInUp 0.4s $animation-easing-decelerate both;
   @include stagger-animation(100ms, 10);
 
@@ -330,7 +344,7 @@ $ksa-color: #8DA399;
   &.expanded {
     border-color: $module-color;
     box-shadow: 0 4px 20px rgba($module-color, 0.15);
-    
+
     .hierarchy-item__expand-icon {
       transform: rotate(180deg);
     }
@@ -522,6 +536,7 @@ $ksa-color: #8DA399;
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -548,8 +563,8 @@ $ksa-color: #8DA399;
   @include flex-start;
   gap: $spacing-sm;
   padding: $spacing-sm 0;
-    font-size: $font-size-sm;
-    color: $color-text-primary;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
   border-bottom: 1px dashed $color-soft-gray;
   line-height: $line-height-relaxed;
 
@@ -594,65 +609,21 @@ $ksa-color: #8DA399;
 }
 
 // Filters Bar
-.filters-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: $spacing-md;
-  padding: $spacing-md;
-  background: $color-cloud-gray;
-  border-radius: $radius-md;
-  margin-bottom: $spacing-md;
-  align-items: flex-end;
+.filter-bar {
+  @include filter-bar($module-color);
 }
 
-.filter-group {
-  display: flex;
-  flex-direction: column;
-  gap: $spacing-xs;
 
-  &--search {
-    flex: 1;
-    min-width: 200px;
-  }
+
+.search-box {
+  @include search-box;
 }
 
-.filter-label {
-  font-size: $font-size-xs;
-  font-weight: $font-weight-medium;
-  color: $color-text-secondary;
-}
 
-.filter-select {
-  @include input-base;
-  min-width: 140px;
-  padding-right: $spacing-xl;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236B7280'%3E%3Cpath d='M12 15l-5-5h10z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right $spacing-sm center;
-  background-size: 16px;
-  cursor: pointer;
-}
 
-.search-input-wrapper {
-  position: relative;
-
-  i {
-    position: absolute;
-    left: $spacing-sm;
-    top: 50%;
-    transform: translateY(-50%);
-    color: $color-muted-gray;
-    font-size: $font-size-base;
-  }
-}
-
-.search-input {
-  @include input-base;
-  width: 100%;
-  padding-left: $spacing-xl;
-}
 
 .btn-clear {
+  // Keep custom style or use secondary button
   @include flex-center;
   gap: $spacing-xs;
   padding: $spacing-sm $spacing-md;
@@ -698,8 +669,13 @@ $ksa-color: #8DA399;
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 // ---------------------------------------------------------------
@@ -748,9 +724,17 @@ $ksa-color: #8DA399;
     font-weight: $font-weight-bold;
     color: white;
 
-    &.type-knowledge { background: $color-info; }
-    &.type-skill { background: $ksa-color; }
-    &.type-attitude { background: $core-color; }
+    &.type-knowledge {
+      background: $color-info;
+    }
+
+    &.type-skill {
+      background: $ksa-color;
+    }
+
+    &.type-attitude {
+      background: $core-color;
+    }
   }
 
   &__name {
@@ -765,10 +749,7 @@ $ksa-color: #8DA399;
     color: $color-text-secondary;
     margin: 0 0 $spacing-md;
     line-height: $line-height-relaxed;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    @include text-clamp(2);
   }
 
   &__footer {
@@ -789,54 +770,32 @@ $ksa-color: #8DA399;
 // ---------------------------------------------------------------
 .competency-table-wrapper {
   overflow-x: auto;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-soft;
 }
 
-.competency-table {
-  width: 100%;
-  border-collapse: collapse;
+.data-table {
+  @include data-table($ksa-color);
+}
 
-  th, td {
-    padding: $spacing-sm $spacing-md;
-    text-align: left;
-    border-bottom: 1px solid $color-soft-gray;
-  }
+.td-code {
+  font-family: $font-family-mono;
+  font-weight: $font-weight-semibold;
+  color: $color-text-secondary;
+}
 
-  th {
-    font-size: $font-size-sm;
-    font-weight: $font-weight-semibold;
-    color: $color-text-secondary;
-    background: $color-cloud-gray;
-    white-space: nowrap;
-  }
+.td-name {
+  font-weight: $font-weight-medium;
+  color: $color-text-dark;
+}
 
-  tbody tr {
-    cursor: pointer;
-    transition: background $transition-fast;
-
-    &:hover {
-      background: rgba($ksa-color, 0.05);
-    }
-  }
-
-  .td-code {
-    font-family: $font-family-mono;
-    font-size: $font-size-sm;
-    color: $color-text-secondary;
-  }
-
-  .td-name {
-    font-weight: $font-weight-medium;
-    color: $color-text-dark;
-  }
-
-  .td-desc {
-    font-size: $font-size-sm;
-    color: $color-text-secondary;
-    max-width: 300px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
+.td-desc {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  max-width: 300px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .type-badge {
@@ -850,10 +809,12 @@ $ksa-color: #8DA399;
     background: rgba($color-info, 0.15);
     color: $color-info;
   }
+
   &.type-skill {
     background: rgba($ksa-color, 0.15);
     color: $ksa-color;
   }
+
   &.type-attitude {
     background: rgba($core-color, 0.15);
     color: $core-color;
@@ -908,49 +869,19 @@ $ksa-color: #8DA399;
 // ---------------------------------------------------------------
 // Modal
 // ---------------------------------------------------------------
+// ---------------------------------------------------------------
+// Modal Details
+// ---------------------------------------------------------------
 .modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 1000;
+  @include modal-backdrop;
 }
 
-.modal {
-  @include flex-center;
-  position: fixed;
-  inset: 0;
-  z-index: 1001;
-  padding: $spacing-md;
-}
-
-.modal-content {
-  background: $color-pure-white;
-  border-radius: $radius-lg;
-  box-shadow: $shadow-xl;
-  width: 100%;
-  max-width: 600px;
-  max-height: 90vh;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  animation: modalSlideIn 0.3s ease-out;
-}
-
-@keyframes modalSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.modal-container {
+  @include modal-container;
 }
 
 .modal-header {
-  @include flex-between;
-  padding: $spacing-md $spacing-lg;
-  border-bottom: 1px solid $color-soft-gray;
+  @include modal-header;
 
   &__info {
     @include flex-start;
@@ -958,64 +889,76 @@ $ksa-color: #8DA399;
   }
 
   &__code {
-    font-size: $font-size-sm;
+    font-size: $font-size-xs;
     font-family: $font-family-mono;
     color: $color-text-secondary;
     background: $color-cloud-gray;
-    padding: 4px 8px;
+    padding: 2px 6px;
     border-radius: $radius-sm;
   }
 
   &__type {
     @include flex-center;
-    padding: 4px 10px;
+    width: 24px;
+    height: 24px;
     border-radius: $radius-sm;
     font-size: $font-size-xs;
     font-weight: $font-weight-bold;
     color: white;
 
-    &.type-knowledge { background: $color-info; }
-    &.type-skill { background: $ksa-color; }
-    &.type-attitude { background: $core-color; }
+    &.type-knowledge {
+      background: $color-info;
+    }
+
+    &.type-skill {
+      background: $ksa-color;
+    }
+
+    &.type-attitude {
+      background: $core-color;
+    }
   }
 }
 
 .btn-close {
   @include button-icon;
-  width: 36px;
-  height: 36px;
-  font-size: 20px;
 }
 
 .modal-body {
-  flex: 1;
-  overflow-y: auto;
   padding: $spacing-lg;
+  overflow-y: auto;
+  @include custom-scrollbar;
 }
 
 .modal-title {
-  font-size: $font-size-xl;
+  font-size: $font-size-2xl;
   font-weight: $font-weight-bold;
   color: $color-text-dark;
   margin: 0 0 $spacing-lg;
 }
 
 .modal-section {
-  margin-bottom: $spacing-lg;
+  margin-bottom: $spacing-xl;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
 
   &__title {
     font-size: $font-size-sm;
     font-weight: $font-weight-semibold;
-    color: $color-text-dark;
-    margin: 0 0 $spacing-sm;
+    color: $color-text-secondary;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 0 $spacing-md;
     padding-bottom: $spacing-xs;
     border-bottom: 2px solid $ksa-color;
     display: inline-block;
   }
 
   &__content {
-    font-size: $font-size-sm;
-    color: $color-text-secondary;
+    font-size: $font-size-base;
+    color: $color-text-primary;
     line-height: $line-height-relaxed;
     margin: 0;
   }
@@ -1067,4 +1010,163 @@ $ksa-color: #8DA399;
   gap: $spacing-sm;
   padding: $spacing-md $spacing-lg;
   border-top: 1px solid $color-soft-gray;
+}
+
+// ---------------------------------------------------------------
+// Action Buttons
+// ---------------------------------------------------------------
+.btn-add {
+  @include flex-center;
+  gap: $spacing-xs;
+  padding: $spacing-sm $spacing-md;
+  background: $module-color;
+  color: white;
+  border: none;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: all $transition-fast;
+  white-space: nowrap;
+
+  i {
+    font-size: 16px;
+  }
+
+  &:hover {
+    background: $module-color-dark;
+    transform: translateY(-1px);
+    box-shadow: $shadow-md;
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.section-header__actions {
+  @include flex-start;
+  gap: $spacing-sm;
+}
+
+// ---------------------------------------------------------------
+// Toast Notifications
+// ---------------------------------------------------------------
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-md $spacing-lg;
+  background: $color-text-dark;
+  color: white;
+  border-radius: $radius-md;
+  box-shadow: $shadow-lg;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  z-index: 10000;
+  animation: toastSlideIn 0.3s $animation-easing-elastic;
+
+  i {
+    font-size: 18px;
+  }
+
+  &--success {
+    background: $color-success;
+
+    i {
+      color: white;
+    }
+  }
+
+  &--error {
+    background: $color-error;
+
+    i {
+      color: white;
+    }
+  }
+}
+
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(100%) translateY(0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0) translateY(0);
+  }
+}
+
+// ---------------------------------------------------------------
+// Action Buttons for Items
+// ---------------------------------------------------------------
+.hierarchy-item__actions {
+  @include flex-start;
+  gap: $spacing-xs;
+  flex-shrink: 0;
+  margin-left: $spacing-md;
+}
+
+.btn-action {
+  @include flex-center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: $radius-sm;
+  background: transparent;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  i {
+    font-size: 16px;
+  }
+
+  &:hover {
+    background: $color-soft-gray;
+    color: $color-text-dark;
+  }
+
+  &--view {
+    &:hover {
+      background: rgba($color-info, 0.1);
+      color: $color-info;
+    }
+  }
+
+  &--edit {
+    &:hover {
+      background: rgba($module-color, 0.1);
+      color: $module-color;
+    }
+  }
+
+  &--delete {
+    &:hover {
+      background: rgba($color-error, 0.15);
+      color: $color-error;
+    }
+  }
+}
+
+// KSA Card Actions
+.competency-card__footer {
+  @include flex-between;
+}
+
+.competency-card__actions {
+  @include flex-start;
+  gap: $spacing-xs;
+}
+
+// Table Actions
+.table-actions {
+  @include flex-start;
+  gap: $spacing-xs;
 }

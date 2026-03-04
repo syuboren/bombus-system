@@ -1,0 +1,128 @@
+<div class="cancel-page">
+  <div class="cancel-container">
+    <!-- Loading State -->
+    @if (loading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>載入中...</p>
+    </div>
+    }
+
+    <!-- Error State -->
+    @if (error()) {
+    <div class="error-state">
+      <div class="error-icon">
+        <i class="ri-error-warning-line"></i>
+      </div>
+      <h2>無法處理您的請求</h2>
+      <p>{{ error() }}</p>
+    </div>
+    }
+
+    <!-- Success State -->
+    @if (success()) {
+    <div class="success-state">
+      <div class="success-icon">
+        <i class="ri-checkbox-circle-line"></i>
+      </div>
+      <h2>已收到您的取消請求</h2>
+      <p>感謝您的通知，我們已收到您的取消請求。<br>祝您一切順利！</p>
+    </div>
+    }
+
+    <!-- Main Content -->
+    @if (!loading() && !error() && !success()) {
+    <div class="cancel-content">
+      <div class="cancel-header">
+        <div class="warning-icon">
+          <i class="ri-calendar-close-line"></i>
+        </div>
+        <h1>取消面試</h1>
+        <p class="subtitle">{{ candidateName() }} 您好，請確認是否要取消以下面試：</p>
+      </div>
+
+      <div class="interview-details">
+        <div class="detail-item">
+          <i class="ri-briefcase-line"></i>
+          <div class="detail-content">
+            <span class="label">應徵職位</span>
+            <span class="value">{{ jobTitle() }}</span>
+          </div>
+        </div>
+
+        <div class="detail-item">
+          <i class="ri-calendar-event-line"></i>
+          <div class="detail-content">
+            <span class="label">面試時間</span>
+            <span class="value">{{ formatDateTime(interviewAt()) }}</span>
+          </div>
+        </div>
+
+        <div class="detail-item">
+          <i class="ri-building-line"></i>
+          <div class="detail-content">
+            <span class="label">面試方式</span>
+            <span class="value">{{ getLocationLabel(location()) }}</span>
+          </div>
+        </div>
+
+        @if (location() === 'onsite') {
+        <div class="detail-item">
+          <i class="ri-map-pin-line"></i>
+          <div class="detail-content">
+            <span class="label">面試地點</span>
+            <span class="value">{{ address() || '待確認' }}</span>
+          </div>
+        </div>
+        }
+
+        @if (location() === 'online') {
+        <div class="detail-item">
+          <i class="ri-video-chat-line"></i>
+          <div class="detail-content">
+            <span class="label">線上會議連結</span>
+            @if (meetingLink()) {
+            <a class="value meeting-link" [href]="meetingLink()" target="_blank">{{ meetingLink() }}</a>
+            } @else {
+            <span class="value">待確認</span>
+            }
+          </div>
+        </div>
+        }
+      </div>
+
+      <div class="reason-section">
+        <label for="cancelReason">取消原因（選填）</label>
+        <textarea
+          id="cancelReason"
+          [value]="cancelReason()"
+          (input)="cancelReason.set($any($event.target).value)"
+          placeholder="請簡述您取消面試的原因..."
+          rows="3"
+        ></textarea>
+      </div>
+
+      <div class="action-buttons">
+        <button
+          class="btn btn-cancel"
+          (click)="confirmCancel()"
+          [disabled]="submitting()"
+        >
+          @if (submitting()) {
+          <span class="spinner-small"></span>
+          處理中...
+          } @else {
+          <i class="ri-close-circle-line"></i>
+          確認取消面試
+          }
+        </button>
+      </div>
+
+      <p class="note">
+        <i class="ri-information-line"></i>
+        取消後我們會將您的資料保留在人才庫中，期待未來有機會再次合作。
+      </p>
+    </div>
+    }
+  </div>
+</div>

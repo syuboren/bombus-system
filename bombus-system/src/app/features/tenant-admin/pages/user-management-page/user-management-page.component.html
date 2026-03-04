@@ -1,0 +1,226 @@
+<div class="user-management-page">
+  <div class="page-header">
+    <h1 class="page-title">使用者管理</h1>
+    <button class="btn-primary" type="button" (click)="openCreateForm()">
+      <i class="ri-user-add-line"></i> 新增使用者
+    </button>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>載入中...</p>
+    </div>
+  } @else if (users().length === 0) {
+    <div class="empty-state">
+      <i class="ri-user-line"></i>
+      <p>尚無使用者資料</p>
+    </div>
+  } @else {
+    <div class="data-table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>使用者</th>
+            <th>電子郵件</th>
+            <th>狀態</th>
+            <th>角色</th>
+            <th>建立時間</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (user of users(); track user.id) {
+            <tr>
+              <td class="col-user">
+                <div class="user-info">
+                  <div class="user-avatar">{{ user.name.charAt(0) }}</div>
+                  <span class="user-name">{{ user.name }}</span>
+                </div>
+              </td>
+              <td class="col-email">{{ user.email }}</td>
+              <td>
+                <span class="status-badge" [class]="getActiveClass(user.is_active)">
+                  {{ getActiveLabel(user.is_active) }}
+                </span>
+              </td>
+              <td class="col-roles">
+                @if (user.roles && user.roles.length > 0) {
+                  <div class="role-tags">
+                    @for (role of user.roles; track role.id) {
+                      <span class="role-tag">{{ role.role_name }}</span>
+                    }
+                  </div>
+                } @else {
+                  <span class="text-muted">無角色</span>
+                }
+              </td>
+              <td>{{ user.created_at | date:'yyyy-MM-dd' }}</td>
+              <td class="col-actions">
+                <button class="action-btn" title="角色管理" type="button" (click)="openAssignRole(user)">
+                  <i class="ri-shield-user-line"></i>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <!-- 新增使用者 Modal -->
+  @if (showCreateForm()) {
+    <div class="modal-overlay" (click)="closeCreateForm()">
+      <div class="modal-container" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2 class="modal-title">新增使用者</h2>
+          <button class="modal-close" (click)="closeCreateForm()">
+            <i class="ri-close-line"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">姓名</label>
+            <input
+              type="text"
+              class="form-input"
+              placeholder="例：王大明"
+              [value]="formName()"
+              (input)="formName.set($any($event.target).value)" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">電子郵件</label>
+            <input
+              type="email"
+              class="form-input"
+              placeholder="例：user@company.com"
+              [value]="formEmail()"
+              (input)="formEmail.set($any($event.target).value)" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">初始密碼</label>
+            <input
+              type="password"
+              class="form-input"
+              placeholder="至少 6 個字元"
+              [value]="formPassword()"
+              (input)="formPassword.set($any($event.target).value)" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">關聯員工 ID（選填）</label>
+            <input
+              type="text"
+              class="form-input"
+              placeholder="若從員工建立帳號，可輸入員工 ID"
+              [value]="formEmployeeId()"
+              (input)="formEmployeeId.set($any($event.target).value)" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" type="button" (click)="closeCreateForm()">取消</button>
+          <button class="btn-primary" type="button" (click)="createUser()">建立使用者</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- 角色指派 Modal -->
+  @if (showAssignRole() && assigningUser()) {
+    <div class="modal-overlay" (click)="closeAssignRole()">
+      <div class="modal-container modal-container--lg" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2 class="modal-title">
+            {{ assigningUser()?.name }} — 角色管理
+          </h2>
+          <button class="modal-close" (click)="closeAssignRole()">
+            <i class="ri-close-line"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <!-- Current roles -->
+          <h3 class="section-title">目前角色</h3>
+          @if (userRoles().length === 0) {
+            <p class="text-muted">尚未指派任何角色</p>
+          } @else {
+            <div class="current-roles">
+              @for (ur of userRoles(); track ur.id) {
+                <div class="current-role-item">
+                  <div class="role-info">
+                    <span class="role-name">{{ ur.role_name }}</span>
+                    <span class="scope-info">
+                      {{ getScopeLabel(ur.scope_type) }}
+                      @if (ur.scope_name) {
+                        - {{ ur.scope_name }}
+                      }
+                    </span>
+                  </div>
+                  <button
+                    class="action-btn action-btn--danger"
+                    title="移除角色"
+                    type="button"
+                    (click)="revokeRole(ur)">
+                    <i class="ri-close-line"></i>
+                  </button>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Add new role -->
+          <div class="assign-section">
+            <h3 class="section-title">指派新角色</h3>
+            <div class="assign-form">
+              <div class="form-group">
+                <label class="form-label">角色</label>
+                <select
+                  class="form-input"
+                  [value]="assignRoleId()"
+                  (change)="assignRoleId.set($any($event.target).value)">
+                  <option value="">選擇角色</option>
+                  @for (role of roles(); track role.id) {
+                    <option [value]="role.id">{{ role.name }}</option>
+                  }
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">作用範圍</label>
+                <select
+                  class="form-input"
+                  [value]="assignScopeType()"
+                  (change)="assignScopeType.set($any($event.target).value); assignScopeId.set('')">
+                  <option value="global">全域</option>
+                  <option value="subsidiary">子公司</option>
+                  <option value="department">部門</option>
+                </select>
+              </div>
+              @if (assignScopeType() !== 'global') {
+                <div class="form-group">
+                  <label class="form-label">範圍對象</label>
+                  <select
+                    class="form-input"
+                    [value]="assignScopeId()"
+                    (change)="assignScopeId.set($any($event.target).value)">
+                    <option value="">選擇對象</option>
+                    @for (unit of getScopeOptions(); track unit.id) {
+                      <option [value]="unit.id">{{ unit.name }}</option>
+                    }
+                  </select>
+                </div>
+              }
+              <button
+                class="btn-primary"
+                type="button"
+                [disabled]="!assignRoleId()"
+                (click)="assignRole()">
+                <i class="ri-add-line"></i> 指派
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" type="button" (click)="closeAssignRole()">關閉</button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

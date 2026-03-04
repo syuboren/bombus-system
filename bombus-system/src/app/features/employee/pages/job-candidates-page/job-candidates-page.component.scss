@@ -2,6 +2,8 @@
 @import '../../../../../assets/styles/mixins';
 @import '../../../../../assets/styles/animations';
 
+$module-color: $color-l1-sage;
+
 .main-content {
   padding: $spacing-lg;
   padding-top: calc(var(--header-height, 70px) + 20px);
@@ -25,9 +27,91 @@
   margin-bottom: $spacing-lg;
 }
 
+// ---------------------------------------------------------------
 // Spinning animation
 .spinning {
   animation: spin 1s linear infinite;
+}
+
+// ---------------------------------------------------------------
+// Status Tabs (L1 Module Style)
+// ---------------------------------------------------------------
+.status-tabs {
+  display: flex;
+  gap: $spacing-xs;
+  margin-bottom: $spacing-lg;
+  padding: $spacing-xs;
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  overflow-x: auto;
+
+  // Hide scrollbar but allow scroll
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.status-tab {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: $spacing-sm $spacing-md;
+  border: none;
+  border-radius: $radius-md;
+  background: transparent;
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all $transition-normal;
+
+  i {
+    font-size: 16px;
+  }
+
+  .tab-label {
+    font-weight: $font-weight-medium;
+  }
+
+  .tab-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: $radius-full;
+    background: rgba($color-text-secondary, 0.1);
+    color: $color-text-secondary;
+    font-size: 11px;
+    font-weight: $font-weight-semibold;
+  }
+
+  &:hover:not(.active) {
+    background: rgba($module-color, 0.08);
+    color: $module-color;
+
+    .tab-count {
+      background: rgba($module-color, 0.15);
+      color: $module-color;
+    }
+  }
+
+  &.active {
+    background: $module-color;
+    color: white;
+    box-shadow: 0 4px 12px rgba($module-color, 0.3);
+
+    .tab-count {
+      background: rgba(white, 0.25);
+      color: white;
+    }
+  }
 }
 
 // ---------------------------------------------------------------
@@ -49,59 +133,10 @@
 }
 
 // ---------------------------------------------------------------
-// Filter Bar
+// Filter Bar (使用參數化 mixin)
 // ---------------------------------------------------------------
 .filter-bar {
-  @include card;
-  display: flex;
-  flex-wrap: wrap;
-  gap: $spacing-md;
-  padding: $spacing-lg;
-  margin-bottom: $spacing-lg;
-}
-
-.filter-item {
-  flex: 1;
-  min-width: 200px;
-
-  &--action {
-    flex: 0 0 auto;
-    display: flex;
-    align-items: flex-end;
-  }
-}
-
-.filter-label {
-  display: block;
-  font-size: $font-size-sm;
-  font-weight: $font-weight-medium;
-  color: $color-text-primary;
-  margin-bottom: $spacing-xs;
-}
-
-.filter-input,
-.filter-select {
-  @include input-base;
-}
-
-.btn-filter {
-  @include flex-center;
-  gap: $spacing-xs;
-  width: 100%;
-  padding: $spacing-sm $spacing-md;
-  background: $color-cloud-gray;
-  border: 1px solid transparent;
-  border-radius: $radius-md;
-  font-size: $font-size-sm;
-  font-weight: $font-weight-semibold;
-  color: $color-text-secondary;
-  cursor: pointer;
-  transition: all $transition-normal;
-
-  &:hover {
-    background: darken($color-cloud-gray, 3%);
-    color: $color-text-dark;
-  }
+  @include filter-bar($module-color);
 }
 
 // ---------------------------------------------------------------
@@ -122,7 +157,7 @@
   flex-direction: column;
   overflow: hidden;
   transition: all 0.3s $animation-easing-standard,
-              transform 0.3s $animation-easing-elastic;
+    transform 0.3s $animation-easing-elastic;
   animation: fadeInUp 0.5s $animation-easing-decelerate both;
   @include stagger-animation(60ms, 20);
 
@@ -255,6 +290,31 @@
 }
 
 // Card Footer
+.reschedule-note {
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-xs;
+  margin: 0 $spacing-lg $spacing-md;
+  padding: $spacing-sm;
+  background: #FFF7ED; // Amber/Orange light
+  border: 1px solid #FED7AA;
+  border-radius: $radius-md;
+  color: #C2410C;
+  font-size: $font-size-xs;
+  line-height: 1.4;
+
+  i {
+    font-size: 14px;
+    margin-top: 2px;
+    color: #F97316;
+    flex-shrink: 0;
+  }
+
+  span {
+    word-break: break-all;
+  }
+}
+
 .card__footer {
   display: flex;
   flex-direction: column;
@@ -278,6 +338,21 @@
   color: $color-success;
 }
 
+.status--invited {
+  background: rgba(#3B82F6, 0.15); // Blue
+  color: #3B82F6;
+}
+
+.status--reschedule {
+  background: rgba(#F59E0B, 0.15); // Amber/Orange
+  color: #D97706;
+}
+
+.status--pending-schedule {
+  background: rgba(#8B5CF6, 0.15); // Purple
+  color: #7C3AED;
+}
+
 .status--interview {
   background: rgba($color-warning, 0.15);
   color: darken($color-warning, 15%);
@@ -291,6 +366,45 @@
 .status--hired {
   background: rgba($color-l1-sage, 0.15);
   color: $color-l1-sage;
+}
+
+// 待處理狀態
+.status--pending-ai {
+  background: rgba(#6366F1, 0.15); // Indigo
+  color: #4F46E5;
+}
+
+.status--pending-decision {
+  background: rgba(#F59E0B, 0.15); // Amber
+  color: #D97706;
+}
+
+// Offer 相關狀態
+.status--offered {
+  background: rgba(#D4A03E, 0.15);
+  color: #B8860B;
+}
+
+.status--offer-accepted {
+  background: rgba($color-success, 0.15);
+  color: $color-success;
+}
+
+.status--offer-declined {
+  background: rgba($color-error, 0.15);
+  color: $color-error;
+}
+
+// 候選人婉拒（統一樣式）
+.status--declined {
+  background: rgba(#F97316, 0.15); // Orange
+  color: #EA580C;
+}
+
+// 流程未繼續（不邀請、未錄取）
+.status--not-continued {
+  background: rgba($color-text-secondary, 0.15);
+  color: $color-text-secondary;
 }
 
 .btn-action {
@@ -422,8 +536,15 @@
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.6;
+  }
 }
 
 // ---------------------------------------------------------------
@@ -488,6 +609,175 @@
       transform: scale(1.1);
     }
   }
+
+  &--schedule {
+    border-color: #3B82F6; // Blue
+    color: #3B82F6;
+
+    &:hover {
+      background: #3B82F6;
+      color: white;
+      transform: scale(1.1);
+    }
+  }
+
+  &--score {
+    border-color: #F59E0B; // Amber
+    color: #F59E0B;
+
+    &:hover {
+      background: #F59E0B;
+      color: white;
+      transform: scale(1.1);
+    }
+  }
+
+  &--decide {
+    border-color: $color-l1-sage;
+    color: $color-l1-sage;
+
+    &:hover {
+      background: $color-l1-sage;
+      color: white;
+      transform: scale(1.1);
+    }
+  }
+
+  &--link {
+    border-color: #6366F1; // Indigo
+    color: #6366F1;
+
+    &:hover {
+      background: #6366F1;
+      color: white;
+      transform: scale(1.1);
+    }
+  }
+}
+
+.scheduled-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 16px;
+  background: rgba(#F59E0B, 0.1);
+  color: #F59E0B;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid rgba(#F59E0B, 0.2);
+
+  i {
+    font-size: 16px;
+  }
+
+  &--success {
+    background: rgba($color-success, 0.1);
+    color: $color-success;
+    border-color: rgba($color-success, 0.2);
+  }
+
+  &--declined {
+    background: rgba($color-error, 0.1);
+    color: $color-error;
+    border-color: rgba($color-error, 0.2);
+  }
+}
+
+.decision-btn--offer-link {
+  background: linear-gradient(135deg, #FFF4D4 0%, #FFE9A8 100%);
+  color: #B8860B;
+  border: 1px solid rgba(#D4A03E, 0.3);
+
+  &:hover {
+    background: linear-gradient(135deg, #FFE9A8 0%, #FFD966 100%);
+    transform: scale(1.1);
+  }
+}
+
+// 面試資訊按鈕
+.decision-btn--info {
+  background: linear-gradient(135deg, #E0F2FE 0%, #BAE6FD 100%);
+  color: #0369A1;
+  border: 1px solid rgba(#0EA5E9, 0.3);
+
+  &:hover {
+    background: linear-gradient(135deg, #BAE6FD 0%, #7DD3FC 100%);
+    transform: scale(1.1);
+  }
+}
+
+// Modal Styles
+.selected-slots-section {
+  margin-bottom: 1rem;
+
+  .slots-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+
+  .slot-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    border: 1px solid #E5E7EB;
+    color: #374151;
+    font-size: 0.875rem;
+    padding: 6px 12px;
+    border-radius: 6px;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      background: rgba(#10B981, 0.05);
+      border-color: #10B981;
+      color: #10B981;
+    }
+
+    i {
+      color: #9CA3AF;
+    }
+  }
+}
+
+.slide-down {
+  animation: slideDown 0.3s ease-out forwards;
+  transform-origin: top;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.input-with-icon {
+  position: relative;
+
+  .icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9CA3AF;
+    pointer-events: none;
+  }
+
+  input {
+    padding-left: 36px;
+    width: 100%;
+  }
 }
 
 .btn-action {
@@ -520,7 +810,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-image: 
+    background-image:
       linear-gradient(rgba($color-l1-sage, 0.03) 1px, transparent 1px),
       linear-gradient(90deg, rgba($color-l1-sage, 0.03) 1px, transparent 1px);
     background-size: 40px 40px;
@@ -535,23 +825,33 @@
     left: 0;
     right: 0;
     height: 200px;
-    background: linear-gradient(to bottom, 
-      transparent, 
-      rgba($color-l1-sage, 0.1), 
-      rgba($color-l1-sage, 0.05), 
-      transparent);
+    background: linear-gradient(to bottom,
+        transparent,
+        rgba($color-l1-sage, 0.1),
+        rgba($color-l1-sage, 0.05),
+        transparent);
     animation: scanLine 3s ease-in-out infinite;
   }
 }
 
 @keyframes gridMove {
-  0% { transform: translate(0, 0); }
-  100% { transform: translate(40px, 40px); }
+  0% {
+    transform: translate(0, 0);
+  }
+
+  100% {
+    transform: translate(40px, 40px);
+  }
 }
 
 @keyframes scanLine {
-  0% { top: -200px; }
-  100% { top: 100%; }
+  0% {
+    top: -200px;
+  }
+
+  100% {
+    top: 100%;
+  }
 }
 
 .ai-scoring-content {
@@ -606,8 +906,17 @@
 }
 
 @keyframes breathe {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.1); opacity: 0.8; }
+
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
 }
 
 .pulse-ring {
@@ -628,8 +937,15 @@
 }
 
 @keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.1);
+  }
 }
 
 @keyframes pulseRing {
@@ -637,6 +953,7 @@
     transform: scale(0.8);
     opacity: 1;
   }
+
   100% {
     transform: scale(1.5);
     opacity: 0;
@@ -680,22 +997,20 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: repeating-linear-gradient(
-      90deg,
-      transparent,
-      transparent 10px,
-      rgba(255, 255, 255, 0.03) 10px,
-      rgba(255, 255, 255, 0.03) 20px
-    );
+    background: repeating-linear-gradient(90deg,
+        transparent,
+        transparent 10px,
+        rgba(255, 255, 255, 0.03) 10px,
+        rgba(255, 255, 255, 0.03) 20px);
   }
 }
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, 
-    darken($color-l1-sage, 10%), 
-    $color-l1-sage, 
-    lighten($color-l1-sage, 10%));
+  background: linear-gradient(90deg,
+      darken($color-l1-sage, 10%),
+      $color-l1-sage,
+      lighten($color-l1-sage, 10%));
   border-radius: $radius-full;
   transition: width 0.3s ease-out;
   position: relative;
@@ -709,12 +1024,10 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      rgba(255, 255, 255, 0.4) 50%,
-      transparent 100%
-    );
+    background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.4) 50%,
+        transparent 100%);
     animation: shimmer 1.5s infinite;
   }
 }
@@ -786,9 +1099,11 @@
     transform: scale(0.5);
     opacity: 0;
   }
+
   50% {
     transform: scale(1.2);
   }
+
   100% {
     transform: scale(1);
     opacity: 1;
@@ -827,6 +1142,7 @@
     opacity: 0;
     transform: translate(-50%, -45%);
   }
+
   to {
     opacity: 1;
     transform: translate(-50%, -50%);
@@ -972,7 +1288,7 @@
   input {
     display: none;
 
-    &:checked + .radio-label {
+    &:checked+.radio-label {
       background: rgba($color-l1-sage, 0.1);
       border-color: $color-l1-sage;
       color: $color-l1-sage;
@@ -1019,4 +1335,207 @@
   align-items: center;
   gap: $spacing-xs;
 }
+// ===============================================================
+// FIX: Force Horizontal Alignment for Card Footer
+// ===============================================================
+.card__footer {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
 
+.footer-actions {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.decision-buttons {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.btn-action {
+  width: auto !important;
+  margin: 0 !important;
+}
+
+.scheduled-badge {
+  display: inline-flex !important;
+  align-items: center !important; 
+  white-space: nowrap !important;
+}
+
+// ===============================================================
+// FIX: Icon-only Scheduled Badge
+// ===============================================================
+.scheduled-badge {
+  padding: 0 !important;
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 50% !important;
+  justify-content: center !important;
+  
+  i {
+    margin: 0 !important;
+    font-size: 18px !important;
+  }
+}
+
+// ===============================================================
+// 面試資訊 Modal 樣式
+// ===============================================================
+.interview-info-modal {
+  max-width: 480px !important;
+
+  .interview-info-content {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-lg;
+  }
+
+  .candidate-info {
+    display: flex;
+    align-items: center;
+    gap: $spacing-md;
+    padding-bottom: $spacing-md;
+    border-bottom: 1px solid $color-cloud-gray;
+
+    .avatar {
+      @include flex-center;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: $color-l1-sage;
+      color: white;
+      font-size: $font-size-lg;
+      font-weight: $font-weight-bold;
+    }
+
+    .info {
+      h4 {
+        margin: 0 0 4px;
+        font-size: $font-size-md;
+        font-weight: $font-weight-semibold;
+        color: $color-text-primary;
+      }
+
+      p {
+        margin: 0;
+        font-size: $font-size-sm;
+        color: $color-text-secondary;
+      }
+    }
+  }
+
+  .interview-details {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-md;
+  }
+
+  .detail-item {
+    display: flex;
+    align-items: flex-start;
+    gap: $spacing-md;
+
+    > i {
+      width: 24px;
+      height: 24px;
+      @include flex-center;
+      font-size: 18px;
+      color: $color-l1-sage;
+      flex-shrink: 0;
+    }
+
+    .detail-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+
+      label {
+        font-size: $font-size-xs;
+        color: $color-text-secondary;
+        font-weight: $font-weight-medium;
+      }
+
+      span, a {
+        font-size: $font-size-sm;
+        color: $color-text-primary;
+        font-weight: $font-weight-semibold;
+      }
+
+      .meeting-link {
+        color: $color-info;
+        text-decoration: none;
+        word-break: break-all;
+
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 8px;
+        border-radius: $radius-sm;
+        font-size: $font-size-xs;
+        font-weight: $font-weight-medium;
+        width: fit-content;
+
+        &--interview {
+          background: rgba($color-l1-sage, 0.1);
+          color: $color-l1-sage;
+        }
+      }
+    }
+  }
+
+  .cancel-link-section {
+    margin-top: $spacing-md;
+    padding: $spacing-md;
+    background: #FEF3C7;
+    border: 1px solid #FCD34D;
+    border-radius: $radius-md;
+
+    label {
+      display: block;
+      font-size: $font-size-sm;
+      font-weight: $font-weight-semibold;
+      color: #92400E;
+      margin-bottom: 4px;
+    }
+
+    .hint-text {
+      font-size: $font-size-xs;
+      color: #B45309;
+      margin: 0 0 $spacing-sm;
+    }
+
+    .link-input-group {
+      display: flex;
+      gap: $spacing-xs;
+
+      .form-input {
+        flex: 1;
+        font-size: $font-size-xs;
+        padding: $spacing-xs $spacing-sm;
+        background: white;
+        border: 1px solid #FCD34D;
+      }
+
+      .btn {
+        flex-shrink: 0;
+        padding: $spacing-xs $spacing-sm;
+        font-size: $font-size-xs;
+      }
+    }
+  }
+}

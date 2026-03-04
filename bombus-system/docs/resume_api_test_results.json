@@ -1,0 +1,1853 @@
+{
+  "testDate": "2026-02-03T05:52:31.463Z",
+  "summary": {
+    "totalTests": 9,
+    "passed": 9,
+    "failed": 0
+  },
+  "testCases": [
+    {
+      "name": "主動應徵履歷",
+      "flag": 1,
+      "params": {
+        "date": "2025-04-25",
+        "startTime": 12,
+        "endTime": 13
+      },
+      "queryListResult": {
+        "success": true,
+        "response": {
+          "data": {
+            "total": 1,
+            "queryDate": "2025-04-25",
+            "timePeriod": "12~13",
+            "idList": [
+              "3781639126814"
+            ]
+          }
+        }
+      },
+      "queryResult": {
+        "success": true,
+        "testedId": "3781639126814",
+        "response": {
+          "data": {
+            "list": [
+              {
+                "resumeId": "3781639126814",
+                "fullName": "張員瑛",
+                "gender": "女",
+                "email": "aser1@gmail.com",
+                "cellPhone": "0912945870",
+                "address": "台北市文山區星船路1號",
+                "birthday": "1999-03-16 00:00:00",
+                "regSource": "104主動應徵",
+                "employmentStatus": "仍在職",
+                "militaryStatus": "",
+                "militaryRetireDate": "",
+                "introduction": "",
+                "motto": "Lucky Vicky",
+                "characteristic": "",
+                "personalPage": [],
+                "englishName": "",
+                "subCellPhone": "",
+                "tel": "",
+                "contactInfo": "",
+                "drivingLicenses": "普通重型機車駕照",
+                "transports": "普通重型機車、普通小型車",
+                "specialIdentities": "",
+                "nationality": "",
+                "disabledTypes": "",
+                "disabilityCard": 0,
+                "assistiveDevices": "",
+                "education": [
+                  {
+                    "schoolName": "고려대학교",
+                    "degreeLevel": "大學",
+                    "major": "音樂學系",
+                    "majorCategory": "",
+                    "degreeStatus": "畢業",
+                    "schoolCountry": "南韓",
+                    "startDate": "2018-09-01 00:00:00",
+                    "endDate": "2019-06-01 00:00:00"
+                  },
+                  {
+                    "schoolName": "國立臺灣大學",
+                    "degreeLevel": "大學",
+                    "major": "中國文學系",
+                    "majorCategory": "",
+                    "degreeStatus": "畢業",
+                    "schoolCountry": "台灣",
+                    "startDate": "2014-09-01 00:00:00",
+                    "endDate": "2017-06-01 00:00:00"
+                  },
+                  {
+                    "schoolName": "國立新竹女中",
+                    "degreeLevel": "高中",
+                    "major": "普通科",
+                    "majorCategory": "",
+                    "degreeStatus": "畢業",
+                    "schoolCountry": "台灣",
+                    "startDate": "2010-09-01 00:00:00",
+                    "endDate": "2014-06-01 00:00:00"
+                  }
+                ],
+                "seniority": "無任何工作經驗",
+                "experiences": [
+                  {
+                    "firmName": "悠旅生活事業股份有限公司台北市第一零五分公司",
+                    "industryCategory": "",
+                    "companySize": "",
+                    "workPlace": "台北市士林區",
+                    "jobName": "產品經理",
+                    "jobRole": "全職",
+                    "jobCategory": "產品管理師",
+                    "startDate": "2021-12-01 00:00:00",
+                    "endDate": "1900-01-01 00:00:00",
+                    "jobDesc": "<ul><li>負責產品的全生命周期管理，包括需求分析、產品設計、開發協調、測試驗收和上線運營。</li><li>與市場、銷售、運營等部門密切合作，收集用戶反饋並持續優化產品。</li><li>制定產品發展路線圖，根據市場趨勢和業務目標確定產品方向。</li><li>撰寫產品需求文檔（PRD）和用戶體驗流程，與設計與開發團隊協作完成產品設計。</li><li>推動跨部門協作，確保產品開發進度符合計劃，並解決開發過程中的問題。</li><li>監控產品數據，分析用戶行為，根據數據驅動產品迭代與優化。</li><li>進行競品分析，研究市場趨勢，為產品策略提供決策依據。</li></ul><p><strong>工作成果與特殊事蹟：</strong></p><ul><li><strong>成功上線XX產品</strong>：帶領團隊在X個月內成功推出XX產品，實現X%的市場滲透率，並獲得XX用戶的積極反饋。</li><li><strong>提升核心指標</strong>：透過功能優化與用戶體驗改善，使XX指標（如轉化率、留存率等）提升X%。</li><li><strong>推動數字化轉型</strong>：主導XX系統的數字化改造，使XX業務流程效率提升X%。</li><li><strong>跨部門協作案例</strong>：成功協調技術、設計、運營團隊，在XX時間內解決重大產品問題，避免XX風險。</li><li><strong>創新產品功能</strong>：推出XX創新功能，吸引X萬新用戶，並獲得XX獎項或媒體報導。</li><li><strong>市場影響力</strong>：參與行業會議並分享XX產品成功經驗，提高公司在市場的影響力。</li></ul><p><br /></p>",
+                    "skills": "",
+                    "management": "無",
+                    "wageTypeDesc": "",
+                    "wage": 0,
+                    "wageYear": 0
+                  },
+                  {
+                    "firmName": "WWW數位媒體行銷股份有限公司",
+                    "industryCategory": "網際網路相關業",
+                    "companySize": "1~30人",
+                    "workPlace": "台北市文山區",
+                    "jobName": "產品企劃專員",
+                    "jobRole": "全職",
+                    "jobCategory": "產品企劃",
+                    "startDate": "2020-01-01 00:00:00",
+                    "endDate": "2021-03-01 00:00:00",
+                    "jobDesc": "<p>1. 日常網站經營：bug排除、數據觀測</p><p>2. 匯整網站經營狀況，和產品經理一起討論專案方向</p><p>3. 執行產品經理指派網站規劃工作</p><p><br /></p><p>主要成就：</p><p>- 導入Google tag manager管理公司Google Analytic代碼</p><p>- 協助產品經理「VIP會員專案」，獲得公司2016年優秀員工獎</p>",
+                    "skills": "競品分析,Google Analytics,產品策略",
+                    "management": "無",
+                    "wageTypeDesc": "月薪",
+                    "wage": 0,
+                    "wageYear": 800000
+                  },
+                  {
+                    "firmName": "ABC數位資訊股份有限公司",
+                    "industryCategory": "網際網路相關業",
+                    "companySize": "",
+                    "workPlace": "",
+                    "jobName": "資深產品企劃",
+                    "jobRole": "全職",
+                    "jobCategory": "產品企劃",
+                    "startDate": "2019-07-01 00:00:00",
+                    "endDate": "2020-04-01 00:00:00",
+                    "jobDesc": "<p>1. 分析需求：研究市場趨勢、蒐集對手資訊，分析出對公司有利的策略。 2. 專案開發：與開發團隊緊密配合，管控專案進度；包括可行性評估、推動設計方案、規格撰寫、開發、測試、發佈。 3. 追蹤成效：觀測用戶反饋、數據，並持續營運產品，進行下一代產品規劃。 重要專案 【XYZ類商品頁改版】成效：商品頁轉換率成長21%，業績成長4.3% 【商品後台改版】成果：增加商品設定手機呈現、數據分析，為後台最高客戶滿意度的專案</p>",
+                    "skills": "產品開發預算與成本控管,市場調查企劃與執行,提案與簡報技巧",
+                    "management": "無",
+                    "wageTypeDesc": "",
+                    "wage": 0,
+                    "wageYear": 0
+                  }
+                ],
+                "jobRequirement": {
+                  "jobCharacteristic": "全職",
+                  "workInterval": "日班",
+                  "otherWorkInterval": "",
+                  "shiftWork": true,
+                  "startDateOpt": "錄取後隨時可上班",
+                  "wage": "面議:0",
+                  "workPlace": "台北市",
+                  "remoteWork": "對遠端工作有意願",
+                  "jobName": "PJM",
+                  "jobCategory": "其他專案管理師、產品管理師、專案管理主管、專案助理",
+                  "industryCategory": "",
+                  "workDesc": ""
+                },
+                "speciality": [
+                  {
+                    "skill": "網站企劃",
+                    "desc": "<p>．Axure：可製作擬真的產品互動原型，藉此讓大家了解專案，並有助提案、向團隊成員、橫向部門溝通</p><p>．Sketch：自學UI設計，配置網站顏色、字體、圖標等，培養視覺美感與使用者體驗</p><p>．系統規格：可撰寫系統詳細規格，包括整體的系統身份、狀態、所有影響動線，以便於團隊溝通、工程開發</p><p><br /></p>#Axure RP ",
+                    "tag": "Axure RP"
+                  }
+                ],
+                "commonCertificates": {
+                  "certificates": "",
+                  "otherCertificates": ""
+                },
+                "foreignLanguage": [
+                  {
+                    "langType": "英文",
+                    "listenDegree": "精通",
+                    "speakDegree": "精通",
+                    "readDegree": "精通",
+                    "writeDegree": "精通",
+                    "certificates": "TOEIC (多益測驗):880"
+                  },
+                  {
+                    "langType": "韓文",
+                    "listenDegree": "精通",
+                    "speakDegree": "精通",
+                    "readDegree": "精通",
+                    "writeDegree": "精通",
+                    "certificates": "TOPIK (韓語):"
+                  }
+                ],
+                "localLanguage": [
+                  {
+                    "langType": "上海語",
+                    "degree": "中等"
+                  }
+                ],
+                "biography": {
+                  "bio": "<p><strong>關於我</strong></p><p>出生於1984年，新竹人，天秤座O型。喜歡閱讀、旅遊，並將自己的旅遊心得，紀錄在自己的blog，除了是興趣，也培養自己的美感與文字能力。</p><p><strong>第一份工作 前端工程師</strong></p><p>畢業後第一份工作，在WWW數位媒體行銷股份有限公司當前端工程師。主要工作內容是負責www主網站前端功能開發，包括CSS切版、jQuery使用，並瞭解SEO、GA相關知識。</p><p>因為前端的工作需和PM、設計師緊密合作，常和PM討論使用者需求、議題，也常和設計師一起發想網站互動、規劃、參與使用者訪談，因此對網站規劃產生興趣，後來在公司內轉任產品企劃專員。</p><p>在前端工程師的工作期間，除了在工程有了實際的經驗，也充份了解專案流程，了解團隊的角色分工。</p><p><strong>特殊事蹟</strong>：參加ABC公司駭客松比賽，獲得佳作</p><p><strong>第一間公司轉換跑道 產品企劃</strong></p><p>雖然以前擔任工程時，就常團隊互動，但轉換企劃工作，還是有很大的不同。除了轉了180度看專案，視野和心境也有很大收穫，不再只是站在單一部門看專案，而是需兼顧用戶、公司策略、實際開發等多面向的權衡。大量收集資料、分析分案、說服大家，成了主要的工作，卻也找到了自己喜歡的工作。</p><p><strong>特殊事蹟</strong>：獲得ABC公司2016年優秀員工</p><p><strong>獨當一面產品企劃/PM</strong></p><p>轉換到ABC公司時，是很挑戰的工作，獨立扛產品的經營成果，工作也和公司業績息息相關。在ABC公司主要專案為「XYZ類商品頁改版」和「商品後台改版」，這2個專案都是自己擔任PM的專案，從需求分析、目標擬定、方案規劃、專案執行、結案等，都參與其中，規劃的過程大量運用數據、檢討調校，才有最後的成果。</p><p><strong>樂於學習，在網路世界中保持一顆上進心</strong></p><p>回顧在網路工作6年多來的經驗，有時為了讓自己在企劃職能更加成長而去學習新工具，有時則是為了自己的興趣而去學習新技能，例如：為了觀測產品數據，學習了如何查看GA以及如何埋設GTM；為了使產品設計概念能夠具體化呈現，自學了Axure工具讓團隊溝通討論更加順利；也因為學了Axure而希望自己可以進一步學習網頁設計，因此自學了Sketch工具、UI/UX設計。</p><p>在網路的世界裡，有許多不同領域的知識可以挖掘，也讓我覺得擔任網站企劃/PM充滿樂趣，也很期待能夠一直學習下去。</p><p> 期許未來能夠接觸不同類型產品、使用者，發揮專長與經驗，幫公司解決問題，提供符合用戶需求的網路服務。</p>",
+                  "engBio": "<p>My name is Lin Lin. I hold a bachelor’s degree with a major in Economics, which was awarded to me by Fu-Jen University in Taipei in 2000. Besides my major, I have also taken many courses related to computer science, such as Data Management, C-Language, and Calculus, which have prepared me for software programming in the field of finance and investment.</p><p><br /></p><p>Therefore, I was employed at the university’s computer center, where I assisted the instructors in teaching students how to search websites on the internet and how to send e-mail messages by using Outlook software. I also helped students design their web pages by familiarizing them with both PowerPoint and FrontPage software.</p><p><br /></p><p>Moreover, I was not only active in the university but also a participant in the 1998 International Conference of Web Technology Development in Taiwan. The experience brought me into contact with professional societies and helped me improve my social skills when interacting and communicating with professional people. This experience also taught me how to work with people efficiently.</p><p><br /></p><p>I am qualified for this position according to the requirements described in your advertisement. First, I have adequate knowledge and experience to support this position. Second, I have a good command of English, because my university minor subject was English. Third, I have good teamwork spirit and communication skills due to my extracurricular experience. These three facts provide the evidence that I have a quite adequate ability to work in an international company.</p>"
+                },
+                "recommenders": [
+                  {
+                    "name": "安俞真",
+                    "corp": "星船股份有限公司",
+                    "jobTitle": "組長",
+                    "email": "104@104.com.tw",
+                    "tel": "0912911111"
+                  }
+                ],
+                "headshotUrl": "https://apis.104api-dev.com.tw/ehrweb_resume/1.0/files/headshot?fileId=$$:v1:6ETsxqrFq-7wRDd9Vtswey6Fcztgbx36ek71LeYSd3ERpj2g93SwYV2NS1Cdhe6vVnTcRe67zRnpy8TFpmSB2INSoYTJSGL1u0KLcc67FUq_vhbh",
+                "attachFiles": [
+                  {
+                    "type": 1,
+                    "title": "",
+                    "fileName": "作品集.ppt",
+                    "resourceLink": "https://apis.104api-dev.com.tw/ehrweb_resume/1.0/files/attachment?type=1&fileId=$$:v1:b275OTIwO1SFnztes8IRQGwGoV9YO8Vuj0Ps_CFGSukZWlCtxsEt-kw1cEzwUgrLIA1Vol_nW_7iDF1iouwL2l6-N4BR4l8GP-Qgubl_tulXUVSJ",
+                    "website": ""
+                  }
+                ],
+                "projectDatas": [
+                  {
+                    "title": "測試專案1",
+                    "startDate": "",
+                    "endDate": "",
+                    "description": "<ol><li><strong>簡化結帳流程</strong>：根據用戶行為數據，我們將原本繁瑣的結帳頁面進行優化，將結帳步驟縮減至三個簡單步驟。這一變更顯著減少了用戶的操作負擔，提升了用戶完成訂單的意願。</li><li><strong>智能推薦系統</strong>：引入了個性化的商品推薦系統，根據用戶的歷史購買記錄和瀏覽行為進行推薦。這不僅提升了交叉銷售的機會，也增加了顧客的滿意度和回訪率。</li><li><strong>實時客服支持</strong>：在結帳頁面新增了即時聊天功能，並設置了常見問題自動回答機制，使用戶能夠在購物過程中獲得即時支持，減少了因為疑慮而棄單的情況。</li></ol><p><br /></p><p>最終，該專案使我們的訂單轉換率提升了30%，並使顧客滿意度顯著上升。該專案的成功落地，得到了高層管理的認可，並被其他產品團隊作為最佳實踐進行分享與學習。</p>",
+                    "type": 1,
+                    "resourceLink": "https://apis.104api-dev.com.tw/ehrweb_resume/1.0/files/attachment?type=3&fileId=$$:v1:eb-dZ5dVgWspoJ3-Id1w4oCyS2wrOt-GzpcqFSAHwITKkpawIR2uouolR0daMUnATwx546P8vWEPqHfUt3guEeQXMoekpLKV4ZrBTqP3ZhP-H1aw",
+                    "website": ""
+                  },
+                  {
+                    "title": "測試專案二",
+                    "startDate": "",
+                    "endDate": "",
+                    "description": "<ol><li><strong>市場調研與需求分析</strong>：我通過對目標市場的深入調研，了解了各國用戶對語言和地區特定需求的不同偏好。針對這些需求，我優先開發了最受歡迎的語言版本，並確保平台的UI設計能夠適應不同語言和文化的差異。</li><li><strong>多語言支持與本地化</strong>：與技術團隊密切合作，設計並實現了系統架構，使平台能夠支持自動語言切換功能。此外，我也推動了多語言內容的本地化，這不僅提升了用戶體驗，還促進了市場的滲透。</li><li><strong>國際市場推廣</strong>：在功能完成後，我協調了市場推廣團隊進行國際市場的宣傳與推廣。我們根據各地的文化特色，設計了適合當地市場的行銷策略，並與當地的合作夥伴建立了有效的聯繫。</li></ol><p><br /></p><p>最終，這個新功能成功地幫助公司進軍五個新市場，並在推出後的三個月內實現了20%的用戶增長。此專案不僅為公司帶來了可觀的市場份額，也加強了品牌在國際市場的認知度。</p>",
+                    "type": 1,
+                    "resourceLink": "https://apis.104api-dev.com.tw/ehrweb_resume/1.0/files/attachment?type=3&fileId=$$:v1:Jfdy1bbiKwSxY2--lhoyIsWHQD5cWCt6lBYgmC7yjb7rbill_kPZEIjVkoMlYebudn38eGUSNMpi-AJ6X3jmw05iGBwQk_X2isb_Li7hBaEGNb3R",
+                    "website": ""
+                  }
+                ],
+                "customContentDatas": [
+                  {
+                    "title": "測試自訂",
+                    "content": [
+                      {
+                        "description": "<p>自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容</p>",
+                        "type": 1,
+                        "resourceLink": "https://apis.104api-dev.com.tw/ehrweb_resume/1.0/files/attachment?type=2&fileId=$$:v1:QTXP0XdVlGuH_5lcQLyyGuHAXyD1b-Bh4nvi_1Fqv0PFvcCPOwSaeh_9JMBxFSLA3h6uRiln1bWwmH_E4FJmgUFl3lh13jcQW0fB_-RKn4uRIkSD",
+                        "website": ""
+                      }
+                    ]
+                  }
+                ],
+                "applyJob": [
+                  {
+                    "applyDate": "2025-04-25",
+                    "name": "總務",
+                    "jobNo": "8338200",
+                    "applySource": "104應徵",
+                    "vipContactUrl": ""
+                  }
+                ],
+                "applyQuestion": [
+                  {
+                    "type": "",
+                    "question": "",
+                    "answer": ""
+                  },
+                  {
+                    "type": "",
+                    "question": "",
+                    "answer": ""
+                  },
+                  {
+                    "type": "",
+                    "question": "",
+                    "answer": ""
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "queryBatchResult": {
+        "success": true,
+        "testedIds": [
+          "3781639126814"
+        ],
+        "response": {
+          "data": {
+            "list": [
+              {
+                "resumeId": "3781639126814",
+                "fullName": "張員瑛",
+                "gender": "女",
+                "email": "aser1@gmail.com",
+                "cellPhone": "0912945870",
+                "address": "台北市文山區星船路1號",
+                "birthday": "1999-03-16 00:00:00",
+                "regSource": "104主動應徵",
+                "employmentStatus": "仍在職",
+                "militaryStatus": "",
+                "militaryRetireDate": "",
+                "introduction": "",
+                "motto": "Lucky Vicky",
+                "characteristic": "",
+                "personalPage": [],
+                "englishName": "",
+                "subCellPhone": "",
+                "tel": "",
+                "contactInfo": "",
+                "drivingLicenses": "普通重型機車駕照",
+                "transports": "普通重型機車、普通小型車",
+                "specialIdentities": "",
+                "nationality": "",
+                "disabledTypes": "",
+                "disabilityCard": 0,
+                "assistiveDevices": "",
+                "education": [
+                  {
+                    "schoolName": "고려대학교",
+                    "degreeLevel": "大學",
+                    "major": "音樂學系",
+                    "majorCategory": "",
+                    "degreeStatus": "畢業",
+                    "schoolCountry": "南韓",
+                    "startDate": "2018-09-01 00:00:00",
+                    "endDate": "2019-06-01 00:00:00"
+                  },
+                  {
+                    "schoolName": "國立臺灣大學",
+                    "degreeLevel": "大學",
+                    "major": "中國文學系",
+                    "majorCategory": "",
+                    "degreeStatus": "畢業",
+                    "schoolCountry": "台灣",
+                    "startDate": "2014-09-01 00:00:00",
+                    "endDate": "2017-06-01 00:00:00"
+                  },
+                  {
+                    "schoolName": "國立新竹女中",
+                    "degreeLevel": "高中",
+                    "major": "普通科",
+                    "majorCategory": "",
+                    "degreeStatus": "畢業",
+                    "schoolCountry": "台灣",
+                    "startDate": "2010-09-01 00:00:00",
+                    "endDate": "2014-06-01 00:00:00"
+                  }
+                ],
+                "seniority": "無任何工作經驗",
+                "experiences": [
+                  {
+                    "firmName": "悠旅生活事業股份有限公司台北市第一零五分公司",
+                    "industryCategory": "",
+                    "companySize": "",
+                    "workPlace": "台北市士林區",
+                    "jobName": "產品經理",
+                    "jobRole": "全職",
+                    "jobCategory": "產品管理師",
+                    "startDate": "2021-12-01 00:00:00",
+                    "endDate": "1900-01-01 00:00:00",
+                    "jobDesc": "<ul><li>負責產品的全生命周期管理，包括需求分析、產品設計、開發協調、測試驗收和上線運營。</li><li>與市場、銷售、運營等部門密切合作，收集用戶反饋並持續優化產品。</li><li>制定產品發展路線圖，根據市場趨勢和業務目標確定產品方向。</li><li>撰寫產品需求文檔（PRD）和用戶體驗流程，與設計與開發團隊協作完成產品設計。</li><li>推動跨部門協作，確保產品開發進度符合計劃，並解決開發過程中的問題。</li><li>監控產品數據，分析用戶行為，根據數據驅動產品迭代與優化。</li><li>進行競品分析，研究市場趨勢，為產品策略提供決策依據。</li></ul><p><strong>工作成果與特殊事蹟：</strong></p><ul><li><strong>成功上線XX產品</strong>：帶領團隊在X個月內成功推出XX產品，實現X%的市場滲透率，並獲得XX用戶的積極反饋。</li><li><strong>提升核心指標</strong>：透過功能優化與用戶體驗改善，使XX指標（如轉化率、留存率等）提升X%。</li><li><strong>推動數字化轉型</strong>：主導XX系統的數字化改造，使XX業務流程效率提升X%。</li><li><strong>跨部門協作案例</strong>：成功協調技術、設計、運營團隊，在XX時間內解決重大產品問題，避免XX風險。</li><li><strong>創新產品功能</strong>：推出XX創新功能，吸引X萬新用戶，並獲得XX獎項或媒體報導。</li><li><strong>市場影響力</strong>：參與行業會議並分享XX產品成功經驗，提高公司在市場的影響力。</li></ul><p><br /></p>",
+                    "skills": "",
+                    "management": "無",
+                    "wageTypeDesc": "",
+                    "wage": 0,
+                    "wageYear": 0
+                  },
+                  {
+                    "firmName": "WWW數位媒體行銷股份有限公司",
+                    "industryCategory": "網際網路相關業",
+                    "companySize": "1~30人",
+                    "workPlace": "台北市文山區",
+                    "jobName": "產品企劃專員",
+                    "jobRole": "全職",
+                    "jobCategory": "產品企劃",
+                    "startDate": "2020-01-01 00:00:00",
+                    "endDate": "2021-03-01 00:00:00",
+                    "jobDesc": "<p>1. 日常網站經營：bug排除、數據觀測</p><p>2. 匯整網站經營狀況，和產品經理一起討論專案方向</p><p>3. 執行產品經理指派網站規劃工作</p><p><br /></p><p>主要成就：</p><p>- 導入Google tag manager管理公司Google Analytic代碼</p><p>- 協助產品經理「VIP會員專案」，獲得公司2016年優秀員工獎</p>",
+                    "skills": "競品分析,Google Analytics,產品策略",
+                    "management": "無",
+                    "wageTypeDesc": "月薪",
+                    "wage": 0,
+                    "wageYear": 800000
+                  },
+                  {
+                    "firmName": "ABC數位資訊股份有限公司",
+                    "industryCategory": "網際網路相關業",
+                    "companySize": "",
+                    "workPlace": "",
+                    "jobName": "資深產品企劃",
+                    "jobRole": "全職",
+                    "jobCategory": "產品企劃",
+                    "startDate": "2019-07-01 00:00:00",
+                    "endDate": "2020-04-01 00:00:00",
+                    "jobDesc": "<p>1. 分析需求：研究市場趨勢、蒐集對手資訊，分析出對公司有利的策略。 2. 專案開發：與開發團隊緊密配合，管控專案進度；包括可行性評估、推動設計方案、規格撰寫、開發、測試、發佈。 3. 追蹤成效：觀測用戶反饋、數據，並持續營運產品，進行下一代產品規劃。 重要專案 【XYZ類商品頁改版】成效：商品頁轉換率成長21%，業績成長4.3% 【商品後台改版】成果：增加商品設定手機呈現、數據分析，為後台最高客戶滿意度的專案</p>",
+                    "skills": "產品開發預算與成本控管,市場調查企劃與執行,提案與簡報技巧",
+                    "management": "無",
+                    "wageTypeDesc": "",
+                    "wage": 0,
+                    "wageYear": 0
+                  }
+                ],
+                "jobRequirement": {
+                  "jobCharacteristic": "全職",
+                  "workInterval": "日班",
+                  "otherWorkInterval": "",
+                  "shiftWork": true,
+                  "startDateOpt": "錄取後隨時可上班",
+                  "wage": "面議:0",
+                  "workPlace": "台北市",
+                  "remoteWork": "對遠端工作有意願",
+                  "jobName": "PJM",
+                  "jobCategory": "其他專案管理師、產品管理師、專案管理主管、專案助理",
+                  "industryCategory": "",
+                  "workDesc": ""
+                },
+                "speciality": [
+                  {
+                    "skill": "網站企劃",
+                    "desc": "<p>．Axure：可製作擬真的產品互動原型，藉此讓大家了解專案，並有助提案、向團隊成員、橫向部門溝通</p><p>．Sketch：自學UI設計，配置網站顏色、字體、圖標等，培養視覺美感與使用者體驗</p><p>．系統規格：可撰寫系統詳細規格，包括整體的系統身份、狀態、所有影響動線，以便於團隊溝通、工程開發</p><p><br /></p>#Axure RP ",
+                    "tag": "Axure RP"
+                  }
+                ],
+                "commonCertificates": {
+                  "certificates": "",
+                  "otherCertificates": ""
+                },
+                "foreignLanguage": [
+                  {
+                    "langType": "英文",
+                    "listenDegree": "精通",
+                    "speakDegree": "精通",
+                    "readDegree": "精通",
+                    "writeDegree": "精通",
+                    "certificates": "TOEIC (多益測驗):880"
+                  },
+                  {
+                    "langType": "韓文",
+                    "listenDegree": "精通",
+                    "speakDegree": "精通",
+                    "readDegree": "精通",
+                    "writeDegree": "精通",
+                    "certificates": "TOPIK (韓語):"
+                  }
+                ],
+                "localLanguage": [
+                  {
+                    "langType": "上海語",
+                    "degree": "中等"
+                  }
+                ],
+                "biography": {
+                  "bio": "<p><strong>關於我</strong></p><p>出生於1984年，新竹人，天秤座O型。喜歡閱讀、旅遊，並將自己的旅遊心得，紀錄在自己的blog，除了是興趣，也培養自己的美感與文字能力。</p><p><strong>第一份工作 前端工程師</strong></p><p>畢業後第一份工作，在WWW數位媒體行銷股份有限公司當前端工程師。主要工作內容是負責www主網站前端功能開發，包括CSS切版、jQuery使用，並瞭解SEO、GA相關知識。</p><p>因為前端的工作需和PM、設計師緊密合作，常和PM討論使用者需求、議題，也常和設計師一起發想網站互動、規劃、參與使用者訪談，因此對網站規劃產生興趣，後來在公司內轉任產品企劃專員。</p><p>在前端工程師的工作期間，除了在工程有了實際的經驗，也充份了解專案流程，了解團隊的角色分工。</p><p><strong>特殊事蹟</strong>：參加ABC公司駭客松比賽，獲得佳作</p><p><strong>第一間公司轉換跑道 產品企劃</strong></p><p>雖然以前擔任工程時，就常團隊互動，但轉換企劃工作，還是有很大的不同。除了轉了180度看專案，視野和心境也有很大收穫，不再只是站在單一部門看專案，而是需兼顧用戶、公司策略、實際開發等多面向的權衡。大量收集資料、分析分案、說服大家，成了主要的工作，卻也找到了自己喜歡的工作。</p><p><strong>特殊事蹟</strong>：獲得ABC公司2016年優秀員工</p><p><strong>獨當一面產品企劃/PM</strong></p><p>轉換到ABC公司時，是很挑戰的工作，獨立扛產品的經營成果，工作也和公司業績息息相關。在ABC公司主要專案為「XYZ類商品頁改版」和「商品後台改版」，這2個專案都是自己擔任PM的專案，從需求分析、目標擬定、方案規劃、專案執行、結案等，都參與其中，規劃的過程大量運用數據、檢討調校，才有最後的成果。</p><p><strong>樂於學習，在網路世界中保持一顆上進心</strong></p><p>回顧在網路工作6年多來的經驗，有時為了讓自己在企劃職能更加成長而去學習新工具，有時則是為了自己的興趣而去學習新技能，例如：為了觀測產品數據，學習了如何查看GA以及如何埋設GTM；為了使產品設計概念能夠具體化呈現，自學了Axure工具讓團隊溝通討論更加順利；也因為學了Axure而希望自己可以進一步學習網頁設計，因此自學了Sketch工具、UI/UX設計。</p><p>在網路的世界裡，有許多不同領域的知識可以挖掘，也讓我覺得擔任網站企劃/PM充滿樂趣，也很期待能夠一直學習下去。</p><p> 期許未來能夠接觸不同類型產品、使用者，發揮專長與經驗，幫公司解決問題，提供符合用戶需求的網路服務。</p>",
+                  "engBio": "<p>My name is Lin Lin. I hold a bachelor’s degree with a major in Economics, which was awarded to me by Fu-Jen University in Taipei in 2000. Besides my major, I have also taken many courses related to computer science, such as Data Management, C-Language, and Calculus, which have prepared me for software programming in the field of finance and investment.</p><p><br /></p><p>Therefore, I was employed at the university’s computer center, where I assisted the instructors in teaching students how to search websites on the internet and how to send e-mail messages by using Outlook software. I also helped students design their web pages by familiarizing them with both PowerPoint and FrontPage software.</p><p><br /></p><p>Moreover, I was not only active in the university but also a participant in the 1998 International Conference of Web Technology Development in Taiwan. The experience brought me into contact with professional societies and helped me improve my social skills when interacting and communicating with professional people. This experience also taught me how to work with people efficiently.</p><p><br /></p><p>I am qualified for this position according to the requirements described in your advertisement. First, I have adequate knowledge and experience to support this position. Second, I have a good command of English, because my university minor subject was English. Third, I have good teamwork spirit and communication skills due to my extracurricular experience. These three facts provide the evidence that I have a quite adequate ability to work in an international company.</p>"
+                },
+                "recommenders": [
+                  {
+                    "name": "安俞真",
+                    "corp": "星船股份有限公司",
+                    "jobTitle": "組長",
+                    "email": "104@104.com.tw",
+                    "tel": "0912911111"
+                  }
+                ],
+                "headshotUrl": "https://apis.104api-dev.com.tw/ehrweb_resume/1.0/files/headshot?fileId=$$:v1:6ETsxqrFq-7wRDd9Vtswey6Fcztgbx36ek71LeYSd3ERpj2g93SwYV2NS1Cdhe6vVnTcRe67zRnpy8TFpmSB2INSoYTJSGL1u0KLcc67FUq_vhbh",
+                "attachFiles": [
+                  {
+                    "type": 1,
+                    "title": "",
+                    "fileName": "作品集.ppt",
+                    "resourceLink": "https://apis.104api-dev.com.tw/ehrweb_resume/1.0/files/attachment?type=1&fileId=$$:v1:b275OTIwO1SFnztes8IRQGwGoV9YO8Vuj0Ps_CFGSukZWlCtxsEt-kw1cEzwUgrLIA1Vol_nW_7iDF1iouwL2l6-N4BR4l8GP-Qgubl_tulXUVSJ",
+                    "website": ""
+                  }
+                ],
+                "projectDatas": [
+                  {
+                    "title": "測試專案1",
+                    "startDate": "",
+                    "endDate": "",
+                    "description": "<ol><li><strong>簡化結帳流程</strong>：根據用戶行為數據，我們將原本繁瑣的結帳頁面進行優化，將結帳步驟縮減至三個簡單步驟。這一變更顯著減少了用戶的操作負擔，提升了用戶完成訂單的意願。</li><li><strong>智能推薦系統</strong>：引入了個性化的商品推薦系統，根據用戶的歷史購買記錄和瀏覽行為進行推薦。這不僅提升了交叉銷售的機會，也增加了顧客的滿意度和回訪率。</li><li><strong>實時客服支持</strong>：在結帳頁面新增了即時聊天功能，並設置了常見問題自動回答機制，使用戶能夠在購物過程中獲得即時支持，減少了因為疑慮而棄單的情況。</li></ol><p><br /></p><p>最終，該專案使我們的訂單轉換率提升了30%，並使顧客滿意度顯著上升。該專案的成功落地，得到了高層管理的認可，並被其他產品團隊作為最佳實踐進行分享與學習。</p>",
+                    "type": 1,
+                    "resourceLink": "https://apis.104api-dev.com.tw/ehrweb_resume/1.0/files/attachment?type=3&fileId=$$:v1:eb-dZ5dVgWspoJ3-Id1w4oCyS2wrOt-GzpcqFSAHwITKkpawIR2uouolR0daMUnATwx546P8vWEPqHfUt3guEeQXMoekpLKV4ZrBTqP3ZhP-H1aw",
+                    "website": ""
+                  },
+                  {
+                    "title": "測試專案二",
+                    "startDate": "",
+                    "endDate": "",
+                    "description": "<ol><li><strong>市場調研與需求分析</strong>：我通過對目標市場的深入調研，了解了各國用戶對語言和地區特定需求的不同偏好。針對這些需求，我優先開發了最受歡迎的語言版本，並確保平台的UI設計能夠適應不同語言和文化的差異。</li><li><strong>多語言支持與本地化</strong>：與技術團隊密切合作，設計並實現了系統架構，使平台能夠支持自動語言切換功能。此外，我也推動了多語言內容的本地化，這不僅提升了用戶體驗，還促進了市場的滲透。</li><li><strong>國際市場推廣</strong>：在功能完成後，我協調了市場推廣團隊進行國際市場的宣傳與推廣。我們根據各地的文化特色，設計了適合當地市場的行銷策略，並與當地的合作夥伴建立了有效的聯繫。</li></ol><p><br /></p><p>最終，這個新功能成功地幫助公司進軍五個新市場，並在推出後的三個月內實現了20%的用戶增長。此專案不僅為公司帶來了可觀的市場份額，也加強了品牌在國際市場的認知度。</p>",
+                    "type": 1,
+                    "resourceLink": "https://apis.104api-dev.com.tw/ehrweb_resume/1.0/files/attachment?type=3&fileId=$$:v1:Jfdy1bbiKwSxY2--lhoyIsWHQD5cWCt6lBYgmC7yjb7rbill_kPZEIjVkoMlYebudn38eGUSNMpi-AJ6X3jmw05iGBwQk_X2isb_Li7hBaEGNb3R",
+                    "website": ""
+                  }
+                ],
+                "customContentDatas": [
+                  {
+                    "title": "測試自訂",
+                    "content": [
+                      {
+                        "description": "<p>自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容自訂內容</p>",
+                        "type": 1,
+                        "resourceLink": "https://apis.104api-dev.com.tw/ehrweb_resume/1.0/files/attachment?type=2&fileId=$$:v1:QTXP0XdVlGuH_5lcQLyyGuHAXyD1b-Bh4nvi_1Fqv0PFvcCPOwSaeh_9JMBxFSLA3h6uRiln1bWwmH_E4FJmgUFl3lh13jcQW0fB_-RKn4uRIkSD",
+                        "website": ""
+                      }
+                    ]
+                  }
+                ],
+                "applyJob": [
+                  {
+                    "applyDate": "2025-04-25",
+                    "name": "總務",
+                    "jobNo": "8338200",
+                    "applySource": "104應徵",
+                    "vipContactUrl": ""
+                  }
+                ],
+                "applyQuestion": [
+                  {
+                    "type": "",
+                    "question": "",
+                    "answer": ""
+                  },
+                  {
+                    "type": "",
+                    "question": "",
+                    "answer": ""
+                  },
+                  {
+                    "type": "",
+                    "question": "",
+                    "answer": ""
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "errors": []
+    },
+    {
+      "name": "配對履歷",
+      "flag": 0,
+      "params": {
+        "date": "2025-08-22",
+        "startTime": 0,
+        "endTime": 24
+      },
+      "queryListResult": {
+        "success": true,
+        "response": {
+          "data": {
+            "total": 2,
+            "queryDate": "2025-08-22",
+            "timePeriod": "0~24",
+            "idList": [
+              "20000000014051",
+              "3781639128202"
+            ]
+          }
+        }
+      },
+      "queryResult": {
+        "success": true,
+        "testedId": "20000000014051",
+        "response": {
+          "data": {
+            "list": [
+              {
+                "resumeId": "20000000014051",
+                "fullName": "HsuLinda",
+                "gender": "女",
+                "email": "",
+                "cellPhone": "",
+                "address": "",
+                "birthday": "1997-01-11 00:00:00",
+                "regSource": "104自訂配對",
+                "employmentStatus": "仍在職",
+                "militaryStatus": "",
+                "militaryRetireDate": "",
+                "introduction": "",
+                "motto": "",
+                "characteristic": "",
+                "personalPage": [],
+                "englishName": "",
+                "subCellPhone": "",
+                "tel": "",
+                "contactInfo": "",
+                "drivingLicenses": "",
+                "transports": "",
+                "specialIdentities": "",
+                "nationality": "",
+                "disabledTypes": "視覺障礙:輕度",
+                "disabilityCard": 0,
+                "assistiveDevices": "輪椅、特殊滑鼠設計、金點1號",
+                "education": [
+                  {
+                    "schoolName": "私立銘傳大學",
+                    "degreeLevel": "碩士",
+                    "major": "企管系",
+                    "majorCategory": "",
+                    "degreeStatus": "畢業",
+                    "schoolCountry": "台灣",
+                    "startDate": "2015-09-01 00:00:00",
+                    "endDate": "2018-06-01 00:00:00"
+                  },
+                  {
+                    "schoolName": "吃飯大學",
+                    "degreeLevel": "大學",
+                    "major": "企業管理學系",
+                    "majorCategory": "",
+                    "degreeStatus": "畢業",
+                    "schoolCountry": "台灣",
+                    "startDate": "2010-09-01 00:00:00",
+                    "endDate": "2012-06-01 00:00:00"
+                  },
+                  {
+                    "schoolName": "ttt",
+                    "degreeLevel": "碩士",
+                    "major": "f",
+                    "majorCategory": "",
+                    "degreeStatus": "畢業",
+                    "schoolCountry": "台灣",
+                    "startDate": "2022-09-01 00:00:00",
+                    "endDate": "2024-06-01 00:00:00"
+                  }
+                ],
+                "seniority": "4~5年",
+                "experiences": [
+                  {
+                    "firmName": "104",
+                    "industryCategory": "網際網路相關業",
+                    "companySize": "1~30人",
+                    "workPlace": "新北市樹林區",
+                    "jobName": "工程師",
+                    "jobRole": "全職",
+                    "jobCategory": "資訊助理",
+                    "startDate": "2016-02-01 00:00:00",
+                    "endDate": "1900-01-01 00:00:00",
+                    "jobDesc": "",
+                    "skills": "",
+                    "management": "無",
+                    "wageTypeDesc": "",
+                    "wage": 0,
+                    "wageYear": 0
+                  }
+                ],
+                "jobRequirement": {
+                  "jobCharacteristic": "全職",
+                  "workInterval": "日班",
+                  "otherWorkInterval": "",
+                  "shiftWork": false,
+                  "startDateOpt": "錄取後隨時可上班",
+                  "wage": "面議:0",
+                  "workPlace": "新北市、台北市",
+                  "remoteWork": "只能遠端工作",
+                  "jobName": "行銷企劃",
+                  "jobCategory": "行銷企劃",
+                  "industryCategory": "",
+                  "workDesc": ""
+                },
+                "speciality": [
+                  {
+                    "skill": "擅長工具",
+                    "desc": "程式設計類：Python",
+                    "tag": "Python"
+                  }
+                ],
+                "commonCertificates": {
+                  "certificates": "",
+                  "otherCertificates": ""
+                },
+                "foreignLanguage": [],
+                "localLanguage": [],
+                "biography": {
+                  "bio": "",
+                  "engBio": ""
+                },
+                "recommenders": [],
+                "headshotUrl": "",
+                "attachFiles": [],
+                "projectDatas": [],
+                "customContentDatas": [
+                  {
+                    "title": "雜誌風格",
+                    "content": [
+                      {
+                        "description": "<p>雜誌風格1</p>",
+                        "type": 1,
+                        "resourceLink": "https://apis.104api-dev.com.tw/ehrweb_resume/1.0/files/attachment?type=2&fileId=$$:v1:Go7iZKESxm1-I4tICBF0dumww6Gv-60aNsDzcvINdivYkwbZwrSYDZPuMeEX1LPDN93sij2BORAXr0o7dCpGsFrqxjjBwzq8Z3CpTfBLyYRCVetL",
+                        "website": "https://www.104-dev.com.tw/"
+                      },
+                      {
+                        "description": "<p>雜誌風格2</p>",
+                        "type": 1,
+                        "resourceLink": "https://apis.104api-dev.com.tw/ehrweb_resume/1.0/files/attachment?type=2&fileId=$$:v1:fkTibyH3ATU7I-cOkMXpXdhoUoyXA2v-fqkLAt1_wcDtc2JXPZ6ieaOGtglLk35o37U9LxJRxFbM6WTcyCyMJWsCYND-A1mC9kjItrsBvmxXJNZ_",
+                        "website": "https://www.104-dev.com.tw/"
+                      }
+                    ]
+                  }
+                ],
+                "applyJob": [
+                  {
+                    "applyDate": "2025-08-22",
+                    "name": "GU門市正職人員 (GU板橋大遠百店)- R00000004152456",
+                    "jobNo": "8351944",
+                    "applySource": "104配對",
+                    "vipContactUrl": "https://vip.104-dev.com.tw/search/searchResumeMasterEncode?p=$$:v1:BgNNuNjbjkkjw74dF5xPE_AAQTtl_qqGg75THoTGZq0OQKxDs69MY2k9mGMs3naqAnPlf4g6KLszOwsw5IQPR3-vmEacvCs6qOiiV6am3_4i2Jg5j9LAeObFVLE"
+                  }
+                ],
+                "applyQuestion": []
+              }
+            ]
+          }
+        }
+      },
+      "queryBatchResult": {
+        "success": true,
+        "testedIds": [
+          "20000000014051",
+          "3781639128202"
+        ],
+        "response": {
+          "data": {
+            "list": [
+              {
+                "resumeId": "20000000014051",
+                "fullName": "HsuLinda",
+                "gender": "女",
+                "email": "",
+                "cellPhone": "",
+                "address": "",
+                "birthday": "1997-01-11 00:00:00",
+                "regSource": "104自訂配對",
+                "employmentStatus": "仍在職",
+                "militaryStatus": "",
+                "militaryRetireDate": "",
+                "introduction": "",
+                "motto": "",
+                "characteristic": "",
+                "personalPage": [],
+                "englishName": "",
+                "subCellPhone": "",
+                "tel": "",
+                "contactInfo": "",
+                "drivingLicenses": "",
+                "transports": "",
+                "specialIdentities": "",
+                "nationality": "",
+                "disabledTypes": "視覺障礙:輕度",
+                "disabilityCard": 0,
+                "assistiveDevices": "輪椅、特殊滑鼠設計、金點1號",
+                "education": [
+                  {
+                    "schoolName": "私立銘傳大學",
+                    "degreeLevel": "碩士",
+                    "major": "企管系",
+                    "majorCategory": "",
+                    "degreeStatus": "畢業",
+                    "schoolCountry": "台灣",
+                    "startDate": "2015-09-01 00:00:00",
+                    "endDate": "2018-06-01 00:00:00"
+                  },
+                  {
+                    "schoolName": "吃飯大學",
+                    "degreeLevel": "大學",
+                    "major": "企業管理學系",
+                    "majorCategory": "",
+                    "degreeStatus": "畢業",
+                    "schoolCountry": "台灣",
+                    "startDate": "2010-09-01 00:00:00",
+                    "endDate": "2012-06-01 00:00:00"
+                  },
+                  {
+                    "schoolName": "ttt",
+                    "degreeLevel": "碩士",
+                    "major": "f",
+                    "majorCategory": "",
+                    "degreeStatus": "畢業",
+                    "schoolCountry": "台灣",
+                    "startDate": "2022-09-01 00:00:00",
+                    "endDate": "2024-06-01 00:00:00"
+                  }
+                ],
+                "seniority": "4~5年",
+                "experiences": [
+                  {
+                    "firmName": "104",
+                    "industryCategory": "網際網路相關業",
+                    "companySize": "1~30人",
+                    "workPlace": "新北市樹林區",
+                    "jobName": "工程師",
+                    "jobRole": "全職",
+                    "jobCategory": "資訊助理",
+                    "startDate": "2016-02-01 00:00:00",
+                    "endDate": "1900-01-01 00:00:00",
+                    "jobDesc": "",
+                    "skills": "",
+                    "management": "無",
+                    "wageTypeDesc": "",
+                    "wage": 0,
+                    "wageYear": 0
+                  }
+                ],
+                "jobRequirement": {
+                  "jobCharacteristic": "全職",
+                  "workInterval": "日班",
+                  "otherWorkInterval": "",
+                  "shiftWork": false,
+                  "startDateOpt": "錄取後隨時可上班",
+                  "wage": "面議:0",
+                  "workPlace": "新北市、台北市",
+                  "remoteWork": "只能遠端工作",
+                  "jobName": "行銷企劃",
+                  "jobCategory": "行銷企劃",
+                  "industryCategory": "",
+                  "workDesc": ""
+                },
+                "speciality": [
+                  {
+                    "skill": "擅長工具",
+                    "desc": "程式設計類：Python",
+                    "tag": "Python"
+                  }
+                ],
+                "commonCertificates": {
+                  "certificates": "",
+                  "otherCertificates": ""
+                },
+                "foreignLanguage": [],
+                "localLanguage": [],
+                "biography": {
+                  "bio": "",
+                  "engBio": ""
+                },
+                "recommenders": [],
+                "headshotUrl": "",
+                "attachFiles": [],
+                "projectDatas": [],
+                "customContentDatas": [
+                  {
+                    "title": "雜誌風格",
+                    "content": [
+                      {
+                        "description": "<p>雜誌風格1</p>",
+                        "type": 1,
+                        "resourceLink": "https://apis.104api-dev.com.tw/ehrweb_resume/1.0/files/attachment?type=2&fileId=$$:v1:Go7iZKESxm1-I4tICBF0dumww6Gv-60aNsDzcvINdivYkwbZwrSYDZPuMeEX1LPDN93sij2BORAXr0o7dCpGsFrqxjjBwzq8Z3CpTfBLyYRCVetL",
+                        "website": "https://www.104-dev.com.tw/"
+                      },
+                      {
+                        "description": "<p>雜誌風格2</p>",
+                        "type": 1,
+                        "resourceLink": "https://apis.104api-dev.com.tw/ehrweb_resume/1.0/files/attachment?type=2&fileId=$$:v1:fkTibyH3ATU7I-cOkMXpXdhoUoyXA2v-fqkLAt1_wcDtc2JXPZ6ieaOGtglLk35o37U9LxJRxFbM6WTcyCyMJWsCYND-A1mC9kjItrsBvmxXJNZ_",
+                        "website": "https://www.104-dev.com.tw/"
+                      }
+                    ]
+                  }
+                ],
+                "applyJob": [
+                  {
+                    "applyDate": "2025-08-22",
+                    "name": "GU門市正職人員 (GU板橋大遠百店)- R00000004152456",
+                    "jobNo": "8351944",
+                    "applySource": "104配對",
+                    "vipContactUrl": "https://vip.104-dev.com.tw/search/searchResumeMasterEncode?p=$$:v1:BgNNuNjbjkkjw74dF5xPE_AAQTtl_qqGg75THoTGZq0OQKxDs69MY2k9mGMs3naqAnPlf4g6KLszOwsw5IQPR3-vmEacvCs6qOiiV6am3_4i2Jg5j9LAeObFVLE"
+                  }
+                ],
+                "applyQuestion": []
+              },
+              {
+                "resumeId": "3781639128202",
+                "fullName": "吳凱文",
+                "gender": "男",
+                "email": "",
+                "cellPhone": "",
+                "address": "",
+                "birthday": "2005-02-02 00:00:00",
+                "regSource": "104自訂配對",
+                "employmentStatus": "仍在職",
+                "militaryStatus": "",
+                "militaryRetireDate": "",
+                "introduction": "",
+                "motto": "",
+                "characteristic": "",
+                "personalPage": [],
+                "englishName": "",
+                "subCellPhone": "",
+                "tel": "",
+                "contactInfo": "",
+                "drivingLicenses": "",
+                "transports": "",
+                "specialIdentities": "",
+                "nationality": "",
+                "disabledTypes": "",
+                "disabilityCard": 0,
+                "assistiveDevices": "",
+                "education": [
+                  {
+                    "schoolName": "國立臺北大學",
+                    "degreeLevel": "大學",
+                    "major": "資訊工程學系",
+                    "majorCategory": "",
+                    "degreeStatus": "肄業",
+                    "schoolCountry": "台灣",
+                    "startDate": "2020-09-01 00:00:00",
+                    "endDate": "2024-06-01 00:00:00"
+                  }
+                ],
+                "seniority": "無任何工作經驗",
+                "experiences": [
+                  {
+                    "firmName": "開店一二三網路科技股份有限公司",
+                    "industryCategory": "網際網路相關業",
+                    "companySize": "",
+                    "workPlace": "台北市大安區",
+                    "jobName": "專員",
+                    "jobRole": "全職",
+                    "jobCategory": "人力資源人員",
+                    "startDate": "2024-11-01 00:00:00",
+                    "endDate": "2025-04-01 00:00:00",
+                    "jobDesc": "",
+                    "skills": "",
+                    "management": "無",
+                    "wageTypeDesc": "",
+                    "wage": 0,
+                    "wageYear": 0
+                  }
+                ],
+                "jobRequirement": {
+                  "jobCharacteristic": "全職",
+                  "workInterval": "日班",
+                  "otherWorkInterval": "",
+                  "shiftWork": false,
+                  "startDateOpt": "錄取後隨時可上班",
+                  "wage": "面議:0",
+                  "workPlace": "台北市、新北市",
+                  "remoteWork": "",
+                  "jobName": "產品企畫",
+                  "jobCategory": "行銷企劃",
+                  "industryCategory": "",
+                  "workDesc": ""
+                },
+                "speciality": [],
+                "commonCertificates": {
+                  "certificates": "",
+                  "otherCertificates": ""
+                },
+                "foreignLanguage": [],
+                "localLanguage": [],
+                "biography": {
+                  "bio": "",
+                  "engBio": ""
+                },
+                "recommenders": [],
+                "headshotUrl": "",
+                "attachFiles": [],
+                "projectDatas": [],
+                "customContentDatas": [
+                  {
+                    "title": "IPS外籍養成班",
+                    "content": [
+                      {
+                        "description": "學習類別：實體課程 \n完成時間：2025/07/12 \n機構單位：世界公民 \n證書編號：WW1234567890",
+                        "type": 0,
+                        "resourceLink": "",
+                        "website": "https://www.tibame.com/certificatepage/123456"
+                      }
+                    ]
+                  }
+                ],
+                "applyJob": [
+                  {
+                    "applyDate": "2025-08-22",
+                    "name": "(GMC) R00000004162132 Management Candidate_Job API",
+                    "jobNo": "8353718",
+                    "applySource": "104配對",
+                    "vipContactUrl": "https://vip.104-dev.com.tw/search/searchResumeMasterEncode?p=$$:v1:mrnWp4GMH87ZhA3MMjhWRC-H150cCxHFmQ90sf5v4g6gxvqRuuQ9EVCRJ0OyuaP7pNVG9k6LAE6EOoCr968Zl1NCpSPVaLRwaDe0wkJXUJhim9absZ2rf0Vwfw"
+                  }
+                ],
+                "applyQuestion": []
+              }
+            ]
+          }
+        }
+      },
+      "errors": []
+    },
+    {
+      "name": "儲存履歷",
+      "flag": 2,
+      "params": {
+        "date": "2025-11-05",
+        "startTime": 16,
+        "endTime": 17
+      },
+      "queryListResult": {
+        "success": true,
+        "response": {
+          "data": {
+            "total": 1,
+            "queryDate": "2025-11-05",
+            "timePeriod": "16~17",
+            "idList": [
+              "3781639095604"
+            ]
+          }
+        }
+      },
+      "queryResult": {
+        "success": true,
+        "testedId": "3781639095604",
+        "response": {
+          "data": {
+            "list": [
+              {
+                "resumeId": "3781639095604",
+                "fullName": "侯代筆",
+                "gender": "女",
+                "email": "debby.hou@104.com.tw",
+                "cellPhone": "0911776655",
+                "address": "金門縣金沙鎮寶中路119之1號10樓",
+                "birthday": "1990-04-19 00:00:00",
+                "regSource": "VIP儲存履歷",
+                "employmentStatus": "仍在職",
+                "militaryStatus": "",
+                "militaryRetireDate": "",
+                "introduction": "<p>這是第一航</p><p>這是第二航</p><p>簡介，即簡明扼要的介紹。是當事人全面而簡潔地介紹情況的一種書面表達方式，它是應用寫作學研究的一種日常應用文體。 企業簡介是指通過文字和圖片資料向社會公眾介紹企業基本情況和經營戰略的文案。主要介紹企業名稱、企業的法律性質、開辦地址、設立時間、所屬行業、註冊資金、建築面積、技術裝備條件；生產經營範圍、主要產品結構；企業發展戰略、經營理念等情況。 由企業名稱和文種組成。如ABCD</p><p>健康餐兌換券</p><p>123</p><p>everyone's word</p><ul><li>1111</li><li style=\"margin-left:1em;\">2222</li><li style=\"margin-left:2em;\">3333</li></ul><p><br /></p><p><a href=\"http://zh.wikipedia.org/zh-tw/%E8%BE%B2%E6%B0%91\" rel=\"noopener noreferrer\" target=\"_blank\">1234567890</a></p>",
+                "motto": "格言一\n健康餐兌換券\n格言二",
+                "characteristic": "",
+                "personalPage": [],
+                "englishName": "",
+                "subCellPhone": "",
+                "tel": "02-2222333",
+                "contactInfo": "手機聯絡",
+                "drivingLicenses": "普通重型機車駕照",
+                "transports": "",
+                "specialIdentities": "外籍人士",
+                "nationality": "",
+                "disabledTypes": "",
+                "disabilityCard": 0,
+                "assistiveDevices": "",
+                "education": [
+                  {
+                    "schoolName": "國立中央大學",
+                    "degreeLevel": "大學",
+                    "major": "地形測量學系、體育與運動科學系",
+                    "majorCategory": "",
+                    "degreeStatus": "肄業",
+                    "schoolCountry": "台灣",
+                    "startDate": "2020-05-01 00:00:00",
+                    "endDate": "2024-11-01 00:00:00"
+                  },
+                  {
+                    "schoolName": "IFP School",
+                    "degreeLevel": "高中",
+                    "major": "普通科",
+                    "majorCategory": "",
+                    "degreeStatus": "畢業",
+                    "schoolCountry": "日本",
+                    "startDate": "2000-03-01 00:00:00",
+                    "endDate": "2004-09-01 00:00:00"
+                  }
+                ],
+                "seniority": "9~10年",
+                "experiences": [
+                  {
+                    "firmName": "VIPOP TEAM 測試用(請勿動) 222877000 一般",
+                    "industryCategory": "",
+                    "companySize": "",
+                    "workPlace": "",
+                    "jobName": "tester",
+                    "jobRole": "全職",
+                    "jobCategory": "軟韌體測試工程師",
+                    "startDate": "2023-01-01 00:00:00",
+                    "endDate": "1900-01-01 00:00:00",
+                    "jobDesc": "<p><strong>富蘭克林曾說過</strong>，<span style=\"color:rgb(255,120,0);\">兄弟不一定是朋友</span>，<span style=\"background-color:rgb(111,184,39);\">便朋友往往是兄弟</span>。</p><ol><li>這激勵了我。</li><li>如果此時我們選擇忽略履歷，</li><li>那後果可想而知。履歷改變了我的命運。</li></ol><ul><li>儘管如此，別人往往卻不這麼想。</li><li>履歷對我來說，已經成為了我生活的一部分。</li></ul><p>由於，徐特立告訴我們，儉樸的生活，不但可使精神愉快，而且可以培養革命品質。這段話非常有意思。總而言之，金斯萊曾說過一句意義深遠的話，天賦每個人都有，誰發揮自己的天賦，誰做事就得心應手。希望大家能發現話中之話。履歷絕對是史無前例的。卡拉姆辛相信，語言屬於一個時代，思想屬於許多時代。這句話幾乎解讀出了問題的根本。老舊的想法已經過時了。履歷究竟是怎麼樣的存在，始終是個謎題。我們不得不面對一個非常尷尬的事實，那就是，若能夠洞悉履歷各種層面的含義，勢必能讓思維再提高一個層級。履歷可以說是有著成為常識的趨勢。當前最急迫的事，想必就是釐清疑惑了。動機，可以說是最單純的力量。履歷因何而發生？盧棱說過一句發人省思的話，偉大的人是絕不會濫用自己的優點的，他們看出自己越過別人的地方，並且意識到這一點，然而絕不會因此就不謙虛。這句話讓我們得到了一個全新的觀點去思考這個問題。別林斯基在過去曾經講過，書是我們時代的生命。希望大家能發現話中之話。履歷必定會成為未來世界的新標準。每個人都不得不面對這些問題。在面對這種問題時，務必詳細考慮履歷的各種可能。我們普遍認為，若能理解透徹核心原理，對其就有了一定的了解程度。話雖如此，履歷的出現，必將帶領人類走向更高的巔峰。我們都很清楚，這是個嚴謹的議題。貝納姆說過一句富有哲理的話，神奇的東西未必都是奇蹟。請諸位將這段話在心中默念三遍。在人生的歷程中，履歷的出現是必然的。約爾旦在過去曾經講過，智慧表現在下一次該怎</p><p><a href=\"http://google.com\" rel=\"noopener noreferrer\" target=\"_blank\">HTML</a></p>",
+                    "skills": "",
+                    "management": "無",
+                    "wageTypeDesc": "",
+                    "wage": 0,
+                    "wageYear": 0
+                  },
+                  {
+                    "firmName": "三緯企業股份有限公司",
+                    "industryCategory": "旅館業",
+                    "companySize": "1~30人",
+                    "workPlace": "澎湖縣馬公市",
+                    "jobName": "櫃台",
+                    "jobRole": "全職",
+                    "jobCategory": "客服主管",
+                    "startDate": "2019-01-01 00:00:00",
+                    "endDate": "1900-01-01 00:00:00",
+                    "jobDesc": "<p>八卦</p><p>健康餐兌換券</p><p>一一一一一</p><p>二二二二二二</p>",
+                    "skills": "",
+                    "management": "無",
+                    "wageTypeDesc": "月薪",
+                    "wage": 40000,
+                    "wageYear": 0
+                  },
+                  {
+                    "firmName": "BAPP-測試公司-國外公司-3363976000",
+                    "industryCategory": "機械設備租賃業",
+                    "companySize": "1~30人",
+                    "workPlace": "雲林縣斗南鎮",
+                    "jobName": "會計",
+                    "jobRole": "全職",
+                    "jobCategory": "主辦會計",
+                    "startDate": "2016-02-01 00:00:00",
+                    "endDate": "2017-04-01 00:00:00",
+                    "jobDesc": "<ul><li>123</li><li>456</li><li>789</li><li>000</li></ul><p>everyone's word</p>",
+                    "skills": "",
+                    "management": "無",
+                    "wageTypeDesc": "",
+                    "wage": 0,
+                    "wageYear": 0
+                  },
+                  {
+                    "firmName": "老英格蘭莊園（桑妮的遊樂場）",
+                    "industryCategory": "旅館業",
+                    "companySize": "1~30人",
+                    "workPlace": "基隆市仁愛區",
+                    "jobName": "會計",
+                    "jobRole": "全職",
+                    "jobCategory": "會計師",
+                    "startDate": "2015-06-01 00:00:00",
+                    "endDate": "2016-09-01 00:00:00",
+                    "jobDesc": "<p>Found in Einhornhöhle cave in northern Germany, the decorated deer phalanx, or toe bone, features an engraved geometric pattern and has been dated, using several techniques, to at least 51,000 years old.</p><p>It refreshes the debate over to what extent Neanderthals, the heavily built Stone Age hominins that disappeared about 40,000 years ago, were capable of artistic expression and symbolic thought and whether they developed these skills themselves or through interactions with early modern humans, who first arrived in Europe around this time.</p><p>\"The phalanx from Einhornhöhle with its stacked offset chevrons represents one of the most complex cultural expressions in Neanderthals known so far,\" according to a study that published Monday in the journal Nature.</p><p>The team of German researchers said the small bone appears to be of no practical use, and the chevron design, with its three uniform parallel lines appears to be intentionally created -- perhaps as a personal ornament.</p><p>The choice -1000</p><p>Found in Einhornhöhle cave in northern Germany, the decorated deer phalanx, or toe bone, features an engraved geometric pattern and has been dated, using several techniques, to at least 51,000 years old.</p><p>It refreshes the debate over to what extent Neanderthals, the heavily built Stone Age hominins that disappeared about 40,000 years ago, were capable of artistic expression and symbolic thought and whether they developed these skills themselves or through interactions with early modern humans, who first arrived in Europe around this time.</p><p>\"The phalanx from Einhornhöhle with its stacked offset chevrons represents one of the most complex cultural expressions in Neanderthals known so far,\" according to a study that published Monday in the journal Nature.</p><p>The team of German researchers said the small bone appears to be of no practical use, and the chevron design, with its three uniform parallel lines appears to be intentionally created -- perhaps as a personal ornament.</p><p>The choice -1000</p><p>我我我我我我我我午我我我我午我我</p>",
+                    "skills": "",
+                    "management": "無",
+                    "wageTypeDesc": "",
+                    "wage": 0,
+                    "wageYear": 0
+                  },
+                  {
+                    "firmName": "某協會",
+                    "industryCategory": "政府／民意機關",
+                    "companySize": "1~30人",
+                    "workPlace": "新北市三重區",
+                    "jobName": "Help man",
+                    "jobRole": "兼職",
+                    "jobCategory": "法務",
+                    "startDate": "2007-04-01 00:00:00",
+                    "endDate": "2010-12-01 00:00:00",
+                    "jobDesc": "<ul><li><strong style=\"background-color:rgb(169,169,169);color:rgb(0,0,0);\">父親項目</strong></li><li style=\"margin-left:1em;\"><strong style=\"background-color:rgb(169,169,169);color:rgb(0,0,0);\">兒子項目</strong></li><li style=\"margin-left:2em;\"><strong style=\"background-color:rgb(169,169,169);color:rgb(0,0,0);\">孫子項目</strong></li></ul><p><br /></p><p>000000</p><p style=\"margin-left:1em;\">AAAAA</p><p style=\"margin-left:2em;\">BBBBB</p><p style=\"margin-left:3em;\">CCCCC</p><p style=\"margin-left:2em;\">DDDDD</p><p style=\"margin-left:1em;\">EEEEEE</p>",
+                    "skills": "執行法律文件及契約撰寫,合約或備忘錄內容審查檢驗,檢驗各項文件之法律效力,法律相關條文諮詢服務,檢驗法律紀錄和相關文件,追蹤及審閱合約流程",
+                    "management": "直接管理人數約5-8人",
+                    "wageTypeDesc": "時薪",
+                    "wage": 1000,
+                    "wageYear": 0
+                  }
+                ],
+                "jobRequirement": {
+                  "jobCharacteristic": "全職",
+                  "workInterval": "日班",
+                  "otherWorkInterval": "",
+                  "shiftWork": false,
+                  "startDateOpt": "錄取後隨時可上班",
+                  "wage": "面議:0",
+                  "workPlace": "瓜地馬拉、台北市",
+                  "remoteWork": "對遠端工作有意願",
+                  "jobName": "儲備幹部",
+                  "jobCategory": "國內業務、產品行銷企劃、行銷企劃、門市／店員／專櫃人員、Internet程式設計師",
+                  "industryCategory": "產業不拘",
+                  "workDesc": "<p><span style=\"color:rgb(255,120,0);\">0427 新增的</span></p><p><strong>健康餐兌換券</strong></p><p>﻿everyone's word</p><p><span style=\"background-color:rgb(255,120,0);\">YYOYOYYOY</span></p><ul><li>主項目</li><li style=\"margin-left:1em;\">子項目</li><li style=\"margin-left:2em;\">孫項目</li></ul>"
+                },
+                "speciality": [
+                  {
+                    "skill": "環境清潔",
+                    "desc": "<p style=\"margin-left:1em;\">環</p><p style=\"margin-left:2em;\">境</p><p style=\"margin-left:3em;\">清</p><p style=\"margin-left:4em;\">潔</p><p style=\"margin-left:5em;\">環</p><p style=\"margin-left:6em;\">境</p><p style=\"margin-left:7em;\">清</p><p style=\"margin-left:8em;\">潔</p><p>everyone's word</p>",
+                    "tag": ""
+                  },
+                  {
+                    "skill": "打掃",
+                    "desc": "<p>很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔</p><p>清潔大師</p><p><br /></p><p><br /></p><p>健康餐兌換券</p><p><br /></p><p>健康餐兌換券</p><p><br /></p><p>健康餐兌換券</p><p><br /></p><p><br /></p><div>#環保資源回收作業 #協助家務處理 #建築物與週邊物清潔 </div>",
+                    "tag": "環保資源回收作業,協助家務處理,建築物與週邊物清潔"
+                  },
+                  {
+                    "skill": "問卷設計",
+                    "desc": "<div>#問卷設計 #市場調查資料分析與報告撰寫 </div>",
+                    "tag": "問卷設計,市場調查資料分析與報告撰寫"
+                  },
+                  {
+                    "skill": "後來新增的",
+                    "desc": "<ol><li style=\"margin-left:1em;\">第一行</li><li style=\"margin-left:1em;\"><strong>第二行</strong></li><li style=\"margin-left:2em;\">第二行之一</li></ol><div>#行銷策略擬定 </div>",
+                    "tag": "行銷策略擬定"
+                  },
+                  {
+                    "skill": "debug",
+                    "desc": "<p>找問題給工程修找問題給工程修找問題給工程修找問題給工程修找問題給工程修找問題給工程修找問題給工程修找問題給工程修找問題給工程修</p><div>#Firmware </div>",
+                    "tag": "Firmware"
+                  }
+                ],
+                "commonCertificates": {
+                  "certificates": "Acrobat",
+                  "otherCertificates": "GMAT、DELE (西班牙語文能力測驗)、DELF (法語鑑定文憑)、FLPT (德語)、TOPIK (韓語)\n健康餐兌換券\n1234567890"
+                },
+                "foreignLanguage": [
+                  {
+                    "langType": "英文",
+                    "listenDegree": "中等",
+                    "speakDegree": "中等",
+                    "readDegree": "精通",
+                    "writeDegree": "精通",
+                    "certificates": "TOEIC (多益測驗):999、GEPT全民英檢初級:、GEPT全民英檢中級:、GEPT全民英檢中高級:、GEPT全民英檢高級:、GEPT全民英檢優級:"
+                  },
+                  {
+                    "langType": "日文",
+                    "listenDegree": "中等",
+                    "speakDegree": "略懂",
+                    "readDegree": "精通",
+                    "writeDegree": "不會",
+                    "certificates": "JLPT N3:"
+                  },
+                  {
+                    "langType": "泰文",
+                    "listenDegree": "精通",
+                    "speakDegree": "精通",
+                    "readDegree": "略懂",
+                    "writeDegree": "略懂",
+                    "certificates": ""
+                  },
+                  {
+                    "langType": "西班牙文",
+                    "listenDegree": "略懂",
+                    "speakDegree": "略懂",
+                    "readDegree": "不會",
+                    "writeDegree": "不會",
+                    "certificates": "FLPT (西語):666"
+                  }
+                ],
+                "localLanguage": [],
+                "biography": {
+                  "bio": "<p>中文履歷</p><p style=\"margin-left:5em;\">沒有英文喔!!</p><p><br /></p><p style=\"margin-left:1em;\"><strong>首行縮進</strong></p><ul><li style=\"margin-left:1em;\">段落的第一行縮進，而第二行之後不縮進的縮進方式是首行縮進。</li><li style=\"margin-left:1em;\">西文排版當中，首行縮進和額外的段距不會同時出現。首行的縮進量為字體的一到四倍。</li></ul><p style=\"margin-left:1em;\"><strong>懸掛縮進</strong></p><ul><li style=\"margin-left:1em;\">段落的第一行不縮進，而第二行之後縮進的縮進方式是懸掛縮進。</li><li style=\"margin-left:1em;\">西文排版當中，懸掛縮進是縮進量為負的首行縮進，懸掛縮進的段落開頭通常是項目符號，而正文不會懸掛。</li></ul><p style=\"margin-left:1em;\"><strong>塊縮進</strong></p><ul><li style=\"margin-left:1em;\">段落的所有行都縮進的縮進方式是塊縮進。</li></ul><p>everyone's word</p><p>健康餐兌換券</p>",
+                  "engBio": "<p>everyone's word</p>"
+                },
+                "recommenders": [
+                  {
+                    "name": "Quote",
+                    "corp": "mmmmm company",
+                    "jobTitle": "主管",
+                    "email": "111_quote@cccc.com",
+                    "tel": ""
+                  }
+                ],
+                "headshotUrl": "https://apis.104api-dev.com.tw/ehrweb_resume/1.0/files/headshot?fileId=$$:v1:Hw1m4loMeXLnnr2mCX7BbYbqT-tCF3f9J-gqnuXIKdjZRkRKKUNJF1Hgl8GIt3yT0FI2YvgGLC1sYcG_lOdDBW5CF0cortfkSpKg0t70ix5MKrZA",
+                "attachFiles": [
+                  {
+                    "type": 1,
+                    "title": "",
+                    "fileName": "eRecruitor 操作手冊.pdf",
+                    "resourceLink": "https://apis.104api-dev.com.tw/ehrweb_resume/1.0/files/attachment?type=1&fileId=$$:v1:Om24oejRpagTf0nXSGmBX2PktLTeIqvvLyj8HFtHlDEWaUiHpqdXtO_QI-2X25F3pjPiiNF9l98qnLPHkG-C_eBWxZ83RzHZiyz208nM5nSI2vvO",
+                    "website": ""
+                  },
+                  {
+                    "type": 1,
+                    "title": "",
+                    "fileName": "PNG.png",
+                    "resourceLink": "https://apis.104api-dev.com.tw/ehrweb_resume/1.0/files/attachment?type=1&fileId=$$:v1:QfYVbJB6fiAt7s2ByN_YyAuFT5hb5W1_l40VvXjJ8JZSgtkYIlLabQOuzpPVdnCCYBI6yhtMKlEurwMR42onRUzRYkD7WXRhrxNyiP2QgGf5zNQM",
+                    "website": ""
+                  },
+                  {
+                    "type": 2,
+                    "title": "",
+                    "fileName": "",
+                    "resourceLink": "",
+                    "website": "https://www.youtube.com"
+                  },
+                  {
+                    "type": 1,
+                    "title": "",
+                    "fileName": "NEW GIF.gif",
+                    "resourceLink": "https://apis.104api-dev.com.tw/ehrweb_resume/1.0/files/attachment?type=1&fileId=$$:v1:GBFeofdaIAGYdh_ZQ0gHW5laZTLn-yB1FIdBhsr2vpT5-ApizpwLMuoOmcLy71wsKrdWE3PMBULVESdv8ZPGwjk_dE6Nw7UWRs_NRsHAPpxUe7ez",
+                    "website": ""
+                  },
+                  {
+                    "type": 1,
+                    "title": "",
+                    "fileName": "狗狗狗.jpg",
+                    "resourceLink": "https://apis.104api-dev.com.tw/ehrweb_resume/1.0/files/attachment?type=1&fileId=$$:v1:KFmZh8-hXHYXDTiH3jeEAefmADbelCCCso771Y_L9GPMtJq0iHJhh3m8QdKu8hJzCClNA60MUzsosCOXIutL_vFKiTeQTdB9SzBiyKWjgbsqQ7Rp",
+                    "website": ""
+                  },
+                  {
+                    "type": 1,
+                    "title": "",
+                    "fileName": "12M圖檔.png",
+                    "resourceLink": "https://apis.104api-dev.com.tw/ehrweb_resume/1.0/files/attachment?type=1&fileId=$$:v1:gGm2StYZphg3fNgMngQT8R5aVOoCGFjCblKXtXZMzgKt_ywaiy8UzxThBdlHDZXvWs5_btUUKxfl9oS90DDgZZZARI8DjWmV92L7cXHanOTR4YPe",
+                    "website": ""
+                  }
+                ],
+                "projectDatas": [
+                  {
+                    "title": "點點",
+                    "startDate": "",
+                    "endDate": "",
+                    "description": "<ul><li><a href=\"https://www.google.com/\" rel=\"noopener noreferrer\" target=\"_blank\">Aaaa</a></li><li style=\"margin-left:2em;\">Bbbb</li><li style=\"margin-left:2em;\">Cccc</li><li>Ddddd</li><li style=\"margin-left:2em;\">Eeee</li><li style=\"margin-left:3em;\"><a href=\"https://www.google.com/\" rel=\"noopener noreferrer\" target=\"_blank\">Ffffff</a></li></ul>",
+                    "type": 0,
+                    "resourceLink": "",
+                    "website": ""
+                  },
+                  {
+                    "title": "GIFFFF 不要問了",
+                    "startDate": "",
+                    "endDate": "",
+                    "description": "<p><strong style=\"color:rgb(255,195,27);\">可愛 GIF</strong></p><p><br /></p><p>健康餐兌換券</p><p><br /></p><p>健康餐兌換券</p><p><br /></p><p>last</p>",
+                    "type": 1,
+                    "resourceLink": "https://apis.104api-dev.com.tw/ehrweb_resume/1.0/files/attachment?type=3&fileId=$$:v1:rk1vLbZRAUthSwiI19iHbgTxqlZMyZO6gldAHBGAzZuNhYxIwN53ms7b_VhMdSiI8wdO5wWYnM0jsaGLc_RtgfrP-OMluMKogqAmBgPwjbHAF8aD",
+                    "website": ""
+                  },
+                  {
+                    "title": "YOUTUBE 影片",
+                    "startDate": "",
+                    "endDate": "",
+                    "description": "<p>WHAT!!!!!</p>",
+                    "type": 3,
+                    "resourceLink": "https://youtu.be/mNEUkkoUoIA",
+                    "website": ""
+                  },
+                  {
+                    "title": "test",
+                    "startDate": "",
+                    "endDate": "",
+                    "description": "<ol><li>QQQ</li><li style=\"margin-left:2em;\">QQQ</li><li style=\"margin-left:3em;\">QQQ</li></ol><p>everyone's word</p>",
+                    "type": 0,
+                    "resourceLink": "",
+                    "website": ""
+                  }
+                ],
+                "customContentDatas": [
+                  {
+                    "title": "我的自訂內容",
+                    "content": [
+                      {
+                        "description": "<p>自訂內容</p><ul><li>健康餐兌換券</li></ul><p>123</p><p>456</p><ul><li><strong style=\"background-color:rgb(255,195,27);color:rgb(255,120,0);\">拼圖大師</strong></li></ul>",
+                        "type": 1,
+                        "resourceLink": "https://apis.104api-dev.com.tw/ehrweb_resume/1.0/files/attachment?type=2&fileId=$$:v1:2ULbUjRtFz4UCvy9ABAb-tE2WigQIpYEYAGKHaNumX54braTueFhdZR8LW9nzQr1ab9i6zXr2SLKeW4bz6Ke4wTwbPOBHS0zOwt4LVjn1sPK19ag",
+                        "website": "https://www.google.com/"
+                      }
+                    ]
+                  },
+                  {
+                    "title": "純圖片MP4+LINK",
+                    "content": [
+                      {
+                        "description": "",
+                        "type": 2,
+                        "resourceLink": "此附件為影音檔，請至104招募管理查看",
+                        "website": ""
+                      },
+                      {
+                        "description": "",
+                        "type": 3,
+                        "resourceLink": "https://www.youtube.com/watch?v=u6wOyMUs74I",
+                        "website": ""
+                      }
+                    ]
+                  },
+                  {
+                    "title": "雜誌風格",
+                    "content": [
+                      {
+                        "description": "<p><strong>普通企鵝照片</strong></p><p>企鵝科 Spheniscidae</p><ul><li>企鵝亞科 Spheniscinae （現代企鵝）</li><li><span style=\"color:rgb(6,69,173);\">王企鵝屬</span> <em>Aptenodytes</em></li><li style=\"margin-left:2em;\">皇帝企鵝 Aptenodytes forsteri</li><li style=\"margin-left:2em;\">國王企鵝 Aptenodytes patagonicus</li><li>†<span style=\"color:rgb(186,0,0);\">里德金企鵝</span> <em>Aptenodytes ridgeni</em></li><li><span style=\"color:rgb(6,69,173);\">阿德利企鵝屬/硬尾企鵝屬</span> <em>Pygoscelis</em></li><li style=\"margin-left:2em;\">巴布亞企鵝（白眉企鵝、紳士企鵝） Pygoscelis papua</li><li style=\"margin-left:2em;\">阿德利企鵝 Pygoscelis adeliae</li><li style=\"margin-left:2em;\">南極企鵝（紋頰企鵝、帽帶企鵝、頰帶企鵝、鬍鬚企鵝） Pygoscelis antarctica</li><li style=\"margin-left:2em;\">†卡爾德拉硬尾企鵝 Pygoscelis calderensis</li><li style=\"margin-left:2em;\">†大型硬尾企鵝 Pygoscelis grandis</li><li>†<span style=\"color:rgb(186,0,0);\">泰氏硬尾企鵝</span> <em>Pygoscelis tyreei</em></li><li><span style=\"color:rgb(6,69,173);\">冠企鵝屬</span> <em>Eudyptes</em></li><li style=\"margin-left:2em;\">鳳頭黃眉企鵝 Eudyptes chrysocome</li><li style=\"margin-left:2em;\">北鳳頭黃眉企鵝 Eudyptes moseleyi</li><li style=\"margin-left:2em;\">峽灣企鵝（鳳冠企鵝、福德蘭企鵝） Eudyptes pachyrhynchus</li><li style=\"margin-left:2em;\">斯島黃眉企鵝 Eudyptes robustus</li><li style=\"margin-left:2em;\">皇家企鵝 Eudyptes schlegeli</li><li style=\"margin-left:2em;\">翹眉企鵝（豎毛企鵝） Eudyptes sclateri</li><li style=\"margin-left:2em;\">馬可羅尼企鵝（長冠企鵝） Eudyptes chrysolophus</li><li style=\"margin-left:2em;\">†查島冠企鵝 Eudyptes chathamensis</li><li style=\"margin-left:2em;\">†黎明冠企鵝 Eudyptes atatu</li><li>†亞甘冠企鵝 Eudyptes calauina</li><li>黃眼企鵝屬 Megadyptes</li><li style=\"margin-left:2em;\"><span style=\"color:rgb(6,69,173);\">黃眼企鵝</span> <em>Megadyptes antipodes</em></li><li>†懷塔哈企鵝 Megadyptes waitaha</li><li>小藍企鵝屬 Eudyptula</li><li style=\"margin-left:2em;\"><span style=\"color:rgb(6,69,173);\">小藍企鵝</span>（神仙企鵝） <em>Eudyptula minor</em></li><li>澳洲小藍企鵝 Eudyptula novaehollandiae</li><li>環企鵝屬 Spheniscus</li><li style=\"margin-left:2em;\">黑腳企鵝（非洲企鵝、斑嘴環企鵝） Spheniscus demersus</li><li style=\"margin-left:2em;\">麥哲倫企鵝（麥氏環企鵝） Spheniscus magellanicus</li><li style=\"margin-left:2em;\">漢波德企鵝（洪氏環企鵝） Spheniscus humboldti</li><li style=\"margin-left:2em;\">加拉帕戈斯企鵝（加拉巴戈企鵝、加島環企鵝） Spheniscus mendiculus</li><li style=\"margin-left:2em;\">†英國灣環企鵝 Spheniscus anglicus</li><li style=\"margin-left:2em;\">†智利環企鵝 Spheniscus chilensis</li><li style=\"margin-left:2em;\">†刀喙環企鵝 Spheniscus urbinai</li><li style=\"margin-left:2em;\">†巨喙環企鵝 Spheniscus megaramphus</li><li>†米氏環企鵝 Spheniscus muizoni</li><li>†馬德林企鵝屬 Madrynornis</li><li>完璧馬德林企鵝 Madrynornis mirandus</li></ul><p><br /></p>",
+                        "type": 1,
+                        "resourceLink": "https://apis.104api-dev.com.tw/ehrweb_resume/1.0/files/attachment?type=2&fileId=$$:v1:HqRQ3QTJIoBBysZhgTeXFrtmg9eebk68E9lyJ1ETNYBW3rENmnH6xXmGJiC2fmkm3z_P9xyVWm6zX1N8xY-H8_-Ujng2MLrhGDW3t8KN7F6Pf5ip",
+                        "website": "https://tw.yahoo.com/"
+                      },
+                      {
+                        "description": "<p>米津玄師 - アイネクライネ , Kenshi Yonezu - Eine Kleine</p><p style=\"margin-left:3em;\">1111</p><p style=\"margin-left:2em;\">2222</p><p style=\"margin-left:1em;\">3333</p><p style=\"margin-left:2em;\">4444</p><p style=\"margin-left:3em;\">5555</p>",
+                        "type": 3,
+                        "resourceLink": "https://www.youtube.com/watch?v=-EKxzId_Sj4",
+                        "website": ""
+                      }
+                    ]
+                  },
+                  {
+                    "title": "都是影片_MP4/MOV",
+                    "content": [
+                      {
+                        "description": "<ul><li>mp4 的說明欄位</li></ul>",
+                        "type": 2,
+                        "resourceLink": "此附件為影音檔，請至104招募管理查看",
+                        "website": "https://zh.wikipedia.org/zh-tw/MP4"
+                      },
+                      {
+                        "description": "<ol><li>mov 的說明欄位</li></ol>",
+                        "type": 2,
+                        "resourceLink": "此附件為影音檔，請至104招募管理查看",
+                        "website": "https://zh.wikipedia.org/zh-tw/QuickTime"
+                      }
+                    ]
+                  },
+                  {
+                    "title": "大型橫幅_嵌入影片連結",
+                    "content": [
+                      {
+                        "description": "<ol><li>Aaaaaa</li><li>Bbbbbb</li><li>Ccccc</li></ol>",
+                        "type": 3,
+                        "resourceLink": "https://www.youtube.com/watch?v=mNEUkkoUoIA",
+                        "website": ""
+                      }
+                    ]
+                  },
+                  {
+                    "title": "VIMEO_FB video",
+                    "content": [
+                      {
+                        "description": "<p>【經緯線】「儒」生有夢</p>",
+                        "type": 3,
+                        "resourceLink": "https://www.facebook.com/now.comNews/videos/775746127125184/",
+                        "website": ""
+                      },
+                      {
+                        "description": "<p><strong>Duct Tape and Dreams</strong></p><p><br /></p>",
+                        "type": 3,
+                        "resourceLink": "https://vimeo.com/810735707",
+                        "website": "https://vimeo.com/sfmoma"
+                      }
+                    ]
+                  }
+                ],
+                "applyJob": [],
+                "applyQuestion": []
+              }
+            ]
+          }
+        }
+      },
+      "queryBatchResult": {
+        "success": true,
+        "testedIds": [
+          "3781639095604"
+        ],
+        "response": {
+          "data": {
+            "list": [
+              {
+                "resumeId": "3781639095604",
+                "fullName": "侯代筆",
+                "gender": "女",
+                "email": "debby.hou@104.com.tw",
+                "cellPhone": "0911776655",
+                "address": "金門縣金沙鎮寶中路119之1號10樓",
+                "birthday": "1990-04-19 00:00:00",
+                "regSource": "VIP儲存履歷",
+                "employmentStatus": "仍在職",
+                "militaryStatus": "",
+                "militaryRetireDate": "",
+                "introduction": "<p>這是第一航</p><p>這是第二航</p><p>簡介，即簡明扼要的介紹。是當事人全面而簡潔地介紹情況的一種書面表達方式，它是應用寫作學研究的一種日常應用文體。 企業簡介是指通過文字和圖片資料向社會公眾介紹企業基本情況和經營戰略的文案。主要介紹企業名稱、企業的法律性質、開辦地址、設立時間、所屬行業、註冊資金、建築面積、技術裝備條件；生產經營範圍、主要產品結構；企業發展戰略、經營理念等情況。 由企業名稱和文種組成。如ABCD</p><p>健康餐兌換券</p><p>123</p><p>everyone's word</p><ul><li>1111</li><li style=\"margin-left:1em;\">2222</li><li style=\"margin-left:2em;\">3333</li></ul><p><br /></p><p><a href=\"http://zh.wikipedia.org/zh-tw/%E8%BE%B2%E6%B0%91\" rel=\"noopener noreferrer\" target=\"_blank\">1234567890</a></p>",
+                "motto": "格言一\n健康餐兌換券\n格言二",
+                "characteristic": "",
+                "personalPage": [],
+                "englishName": "",
+                "subCellPhone": "",
+                "tel": "02-2222333",
+                "contactInfo": "手機聯絡",
+                "drivingLicenses": "普通重型機車駕照",
+                "transports": "",
+                "specialIdentities": "外籍人士",
+                "nationality": "",
+                "disabledTypes": "",
+                "disabilityCard": 0,
+                "assistiveDevices": "",
+                "education": [
+                  {
+                    "schoolName": "國立中央大學",
+                    "degreeLevel": "大學",
+                    "major": "地形測量學系、體育與運動科學系",
+                    "majorCategory": "",
+                    "degreeStatus": "肄業",
+                    "schoolCountry": "台灣",
+                    "startDate": "2020-05-01 00:00:00",
+                    "endDate": "2024-11-01 00:00:00"
+                  },
+                  {
+                    "schoolName": "IFP School",
+                    "degreeLevel": "高中",
+                    "major": "普通科",
+                    "majorCategory": "",
+                    "degreeStatus": "畢業",
+                    "schoolCountry": "日本",
+                    "startDate": "2000-03-01 00:00:00",
+                    "endDate": "2004-09-01 00:00:00"
+                  }
+                ],
+                "seniority": "9~10年",
+                "experiences": [
+                  {
+                    "firmName": "VIPOP TEAM 測試用(請勿動) 222877000 一般",
+                    "industryCategory": "",
+                    "companySize": "",
+                    "workPlace": "",
+                    "jobName": "tester",
+                    "jobRole": "全職",
+                    "jobCategory": "軟韌體測試工程師",
+                    "startDate": "2023-01-01 00:00:00",
+                    "endDate": "1900-01-01 00:00:00",
+                    "jobDesc": "<p><strong>富蘭克林曾說過</strong>，<span style=\"color:rgb(255,120,0);\">兄弟不一定是朋友</span>，<span style=\"background-color:rgb(111,184,39);\">便朋友往往是兄弟</span>。</p><ol><li>這激勵了我。</li><li>如果此時我們選擇忽略履歷，</li><li>那後果可想而知。履歷改變了我的命運。</li></ol><ul><li>儘管如此，別人往往卻不這麼想。</li><li>履歷對我來說，已經成為了我生活的一部分。</li></ul><p>由於，徐特立告訴我們，儉樸的生活，不但可使精神愉快，而且可以培養革命品質。這段話非常有意思。總而言之，金斯萊曾說過一句意義深遠的話，天賦每個人都有，誰發揮自己的天賦，誰做事就得心應手。希望大家能發現話中之話。履歷絕對是史無前例的。卡拉姆辛相信，語言屬於一個時代，思想屬於許多時代。這句話幾乎解讀出了問題的根本。老舊的想法已經過時了。履歷究竟是怎麼樣的存在，始終是個謎題。我們不得不面對一個非常尷尬的事實，那就是，若能夠洞悉履歷各種層面的含義，勢必能讓思維再提高一個層級。履歷可以說是有著成為常識的趨勢。當前最急迫的事，想必就是釐清疑惑了。動機，可以說是最單純的力量。履歷因何而發生？盧棱說過一句發人省思的話，偉大的人是絕不會濫用自己的優點的，他們看出自己越過別人的地方，並且意識到這一點，然而絕不會因此就不謙虛。這句話讓我們得到了一個全新的觀點去思考這個問題。別林斯基在過去曾經講過，書是我們時代的生命。希望大家能發現話中之話。履歷必定會成為未來世界的新標準。每個人都不得不面對這些問題。在面對這種問題時，務必詳細考慮履歷的各種可能。我們普遍認為，若能理解透徹核心原理，對其就有了一定的了解程度。話雖如此，履歷的出現，必將帶領人類走向更高的巔峰。我們都很清楚，這是個嚴謹的議題。貝納姆說過一句富有哲理的話，神奇的東西未必都是奇蹟。請諸位將這段話在心中默念三遍。在人生的歷程中，履歷的出現是必然的。約爾旦在過去曾經講過，智慧表現在下一次該怎</p><p><a href=\"http://google.com\" rel=\"noopener noreferrer\" target=\"_blank\">HTML</a></p>",
+                    "skills": "",
+                    "management": "無",
+                    "wageTypeDesc": "",
+                    "wage": 0,
+                    "wageYear": 0
+                  },
+                  {
+                    "firmName": "三緯企業股份有限公司",
+                    "industryCategory": "旅館業",
+                    "companySize": "1~30人",
+                    "workPlace": "澎湖縣馬公市",
+                    "jobName": "櫃台",
+                    "jobRole": "全職",
+                    "jobCategory": "客服主管",
+                    "startDate": "2019-01-01 00:00:00",
+                    "endDate": "1900-01-01 00:00:00",
+                    "jobDesc": "<p>八卦</p><p>健康餐兌換券</p><p>一一一一一</p><p>二二二二二二</p>",
+                    "skills": "",
+                    "management": "無",
+                    "wageTypeDesc": "月薪",
+                    "wage": 40000,
+                    "wageYear": 0
+                  },
+                  {
+                    "firmName": "BAPP-測試公司-國外公司-3363976000",
+                    "industryCategory": "機械設備租賃業",
+                    "companySize": "1~30人",
+                    "workPlace": "雲林縣斗南鎮",
+                    "jobName": "會計",
+                    "jobRole": "全職",
+                    "jobCategory": "主辦會計",
+                    "startDate": "2016-02-01 00:00:00",
+                    "endDate": "2017-04-01 00:00:00",
+                    "jobDesc": "<ul><li>123</li><li>456</li><li>789</li><li>000</li></ul><p>everyone's word</p>",
+                    "skills": "",
+                    "management": "無",
+                    "wageTypeDesc": "",
+                    "wage": 0,
+                    "wageYear": 0
+                  },
+                  {
+                    "firmName": "老英格蘭莊園（桑妮的遊樂場）",
+                    "industryCategory": "旅館業",
+                    "companySize": "1~30人",
+                    "workPlace": "基隆市仁愛區",
+                    "jobName": "會計",
+                    "jobRole": "全職",
+                    "jobCategory": "會計師",
+                    "startDate": "2015-06-01 00:00:00",
+                    "endDate": "2016-09-01 00:00:00",
+                    "jobDesc": "<p>Found in Einhornhöhle cave in northern Germany, the decorated deer phalanx, or toe bone, features an engraved geometric pattern and has been dated, using several techniques, to at least 51,000 years old.</p><p>It refreshes the debate over to what extent Neanderthals, the heavily built Stone Age hominins that disappeared about 40,000 years ago, were capable of artistic expression and symbolic thought and whether they developed these skills themselves or through interactions with early modern humans, who first arrived in Europe around this time.</p><p>\"The phalanx from Einhornhöhle with its stacked offset chevrons represents one of the most complex cultural expressions in Neanderthals known so far,\" according to a study that published Monday in the journal Nature.</p><p>The team of German researchers said the small bone appears to be of no practical use, and the chevron design, with its three uniform parallel lines appears to be intentionally created -- perhaps as a personal ornament.</p><p>The choice -1000</p><p>Found in Einhornhöhle cave in northern Germany, the decorated deer phalanx, or toe bone, features an engraved geometric pattern and has been dated, using several techniques, to at least 51,000 years old.</p><p>It refreshes the debate over to what extent Neanderthals, the heavily built Stone Age hominins that disappeared about 40,000 years ago, were capable of artistic expression and symbolic thought and whether they developed these skills themselves or through interactions with early modern humans, who first arrived in Europe around this time.</p><p>\"The phalanx from Einhornhöhle with its stacked offset chevrons represents one of the most complex cultural expressions in Neanderthals known so far,\" according to a study that published Monday in the journal Nature.</p><p>The team of German researchers said the small bone appears to be of no practical use, and the chevron design, with its three uniform parallel lines appears to be intentionally created -- perhaps as a personal ornament.</p><p>The choice -1000</p><p>我我我我我我我我午我我我我午我我</p>",
+                    "skills": "",
+                    "management": "無",
+                    "wageTypeDesc": "",
+                    "wage": 0,
+                    "wageYear": 0
+                  },
+                  {
+                    "firmName": "某協會",
+                    "industryCategory": "政府／民意機關",
+                    "companySize": "1~30人",
+                    "workPlace": "新北市三重區",
+                    "jobName": "Help man",
+                    "jobRole": "兼職",
+                    "jobCategory": "法務",
+                    "startDate": "2007-04-01 00:00:00",
+                    "endDate": "2010-12-01 00:00:00",
+                    "jobDesc": "<ul><li><strong style=\"background-color:rgb(169,169,169);color:rgb(0,0,0);\">父親項目</strong></li><li style=\"margin-left:1em;\"><strong style=\"background-color:rgb(169,169,169);color:rgb(0,0,0);\">兒子項目</strong></li><li style=\"margin-left:2em;\"><strong style=\"background-color:rgb(169,169,169);color:rgb(0,0,0);\">孫子項目</strong></li></ul><p><br /></p><p>000000</p><p style=\"margin-left:1em;\">AAAAA</p><p style=\"margin-left:2em;\">BBBBB</p><p style=\"margin-left:3em;\">CCCCC</p><p style=\"margin-left:2em;\">DDDDD</p><p style=\"margin-left:1em;\">EEEEEE</p>",
+                    "skills": "執行法律文件及契約撰寫,合約或備忘錄內容審查檢驗,檢驗各項文件之法律效力,法律相關條文諮詢服務,檢驗法律紀錄和相關文件,追蹤及審閱合約流程",
+                    "management": "直接管理人數約5-8人",
+                    "wageTypeDesc": "時薪",
+                    "wage": 1000,
+                    "wageYear": 0
+                  }
+                ],
+                "jobRequirement": {
+                  "jobCharacteristic": "全職",
+                  "workInterval": "日班",
+                  "otherWorkInterval": "",
+                  "shiftWork": false,
+                  "startDateOpt": "錄取後隨時可上班",
+                  "wage": "面議:0",
+                  "workPlace": "瓜地馬拉、台北市",
+                  "remoteWork": "對遠端工作有意願",
+                  "jobName": "儲備幹部",
+                  "jobCategory": "國內業務、產品行銷企劃、行銷企劃、門市／店員／專櫃人員、Internet程式設計師",
+                  "industryCategory": "產業不拘",
+                  "workDesc": "<p><span style=\"color:rgb(255,120,0);\">0427 新增的</span></p><p><strong>健康餐兌換券</strong></p><p>﻿everyone's word</p><p><span style=\"background-color:rgb(255,120,0);\">YYOYOYYOY</span></p><ul><li>主項目</li><li style=\"margin-left:1em;\">子項目</li><li style=\"margin-left:2em;\">孫項目</li></ul>"
+                },
+                "speciality": [
+                  {
+                    "skill": "環境清潔",
+                    "desc": "<p style=\"margin-left:1em;\">環</p><p style=\"margin-left:2em;\">境</p><p style=\"margin-left:3em;\">清</p><p style=\"margin-left:4em;\">潔</p><p style=\"margin-left:5em;\">環</p><p style=\"margin-left:6em;\">境</p><p style=\"margin-left:7em;\">清</p><p style=\"margin-left:8em;\">潔</p><p>everyone's word</p>",
+                    "tag": ""
+                  },
+                  {
+                    "skill": "打掃",
+                    "desc": "<p>很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔很會清潔</p><p>清潔大師</p><p><br /></p><p><br /></p><p>健康餐兌換券</p><p><br /></p><p>健康餐兌換券</p><p><br /></p><p>健康餐兌換券</p><p><br /></p><p><br /></p><div>#環保資源回收作業 #協助家務處理 #建築物與週邊物清潔 </div>",
+                    "tag": "環保資源回收作業,協助家務處理,建築物與週邊物清潔"
+                  },
+                  {
+                    "skill": "問卷設計",
+                    "desc": "<div>#問卷設計 #市場調查資料分析與報告撰寫 </div>",
+                    "tag": "問卷設計,市場調查資料分析與報告撰寫"
+                  },
+                  {
+                    "skill": "後來新增的",
+                    "desc": "<ol><li style=\"margin-left:1em;\">第一行</li><li style=\"margin-left:1em;\"><strong>第二行</strong></li><li style=\"margin-left:2em;\">第二行之一</li></ol><div>#行銷策略擬定 </div>",
+                    "tag": "行銷策略擬定"
+                  },
+                  {
+                    "skill": "debug",
+                    "desc": "<p>找問題給工程修找問題給工程修找問題給工程修找問題給工程修找問題給工程修找問題給工程修找問題給工程修找問題給工程修找問題給工程修</p><div>#Firmware </div>",
+                    "tag": "Firmware"
+                  }
+                ],
+                "commonCertificates": {
+                  "certificates": "Acrobat",
+                  "otherCertificates": "GMAT、DELE (西班牙語文能力測驗)、DELF (法語鑑定文憑)、FLPT (德語)、TOPIK (韓語)\n健康餐兌換券\n1234567890"
+                },
+                "foreignLanguage": [
+                  {
+                    "langType": "英文",
+                    "listenDegree": "中等",
+                    "speakDegree": "中等",
+                    "readDegree": "精通",
+                    "writeDegree": "精通",
+                    "certificates": "TOEIC (多益測驗):999、GEPT全民英檢初級:、GEPT全民英檢中級:、GEPT全民英檢中高級:、GEPT全民英檢高級:、GEPT全民英檢優級:"
+                  },
+                  {
+                    "langType": "日文",
+                    "listenDegree": "中等",
+                    "speakDegree": "略懂",
+                    "readDegree": "精通",
+                    "writeDegree": "不會",
+                    "certificates": "JLPT N3:"
+                  },
+                  {
+                    "langType": "泰文",
+                    "listenDegree": "精通",
+                    "speakDegree": "精通",
+                    "readDegree": "略懂",
+                    "writeDegree": "略懂",
+                    "certificates": ""
+                  },
+                  {
+                    "langType": "西班牙文",
+                    "listenDegree": "略懂",
+                    "speakDegree": "略懂",
+                    "readDegree": "不會",
+                    "writeDegree": "不會",
+                    "certificates": "FLPT (西語):666"
+                  }
+                ],
+                "localLanguage": [],
+                "biography": {
+                  "bio": "<p>中文履歷</p><p style=\"margin-left:5em;\">沒有英文喔!!</p><p><br /></p><p style=\"margin-left:1em;\"><strong>首行縮進</strong></p><ul><li style=\"margin-left:1em;\">段落的第一行縮進，而第二行之後不縮進的縮進方式是首行縮進。</li><li style=\"margin-left:1em;\">西文排版當中，首行縮進和額外的段距不會同時出現。首行的縮進量為字體的一到四倍。</li></ul><p style=\"margin-left:1em;\"><strong>懸掛縮進</strong></p><ul><li style=\"margin-left:1em;\">段落的第一行不縮進，而第二行之後縮進的縮進方式是懸掛縮進。</li><li style=\"margin-left:1em;\">西文排版當中，懸掛縮進是縮進量為負的首行縮進，懸掛縮進的段落開頭通常是項目符號，而正文不會懸掛。</li></ul><p style=\"margin-left:1em;\"><strong>塊縮進</strong></p><ul><li style=\"margin-left:1em;\">段落的所有行都縮進的縮進方式是塊縮進。</li></ul><p>everyone's word</p><p>健康餐兌換券</p>",
+                  "engBio": "<p>everyone's word</p>"
+                },
+                "recommenders": [
+                  {
+                    "name": "Quote",
+                    "corp": "mmmmm company",
+                    "jobTitle": "主管",
+                    "email": "111_quote@cccc.com",
+                    "tel": ""
+                  }
+                ],
+                "headshotUrl": "https://apis.104api-dev.com.tw/ehrweb_resume/1.0/files/headshot?fileId=$$:v1:Hw1m4loMeXLnnr2mCX7BbYbqT-tCF3f9J-gqnuXIKdjZRkRKKUNJF1Hgl8GIt3yT0FI2YvgGLC1sYcG_lOdDBW5CF0cortfkSpKg0t70ix5MKrZA",
+                "attachFiles": [
+                  {
+                    "type": 1,
+                    "title": "",
+                    "fileName": "eRecruitor 操作手冊.pdf",
+                    "resourceLink": "https://apis.104api-dev.com.tw/ehrweb_resume/1.0/files/attachment?type=1&fileId=$$:v1:Om24oejRpagTf0nXSGmBX2PktLTeIqvvLyj8HFtHlDEWaUiHpqdXtO_QI-2X25F3pjPiiNF9l98qnLPHkG-C_eBWxZ83RzHZiyz208nM5nSI2vvO",
+                    "website": ""
+                  },
+                  {
+                    "type": 1,
+                    "title": "",
+                    "fileName": "PNG.png",
+                    "resourceLink": "https://apis.104api-dev.com.tw/ehrweb_resume/1.0/files/attachment?type=1&fileId=$$:v1:QfYVbJB6fiAt7s2ByN_YyAuFT5hb5W1_l40VvXjJ8JZSgtkYIlLabQOuzpPVdnCCYBI6yhtMKlEurwMR42onRUzRYkD7WXRhrxNyiP2QgGf5zNQM",
+                    "website": ""
+                  },
+                  {
+                    "type": 2,
+                    "title": "",
+                    "fileName": "",
+                    "resourceLink": "",
+                    "website": "https://www.youtube.com"
+                  },
+                  {
+                    "type": 1,
+                    "title": "",
+                    "fileName": "NEW GIF.gif",
+                    "resourceLink": "https://apis.104api-dev.com.tw/ehrweb_resume/1.0/files/attachment?type=1&fileId=$$:v1:GBFeofdaIAGYdh_ZQ0gHW5laZTLn-yB1FIdBhsr2vpT5-ApizpwLMuoOmcLy71wsKrdWE3PMBULVESdv8ZPGwjk_dE6Nw7UWRs_NRsHAPpxUe7ez",
+                    "website": ""
+                  },
+                  {
+                    "type": 1,
+                    "title": "",
+                    "fileName": "狗狗狗.jpg",
+                    "resourceLink": "https://apis.104api-dev.com.tw/ehrweb_resume/1.0/files/attachment?type=1&fileId=$$:v1:KFmZh8-hXHYXDTiH3jeEAefmADbelCCCso771Y_L9GPMtJq0iHJhh3m8QdKu8hJzCClNA60MUzsosCOXIutL_vFKiTeQTdB9SzBiyKWjgbsqQ7Rp",
+                    "website": ""
+                  },
+                  {
+                    "type": 1,
+                    "title": "",
+                    "fileName": "12M圖檔.png",
+                    "resourceLink": "https://apis.104api-dev.com.tw/ehrweb_resume/1.0/files/attachment?type=1&fileId=$$:v1:gGm2StYZphg3fNgMngQT8R5aVOoCGFjCblKXtXZMzgKt_ywaiy8UzxThBdlHDZXvWs5_btUUKxfl9oS90DDgZZZARI8DjWmV92L7cXHanOTR4YPe",
+                    "website": ""
+                  }
+                ],
+                "projectDatas": [
+                  {
+                    "title": "點點",
+                    "startDate": "",
+                    "endDate": "",
+                    "description": "<ul><li><a href=\"https://www.google.com/\" rel=\"noopener noreferrer\" target=\"_blank\">Aaaa</a></li><li style=\"margin-left:2em;\">Bbbb</li><li style=\"margin-left:2em;\">Cccc</li><li>Ddddd</li><li style=\"margin-left:2em;\">Eeee</li><li style=\"margin-left:3em;\"><a href=\"https://www.google.com/\" rel=\"noopener noreferrer\" target=\"_blank\">Ffffff</a></li></ul>",
+                    "type": 0,
+                    "resourceLink": "",
+                    "website": ""
+                  },
+                  {
+                    "title": "GIFFFF 不要問了",
+                    "startDate": "",
+                    "endDate": "",
+                    "description": "<p><strong style=\"color:rgb(255,195,27);\">可愛 GIF</strong></p><p><br /></p><p>健康餐兌換券</p><p><br /></p><p>健康餐兌換券</p><p><br /></p><p>last</p>",
+                    "type": 1,
+                    "resourceLink": "https://apis.104api-dev.com.tw/ehrweb_resume/1.0/files/attachment?type=3&fileId=$$:v1:rk1vLbZRAUthSwiI19iHbgTxqlZMyZO6gldAHBGAzZuNhYxIwN53ms7b_VhMdSiI8wdO5wWYnM0jsaGLc_RtgfrP-OMluMKogqAmBgPwjbHAF8aD",
+                    "website": ""
+                  },
+                  {
+                    "title": "YOUTUBE 影片",
+                    "startDate": "",
+                    "endDate": "",
+                    "description": "<p>WHAT!!!!!</p>",
+                    "type": 3,
+                    "resourceLink": "https://youtu.be/mNEUkkoUoIA",
+                    "website": ""
+                  },
+                  {
+                    "title": "test",
+                    "startDate": "",
+                    "endDate": "",
+                    "description": "<ol><li>QQQ</li><li style=\"margin-left:2em;\">QQQ</li><li style=\"margin-left:3em;\">QQQ</li></ol><p>everyone's word</p>",
+                    "type": 0,
+                    "resourceLink": "",
+                    "website": ""
+                  }
+                ],
+                "customContentDatas": [
+                  {
+                    "title": "我的自訂內容",
+                    "content": [
+                      {
+                        "description": "<p>自訂內容</p><ul><li>健康餐兌換券</li></ul><p>123</p><p>456</p><ul><li><strong style=\"background-color:rgb(255,195,27);color:rgb(255,120,0);\">拼圖大師</strong></li></ul>",
+                        "type": 1,
+                        "resourceLink": "https://apis.104api-dev.com.tw/ehrweb_resume/1.0/files/attachment?type=2&fileId=$$:v1:2ULbUjRtFz4UCvy9ABAb-tE2WigQIpYEYAGKHaNumX54braTueFhdZR8LW9nzQr1ab9i6zXr2SLKeW4bz6Ke4wTwbPOBHS0zOwt4LVjn1sPK19ag",
+                        "website": "https://www.google.com/"
+                      }
+                    ]
+                  },
+                  {
+                    "title": "純圖片MP4+LINK",
+                    "content": [
+                      {
+                        "description": "",
+                        "type": 2,
+                        "resourceLink": "此附件為影音檔，請至104招募管理查看",
+                        "website": ""
+                      },
+                      {
+                        "description": "",
+                        "type": 3,
+                        "resourceLink": "https://www.youtube.com/watch?v=u6wOyMUs74I",
+                        "website": ""
+                      }
+                    ]
+                  },
+                  {
+                    "title": "雜誌風格",
+                    "content": [
+                      {
+                        "description": "<p><strong>普通企鵝照片</strong></p><p>企鵝科 Spheniscidae</p><ul><li>企鵝亞科 Spheniscinae （現代企鵝）</li><li><span style=\"color:rgb(6,69,173);\">王企鵝屬</span> <em>Aptenodytes</em></li><li style=\"margin-left:2em;\">皇帝企鵝 Aptenodytes forsteri</li><li style=\"margin-left:2em;\">國王企鵝 Aptenodytes patagonicus</li><li>†<span style=\"color:rgb(186,0,0);\">里德金企鵝</span> <em>Aptenodytes ridgeni</em></li><li><span style=\"color:rgb(6,69,173);\">阿德利企鵝屬/硬尾企鵝屬</span> <em>Pygoscelis</em></li><li style=\"margin-left:2em;\">巴布亞企鵝（白眉企鵝、紳士企鵝） Pygoscelis papua</li><li style=\"margin-left:2em;\">阿德利企鵝 Pygoscelis adeliae</li><li style=\"margin-left:2em;\">南極企鵝（紋頰企鵝、帽帶企鵝、頰帶企鵝、鬍鬚企鵝） Pygoscelis antarctica</li><li style=\"margin-left:2em;\">†卡爾德拉硬尾企鵝 Pygoscelis calderensis</li><li style=\"margin-left:2em;\">†大型硬尾企鵝 Pygoscelis grandis</li><li>†<span style=\"color:rgb(186,0,0);\">泰氏硬尾企鵝</span> <em>Pygoscelis tyreei</em></li><li><span style=\"color:rgb(6,69,173);\">冠企鵝屬</span> <em>Eudyptes</em></li><li style=\"margin-left:2em;\">鳳頭黃眉企鵝 Eudyptes chrysocome</li><li style=\"margin-left:2em;\">北鳳頭黃眉企鵝 Eudyptes moseleyi</li><li style=\"margin-left:2em;\">峽灣企鵝（鳳冠企鵝、福德蘭企鵝） Eudyptes pachyrhynchus</li><li style=\"margin-left:2em;\">斯島黃眉企鵝 Eudyptes robustus</li><li style=\"margin-left:2em;\">皇家企鵝 Eudyptes schlegeli</li><li style=\"margin-left:2em;\">翹眉企鵝（豎毛企鵝） Eudyptes sclateri</li><li style=\"margin-left:2em;\">馬可羅尼企鵝（長冠企鵝） Eudyptes chrysolophus</li><li style=\"margin-left:2em;\">†查島冠企鵝 Eudyptes chathamensis</li><li style=\"margin-left:2em;\">†黎明冠企鵝 Eudyptes atatu</li><li>†亞甘冠企鵝 Eudyptes calauina</li><li>黃眼企鵝屬 Megadyptes</li><li style=\"margin-left:2em;\"><span style=\"color:rgb(6,69,173);\">黃眼企鵝</span> <em>Megadyptes antipodes</em></li><li>†懷塔哈企鵝 Megadyptes waitaha</li><li>小藍企鵝屬 Eudyptula</li><li style=\"margin-left:2em;\"><span style=\"color:rgb(6,69,173);\">小藍企鵝</span>（神仙企鵝） <em>Eudyptula minor</em></li><li>澳洲小藍企鵝 Eudyptula novaehollandiae</li><li>環企鵝屬 Spheniscus</li><li style=\"margin-left:2em;\">黑腳企鵝（非洲企鵝、斑嘴環企鵝） Spheniscus demersus</li><li style=\"margin-left:2em;\">麥哲倫企鵝（麥氏環企鵝） Spheniscus magellanicus</li><li style=\"margin-left:2em;\">漢波德企鵝（洪氏環企鵝） Spheniscus humboldti</li><li style=\"margin-left:2em;\">加拉帕戈斯企鵝（加拉巴戈企鵝、加島環企鵝） Spheniscus mendiculus</li><li style=\"margin-left:2em;\">†英國灣環企鵝 Spheniscus anglicus</li><li style=\"margin-left:2em;\">†智利環企鵝 Spheniscus chilensis</li><li style=\"margin-left:2em;\">†刀喙環企鵝 Spheniscus urbinai</li><li style=\"margin-left:2em;\">†巨喙環企鵝 Spheniscus megaramphus</li><li>†米氏環企鵝 Spheniscus muizoni</li><li>†馬德林企鵝屬 Madrynornis</li><li>完璧馬德林企鵝 Madrynornis mirandus</li></ul><p><br /></p>",
+                        "type": 1,
+                        "resourceLink": "https://apis.104api-dev.com.tw/ehrweb_resume/1.0/files/attachment?type=2&fileId=$$:v1:HqRQ3QTJIoBBysZhgTeXFrtmg9eebk68E9lyJ1ETNYBW3rENmnH6xXmGJiC2fmkm3z_P9xyVWm6zX1N8xY-H8_-Ujng2MLrhGDW3t8KN7F6Pf5ip",
+                        "website": "https://tw.yahoo.com/"
+                      },
+                      {
+                        "description": "<p>米津玄師 - アイネクライネ , Kenshi Yonezu - Eine Kleine</p><p style=\"margin-left:3em;\">1111</p><p style=\"margin-left:2em;\">2222</p><p style=\"margin-left:1em;\">3333</p><p style=\"margin-left:2em;\">4444</p><p style=\"margin-left:3em;\">5555</p>",
+                        "type": 3,
+                        "resourceLink": "https://www.youtube.com/watch?v=-EKxzId_Sj4",
+                        "website": ""
+                      }
+                    ]
+                  },
+                  {
+                    "title": "都是影片_MP4/MOV",
+                    "content": [
+                      {
+                        "description": "<ul><li>mp4 的說明欄位</li></ul>",
+                        "type": 2,
+                        "resourceLink": "此附件為影音檔，請至104招募管理查看",
+                        "website": "https://zh.wikipedia.org/zh-tw/MP4"
+                      },
+                      {
+                        "description": "<ol><li>mov 的說明欄位</li></ol>",
+                        "type": 2,
+                        "resourceLink": "此附件為影音檔，請至104招募管理查看",
+                        "website": "https://zh.wikipedia.org/zh-tw/QuickTime"
+                      }
+                    ]
+                  },
+                  {
+                    "title": "大型橫幅_嵌入影片連結",
+                    "content": [
+                      {
+                        "description": "<ol><li>Aaaaaa</li><li>Bbbbbb</li><li>Ccccc</li></ol>",
+                        "type": 3,
+                        "resourceLink": "https://www.youtube.com/watch?v=mNEUkkoUoIA",
+                        "website": ""
+                      }
+                    ]
+                  },
+                  {
+                    "title": "VIMEO_FB video",
+                    "content": [
+                      {
+                        "description": "<p>【經緯線】「儒」生有夢</p>",
+                        "type": 3,
+                        "resourceLink": "https://www.facebook.com/now.comNews/videos/775746127125184/",
+                        "website": ""
+                      },
+                      {
+                        "description": "<p><strong>Duct Tape and Dreams</strong></p><p><br /></p>",
+                        "type": 3,
+                        "resourceLink": "https://vimeo.com/810735707",
+                        "website": "https://vimeo.com/sfmoma"
+                      }
+                    ]
+                  }
+                ],
+                "applyJob": [],
+                "applyQuestion": []
+              }
+            ]
+          }
+        }
+      },
+      "errors": []
+    }
+  ]
+}

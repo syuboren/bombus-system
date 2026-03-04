@@ -1,0 +1,724 @@
+@import '../../../../../assets/styles/variables';
+@import '../../../../../assets/styles/mixins';
+
+// ============================================================
+// Main Layout
+// ============================================================
+
+.main-content {
+    padding: $spacing-lg;
+    padding-top: calc(var(--header-height, 70px) + 20px);
+    min-height: calc(100vh - 64px);
+    background: $color-cloud-gray;
+}
+
+.content-container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+// ============================================================
+// Page Header
+// ============================================================
+
+.page-header {
+    @include flex-between;
+    margin-bottom: $spacing-lg;
+    flex-wrap: wrap;
+    gap: $spacing-md;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: $spacing-md;
+}
+
+.btn-back {
+    @include flex-center;
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: white;
+    border-radius: $radius-md;
+    color: $color-text-secondary;
+    cursor: pointer;
+    transition: all $transition-normal;
+    box-shadow: $shadow-soft;
+
+    &:hover {
+        background: $color-l1-sage;
+        color: white;
+    }
+}
+
+.header-info {
+    .page-title {
+        font-size: $font-size-xl;
+        font-weight: $font-weight-semibold;
+        color: $color-text-dark;
+        margin: 0 0 $spacing-xs 0;
+    }
+
+    .page-description {
+        font-size: $font-size-sm;
+        color: $color-text-secondary;
+        margin: 0;
+    }
+}
+
+.header-actions {
+    display: flex;
+    gap: $spacing-sm;
+}
+
+// ============================================================
+// Config Layout (Two Column)
+// ============================================================
+
+.config-layout {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: $spacing-lg;
+
+    @include media-max-lg {
+        grid-template-columns: 1fr;
+    }
+}
+
+// ============================================================
+// Dimensions Panel (Left Sidebar)
+// ============================================================
+
+.dimensions-panel {
+    @include card;
+    height: fit-content;
+    position: sticky;
+    top: calc(#{$header-height} + #{$spacing-lg});
+}
+
+.panel-header {
+    @include flex-between;
+    padding: $spacing-md $spacing-lg;
+    border-bottom: 1px solid $color-soft-gray;
+
+    h3 {
+        font-size: $font-size-base;
+        font-weight: $font-weight-semibold;
+        color: $color-text-dark;
+        margin: 0;
+    }
+}
+
+.dimensions-list {
+    padding: $spacing-md;
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-sm;
+}
+
+.dimension-card {
+    padding: $spacing-md;
+    background: $color-cloud-gray;
+    border-radius: $radius-md;
+    transition: all $transition-normal;
+
+    &:hover {
+        background: rgba($color-l1-sage, 0.1);
+
+        .dim-actions {
+            opacity: 1;
+        }
+    }
+}
+
+.dim-info {
+    @include flex-between;
+    margin-bottom: $spacing-xs;
+}
+
+.dim-name {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: $color-text-dark;
+}
+
+.dim-weight {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-l1-sage;
+}
+
+.dim-stats {
+    margin-bottom: $spacing-xs;
+}
+
+.keyword-count {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+}
+
+.dim-actions {
+    display: flex;
+    gap: $spacing-xs;
+    opacity: 0;
+    transition: opacity $transition-normal;
+}
+
+.weight-summary {
+    @include flex-between;
+    padding: $spacing-md $spacing-lg;
+    border-top: 1px solid $color-soft-gray;
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+
+    strong {
+        color: $color-l1-sage;
+    }
+
+    &.warning {
+        background: rgba($color-warning, 0.1);
+
+        strong {
+            color: $color-warning;
+        }
+
+        i {
+            color: $color-warning;
+        }
+    }
+}
+
+// ============================================================
+// Keywords Panel (Right Main Area)
+// ============================================================
+
+.keywords-panel {
+    @include card;
+}
+
+.tab-bar {
+    display: flex;
+    border-bottom: 1px solid $color-soft-gray;
+}
+
+.tab-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: $spacing-xs;
+    padding: $spacing-md $spacing-lg;
+    border: none;
+    background: none;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: $color-text-secondary;
+    cursor: pointer;
+    transition: all $transition-normal;
+    border-bottom: 2px solid transparent;
+
+    &:hover {
+        color: $color-text-dark;
+        background: $color-cloud-gray;
+    }
+
+    &.active {
+        color: $color-l1-sage;
+        border-bottom-color: $color-l1-sage;
+    }
+
+    .badge {
+        @include flex-center;
+        min-width: 24px;
+        height: 20px;
+        padding: 0 $spacing-xs;
+        border-radius: 10px;
+        font-size: $font-size-xs;
+        font-weight: $font-weight-semibold;
+
+        &.positive {
+            background: rgba($color-success, 0.15);
+            color: $color-success;
+        }
+
+        &.negative {
+            background: rgba($color-error, 0.15);
+            color: $color-error;
+        }
+    }
+}
+
+.keywords-toolbar {
+    @include flex-between;
+    padding: $spacing-md $spacing-lg;
+    border-bottom: 1px solid $color-soft-gray;
+    flex-wrap: wrap;
+    gap: $spacing-sm;
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+
+    label {
+        font-size: $font-size-sm;
+        color: $color-text-secondary;
+    }
+}
+
+.action-group {
+    display: flex;
+    gap: $spacing-sm;
+}
+
+.keywords-list {
+    padding: $spacing-md $spacing-lg;
+    min-height: 300px;
+    max-height: 500px;
+    overflow-y: auto;
+    @include custom-scrollbar;
+}
+
+.keyword-item {
+    @include flex-between;
+    padding: $spacing-md;
+    background: $color-cloud-gray;
+    border-radius: $radius-md;
+    margin-bottom: $spacing-sm;
+    border-left: 3px solid transparent;
+    transition: all $transition-normal;
+
+    &.positive {
+        border-left-color: $color-success;
+    }
+
+    &.negative {
+        border-left-color: $color-error;
+    }
+
+    &:hover {
+        background: rgba($color-l1-sage, 0.05);
+    }
+}
+
+.kw-content {
+    flex: 1;
+}
+
+.kw-text {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: $color-text-dark;
+    margin-right: $spacing-sm;
+}
+
+.kw-dimension {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    background: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.kw-weight {
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+    margin-right: $spacing-md;
+
+    label {
+        font-size: $font-size-xs;
+        color: $color-text-secondary;
+    }
+}
+
+.weight-input {
+    width: 50px;
+    padding: $spacing-xs;
+    border: 1px solid $color-soft-gray;
+    border-radius: $radius-sm;
+    font-size: $font-size-sm;
+    text-align: center;
+
+    &:focus {
+        outline: none;
+        border-color: $color-l1-sage;
+    }
+}
+
+// ============================================================
+// Empty State
+// ============================================================
+
+.empty-state {
+    @include flex-center;
+    flex-direction: column;
+    padding: $spacing-2xl;
+    text-align: center;
+
+    i {
+        font-size: 48px;
+        color: $color-muted-gray;
+        margin-bottom: $spacing-md;
+    }
+
+    p {
+        font-size: $font-size-sm;
+        color: $color-text-secondary;
+        margin-bottom: $spacing-md;
+    }
+}
+
+.loading-state {
+    @include flex-center;
+    flex-direction: column;
+    padding: $spacing-2xl;
+
+    i {
+        font-size: 32px;
+        color: $color-l1-sage;
+        margin-bottom: $spacing-md;
+    }
+
+    p {
+        color: $color-text-secondary;
+    }
+}
+
+.spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+// ============================================================
+// Buttons
+// ============================================================
+
+.btn {
+    @include button-base;
+    gap: $spacing-xs;
+}
+
+.btn-primary {
+    background: $color-l1-sage;
+    color: white;
+
+    &:hover:not(:disabled) {
+        background: darken($color-l1-sage, 8%);
+    }
+}
+
+.btn-secondary {
+    background: white;
+    color: $color-text-primary;
+    border: 1px solid $color-soft-gray;
+
+    &:hover:not(:disabled) {
+        background: $color-cloud-gray;
+    }
+}
+
+.btn-outline {
+    background: transparent;
+    color: $color-l1-sage;
+    border: 1px solid $color-l1-sage;
+
+    &:hover:not(:disabled) {
+        background: rgba($color-l1-sage, 0.1);
+    }
+}
+
+.btn-sm {
+    padding: $spacing-xs $spacing-sm;
+    font-size: $font-size-xs;
+}
+
+.btn-icon {
+    @include flex-center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    color: $color-text-secondary;
+    border-radius: $radius-sm;
+    cursor: pointer;
+    transition: all $transition-normal;
+
+    &:hover {
+        background: $color-l1-sage;
+        color: white;
+    }
+}
+
+.btn-icon-sm {
+    @include flex-center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: transparent;
+    color: $color-text-secondary;
+    border-radius: $radius-sm;
+    cursor: pointer;
+    transition: all $transition-normal;
+
+    &:hover {
+        background: $color-cloud-gray;
+        color: $color-text-dark;
+    }
+
+    &.danger:hover {
+        background: rgba($color-error, 0.1);
+        color: $color-error;
+    }
+}
+
+// ============================================================
+// Modal Styles
+// ============================================================
+
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+}
+
+.modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: $color-pure-white;
+    border-radius: $radius-lg;
+    box-shadow: $shadow-xl;
+    width: calc(100% - 40px);
+    max-width: 480px;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    z-index: 1001;
+    animation: modalFadeIn 0.2s ease-out;
+}
+
+.large-modal {
+    max-width: 640px;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+.modal-header {
+    @include flex-between;
+    padding: $spacing-lg;
+    border-bottom: 1px solid $color-soft-gray;
+}
+
+.modal-title {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+    margin: 0;
+
+    i {
+        color: $color-l1-sage;
+    }
+}
+
+.btn-close {
+    @include flex-center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    color: $color-text-secondary;
+    border-radius: $radius-sm;
+    cursor: pointer;
+
+    &:hover {
+        background: $color-cloud-gray;
+        color: $color-text-dark;
+    }
+}
+
+.modal-body {
+    padding: $spacing-lg;
+}
+
+.modal-footer {
+    @include flex-end;
+    gap: $spacing-sm;
+    padding: $spacing-md $spacing-lg;
+    border-top: 1px solid $color-soft-gray;
+}
+
+// ============================================================
+// Form Elements
+// ============================================================
+
+.form-group {
+    margin-bottom: $spacing-md;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: $spacing-md;
+}
+
+.form-label {
+    display: block;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: $color-text-dark;
+    margin-bottom: $spacing-xs;
+
+    .required {
+        color: $color-error;
+    }
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+    width: 100%;
+    padding: $spacing-sm $spacing-md;
+    border: 1px solid $color-soft-gray;
+    border-radius: $radius-md;
+    font-size: $font-size-sm;
+    color: $color-text-dark;
+    background: white;
+    transition: border-color $transition-normal;
+
+    &:focus {
+        outline: none;
+        border-color: $color-l1-sage;
+    }
+
+    &::placeholder {
+        color: $color-muted-gray;
+    }
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.form-range {
+    width: calc(100% - 40px);
+    margin-right: $spacing-sm;
+}
+
+.weight-value {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-bold;
+    color: $color-l1-sage;
+}
+
+.form-hint {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    margin-top: $spacing-xs;
+}
+
+// ============================================================
+// Template List
+// ============================================================
+
+.template-list {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-md;
+    margin-bottom: $spacing-lg;
+}
+
+.template-card {
+    @include flex-between;
+    padding: $spacing-md;
+    background: $color-cloud-gray;
+    border-radius: $radius-md;
+    gap: $spacing-md;
+}
+
+.tpl-info {
+    flex: 1;
+}
+
+.tpl-name {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+    margin: 0 0 $spacing-xs 0;
+}
+
+.tpl-desc {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    margin: 0 0 $spacing-sm 0;
+}
+
+.tpl-meta {
+    display: flex;
+    gap: $spacing-md;
+    flex-wrap: wrap;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+
+    i {
+        font-size: 14px;
+    }
+
+    &.imported {
+        color: $color-l1-sage;
+    }
+}
+
+.import-section {
+    padding: $spacing-md;
+    background: rgba($color-l1-sage, 0.05);
+    border-radius: $radius-md;
+    text-align: center;
+
+    h4 {
+        font-size: $font-size-sm;
+        font-weight: $font-weight-semibold;
+        color: $color-text-dark;
+        margin: 0 0 $spacing-xs 0;
+    }
+
+    p {
+        font-size: $font-size-xs;
+        color: $color-text-secondary;
+        margin: 0 0 $spacing-md 0;
+    }
+}

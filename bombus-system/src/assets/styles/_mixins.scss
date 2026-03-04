@@ -270,6 +270,7 @@
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -285,9 +286,762 @@
     opacity: 0;
     transform: translateX(-20px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
   }
 }
 
+// ===============================================================
+// 共用元件 Mixin - UI 元件標準化
+// ===============================================================
+
+// ---------------------------------------------------------------
+// 資料表格
+// ---------------------------------------------------------------
+@mixin data-table($module-color: $color-brand-main) {
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    padding: $spacing-md $spacing-lg;
+    background: $color-cloud-gray;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-text-secondary;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: left;
+    border-bottom: 1px solid $color-soft-gray;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: $spacing-md $spacing-lg;
+    border-bottom: 1px solid $color-soft-gray;
+    font-size: $font-size-sm;
+    color: $color-text-primary;
+    vertical-align: middle;
+  }
+
+  tbody tr {
+    transition: background $transition-fast;
+
+    &:hover {
+      background: rgba($module-color, 0.05);
+    }
+
+    &:last-child td {
+      border-bottom: none;
+    }
+  }
+}
+
+// ---------------------------------------------------------------
+// 篩選區塊（參數化 mixin，統一風格）
+// ---------------------------------------------------------------
+// ---------------------------------------------------------------
+// 搜尋框與下拉選單 Mixins
+// ---------------------------------------------------------------
+@mixin search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid $color-soft-gray;
+  border-radius: 8px;
+  background: $color-pure-white;
+  transition: border-color 0.2s;
+
+  &:focus-within {
+    border-color: $color-brand-main;
+  }
+
+  i {
+    color: $color-text-secondary;
+  }
+
+  input {
+    border: none;
+    background: transparent;
+    outline: none;
+    width: 100%;
+    font-size: 14px;
+    color: $color-text-primary;
+
+    &::placeholder {
+      color: $color-text-secondary;
+    }
+  }
+}
+
+@mixin filter-select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid $color-soft-gray;
+  border-radius: 8px;
+  background: $color-pure-white;
+  font-size: 14px;
+  color: $color-text-primary;
+  cursor: pointer;
+
+  &:focus {
+    outline: none;
+    border-color: $color-brand-main;
+  }
+}
+
+// ---------------------------------------------------------------
+// 篩選區塊（參數化 mixin，統一風格）
+// ---------------------------------------------------------------
+@mixin filter-bar($module-color: $color-brand-main, $layout: 'row') {
+  background: $color-pure-white;
+  padding: 15px 20px;
+  border-radius: 12px;
+  border: 1px solid $color-soft-gray;
+
+  display: flex;
+
+  @if $layout =='stacked' {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0; // Spacing handled by children
+  }
+
+  @else {
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: nowrap;
+  }
+
+  margin-bottom: 20px;
+  box-shadow: $shadow-soft;
+
+  @include media-max-md {
+
+    // Media query overrides for 'row' layout to stack on mobile
+    @if $layout =='row' {
+      flex-wrap: wrap;
+      padding: $spacing-md;
+      gap: $spacing-sm;
+    }
+  }
+
+  // 搜尋框 (Primary Filter Item)
+
+
+  // 分隔線
+  .filter-divider {
+    width: 1px;
+    height: 24px;
+    background: $color-soft-gray;
+    flex-shrink: 0;
+  }
+
+  // 篩選項目 (Base & Modifier)
+  .filter-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 0 0 auto;
+    min-width: auto;
+
+    // Filter Label
+    .filter-label {
+      font-size: 14px;
+      color: $color-text-secondary;
+      white-space: nowrap;
+      margin: 0;
+    }
+
+    // Dropdown / Input Styles
+    .filter-select,
+    select {
+      border: 1px solid $color-soft-gray;
+      border-radius: 8px;
+      background: $color-pure-white;
+      padding: 6px 32px 6px 12px; // Right padding for arrow
+      font-size: 14px;
+      color: $color-text-primary;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        border-color: $module-color;
+      }
+
+
+      &:focus {
+        outline: none;
+      }
+    }
+
+    // Explicit standard input override if class present
+    input.filter-input,
+    select.filter-select.bordered {
+      min-width: 120px;
+      border: 1px solid $color-soft-gray;
+      border-radius: 6px;
+      padding: 6px 12px;
+      background-color: $color-pure-white;
+    }
+
+    // Search Modifier (High Specificity)
+    &--search {
+      flex: 1; // Search box takes remaining space
+      min-width: 200px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0;
+
+      .filter-label {
+        display: none;
+      }
+
+      input {
+        width: 100%;
+        border: none;
+        outline: none;
+        font-size: 14px;
+        color: $color-text-primary;
+        background: transparent;
+
+        &::placeholder {
+          color: $color-text-secondary;
+        }
+      }
+
+      i {
+        font-size: 18px;
+        color: $color-text-secondary;
+      }
+    }
+  }
+
+  // Action Button Group
+  .filter-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 10px;
+  }
+
+  // 標籤篩選區塊 (Restored)
+  .tag-filters {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid $color-soft-gray;
+
+    .tag-label {
+      font-size: 14px;
+      color: $color-text-secondary;
+    }
+
+    .tag-btn {
+      padding: 4px 12px;
+      border: 1px solid $color-soft-gray;
+      border-radius: 20px;
+      background: $color-pure-white;
+      font-size: 13px;
+      color: $color-text-secondary;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: $color-cloud-gray;
+      }
+
+      &.active {
+        background: $module-color;
+        color: $color-pure-white;
+        border-color: $module-color;
+      }
+    }
+  }
+}
+
+// 保留獨立 mixin 供特殊用途
+@mixin filter-select($module-color: $color-brand-main) {
+  @include input-base;
+  min-width: 150px;
+  cursor: pointer;
+
+  &:focus {
+    border-color: $module-color;
+  }
+}
+
+// ---------------------------------------------------------------
+// Modal 對話框
+// ---------------------------------------------------------------
+@mixin modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: $spacing-lg;
+
+  @include media-max-md {
+    padding: $spacing-md;
+  }
+}
+
+@mixin modal-container($max-width: 640px) {
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-xl;
+  width: 100%;
+  max-width: $max-width;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+@mixin modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-lg $spacing-xl;
+  border-bottom: 1px solid $color-soft-gray;
+
+  @include media-max-md {
+    padding: $spacing-md $spacing-lg;
+  }
+}
+
+@mixin modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: $spacing-xl;
+  @include custom-scrollbar;
+
+  @include media-max-md {
+    padding: $spacing-lg;
+  }
+}
+
+@mixin modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: $spacing-md;
+  padding: $spacing-md $spacing-xl;
+  border-top: 1px solid $color-soft-gray;
+  background: $color-cloud-gray;
+
+  @include media-max-md {
+    padding: $spacing-md $spacing-lg;
+  }
+}
+
+@mixin modal-title {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin: 0;
+}
+
+@mixin modal-close {
+  @include button-icon;
+  width: 36px;
+  height: 36px;
+}
+
+// ---------------------------------------------------------------
+// 統計卡片 - 變體 A：背景圖標裝飾型
+// ---------------------------------------------------------------
+@mixin stat-card-decorative($module-color: $color-brand-main) {
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  border: 1px solid $color-soft-gray;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+
+  .stat-icon-bg {
+    position: absolute;
+    right: -10px;
+    top: -10px;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: rgba($module-color, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    color: $module-color;
+
+    i {
+      transform: translate(-5px, 5px);
+    }
+  }
+
+  .stat-title {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    margin-bottom: $spacing-sm;
+    z-index: 1;
+    position: relative;
+  }
+
+  .stat-value {
+    font-size: $font-size-3xl;
+    font-weight: $font-weight-bold;
+    color: $color-text-primary;
+    z-index: 1;
+    position: relative;
+
+    &--danger {
+      color: $color-error;
+    }
+
+    &--success {
+      color: $color-success;
+    }
+
+    &--warning {
+      color: $color-warning;
+    }
+  }
+
+  .stat-sub {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-normal;
+    color: $color-text-secondary;
+  }
+
+  .stat-trend {
+    font-size: $font-size-xs;
+    margin-top: $spacing-xs;
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+    z-index: 1;
+    position: relative;
+
+    &.trend-up {
+      color: $color-success;
+    }
+
+    &.trend-down {
+      color: $color-error;
+    }
+  }
+}
+
+// ---------------------------------------------------------------
+// 統計卡片 - 變體 B：左側圖標型
+// ---------------------------------------------------------------
+@mixin stat-card-icon-left($module-color: $color-brand-main) {
+  @include flex-start;
+  gap: $spacing-md;
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-soft;
+  position: relative;
+  overflow: hidden;
+
+  .stat-card__icon {
+    @include flex-center;
+    width: 56px;
+    height: 56px;
+    border-radius: $radius-md;
+    font-size: 24px;
+    flex-shrink: 0;
+    background: rgba($module-color, 0.15);
+    color: $module-color;
+
+    &--success {
+      background: rgba($color-success, 0.15);
+      color: $color-success;
+    }
+
+    &--warning {
+      background: rgba($color-warning, 0.15);
+      color: darken($color-warning, 15%);
+    }
+
+    &--info {
+      background: rgba($color-info, 0.15);
+      color: $color-info;
+    }
+  }
+
+  .stat-card__content {
+    flex: 1;
+  }
+
+  .stat-card__value {
+    font-size: $font-size-3xl;
+    font-weight: $font-weight-bold;
+    color: $color-text-dark;
+    line-height: 1;
+    margin-bottom: $spacing-xs;
+  }
+
+  .stat-card__label {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+  }
+
+  .stat-card__progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: $color-soft-gray;
+
+    .fill {
+      height: 100%;
+      background: $module-color;
+      transition: width $transition-normal;
+    }
+  }
+}
+
+// ---------------------------------------------------------------
+// 統計卡片 - 變體 C：漸層圖標型
+// ---------------------------------------------------------------
+@mixin stat-card-gradient($module-color: $color-brand-main) {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-md;
+  background: $color-pure-white;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-sm;
+
+  .stat-icon {
+    @include flex-center;
+    width: 44px;
+    height: 44px;
+    border-radius: $radius-md;
+    background: linear-gradient(135deg, $module-color, darken($module-color, 10%));
+
+    i {
+      font-size: 22px;
+      color: white;
+    }
+
+    &--success {
+      background: linear-gradient(135deg, $color-success, darken($color-success, 10%));
+    }
+
+    &--warning {
+      background: linear-gradient(135deg, $color-warning, darken($color-warning, 10%));
+    }
+
+    &--danger {
+      background: linear-gradient(135deg, $color-error, darken($color-error, 10%));
+    }
+  }
+
+  .stat-content {
+    flex: 1;
+  }
+
+  .stat-label {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+  }
+
+  .stat-value {
+    font-size: $font-size-2xl;
+    font-weight: $font-weight-bold;
+    font-family: 'Georgia', serif;
+    color: $color-text-primary;
+  }
+}
+
+// ---------------------------------------------------------------
+// 視圖切換
+// ---------------------------------------------------------------
+@mixin view-toggle($module-color: $color-brand-main) {
+  display: flex;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+  padding: $spacing-xs;
+
+  .toggle-btn {
+    padding: $spacing-sm $spacing-md;
+    border: none;
+    background: transparent;
+    color: $color-text-secondary;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    border-radius: $radius-sm;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+    transition: all $transition-fast;
+
+    i {
+      font-size: 16px;
+    }
+
+    &:hover {
+      color: $color-text-primary;
+    }
+
+    &.active {
+      background: $module-color;
+      color: white;
+      box-shadow: $shadow-sm;
+    }
+  }
+}
+
+// ---------------------------------------------------------------
+// 模組色按鈕
+// ---------------------------------------------------------------
+@mixin button-module($module-color) {
+  @include button-base;
+  background: $module-color;
+  color: white;
+
+  &:hover:not(:disabled) {
+    background: darken($module-color, 8%);
+  }
+}
+
+@mixin button-outline-module($module-color) {
+  @include button-base;
+  background: transparent;
+  border: 1px solid $module-color;
+  color: $module-color;
+
+  &:hover:not(:disabled) {
+    background: rgba($module-color, 0.1);
+  }
+}
+
+// ---------------------------------------------------------------
+// 狀態徽章
+// ---------------------------------------------------------------
+@mixin status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: 4px 10px;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+
+  &--success {
+    background: rgba($color-success, 0.15);
+    color: $color-success;
+  }
+
+  &--warning {
+    background: rgba($color-warning, 0.15);
+    color: darken($color-warning, 15%);
+  }
+
+  &--error {
+    background: rgba($color-error, 0.15);
+    color: $color-error;
+  }
+
+  &--info {
+    background: rgba($color-info, 0.15);
+    color: $color-info;
+  }
+
+  &--muted {
+    background: rgba($color-muted-gray, 0.15);
+    color: $color-text-secondary;
+  }
+}
+
+// 參數化狀態徽章顏色
+@mixin status-badge-color($color) {
+  background: rgba($color, 0.15);
+  color: $color;
+}
+
+// ---------------------------------------------------------------
+// 進度條
+// ---------------------------------------------------------------
+@mixin progress-bar($module-color: $color-brand-main, $height: 6px) {
+  height: $height;
+  background: $color-soft-gray;
+  border-radius: $radius-full;
+  overflow: hidden;
+
+  .progress-fill {
+    height: 100%;
+    background: $module-color;
+    border-radius: $radius-full;
+    transition: width $transition-normal;
+  }
+}
+
+// ---------------------------------------------------------------
+// 空狀態
+// ---------------------------------------------------------------
+@mixin empty-state {
+  @include flex-center;
+  flex-direction: column;
+  padding: $spacing-2xl;
+  color: $color-text-secondary;
+  text-align: center;
+
+  i {
+    font-size: 48px;
+    margin-bottom: $spacing-md;
+    opacity: 0.5;
+  }
+
+  h3 {
+    font-size: $font-size-lg;
+    color: $color-text-primary;
+    margin: 0 0 $spacing-sm 0;
+  }
+
+  p {
+    font-size: $font-size-sm;
+    margin: 0;
+  }
+}
+
+// ---------------------------------------------------------------
+// 載入狀態
+// ---------------------------------------------------------------
+@mixin loading-state {
+  @include flex-center;
+  gap: $spacing-sm;
+  padding: $spacing-2xl;
+  color: $color-text-secondary;
+
+  .spinner {
+    animation: spin 1s linear infinite;
+    font-size: 24px;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}

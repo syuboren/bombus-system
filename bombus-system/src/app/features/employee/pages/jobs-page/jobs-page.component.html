@@ -1,51 +1,46 @@
-<app-header
-  pageTitle="職缺管理"
-  [breadcrumbs]="['員工管理']" />
+<app-header pageTitle="職缺管理" [breadcrumbs]="['員工管理']" />
 
 <main class="main-content">
   <div class="content-container">
     <!-- Stats Cards -->
     @if (stats(); as s) {
-      <div class="stats-grid">
-        <app-stat-card
-          icon="ri-briefcase-line"
-          label="進行中職缺"
-          [value]="s.activeJobs"
-          moduleType="l1" />
-        <app-stat-card
-          icon="ri-user-search-line"
-          label="本週新進履歷"
-          [value]="s.newResumes"
-          moduleType="l1" />
-        <app-stat-card
-          icon="ri-file-list-3-line"
-          label="待審核履歷"
-          [value]="s.pendingReview"
-          moduleType="l1" />
-        <app-stat-card
-          icon="ri-calendar-check-line"
-          label="已安排面試"
-          [value]="s.scheduledInterviews"
-          moduleType="l1" />
-      </div>
+    <div class="stats-grid">
+      <app-stat-card icon="ri-briefcase-line" label="進行中職缺" [value]="s.activeJobs" moduleType="l1" />
+      <app-stat-card icon="ri-user-search-line" label="本週新進履歷" [value]="s.newResumes" moduleType="l1" />
+      <app-stat-card icon="ri-file-list-3-line" label="待審核履歷" [value]="s.pendingReview" moduleType="l1" />
+      <app-stat-card icon="ri-calendar-check-line" label="已安排面試" [value]="s.scheduledInterviews" moduleType="l1" />
+    </div>
     }
 
-    <!-- Filter Bar -->
+    <!-- Filter Bar (參考 project-list 風格) -->
     <div class="filter-bar">
-      <div class="filter-item">
-        <label class="filter-label">關鍵字搜尋</label>
-        <input
-          type="text"
-          class="filter-input"
-          placeholder="職稱 / 部門"
-          [value]="searchQuery()"
+      <!-- 資料來源切換 -->
+      <div class="tab-group">
+        <button class="tab-btn" [class.active]="dataSource() === 'internal'" (click)="switchDataSource('internal')"
+          type="button">
+          <i class="ri-home-office-line"></i>
+          內部職缺
+        </button>
+        <button class="tab-btn" [class.active]="dataSource() === '104'" (click)="switchDataSource('104')" type="button">
+          <i class="ri-global-line"></i>
+          104 職缺 (Sandbox)
+        </button>
+      </div>
+      @if (dataSource() === '104') {
+      <button class="btn-import-settings" (click)="openImport104SettingsModal()" type="button">
+        <i class="ri-settings-4-line"></i>
+        匯入設定
+      </button>
+      }
+      <div class="filter-divider"></div>
+      <div class="filter-item filter-item--search">
+        <i class="ri-search-line"></i>
+        <input type="text" placeholder="搜尋職稱、部門…" [value]="searchQuery()"
           (input)="searchQuery.set($any($event.target).value)">
       </div>
+      <div class="filter-divider"></div>
       <div class="filter-item">
-        <label class="filter-label">部門篩選</label>
-        <select
-          class="filter-select"
-          [value]="departmentFilter()"
+        <select class="filter-select" [value]="departmentFilter()"
           (change)="departmentFilter.set($any($event.target).value)">
           <option value="">所有部門</option>
           <option value="資訊部">資訊部</option>
@@ -57,31 +52,33 @@
         </select>
       </div>
       <div class="filter-item">
-        <label class="filter-label">狀態</label>
-        <select
-          class="filter-select"
-          [value]="statusFilter()"
-          (change)="statusFilter.set($any($event.target).value)">
+        <select class="filter-select" [value]="statusFilter()" (change)="statusFilter.set($any($event.target).value)">
           <option value="">所有狀態</option>
           <option value="published">刊登中</option>
           <option value="draft">草稿</option>
           <option value="review">審核中</option>
+          <option value="closed">已關閉</option>
         </select>
       </div>
-      <div class="filter-item filter-item--action">
-        <button class="btn btn-primary" (click)="openModal()" type="button">
-          <i class="ri-add-line"></i>
-          發布職缺
-        </button>
-      </div>
+      <button class="btn btn-primary" (click)="openModal()" type="button">
+        <i class="ri-add-line"></i>
+        發布職缺
+      </button>
     </div>
 
     <!-- Job Table -->
     <div class="table-card">
+      @if (dataSource() === '104' && loading104()) {
+      <div class="loading-overlay">
+        <i class="ri-loader-4-line spin"></i>
+        <span>載入 104 職缺中...</span>
+      </div>
+      }
       <table class="job-table">
         <thead>
           <tr>
             <th>職缺名稱</th>
+            <th>來源</th>
             <th>部門</th>
             <th>發布日期</th>
             <th>應徵狀況</th>
@@ -92,90 +89,109 @@
         </thead>
         <tbody>
           @for (job of filteredJobs(); track job.id) {
-            <tr>
-              <td>
-                <div class="job-title">{{ job.title }}</div>
-                <div class="job-id">ID: {{ job.id }}</div>
-              </td>
-              <td>{{ job.department }}</td>
-              <td>{{ job.publishDate || '--' }}</td>
-              <td>
-                @if (job.status === 'published') {
-                  <div class="candidate-count">
-                    @if (job.newCandidates > 0) {
-                      <span class="count-badge count-badge--new">New {{ job.newCandidates }}</span>
-                    }
-                    <span class="count-total">/ {{ job.totalCandidates }} 人</span>
-                  </div>
+          <tr>
+            <td>
+              <div class="job-title">{{ job.title }}</div>
+              <div class="job-id">ID: {{ job.id }}@if (job.job104No) { (104: {{ job.job104No }}) }</div>
+            </td>
+            <td>
+              <span class="source-badge" [class.source-badge--104]="job.source === '104'">
+                @if (job.source === '104') {
+                <i class="ri-global-line"></i> 104
                 } @else {
-                  <span class="text-muted">-</span>
+                <i class="ri-home-office-line"></i> 內部
                 }
-              </td>
-              <td>
-                <span class="status-badge {{ getStatusClass(job.status) }}">
-                  <i [class]="getStatusIcon(job.status)"></i>
-                  {{ getStatusLabel(job.status) }}
-                </span>
-              </td>
-              <td>{{ job.recruiter }}</td>
-              <td>
-                <div class="action-group">
-                  @if (job.status === 'published') {
-                    <button
-                      class="icon-btn"
-                      title="匯入履歷"
-                      (click)="openImportModal(job)"
-                      type="button">
-                      <i class="ri-upload-cloud-line"></i>
-                    </button>
-                    <button
-                      class="icon-btn"
-                      title="查看候選人"
-                      (click)="viewCandidates(job)"
-                      type="button">
-                      <i class="ri-user-search-line"></i>
-                    </button>
-                  }
-                  @if (job.status === 'review') {
-                    <button
-                      class="icon-btn"
-                      title="審核"
-                      type="button">
-                      <i class="ri-check-double-line"></i>
-                    </button>
-                  }
-                  <button
-                    class="icon-btn"
-                    title="編輯職缺"
-                    (click)="editJob(job)"
-                    type="button">
-                    <i class="ri-edit-line"></i>
-                  </button>
-                  @if (job.status === 'draft') {
-                    <button
-                      class="icon-btn icon-btn--danger"
-                      title="刪除"
-                      type="button">
-                      <i class="ri-delete-bin-line"></i>
-                    </button>
-                  } @else {
-                    <button
-                      class="icon-btn"
-                      title="更多"
-                      type="button">
-                      <i class="ri-more-2-fill"></i>
-                    </button>
-                  }
-                </div>
-              </td>
-            </tr>
+              </span>
+            </td>
+            <td>{{ job.department }}</td>
+            <td>{{ job.publishDate || '--' }}</td>
+            <td>
+              @if (job.status === 'published') {
+              <div class="candidate-count">
+                @if (job.newCandidates > 0) {
+                <span class="count-badge count-badge--new">New {{ job.newCandidates }}</span>
+                }
+                <span class="count-total">/ {{ job.totalCandidates }} 人</span>
+              </div>
+              } @else {
+              <span class="text-muted">-</span>
+              }
+            </td>
+            <td>
+              <span class="status-badge {{ getStatusClass(job.status) }}">
+                <i [class]="getStatusIcon(job.status)"></i>
+                {{ getStatusLabel(job.status) }}
+              </span>
+            </td>
+            <td>{{ job.recruiter }}</td>
+            <td>
+              <div class="action-group">
+                @if (job.status === 'draft') {
+                <button class="icon-btn icon-btn--success" title="送出審核" (click)="updateJobStatus(job, 'review')"
+                  type="button">
+                  <i class="ri-send-plane-fill"></i>
+                </button>
+                }
+
+                @if (job.status === 'review') {
+                <button class="icon-btn icon-btn--success" title="核准發布" (click)="updateJobStatus(job, 'published')"
+                  type="button">
+                  <i class="ri-checkbox-circle-line"></i>
+                </button>
+                <button class="icon-btn icon-btn--warning" title="退回草稿" (click)="updateJobStatus(job, 'draft')"
+                  type="button">
+                  <i class="ri-arrow-go-back-line"></i>
+                </button>
+                }
+
+                @if (job.status === 'published') {
+                @if (job.source !== '104') {
+                <button class="icon-btn" title="新增候選人" (click)="openImportModal(job)" type="button">
+                  <i class="ri-user-add-line"></i>
+                </button>
+                }
+                <button class="icon-btn" title="查看候選人" (click)="viewCandidates(job)" type="button">
+                  <i class="ri-user-search-line"></i>
+                </button>
+                <button class="icon-btn icon-btn--danger" title="關閉職缺" (click)="updateJobStatus(job, 'closed')"
+                  type="button">
+                  <i class="ri-stop-circle-line"></i>
+                </button>
+                }
+
+                @if (job.status === 'closed') {
+                <button class="icon-btn" title="重新開啟" (click)="updateJobStatus(job, 'draft')" type="button">
+                  <i class="ri-refresh-line"></i>
+                </button>
+                }
+
+                <button class="icon-btn" title="設定關鍵字" (click)="navigateToKeywords(job)" type="button">
+                  <i class="ri-key-line"></i>
+                </button>
+
+                <button class="icon-btn" title="編輯職缺" (click)="openEditModal(job)" type="button">
+                  <i class="ri-edit-line"></i>
+                </button>
+
+                @if (job.status === 'draft') {
+                <button class="icon-btn icon-btn--danger" title="刪除" (click)="confirmDeleteJob(job)" type="button">
+                  <i class="ri-delete-bin-line"></i>
+                </button>
+                }
+              </div>
+            </td>
+          </tr>
           } @empty {
-            <tr>
-              <td colspan="7" class="empty-row">
-                <i class="ri-folder-open-line"></i>
-                <p>目前沒有職缺資料</p>
-              </td>
-            </tr>
+          <tr>
+            <td colspan="8" class="empty-row">
+              <i class="ri-folder-open-line"></i>
+              @if (dataSource() === '104') {
+              <p>104 Sandbox 無職缺資料，請確認 API 連線狀態</p>
+              } @else {
+              <p>目前沒有職缺資料</p>
+              }
+            </td>
+          </tr>
           }
         </tbody>
       </table>
@@ -185,156 +201,1312 @@
 
 <!-- Create Job Modal -->
 @if (showModal()) {
-  <div class="modal-backdrop" (click)="closeModal()"></div>
-  <div class="modal">
-    <div class="modal__header">
-      <h3 class="modal__title">發布新職缺</h3>
-      <button class="modal__close" (click)="closeModal()" type="button">
-        <i class="ri-close-line"></i>
-      </button>
+<div class="modal-backdrop"></div>
+<div class="modal">
+  <div class="modal__header">
+    <h3 class="modal__title">發布新職缺</h3>
+    <button class="modal__close" (click)="closeModal()" type="button">
+      <i class="ri-close-line"></i>
+    </button>
+  </div>
+  <div class="modal__body">
+    <!-- 選擇職務說明書 (JD) -->
+    <div class="form-group">
+      <label class="form-label">
+        <i class="ri-file-text-line"></i>
+        選擇職務說明書 (JD) <span class="required">*</span>
+      </label>
+      <select class="form-select form-select--highlight" [value]="newJob().jdId"
+        (change)="updateJobField('jdId', $any($event.target).value)">
+        <option value="">請選擇 JD（選擇後自動帶入職缺資訊）</option>
+        @for (jd of jobDescriptions(); track jd.id) {
+        <option [value]="jd.id">{{ jd.positionCode }} - {{ jd.positionName }} ({{ jd.department }})</option>
+        }
+      </select>
+      @if (selectedJD(); as jd) {
+      <div class="jd-preview">
+        <div class="jd-preview__header">
+          <i class="ri-checkbox-circle-fill"></i>
+          已選擇：{{ jd.positionName }}
+        </div>
+        <div class="jd-preview__content">
+          <p><strong>部門：</strong>{{ jd.department }}</p>
+          <p><strong>職等：</strong>{{ jd.gradeLevel }}</p>
+          <p><strong>摘要：</strong>{{ jd.summary }}</p>
+          <p><strong>職能要求：</strong>{{ jd.requiredCompetencies.length }} 項</p>
+        </div>
+      </div>
+      }
     </div>
-    <div class="modal__body">
-      <!-- 選擇職務說明書 (JD) -->
-      <div class="form-group">
-        <label class="form-label">
-          <i class="ri-file-text-line"></i>
-          選擇職務說明書 (JD) <span class="required">*</span>
-        </label>
-        <select
-          class="form-select form-select--highlight"
-          [value]="newJob().jdId"
-          (change)="updateJobField('jdId', $any($event.target).value)">
-          <option value="">請選擇 JD（選擇後自動帶入職缺資訊）</option>
-          @for (jd of jobDescriptions(); track jd.id) {
-            <option [value]="jd.id">{{ jd.positionCode }} - {{ jd.positionName }} ({{ jd.department }})</option>
+
+    <div class="form-group">
+      <label class="form-label">職缺名稱 <span class="required">*</span></label>
+      <input type="text" class="form-input" placeholder="例如：資深前端工程師" [value]="newJob().title"
+        (input)="updateJobField('title', $any($event.target).value)">
+    </div>
+    <div class="form-group">
+      <label class="form-label">所屬部門 <span class="required">*</span></label>
+      <select class="form-select" [value]="newJob().department"
+        (change)="updateJobField('department', $any($event.target).value)">
+        <option value="">請選擇部門</option>
+        <option value="財務部">財務部</option>
+        <option value="人資部">人資部</option>
+        <option value="專案部">專案部</option>
+        <option value="資訊部">資訊部</option>
+        <option value="業務部">業務部</option>
+        <option value="產品部">產品部</option>
+        <option value="設計部">設計部</option>
+        <option value="行銷部">行銷部</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">招募負責人</label>
+      <input type="text" class="form-input" [value]="newJob().recruiter" readonly>
+    </div>
+    <div class="form-group">
+      <label class="form-label">職務說明</label>
+      <textarea class="form-textarea" placeholder="請輸入職務內容與需求…" [value]="newJob().description"
+        (input)="updateJobField('description', $any($event.target).value)">
+        </textarea>
+    </div>
+    <!-- 同步至 104 選項 -->
+    <div class="sync-option">
+      <label class="sync-checkbox">
+        <input type="checkbox" [checked]="newJob().syncTo104" (change)="toggleSyncTo104($any($event.target).checked)">
+        <span class="sync-checkbox__mark"></span>
+        <span class="sync-checkbox__label">
+          <i class="ri-global-line"></i>
+          填寫 104 (Sandbox) 設定
+        </span>
+      </label>
+      <p class="sync-option__hint">勾選後請填寫下方 104 詳細設定，職缺將在核准發布時自動同步</p>
+    </div>
+
+    <!-- 104 詳細設定 (勾選同步時展開) -->
+    @if (newJob().syncTo104) {
+    <div class="job104-settings">
+      <div class="job104-settings__header">
+        <i class="ri-settings-3-line"></i>
+        <span>104 職缺詳細設定</span>
+      </div>
+
+      <div class="job104-settings__body">
+        <!-- 職缺類型 -->
+        <div class="form-row">
+          <div class="form-group form-group--half">
+            <label class="form-label">職缺類型 <span class="required">*</span></label>
+            <select class="form-select" [value]="newJob().job104.role"
+              (change)="updateJob104Field('role', +$any($event.target).value)">
+              <option [value]="1">全職</option>
+              <option [value]="2">兼職</option>
+              <option [value]="3">高階主管</option>
+            </select>
+          </div>
+          <div class="form-group form-group--half">
+            <label class="form-label">工作地區 <span class="required">*</span></label>
+            <select class="form-select" [value]="newJob().job104.addrNo"
+              (change)="updateJob104Field('addrNo', +$any($event.target).value)">
+              <option [value]="6001001001">台北市</option>
+              <option [value]="6001002001">新北市</option>
+              <option [value]="6001005001">桃園市</option>
+              <option [value]="6001008001">台中市</option>
+              <option [value]="6001014001">台南市</option>
+              <option [value]="6001015001">高雄市</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 職務類別 (根據職缺類型動態切換) -->
+        <div class="form-group">
+          <label class="form-label">職務類別 <span class="required">*</span></label>
+          @if (newJob().job104.role === 3) {
+          <!-- 高階主管類別 (9xxx 系列) -->
+          <select class="form-select" [value]="newJob().job104.jobCatSet[0]"
+            (change)="updateJob104Field('jobCatSet', [+$any($event.target).value])">
+            <option [value]="9001001000">總經理/副總 (General Manager)</option>
+            <option [value]="9001002000">經營管理高階主管</option>
+            <option [value]="9001003000">特別助理 (Special Assistant)</option>
+            <option [value]="9002001000">財務或會計高階主管</option>
+            <option [value]="9002002000">金融高階主管</option>
+            <option [value]="9003001000">法務部門高階主管</option>
+          </select>
+          } @else {
+          <!-- 全職/兼職類別 (2xxx 系列) -->
+          <select class="form-select" [value]="newJob().job104.jobCatSet[0]"
+            (change)="updateJob104Field('jobCatSet', [+$any($event.target).value])">
+            <option [value]="2001001001">經營管理主管</option>
+            <option [value]="2001002001">人力資源主管</option>
+            <option [value]="2001002002">人力資源人員</option>
+            <option [value]="2001002003">教育訓練人員</option>
+          </select>
           }
-        </select>
-        @if (selectedJD(); as jd) {
-          <div class="jd-preview">
-            <div class="jd-preview__header">
-              <i class="ri-checkbox-circle-fill"></i>
-              已選擇：{{ jd.positionName }}
-            </div>
-            <div class="jd-preview__content">
-              <p><strong>部門：</strong>{{ jd.department }}</p>
-              <p><strong>職等：</strong>{{ jd.gradeLevel }}</p>
-              <p><strong>摘要：</strong>{{ jd.summary }}</p>
-              <p><strong>職能要求：</strong>{{ jd.requiredCompetencies.length }} 項</p>
+          <small class="form-hint">註：職務類別需與職缺類型匹配 (高階主管需選高階類別)</small>
+        </div>
+
+        <!-- 薪資 -->
+        <div class="form-row">
+          <div class="form-group form-group--third">
+            <label class="form-label">薪資類型 <span class="required">*</span></label>
+            <select class="form-select" [value]="newJob().job104.salaryType"
+              (change)="updateJob104Field('salaryType', +$any($event.target).value)">
+              <option [value]="10">面議</option>
+              @if (newJob().job104.role !== 3) {
+                <option [value]="50">月薪</option>
+                <option [value]="60">年薪</option>
+              }
+            </select>
+          </div>
+          @if (newJob().job104.salaryType !== 10 && newJob().job104.role !== 3) {
+          <div class="form-group form-group--third">
+            <label class="form-label">最低薪資 <span class="required">*</span></label>
+            <input type="number" class="form-input" [placeholder]="newJob().job104.salaryType === 50 ? '例：30000' : '例：500000'" 
+              [value]="newJob().job104.salaryLow ?? ''"
+              (input)="updateJob104Field('salaryLow', $any($event.target).value === '' ? null : +$any($event.target).value)">
+          </div>
+          <div class="form-group form-group--third">
+            <label class="form-label">最高薪資 <span class="required">*</span></label>
+            <input type="number" class="form-input" [placeholder]="newJob().job104.salaryType === 50 ? '例：50000' : '例：800000'" 
+              [value]="newJob().job104.salaryHigh ?? ''"
+              (input)="updateJob104Field('salaryHigh', $any($event.target).value === '' ? null : +$any($event.target).value)">
+          </div>
+          }
+        </div>
+        <small class="form-hint">
+          @if (newJob().job104.role === 3) {
+            <span style="color: #dc2626;">⚠️ 高階主管職缺只能使用「面議」（104 API 規定）</span>
+          } @else if (newJob().job104.salaryType === 10) {
+            註：選擇「面議」時不需填寫薪資金額
+          } @else {
+            註：選擇「{{ newJob().job104.salaryType === 50 ? '月薪' : '年薪' }}」時必須填寫薪資範圍，否則 104 同步會失敗
+          }
+        </small>
+
+        <!-- 學歷要求 -->
+        <div class="form-group">
+          <label class="form-label">學歷要求 <span class="required">*</span></label>
+          <select class="form-select" [value]="newJob().job104.edu[0]"
+            (change)="updateJob104Field('edu', [+$any($event.target).value])">
+            <option [value]="1">高中以下</option>
+            <option [value]="2">高中職</option>
+            <option [value]="4">專科</option>
+            <option [value]="8">大學</option>
+            <option [value]="16">碩士</option>
+            <option [value]="32">博士</option>
+          </select>
+        </div>
+
+        <!-- 聯絡資訊 -->
+        <div class="form-row">
+          <div class="form-group form-group--half">
+            <label class="form-label">聯絡人 <span class="required">*</span></label>
+            <input type="text" class="form-input" placeholder="HR" [value]="newJob().job104.contact"
+              (input)="updateJob104Field('contact', $any($event.target).value)">
+          </div>
+          <div class="form-group form-group--half">
+            <label class="form-label">聯絡 Email <span class="required">*</span></label>
+            <input type="email" class="form-input" placeholder="hr@company.com" [value]="newJob().job104.email"
+              (input)="updateJob104Field('email', $any($event.target).value)">
+          </div>
+        </div>
+
+        <!-- 上班時段 (新增) -->
+        <div class="form-group">
+          <label class="form-label">上班時段 <span class="required">*</span></label>
+          <div class="work-shift-config">
+            <select class="form-select mb-2" [value]="newJob().job104.workShifts[0].type" (change)="updateJob104Field('workShifts', [{
+                type: +$any($event.target).value,
+                periods: newJob().job104.workShifts[0].periods || [{startHour: 9, startMinute: 0, endHour: 18, endMinute: 0}]
+              }])">
+              <option [value]="1">日班</option>
+              <option [value]="2">夜班</option>
+              <option [value]="4">大夜班</option>
+              <option [value]="8">假日班</option>
+              <option [value]="16">中班</option>
+            </select>
+            <div class="time-range-group">
+              <div class="time-input-group">
+                <input type="number" class="form-input time-input" min="0" max="23" placeholder="9"
+                  [value]="newJob().job104.workShifts[0].periods[0].startHour" (change)="updateJob104Field('workShifts', [{
+                    type: newJob().job104.workShifts[0].type || 1,
+                    periods: [{
+                      startHour: +$any($event.target).value,
+                      startMinute: newJob().job104.workShifts[0].periods[0].startMinute || 0,
+                      endHour: newJob().job104.workShifts[0].periods[0].endHour || 18,
+                      endMinute: newJob().job104.workShifts[0].periods[0].endMinute || 0
+                    }]
+                  }])">
+                <span>:</span>
+                <input type="number" class="form-input time-input" min="0" max="59" step="5" placeholder="00"
+                  [value]="newJob().job104.workShifts[0].periods[0].startMinute" (change)="updateJob104Field('workShifts', [{
+                    type: newJob().job104.workShifts[0].type || 1,
+                    periods: [{
+                      startHour: newJob().job104.workShifts[0].periods[0].startHour || 9,
+                      startMinute: +$any($event.target).value,
+                      endHour: newJob().job104.workShifts[0].periods[0].endHour || 18,
+                      endMinute: newJob().job104.workShifts[0].periods[0].endMinute || 0
+                    }]
+                  }])">
+              </div>
+              <span class="time-separator">至</span>
+              <div class="time-input-group">
+                <input type="number" class="form-input time-input" min="0" max="23" placeholder="18"
+                  [value]="newJob().job104.workShifts[0].periods[0].endHour" (change)="updateJob104Field('workShifts', [{
+                    type: newJob().job104.workShifts[0].type || 1,
+                    periods: [{
+                      startHour: newJob().job104.workShifts[0].periods[0].startHour || 9,
+                      startMinute: newJob().job104.workShifts[0].periods[0].startMinute || 0,
+                      endHour: +$any($event.target).value,
+                      endMinute: newJob().job104.workShifts[0].periods[0].endMinute || 0
+                    }]
+                  }])">
+                <span>:</span>
+                <input type="number" class="form-input time-input" min="0" max="59" step="5" placeholder="00"
+                  [value]="newJob().job104.workShifts[0].periods[0].endMinute" (change)="updateJob104Field('workShifts', [{
+                    type: newJob().job104.workShifts[0].type || 1,
+                    periods: [{
+                      startHour: newJob().job104.workShifts[0].periods[0].startHour || 9,
+                      startMinute: newJob().job104.workShifts[0].periods[0].startMinute || 0,
+                      endHour: newJob().job104.workShifts[0].periods[0].endHour || 18,
+                      endMinute: +$any($event.target).value
+                    }]
+                  }])">
+              </div>
             </div>
           </div>
+        </div>
+
+
+        <!-- 回覆天數 -->
+        <div class="form-group">
+          <label class="form-label">預計回覆天數</label>
+          <select class="form-select" [value]="newJob().job104.replyDay"
+            (change)="updateJob104Field('replyDay', +$any($event.target).value)">
+            <option [value]="0">不限</option>
+            <option [value]="3">3 天內</option>
+            <option [value]="7">7 天內</option>
+            <option [value]="14">14 天內</option>
+            <option [value]="30">30 天內</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    }
+  </div>
+  <div class="modal__footer">
+    <button class="btn btn-secondary" (click)="closeModal()" type="button">取消</button>
+    <button class="btn btn-primary" (click)="saveJob()" type="button">儲存草稿</button>
+  </div>
+</div>
+}
+
+<!-- Add Candidate Modal -->
+@if (showImportModal()) {
+<div class="modal-backdrop"></div>
+<div class="modal modal--large">
+  <div class="modal__header">
+    <h3 class="modal__title">
+      <i class="ri-user-add-line"></i>
+      新增候選人
+    </h3>
+    <button class="modal__close" (click)="closeImportModal()" type="button">
+      <i class="ri-close-line"></i>
+    </button>
+  </div>
+  <div class="modal__body modal__body--tabs">
+    @if (selectedJobForImport(); as job) {
+    <div class="import-info">
+      <p><strong>目標職缺：</strong>{{ job.title }}</p>
+      <p><strong>部門：</strong>{{ job.department }}</p>
+    </div>
+    }
+    
+    <!-- Tab Navigation -->
+    <div class="candidate-tabs">
+      <button class="candidate-tab" [class.active]="candidateFormTab() === 1" (click)="setCandidateFormTab(1)" type="button">
+        <i class="ri-user-line"></i> 基本資料
+        @if (hasTabErrors(1)) {
+        <span class="tab-error-dot"></span>
+        }
+      </button>
+      <button class="candidate-tab" [class.active]="candidateFormTab() === 2" (click)="setCandidateFormTab(2)" type="button">
+        <i class="ri-briefcase-line"></i> 求職條件
+        @if (hasTabErrors(2)) {
+        <span class="tab-error-dot"></span>
+        }
+      </button>
+      <button class="candidate-tab" [class.active]="candidateFormTab() === 3" (click)="setCandidateFormTab(3)" type="button">
+        <i class="ri-graduation-cap-line"></i> 學經歷
+        @if (hasTabErrors(3)) {
+        <span class="tab-error-dot"></span>
+        }
+      </button>
+      <button class="candidate-tab" [class.active]="candidateFormTab() === 4" (click)="setCandidateFormTab(4)" type="button">
+        <i class="ri-attachment-line"></i> 附件上傳
+      </button>
+    </div>
+
+    <!-- Tab 1: 基本資料 -->
+    @if (candidateFormTab() === 1) {
+    <div class="candidate-form">
+      <div class="form-section">
+        <h4 class="form-section__title">個人資訊</h4>
+        <div class="form-grid form-grid--3">
+          <div class="form-group">
+            <label class="form-label">姓名 <span class="required">*</span></label>
+            <input type="text" class="form-input" [(ngModel)]="newCandidate().name" placeholder="請輸入姓名">
+          </div>
+          <div class="form-group">
+            <label class="form-label">英文姓名 <span class="required">*</span></label>
+            <input type="text" class="form-input" [(ngModel)]="newCandidate().nameEn" placeholder="請輸入英文姓名">
+          </div>
+          <div class="form-group">
+            <label class="form-label">性別 <span class="required">*</span></label>
+            <select class="form-select" [(ngModel)]="newCandidate().gender">
+              <option value="">請選擇</option>
+              <option value="male">男</option>
+              <option value="female">女</option>
+              <option value="other">其他</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-grid form-grid--3">
+          <div class="form-group">
+            <label class="form-label">生日 <span class="required">*</span></label>
+            <input type="date" class="form-input" [(ngModel)]="newCandidate().birthday">
+          </div>
+          <div class="form-group">
+            <label class="form-label">國籍 <span class="required">*</span></label>
+            <input type="text" class="form-input" [(ngModel)]="newCandidate().nationality" placeholder="例：中華民國">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email <span class="required">*</span></label>
+            <input type="email" class="form-input" [(ngModel)]="newCandidate().email" placeholder="example@email.com">
+          </div>
+        </div>
+        <div class="form-grid form-grid--3">
+          <div class="form-group">
+            <label class="form-label">手機 <span class="required">*</span></label>
+            <input type="tel" class="form-input" [(ngModel)]="newCandidate().phone" placeholder="0912-345-678">
+          </div>
+          <div class="form-group">
+            <label class="form-label">聯絡方式 <span class="required">*</span></label>
+            <input type="text" class="form-input" [(ngModel)]="newCandidate().contactInfo" placeholder="最佳聯絡方式">
+          </div>
+          <div class="form-group">
+            <label class="form-label">市內電話</label>
+            <input type="tel" class="form-input" [(ngModel)]="newCandidate().tel" placeholder="02-1234-5678">
+          </div>
+        </div>
+        <div class="form-grid form-grid--1">
+          <div class="form-group">
+            <label class="form-label">聯絡地址 <span class="required">*</span></label>
+            <input type="text" class="form-input" [(ngModel)]="newCandidate().address" placeholder="完整聯絡地址">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h4 class="form-section__title">其他資訊（選填）</h4>
+        <div class="form-grid form-grid--3">
+          <div class="form-group">
+            <label class="form-label">兵役狀況</label>
+            <select class="form-select" [(ngModel)]="newCandidate().militaryStatus">
+              <option value="">請選擇</option>
+              <option value="免役">免役</option>
+              <option value="役畢">役畢</option>
+              <option value="待役">待役</option>
+              <option value="服役中">服役中</option>
+              <option value="替代役">替代役</option>
+              <option value="不適用">不適用</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">駕照</label>
+            <input type="text" class="form-input" [(ngModel)]="newCandidate().drivingLicenses" placeholder="例：汽車、機車">
+          </div>
+          <div class="form-group">
+            <label class="form-label">交通工具</label>
+            <input type="text" class="form-input" [(ngModel)]="newCandidate().transports" placeholder="例：自有汽車">
+          </div>
+        </div>
+      </div>
+    </div>
+    }
+
+    <!-- Tab 2: 求職條件 -->
+    @if (candidateFormTab() === 2) {
+    <div class="candidate-form">
+      <div class="form-section">
+        <h4 class="form-section__title">求職條件</h4>
+        <div class="form-grid form-grid--3">
+          <div class="form-group">
+            <label class="form-label">希望性質 <span class="required">*</span></label>
+            <select class="form-select" [(ngModel)]="newCandidate().jobCharacteristic">
+              <option value="">請選擇</option>
+              <option value="全職">全職</option>
+              <option value="兼職">兼職</option>
+              <option value="全職/兼職">全職/兼職皆可</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">上班時段 <span class="required">*</span></label>
+            <select class="form-select" [(ngModel)]="newCandidate().workInterval">
+              <option value="">請選擇</option>
+              <option value="日班">日班</option>
+              <option value="夜班">夜班</option>
+              <option value="大夜班">大夜班</option>
+              <option value="假日班">假日班</option>
+              <option value="不拘">不拘</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">輪班制度 <span class="required">*</span></label>
+            <select class="form-select" [(ngModel)]="newCandidate().shiftWork">
+              <option [ngValue]="null">請選擇</option>
+              <option [ngValue]="true">可接受輪班</option>
+              <option [ngValue]="false">不接受輪班</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-grid form-grid--3">
+          <div class="form-group">
+            <label class="form-label">可上班日</label>
+            <input type="text" class="form-input" [(ngModel)]="newCandidate().startDateOpt" placeholder="例：隨時、一週內">
+          </div>
+          <div class="form-group">
+            <label class="form-label">希望待遇</label>
+            <input type="text" class="form-input" [(ngModel)]="newCandidate().expectedSalary" placeholder="例：月薪 50,000 以上">
+          </div>
+          <div class="form-group">
+            <label class="form-label">希望地點</label>
+            <input type="text" class="form-input" [(ngModel)]="newCandidate().preferredLocation" placeholder="例：台北市">
+          </div>
+        </div>
+        <div class="form-grid form-grid--3">
+          <div class="form-group">
+            <label class="form-label">希望職稱</label>
+            <input type="text" class="form-input" [(ngModel)]="newCandidate().preferredJobName" placeholder="例：前端工程師">
+          </div>
+          <div class="form-group">
+            <label class="form-label">希望職類</label>
+            <input type="text" class="form-input" [(ngModel)]="newCandidate().preferredJobCategory" placeholder="例：軟體/工程類">
+          </div>
+          <div class="form-group">
+            <label class="form-label">希望產業</label>
+            <input type="text" class="form-input" [(ngModel)]="newCandidate().preferredIndustry" placeholder="例：資訊科技業">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h4 class="form-section__title">自我介紹（選填）</h4>
+        <div class="form-grid form-grid--1">
+          <div class="form-group">
+            <label class="form-label">個人簡介</label>
+            <textarea class="form-textarea" [(ngModel)]="newCandidate().introduction" rows="3" placeholder="簡短自我介紹"></textarea>
+          </div>
+        </div>
+        <div class="form-grid form-grid--2">
+          <div class="form-group">
+            <label class="form-label">個人格言</label>
+            <input type="text" class="form-input" [(ngModel)]="newCandidate().motto" placeholder="座右銘">
+          </div>
+          <div class="form-group">
+            <label class="form-label">個人特色</label>
+            <input type="text" class="form-input" [(ngModel)]="newCandidate().characteristic" placeholder="個人特色標籤">
+          </div>
+        </div>
+        <div class="form-grid form-grid--1">
+          <div class="form-group">
+            <label class="form-label">證照</label>
+            <textarea class="form-textarea" [(ngModel)]="newCandidate().certificates" rows="2" placeholder="持有的證照名稱"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+    }
+
+    <!-- Tab 3: 學經歷 -->
+    @if (candidateFormTab() === 3) {
+    <div class="candidate-form">
+      <!-- 學歷 -->
+      <div class="form-section">
+        <div class="form-section__header">
+          <h4 class="form-section__title">學歷 <span class="required">*</span></h4>
+          <button class="btn btn-sm btn-outline" (click)="addEducation()" type="button">
+            <i class="ri-add-line"></i> 新增學歷
+          </button>
+        </div>
+        @for (edu of newCandidate().educationList; track $index) {
+        <div class="form-card">
+          <div class="form-card__header">
+            <span class="form-card__title">學歷 {{ $index + 1 }}</span>
+            @if (newCandidate().educationList.length > 1) {
+            <button class="btn-icon btn-icon--danger" (click)="removeEducation($index)" type="button">
+              <i class="ri-delete-bin-line"></i>
+            </button>
+            }
+          </div>
+          <div class="form-grid form-grid--2">
+            <div class="form-group">
+              <label class="form-label">學校名稱 <span class="required">*</span></label>
+              <input type="text" class="form-input" [(ngModel)]="edu.schoolName" placeholder="學校名稱">
+            </div>
+            <div class="form-group">
+              <label class="form-label">科系 <span class="required">*</span></label>
+              <input type="text" class="form-input" [(ngModel)]="edu.major" placeholder="科系名稱">
+            </div>
+          </div>
+          <div class="form-grid form-grid--2">
+            <div class="form-group">
+              <label class="form-label">學位 <span class="required">*</span></label>
+              <select class="form-select" [(ngModel)]="edu.degreeLevel">
+                <option value="">請選擇</option>
+                <option value="博士">博士</option>
+                <option value="碩士">碩士</option>
+                <option value="大學">大學</option>
+                <option value="專科">專科</option>
+                <option value="高中職">高中職</option>
+                <option value="國中以下">國中以下</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">就學狀態 <span class="required">*</span></label>
+              <select class="form-select" [(ngModel)]="edu.degreeStatus">
+                <option value="">請選擇</option>
+                <option value="畢業">畢業</option>
+                <option value="肄業">肄業</option>
+                <option value="就學中">就學中</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        } @empty {
+        <div class="empty-card">
+          <i class="ri-graduation-cap-line"></i>
+          <p>尚未新增學歷，請點擊「新增學歷」按鈕</p>
+        </div>
         }
       </div>
 
-      <div class="form-group">
-        <label class="form-label">職缺名稱 <span class="required">*</span></label>
-        <input
-          type="text"
-          class="form-input"
-          placeholder="例如：資深前端工程師"
-          [value]="newJob().title"
-          (input)="updateJobField('title', $any($event.target).value)">
+      <!-- 工作經歷 -->
+      <div class="form-section">
+        <div class="form-section__header">
+          <h4 class="form-section__title">工作經歷 <span class="required">*</span></h4>
+          <button class="btn btn-sm btn-outline" (click)="addExperience()" type="button">
+            <i class="ri-add-line"></i> 新增經歷
+          </button>
+        </div>
+        @for (exp of newCandidate().experienceList; track $index) {
+        <div class="form-card">
+          <div class="form-card__header">
+            <span class="form-card__title">工作經歷 {{ $index + 1 }}</span>
+            @if (newCandidate().experienceList.length > 1) {
+            <button class="btn-icon btn-icon--danger" (click)="removeExperience($index)" type="button">
+              <i class="ri-delete-bin-line"></i>
+            </button>
+            }
+          </div>
+          <div class="form-grid form-grid--2">
+            <div class="form-group">
+              <label class="form-label">公司名稱 <span class="required">*</span></label>
+              <input type="text" class="form-input" [(ngModel)]="exp.firmName" placeholder="公司名稱">
+            </div>
+            <div class="form-group">
+              <label class="form-label">職稱 <span class="required">*</span></label>
+              <input type="text" class="form-input" [(ngModel)]="exp.jobName" placeholder="職稱">
+            </div>
+          </div>
+          <div class="form-grid form-grid--3">
+            <div class="form-group">
+              <label class="form-label">產業類別 <span class="required">*</span></label>
+              <input type="text" class="form-input" [(ngModel)]="exp.industryCategory" placeholder="例：資訊科技業">
+            </div>
+            <div class="form-group">
+              <label class="form-label">任職起始 <span class="required">*</span></label>
+              <input type="month" class="form-input" [(ngModel)]="exp.startDate">
+            </div>
+            <div class="form-group">
+              <label class="form-label">任職結束 <span class="required">*</span></label>
+              <input type="month" class="form-input" [(ngModel)]="exp.endDate" placeholder="在職中可留空">
+            </div>
+          </div>
+          <div class="form-grid form-grid--1">
+            <div class="form-group">
+              <label class="form-label">工作內容 <span class="required">*</span></label>
+              <textarea class="form-textarea" [(ngModel)]="exp.jobDesc" rows="3" placeholder="描述主要工作職責與內容"></textarea>
+            </div>
+          </div>
+        </div>
+        } @empty {
+        <div class="empty-card">
+          <i class="ri-briefcase-line"></i>
+          <p>尚未新增工作經歷，請點擊「新增經歷」按鈕</p>
+        </div>
+        }
       </div>
-      <div class="form-group">
-        <label class="form-label">所屬部門 <span class="required">*</span></label>
-        <select
-          class="form-select"
-          [value]="newJob().department"
-          (change)="updateJobField('department', $any($event.target).value)">
-          <option value="">請選擇部門</option>
-          <option value="財務部">財務部</option>
-          <option value="人資部">人資部</option>
-          <option value="專案部">專案部</option>
-          <option value="資訊部">資訊部</option>
-          <option value="業務部">業務部</option>
-          <option value="產品部">產品部</option>
-          <option value="設計部">設計部</option>
-          <option value="行銷部">行銷部</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">招募負責人</label>
-        <input
-          type="text"
-          class="form-input"
-          [value]="newJob().recruiter"
-          readonly>
-      </div>
-      <div class="form-group">
-        <label class="form-label">職務說明</label>
-        <textarea
-          class="form-textarea"
-          placeholder="請輸入職務內容與需求..."
-          [value]="newJob().description"
-          (input)="updateJobField('description', $any($event.target).value)">
-        </textarea>
+
+      <!-- 技能專長 -->
+      <div class="form-section">
+        <h4 class="form-section__title">技能專長（選填）</h4>
+        <div class="form-grid form-grid--1">
+          <div class="form-group">
+            <label class="form-label">技能標籤</label>
+            <input type="text" class="form-input" [(ngModel)]="newCandidate().skillsText" placeholder="以逗號分隔，例：Angular, TypeScript, Node.js">
+          </div>
+        </div>
       </div>
     </div>
-    <div class="modal__footer">
-      <button class="btn btn-secondary" (click)="closeModal()" type="button">取消</button>
-      <button class="btn btn-primary" (click)="saveJob()" type="button">確認發布</button>
+    }
+
+    <!-- Tab 4: 附件上傳 -->
+    @if (candidateFormTab() === 4) {
+    <div class="candidate-form">
+      <div class="form-section">
+        <h4 class="form-section__title">履歷附件（選填）</h4>
+        <div class="upload-zone" (click)="fileInput.click()" (dragover)="onDragOver($event)" (drop)="onFileDrop($event)">
+          <input #fileInput type="file" hidden multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" (change)="onFileSelect($event)">
+          <i class="ri-upload-cloud-2-line"></i>
+          <p class="upload-zone__title">點擊或拖曳上傳履歷附件</p>
+          <p class="upload-zone__hint">支援 PDF、Word、圖片格式，單檔最大 10MB</p>
+        </div>
+        @if (candidateAttachments().length > 0) {
+        <div class="attachment-list">
+          @for (file of candidateAttachments(); track $index) {
+          <div class="attachment-item">
+            <i class="ri-file-text-line"></i>
+            <span class="attachment-name">{{ file.name }}</span>
+            <span class="attachment-size">{{ formatFileSize(file.size) }}</span>
+            <button class="btn-icon btn-icon--danger" (click)="removeAttachment($index)" type="button">
+              <i class="ri-close-line"></i>
+            </button>
+          </div>
+          }
+        </div>
+        }
+      </div>
+
+      <div class="form-section">
+        <div class="form-section__header">
+          <h4 class="form-section__title">推薦人（選填）</h4>
+          <button class="btn btn-sm btn-outline" (click)="addRecommender()" type="button">
+            <i class="ri-add-line"></i> 新增推薦人
+          </button>
+        </div>
+        @for (rec of newCandidate().recommenderList; track $index) {
+        <div class="form-card">
+          <div class="form-card__header">
+            <span class="form-card__title">推薦人 {{ $index + 1 }}</span>
+            <button class="btn-icon btn-icon--danger" (click)="removeRecommender($index)" type="button">
+              <i class="ri-delete-bin-line"></i>
+            </button>
+          </div>
+          <div class="form-grid form-grid--3">
+            <div class="form-group">
+              <label class="form-label">姓名</label>
+              <input type="text" class="form-input" [(ngModel)]="rec.name" placeholder="推薦人姓名">
+            </div>
+            <div class="form-group">
+              <label class="form-label">公司/單位</label>
+              <input type="text" class="form-input" [(ngModel)]="rec.corp" placeholder="所屬公司">
+            </div>
+            <div class="form-group">
+              <label class="form-label">職稱</label>
+              <input type="text" class="form-input" [(ngModel)]="rec.jobTitle" placeholder="職稱">
+            </div>
+          </div>
+          <div class="form-grid form-grid--2">
+            <div class="form-group">
+              <label class="form-label">電話</label>
+              <input type="tel" class="form-input" [(ngModel)]="rec.tel" placeholder="聯絡電話">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email</label>
+              <input type="email" class="form-input" [(ngModel)]="rec.email" placeholder="電子郵件">
+            </div>
+          </div>
+        </div>
+        } @empty {
+        <div class="empty-card empty-card--sm">
+          <i class="ri-user-voice-line"></i>
+          <p>尚未新增推薦人</p>
+        </div>
+        }
+      </div>
+    </div>
+    }
+
+    <div class="import-note">
+      <i class="ri-information-line"></i>
+      <span>新增後將自動進行 AI 履歷評分，依據 JD 職能需求計算匹配分數</span>
     </div>
   </div>
+  <div class="modal__footer">
+    <button class="btn btn-secondary" (click)="closeImportModal()" type="button">取消</button>
+    <div class="footer-nav">
+      @if (candidateFormTab() > 1) {
+      <button class="btn btn-outline" (click)="prevCandidateTab()" type="button">
+        <i class="ri-arrow-left-line"></i> 上一步
+      </button>
+      }
+      @if (candidateFormTab() < 4) {
+      <button class="btn btn-primary" (click)="nextCandidateTab()" type="button">
+        下一步 <i class="ri-arrow-right-line"></i>
+      </button>
+      } @else {
+      <button class="btn btn-primary" (click)="submitCandidate()" [disabled]="!isCandidateFormValid()" type="button">
+        <i class="ri-check-line"></i> 確認新增
+      </button>
+      }
+    </div>
+  </div>
+</div>
 }
 
-<!-- Import Resume Modal -->
-@if (showImportModal()) {
-  <div class="modal-backdrop" (click)="closeImportModal()"></div>
-  <div class="modal">
-    <div class="modal__header">
-      <h3 class="modal__title">
-        <i class="ri-upload-cloud-line"></i>
-        匯入履歷
-      </h3>
-      <button class="modal__close" (click)="closeImportModal()" type="button">
-        <i class="ri-close-line"></i>
-      </button>
+<!-- 編輯職缺 Modal -->
+@if (showEditModal()) {
+<div class="modal-backdrop"></div>
+<div class="modal">
+  <div class="modal__header">
+    <h3 class="modal__title">
+      <i class="ri-edit-line"></i>
+      編輯職缺
+    </h3>
+    <button class="modal__close" (click)="closeEditModal()" type="button">
+      <i class="ri-close-line"></i>
+    </button>
+  </div>
+  <div class="modal__body">
+    <div class="form-group">
+      <label class="form-label">職缺名稱 <span class="required">*</span></label>
+      <input type="text" class="form-input" [value]="newJob().title"
+        (input)="updateJobField('title', $any($event.target).value)" placeholder="例如：資深軟體工程師">
     </div>
-    <div class="modal__body">
-      @if (selectedJobForImport(); as job) {
-        <div class="import-info">
-          <p><strong>目標職缺：</strong>{{ job.title }}</p>
-          <p><strong>部門：</strong>{{ job.department }}</p>
+    <div class="form-group">
+      <label class="form-label">部門 <span class="required">*</span></label>
+      <select class="form-select" [value]="newJob().department"
+        (change)="updateJobField('department', $any($event.target).value)">
+        <option value="">請選擇部門</option>
+        <option value="資訊部">資訊部</option>
+        <option value="人資部">人資部</option>
+        <option value="財務部">財務部</option>
+        <option value="業務部">業務部</option>
+        <option value="行銷部">行銷部</option>
+        <option value="專案部">專案部</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">職缺說明</label>
+      <textarea class="form-textarea" rows="4" [value]="newJob().description"
+        (input)="updateJobField('description', $any($event.target).value)" placeholder="輸入職缺說明..."></textarea>
+    </div>
+
+    @if (editingJob()?.job104No) {
+    <!-- 104 職缺設定區塊 -->
+    <div class="job104-settings">
+      <div class="job104-settings__header">
+        <div class="job104-settings__title">
+          <i class="ri-settings-3-line"></i>
+          <span>104 職缺詳細設定</span>
         </div>
-      }
-      <div class="import-options">
-        <div class="import-option">
-          <div class="import-option__icon">
-            <i class="ri-file-upload-line"></i>
+        <button class="btn btn-sm btn-outline-info" (click)="syncFrom104()" [disabled]="syncingFrom104()" type="button">
+          @if (syncingFrom104()) {
+          <i class="ri-loader-4-line spin"></i>
+          同步中…
+          } @else {
+          <i class="ri-refresh-line"></i>
+          從 104 同步
+          }
+        </button>
+      </div>
+
+      <div class="job104-settings__body">
+        <!-- 職缺類型 + 工作地區 -->
+        <div class="form-row">
+          <div class="form-group form-group--half">
+            <label class="form-label">職缺類型 <span class="readonly-hint">(無法修改)</span></label>
+            <select class="form-select" [ngModel]="newJob().job104.role" disabled>
+              <option [ngValue]="1">全職</option>
+              <option [ngValue]="2">兼職</option>
+              <option [ngValue]="3">高階主管</option>
+            </select>
+            <small class="form-hint form-hint--warning">* 104 規定職缺類型於建立後無法變更</small>
           </div>
-          <div class="import-option__content">
-            <h4>上傳履歷檔案</h4>
-            <p>支援 PDF、Word 格式，可一次上傳多份</p>
-            <button class="btn btn-outline" type="button">
-              <i class="ri-upload-2-line"></i>
-              選擇檔案
-            </button>
+
+          <div class="form-group form-group--half">
+            <label class="form-label">工作地區 <span class="required">*</span></label>
+            <select class="form-select" [ngModel]="newJob().job104.addrNo"
+              (ngModelChange)="updateJob104Field('addrNo', $event)">
+              <option [ngValue]="6001001001">台北市</option>
+              <option [ngValue]="6001002001">新北市</option>
+              <option [ngValue]="6001005001">桃園市</option>
+              <option [ngValue]="6001008001">台中市</option>
+              <option [ngValue]="6001014001">台南市</option>
+              <option [ngValue]="6001015001">高雄市</option>
+            </select>
           </div>
         </div>
-        <div class="import-option">
-          <div class="import-option__icon">
-            <i class="ri-global-line"></i>
+
+        <!-- 職務類別 -->
+        <div class="form-group">
+          <label class="form-label">職務類別 <span class="required">*</span></label>
+          @if (newJob().job104.role === 3) {
+          <select class="form-select" [ngModel]="newJob().job104.jobCatSet[0]"
+            (ngModelChange)="updateJob104Field('jobCatSet', [$event])">
+            <option [ngValue]="9001001000">總經理/副總 (General Manager)</option>
+            <option [ngValue]="9001002000">經營管理高階主管</option>
+            <option [ngValue]="9001003000">特別助理 (Special Assistant)</option>
+            <option [ngValue]="9002001000">財務或會計高階主管</option>
+            <option [ngValue]="9002002000">金融高階主管</option>
+            <option [ngValue]="9003001000">法務部門高階主管</option>
+          </select>
+          } @else {
+          <select class="form-select" [ngModel]="newJob().job104.jobCatSet[0]"
+            (ngModelChange)="updateJob104Field('jobCatSet', [$event])">
+            <option [ngValue]="2001001001">經營管理主管</option>
+            <option [ngValue]="2001002001">人力資源主管</option>
+            <option [ngValue]="2001002002">人力資源人員</option>
+            <option [ngValue]="2001002003">教育訓練人員</option>
+          </select>
+          }
+          <small class="form-hint">註：職務類別需與職缺類型匹配 (高階主管需選高階類別)</small>
+        </div>
+
+        <!-- 薪資類型 -->
+        <div class="form-row">
+          <div class="form-group form-group--third">
+            <label class="form-label">薪資類型 <span class="required">*</span></label>
+            <select class="form-select" [ngModel]="newJob().job104.salaryType"
+              (ngModelChange)="updateJob104Field('salaryType', $event)">
+              <option [ngValue]="10">面議</option>
+              @if (newJob().job104.role !== 3) {
+                <option [ngValue]="50">月薪</option>
+                <option [ngValue]="60">年薪</option>
+              }
+            </select>
           </div>
-          <div class="import-option__content">
-            <h4>從人力銀行匯入</h4>
-            <p>連接 104、1111 等人力銀行自動匯入</p>
-            <button class="btn btn-outline" type="button">
-              <i class="ri-link"></i>
-              連接 104 人力銀行
-            </button>
+          @if (newJob().job104.salaryType !== 10 && newJob().job104.role !== 3) {
+          <div class="form-group form-group--third">
+            <label class="form-label">最低薪資 <span class="required">*</span></label>
+            <input type="number" class="form-input" [placeholder]="newJob().job104.salaryType === 50 ? '例：30000' : '例：500000'" 
+              [value]="newJob().job104.salaryLow ?? ''"
+              (input)="updateJob104Field('salaryLow', $any($event.target).value === '' ? null : +$any($event.target).value)">
           </div>
+          <div class="form-group form-group--third">
+            <label class="form-label">最高薪資 <span class="required">*</span></label>
+            <input type="number" class="form-input" [placeholder]="newJob().job104.salaryType === 50 ? '例：50000' : '例：800000'" 
+              [value]="newJob().job104.salaryHigh ?? ''"
+              (input)="updateJob104Field('salaryHigh', $any($event.target).value === '' ? null : +$any($event.target).value)">
+          </div>
+          }
+        </div>
+        <small class="form-hint">
+          @if (newJob().job104.role === 3) {
+            <span style="color: #dc2626;">⚠️ 高階主管職缺只能使用「面議」（104 API 規定）</span>
+          } @else if (newJob().job104.salaryType === 10) {
+            註：選擇「面議」時不需填寫薪資金額
+          } @else {
+            註：選擇「{{ newJob().job104.salaryType === 50 ? '月薪' : '年薪' }}」時必須填寫薪資範圍，否則 104 同步會失敗
+          }
+        </small>
+
+        <!-- 學歷要求 -->
+        <div class="form-group">
+          <label class="form-label">學歷要求 <span class="required">*</span></label>
+          <select class="form-select" [ngModel]="newJob().job104.edu[0]"
+            (ngModelChange)="updateJob104Field('edu', [$event])">
+            <option [ngValue]="1">高中以下</option>
+            <option [ngValue]="2">高中職</option>
+            <option [ngValue]="4">專科</option>
+            <option [ngValue]="8">大學</option>
+            <option [ngValue]="16">碩士</option>
+            <option [ngValue]="32">博士</option>
+          </select>
+        </div>
+
+        <!-- 聯絡資訊 -->
+        <div class="form-row">
+          <div class="form-group form-group--half">
+            <label class="form-label">聯絡人 <span class="required">*</span></label>
+            <input type="text" class="form-input" placeholder="HR" [value]="newJob().job104.contact"
+              (input)="updateJob104Field('contact', $any($event.target).value)">
+          </div>
+          <div class="form-group form-group--half">
+            <label class="form-label">聯絡 Email <span class="required">*</span></label>
+            <input type="email" class="form-input" placeholder="hr@company.com" [value]="newJob().job104.email"
+              (input)="updateJob104Field('email', $any($event.target).value)">
+          </div>
+        </div>
+
+        <!-- 上班時段 -->
+        <div class="form-group">
+          <label class="form-label">上班時段 <span class="required">*</span></label>
+          <div class="work-shift-config">
+            <select class="form-select mb-2" [ngModel]="newJob().job104.workShifts[0].type" (ngModelChange)="updateJob104Field('workShifts', [{
+                  type: $event,
+                  periods: newJob().job104.workShifts[0].periods || [{startHour: 9, startMinute: 0, endHour: 18, endMinute: 0}]
+                }])">
+              <option [ngValue]="1">日班</option>
+              <option [ngValue]="2">夜班</option>
+              <option [ngValue]="4">大夜班</option>
+              <option [ngValue]="8">假日班</option>
+              <option [ngValue]="16">中班</option>
+            </select>
+            <div class="time-range-group">
+              <div class="time-input-group">
+                <input type="number" class="form-input time-input" min="0" max="23" placeholder="9"
+                  [value]="newJob().job104.workShifts[0].periods[0].startHour" (change)="updateJob104Field('workShifts', [{
+                    type: newJob().job104.workShifts[0].type || 1,
+                    periods: [{
+                      startHour: +$any($event.target).value,
+                      startMinute: newJob().job104.workShifts[0].periods[0].startMinute || 0,
+                      endHour: newJob().job104.workShifts[0].periods[0].endHour || 18,
+                      endMinute: newJob().job104.workShifts[0].periods[0].endMinute || 0
+                    }]
+                  }])">
+                <span>:</span>
+                <input type="number" class="form-input time-input" min="0" max="59" step="5" placeholder="00"
+                  [value]="newJob().job104.workShifts[0].periods[0].startMinute" (change)="updateJob104Field('workShifts', [{
+                    type: newJob().job104.workShifts[0].type || 1,
+                    periods: [{
+                      startHour: newJob().job104.workShifts[0].periods[0].startHour || 9,
+                      startMinute: +$any($event.target).value,
+                      endHour: newJob().job104.workShifts[0].periods[0].endHour || 18,
+                      endMinute: newJob().job104.workShifts[0].periods[0].endMinute || 0
+                    }]
+                  }])">
+              </div>
+              <span class="time-separator">至</span>
+              <div class="time-input-group">
+                <input type="number" class="form-input time-input" min="0" max="23" placeholder="18"
+                  [value]="newJob().job104.workShifts[0].periods[0].endHour" (change)="updateJob104Field('workShifts', [{
+                    type: newJob().job104.workShifts[0].type || 1,
+                    periods: [{
+                      startHour: newJob().job104.workShifts[0].periods[0].startHour || 9,
+                      startMinute: newJob().job104.workShifts[0].periods[0].startMinute || 0,
+                      endHour: +$any($event.target).value,
+                      endMinute: newJob().job104.workShifts[0].periods[0].endMinute || 0
+                    }]
+                  }])">
+                <span>:</span>
+                <input type="number" class="form-input time-input" min="0" max="59" step="5" placeholder="00"
+                  [value]="newJob().job104.workShifts[0].periods[0].endMinute" (change)="updateJob104Field('workShifts', [{
+                    type: newJob().job104.workShifts[0].type || 1,
+                    periods: [{
+                      startHour: newJob().job104.workShifts[0].periods[0].startHour || 9,
+                      startMinute: newJob().job104.workShifts[0].periods[0].startMinute || 0,
+                      endHour: newJob().job104.workShifts[0].periods[0].endHour || 18,
+                      endMinute: +$any($event.target).value
+                    }]
+                  }])">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 回覆天數 -->
+        <div class="form-group">
+          <label class="form-label">預計回覆天數</label>
+          <select class="form-select" [value]="newJob().job104.replyDay"
+            (change)="updateJob104Field('replyDay', +$any($event.target).value)">
+            <option [value]="0">不限</option>
+            <option [value]="3">3 天內</option>
+            <option [value]="7">7 天內</option>
+            <option [value]="14">14 天內</option>
+            <option [value]="30">30 天內</option>
+          </select>
         </div>
       </div>
-      <div class="import-note">
-        <i class="ri-information-line"></i>
-        <span>匯入後將自動進行 AI 履歷評分，依據 JD 職能需求計算匹配分數</span>
+    </div>
+
+    <div class="sync-info-box">
+      <i class="ri-link"></i>
+      <span>已同步至 104 (jobNo: {{ editingJob()?.job104No }})</span>
+    </div>
+    }
+
+
+
+  </div>
+  <div class="modal__footer">
+    <button class="btn btn-secondary" (click)="closeEditModal()" type="button">取消</button>
+    <button class="btn btn-primary" (click)="saveEditedJob()" type="button">
+      <i class="ri-save-line"></i>
+      儲存變更
+    </button>
+  </div>
+</div>
+}
+
+<!-- 刪除確認對話框 -->
+@if (showDeleteConfirm()) {
+<div class="modal-backdrop" (click)="cancelDelete()"></div>
+<div class="modal modal--small">
+  <div class="modal__header modal__header--danger">
+    <h3 class="modal__title">
+      <i class="ri-error-warning-line"></i>
+      確認刪除
+    </h3>
+  </div>
+  <div class="modal__body">
+    <p class="confirm-text">確定要刪除職缺「<strong>{{ jobToDelete()?.title }}</strong>」嗎？</p>
+    <p class="confirm-warning">此操作無法復原</p>
+  </div>
+  <div class="modal__footer">
+    <button class="btn btn-secondary" (click)="cancelDelete()" type="button">取消</button>
+    <button class="btn btn-danger" (click)="executeDelete()" type="button">
+      <i class="ri-delete-bin-line"></i>
+      確認刪除
+    </button>
+  </div>
+</div>
+}
+
+<!-- 104 匯入設定 Modal -->
+@if (showImport104SettingsModal()) {
+<div class="modal-backdrop" (click)="closeImport104SettingsModal()"></div>
+<div class="modal modal--medium">
+  <div class="modal__header">
+    <h3 class="modal__title">
+      <i class="ri-settings-4-line"></i>
+      104 履歷匯入設定
+    </h3>
+    <button class="modal__close" (click)="closeImport104SettingsModal()" type="button">
+      <i class="ri-close-line"></i>
+    </button>
+  </div>
+  <div class="modal__body">
+    <!-- 手動更新區塊 -->
+    <div class="import-section">
+      <div class="import-section__header">
+        <i class="ri-refresh-line"></i>
+        <span>手動更新</span>
+      </div>
+      <div class="import-section__content">
+        <p class="import-section__desc">立即從 104 人力銀行同步最新履歷資料</p>
+        <button class="btn btn-primary" (click)="startManualImport()" type="button">
+          <i class="ri-download-cloud-line"></i>
+          立即匯入
+        </button>
       </div>
     </div>
-    <div class="modal__footer">
-      <button class="btn btn-secondary" (click)="closeImportModal()" type="button">取消</button>
-      <button class="btn btn-primary" (click)="importResumes()" type="button">
-        <i class="ri-magic-line"></i>
-        確認匯入並評分
-      </button>
+
+    <!-- 自動匯入排程區塊 -->
+    <div class="import-section">
+      <div class="import-section__header">
+        <i class="ri-calendar-schedule-line"></i>
+        <span>自動匯入排程</span>
+      </div>
+      <div class="import-section__content">
+        <!-- 啟用開關 -->
+        <div class="schedule-toggle">
+          <label class="toggle-label">
+            <input type="checkbox" [checked]="import104Schedule().enabled"
+              (change)="updateImport104Schedule('enabled', $any($event.target).checked)">
+            <span class="toggle-switch"></span>
+            <span class="toggle-text">啟用自動匯入</span>
+          </label>
+        </div>
+
+        @if (import104Schedule().enabled) {
+        <!-- 頻率選擇 -->
+        <div class="schedule-frequency">
+          <label class="form-label">匯入頻率</label>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input type="radio" name="frequency" value="daily" [checked]="import104Schedule().frequency === 'daily'"
+                (change)="updateImport104Schedule('frequency', 'daily')">
+              <span class="radio-mark"></span>
+              <span>每天</span>
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="frequency" value="weekly" [checked]="import104Schedule().frequency === 'weekly'"
+                (change)="updateImport104Schedule('frequency', 'weekly')">
+              <span class="radio-mark"></span>
+              <span>每週</span>
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="frequency" value="monthly"
+                [checked]="import104Schedule().frequency === 'monthly'"
+                (change)="updateImport104Schedule('frequency', 'monthly')">
+              <span class="radio-mark"></span>
+              <span>每月</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 每天設定 -->
+        @if (import104Schedule().frequency === 'daily') {
+        <div class="schedule-detail">
+          <label class="form-label">執行時間</label>
+          <div class="time-picker">
+            <select class="form-select" [value]="import104Schedule().dailyTime"
+              (change)="updateImport104Schedule('dailyTime', $any($event.target).value)">
+              @for (time of timeOptions; track time) {
+              <option [value]="time">{{ time }}</option>
+              }
+            </select>
+          </div>
+        </div>
+        }
+
+        <!-- 每週設定 -->
+        @if (import104Schedule().frequency === 'weekly') {
+        <div class="schedule-detail">
+          <label class="form-label">星期</label>
+          <div class="weekday-picker">
+            @for (day of weekDays; track day.value) {
+            <label class="weekday-checkbox" [class.active]="import104Schedule().weeklyDays.includes(day.value)">
+              <input type="checkbox" [checked]="import104Schedule().weeklyDays.includes(day.value)"
+                (change)="toggleWeekday(day.value)">
+              <span>{{ day.label }}</span>
+            </label>
+            }
+          </div>
+          <label class="form-label">執行時間</label>
+          <div class="time-picker">
+            <select class="form-select" [value]="import104Schedule().weeklyTime"
+              (change)="updateImport104Schedule('weeklyTime', $any($event.target).value)">
+              @for (time of timeOptions; track time) {
+              <option [value]="time">{{ time }}</option>
+              }
+            </select>
+          </div>
+        </div>
+        }
+
+        <!-- 每月設定 -->
+        @if (import104Schedule().frequency === 'monthly') {
+        <div class="schedule-detail">
+          <label class="form-label">日期</label>
+          <div class="monthly-dates">
+            @for (date of import104Schedule().monthlyDates; track $index) {
+            <div class="monthly-date-item">
+              <select class="form-select" [value]="date" (change)="updateMonthlyDate($index, +$any($event.target).value)">
+                @for (d of monthDays; track d) {
+                <option [value]="d">{{ d }} 號</option>
+                }
+              </select>
+              @if (import104Schedule().monthlyDates.length > 1) {
+              <button class="btn-icon btn-icon--danger" (click)="removeMonthlyDate($index)" type="button">
+                <i class="ri-delete-bin-line"></i>
+              </button>
+              }
+            </div>
+            }
+            <button class="btn btn-outline-primary btn--sm" (click)="addMonthlyDate()" type="button">
+              <i class="ri-add-line"></i>
+              新增日期
+            </button>
+          </div>
+          <label class="form-label">執行時間</label>
+          <div class="time-picker">
+            <select class="form-select" [value]="import104Schedule().monthlyTime"
+              (change)="updateImport104Schedule('monthlyTime', $any($event.target).value)">
+              @for (time of timeOptions; track time) {
+              <option [value]="time">{{ time }}</option>
+              }
+            </select>
+          </div>
+        </div>
+        }
+        }
+      </div>
     </div>
   </div>
+  <div class="modal__footer">
+    <button class="btn btn-secondary" (click)="closeImport104SettingsModal()" type="button">取消</button>
+    <button class="btn btn-primary" (click)="saveImport104Schedule()" type="button">
+      <i class="ri-save-line"></i>
+      儲存設定
+    </button>
+  </div>
+</div>
+}
+
+<!-- 104 匯入進度 Modal -->
+@if (showImport104ProgressModal()) {
+<div class="modal-backdrop"></div>
+<div class="modal modal--medium">
+  <div class="modal__header">
+    <h3 class="modal__title">
+      <i class="ri-download-cloud-line import-icon--spinning"></i>
+      104 履歷匯入中...
+    </h3>
+    <button class="modal__close" (click)="cancelImport104()" type="button" [disabled]="!import104Progress().isImporting">
+      <i class="ri-close-line"></i>
+    </button>
+  </div>
+  <div class="modal__body">
+    <p class="import-progress__desc">正在同步已發布職缺的履歷資料</p>
+
+    <!-- 職缺處理列表 -->
+    <div class="import-job-list">
+      @for (job of import104Progress().jobs; track job.jobId) {
+      <div class="import-job-item" [class.import-job-item--completed]="job.status === 'completed'"
+        [class.import-job-item--processing]="job.status === 'processing'"
+        [class.import-job-item--error]="job.status === 'error'">
+        <div class="import-job-item__icon">
+          @if (job.status === 'completed') {
+          <i class="ri-checkbox-circle-fill"></i>
+          } @else if (job.status === 'processing') {
+          <i class="ri-loader-4-line import-icon--spinning"></i>
+          } @else if (job.status === 'error') {
+          <i class="ri-error-warning-fill"></i>
+          } @else {
+          <i class="ri-time-line"></i>
+          }
+        </div>
+        <div class="import-job-item__info">
+          <span class="import-job-item__title">{{ job.jobTitle }}</span>
+          <span class="import-job-item__id">({{ job.jobId }})</span>
+        </div>
+        <div class="import-job-item__status">
+          @if (job.status === 'completed') {
+          <span class="status-text status-text--success">{{ job.resumeCount }} 筆履歷</span>
+          } @else if (job.status === 'processing') {
+          <span class="status-text status-text--processing">處理中...</span>
+          } @else if (job.status === 'error') {
+          <span class="status-text status-text--error">處理失敗</span>
+          } @else {
+          <span class="status-text status-text--pending">待處理</span>
+          }
+        </div>
+      </div>
+      }
+    </div>
+
+    <!-- 進度條 -->
+    <div class="import-progress-bar">
+      <div class="import-progress-bar__info">
+        <span>進度：{{ import104Progress().currentIndex }} / {{ import104Progress().jobs.length }} 職缺</span>
+        <span>{{ getImportProgressPercent() }}%</span>
+      </div>
+      <div class="import-progress-bar__track">
+        <div class="import-progress-bar__fill" [style.width.%]="getImportProgressPercent()"></div>
+      </div>
+    </div>
+
+    <!-- 完成統計 -->
+    @if (!import104Progress().isImporting && import104Progress().currentIndex === import104Progress().jobs.length) {
+    <div class="import-complete-stats">
+      <i class="ri-checkbox-circle-fill"></i>
+      <span>匯入完成！共取得 <strong>{{ import104Progress().totalResumes }}</strong> 筆履歷</span>
+    </div>
+    }
+  </div>
+  <div class="modal__footer">
+    @if (import104Progress().isImporting) {
+    <button class="btn btn-danger" (click)="cancelImport104()" type="button">
+      <i class="ri-stop-circle-line"></i>
+      取消匯入
+    </button>
+    } @else {
+    <button class="btn btn-primary" (click)="closeImport104ProgressModal()" type="button">
+      <i class="ri-check-line"></i>
+      完成
+    </button>
+    }
+  </div>
+</div>
 }

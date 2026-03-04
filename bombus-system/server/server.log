@@ -1,0 +1,7 @@
+
+> bombus-onboarding-api@1.0.0 start
+> node src/index.js
+
+📂 Loaded existing database from: /Users/alifrt/Desktop/Bombus/bombus-system/server/src/db/onboarding.db
+✅ Database initialized successfully
+🚀 Onboarding API Server running on http://localhost:3001

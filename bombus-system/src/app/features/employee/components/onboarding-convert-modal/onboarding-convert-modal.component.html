@@ -1,0 +1,320 @@
+@if (isVisible()) {
+<div class="modal-overlay" (click)="closeModal()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <!-- Header -->
+    <div class="modal-header">
+      <h2>
+        <i class="ri-user-add-line"></i>
+        啟動入職流程
+      </h2>
+      <button class="close-btn" (click)="closeModal()" type="button">
+        <i class="ri-close-line"></i>
+      </button>
+    </div>
+
+    @if (!showSuccess()) {
+    <!-- Form Content -->
+    <div class="modal-body">
+      <!-- 候選人資訊 -->
+      <div class="candidate-info">
+        <div class="avatar">
+          @if (candidate().avatar?.startsWith('http')) {
+          <img [src]="candidate().avatar" [alt]="candidate().name" (error)="$any($event.target).style.display='none'">
+          <span class="avatar-text" style="display:none">{{ candidate().name.charAt(0) }}</span>
+          } @else {
+          <span class="avatar-text">{{ candidate().name.charAt(0) }}</span>
+          }
+        </div>
+        <div class="info">
+          <h3>{{ candidate().name }}</h3>
+          <p class="meta">
+            <span><i class="ri-mail-line"></i> {{ candidate().email }}</span>
+            @if (candidate().phone) {
+            <span><i class="ri-phone-line"></i> {{ candidate().phone }}</span>
+            }
+          </p>
+          <p class="position">應徵職位：{{ candidate().position }}</p>
+        </div>
+        <div class="badge accepted">
+          <i class="ri-check-double-line"></i>
+          已接受 Offer
+        </div>
+      </div>
+
+      <!-- 員工編號預覽 -->
+      <div class="employee-no-preview">
+        <span class="label">員工編號</span>
+        <span class="value">{{ nextEmployeeNo() || '載入中...' }}</span>
+        <span class="hint">系統自動產生</span>
+      </div>
+
+      <!-- 表單 -->
+      <form class="convert-form">
+        <div class="form-row">
+          <!-- 部門 -->
+          <div class="form-group">
+            <label for="department">
+              部門 <span class="required">*</span>
+            </label>
+            <div class="input-with-icon">
+              <i class="ri-building-line"></i>
+              <select id="department" [ngModel]="department()" (ngModelChange)="onDepartmentChange($event)"
+                [ngModelOptions]="{standalone: true}">
+                <option value="">請選擇部門</option>
+                @for (dept of departments(); track dept.name) {
+                <option [value]="dept.name">{{ dept.name }}</option>
+                }
+              </select>
+            </div>
+          </div>
+
+          <!-- 職等 -->
+          <div class="form-group">
+            <label for="gradeSelect">
+              職等 <span class="required">*</span>
+            </label>
+            <div class="input-with-icon">
+              <i class="ri-bar-chart-horizontal-line"></i>
+              <select id="gradeSelect" [ngModel]="gradeNumber()"
+                (ngModelChange)="onGradeChange($event ? +$event : null)" [ngModelOptions]="{standalone: true}">
+                <option [ngValue]="null">請選擇職等</option>
+                @for (g of grades(); track g.grade) {
+                <option [value]="g.grade">Grade {{ g.grade }} - {{ g.title_management }}</option>
+                }
+              </select>
+            </div>
+            @if (selectedGradeInfo()) {
+            <span class="hint">{{ selectedGradeInfo()?.education_requirement }}</span>
+            }
+          </div>
+        </div>
+
+        <div class="form-row">
+          <!-- 職級 -->
+          <div class="form-group">
+            <label for="salaryLevel">職級</label>
+            <div class="input-with-icon">
+              <i class="ri-medal-line"></i>
+              <select id="salaryLevel" [ngModel]="salaryLevelCode()" (ngModelChange)="salaryLevelCode.set($event)"
+                [ngModelOptions]="{standalone: true}">
+                <option value="">請選擇職級</option>
+                @for (level of filteredSalaryLevels(); track level.code) {
+                <option [value]="level.code">{{ level.code }} - NT$ {{ level.salary | number }}</option>
+                }
+              </select>
+            </div>
+            @if (selectedSalaryInfo()) {
+            <span class="hint">薪資：NT$ {{ selectedSalaryInfo()?.salary | number }}</span>
+            }
+          </div>
+
+          <!-- 職位（標準職位） -->
+          <div class="form-group">
+            <label for="position">
+              職位 <span class="required">*</span>
+            </label>
+            <div class="input-with-icon">
+              <i class="ri-briefcase-line"></i>
+              @if (filteredPositions().length > 0) {
+              <select id="position" [ngModel]="position()" (ngModelChange)="onPositionSelect($event)"
+                [ngModelOptions]="{standalone: true}">
+                <option value="">請選擇職位</option>
+                @for (pos of filteredPositions(); track pos.id) {
+                <option [value]="pos.title">{{ pos.title }} ({{ pos.track === 'management' ? '管理職' : '專業職' }})</option>
+                }
+              </select>
+              } @else {
+              <input type="text" id="position" [ngModel]="position()" (ngModelChange)="position.set($event)"
+                [ngModelOptions]="{standalone: true}" placeholder="請輸入職位名稱">
+              }
+            </div>
+            @if (!department() || !gradeNumber()) {
+            <span class="hint warning">請先選擇部門和職等</span>
+            } @else {
+            <span class="hint">用於職等職級對應</span>
+            }
+          </div>
+        </div>
+
+        <div class="form-row">
+          <!-- 職務（具體工作名稱） -->
+          <div class="form-group full-width">
+            <label for="jobTitle">職務</label>
+            <div class="input-with-icon">
+              <i class="ri-file-user-line"></i>
+              <input type="text" id="jobTitle" [ngModel]="jobTitle()" (ngModelChange)="jobTitle.set($event)"
+                [ngModelOptions]="{standalone: true}" placeholder="例如：財務出納、前端工程師">
+            </div>
+            <span class="hint">具體工作名稱，從應徵職位帶入</span>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <!-- 角色 -->
+          <div class="form-group">
+            <label for="role">角色</label>
+            <div class="input-with-icon">
+              <i class="ri-user-settings-line"></i>
+              <select id="role" [ngModel]="role()" (ngModelChange)="role.set($event)"
+                [ngModelOptions]="{standalone: true}">
+                @for (opt of roleOptions; track opt.value) {
+                <option [value]="opt.value">{{ opt.label }}</option>
+                }
+              </select>
+            </div>
+            <span class="hint">
+              @if (role() === 'manager') {
+              季度面談使用主管表單（含管理職能區塊）
+              } @else {
+              季度面談使用員工表單
+              }
+            </span>
+          </div>
+
+          <!-- 直屬主管 -->
+          <div class="form-group">
+            <label for="manager">直屬主管</label>
+            <div class="input-with-icon">
+              <i class="ri-user-star-line"></i>
+              <select id="manager" [ngModel]="managerId()" (ngModelChange)="managerId.set($event)"
+                [ngModelOptions]="{standalone: true}">
+                <option value="">請選擇主管</option>
+                @for (mgr of filteredManagers(); track mgr.id) {
+                <option [value]="mgr.id">{{ mgr.name }} - {{ mgr.position }}</option>
+                }
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <!-- 合約類型 -->
+          <div class="form-group">
+            <label for="contractType">合約類型</label>
+            <div class="input-with-icon">
+              <i class="ri-file-text-line"></i>
+              <select id="contractType" [ngModel]="contractType()" (ngModelChange)="contractType.set($event)"
+                [ngModelOptions]="{standalone: true}">
+                @for (opt of contractTypeOptions; track opt.value) {
+                <option [value]="opt.value">{{ opt.label }}</option>
+                }
+              </select>
+            </div>
+          </div>
+
+          <!-- 工作地點 -->
+          <div class="form-group">
+            <label for="workLocation">工作地點</label>
+            <div class="input-with-icon">
+              <i class="ri-map-pin-line"></i>
+              <input type="text" id="workLocation" [ngModel]="workLocation()" (ngModelChange)="workLocation.set($event)"
+                [ngModelOptions]="{standalone: true}" placeholder="例如：台北總部">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <!-- 報到日期 -->
+          <div class="form-group">
+            <label for="hireDate">
+              報到日期 <span class="required">*</span>
+            </label>
+            <div class="input-with-icon">
+              <i class="ri-calendar-check-line"></i>
+              <input type="date" id="hireDate" [ngModel]="hireDate()" (ngModelChange)="hireDate.set($event)"
+                [ngModelOptions]="{standalone: true}">
+            </div>
+          </div>
+
+          <!-- 試用期 -->
+          <div class="form-group">
+            <label for="probationMonths">試用期</label>
+            <div class="input-with-icon">
+              <i class="ri-time-line"></i>
+              <select id="probationMonths" [ngModel]="probationMonths()" (ngModelChange)="probationMonths.set(+$event)"
+                [ngModelOptions]="{standalone: true}">
+                <option [value]="1">1 個月</option>
+                <option [value]="2">2 個月</option>
+                <option [value]="3">3 個月</option>
+                <option [value]="6">6 個月</option>
+              </select>
+            </div>
+            <span class="hint">
+              試用期結束：{{ probationEndDate() || '-' }}
+            </span>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Footer -->
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeModal()" type="button">
+        取消
+      </button>
+      <button class="btn-primary" (click)="submit()" [disabled]="!canSubmit()" type="button">
+        @if (loading()) {
+        <i class="ri-loader-4-line spin"></i> 處理中...
+        } @else {
+        <i class="ri-check-line"></i> 確認轉入
+        }
+      </button>
+    </div>
+    } @else {
+    <!-- Success View -->
+    <div class="modal-body success-view">
+      <div class="success-icon">
+        <i class="ri-checkbox-circle-fill"></i>
+      </div>
+      <h3>入職流程已啟動</h3>
+      <p class="success-message">
+        <strong>{{ convertResult()?.data?.name }}</strong> 已成功轉為試用期員工
+      </p>
+
+      <div class="result-info">
+        <div class="info-item">
+          <span class="label">員工編號</span>
+          <span class="value">{{ convertResult()?.data?.employee_no }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">部門 / 職位</span>
+          <span class="value">{{ convertResult()?.data?.department }} / {{ convertResult()?.data?.position }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">報到日期</span>
+          <span class="value">{{ convertResult()?.data?.hire_date }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">試用期結束</span>
+          <span class="value">{{ convertResult()?.data?.probation_end_date }}</span>
+        </div>
+      </div>
+
+      @if (convertResult()?.data?.onboarding_links?.length) {
+      <div class="onboarding-links">
+        <h4><i class="ri-link"></i> 入職文件簽署連結</h4>
+        <p class="links-hint">請將以下連結發送給新員工，以便其完成入職文件簽署</p>
+        @for (link of convertResult()?.data?.onboarding_links; track link.token) {
+        <div class="link-item">
+          <span class="template-name">{{ link.template_name }}</span>
+          <div class="link-actions">
+            <code>{{ link.url }}</code>
+            <button class="copy-btn" (click)="copyLink(link.url)" type="button">
+              <i class="ri-file-copy-line"></i>
+            </button>
+          </div>
+        </div>
+        }
+      </div>
+      }
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-primary" (click)="closeModal()" type="button">
+        <i class="ri-check-line"></i> 完成
+      </button>
+    </div>
+    }
+  </div>
+</div>
+}

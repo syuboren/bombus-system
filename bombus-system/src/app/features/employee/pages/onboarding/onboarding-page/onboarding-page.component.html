@@ -1,0 +1,36 @@
+<app-header pageTitle="入職管理" [breadcrumbs]="['首頁', '員工管理', '入職管理']">
+</app-header>
+
+<div class="onboarding-page">
+  <!-- Tab 導航 -->
+  <div class="tab-navigation">
+    @for (tab of tabs; track tab.id) {
+    <button 
+      class="tab-btn" 
+      [class.active]="activeTab() === tab.id"
+      (click)="setActiveTab(tab.id)"
+      type="button">
+      <i [class]="tab.icon"></i>
+      <span>{{ tab.label }}</span>
+    </button>
+    }
+  </div>
+
+  <!-- Tab 內容 -->
+  <div class="tab-content">
+    @switch (activeTab()) {
+      @case ('progress') {
+        <app-onboarding-progress-page></app-onboarding-progress-page>
+      }
+      @case ('templates') {
+        <app-onboarding-templates-page></app-onboarding-templates-page>
+      }
+      @case ('my-documents') {
+        <app-onboarding-documents-page></app-onboarding-documents-page>
+      }
+      @case ('approval') {
+        <app-onboarding-approval-page></app-onboarding-approval-page>
+      }
+    }
+  </div>
+</div>

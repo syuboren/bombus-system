@@ -14,6 +14,7 @@ import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { NotificationService } from '../../../../core/services/notification.service';
 import { EmployeeService } from '../../services/employee.service';
+import { OnboardingService } from '../../services/onboarding.service';
 import {
   Employee,
   EmployeeDetail,
@@ -21,6 +22,7 @@ import {
   EmployeeDocument,
   AuditLog
 } from '../../models/talent-pool.model';
+import { Submission, UploadDocument } from '../../models/onboarding.model';
 import * as echarts from 'echarts';
 
 @Component({
@@ -35,6 +37,7 @@ export class ProfilePageComponent implements OnInit, OnDestroy {
   @ViewChild('roiChart') roiChartRef!: ElementRef<HTMLDivElement>;
 
   private employeeService = inject(EmployeeService);
+  private onboardingService = inject(OnboardingService);
   private notificationService = inject(NotificationService);
 
   private roiChart: echarts.ECharts | null = null;
@@ -47,6 +50,10 @@ export class ProfilePageComponent implements OnInit, OnDestroy {
   expiringDocuments = signal<EmployeeDocument[]>([]);
   auditLogs = signal<AuditLog[]>([]);
   departmentROI = signal<{ department: string; avgROI: number; employeeCount: number }[]>([]);
+  
+  // Onboarding Documents
+  signatureSubmissions = signal<Submission[]>([]);
+  uploadedDocuments = signal<UploadDocument[]>([]);
 
   // Filters
   searchQuery = signal<string>('');
@@ -55,7 +62,7 @@ export class ProfilePageComponent implements OnInit, OnDestroy {
 
   // UI State
   loading = signal<boolean>(false);
-  activeTab = signal<'info' | 'history' | 'documents' | 'performance' | 'roi'>('info');
+  activeTab = signal<'info' | 'history' | 'documents' | 'training' | 'performance' | 'roi'>('info');
 
   // Computed
   filteredEmployees = computed(() => {
@@ -133,6 +140,17 @@ export class ProfilePageComponent implements OnInit, OnDestroy {
           this.auditLogs.set(logs);
         });
 
+        // Load onboarding documents
+        this.onboardingService.getEmployeeSubmissions(employee.id).subscribe({
+          next: (submissions) => this.signatureSubmissions.set(submissions),
+          error: () => this.signatureSubmissions.set([])
+        });
+
+        this.onboardingService.getUploadedDocuments(employee.id).subscribe({
+          next: (documents) => this.uploadedDocuments.set(documents),
+          error: () => this.uploadedDocuments.set([])
+        });
+
         // Initialize ROI chart after a brief delay to ensure DOM is ready
         setTimeout(() => this.initROIChart(), 100);
       }
@@ -143,7 +161,7 @@ export class ProfilePageComponent implements OnInit, OnDestroy {
     this.selectedEmployee.set(null);
   }
 
-  setActiveTab(tab: 'info' | 'history' | 'documents' | 'performance' | 'roi'): void {
+  setActiveTab(tab: 'info' | 'history' | 'documents' | 'training' | 'performance' | 'roi'): void {
     this.activeTab.set(tab);
     if (tab === 'roi') {
       setTimeout(() => this.initROIChart(), 100);
@@ -154,11 +172,28 @@ export class ProfilePageComponent implements OnInit, OnDestroy {
     const employee = this.selectedEmployee();
     if (!employee || !this.roiChartRef?.nativeElement) return;
 
-    if (!this.roiChart) {
-      this.roiChart = echarts.init(this.roiChartRef.nativeElement);
+    const roi = employee.roi;
+    if (!roi) return;
+
+    // 確保 echarts 容器有正確的尺寸
+    const container = this.roiChartRef.nativeElement;
+    if (container.offsetWidth === 0 || container.offsetHeight === 0) {
+      // 延遲重試
+      setTimeout(() => this.initROIChart(), 200);
+      return;
     }
 
-    const roi = employee.roi;
+    // 銷毀舊的圖表實例
+    if (this.roiChart) {
+      this.roiChart.dispose();
+    }
+    
+    this.roiChart = echarts.init(container);
+
+    const currentRoi = Math.round(roi.roi || 0);
+    const deptAvg = roi.comparison?.departmentAvg || 150;
+    const companyAvg = roi.comparison?.companyAvg || 140;
+
     const option: echarts.EChartsOption = {
       tooltip: {
         trigger: 'axis',
@@ -192,20 +227,20 @@ export class ProfilePageComponent implements OnInit, OnDestroy {
         {
           name: '個人 ROI',
           type: 'bar',
-          data: [180, 210, 235, roi.roi],
+          data: [Math.round(currentRoi * 0.7), Math.round(currentRoi * 0.85), Math.round(currentRoi * 0.95), currentRoi],
           itemStyle: { color: '#8DA399' }
         },
         {
           name: '部門平均',
           type: 'line',
-          data: [165, 170, 175, roi.comparison.departmentAvg],
+          data: [Math.round(deptAvg * 0.9), Math.round(deptAvg * 0.95), Math.round(deptAvg * 0.98), deptAvg],
           lineStyle: { color: '#7F9CA0' },
           itemStyle: { color: '#7F9CA0' }
         },
         {
           name: '公司平均',
           type: 'line',
-          data: [150, 155, 160, roi.comparison.companyAvg],
+          data: [Math.round(companyAvg * 0.9), Math.round(companyAvg * 0.95), Math.round(companyAvg * 0.98), companyAvg],
           lineStyle: { color: '#9A8C98', type: 'dashed' },
           itemStyle: { color: '#9A8C98' }
         }
@@ -233,6 +268,17 @@ export class ProfilePageComponent implements OnInit, OnDestroy {
       'terminated': '資遣'
     };
     return labels[status] || status;
+  }
+
+  /**
+   * 格式化職等顯示
+   * grade 值為 1-7，顯示為 "Grade X"
+   */
+  getGradeDisplay(grade: string | number | undefined): string {
+    if (!grade) return '-';
+    const gradeNum = typeof grade === 'string' ? parseInt(grade, 10) : grade;
+    if (isNaN(gradeNum)) return grade?.toString() || '-';
+    return `Grade ${gradeNum}`;
   }
 
   getDocumentStatusLabel(status: string): string {
@@ -290,12 +336,13 @@ export class ProfilePageComponent implements OnInit, OnDestroy {
     return labels[action] || action;
   }
 
-  formatDate(date: Date | undefined): string {
+  formatDate(date: Date | string | undefined): string {
     if (!date) return '-';
     return new Date(date).toLocaleDateString('zh-TW');
   }
 
-  formatDateTime(date: Date): string {
+  formatDateTime(date: Date | string | undefined): string {
+    if (!date) return '-';
     return new Date(date).toLocaleString('zh-TW');
   }
 
@@ -305,5 +352,94 @@ export class ProfilePageComponent implements OnInit, OnDestroy {
       currency: 'TWD',
       maximumFractionDigits: 0
     }).format(amount);
+  }
+
+  getSubmissionStatusLabel(submission: Submission): string {
+    // 優先使用 approval_status（審核狀態）
+    if (submission.approval_status) {
+      const approvalLabels: Record<string, string> = {
+        'PENDING': '審核中',
+        'APPROVED': '已核准',
+        'REJECTED': '已退回'
+      };
+      return approvalLabels[submission.approval_status] || submission.approval_status;
+    }
+
+    // 如果沒有 approval_status，使用簽署狀態
+    const statusLabels: Record<string, string> = {
+      'DRAFT': '待填寫',
+      'SIGNED': '已簽署',
+      'COMPLETED': '已完成'
+    };
+    return statusLabels[submission.status] || submission.status;
+  }
+
+  getSubmissionStatusClass(submission: Submission): string {
+    // 優先使用 approval_status（審核狀態）
+    if (submission.approval_status) {
+      const approvalClasses: Record<string, string> = {
+        'PENDING': 'status-pending',
+        'APPROVED': 'status-approved',
+        'REJECTED': 'status-rejected'
+      };
+      return approvalClasses[submission.approval_status] || '';
+    }
+
+    // 如果沒有 approval_status，使用簽署狀態
+    const statusClasses: Record<string, string> = {
+      'DRAFT': 'status-draft',
+      'SIGNED': 'status-submitted',
+      'COMPLETED': 'status-approved'
+    };
+    return statusClasses[submission.status] || '';
+  }
+
+  getUploadTypeLabel(type: string): string {
+    const labels: Record<string, string> = {
+      'id_card': '身分證件',
+      'bank_account': '銀行帳戶',
+      'health_report': '體檢報告',
+      'photo': '大頭照',
+      'education_cert': '學經歷證明',
+      'other': '其他文件'
+    };
+    return labels[type] || type;
+  }
+
+  downloadSignedDocument(submission: Submission): void {
+    if (submission.status !== 'SIGNED' && submission.status !== 'COMPLETED') {
+      this.notificationService.error('文件尚未簽署完成');
+      return;
+    }
+    // 使用 token 打開簽署頁面，用戶可以在該頁面使用瀏覽器列印功能存為 PDF
+    const viewUrl = `/employee/onboarding/sign/${submission.token}`;
+    window.open(viewUrl, '_blank');
+    this.notificationService.info('請在開啟的頁面中使用瀏覽器列印功能（Ctrl+P / Cmd+P）存為 PDF');
+  }
+
+  viewSignedDocument(submission: Submission): void {
+    if (submission.status !== 'SIGNED' && submission.status !== 'COMPLETED') {
+      this.notificationService.error('文件尚未簽署完成');
+      return;
+    }
+    // 使用 token 打開簽署頁面的閱覽模式
+    const viewUrl = `/employee/onboarding/sign/${submission.token}`;
+    window.open(viewUrl, '_blank');
+  }
+
+  downloadUploadedDocument(document: UploadDocument): void {
+    if (!document.fileUrl) {
+      this.notificationService.error('文件不存在');
+      return;
+    }
+    window.open(document.fileUrl, '_blank');
+  }
+
+  viewUploadedDocument(document: UploadDocument): void {
+    if (!document.fileUrl) {
+      this.notificationService.error('文件不存在');
+      return;
+    }
+    window.open(document.fileUrl, '_blank');
   }
 }

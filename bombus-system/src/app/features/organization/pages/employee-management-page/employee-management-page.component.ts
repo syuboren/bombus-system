@@ -9,6 +9,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
+import { HasPermissionDirective } from '../../../../shared/directives/has-permission.directive';
 import { OrganizationService } from '../../services/organization.service';
 import { Company, Department, Employee, EmployeePosition } from '../../models/organization.model';
 
@@ -17,7 +18,7 @@ type ViewMode = 'card' | 'list';
 @Component({
   selector: 'app-employee-management-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, HeaderComponent],
+  imports: [CommonModule, FormsModule, HeaderComponent, HasPermissionDirective],
   templateUrl: './employee-management-page.component.html',
   styleUrl: './employee-management-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush

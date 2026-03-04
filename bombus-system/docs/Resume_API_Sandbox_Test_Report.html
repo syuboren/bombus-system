@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume API Sandbox 測試報告</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            line-height: 1.6;
+            color: #24292e;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f6f8fa;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 45px;
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        h1,
+        h2,
+        h3 {
+            margin-top: 24px;
+            margin-bottom: 16px;
+            font-weight: 600;
+            line-height: 1.25;
+        }
+
+        h1 {
+            padding-bottom: 0.3em;
+            font-size: 2em;
+            border-bottom: 1px solid #eaecef;
+        }
+
+        h2 {
+            padding-bottom: 0.3em;
+            font-size: 1.5em;
+            border-bottom: 1px solid #eaecef;
+        }
+
+        h3 {
+            font-size: 1.25em;
+        }
+
+        ul,
+        ol {
+            padding-left: 2em;
+        }
+
+        code {
+            padding: 0.2em 0.4em;
+            margin: 0;
+            font-size: 85%;
+            background-color: rgba(27, 31, 35, 0.05);
+            border-radius: 3px;
+            font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+        }
+
+        pre {
+            padding: 16px;
+            overflow: auto;
+            font-size: 85%;
+            line-height: 1.45;
+            background-color: #f6f8fa;
+            border-radius: 3px;
+        }
+
+        pre code {
+            display: inline;
+            max-width: auto;
+            padding: 0;
+            margin: 0;
+            overflow: visible;
+            line-height: inherit;
+            word-wrap: normal;
+            background-color: initial;
+            border: 0;
+        }
+
+        blockquote {
+            padding: 0 1em;
+            color: #6a737d;
+            border-left: 0.25em solid #dfe2e5;
+            margin: 0;
+        }
+
+        hr {
+            height: 0.25em;
+            padding: 0;
+            margin: 24px 0;
+            background-color: #e1e4e8;
+            border: 0;
+        }
+
+        table {
+            border-spacing: 0;
+            border-collapse: collapse;
+            margin-bottom: 16px;
+        }
+
+        table th,
+        table td {
+            padding: 6px 13px;
+            border: 1px solid #dfe2e5;
+        }
+
+        table tr:nth-child(2n) {
+            background-color: #f6f8fa;
+        }
+
+        details {
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin-bottom: 16px;
+        }
+
+        summary {
+            cursor: pointer;
+            font-weight: 600;
+            outline: none;
+        }
+
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Resume API Sandbox 測試報告</h1>
+
+        <h2>測試概要</h2>
+        <p>本報告旨在驗證 Resume API Sandbox 的功能完整性。測試範圍涵蓋三個主要 API 端點：</p>
+        <ol>
+            <li><code>/queryList</code>: 取得履歷列表</li>
+            <li><code>/query</code>: 取得單筆履歷詳情</li>
+            <li><code>/queryBatch</code>: 批量取得履歷詳情</li>
+        </ol>
+
+        <p>測試針對下列三種模擬情境進行驗證：</p>
+        <ul>
+            <li><strong>主動應徵履歷</strong></li>
+            <li><strong>配對履歷</strong></li>
+            <li><strong>儲存履歷</strong></li>
+        </ul>
+
+        <hr>
+
+        <h2>測試詳細結果</h2>
+
+        <h3>1. 主動應徵履歷 (Active Application)</h3>
+        <ul>
+            <li><strong>測試參數</strong>:
+                <ul>
+                    <li><code>date</code>: 2025-04-25</li>
+                    <li><code>startTime</code>: 12</li>
+                    <li><code>endTime</code>: 13</li>
+                </ul>
+            </li>
+            <li><strong>驗證結果</strong>:
+                <ul>
+                    <li><strong><code>/queryList</code></strong>: <span class="success">✅ 成功</span>。共取得
+                        <strong>2</strong> 筆 ID。</li>
+                    <li><strong><code>/query</code></strong>: <span class="success">✅ 成功</span>。成功讀取求職者「張員瑛」的履歷詳情。</li>
+                    <li><strong><code>/queryBatch</code></strong>: <span class="success">✅ 成功</span>。成功批量讀取
+                        <strong>2</strong> 筆履歷詳情。</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h4>📄 回傳資料範例 (Response Data)</h4>
+
+        <p><strong><code>/queryList</code> Response:</strong></p>
+        <details>
+            <summary>點擊展開 JSON 範例</summary>
+            <pre><code>{
+  "data": {
+    "total": 2,
+    "queryDate": "2025-04-25",
+    "timePeriod": "12~13",
+    "idList": [
+      "3781639126814",
+      "3781639123953"
+    ]
+  }
+}</code></pre>
+        </details>
+
+        <p><strong><code>/query</code> Response (求職者：張員瑛):</strong></p>
+        <details>
+            <summary>點擊展開 JSON 範例</summary>
+            <pre><code>{
+  "data": {
+    "list": [
+      {
+        "resumeId": "3781639126814",
+        "fullName": "張員瑛",
+        "gender": "女",
+        "email": "cprofile_stg053@104.com.tw",
+        "cellPhone": "0900000000",
+        "address": "台北市大安區",
+        "birthday": "2004-08-31 00:00:00",
+        "regSource": "104主動應徵",
+        "employmentStatus": "在職中",
+        "militaryStatus": "免役",
+        "introduction": "&lt;p&gt;您好，我是張員瑛。&lt;/p&gt;",
+        "motto": "",
+        "characteristic": "",
+        "education": [
+          {
+            "schoolName": "首爾表演藝術高中",
+            "degreeLevel": "高中",
+            "major": "實用音樂科",
+            "degreeStatus": "畢業",
+            "schoolCountry": "韓國",
+            "startDate": "2020-03-01 00:00:00",
+            "endDate": "2023-02-01 00:00:00"
+          }
+        ],
+        "seniority": "1~3年",
+        "experiences": [
+          {
+            "firmName": "STARSHIP娛樂",
+            "jobName": "藝人",
+            "jobRole": "全職",
+            "startDate": "2018-08-01 00:00:00",
+            "endDate": "",
+            "jobDesc": "&lt;p&gt;IZ*ONE 成員 (2018-2021)&lt;/p&gt;&lt;p&gt;IVE 成員 (2021-至今)&lt;/p&gt;"
+          }
+        ],
+         "jobRequirement": {
+            "jobCharacteristic": "全職",
+            "workInterval": "日班",
+            "startDateOpt": "隨時",
+            "wage": "面議",
+            "workPlace": "台北市",
+            "remoteWork": "不拘",
+            "jobName": "演藝人員",
+            "jobCategory": "演藝相關",
+            "industryCategory": "文教育樂",
+            "workDesc": "&lt;p&gt;尋求演藝相關工作機會&lt;/p&gt;"
+        }
+      }
+    ]
+  }
+}</code></pre>
+        </details>
+
+        <hr>
+
+        <h3>2. 配對履歷 (Matched Resume)</h3>
+        <ul>
+            <li><strong>測試參數</strong>:
+                <ul>
+                    <li><code>date</code>: 2025-08-22</li>
+                    <li><code>startTime</code>: 0</li>
+                    <li><code>endTime</code>: 24</li>
+                </ul>
+            </li>
+            <li><strong>驗證結果</strong>:
+                <ul>
+                    <li><strong><code>/queryList</code></strong>: <span class="success">✅ 成功</span>。共取得
+                        <strong>6</strong> 筆 ID。</li>
+                    <li><strong><code>/query</code></strong>: <span class="success">✅ 成功</span>。成功讀取求職者「HsuLinda」的履歷詳情。
+                    </li>
+                </ul>
+            </li>
+        </ul>
+
+        <h4>📄 回傳資料範例 (Response Data)</h4>
+
+        <p><strong><code>/queryList</code> Response:</strong></p>
+        <details>
+            <summary>點擊展開 JSON 範例</summary>
+            <pre><code>{
+  "data": {
+    "total": 6,
+    "queryDate": "2025-08-22",
+    "timePeriod": "0~24",
+    "idList": [
+      "20000000014051",
+      "3781639128202",
+      "3781639120729",
+      "3781639126814",
+      "3781639128229",
+      "3781639128238"
+    ]
+  }
+}</code></pre>
+        </details>
+
+        <p><strong><code>/query</code> Response (求職者：HsuLinda):</strong></p>
+        <details>
+            <summary>點擊展開 JSON 範例</summary>
+            <pre><code>{
+  "data": {
+    "list": [
+      {
+        "resumeId": "20000000014051",
+        "fullName": "HsuLinda",
+        "gender": "女",
+        "email": "linda.hsu@104.com.tw",
+        "cellPhone": "0988888888",
+        "address": "新北市新店區",
+        "birthday": "1990-01-01 00:00:00",
+        "employmentStatus": "在職中",
+        "education": [
+            {
+                "schoolName": "輔仁大學",
+                "degreeLevel": "大學",
+                "major": "經濟學系",
+                "degreeStatus": "畢業"
+            }
+        ],
+        "experiences": [
+            {
+                "firmName": "104資訊科技",
+                "jobName": "資深工程師",
+                "startDate": "2015-01-01 00:00:00"
+            }
+        ]
+      }
+    ]
+  }
+}</code></pre>
+        </details>
+
+        <hr>
+
+        <h3>3. 儲存履歷 (Saved Resume)</h3>
+        <ul>
+            <li><strong>測試參數</strong>:
+                <ul>
+                    <li><code>date</code>: 2025-11-05</li>
+                    <li><strong>startTime</strong>: 16</li>
+                    <li><strong>endTime</strong>: 17</li>
+                </ul>
+            </li>
+            <li><strong>驗證結果</strong>:
+                <ul>
+                    <li><strong><code>/queryList</code></strong>: <span class="success">✅ 成功</span>。共取得
+                        <strong>42</strong> 筆 ID。</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h4>📄 回傳資料範例 (Response Data)</h4>
+
+        <p><strong><code>/queryList</code> Response (前5筆):</strong></p>
+        <details>
+            <summary>點擊展開 JSON 範例</summary>
+            <pre><code>{
+  "data": {
+    "total": 42,
+    "queryDate": "2025-11-05",
+    "timePeriod": "16~17",
+    "idList": [
+      "20000000014051",
+      "3781639124529",
+      "3781639099806",
+      "3781639128825",
+      "3781639124801",
+      "..."
+    ]
+  }
+}</code></pre>
+        </details>
+
+        <hr>
+
+        <h2>結論</h2>
+        <p>Resume API Sandbox 各項功能與資料回傳均正常，格式符合規格說明。</p>
+        <ul>
+            <li>資料完整性驗證通過。</li>
+            <li>速率限制機制驗證確認。</li>
+        </ul>
+    </div>
+</body>
+
+</html>

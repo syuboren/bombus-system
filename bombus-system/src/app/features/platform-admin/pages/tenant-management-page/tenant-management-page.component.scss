@@ -1,0 +1,565 @@
+@import '../../../../../assets/styles/variables';
+@import '../../../../../assets/styles/mixins';
+
+$module-color: $color-brand-main;
+
+.tenant-management-page {
+  padding: $spacing-lg;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+// ---------------------------------------------------------------
+// Page Header
+// ---------------------------------------------------------------
+.page-header {
+  @include flex-between;
+  margin-bottom: $spacing-xl;
+
+  .page-title {
+    font-size: $font-size-2xl;
+    font-weight: $font-weight-bold;
+    color: $color-text-dark;
+    margin: 0;
+  }
+}
+
+.btn-primary {
+  @include button-primary;
+}
+
+.btn-secondary {
+  @include button-secondary;
+}
+
+.btn-danger {
+  @include button-base;
+  background: $color-error;
+  color: white;
+
+  &:hover:not(:disabled) {
+    background: darken($color-error, 8%);
+  }
+}
+
+// ---------------------------------------------------------------
+// Stats Row
+// ---------------------------------------------------------------
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $spacing-md;
+  margin-bottom: $spacing-xl;
+
+  @include media-max-md {
+    grid-template-columns: 1fr;
+  }
+}
+
+.stat-card {
+  @include card;
+  padding: $spacing-lg;
+  text-align: center;
+  border: 1px solid $color-soft-gray;
+
+  .stat-value {
+    display: block;
+    font-size: $font-size-3xl;
+    font-weight: $font-weight-bold;
+    color: $color-text-dark;
+    line-height: 1;
+    margin-bottom: $spacing-xs;
+  }
+
+  .stat-label {
+    display: block;
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+  }
+
+  &--active .stat-value {
+    color: $color-success;
+  }
+
+  &--warning .stat-value {
+    color: darken($color-warning, 15%);
+  }
+}
+
+// ---------------------------------------------------------------
+// Filter Bar
+// ---------------------------------------------------------------
+.filter-bar {
+  @include filter-bar($module-color);
+  flex-wrap: wrap;
+  gap: $spacing-md;
+}
+
+.search-box {
+  @include search-box;
+  flex: 1;
+  min-width: 200px;
+}
+
+.status-tabs {
+  display: flex;
+  gap: $spacing-xs;
+  flex-wrap: wrap;
+}
+
+.tab {
+  @include button-base;
+  background: transparent;
+  color: $color-text-secondary;
+  padding: 6px $spacing-md;
+  border-radius: $radius-full;
+  font-size: $font-size-sm;
+
+  &:hover {
+    background: $color-cloud-gray;
+    color: $color-text-primary;
+  }
+
+  &--active {
+    background: $module-color;
+    color: white;
+
+    &:hover {
+      background: $color-brand-dark;
+      color: white;
+    }
+  }
+}
+
+// ---------------------------------------------------------------
+// Data Table
+// ---------------------------------------------------------------
+.data-table-wrapper {
+  @include card;
+  border: 1px solid $color-soft-gray;
+  overflow-x: auto;
+  @include custom-scrollbar;
+}
+
+.data-table {
+  @include data-table($module-color);
+}
+
+// ---------------------------------------------------------------
+// Tenant Identity (Table Cell)
+// ---------------------------------------------------------------
+.tenant-name-cell {
+  min-width: 160px;
+}
+
+.tenant-identity {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.tenant-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: $radius-md;
+  object-fit: cover;
+  border: 1px solid $color-soft-gray;
+  flex-shrink: 0;
+}
+
+.tenant-logo-placeholder {
+  width: 32px;
+  height: 32px;
+  border-radius: $radius-md;
+  background: $color-cloud-gray;
+  @include flex-center;
+  flex-shrink: 0;
+
+  i {
+    font-size: 16px;
+    color: $color-text-secondary;
+  }
+}
+
+.tenant-name {
+  font-weight: $font-weight-medium;
+  color: $color-text-dark;
+}
+
+.tenant-slug {
+  font-family: $font-family-mono;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.actions-cell {
+  white-space: nowrap;
+}
+
+.action-btn {
+  @include button-icon;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+
+  &--warning {
+    color: darken($color-warning, 15%);
+
+    &:hover {
+      background: $color-warning-light;
+      color: darken($color-warning, 20%);
+    }
+  }
+
+  &--success {
+    color: $color-success;
+
+    &:hover {
+      background: $color-success-light;
+      color: darken($color-success, 10%);
+    }
+  }
+
+  &--danger {
+    color: $color-error;
+
+    &:hover {
+      background: $color-error-light;
+      color: darken($color-error, 10%);
+    }
+  }
+}
+
+// ---------------------------------------------------------------
+// Status Badge
+// ---------------------------------------------------------------
+.status-badge {
+  @include status-badge;
+}
+
+.status--active {
+  @include status-badge-color($color-success);
+}
+
+.status--warning {
+  @include status-badge-color(darken($color-warning, 15%));
+}
+
+.status--danger {
+  @include status-badge-color($color-error);
+}
+
+// ---------------------------------------------------------------
+// Pagination
+// ---------------------------------------------------------------
+.pagination {
+  @include flex-center;
+  gap: $spacing-md;
+  margin-top: $spacing-lg;
+}
+
+.page-btn {
+  @include button-icon;
+  width: 36px;
+  height: 36px;
+}
+
+.page-info {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+// ---------------------------------------------------------------
+// Loading & Empty States
+// ---------------------------------------------------------------
+.loading-state {
+  @include loading-state;
+  flex-direction: column;
+
+  .spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid $color-soft-gray;
+    border-top-color: $module-color;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  p {
+    margin: $spacing-md 0 0;
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+  }
+}
+
+.empty-state {
+  @include empty-state;
+}
+
+// ---------------------------------------------------------------
+// Modal
+// ---------------------------------------------------------------
+.modal-overlay {
+  @include modal-backdrop;
+}
+
+.modal-container {
+  @include modal-container(600px);
+  @include fade-in;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+
+  &--sm {
+    max-width: 440px;
+  }
+}
+
+.modal-header {
+  @include modal-header;
+
+  &--danger {
+    border-bottom-color: $color-error;
+
+    .modal-title {
+      color: $color-error;
+
+      i {
+        margin-right: $spacing-sm;
+      }
+    }
+  }
+}
+
+.modal-title {
+  @include modal-title;
+}
+
+.modal-close {
+  @include modal-close;
+}
+
+.modal-body {
+  @include modal-body;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.modal-footer {
+  @include modal-footer;
+}
+
+// ---------------------------------------------------------------
+// Form
+// ---------------------------------------------------------------
+.form-group {
+  margin-bottom: $spacing-lg;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.form-label {
+  display: block;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  margin-bottom: $spacing-xs;
+}
+
+.form-input {
+  @include input-base;
+}
+
+.form-divider {
+  @include flex-center;
+  margin: $spacing-xl 0 $spacing-lg;
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: $color-soft-gray;
+  }
+
+  span {
+    position: relative;
+    padding: 0 $spacing-md;
+    background: $color-pure-white;
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    font-weight: $font-weight-medium;
+  }
+}
+
+// ---------------------------------------------------------------
+// Logo Upload
+// ---------------------------------------------------------------
+.logo-upload-area {
+  display: flex;
+  align-items: center;
+}
+
+.logo-upload-trigger {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-xs;
+  width: 120px;
+  height: 120px;
+  border: 2px dashed $color-soft-gray;
+  border-radius: $radius-lg;
+  cursor: pointer;
+  transition: border-color 200ms ease, background 200ms ease;
+  background: rgba($color-cloud-gray, 0.3);
+
+  &:hover {
+    border-color: $color-brand-light;
+    background: rgba($color-brand-main, 0.04);
+  }
+
+  &--loading {
+    pointer-events: none;
+    opacity: 0.7;
+  }
+
+  i {
+    font-size: 28px;
+    color: $color-text-secondary;
+  }
+
+  span {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    text-align: center;
+  }
+
+  .logo-hint {
+    font-size: 11px;
+    color: $color-muted-gray;
+    padding: 0 $spacing-sm;
+  }
+}
+
+.logo-file-input {
+  display: none;
+}
+
+.logo-preview-wrapper {
+  position: relative;
+  width: 120px;
+  height: 120px;
+}
+
+.logo-preview {
+  width: 120px;
+  height: 120px;
+  border-radius: $radius-lg;
+  object-fit: cover;
+  border: 2px solid $color-soft-gray;
+}
+
+.logo-remove-btn {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: white;
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+  @include flex-center;
+  box-shadow: $shadow-sm;
+
+  i {
+    font-size: 18px;
+    color: $color-error;
+  }
+
+  &:hover i {
+    color: darken($color-error, 10%);
+  }
+}
+
+.spinner-sm {
+  width: 20px;
+  height: 20px;
+  border: 2px solid $color-soft-gray;
+  border-top-color: $module-color;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+// ---------------------------------------------------------------
+// Danger Confirm Dialog
+// ---------------------------------------------------------------
+// ---------------------------------------------------------------
+// Admin Card (Edit Mode)
+// ---------------------------------------------------------------
+.admin-card {
+  background: rgba($color-cloud-gray, 0.3);
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  margin-bottom: $spacing-md;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.admin-card-header {
+  @include flex-between;
+  margin-bottom: $spacing-sm;
+}
+
+.admin-role-badge {
+  font-family: $font-family-mono;
+  font-size: $font-size-xs;
+  background: rgba($module-color, 0.1);
+  color: $module-color;
+  padding: 2px $spacing-sm;
+  border-radius: $radius-full;
+}
+
+.admin-status {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+
+  &--active {
+    color: $color-success;
+  }
+}
+
+.admin-empty-hint {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  text-align: center;
+  padding: $spacing-md 0;
+  margin: 0;
+}
+
+.form-hint {
+  font-weight: $font-weight-normal;
+  color: $color-muted-gray;
+  font-size: $font-size-xs;
+}
+
+.danger-text {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  line-height: $line-height-relaxed;
+  margin: 0 0 $spacing-lg;
+
+  strong {
+    color: $color-error;
+  }
+}

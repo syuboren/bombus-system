@@ -4,12 +4,29 @@ export type TalentStatus = 'active' | 'contacted' | 'scheduled' | 'hired' | 'dec
 export type TalentSource = '104' | 'linkedin' | 'referral' | 'website' | 'headhunter' | 'other';
 export type ContactPriority = 'high' | 'medium' | 'low';
 
+/**
+ * 進入人才庫的原因（婉拒階段）
+ * - invite_declined: 邀請婉拒（候選人婉拒面試邀請）
+ * - interview_declined: 面試婉拒（候選人面試後婉拒）
+ * - offer_declined: Offer 婉拒（候選人婉拒錄取通知）
+ * - not_hired: 未錄取（面試後未錄用）
+ */
+export type DeclineStage = 'invite_declined' | 'interview_declined' | 'offer_declined' | 'not_hired';
+
 export interface TalentTag {
   id: string;
   name: string;
   color: string;
   category: 'skill' | 'experience' | 'education' | 'personality' | 'custom';
 }
+
+/**
+ * 聯繫狀態 (動態計算)
+ * - contacted: 近 1 個月有聯繫紀錄
+ * - pending: 開啟待聯繫提醒但近 1 個月沒有聯繫
+ * - null: 無狀態 (未開啟提醒且沒有近期聯繫)
+ */
+export type ContactStatus = 'contacted' | 'pending' | null;
 
 export interface TalentCandidate {
   id: string;
@@ -24,6 +41,8 @@ export interface TalentCandidate {
   expectedSalary?: string;
   source: TalentSource;
   status: TalentStatus;
+  declineStage?: DeclineStage; // 進入人才庫的原因
+  declineReason?: string;      // 婉拒原因說明
   tags: TalentTag[];
   skills: string[];
   matchScore: number; // AI 媒合分數 0-100
@@ -33,6 +52,12 @@ export interface TalentCandidate {
   contactPriority: ContactPriority;
   notes: string;
   resumeUrl?: string;
+  
+  // 聯繫追蹤欄位
+  contactReminderEnabled?: boolean; // 是否開啟待聯繫提醒
+  contactStatus?: ContactStatus;    // 聯繫狀態 (動態計算)
+  latestContactDate?: Date;         // 最新聯繫日期
+  recentContactCount?: number;      // 近 1 個月聯繫次數
 }
 
 export interface TalentContactHistory {
@@ -68,6 +93,38 @@ export interface TalentMatchResult {
   recommendation: 'highly-recommended' | 'recommended' | 'consider' | 'not-recommended';
 }
 
+/**
+ * 職缺媒合度資料
+ */
+export interface JobMatch {
+  jobId: string;
+  title: string;
+  department?: string;
+  status: string;
+  description?: string;
+  matchScore: number | null;  // null 表示尚未分析
+  matchDetails?: {
+    talentSkills: string[];
+    jobKeywords: string[];
+    matchedSkills: string[];
+  };
+  analysisSummary?: string;
+  analyzedAt?: Date;
+}
+
+/**
+ * 加入職缺候選人的結果
+ */
+export interface ApplyToJobResult {
+  candidateId: string;
+  jobId: string;
+  jobTitle: string;
+  talentName: string;
+  invitationSent: boolean;
+  invitationToken?: string;
+  isNewCandidate: boolean;
+}
+
 export interface TalentPoolStats {
   totalCandidates: number;
   activeCount: number;
@@ -97,7 +154,7 @@ export interface Employee {
   grade: string; // 職級
   manager: string;
   managerId: string;
-  hireDate: Date;
+  hireDate?: Date;
   status: EmployeeStatus;
   contractType: 'full-time' | 'part-time' | 'contract' | 'intern';
   workLocation: string;
@@ -125,11 +182,35 @@ export interface EmployeeDetail extends Employee {
   training: EmployeeTraining[];
   performance: EmployeePerformance[];
   roi: EmployeeROI;
+  // 候選人追溯資訊
+  candidateSource?: {
+    candidate_id: string;
+    name: string;
+    email: string;
+    position: string;
+    status: string;
+    stage: string;
+  };
+  // 入職進度（試用期員工）
+  onboardingProgress?: {
+    overall: number;
+    templates: {
+      total: number;
+      signed: number;
+      approved: number;
+    };
+    documents: {
+      total: number;
+      uploaded: number;
+    };
+    probation_end_date: string;
+    probation_months: number;
+  };
 }
 
 export interface JobChange {
   id: string;
-  effectiveDate: Date;
+  effectiveDate?: Date;
   changeType: 'promotion' | 'transfer' | 'demotion' | 'title-change' | 'salary-adjustment';
   fromPosition: string;
   toPosition: string;
@@ -158,11 +239,14 @@ export interface EmployeeTraining {
   id: string;
   courseName: string;
   courseType: 'internal' | 'external' | 'online';
-  completionDate: Date;
+  completionDate?: Date;
   score?: number;
   certificate?: string;
   hours: number;
   cost: number;
+  status: 'enrolled' | 'in-progress' | 'completed' | 'cancelled';
+  instructor?: string;
+  notes?: string;
 }
 
 export interface EmployeePerformance {

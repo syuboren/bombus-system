@@ -21,7 +21,7 @@ $color-bg-card: #FFFFFF;
 // Status Colors
 $color-success: #7FB095;
 $color-warning: #E3C088;
-$color-danger: #C77F7F;
+$color-error: #C77F7F;
 
 .bonus-distribution-page {
   padding: 24px;
@@ -479,8 +479,8 @@ $color-danger: #C77F7F;
     }
 
     &.level--low {
-      color: $color-danger;
-      background: rgba($color-danger, 0.12);
+      color: $color-error;
+      background: rgba($color-error, 0.12);
     }
   }
 
@@ -533,7 +533,7 @@ $color-danger: #C77F7F;
 }
 
 .achievement--low {
-  color: $color-danger;
+  color: $color-error;
   font-weight: 600;
 }
 

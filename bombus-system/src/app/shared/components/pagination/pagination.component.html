@@ -1,0 +1,64 @@
+<div class="pagination">
+  <div class="pagination__info">
+    顯示第 {{ startItem() }} - {{ endItem() }} 筆，共 {{ totalItems() }} 筆
+  </div>
+  
+  <div class="pagination__controls">
+    <button 
+      class="pagination__btn pagination__btn--prev"
+      [disabled]="currentPage() <= 1"
+      (click)="prevPage()"
+      type="button">
+      <i class="ri-arrow-left-s-line"></i>
+    </button>
+    
+    @if (showStartEllipsis()) {
+      <button 
+        class="pagination__btn"
+        (click)="goToPage(1)"
+        type="button">
+        1
+      </button>
+      <span class="pagination__ellipsis">...</span>
+    }
+    
+    @for (page of pages(); track page) {
+      <button 
+        class="pagination__btn"
+        [class.pagination__btn--active]="page === currentPage()"
+        (click)="goToPage(page)"
+        type="button">
+        {{ page }}
+      </button>
+    }
+    
+    @if (showEndEllipsis()) {
+      <span class="pagination__ellipsis">...</span>
+      <button 
+        class="pagination__btn"
+        (click)="goToPage(totalPages())"
+        type="button">
+        {{ totalPages() }}
+      </button>
+    }
+    
+    <button 
+      class="pagination__btn pagination__btn--next"
+      [disabled]="currentPage() >= totalPages()"
+      (click)="nextPage()"
+      type="button">
+      <i class="ri-arrow-right-s-line"></i>
+    </button>
+  </div>
+  
+  <div class="pagination__size">
+    <label>每頁</label>
+    <select [value]="pageSize()" (change)="onPageSizeChange($event)">
+      <option value="10">10</option>
+      <option value="20">20</option>
+      <option value="50">50</option>
+      <option value="100">100</option>
+    </select>
+    <label>筆</label>
+  </div>
+</div>

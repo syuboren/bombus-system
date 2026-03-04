@@ -1,28 +1,13 @@
-// Variables
-$color-border: #E2E4E8;
-$color-bg-base: #F5F5F7;
-$color-brand-main: #64748B;
-$color-brand-dark: #475569;
-$color-l1-sage: #8DA399;
-$color-l3-petrol: #7F9CA0;
-$color-text-primary: #1F2937;
-$color-text-secondary: #6B7280;
-$color-success: #7FB095;
-$color-danger: #C77F7F;
-$radius-lg: 12px;
-$radius-md: 8px;
-$radius-sm: 6px;
-$shadow-md: 0 4px 15px rgba(0, 0, 0, 0.1);
-$spacing-xs: 4px;
-$spacing-sm: 8px;
-$spacing-md: 16px;
-$spacing-lg: 24px;
-$spacing-xl: 32px;
+@import '../../../../../assets/styles/variables';
+@import '../../../../../assets/styles/mixins';
+
+// 模組色變數
+$module-color: $color-l3-petrol;
 
 .map-card {
   background: white;
   border-radius: $radius-lg;
-  border: 1px solid $color-border;
+  border: 1px solid $color-soft-gray;
   padding: 30px;
 
   &__header {
@@ -39,7 +24,7 @@ $spacing-xl: 32px;
     gap: 10px;
 
     i {
-      color: $color-l3-petrol;
+      color: $module-color;
     }
   }
 
@@ -50,51 +35,12 @@ $spacing-xl: 32px;
   }
 }
 
+// 使用標準化 filter-bar mixin
 .filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 15px;
-  align-items: center;
-  margin-bottom: 30px;
-  padding: 20px;
-  background: $color-bg-base;
-  border-radius: 10px;
+  @include filter-bar($module-color);
 }
 
-.filter-group {
-  display: flex;
-  align-items: center;
-  gap: 8px;
 
-  label {
-    font-size: 14px;
-    font-weight: 600;
-    color: $color-text-primary;
-    white-space: nowrap;
-  }
-
-  select {
-    padding: 10px 15px;
-    border: 1px solid $color-border;
-    border-radius: $radius-md;
-    background: white;
-    color: $color-text-primary;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    min-width: 150px;
-
-    &:hover {
-      border-color: $color-brand-main;
-    }
-
-    &:focus {
-      outline: none;
-      border-color: $color-brand-main;
-      box-shadow: 0 0 0 3px rgba(100, 116, 139, 0.1);
-    }
-  }
-}
 
 .dashboard-grid {
   display: grid;
@@ -106,7 +52,7 @@ $spacing-xl: 32px;
 .metric-card {
   background: white;
   border-radius: $radius-lg;
-  border: 1px solid $color-border;
+  border: 1px solid $color-soft-gray;
   padding: 25px;
   text-align: center;
   transition: all 0.3s ease;
@@ -200,7 +146,7 @@ $spacing-xl: 32px;
   display: flex;
   align-items: center;
   gap: 15px;
-  border: 1px solid $color-border;
+  border: 1px solid $color-soft-gray;
   border-left: 4px solid;
 
   &.high {
@@ -280,7 +226,7 @@ $spacing-xl: 32px;
     flex-shrink: 0;
 
     &:hover {
-      background: $color-brand-dark;
+      background: darken($color-brand-main, 8%);
       transform: translateY(-1px);
     }
   }
@@ -307,7 +253,7 @@ $spacing-xl: 32px;
   background: white;
   border-radius: $radius-lg;
   padding: 20px;
-  border: 1px solid $color-border;
+  border: 1px solid $color-soft-gray;
   transition: all 0.3s ease;
 
   &:hover {
@@ -320,7 +266,7 @@ $spacing-xl: 32px;
     align-items: center;
     margin-bottom: 15px;
     padding-bottom: 15px;
-    border-bottom: 1px solid $color-border;
+    border-bottom: 1px solid $color-soft-gray;
   }
 
   &__position {
@@ -337,7 +283,7 @@ $spacing-xl: 32px;
 
   &--high {
     background: rgba(127, 176, 149, 0.15);
-    color: $color-success;
+    color: $color-l1-sage;
   }
 
   &--medium {
@@ -347,7 +293,7 @@ $spacing-xl: 32px;
 
   &--low {
     background: rgba(199, 127, 127, 0.15);
-    color: $color-danger;
+    color: $color-error;
   }
 }
 
@@ -362,7 +308,7 @@ $spacing-xl: 32px;
   align-items: center;
   gap: 10px;
   padding: 10px;
-  background: $color-bg-base;
+  background: $color-cloud-gray;
   border-radius: $radius-md;
 }
 
@@ -397,7 +343,7 @@ $spacing-xl: 32px;
 
 .readiness-fill {
   height: 100%;
-  background: $color-success;
+  background: $color-l1-sage;
   border-radius: 3px;
 }
 
@@ -433,7 +379,7 @@ $spacing-xl: 32px;
   background: white;
   border-radius: $radius-lg;
   padding: 20px;
-  border: 1px solid $color-border;
+  border: 1px solid $color-soft-gray;
 }
 
 .chart-container {
@@ -457,7 +403,7 @@ $spacing-xl: 32px;
   gap: 8px;
 
   &:hover {
-    background: $color-brand-dark;
+    background: darken($color-brand-main, 8%);
     transform: translateY(-2px);
     box-shadow: $shadow-md;
   }
@@ -484,8 +430,13 @@ $spacing-xl: 32px;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .modal-content {
@@ -503,6 +454,7 @@ $spacing-xl: 32px;
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -532,7 +484,7 @@ $spacing-xl: 32px;
 }
 
 .factor-list {
-  background: $color-bg-base;
+  background: $color-cloud-gray;
   padding: 15px 20px;
   border-radius: $radius-md;
   list-style: none;
@@ -570,14 +522,14 @@ $spacing-xl: 32px;
   justify-content: flex-end;
   margin-top: 25px;
   padding-top: 20px;
-  border-top: 1px solid $color-border;
+  border-top: 1px solid $color-soft-gray;
 }
 
 .btn-secondary {
   padding: 10px 20px;
-  background: $color-bg-base;
+  background: $color-cloud-gray;
   color: $color-text-primary;
-  border: 1px solid $color-border;
+  border: 1px solid $color-soft-gray;
   border-radius: $radius-md;
   font-size: 14px;
   font-weight: 600;
@@ -585,7 +537,7 @@ $spacing-xl: 32px;
   transition: all 0.3s ease;
 
   &:hover {
-    background: darken($color-bg-base, 5%);
+    background: darken($color-cloud-gray, 5%);
   }
 }
 
@@ -601,7 +553,7 @@ $spacing-xl: 32px;
   transition: all 0.3s ease;
 
   &:hover {
-    background: $color-brand-dark;
+    background: darken($color-brand-main, 8%);
   }
 }
 

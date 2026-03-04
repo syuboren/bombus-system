@@ -1,0 +1,157 @@
+<div class="modal-overlay" [class.visible]="visible()">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h2 class="modal-title">{{ isEditMode() ? '編輯晉升條件' : '新增晉升條件' }}</h2>
+            <button class="close-btn" (click)="onClose()" [disabled]="saving()">
+                <span class="close-icon">×</span>
+            </button>
+        </div>
+
+        <div class="modal-content">
+            @if (error()) {
+            <div class="error-message">
+                <span class="error-icon">⚠️</span> {{ error() }}
+            </div>
+            }
+
+            <!-- 基本設定 -->
+            <section class="form-section">
+                <h3 class="section-title">晉升路徑</h3>
+                <div class="form-row form-row-3">
+                    <div class="form-group">
+                        <label class="form-label required">來源職等</label>
+                        <select class="form-select" [value]="formData().fromGrade"
+                            (change)="updateField('fromGrade', +$any($event.target).value)" [disabled]="saving()">
+                            @for (g of gradeOptions(); track g) {
+                            <option [value]="g">Grade {{ g }}</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required">目標職等</label>
+                        <select class="form-select" [value]="formData().toGrade"
+                            (change)="updateField('toGrade', +$any($event.target).value)" [disabled]="saving()">
+                            @for (g of gradeOptions(); track g) {
+                            <option [value]="g">Grade {{ g }}</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required">適用軌道</label>
+                        <select class="form-select" [value]="formData().track"
+                            (change)="updateField('track', $any($event.target).value)" [disabled]="saving()">
+                            @for (t of tracks(); track t.id) {
+                            <option [value]="t.code">{{ t.name }}</option>
+                            }
+                            <option value="both">雙軌適用</option>
+                        </select>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 績效門檻 -->
+            <section class="form-section">
+                <h3 class="section-title">績效門檻</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label required">績效等級門檻</label>
+                        <select class="form-select" [value]="formData().performanceThreshold"
+                            (change)="updateField('performanceThreshold', $any($event.target).value)"
+                            [disabled]="saving()">
+                            <option value="A+">A+ (卓越)</option>
+                            <option value="A">A (優秀)</option>
+                            <option value="B+">B+ (良好)</option>
+                            <option value="B">B (合格)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">晉升程序</label>
+                        <input type="text" class="form-input" [value]="formData().promotionProcedure"
+                            (input)="updateField('promotionProcedure', $any($event.target).value)"
+                            placeholder="例如：主管推薦 + 能力評估" [disabled]="saving()" />
+                    </div>
+                </div>
+            </section>
+
+            <!-- 必備技能 (Chip Input) -->
+            <section class="form-section">
+                <h3 class="section-title">必備技能</h3>
+                <div class="chip-container">
+                    @for (skill of formData().requiredSkills; track $index) {
+                    <span class="chip">
+                        {{ skill }}
+                        <button class="chip-remove" (click)="removeChip('requiredSkills', $index)"
+                            [disabled]="saving()">×</button>
+                    </span>
+                    }
+                    <input type="text" class="chip-input" [value]="chipInput().skills"
+                        (input)="updateChipInput('skills', $any($event.target).value)"
+                        (keydown)="onChipKeyDown($event, 'requiredSkills', chipInput().skills)"
+                        placeholder="輸入技能後按 Enter..." [disabled]="saving()" />
+                </div>
+            </section>
+
+            <!-- 必修課程 (Chip Input) -->
+            <section class="form-section">
+                <h3 class="section-title">必修課程</h3>
+                <div class="chip-container">
+                    @for (course of formData().requiredCourses; track $index) {
+                    <span class="chip">
+                        {{ course }}
+                        <button class="chip-remove" (click)="removeChip('requiredCourses', $index)"
+                            [disabled]="saving()">×</button>
+                    </span>
+                    }
+                    <input type="text" class="chip-input" [value]="chipInput().courses"
+                        (input)="updateChipInput('courses', $any($event.target).value)"
+                        (keydown)="onChipKeyDown($event, 'requiredCourses', chipInput().courses)"
+                        placeholder="輸入課程名稱後按 Enter..." [disabled]="saving()" />
+                </div>
+            </section>
+
+            <!-- KPI 重點 (Chip Input) -->
+            <section class="form-section">
+                <h3 class="section-title">KPI 重點指標</h3>
+                <div class="chip-container">
+                    @for (kpi of formData().kpiFocus; track $index) {
+                    <span class="chip">
+                        {{ kpi }}
+                        <button class="chip-remove" (click)="removeChip('kpiFocus', $index)"
+                            [disabled]="saving()">×</button>
+                    </span>
+                    }
+                    <input type="text" class="chip-input" [value]="chipInput().kpi"
+                        (input)="updateChipInput('kpi', $any($event.target).value)"
+                        (keydown)="onChipKeyDown($event, 'kpiFocus', chipInput().kpi)"
+                        placeholder="輸入 KPI 指標後按 Enter..." [disabled]="saving()" />
+                </div>
+            </section>
+
+            <!-- 附加條件 (Chip Input) -->
+            <section class="form-section">
+                <h3 class="section-title">附加條件</h3>
+                <div class="chip-container">
+                    @for (ac of formData().additionalCriteria; track $index) {
+                    <span class="chip">
+                        {{ ac }}
+                        <button class="chip-remove" (click)="removeChip('additionalCriteria', $index)"
+                            [disabled]="saving()">×</button>
+                    </span>
+                    }
+                    <input type="text" class="chip-input" [value]="chipInput().criteria"
+                        (input)="updateChipInput('criteria', $any($event.target).value)"
+                        (keydown)="onChipKeyDown($event, 'additionalCriteria', chipInput().criteria)"
+                        placeholder="輸入附加條件後按 Enter..." [disabled]="saving()" />
+                </div>
+            </section>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn btn-secondary" (click)="onClose()" [disabled]="saving()">取消</button>
+            <button class="btn btn-primary" (click)="onSave()" [disabled]="saving()">
+                @if (saving()) { <span class="spinner"></span> 儲存中... }
+                @else { {{ isEditMode() ? '更新' : '新增' }} }
+            </button>
+        </div>
+    </div>
+</div>

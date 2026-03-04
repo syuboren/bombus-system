@@ -1,0 +1,103 @@
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 16px 0;
+
+  &__info {
+    font-size: 13px;
+    color: var(--color-text-secondary, #718096);
+  }
+
+  &__controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  &__btn {
+    min-width: 36px;
+    height: 36px;
+    padding: 0 8px;
+    border: 1px solid var(--color-border, #e2e8f0);
+    border-radius: 8px;
+    background: var(--color-bg-card, #ffffff);
+    color: var(--color-text-primary, #2d3748);
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover:not(:disabled):not(.pagination__btn--active) {
+      background: var(--color-bg-secondary, #f7fafc);
+      border-color: #D6A28C;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    &--active {
+      background: #D6A28C;
+      border-color: #D6A28C;
+      color: white;
+    }
+
+    &--prev,
+    &--next {
+      i {
+        font-size: 18px;
+      }
+    }
+  }
+
+  &__ellipsis {
+    padding: 0 4px;
+    color: var(--color-text-secondary, #718096);
+  }
+
+  &__size {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--color-text-secondary, #718096);
+
+    select {
+      padding: 6px 12px;
+      border: 1px solid var(--color-border, #e2e8f0);
+      border-radius: 6px;
+      background: var(--color-bg-card, #ffffff);
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+
+      &:focus {
+        border-color: #D6A28C;
+      }
+    }
+  }
+}
+
+// 響應式調整
+@media (max-width: 768px) {
+  .pagination {
+    flex-direction: column;
+    align-items: stretch;
+
+    &__controls {
+      justify-content: center;
+    }
+
+    &__info,
+    &__size {
+      justify-content: center;
+      text-align: center;
+    }
+  }
+}

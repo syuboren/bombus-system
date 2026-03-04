@@ -22,7 +22,10 @@ export interface MeetingReminder {
 
 // 出席人員
 export interface MeetingAttendee {
-  id: string;
+  id: string; // 統一使用員工 ID
+  attendeeRecordId?: string; // 出席記錄 ID（meeting_attendees 表的主鍵）
+  employeeId?: string; // 員工 ID（向後相容）
+  employeeNo?: string; // 員工編號（用於顯示）
   name: string;
   department: string;
   position: string;
@@ -41,7 +44,8 @@ export interface AgendaItem {
   id: string;
   order: number;
   title: string;
-  description: string;
+  description: string; // 向下相容
+  discussionPoints: string[]; // 討論要點（條列式）
   presenter: string;
   duration: number; // 分鐘
   status: AgendaItemStatus;
@@ -55,9 +59,12 @@ export interface MeetingAttachment {
   name: string;
   type: string;
   size: number;
-  url: string;
-  uploadedBy: string;
-  uploadedAt: Date;
+  url?: string;
+  uploadedBy?: string;
+  uploadedAt?: Date;
+  // 前端上傳用
+  uploadProgress?: number;
+  file?: File;
 }
 
 // 會議結論
@@ -67,6 +74,7 @@ export interface MeetingConclusion {
   content: string;
   responsible: string;
   responsibleId: string;
+  responsibleName?: string; // 負責人名稱（API 回傳）
   department: string;
   dueDate: Date;
   status: ConclusionStatus;
@@ -74,6 +82,12 @@ export interface MeetingConclusion {
   progressNotes: ProgressNote[];
   createdAt: Date;
   completedAt?: Date;
+  // 來源會議資訊（從 GET /api/meetings/conclusions 回傳）
+  meetingId?: string;
+  meetingTitle?: string;
+  meetingDate?: Date;
+  meetingType?: string;
+  isOverdue?: boolean;
 }
 
 // 進度備註
@@ -102,10 +116,12 @@ export interface Meeting {
   reminders: MeetingReminder[];
   organizer: MeetingAttendee;
   attendees: MeetingAttendee[];
+  attendeeCount?: number; // 出席人數（列表 API 返回）
   agenda: AgendaItem[];
   attachments: MeetingAttachment[];
   conclusions: MeetingConclusion[];
   notes: string;
+  signInEnabled?: boolean; // 是否開啟簽到
   createdAt: Date;
   updatedAt: Date;
 }

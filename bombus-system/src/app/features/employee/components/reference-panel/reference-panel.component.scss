@@ -1,0 +1,1138 @@
+// ============================================================
+// Reference Panel Styles
+// 使用莫蘭迪色系設計規範
+// ============================================================
+
+// L1 模組色：鼠尾草綠
+$module-color: #8DA399;
+$module-color-light: #A8BAB0;
+$module-color-dark: #6B8577;
+
+// 基礎色
+$bg-base: #F5F5F7;
+$bg-card: #FCFCFD;
+$text-primary: #464E56;
+$text-secondary: #6B7280;
+$text-muted: #9CA3AF;
+$border-color: #E8E8EA;
+
+// 功能色 (莫蘭迪)
+$color-success: #7FB095;
+$color-warning: #E3C088;
+$color-error: #C77F7F;
+$color-info: #8DA8BE;
+
+.reference-panel {
+  position: relative;
+  background: $bg-card;
+  border-left: 1px solid $border-color;
+  transition: width 0.3s ease;
+  overflow: hidden;
+  height: 100%;
+  max-height: calc(100vh - 180px); // 確保面板有固定高度
+
+  &.expanded {
+    width: 380px;
+    min-width: 380px;
+  }
+
+  &.collapsed {
+    width: 40px;
+    min-width: 40px;
+  }
+}
+
+.toggle-btn {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 48px;
+  background: $bg-card;
+  border: 1px solid $border-color;
+  border-left: none;
+  border-radius: 0 8px 8px 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: $text-secondary;
+  transition: all 0.2s ease;
+  z-index: 10;
+
+  &:hover {
+    background: $bg-base;
+    color: $module-color;
+  }
+
+  i {
+    font-size: 18px;
+  }
+}
+
+.panel-content {
+  height: 100%;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding-left: 24px;
+  overflow: hidden;
+}
+
+// Tab Header
+.tab-header {
+  display: flex;
+  border-bottom: 1px solid $border-color;
+  padding: 0 16px;
+  gap: 4px;
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: $text-secondary;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    color: $text-primary;
+  }
+
+  &.active {
+    color: $module-color;
+    border-bottom-color: $module-color;
+  }
+
+  i {
+    font-size: 16px;
+  }
+}
+
+// Tab Content
+.tab-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px;
+  min-height: 0; // 重要：讓 flex item 可以正確計算高度並滾動
+
+  // 自訂捲軸樣式
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba($module-color, 0.3);
+    border-radius: 3px;
+
+    &:hover {
+      background: rgba($module-color, 0.5);
+    }
+  }
+}
+
+.tab-pane {
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+// Info Section
+.info-section {
+  margin-bottom: 20px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: $text-primary;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid $border-color;
+
+  i {
+    color: $module-color;
+    font-size: 16px;
+  }
+}
+
+// Info Grid
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  .label {
+    font-size: 11px;
+    color: $text-secondary;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .value {
+    font-size: 13px;
+    color: $text-primary;
+    font-weight: 500;
+  }
+}
+
+// Introduction Text
+.intro-text {
+  font-size: 13px;
+  color: $text-primary;
+  line-height: 1.6;
+  margin: 0;
+}
+
+// Timeline List
+.timeline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.timeline-item {
+  padding-left: 12px;
+  border-left: 2px solid $module-color;
+}
+
+.timeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 4px;
+
+  .title {
+    font-size: 13px;
+    font-weight: 600;
+    color: $text-primary;
+  }
+
+  .period {
+    font-size: 11px;
+    color: $text-secondary;
+    white-space: nowrap;
+  }
+}
+
+.timeline-sub {
+  font-size: 12px;
+  color: $module-color;
+  margin-bottom: 4px;
+}
+
+.timeline-desc {
+  font-size: 12px;
+  color: $text-secondary;
+  line-height: 1.5;
+  margin: 0;
+}
+
+// Skill Tags
+.skill-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.skill-tag {
+  display: inline-block;
+  padding: 4px 10px;
+  background: rgba($module-color, 0.1);
+  color: $module-color;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 12px;
+}
+
+// AI Score Display
+.score-display {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  padding: 16px;
+  background: $bg-base;
+  border-radius: 12px;
+  margin-bottom: 12px;
+
+  .score-value {
+    font-size: 48px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .score-label {
+    font-size: 18px;
+    color: $text-secondary;
+    margin-left: 4px;
+  }
+
+  // 使用莫蘭迪色系
+  &.excellent .score-value { color: $color-success; }
+  &.good .score-value { color: $module-color; }
+  &.neutral .score-value { color: $color-warning; }
+  &.poor .score-value { color: $color-error; }
+}
+
+.recommendation-badge {
+  text-align: center;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+
+  // 使用莫蘭迪色系
+  &.excellent {
+    background: rgba($color-success, 0.12);
+    color: $color-success;
+  }
+  &.good {
+    background: rgba($module-color, 0.12);
+    color: $module-color;
+  }
+  &.neutral {
+    background: rgba($color-warning, 0.12);
+    color: darken($color-warning, 15%);
+  }
+  &.poor {
+    background: rgba($color-error, 0.12);
+    color: $color-error;
+  }
+}
+
+// Score Breakdown
+.score-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.breakdown-item {
+  display: grid;
+  grid-template-columns: 80px 1fr 40px;
+  align-items: center;
+  gap: 12px;
+}
+
+.breakdown-label {
+  font-size: 12px;
+  color: $text-secondary;
+}
+
+.breakdown-bar {
+  height: 8px;
+  background: rgba($module-color, 0.15);
+  border-radius: 4px;
+  overflow: hidden;
+
+  .bar-fill {
+    height: 100%;
+    background: $module-color;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+  }
+}
+
+.breakdown-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: $text-primary;
+  text-align: right;
+}
+
+// AI Summary
+.ai-summary {
+  font-size: 13px;
+  color: $text-primary;
+  line-height: 1.6;
+  margin: 0;
+  padding: 12px;
+  background: $bg-base;
+  border-radius: 8px;
+}
+
+// ============================================================
+// AI 履歷解析報告樣式 (與 profile-detail 一致)
+// ============================================================
+
+// 需求條件組
+.requirement-group {
+  margin-bottom: 16px;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.group-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  
+  &.matched-label {
+    color: $color-success;
+  }
+  
+  &.unmatched-label {
+    color: $text-secondary;
+  }
+  
+  i {
+    font-size: 14px;
+  }
+}
+
+.requirement-item {
+  padding: 8px 12px;
+  background: $bg-base;
+  border-radius: 6px;
+  margin-bottom: 6px;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+  
+  &.matched {
+    border-left: 3px solid $color-success;
+  }
+  
+  &.unmatched {
+    border-left: 3px solid $border-color;
+  }
+}
+
+.req-text {
+  display: block;
+  font-size: 12px;
+  color: $text-primary;
+  margin-bottom: 4px;
+}
+
+.req-evidence {
+  display: block;
+  font-size: 11px;
+  color: $module-color;
+}
+
+.req-note {
+  display: block;
+  font-size: 11px;
+  color: $text-secondary;
+  font-style: italic;
+}
+
+// 技能分類
+.skill-category {
+  margin-bottom: 12px;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.category-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: $text-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.skill-tag {
+  &.tech {
+    background: rgba($module-color, 0.12);
+    color: $module-color-dark;
+  }
+  
+  &.soft {
+    // 使用 L4 錦葵紫 (莫蘭迪色系)
+    background: rgba(#9A8C98, 0.12);
+    color: #7A6C78;
+  }
+}
+
+// 匹配統計
+.match-stats {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid $border-color;
+}
+
+.stat-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.stat-label {
+  font-size: 12px;
+  color: $text-secondary;
+  width: 60px;
+  flex-shrink: 0;
+}
+
+.stat-bar-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stat-bar {
+  flex: 1;
+  height: 6px;
+  background: rgba($module-color, 0.15);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.stat-bar-fill {
+  height: 100%;
+  background: $module-color;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+  
+  &.bonus {
+    // 使用莫蘭迪警告色
+    background: $color-warning;
+  }
+}
+
+.stat-value {
+  font-size: 11px;
+  color: $text-secondary;
+  white-space: nowrap;
+}
+
+// 經歷相關性
+.experience-relevance-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.relevance-card {
+  padding: 12px;
+  background: $bg-base;
+  border-radius: 8px;
+}
+
+.rel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 4px;
+}
+
+.rel-firm {
+  font-size: 13px;
+  font-weight: 600;
+  color: $text-primary;
+}
+
+.rel-duration {
+  font-size: 11px;
+  color: $text-secondary;
+}
+
+.rel-job {
+  font-size: 12px;
+  color: $module-color;
+  margin-bottom: 8px;
+}
+
+.rel-level {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rel-level-label {
+  font-size: 11px;
+  color: $text-secondary;
+}
+
+.rel-dots {
+  display: flex;
+  gap: 4px;
+}
+
+.rel-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #E5E7EB;
+  
+  &.active {
+    background: $module-color;
+  }
+}
+
+.rel-level-text {
+  font-size: 11px;
+  color: $module-color;
+  font-weight: 500;
+}
+
+// 年資總結
+.years-summary {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 16px;
+  padding: 12px;
+  background: $bg-base;
+  border-radius: 8px;
+}
+
+.years-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.years-label {
+  font-size: 11px;
+  color: $text-secondary;
+}
+
+.years-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: $text-primary;
+  
+  &.total {
+    color: $module-color;
+  }
+}
+
+.years-divider {
+  width: 1px;
+  height: 32px;
+  background: $border-color;
+}
+
+.years-check {
+  margin-left: auto;
+  
+  i {
+    font-size: 20px;
+    
+    &.pass {
+      color: $color-success;
+    }
+    
+    &.fail {
+      color: $color-error;
+    }
+  }
+}
+
+// ============================================================
+// 履歷內容品質評估
+// ============================================================
+.quality-section {
+  .quality-meta {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+    padding: 12px;
+    background: $bg-base;
+    border-radius: 8px;
+  }
+  
+  .quality-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    
+    .quality-label {
+      font-size: 11px;
+      color: $text-secondary;
+    }
+    
+    .quality-value {
+      font-size: 13px;
+      font-weight: 600;
+      color: $text-primary;
+    }
+  }
+}
+
+.features-block,
+.clarify-block {
+  margin-top: 12px;
+}
+
+.features-title,
+.clarify-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: $text-secondary;
+  margin-bottom: 8px;
+}
+
+.feature-item {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  background: $bg-base;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.feature-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba($color-success, 0.12);
+  border-radius: 50%;
+  flex-shrink: 0;
+  
+  i {
+    font-size: 14px;
+    color: $color-success;
+  }
+}
+
+.feature-content {
+  flex: 1;
+}
+
+.feature-type {
+  font-size: 12px;
+  font-weight: 600;
+  color: $text-primary;
+  margin-bottom: 2px;
+}
+
+.feature-desc {
+  font-size: 11px;
+  color: $text-secondary;
+  line-height: 1.4;
+}
+
+.clarify-list {
+  margin: 0;
+  padding-left: 20px;
+  
+  li {
+    font-size: 12px;
+    color: $text-secondary;
+    line-height: 1.6;
+    margin-bottom: 4px;
+    
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+}
+
+// ============================================================
+// 面試關注點建議
+// ============================================================
+.focus-block {
+  margin-bottom: 16px;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.focus-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: $module-color;
+  margin-bottom: 8px;
+  
+  i {
+    font-size: 14px;
+  }
+}
+
+.focus-list {
+  margin: 0;
+  padding-left: 20px;
+  
+  li {
+    font-size: 12px;
+    color: $text-primary;
+    line-height: 1.6;
+    margin-bottom: 6px;
+    
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+}
+
+// 分析元資訊
+.ai-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid $border-color;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: $text-muted;
+  
+  i {
+    font-size: 12px;
+  }
+}
+
+// QA Groups
+.qa-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.qa-group {
+  .group-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: $module-color;
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px dashed $border-color;
+  }
+}
+
+.qa-item {
+  margin-bottom: 12px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.qa-question {
+  font-size: 12px;
+  color: $text-secondary;
+  margin-bottom: 4px;
+}
+
+.qa-answer {
+  font-size: 13px;
+  color: $text-primary;
+  line-height: 1.5;
+  padding: 8px;
+  background: $bg-base;
+  border-radius: 6px;
+}
+
+// Empty State
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+
+  i {
+    font-size: 48px;
+    color: $border-color;
+    margin-bottom: 12px;
+  }
+
+  p {
+    font-size: 14px;
+    color: $text-secondary;
+    margin: 0;
+  }
+}
+
+// ============================================================
+// 更豐富的履歷顯示樣式 (與 profile-detail 一致)
+// ============================================================
+
+// 座右銘
+.motto-block {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: rgba($module-color, 0.05);
+  border-radius: 8px;
+  font-style: italic;
+  font-size: 12px;
+  color: $text-secondary;
+  
+  i {
+    color: $module-color;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+}
+
+// 學歷徽章
+.degree-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  background: rgba($module-color, 0.1);
+  color: $module-color;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 4px;
+  margin-right: 4px;
+}
+
+.status-text {
+  color: $text-secondary;
+  font-size: 11px;
+}
+
+// 工作經歷卡片
+.experience-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.experience-card {
+  padding: 12px;
+  background: $bg-base;
+  border-radius: 8px;
+  border-left: 3px solid $module-color;
+}
+
+.exp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.exp-company {
+  font-size: 13px;
+  font-weight: 600;
+  color: $text-primary;
+}
+
+.exp-period {
+  font-size: 11px;
+  color: $text-secondary;
+  white-space: nowrap;
+}
+
+.exp-title {
+  font-size: 12px;
+  color: $module-color;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+.exp-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 11px;
+  color: $text-secondary;
+  
+  span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    
+    i {
+      font-size: 12px;
+    }
+  }
+}
+
+.exp-desc {
+  font-size: 12px;
+  color: $text-secondary;
+  line-height: 1.5;
+  margin-bottom: 8px;
+  
+  // 限制顯示行數
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.exp-skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.skill-tag-sm {
+  display: inline-block;
+  padding: 2px 6px;
+  background: rgba($module-color, 0.1);
+  color: $module-color;
+  font-size: 10px;
+  border-radius: 4px;
+}
+
+// 技能網格
+.skills-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.skill-card {
+  padding: 10px 12px;
+  background: $bg-base;
+  border-radius: 8px;
+}
+
+.skill-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: $text-primary;
+  margin-bottom: 4px;
+}
+
+.skill-desc {
+  font-size: 12px;
+  color: $text-secondary;
+  line-height: 1.4;
+  margin-bottom: 6px;
+}
+
+.skill-tags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tag-mini {
+  display: inline-block;
+  padding: 2px 6px;
+  background: rgba($module-color, 0.08);
+  color: $module-color;
+  font-size: 10px;
+  border-radius: 3px;
+}
+
+// 語言能力
+.language-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.language-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: $bg-base;
+  border-radius: 6px;
+}
+
+.lang-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: $text-primary;
+}
+
+.lang-cert {
+  font-size: 11px;
+  color: $module-color;
+  padding: 2px 6px;
+  background: rgba($module-color, 0.1);
+  border-radius: 4px;
+}
+
+.lang-degree {
+  font-size: 11px;
+  color: $text-secondary;
+  margin-left: auto;
+}
+
+// 專案列表
+.project-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.project-card {
+  padding: 10px 12px;
+  background: $bg-base;
+  border-radius: 8px;
+}
+
+.proj-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: $text-primary;
+  margin-bottom: 4px;
+}
+
+.proj-period {
+  font-size: 11px;
+  color: $text-secondary;
+  margin-bottom: 6px;
+}
+
+.proj-desc {
+  font-size: 12px;
+  color: $text-secondary;
+  line-height: 1.4;
+}

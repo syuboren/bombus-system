@@ -1,0 +1,162 @@
+<div class="permission-visualization-page">
+  <div class="page-header">
+    <h1 class="page-title">權限可視化</h1>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>載入中...</p>
+    </div>
+  } @else {
+    <div class="content-layout">
+      <!-- Left: Org Tree -->
+      <div class="panel panel--tree">
+        <div class="panel-header">
+          <h3 class="panel-title">
+            <i class="ri-organization-chart"></i> 組織架構
+          </h3>
+        </div>
+        <div class="panel-body">
+          @if (tree().length === 0) {
+            <p class="text-muted">無組織架構資料</p>
+          } @else {
+            <ng-container *ngTemplateOutlet="treeNodes; context: { $implicit: tree() }"></ng-container>
+          }
+
+          <!-- Global roles -->
+          @if (selectedUserId() && getGlobalRoles().length > 0) {
+            <div class="global-roles">
+              <span class="global-label">全域角色：</span>
+              @for (ur of getGlobalRoles(); track ur.id) {
+                <span class="role-badge role-badge--global">{{ ur.role_name }}</span>
+              }
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Right: User Query + Permissions -->
+      <div class="panel panel--permissions">
+        <div class="panel-header">
+          <h3 class="panel-title">
+            <i class="ri-user-search-line"></i> 使用者權限查詢
+          </h3>
+        </div>
+        <div class="panel-body">
+          <!-- User Selector -->
+          <div class="user-selector">
+            <select
+              class="form-input"
+              [value]="selectedUserId()"
+              (change)="onUserSelect($any($event.target).value)">
+              <option value="">選擇使用者...</option>
+              @for (user of users(); track user.id) {
+                <option [value]="user.id">{{ user.name }} ({{ user.email }})</option>
+              }
+            </select>
+          </div>
+
+          @if (!selectedUserId()) {
+            <div class="empty-hint">
+              <i class="ri-arrow-up-line"></i>
+              <p>請選擇使用者以查看有效權限</p>
+            </div>
+          } @else if (loadingUserRoles()) {
+            <p class="text-muted">載入中...</p>
+          } @else {
+            <!-- User Roles Summary -->
+            <div class="user-roles-summary">
+              <h4 class="summary-title">
+                {{ getSelectedUserName() }} 的角色（{{ userRoles().length }} 個）
+              </h4>
+              @if (userRoles().length === 0) {
+                <p class="text-muted">此使用者未被指派任何角色</p>
+              } @else {
+                <div class="roles-list">
+                  @for (ur of userRoles(); track ur.id) {
+                    <div class="role-item">
+                      <span class="role-name">{{ ur.role_name }}</span>
+                      <span class="scope-tag">
+                        {{ getScopeLabel(ur.scope_type) }}
+                        @if (ur.scope_name) { - {{ ur.scope_name }} }
+                      </span>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+
+            <!-- Effective Permissions -->
+            <div class="effective-permissions">
+              <h4 class="summary-title">
+                有效權限（聯集合併，{{ effectivePermissionIds().size }} 個）
+              </h4>
+              @if (permissionGroups().length === 0) {
+                <p class="text-muted">無權限定義</p>
+              } @else {
+                <div class="perm-groups">
+                  @for (group of permissionGroups(); track group.resource) {
+                    <div class="perm-group">
+                      <span class="perm-resource">{{ getResourceLabel(group.resource) }}</span>
+                      <div class="perm-actions">
+                        @for (perm of group.permissions; track perm.id) {
+                          <span
+                            class="perm-tag"
+                            [class.perm-tag--active]="isPermissionActive(perm.id)">
+                            @if (isPermissionActive(perm.id)) {
+                              <i class="ri-check-line"></i>
+                            } @else {
+                              <i class="ri-close-line"></i>
+                            }
+                            {{ getActionLabel(perm.action) }}
+                          </span>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Tree Node Template (recursive) -->
+  <ng-template #treeNodes let-nodes>
+    <ul class="tree-list">
+      @for (node of nodes; track node.id) {
+        <li class="tree-item">
+          <div
+            class="tree-node"
+            [class.tree-node--highlighted]="isHighlighted(node.id)"
+            (click)="toggleNode(node.id)">
+            <div class="node-toggle">
+              @if (hasChildren(node)) {
+                <i [class]="isExpanded(node.id) ? 'ri-arrow-down-s-fill' : 'ri-arrow-right-s-fill'"></i>
+              } @else {
+                <span class="toggle-spacer"></span>
+              }
+            </div>
+            <i [class]="getTypeIcon(node.type)" class="node-type-icon"></i>
+            <span class="node-name">{{ node.name }}</span>
+
+            @if (isHighlighted(node.id)) {
+              <div class="node-role-badges">
+                @for (ur of getRolesForNode(node.id); track ur.id) {
+                  <span class="role-badge">{{ ur.role_name }}</span>
+                }
+              </div>
+            }
+          </div>
+
+          @if (hasChildren(node) && isExpanded(node.id)) {
+            <ng-container *ngTemplateOutlet="treeNodes; context: { $implicit: node.children }"></ng-container>
+          }
+        </li>
+      }
+    </ul>
+  </ng-template>
+</div>

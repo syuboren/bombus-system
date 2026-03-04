@@ -1,422 +1,101 @@
-import { Injectable } from '@angular/core';
-import { Observable, of, delay } from 'rxjs';
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable, of, delay, map, catchError } from 'rxjs';
 import {
   Job,
   JobCandidate,
   CandidateDetail,
   JobStats,
   CandidateStats,
-  JobStatus
+  JobStatus,
+  Job104,
+  Job104Response,
+  Job104CreateRequest,
+  CandidateFull,
+  CandidateResumeAnalysis
 } from '../models/job.model';
+
+const API_104_BASE = '/api/jobs/104';
 
 @Injectable({
   providedIn: 'root'
 })
 export class JobService {
-  private readonly mockJobs: Job[] = [
-    // 對應 JD: 人員招募專員 (jd-recruiter-001)
-    {
-      id: 'JOB-2025001',
-      title: '人員招募專員',
-      department: '人資部',
-      publishDate: '2025-11-20',
-      newCandidates: 3,
-      totalCandidates: 15,
-      status: 'published',
-      recruiter: 'HR Admin'
-    },
-    // 對應 JD: 主辦會計 (jd-acc-001)
-    {
-      id: 'JOB-2025002',
-      title: '主辦會計',
-      department: '財務部',
-      publishDate: '2025-11-18',
-      newCandidates: 2,
-      totalCandidates: 8,
-      status: 'published',
-      recruiter: 'HR Admin'
-    },
-    // 對應 JD: 人資專員 (jd-hr-sp-001)
-    {
-      id: 'JOB-2025003',
-      title: '人資專員',
-      department: '人資部',
-      publishDate: '2025-11-15',
-      newCandidates: 1,
-      totalCandidates: 12,
-      status: 'published',
-      recruiter: 'HR Admin'
-    },
-    // 對應 JD: 專案部副理 (jd-pm-001)
-    {
-      id: 'JOB-2025004',
-      title: '專案部副理',
-      department: '專案部',
-      publishDate: null,
-      newCandidates: 0,
-      totalCandidates: 0,
-      status: 'review',
-      recruiter: 'HR Admin'
-    },
-    // 對應 JD: 薪酬與福利專員 (jd-comp-001)
-    {
-      id: 'JOB-2025005',
-      title: '薪酬與福利專員',
-      department: '人資部',
-      publishDate: null,
-      newCandidates: 0,
-      totalCandidates: 0,
-      status: 'draft',
-      recruiter: 'HR Admin'
-    },
-    // 對應 JD: 出納會計 (jd-cashier-001)
-    {
-      id: 'JOB-2025006',
-      title: '出納會計',
-      department: '財務部',
-      publishDate: '2025-11-10',
-      newCandidates: 0,
-      totalCandidates: 5,
-      status: 'published',
-      recruiter: 'HR Admin'
-    }
-  ];
+  private readonly http = inject(HttpClient);
 
-  private readonly mockCandidates: JobCandidate[] = [
-    {
-      id: 'C001',
-      name: '林小美',
-      nameEn: 'Amy Lin',
-      email: 'amy.lin@example.com',
-      phone: '0912-345-678',
-      location: '台北市',
-      applyDate: '2025-11-23',
-      education: '國立臺灣大學 心理學系',
-      experience: '人力資源專員',
-      experienceYears: 3,
-      skills: ['招募面試', '勞動法規', 'Excel', '人才評估'],
-      matchScore: 92,
-      scoreLevel: 'high',
-      status: 'new',
-      avatarColor: '#8DA399'
-    },
-    {
-      id: 'C002',
-      name: '陳大華',
-      nameEn: 'David Chen',
-      email: 'david.chen@example.com',
-      applyDate: '2025-11-22',
-      education: '國立政治大學 企業管理學系',
-      experience: '人資行政專員',
-      experienceYears: 2,
-      skills: ['薪資計算', '勞健保', 'HRIS系統'],
-      matchScore: 78,
-      scoreLevel: 'medium',
-      status: 'interview',
-      avatarColor: '#a88643'
-    },
-    {
-      id: 'C003',
-      name: '王小明',
-      nameEn: 'Mike Wang',
-      email: 'mike.wang@example.com',
-      applyDate: '2025-11-20',
-      education: '私立淡江大學 企業管理學系',
-      experience: '行政助理',
-      experienceYears: 1,
-      skills: ['文書處理', 'Excel基礎'],
-      matchScore: 65,
-      scoreLevel: 'low',
-      status: 'rejected',
-      avatarColor: '#7F9CA0'
-    },
-    {
-      id: 'C004',
-      name: '李美玲',
-      nameEn: 'Mei Li',
-      email: 'mei.li@example.com',
-      applyDate: '2025-11-24',
-      education: '國立中央大學 人力資源管理研究所',
-      experience: '招募專員',
-      experienceYears: 4,
-      skills: ['結構化面試', '104人力銀行', '雇主品牌', '人才庫管理'],
-      matchScore: 88,
-      scoreLevel: 'high',
-      status: 'new',
-      avatarColor: '#8DA399'
-    },
-    {
-      id: 'C005',
-      name: '張志偉',
-      nameEn: 'Jason Chang',
-      email: 'jason.chang@example.com',
-      applyDate: '2025-11-25',
-      education: '國立臺北大學 企業管理學系',
-      experience: '人資主管',
-      experienceYears: 6,
-      skills: ['團隊管理', '績效管理', '組織發展', '員工關係'],
-      matchScore: 95,
-      scoreLevel: 'high',
-      status: 'new',
-      avatarColor: '#6B8E8D'
-    },
-    {
-      id: 'C006',
-      name: '黃雅琳',
-      nameEn: 'Linda Huang',
-      email: 'linda.huang@example.com',
-      applyDate: '2025-11-19',
-      education: '國立成功大學 企業管理學系',
-      experience: '人資專員',
-      experienceYears: 2,
-      skills: ['招募流程', '面試安排', 'Excel', '人事行政'],
-      matchScore: 76,
-      scoreLevel: 'medium',
-      status: 'new',
-      avatarColor: '#9B7653'
-    },
-    {
-      id: 'C007',
-      name: '吳建宏',
-      nameEn: 'Ken Wu',
-      email: 'ken.wu@example.com',
-      applyDate: '2025-11-18',
-      education: '私立輔仁大學 心理學系',
-      experience: '招募助理',
-      experienceYears: 1,
-      skills: ['履歷篩選', '電話邀約', '行政作業'],
-      matchScore: 62,
-      scoreLevel: 'low',
-      status: 'new',
-      avatarColor: '#7E6B5C'
-    },
-    {
-      id: 'C008',
-      name: '許芳瑜',
-      nameEn: 'Fiona Hsu',
-      email: 'fiona.hsu@example.com',
-      applyDate: '2025-11-17',
-      education: '國立中正大學 勞工關係學系',
-      experience: '人資專員',
-      experienceYears: 3,
-      skills: ['勞動法規', '員工關係', '薪資管理', '福利規劃'],
-      matchScore: 84,
-      scoreLevel: 'high',
-      status: 'interview',
-      avatarColor: '#8DA399'
-    },
-    {
-      id: 'C009',
-      name: '蔡明翰',
-      nameEn: 'Michael Tsai',
-      email: 'michael.tsai@example.com',
-      applyDate: '2025-11-16',
-      education: '國立臺灣師範大學 教育心理學系',
-      experience: '培訓專員',
-      experienceYears: 4,
-      skills: ['教育訓練', '課程設計', '講師培訓', '成效評估'],
-      matchScore: 71,
-      scoreLevel: 'medium',
-      status: 'new',
-      avatarColor: '#6B8E8D'
-    },
-    {
-      id: 'C010',
-      name: '鄭雨萱',
-      nameEn: 'Rachel Cheng',
-      email: 'rachel.cheng@example.com',
-      applyDate: '2025-11-15',
-      education: '國立交通大學 管理科學系',
-      experience: '人資分析師',
-      experienceYears: 2,
-      skills: ['數據分析', 'Power BI', 'Excel進階', '人力報表'],
-      matchScore: 79,
-      scoreLevel: 'medium',
-      status: 'new',
-      avatarColor: '#A08D76'
-    },
-    {
-      id: 'C011',
-      name: '周冠廷',
-      nameEn: 'Kevin Chou',
-      email: 'kevin.chou@example.com',
-      applyDate: '2025-11-14',
-      education: '私立東吳大學 企業管理學系',
-      experience: '行政專員',
-      experienceYears: 1,
-      skills: ['文書處理', '會議安排', '檔案管理'],
-      matchScore: 55,
-      scoreLevel: 'low',
-      status: 'rejected',
-      avatarColor: '#7F9CA0'
-    },
-    {
-      id: 'C012',
-      name: '林佳慧',
-      nameEn: 'Grace Lin',
-      email: 'grace.lin@example.com',
-      applyDate: '2025-11-13',
-      education: '國立政治大學 勞工研究所',
-      experience: '勞資關係專員',
-      experienceYears: 5,
-      skills: ['勞資協商', '法規遵循', '爭議處理', '工會關係'],
-      matchScore: 82,
-      scoreLevel: 'high',
-      status: 'new',
-      avatarColor: '#8DA399'
-    },
-    {
-      id: 'C013',
-      name: '楊承翰',
-      nameEn: 'Hans Yang',
-      email: 'hans.yang@example.com',
-      applyDate: '2025-11-12',
-      education: '私立中原大學 企業管理學系',
-      experience: '招募顧問',
-      experienceYears: 3,
-      skills: ['獵才服務', '產業分析', '薪資談判', '人才mapping'],
-      matchScore: 87,
-      scoreLevel: 'high',
-      status: 'interview',
-      avatarColor: '#6B8E8D'
-    },
-    {
-      id: 'C014',
-      name: '陳怡君',
-      nameEn: 'Irene Chen',
-      email: 'irene.chen@example.com',
-      applyDate: '2025-11-11',
-      education: '國立臺北商業大學 企業管理系',
-      experience: '人事助理',
-      experienceYears: 1,
-      skills: ['考勤管理', '保險作業', '人事資料維護'],
-      matchScore: 58,
-      scoreLevel: 'low',
-      status: 'rejected',
-      avatarColor: '#9B7653'
-    },
-    {
-      id: 'C015',
-      name: '劉宗翰',
-      nameEn: 'Leo Liu',
-      email: 'leo.liu@example.com',
-      applyDate: '2025-11-10',
-      education: '國立清華大學 科技管理研究所',
-      experience: '人資經理',
-      experienceYears: 8,
-      skills: ['人資策略', '組織變革', '人才發展', '績效制度設計'],
-      matchScore: 94,
-      scoreLevel: 'high',
-      status: 'new',
-      avatarColor: '#8DA399'
-    }
-  ];
 
-  private readonly mockCandidateDetail: CandidateDetail = {
-    ...this.mockCandidates[0],
-    resumeUrl: 'resume_amy_lin.pdf',
-    aiAnalysis: {
-      matchScore: 92,
-      overallCompetencyScore: 88,
-      skills: [
-        { name: '招募面試', level: 'high', matched: true },
-        { name: '勞動法規', level: 'high', matched: true },
-        { name: 'Excel', level: 'high', matched: true },
-        { name: '人才評估', level: 'medium', matched: true },
-        { name: '104人力銀行', level: 'medium', matched: false },
-        { name: 'HRIS系統', level: 'medium', matched: false }
-      ],
-      experiences: [
-        {
-          company: '科技公司人資部',
-          position: '人力資源專員',
-          duration: '2 年 6 個月',
-          highlights: ['年度招募超過 50 人', '建立新人訓練流程']
-        },
-        {
-          company: '獵頭公司',
-          position: '招募顧問',
-          duration: '1 年',
-          highlights: ['科技產業獵才', '人才庫建置']
-        }
-      ],
-      education: {
-        school: '國立臺灣大學',
-        degree: '學士',
-        major: '心理學系',
-        verified: true
-      },
-      // 職能需求匹配分析 (對應 JD: 人員招募專員 jd-recruiter-001)
-      competencyMatches: [
-        {
-          competencyId: 'c-hr-s-recruit',
-          competencyName: '招募甄選',
-          type: 'skill' as const,
-          requiredLevel: 3,
-          assessedLevel: 4,
-          score: 95,
-          weight: 30,
-          evidence: '履歷顯示具備 3 年招募經驗，年度招募超過 50 人，熟悉多元招募管道'
-        },
-        {
-          competencyId: 'c-core-3',
-          competencyName: '溝通表達',
-          type: 'skill' as const,
-          requiredLevel: 4,
-          assessedLevel: 4,
-          score: 90,
-          weight: 25,
-          evidence: '過往獵頭經驗需要大量溝通協調，推薦信顯示良好人際互動能力'
-        },
-        {
-          competencyId: 'c-hr-s-interview',
-          competencyName: '面試技巧',
-          type: 'skill' as const,
-          requiredLevel: 3,
-          assessedLevel: 3,
-          score: 85,
-          weight: 20,
-          evidence: '有結構化面試經驗，心理學背景有助於行為面試評估'
-        },
-        {
-          competencyId: 'c-hr-a-proact',
-          competencyName: '積極主動',
-          type: 'attitude' as const,
-          requiredLevel: 4,
-          assessedLevel: 4,
-          score: 88,
-          weight: 15,
-          evidence: '自主建立新人訓練流程，展現主動改善的工作態度'
-        },
-        {
-          competencyId: 'c-hr-k-labor',
-          competencyName: '勞動法規知識',
-          type: 'knowledge' as const,
-          requiredLevel: 2,
-          assessedLevel: 3,
-          score: 92,
-          weight: 10,
-          evidence: '履歷提及熟悉勞基法相關規定，超過職位要求等級'
-        }
-      ]
-    }
-  };
+
+  private readonly JOBS_API = '/api/jobs';
 
   getJobs(): Observable<Job[]> {
-    return of(this.mockJobs).pipe(delay(300));
+    return this.http.get<{ status: string; data: any[] }>(`${this.JOBS_API}`).pipe(
+      map(response => response.data.map(job => this.mapDbJobToLocal(job))),
+      catchError(error => {
+        console.error('Failed to fetch jobs:', error);
+        return of([]);
+      })
+    );
   }
 
+  /**
+   * 取得已同步 104 的職缺（從資料庫）
+   * 用於「104 職缺」分頁，顯示已關聯 104 的職缺
+   */
+  getSynced104Jobs(): Observable<Job[]> {
+    return this.http.get<{ status: string; data: any[] }>(`${this.JOBS_API}`).pipe(
+      map(response => response.data
+        .filter(job => job.job104_no)  // 只取有 104 編號的職缺
+        .map(job => this.mapDbJobToLocal(job))
+      ),
+      catchError(error => {
+        console.error('Failed to fetch synced 104 jobs:', error);
+        return of([]);
+      })
+    );
+  }
+
+
+  /**
+   * 取得單一職缺詳情（含 job104_data）
+   */
+  getJobById(jobId: string): Observable<any> {
+    return this.http.get<{ status: string; data: any }>(`${this.JOBS_API}/${jobId}`).pipe(
+      map(response => response.data),
+      catchError(error => {
+        console.error('Failed to fetch job by id:', error);
+        return of(null);
+      })
+    );
+  }
+
+
   getJobStats(): Observable<JobStats> {
-    return of({
-      activeJobs: 12,
-      newResumes: 45,
-      pendingReview: 28,
-      scheduledInterviews: 8
-    }).pipe(delay(200));
+    return this.http.get<{ status: string; data: any }>(`${this.JOBS_API}/stats/summary`).pipe(
+      map(response => ({
+        activeJobs: response.data?.activeJobs || 0,
+        newResumes: 45,  // TODO: 從實際資料取得
+        pendingReview: 28,
+        scheduledInterviews: 8
+      })),
+      catchError(() => of({
+        activeJobs: 0,
+        newResumes: 0,
+        pendingReview: 0,
+        scheduledInterviews: 0
+      }))
+    );
   }
 
   getCandidates(jobId?: string): Observable<JobCandidate[]> {
-    return of(this.mockCandidates).pipe(delay(300));
+    if (!jobId) return of([]);
+
+    return this.http.get<{ status: string; data: any[] }>(`${this.JOBS_API}/${jobId}/candidates`).pipe(
+      map(response => response.data.map(c => this.mapDbCandidateToLocal(c))),
+      catchError(error => {
+        console.error('Failed to fetch candidates:', error);
+        return of([]);
+      })
+    );
   }
 
   getCandidateStats(): Observable<CandidateStats> {
@@ -429,29 +108,439 @@ export class JobService {
   }
 
   getCandidateDetail(candidateId: string): Observable<CandidateDetail | null> {
-    // 模擬返回第一個候選人的詳情
-    return of(this.mockCandidateDetail).pipe(delay(300));
+    // 暫時返回一個基本的 mock 物件，以避免 build error
+    const detail: CandidateDetail = {
+      id: candidateId,
+      name: '模擬候選人',
+      nameEn: 'Mock Candidate',
+      email: 'mock@example.com',
+      applyDate: '2026-01-01',
+      education: 'Mock University',
+      experience: 'Mock Experience',
+      experienceYears: 1,
+      skills: ['Mock Skill'],
+      matchScore: 80,
+      scoreLevel: 'medium',
+      status: 'new',
+      resumeUrl: '',
+      aiAnalysis: {
+        matchScore: 80,
+        skills: [],
+        experiences: [],
+        education: { school: '', degree: '', major: '', verified: false }
+      }
+    };
+    return of(detail).pipe(delay(300));
   }
 
-  createJob(job: Partial<Job>): Observable<Job> {
-    const newJob: Job = {
-      id: `JOB-${Date.now()}`,
-      title: job.title || '',
-      department: job.department || '',
-      publishDate: null,
-      newCandidates: 0,
-      totalCandidates: 0,
-      status: 'draft',
-      recruiter: job.recruiter || 'Admin'
-    };
-    return of(newJob).pipe(delay(500));
+  /**
+   * 取得候選人完整履歷資料與 AI 解析報告
+   */
+  getCandidateFull(jobId: string, candidateId: string): Observable<CandidateFull & { resumeAnalysis?: CandidateResumeAnalysis }> {
+    return this.http.get<any>(`${this.JOBS_API}/${jobId}/candidates/${candidateId}/full`).pipe(
+      map(dbData => this.mapDbCandidateFullToLocal(dbData)),
+      catchError(error => {
+        console.error('Failed to fetch candidate full data:', error);
+        throw error;
+      })
+    );
   }
+
+  /**
+   * 將資料庫候選人完整資料轉為前端格式
+   */
+  private mapDbCandidateFullToLocal(dbData: any): CandidateFull & { resumeAnalysis?: CandidateResumeAnalysis } {
+    // Parse skills
+    let skills: string[] = [];
+    try {
+      if (dbData.skills) {
+        skills = JSON.parse(dbData.skills);
+      }
+    } catch (e) {
+      if (typeof dbData.skills === 'string') {
+        skills = dbData.skills.split(',').map((s: string) => s.trim());
+      }
+    }
+
+    // Parse personal page
+    let personalPage: string[] = [];
+    try {
+      if (dbData.personal_page) {
+        personalPage = JSON.parse(dbData.personal_page);
+      }
+    } catch (e) { }
+
+    // Parse selected slots
+    let selectedSlots: string[] = [];
+    try {
+      if (dbData.selected_slots) {
+        selectedSlots = JSON.parse(dbData.selected_slots);
+      }
+    } catch (e) { }
+
+    const candidate: CandidateFull = {
+      // 基本資料
+      id: dbData.id,
+      name: dbData.name,
+      nameEn: dbData.name_en || '',
+      email: dbData.email || '',
+      phone: dbData.phone || '',
+      location: dbData.location || dbData.address || '',
+      applyDate: dbData.apply_date || '',
+      education: dbData.education || '',
+      experience: dbData.experience || '',
+      experienceYears: dbData.experience_years || 0,
+      skills: skills,
+      matchScore: dbData.score || 0,
+      scoreLevel: (dbData.score >= 80 ? 'high' : dbData.score >= 60 ? 'medium' : 'low'),
+      status: dbData.status || 'new',
+      stage: dbData.stage,
+      avatarColor: this.getRandomColor(),
+      jobTitle: dbData.job_title || '',  // 應徵職缺標題
+      
+      // 面試邀請資訊
+      invitationStatus: dbData.invitation_status,
+      candidateResponse: dbData.candidate_response,
+      selectedSlots: selectedSlots,
+      responseToken: dbData.response_token,
+      rescheduleNote: dbData.reschedule_note,
+      interviewCount: dbData.interview_count || 0,
+      
+      // 面試資訊
+      interviewId: dbData.interview_id,
+      interviewAt: dbData.interview_at,
+      interviewLocation: dbData.interview_location,
+      interviewAddress: dbData.interview_address,
+      meetingLink: dbData.meeting_link,
+      interviewCancelToken: dbData.interview_cancel_token,
+      interviewResult: dbData.interview_result,
+      
+      // 104 擴充資料
+      currentPosition: dbData.current_position,
+      currentCompany: dbData.current_company,
+      expectedSalary: dbData.expected_salary,
+      avatar: dbData.avatar,
+      resume104Id: dbData.resume_104_id,
+      gender: dbData.gender,
+      birthday: dbData.birthday,
+      employmentStatus: dbData.employment_status,
+      seniority: dbData.seniority,
+      subPhone: dbData.sub_phone,
+      tel: dbData.tel,
+      contactInfo: dbData.contact_info,
+      address: dbData.address,
+      regSource: dbData.reg_source,
+      militaryStatus: dbData.military_status,
+      militaryRetireDate: dbData.military_retire_date,
+      introduction: dbData.introduction,
+      motto: dbData.motto,
+      characteristic: dbData.characteristic,
+      personalPage: personalPage,
+      drivingLicenses: dbData.driving_licenses,
+      transports: dbData.transports,
+      specialIdentities: dbData.special_identities,
+      nationality: dbData.nationality,
+      disabledTypes: dbData.disabled_types,
+      disabilityCard: dbData.disability_card,
+      assistiveDevices: dbData.assistive_devices,
+      
+      // 求職條件
+      jobCharacteristic: dbData.job_characteristic,
+      workInterval: dbData.work_interval,
+      otherWorkInterval: dbData.other_work_interval,
+      shiftWork: dbData.shift_work === 1,
+      startDateOpt: dbData.start_date_opt,
+      preferredLocation: dbData.preferred_location,
+      remoteWork: dbData.remote_work,
+      preferredJobName: dbData.preferred_job_name,
+      preferredJobCategory: dbData.preferred_job_category,
+      preferredIndustry: dbData.preferred_industry,
+      workDesc: dbData.work_desc,
+      
+      // 自傳
+      biography: dbData.biography,
+      biographyEn: dbData.biography_en,
+      
+      // 證照
+      certificates: dbData.certificates,
+      otherCertificates: dbData.other_certificates,
+      
+      // 子資料（轉換 snake_case 為 camelCase）
+      educationList: (dbData.educationList || []).map((edu: any) => ({
+        id: edu.id,
+        candidateId: edu.candidate_id,
+        schoolName: edu.school_name,
+        degreeLevel: edu.degree_level,
+        major: edu.major,
+        majorCategory: edu.major_category,
+        degreeStatus: edu.degree_status,
+        schoolCountry: edu.school_country,
+        startDate: edu.start_date,
+        endDate: edu.end_date,
+        sortOrder: edu.sort_order,
+        createdAt: edu.created_at
+      })),
+      experienceList: (dbData.experienceList || []).map((exp: any) => ({
+        id: exp.id,
+        candidateId: exp.candidate_id,
+        firmName: exp.firm_name,
+        industryCategory: exp.industry_category,
+        companySize: exp.company_size,
+        workPlace: exp.work_place,
+        jobName: exp.job_name,
+        jobRole: exp.job_role,
+        jobCategory: exp.job_category,
+        startDate: exp.start_date,
+        endDate: exp.end_date,
+        jobDesc: exp.job_desc,
+        skills: exp.skills,
+        management: exp.management,
+        wageTypeDesc: exp.wage_type_desc,
+        wage: exp.wage,
+        wageYear: exp.wage_year,
+        sortOrder: exp.sort_order,
+        createdAt: exp.created_at
+      })),
+      specialityList: (dbData.specialityList || []).map((spec: any) => ({
+        id: spec.id,
+        candidateId: spec.candidate_id,
+        skill: spec.skill,
+        description: spec.description,
+        tags: spec.tags,
+        sortOrder: spec.sort_order,
+        createdAt: spec.created_at
+      })),
+      languageList: (dbData.languageList || []).map((lang: any) => ({
+        id: lang.id,
+        candidateId: lang.candidate_id,
+        langType: lang.lang_type,
+        languageCategory: lang.language_category,
+        listenDegree: lang.listen_degree,
+        speakDegree: lang.speak_degree,
+        readDegree: lang.read_degree,
+        writeDegree: lang.write_degree,
+        degree: lang.degree,
+        certificates: lang.certificates,
+        sortOrder: lang.sort_order,
+        createdAt: lang.created_at
+      })),
+      attachmentList: (dbData.attachmentList || []).map((attach: any) => ({
+        id: attach.id,
+        candidateId: attach.candidate_id,
+        type: attach.type,
+        title: attach.title,
+        fileName: attach.file_name,
+        resourceLink: attach.resource_link,
+        website: attach.website,
+        sortOrder: attach.sort_order,
+        createdAt: attach.created_at
+      })),
+      projectList: (dbData.projectList || []).map((proj: any) => ({
+        id: proj.id,
+        candidateId: proj.candidate_id,
+        title: proj.title,
+        startDate: proj.start_date,
+        endDate: proj.end_date,
+        description: proj.description,
+        type: proj.type,
+        resourceLink: proj.resource_link,
+        website: proj.website,
+        sortOrder: proj.sort_order,
+        createdAt: proj.created_at
+      })),
+      customContentList: dbData.customContentList || [],
+      recommenderList: (dbData.recommenderList || []).map((rec: any) => ({
+        id: rec.id,
+        candidateId: rec.candidate_id,
+        name: rec.name,
+        corp: rec.corp,
+        jobTitle: rec.job_title,
+        email: rec.email,
+        tel: rec.tel,
+        sortOrder: rec.sort_order,
+        createdAt: rec.created_at
+      })),
+      applyRecordList: (dbData.applyRecordList || []).map((record: any) => ({
+        id: record.id,
+        candidateId: record.candidate_id,
+        applyDate: record.apply_date,
+        jobName: record.job_name,
+        jobNo: record.job_no,
+        applySource: record.apply_source,
+        createdAt: record.created_at
+      })),
+      applyQuestionList: (dbData.applyQuestionList || []).map((q: any) => ({
+        id: q.id,
+        candidateId: q.candidate_id,
+        type: q.type,
+        question: q.question,
+        answer: q.answer,
+        sortOrder: q.sort_order,
+        createdAt: q.created_at
+      }))
+    };
+
+    // AI 解析報告（如果有）
+    const result: CandidateFull & { resumeAnalysis?: CandidateResumeAnalysis } = candidate;
+    
+    if (dbData.resumeAnalysis) {
+      result.resumeAnalysis = {
+        id: dbData.resumeAnalysis.id,
+        candidateId: dbData.resumeAnalysis.candidate_id,
+        jobId: dbData.resumeAnalysis.job_id,
+        overallMatchScore: dbData.resumeAnalysis.overall_match_score || 0,
+        requirementMatchScore: dbData.resumeAnalysis.requirement_match_score || 0,
+        keywordMatchScore: dbData.resumeAnalysis.keyword_match_score || 0,
+        experienceRelevanceScore: dbData.resumeAnalysis.experience_relevance_score || 0,
+        matchedRequirements: dbData.resumeAnalysis.matchedRequirements || [],
+        unmatchedRequirements: dbData.resumeAnalysis.unmatchedRequirements || [],
+        bonusSkills: dbData.resumeAnalysis.bonusSkills || [],
+        extractedTechSkills: dbData.resumeAnalysis.extractedTechSkills || [],
+        extractedSoftSkills: dbData.resumeAnalysis.extractedSoftSkills || [],
+        jdRequiredMatchCount: dbData.resumeAnalysis.jd_required_match_count || 0,
+        jdRequiredTotalCount: dbData.resumeAnalysis.jd_required_total_count || 0,
+        jdBonusMatchCount: dbData.resumeAnalysis.jd_bonus_match_count || 0,
+        jdBonusTotalCount: dbData.resumeAnalysis.jd_bonus_total_count || 0,
+        experienceAnalysis: dbData.resumeAnalysis.experienceAnalysis || [],
+        totalRelevantYears: dbData.resumeAnalysis.total_relevant_years || 0,
+        jdRequiredYears: dbData.resumeAnalysis.jd_required_years || 0,
+        writingStyle: dbData.resumeAnalysis.writing_style || '',
+        analysisConfidence: dbData.resumeAnalysis.analysis_confidence || 0,
+        contentFeatures: dbData.resumeAnalysis.contentFeatures || [],
+        areasToClarify: dbData.resumeAnalysis.areasToClarify || [],
+        techVerificationPoints: dbData.resumeAnalysis.techVerificationPoints || [],
+        experienceSupplementPoints: dbData.resumeAnalysis.experienceSupplementPoints || [],
+        analyzedAt: dbData.resumeAnalysis.analyzed_at || '',
+        analysisEngineVersion: dbData.resumeAnalysis.analysis_engine_version || '',
+        resumeWordCount: dbData.resumeAnalysis.resume_word_count || 0
+      };
+    }
+
+    return result;
+  }
+
+  /**
+   * 新增職缺 (可選同步至 104)
+   */
+  createJob(job: Partial<Job> & { syncTo104?: boolean; job104Data?: any }): Observable<Job> {
+    const payload = {
+      title: job.title,
+      department: job.department,
+      description: job.description || '',
+      recruiter: job.recruiter || 'HR Admin',
+      syncTo104: job.syncTo104 || false,
+      job104Data: job.job104Data || null
+    };
+
+    return this.http.post<{ status: string; data: any }>(`${this.JOBS_API}`, payload).pipe(
+      map(response => this.mapDbJobToLocal(response.data)),
+      catchError(error => {
+        console.error('Failed to create job:', error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * 將現有職缺同步至 104
+   */
+  syncJobTo104(jobId: string, job104Data: any): Observable<{ job104No: string; syncStatus: string } | null> {
+    return this.http.post<{ status: string; data: any }>(`${this.JOBS_API}/${jobId}/sync-104`, { job104Data }).pipe(
+      map(response => ({
+        job104No: response.data?.job104_no,
+        syncStatus: response.data?.sync_status
+      })),
+      catchError(error => {
+        console.error('Failed to sync job to 104:', error);
+        return of(null);
+      })
+    );
+  }
+
+  /**
+   * 從 104 同步最新資料回本地
+   */
+  syncFrom104(jobId: string): Observable<{ job104Data: any; syncedAt: string } | null> {
+    return this.http.post<{ status: string; data: any; message?: string }>(`${this.JOBS_API}/${jobId}/sync-from-104`, {}).pipe(
+      map(response => ({
+        job104Data: response.data?.job104_data,
+        syncedAt: response.data?.synced_at
+      })),
+      catchError(error => {
+        console.error('Failed to sync from 104:', error);
+        return of(null);
+      })
+    );
+  }
+
+
+  /**
+   * 更新職缺
+   */
+  updateJob(jobId: string, jobData: Partial<Job>): Observable<boolean> {
+    return this.http.put<{ status: string }>(`${this.JOBS_API}/${jobId}`, jobData).pipe(
+      map(response => response.status === 'success'),
+      catchError(error => {
+        console.error('Failed to update job:', error);
+        return of(false);
+      })
+    );
+  }
+
+  /**
+   * 更新職缺狀態
+   */
+  updateStatus(jobId: string, status: JobStatus): Observable<any> {
+    return this.http.patch<{ status: string; sync104?: any }>(`${this.JOBS_API}/${jobId}/status`, { status }).pipe(
+      map(response => response),  // 返回完整回應，包含 sync104
+      catchError(error => {
+        console.error('Failed to update job status:', error);
+        return of(false);
+      })
+    );
+  }
+
+
+  /**
+   * 刪除職缺
+   */
+  deleteJob(jobId: string): Observable<boolean> {
+    return this.http.delete<{ status: string }>(`${this.JOBS_API}/${jobId}`).pipe(
+      map(response => response.status === 'success'),
+      catchError(error => {
+        console.error('Failed to delete job:', error);
+        return of(false);
+      })
+    );
+  }
+
+  /**
+   * 將 DB 職缺格式轉為前端格式
+   */
+  private mapDbJobToLocal(dbJob: any): Job {
+    return {
+      id: dbJob.id,
+      title: dbJob.title,
+      department: dbJob.department || '',
+      description: dbJob.description || '',  // 加入 description 欄位
+      publishDate: dbJob.publish_date || dbJob.synced_at?.split('T')[0] || null,
+      newCandidates: dbJob.new_candidates || 0,
+      totalCandidates: dbJob.total_candidates || 0,
+      status: (dbJob.status as any) || 'draft',
+      recruiter: dbJob.recruiter || 'HR Admin',
+      source: dbJob.job104_no ? '104' : 'internal',
+      job104No: dbJob.job104_no || undefined,
+      syncStatus: dbJob.sync_status || 'local_only'
+    };
+  }
+
 
   getStatusLabel(status: JobStatus): string {
     const labels: Record<JobStatus, string> = {
       published: '刊登中',
       draft: '草稿',
-      review: '審核中'
+      review: '審核中',
+      closed: '已關閉'
     };
     return labels[status];
   }
@@ -460,9 +549,215 @@ export class JobService {
     const icons: Record<JobStatus, string> = {
       published: 'ri-checkbox-circle-line',
       draft: 'ri-file-edit-line',
-      review: 'ri-time-line'
+      review: 'ri-time-line',
+      closed: 'ri-close-circle-line'
     };
     return icons[status];
+  }
+
+  // ============================================================
+  // 104 Job API 整合方法
+  // ============================================================
+
+  /**
+   * 取得 104 職缺列表
+   */
+  get104Jobs(limit = 10, offset = 0): Observable<Job[]> {
+    return this.http.get<Job104Response>(`${API_104_BASE}/jobs`, {
+      params: { limit: limit.toString(), offset: offset.toString() }
+    }).pipe(
+      map(response => {
+        const jobs = Array.isArray(response.data) ? response.data : [response.data];
+        return jobs.map(job104 => this.mapJob104ToLocal(job104));
+      }),
+      catchError(error => {
+        console.error('Failed to fetch 104 jobs:', error);
+        return of([]);
+      })
+    );
+  }
+
+  /**
+   * 取得 104 單一職缺詳情
+   */
+  get104JobDetail(jobNo: string): Observable<Job | null> {
+    return this.http.get<Job104Response>(`${API_104_BASE}/jobs/${jobNo}`).pipe(
+      map(response => {
+        const job104 = response.data as Job104;
+        return this.mapJob104ToLocal(job104);
+      }),
+      catchError(error => {
+        console.error(`Failed to fetch 104 job detail (${jobNo}):`, error);
+        return of(null);
+      })
+    );
+  }
+
+  /**
+   * 新增職缺至 104
+   */
+  create104Job(jobData: Job104CreateRequest): Observable<Job | null> {
+    return this.http.post<Job104Response>(`${API_104_BASE}/jobs`, jobData).pipe(
+      map(response => {
+        const job104 = response.data as Job104;
+        return this.mapJob104ToLocal(job104);
+      }),
+      catchError(error => {
+        console.error('Failed to create 104 job:', error);
+        return of(null);
+      })
+    );
+  }
+
+  /**
+   * 更新 104 職缺
+   */
+  update104Job(jobNo: string, jobData: Partial<Job104CreateRequest>): Observable<Job | null> {
+    return this.http.put<Job104Response>(`${API_104_BASE}/jobs/${jobNo}`, jobData).pipe(
+      map(response => {
+        const job104 = response.data as Job104;
+        return this.mapJob104ToLocal(job104);
+      }),
+      catchError(error => {
+        console.error(`Failed to update 104 job (${jobNo}):`, error);
+        return of(null);
+      })
+    );
+  }
+
+  /**
+   * 刪除/下架 104 職缺
+   */
+  delete104Job(jobNo: string): Observable<boolean> {
+    return this.http.delete<{ status: string }>(`${API_104_BASE}/jobs/${jobNo}`).pipe(
+      map(response => response.status === 'success'),
+      catchError(error => {
+        console.error(`Failed to delete 104 job (${jobNo}):`, error);
+        return of(false);
+      })
+    );
+  }
+
+  /**
+   * 更新 104 職缺狀態 (開啟/關閉)
+   */
+  patch104JobStatus(jobNo: string, status: 'on' | 'off'): Observable<boolean> {
+    return this.http.patch<{ status: string }>(`${API_104_BASE}/jobs/${jobNo}`, { switch: status }).pipe(
+      map(response => response.status === 'success'),
+      catchError(error => {
+        console.error(`Failed to patch 104 job status (${jobNo}):`, error);
+        return of(false);
+      })
+    );
+  }
+
+  // ============================================================
+  // 資料轉換方法
+  // ============================================================
+
+  /**
+   * 將 104 職缺格式轉為本地格式
+   */
+  mapJob104ToLocal(job104: Job104): Job {
+    return {
+      id: job104.internalId || job104.jobNo,
+      title: job104.jobTitle,
+      department: job104.workPlace?.city || '未指定',
+      description: '',  // 104 API 列表不返回 description，編輯時需另外獲取
+      publishDate: new Date().toISOString().split('T')[0],
+      newCandidates: 0,
+      totalCandidates: 0,
+      status: job104.internalStatus || (job104.switch === 'on' ? 'published' : 'draft'),
+      recruiter: 'HR Admin',
+      source: '104',
+      job104No: job104.jobNo,
+      syncStatus: '104_synced'
+    };
+  }
+
+
+  /**
+   * 將本地格式轉為 104 新增請求格式
+   * 注意：104 API 有很多必填欄位，這裡填入預設值
+   */
+  mapLocalToJob104(job: Partial<Job>): Job104CreateRequest {
+    return {
+      role: 1,                                    // 全職
+      job: job.title || '職缺名稱',               // 職缺名稱
+      jobCatSet: [2007001004],                  // 預設: 軟體工程類 (API 需為數字)
+      description: `職缺說明：${job.title || '待補充'}\n\n工作內容待補充。`, // 職務說明
+      salaryType: 10,                             // 面議
+      salaryLow: 0,                               // 最低薪資
+      salaryHigh: 0,                              // 最高薪資
+      addrNo: 6001001001,                         // 台北市
+      edu: [7],                                   // 大學
+      contact: 'HR',                              // 聯絡人
+      email: ['hr@company.com'],                  // 聯絡 email
+      applyType: {
+        '104': [2]                               // 接受 104 履歷
+      },
+      replyDay: 7,                                // 7天內回覆
+      workShifts: []                              // 預設空的排班
+    };
+  }
+
+  private mapDbCandidateToLocal(dbCandidate: any): JobCandidate {
+    let skills: string[] = [];
+    try {
+      if (dbCandidate.skills) {
+        skills = JSON.parse(dbCandidate.skills);
+      }
+    } catch (e) {
+      if (typeof dbCandidate.skills === 'string') {
+        skills = dbCandidate.skills.split(',').map((s: string) => s.trim());
+      }
+    }
+
+    let selectedSlots: string[] = [];
+    try {
+      if (dbCandidate.selected_slots) {
+        selectedSlots = JSON.parse(dbCandidate.selected_slots);
+      }
+    } catch (e) { }
+
+    return {
+      id: dbCandidate.id,
+      name: dbCandidate.name,
+      nameEn: dbCandidate.name_en || '',
+      email: dbCandidate.email || '',
+      phone: dbCandidate.phone || '',
+      location: '台北市',
+      applyDate: dbCandidate.apply_date,
+      education: dbCandidate.education || '未填寫',
+      experience: dbCandidate.experience || '未填寫',
+      experienceYears: dbCandidate.experience_years || 0,
+      skills: skills,
+      matchScore: dbCandidate.score || 0,
+      scoreLevel: (dbCandidate.score >= 80 ? 'high' : dbCandidate.score >= 60 ? 'medium' : 'low'),
+      status: dbCandidate.status || 'new',
+      avatarColor: this.getRandomColor(),
+      stage: dbCandidate.stage,
+      // Invitation Data
+      invitationStatus: dbCandidate.invitation_status,
+      candidateResponse: dbCandidate.candidate_response,
+      selectedSlots: selectedSlots,
+      responseToken: dbCandidate.response_token,
+      rescheduleNote: dbCandidate.reschedule_note,
+      interviewCount: dbCandidate.interview_count || 0,
+      // 面試資訊
+      interviewId: dbCandidate.interview_id,
+      interviewAt: dbCandidate.interview_at,
+      interviewLocation: dbCandidate.interview_location,
+      interviewAddress: dbCandidate.interview_address,
+      meetingLink: dbCandidate.meeting_link,
+      interviewCancelToken: dbCandidate.interview_cancel_token,
+      interviewResult: dbCandidate.interview_result
+    };
+  }
+
+  private getRandomColor(): string {
+    const colors = ['#8DA399', '#D6A28C', '#7F9CA0', '#9A8C98', '#B87D7B', '#C4A4A1'];
+    return colors[Math.floor(Math.random() * colors.length)];
   }
 }
 

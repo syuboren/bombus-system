@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
-import { LoginRequest } from '../../models/auth.model';
+import { LoginRequest, PlatformLoginRequest } from '../../models/auth.model';
 
 @Component({
   standalone: true,
@@ -17,11 +17,18 @@ export class LoginPageComponent implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
 
+  // Login mode
+  loginMode = signal<'tenant' | 'platform'>('tenant');
+
   // Form state
-  username = signal('');
+  email = signal('');
   password = signal('');
+  tenantSlug = signal('demo');
   rememberMe = signal(false);
   showPassword = signal(false);
+
+  /** @deprecated 向後相容 alias */
+  username = this.email;
 
   // Forgot password modal
   showForgotModal = signal(false);
@@ -42,16 +49,28 @@ export class LoginPageComponent implements OnInit {
   ngOnInit(): void {
     // 檢查是否已登入
     if (this.authService.isLoggedIn()) {
-      this.router.navigate(['/dashboard']);
+      const user = this.authService.getCurrentUser();
+      this.router.navigate([user?.isPlatformAdmin ? '/platform' : '/dashboard']);
       return;
     }
 
     // 載入記住的帳號
     const remembered = this.authService.getRememberedCredentials();
     if (remembered) {
-      this.username.set(remembered.username);
+      this.email.set(remembered.email || '');
+      if (remembered.tenant_slug) {
+        this.tenantSlug.set(remembered.tenant_slug);
+      }
       this.rememberMe.set(remembered.rememberMe);
     }
+  }
+
+  /**
+   * 切換登入模式
+   */
+  switchMode(mode: 'tenant' | 'platform'): void {
+    this.loginMode.set(mode);
+    this.errorMessage.set(null);
   }
 
   /**
@@ -67,15 +86,28 @@ export class LoginPageComponent implements OnInit {
   onLogin(): void {
     this.errorMessage.set(null);
 
-    // 表單驗證
-    if (!this.username() || !this.password()) {
-      this.errorMessage.set('請輸入帳號和密碼');
+    if (!this.email() || !this.password()) {
+      this.errorMessage.set('請輸入電子郵件和密碼');
+      return;
+    }
+
+    if (this.loginMode() === 'platform') {
+      this.onPlatformLogin();
+    } else {
+      this.onTenantLogin();
+    }
+  }
+
+  private onTenantLogin(): void {
+    if (!this.tenantSlug()) {
+      this.errorMessage.set('請輸入組織代碼');
       return;
     }
 
     const request: LoginRequest = {
-      username: this.username(),
+      email: this.email(),
       password: this.password(),
+      tenant_slug: this.tenantSlug(),
       rememberMe: this.rememberMe()
     };
 
@@ -83,6 +115,26 @@ export class LoginPageComponent implements OnInit {
       next: (response) => {
         if (response.success) {
           this.router.navigate(['/dashboard']);
+        } else {
+          this.errorMessage.set(response.message);
+        }
+      },
+      error: () => {
+        this.errorMessage.set('系統發生錯誤，請稍後再試');
+      }
+    });
+  }
+
+  private onPlatformLogin(): void {
+    const request: PlatformLoginRequest = {
+      email: this.email(),
+      password: this.password()
+    };
+
+    this.authService.platformLogin(request).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.router.navigate(['/platform']);
         } else {
           this.errorMessage.set(response.message);
         }

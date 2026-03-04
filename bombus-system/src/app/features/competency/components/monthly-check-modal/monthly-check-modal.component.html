@@ -1,0 +1,386 @@
+@if (visible()) {
+  <div class="modal-backdrop" (click)="onBackdropClick($event)">
+    <div class="modal-container">
+      <!-- Header -->
+      <div class="modal-header">
+        <h2>
+          @if (check()) {
+            {{ check()?.year }}年{{ check()?.month }}月 - 月度檢核
+          } @else {
+            月度檢核詳情
+          }
+        </h2>
+        <button class="btn-close" (click)="onClose()" type="button">
+          <i class="ri-close-line"></i>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="modal-body">
+        @if (loading()) {
+          <div class="loading-state">
+            <i class="ri-loader-4-line spinner"></i>
+            <span>載入中...</span>
+          </div>
+        } @else if (error()) {
+          <div class="error-state">
+            <i class="ri-error-warning-line"></i>
+            <span>{{ error() }}</span>
+            <button class="btn-retry" (click)="loadCheck()" type="button">重試</button>
+          </div>
+        } @else if (check()) {
+          <!-- Employee Info -->
+          <div class="info-section">
+            <div class="info-grid">
+              <div class="info-item">
+                <label>員工姓名</label>
+                <span>{{ check()?.employeeName }}</span>
+              </div>
+              <div class="info-item">
+                <label>部門</label>
+                <span>{{ check()?.department }}</span>
+              </div>
+              <div class="info-item">
+                <label>職位</label>
+                <span>{{ check()?.position }}</span>
+              </div>
+              <div class="info-item">
+                <label>狀態</label>
+                <app-status-badge [status]="check()?.status || ''"></app-status-badge>
+              </div>
+              <div class="info-item">
+                <label>自評日期</label>
+                <span>{{ formatDate(check()?.selfAssessmentDate) }}</span>
+              </div>
+              <div class="info-item">
+                <label>主管審核日期</label>
+                <span>{{ formatDate(check()?.managerReviewDate) }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Items Table -->
+          <div class="items-section">
+            <h3>檢核項目</h3>
+            <div class="items-table-wrapper">
+              <table class="items-table">
+                <thead>
+                  <tr>
+                    <th class="col-index">#</th>
+                    <th class="col-name">指標名稱</th>
+                    <th class="col-points">點數</th>
+                    <th class="col-score">自評分數</th>
+                    <th class="col-score">主管分數</th>
+                    <th class="col-weighted">加權分</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of check()?.items; track item.id; let i = $index) {
+                    <tr>
+                      <td class="col-index">{{ i + 1 }}</td>
+                      <td class="col-name">
+                        <div class="item-name">{{ item.name }}</div>
+                        @if (item.description) {
+                          <div class="item-desc">
+                            <span class="desc-label">說明：</span>{{ item.description }}
+                          </div>
+                        }
+                        @if (item.measurement) {
+                          <div class="item-measurement">
+                            <span class="measurement-label">衡量標準：</span>{{ item.measurement }}
+                          </div>
+                        }
+                      </td>
+                      <td class="col-points">{{ item.points }}</td>
+                      <td class="col-score">
+                        @if (isEditing() && canSelfAssess()) {
+                          <select 
+                            class="score-select"
+                            [ngModel]="getItemScore(item.id, 'self')"
+                            (ngModelChange)="updateSelfScore(item.id, $event)">
+                            <option [value]="0">-</option>
+                            @for (opt of scoreOptions; track opt.value) {
+                              <option [value]="opt.value">{{ opt.value }} - {{ opt.label }}</option>
+                            }
+                          </select>
+                        } @else {
+                          <span class="score-value" [class.empty]="!item.selfScore">
+                            {{ item.selfScore || '-' }}
+                          </span>
+                        }
+                      </td>
+                      <td class="col-score">
+                        @if (isEditing() && canManagerReview()) {
+                          <select 
+                            class="score-select"
+                            [ngModel]="getItemScore(item.id, 'manager')"
+                            (ngModelChange)="updateManagerScore(item.id, $event)">
+                            <option [value]="0">-</option>
+                            @for (opt of scoreOptions; track opt.value) {
+                              <option [value]="opt.value">{{ opt.value }} - {{ opt.label }}</option>
+                            }
+                          </select>
+                        } @else {
+                          <span class="score-value" [class.empty]="!item.managerScore">
+                            {{ item.managerScore || '-' }}
+                          </span>
+                        }
+                      </td>
+                      <td class="col-weighted">
+                        <span class="weighted-score" [class.empty]="!item.weightedScore">
+                          {{ item.weightedScore?.toFixed(2) || '-' }}
+                        </span>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+                <tfoot>
+                  <tr class="total-row">
+                    <td colspan="5" class="total-label">總分</td>
+                    <td class="total-value">
+                      @if (isEditing()) {
+                        {{ totalWeightedScore() }}
+                      } @else {
+                        {{ check()?.totalScore?.toFixed(1) || '-' }}
+                      }
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+
+          <!-- Comments Section -->
+          @if (check()?.managerComment || canManagerReview()) {
+            <div class="comment-section">
+              <h3>主管評語</h3>
+              @if (isEditing() && canManagerReview()) {
+                <textarea 
+                  class="comment-textarea"
+                  [ngModel]="managerComment()"
+                  (ngModelChange)="managerComment.set($event)"
+                  placeholder="請輸入主管評語..."
+                  rows="3">
+                </textarea>
+              } @else {
+                <div class="comment-content">
+                  {{ check()?.managerComment || '(無)' }}
+                </div>
+              }
+            </div>
+          }
+
+          @if (check()?.hrComment) {
+            <div class="comment-section">
+              <h3>HR 備註</h3>
+              <div class="comment-content">{{ check()?.hrComment }}</div>
+            </div>
+          }
+
+          <!-- 歷史簽名記錄 -->
+          @if (check()?.employeeSignature || check()?.managerSignature || check()?.hrSignature) {
+            <div class="signatures-section">
+              <h3><i class="ri-quill-pen-line"></i> 電子簽名記錄</h3>
+              <div class="signatures-grid">
+                @if (check()?.employeeSignature) {
+                  <div class="signature-record">
+                    <label>員工自評簽名</label>
+                    <div class="signature-image">
+                      <img [src]="check()?.employeeSignature" alt="員工簽名" />
+                    </div>
+                    <span class="signature-date">{{ formatDate(check()?.employeeSignatureDate) }}</span>
+                  </div>
+                }
+                @if (check()?.managerSignature) {
+                  <div class="signature-record">
+                    <label>主管審核簽名</label>
+                    <div class="signature-image">
+                      <img [src]="check()?.managerSignature" alt="主管簽名" />
+                    </div>
+                    <span class="signature-date">{{ formatDate(check()?.managerSignatureDate) }}</span>
+                  </div>
+                }
+                @if (check()?.hrSignature) {
+                  <div class="signature-record">
+                    <label>HR 結案簽名</label>
+                    <div class="signature-image">
+                      <img [src]="check()?.hrSignature" alt="HR簽名" />
+                    </div>
+                    <span class="signature-date">{{ formatDate(check()?.hrSignatureDate) }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- 電子簽名區塊 (編輯模式) -->
+          @if (isEditing() && (canSelfAssess() || canManagerReview())) {
+            <div class="signature-section">
+              <h3><i class="ri-edit-line"></i> 電子簽名</h3>
+              <p class="signature-hint">請在下方區域完成電子簽名後再提交</p>
+              <app-signature-pad 
+                #signaturePad
+                [label]="canSelfAssess() ? '員工簽名' : '主管簽名'"
+                (signatureChange)="onSignatureChange($event)">
+              </app-signature-pad>
+              @if (hasSignature()) {
+                <div class="signature-status success">
+                  <i class="ri-check-line"></i> 簽名已完成
+                </div>
+              } @else {
+                <div class="signature-status warning">
+                  <i class="ri-alert-line"></i> 請完成簽名
+                </div>
+              }
+            </div>
+          }
+
+          <!-- HR 結案簽名區塊 -->
+          @if (canHrClose()) {
+            <div class="signature-section">
+              <h3><i class="ri-edit-line"></i> HR 結案簽名</h3>
+              <p class="signature-hint">結案前請在下方區域完成電子簽名</p>
+              <app-signature-pad 
+                #signaturePad
+                label="HR 簽名"
+                (signatureChange)="onSignatureChange($event)">
+              </app-signature-pad>
+              @if (hasSignature()) {
+                <div class="signature-status success">
+                  <i class="ri-check-line"></i> 簽名已完成
+                </div>
+              } @else {
+                <div class="signature-status warning">
+                  <i class="ri-alert-line"></i> 請完成簽名後再結案
+                </div>
+              }
+            </div>
+          }
+        }
+      </div>
+
+      <!-- Validation Error Alert -->
+      @if (error() && !loading()) {
+        <div class="validation-alert">
+          <i class="ri-error-warning-line"></i>
+          <span>{{ error() }}</span>
+          <button class="btn-dismiss" (click)="error.set(null)" type="button">
+            <i class="ri-close-line"></i>
+          </button>
+        </div>
+      }
+
+      <!-- Progress Indicator -->
+      @if (isEditing() && canSelfAssess()) {
+        <div class="progress-indicator">
+          <span class="progress-text">
+            已填寫 {{ editedItems().length - unfilledSelfScoreCount() }} / {{ editedItems().length }} 項
+          </span>
+          @if (allSelfScoresFilled()) {
+            <span class="progress-complete">
+              <i class="ri-check-line"></i> 已完成全部填寫
+            </span>
+          } @else {
+            <span class="progress-incomplete">
+              還有 {{ unfilledSelfScoreCount() }} 項未填寫
+            </span>
+          }
+        </div>
+      }
+
+      @if (isEditing() && canManagerReview()) {
+        <div class="progress-indicator">
+          <span class="progress-text">
+            已填寫 {{ editedItems().length - unfilledManagerScoreCount() }} / {{ editedItems().length }} 項
+          </span>
+          @if (allManagerScoresFilled()) {
+            <span class="progress-complete">
+              <i class="ri-check-line"></i> 已完成全部填寫
+            </span>
+          } @else {
+            <span class="progress-incomplete">
+              還有 {{ unfilledManagerScoreCount() }} 項未填寫
+            </span>
+          }
+        </div>
+      }
+
+      <!-- Footer -->
+      <div class="modal-footer">
+        @if (check()) {
+          @if (canSelfAssess()) {
+            @if (isEditing()) {
+              <button class="btn-cancel" (click)="cancelEditing()" type="button" [disabled]="saving()">
+                取消
+              </button>
+              <button 
+                class="btn-primary" 
+                (click)="submitSelfAssessment()" 
+                type="button" 
+                [disabled]="saving() || !canSubmitSelfAssessment()"
+                [class.btn-disabled]="!canSubmitSelfAssessment()">
+                @if (saving()) {
+                  <i class="ri-loader-4-line spinner"></i>
+                }
+                <i class="ri-quill-pen-line"></i> 簽名並提交自評
+              </button>
+            } @else {
+              <button class="btn-primary" (click)="startEditing()" type="button">
+                開始自評
+              </button>
+            }
+          }
+
+          @if (canManagerReview()) {
+            @if (isEditing()) {
+              <button class="btn-cancel" (click)="cancelEditing()" type="button" [disabled]="saving()">
+                取消
+              </button>
+              <button class="btn-danger" (click)="submitManagerReview('reject')" type="button" [disabled]="saving()">
+                退回修改
+              </button>
+              <button 
+                class="btn-primary" 
+                (click)="submitManagerReview('approve')" 
+                type="button" 
+                [disabled]="saving() || !canSubmitManagerApproval()"
+                [class.btn-disabled]="!canSubmitManagerApproval()">
+                @if (saving()) {
+                  <i class="ri-loader-4-line spinner"></i>
+                }
+                <i class="ri-quill-pen-line"></i> 簽名並核准
+              </button>
+            } @else {
+              <button class="btn-primary" (click)="startEditing()" type="button">
+                開始審核
+              </button>
+            }
+          }
+
+          @if (canHrClose()) {
+            <button class="btn-secondary" (click)="submitHrClose('reopen')" type="button" [disabled]="saving()">
+              退回主管
+            </button>
+            <button 
+              class="btn-primary" 
+              (click)="submitHrClose('close')" 
+              type="button" 
+              [disabled]="saving() || !canSubmitHrClose()"
+              [class.btn-disabled]="!canSubmitHrClose()">
+              @if (saving()) {
+                <i class="ri-loader-4-line spinner"></i>
+              }
+              <i class="ri-quill-pen-line"></i> 簽名並結案
+            </button>
+          }
+
+          @if (check()?.status === 'completed') {
+            <button class="btn-secondary" (click)="onClose()" type="button">
+              關閉
+            </button>
+          }
+        }
+      </div>
+    </div>
+  </div>
+}

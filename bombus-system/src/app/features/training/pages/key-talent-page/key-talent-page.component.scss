@@ -1,6 +1,9 @@
 @import '../../../../../assets/styles/variables';
 @import '../../../../../assets/styles/mixins';
 
+// 模組色變數
+$module-color: $color-l3-petrol;
+
 .main-content {
   padding: $spacing-lg;
   padding-top: calc(var(--header-height, 70px) + 20px);
@@ -16,4 +19,3 @@
   max-width: 1600px;
   margin: 0 auto;
 }
-

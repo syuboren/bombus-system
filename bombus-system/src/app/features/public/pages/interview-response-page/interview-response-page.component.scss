@@ -1,0 +1,400 @@
+// Public Interview Response Page Styles
+// 莫蘭迪配色，簡潔專業風格
+
+.response-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #F5F5F7 0%, #E8E8EA 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    font-family: 'Microsoft JhengHei', 'PingFang TC', sans-serif;
+}
+
+// Loading State
+.loading-container {
+    text-align: center;
+    color: #6B7280;
+
+    .spinner {
+        width: 48px;
+        height: 48px;
+        border: 4px solid #E8E8EA;
+        border-top-color: #8DA399;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 1rem;
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+}
+
+// Error State
+.error-container {
+    text-align: center;
+    background: white;
+    padding: 3rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+
+    .error-icon {
+        font-size: 4rem;
+        color: #C77F7F;
+        margin-bottom: 1rem;
+    }
+
+    h2 {
+        margin: 0 0 0.5rem;
+        color: #1F2937;
+    }
+
+    p {
+        color: #6B7280;
+        margin: 0;
+    }
+}
+
+// Success State
+.success-container {
+    text-align: center;
+    background: white;
+    padding: 3rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+    max-width: 400px;
+
+    .success-icon {
+        font-size: 4rem;
+        color: #8DA399;
+        margin-bottom: 1rem;
+    }
+
+    h2 {
+        margin: 0 0 0.5rem;
+        color: #1F2937;
+    }
+
+    p {
+        color: #6B7280;
+        margin: 0;
+        line-height: 1.6;
+    }
+}
+
+// Main Card
+.response-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+    max-width: 600px;
+    width: 100%;
+    overflow: hidden;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #8DA399 0%, #6B8577 100%);
+    color: white;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    .company-logo {
+        width: 64px;
+        height: 64px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+
+        i {
+            font-size: 2rem;
+        }
+    }
+
+    h1 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: white !important;
+        text-align: center;
+    }
+}
+
+.candidate-info {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid #E8E8EA;
+
+    .info-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+
+        .label {
+            color: #6B7280;
+            font-size: 0.875rem;
+        }
+
+        .value {
+            color: #1F2937;
+            font-weight: 500;
+        }
+
+        .job-title {
+            background: #F5F5F7;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            color: #8DA399;
+        }
+    }
+}
+
+.message-section {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid #E8E8EA;
+
+    p {
+        margin: 0;
+        color: #464E56;
+        line-height: 1.7;
+        white-space: pre-line;
+    }
+}
+
+.deadline-notice {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 2rem;
+    background: #FFF8E7;
+    color: #92710f;
+    font-size: 0.875rem;
+
+    i {
+        font-size: 1.25rem;
+    }
+
+    strong {
+        color: #6B5300;
+    }
+}
+
+.slots-section {
+    padding: 1.5rem 2rem;
+
+    h3 {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 0 0 1rem;
+        font-size: 1rem;
+        color: #1F2937;
+
+        i {
+            color: #8DA399;
+        }
+    }
+}
+
+.slots-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.slot-option {
+    display: block;
+    cursor: pointer;
+
+    input {
+        display: none;
+    }
+
+    .slot-content {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1rem;
+        border: 2px solid #E8E8EA;
+        border-radius: 12px;
+        transition: all 0.2s ease;
+
+        .check-icon {
+            font-size: 1.25rem;
+            color: #C4C4C6;
+            transition: color 0.2s;
+        }
+
+        .slot-time {
+            color: #464E56;
+            font-weight: 500;
+        }
+    }
+
+    &:hover .slot-content {
+        border-color: #8DA399;
+        background: rgba(141, 163, 153, 0.03);
+    }
+
+    &.selected .slot-content {
+        border-color: #8DA399;
+        background: rgba(141, 163, 153, 0.08);
+
+        .check-icon {
+            color: #8DA399;
+        }
+    }
+}
+
+.slots-hint {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin: 1rem 0 0;
+    font-size: 0.8rem;
+    color: #9A8C98;
+
+    i {
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+}
+
+.actions {
+    display: flex;
+    gap: 1rem;
+    padding: 1.5rem 2rem;
+    border-top: 1px solid #E8E8EA;
+    justify-content: flex-end;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+}
+
+.btn-primary {
+    background: #8DA399;
+    color: white;
+
+    &:hover:not(:disabled) {
+        background: #6B8577;
+    }
+}
+
+.btn-secondary {
+    background: #F5F5F7;
+    color: #6B7280;
+
+    &:hover:not(:disabled) {
+        background: #E8E8EA;
+    }
+}
+
+.btn-outline {
+    background: transparent;
+    color: #8DA399;
+    border: 2px solid #8DA399;
+
+    &:hover:not(:disabled) {
+        background: rgba(#8DA399, 0.08);
+    }
+}
+
+// Reschedule Section
+.reschedule-section {
+    padding: 1.5rem 2rem;
+    border-top: 1px solid #E8E8EA;
+    background: #FAFAFA;
+
+    h3 {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 0 0 1rem;
+        font-size: 1rem;
+        color: #1F2937;
+
+        i {
+            color: #8DA399;
+        }
+    }
+}
+
+.reschedule-input {
+    width: 100%;
+    padding: 1rem;
+    border: 2px solid #E8E8EA;
+    border-radius: 12px;
+    font-size: 0.9375rem;
+    font-family: inherit;
+    resize: vertical;
+    transition: border-color 0.2s;
+
+    &:focus {
+        outline: none;
+        border-color: #8DA399;
+    }
+
+    &::placeholder {
+        color: #9CA3AF;
+    }
+}
+
+.reschedule-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+    justify-content: flex-end;
+}
+
+// Responsive
+@media (max-width: 640px) {
+    .response-page {
+        padding: 1rem;
+    }
+
+    .card-header,
+    .candidate-info,
+    .message-section,
+    .slots-section,
+    .actions {
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+    }
+
+    .actions {
+        flex-direction: column-reverse;
+
+        .btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+}

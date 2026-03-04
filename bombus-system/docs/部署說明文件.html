@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bombus 系統部署說明文件</title>
+  <style>
+    :root {
+      /* Morandi 色系 */
+      --color-module: #8B9A82;
+      --color-module-dark: #6B7A62;
+      --color-module-light: #D4DED0;
+      --color-pure-white: #FFFFFF;
+      --color-cloud-gray: #F5F5F5;
+      --color-soft-gray: #E8E8E8;
+      --color-text-primary: #4A4A4A;
+      --color-text-secondary: #6B6B6B;
+      --color-text-dark: #2D2D2D;
+      --color-success: #7BA376;
+      --color-warning: #C4A35A;
+      --color-error: #B57B7B;
+      --color-info: #7B9EB5;
+      
+      /* 間距 */
+      --spacing-xs: 4px;
+      --spacing-sm: 8px;
+      --spacing-md: 16px;
+      --spacing-lg: 24px;
+      --spacing-xl: 32px;
+      
+      /* 圓角 */
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      
+      /* 陰影 */
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.08);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.12);
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: var(--color-cloud-gray);
+      color: var(--color-text-primary);
+      line-height: 1.6;
+      padding: var(--spacing-lg);
+    }
+    
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    
+    /* 文件標頭 */
+    .doc-header {
+      background: linear-gradient(135deg, var(--color-module) 0%, var(--color-module-dark) 100%);
+      color: white;
+      padding: var(--spacing-xl);
+      border-radius: var(--radius-lg);
+      margin-bottom: var(--spacing-xl);
+      box-shadow: var(--shadow-md);
+    }
+    
+    .doc-header h1 {
+      font-size: 1.75rem;
+      font-weight: 600;
+      margin-bottom: var(--spacing-sm);
+    }
+    
+    .doc-header h2 {
+      font-size: 1.25rem;
+      font-weight: 400;
+      opacity: 0.9;
+    }
+    
+    /* 文件資訊 */
+    .doc-info {
+      background: var(--color-pure-white);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-lg);
+      margin-bottom: var(--spacing-xl);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--color-soft-gray);
+    }
+    
+    .doc-info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: var(--spacing-md);
+    }
+    
+    .doc-info-item {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+    
+    .doc-info-label {
+      font-size: 0.875rem;
+      color: var(--color-text-secondary);
+      min-width: 80px;
+    }
+    
+    .doc-info-value {
+      font-weight: 500;
+      color: var(--color-text-dark);
+    }
+    
+    /* 目錄 */
+    .toc {
+      background: var(--color-pure-white);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-lg);
+      margin-bottom: var(--spacing-xl);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--color-soft-gray);
+    }
+    
+    .toc-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--color-module-dark);
+      margin-bottom: var(--spacing-md);
+      padding-bottom: var(--spacing-sm);
+      border-bottom: 2px solid var(--color-module-light);
+    }
+    
+    .toc-list {
+      list-style: none;
+      counter-reset: toc-counter;
+    }
+    
+    .toc-list li {
+      counter-increment: toc-counter;
+      margin-bottom: var(--spacing-sm);
+    }
+    
+    .toc-list a {
+      color: var(--color-text-primary);
+      text-decoration: none;
+      display: block;
+      padding: var(--spacing-xs) 0;
+    }
+    
+    .toc-list a:hover {
+      color: var(--color-module);
+      text-decoration: underline;
+    }
+    
+    /* 主要內容區 */
+    .content {
+      background: var(--color-pure-white);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-xl);
+      margin-bottom: var(--spacing-xl);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--color-soft-gray);
+    }
+    
+    /* 章節標題 */
+    .section-title {
+      background: linear-gradient(135deg, var(--color-module) 0%, var(--color-module-dark) 100%);
+      color: white;
+      padding: var(--spacing-md) var(--spacing-lg);
+      border-radius: var(--radius-md);
+      margin: var(--spacing-xl) 0 var(--spacing-lg);
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    
+    .section-title:first-child {
+      margin-top: 0;
+    }
+    
+    /* 次級標題 */
+    h3 {
+      color: var(--color-text-dark);
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin: var(--spacing-lg) 0 var(--spacing-md);
+      padding-bottom: var(--spacing-xs);
+      border-bottom: 2px solid var(--color-module-light);
+    }
+    
+    h4 {
+      color: var(--color-module-dark);
+      font-size: 1rem;
+      font-weight: 600;
+      margin: var(--spacing-md) 0 var(--spacing-sm);
+    }
+    
+    /* 段落 */
+    p {
+      margin-bottom: var(--spacing-md);
+      color: var(--color-text-primary);
+    }
+    
+    /* 列表 */
+    ul, ol {
+      margin-bottom: var(--spacing-md);
+      padding-left: var(--spacing-lg);
+    }
+    
+    li {
+      margin-bottom: var(--spacing-xs);
+    }
+    
+    /* 表格 */
+    .table-wrapper {
+      overflow-x: auto;
+      margin: var(--spacing-md) 0;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9375rem;
+    }
+    
+    th {
+      background: var(--color-module);
+      color: white;
+      padding: var(--spacing-sm) var(--spacing-md);
+      text-align: left;
+      font-weight: 500;
+    }
+    
+    td {
+      padding: var(--spacing-sm) var(--spacing-md);
+      border-bottom: 1px solid var(--color-soft-gray);
+    }
+    
+    tr:hover td {
+      background: var(--color-cloud-gray);
+    }
+    
+    /* 程式碼區塊 */
+    .code-block {
+      background: #2d2d2d;
+      color: #f8f8f2;
+      padding: var(--spacing-md);
+      border-radius: var(--radius-md);
+      margin: var(--spacing-md) 0;
+      overflow-x: auto;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 0.875rem;
+      line-height: 1.5;
+    }
+    
+    .code-block-title {
+      background: #1a1a1a;
+      color: #888;
+      padding: var(--spacing-xs) var(--spacing-md);
+      border-radius: var(--radius-md) var(--radius-md) 0 0;
+      margin-bottom: -1px;
+      font-size: 0.75rem;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    }
+    
+    .code-block.has-title {
+      border-radius: 0 0 var(--radius-md) var(--radius-md);
+    }
+    
+    code {
+      background: var(--color-cloud-gray);
+      padding: 2px 6px;
+      border-radius: var(--radius-sm);
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 0.875em;
+      color: var(--color-module-dark);
+    }
+    
+    /* 提示框 */
+    .highlight-box {
+      background: var(--color-module-light);
+      border-left: 4px solid var(--color-module);
+      padding: var(--spacing-md);
+      border-radius: 0 var(--radius-md) var(--radius-md) 0;
+      margin: var(--spacing-md) 0;
+    }
+    
+    .highlight-box.warning {
+      background: #FEF3E2;
+      border-left-color: var(--color-warning);
+    }
+    
+    .highlight-box.error {
+      background: #FDECEC;
+      border-left-color: var(--color-error);
+    }
+    
+    .highlight-box.info {
+      background: #E8F4FC;
+      border-left-color: var(--color-info);
+    }
+    
+    .highlight-box.success {
+      background: #E8F5E9;
+      border-left-color: var(--color-success);
+    }
+    
+    /* 卡片群組 */
+    .card-group {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: var(--spacing-md);
+      margin: var(--spacing-md) 0;
+    }
+    
+    .card {
+      background: var(--color-cloud-gray);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-md);
+      border: 1px solid var(--color-soft-gray);
+    }
+    
+    .card-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--color-module-dark);
+      margin-bottom: var(--spacing-sm);
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+    
+    .card-title .icon {
+      background: var(--color-module);
+      color: white;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    
+    .card ul {
+      margin: 0;
+      padding-left: var(--spacing-md);
+    }
+    
+    /* 步驟列表 */
+    ol.steps {
+      counter-reset: step-counter;
+      list-style: none;
+      padding-left: 0;
+    }
+    
+    ol.steps li {
+      counter-increment: step-counter;
+      position: relative;
+      padding-left: 36px;
+      margin-bottom: var(--spacing-sm);
+    }
+    
+    ol.steps li::before {
+      content: counter(step-counter);
+      position: absolute;
+      left: 0;
+      top: 2px;
+      background: var(--color-module);
+      color: white;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    
+    /* 檢查清單 */
+    .checklist {
+      list-style: none;
+      padding-left: 0;
+    }
+    
+    .checklist li {
+      position: relative;
+      padding-left: 28px;
+      margin-bottom: var(--spacing-sm);
+    }
+    
+    .checklist li::before {
+      content: '☐';
+      position: absolute;
+      left: 0;
+      color: var(--color-module);
+      font-size: 1.125rem;
+    }
+    
+    /* 分隔線 */
+    hr {
+      border: none;
+      height: 1px;
+      background: var(--color-soft-gray);
+      margin: var(--spacing-xl) 0;
+    }
+    
+    /* 樹狀結構 */
+    .tree {
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 0.875rem;
+      background: var(--color-cloud-gray);
+      padding: var(--spacing-md);
+      border-radius: var(--radius-md);
+      white-space: pre;
+      overflow-x: auto;
+    }
+    
+    /* 標籤 */
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    
+    .tag.required {
+      background: var(--color-error);
+      color: white;
+    }
+    
+    .tag.optional {
+      background: var(--color-soft-gray);
+      color: var(--color-text-secondary);
+    }
+    
+    /* 列印樣式 */
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+      }
+      
+      .container {
+        max-width: none;
+        padding: 0;
+      }
+      
+      .doc-header, .content {
+        box-shadow: none;
+        border: 1px solid #ddd;
+      }
+      
+      .toc {
+        page-break-after: always;
+      }
+      
+      .section-title {
+        break-after: avoid;
+      }
+      
+      table {
+        break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- 文件標頭 -->
+    <header class="doc-header">
+      <h1>Bombus 人力資源管理系統</h1>
+      <h2>前端與後端部署說明文件</h2>
+    </header>
+    
+    <!-- 文件資訊 -->
+    <section class="doc-info">
+      <div class="doc-info-grid">
+        <div class="doc-info-item">
+          <span class="doc-info-label">文件名稱</span>
+          <span class="doc-info-value">系統部署說明文件</span>
+        </div>
+        <div class="doc-info-item">
+          <span class="doc-info-label">適用版本</span>
+          <span class="doc-info-value">v1.0.0</span>
+        </div>
+        <div class="doc-info-item">
+          <span class="doc-info-label">適用對象</span>
+          <span class="doc-info-value">系統管理員、DevOps 工程師</span>
+        </div>
+        <div class="doc-info-item">
+          <span class="doc-info-label">最後更新</span>
+          <span class="doc-info-value">2026-02-05</span>
+        </div>
+      </div>
+    </section>
+    
+    <!-- 目錄 -->
+    <nav class="toc">
+      <h2 class="toc-title">目錄</h2>
+      <ol class="toc-list">
+        <li><a href="#section-1">一、系統架構概述</a></li>
+        <li><a href="#section-2">二、環境需求</a></li>
+        <li><a href="#section-3">三、後端部署</a></li>
+        <li><a href="#section-4">四、前端部署</a></li>
+        <li><a href="#section-5">五、Nginx 反向代理配置</a></li>
+        <li><a href="#section-6">六、Docker 部署（建議）</a></li>
+        <li><a href="#section-7">七、部署檢查清單</a></li>
+        <li><a href="#section-8">八、常見問題排解</a></li>
+      </ol>
+    </nav>
+    
+    <!-- 主要內容 -->
+    <main class="content">
+      
+      <!-- 一、系統架構概述 -->
+      <h2 id="section-1" class="section-title">一、系統架構概述</h2>
+      
+      <h3>1.1 技術棧</h3>
+      <div class="card-group">
+        <div class="card">
+          <h4 class="card-title"><span class="icon">前</span> 前端技術</h4>
+          <ul>
+            <li>Angular 18.2.0</li>
+            <li>TypeScript 5.5</li>
+            <li>RxJS 7.8</li>
+            <li>SCSS</li>
+            <li>ECharts 6.0（圖表）</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4 class="card-title"><span class="icon">後</span> 後端技術</h4>
+          <ul>
+            <li>Node.js 18+</li>
+            <li>Express.js 4.18</li>
+            <li>SQLite（sql.js）</li>
+            <li>Multer（檔案上傳）</li>
+            <li>104 API 整合</li>
+          </ul>
+        </div>
+      </div>
+      
+      <h3>1.2 系統架構圖</h3>
+      <div class="tree">┌─────────────────────────────────────────────────────────────┐
+│                         使用者瀏覽器                          │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    Nginx 反向代理（建議）                      │
+│                    - HTTPS 終端                              │
+│                    - 靜態檔案服務                             │
+│                    - API 路由轉發                             │
+└─────────────────────────────────────────────────────────────┘
+                    │                       │
+        ┌───────────┘                       └───────────┐
+        ▼                                               ▼
+┌───────────────────┐                   ┌───────────────────┐
+│   前端 (Angular)   │                   │   後端 (Express)   │
+│   Port: 4200      │                   │   Port: 3001       │
+│   (開發環境)       │                   │                    │
+└───────────────────┘                   └───────────────────┘
+                                                    │
+                                                    ▼
+                                        ┌───────────────────┐
+                                        │  SQLite 資料庫     │
+                                        │  onboarding.db    │
+                                        └───────────────────┘</div>
+      
+      <h3>1.3 目錄結構</h3>
+      <div class="tree">bombus-system/
+├── src/                          # 前端原始碼
+│   ├── app/
+│   │   ├── core/                 # 核心服務
+│   │   ├── shared/               # 共用元件
+│   │   └── features/             # 功能模組
+│   ├── assets/                   # 靜態資源
+│   └── environments/             # 環境配置
+├── server/                       # 後端原始碼
+│   ├── src/
+│   │   ├── db/                   # 資料庫
+│   │   ├── routes/               # API 路由
+│   │   └── index.js              # 入口檔案
+│   ├── uploads/                  # 上傳檔案
+│   └── .env                      # 環境變數
+├── dist/                         # 前端建置輸出
+├── angular.json                  # Angular 配置
+├── package.json                  # 前端依賴
+└── proxy.conf.json               # 開發代理配置</div>
+      
+      <hr>
+      
+      <!-- 二、環境需求 -->
+      <h2 id="section-2" class="section-title">二、環境需求</h2>
+      
+      <h3>2.1 軟體需求</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>軟體</th>
+              <th>最低版本</th>
+              <th>建議版本</th>
+              <th>用途</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Node.js</td>
+              <td>18.0.0</td>
+              <td>20.x LTS</td>
+              <td>執行後端伺服器與前端建置</td>
+            </tr>
+            <tr>
+              <td>npm</td>
+              <td>9.0.0</td>
+              <td>10.x</td>
+              <td>套件管理</td>
+            </tr>
+            <tr>
+              <td>Nginx</td>
+              <td>1.18</td>
+              <td>1.24+</td>
+              <td>反向代理（生產環境）</td>
+            </tr>
+            <tr>
+              <td>PM2</td>
+              <td>5.0</td>
+              <td>5.3+</td>
+              <td>Node.js 程序管理（生產環境）</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <h3>2.2 硬體需求</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>項目</th>
+              <th>最低需求</th>
+              <th>建議配置</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>CPU</td>
+              <td>2 核心</td>
+              <td>4 核心以上</td>
+            </tr>
+            <tr>
+              <td>記憶體</td>
+              <td>2 GB</td>
+              <td>4 GB 以上</td>
+            </tr>
+            <tr>
+              <td>硬碟空間</td>
+              <td>10 GB</td>
+              <td>20 GB 以上（含上傳檔案）</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <h3>2.3 網路需求</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Port</th>
+              <th>用途</th>
+              <th>備註</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>80</td>
+              <td>HTTP</td>
+              <td>Nginx 前端服務</td>
+            </tr>
+            <tr>
+              <td>443</td>
+              <td>HTTPS</td>
+              <td>Nginx SSL 終端（建議）</td>
+            </tr>
+            <tr>
+              <td>3001</td>
+              <td>後端 API</td>
+              <td>內部通訊，不對外開放</td>
+            </tr>
+            <tr>
+              <td>4200</td>
+              <td>前端開發</td>
+              <td>僅開發環境使用</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <hr>
+      
+      <!-- 三、後端部署 -->
+      <h2 id="section-3" class="section-title">三、後端部署</h2>
+      
+      <h3>3.1 安裝依賴</h3>
+      <div class="code-block-title">bash</div>
+      <div class="code-block has-title"># 進入後端目錄
+cd bombus-system/server
+
+# 安裝生產依賴
+npm install --production
+
+# 或安裝所有依賴（含開發工具）
+npm install</div>
+      
+      <h3>3.2 環境變數配置</h3>
+      <p>在 <code>server/</code> 目錄下建立 <code>.env</code> 檔案：</p>
+      
+      <div class="code-block-title">.env</div>
+      <div class="code-block has-title"># ===== 伺服器配置 =====
+PORT=3001
+NODE_ENV=production
+FRONTEND_URL=https://your-domain.com
+
+# ===== 104 API 整合（Sandbox 環境）=====
+API_104_BASE_URL=https://apis.104api-dev.com.tw
+
+# Job API 認證
+API_104_CLIENT_ID=your_client_id
+API_104_CLIENT_SECRET=your_client_secret
+
+# Resume API 認證
+API_104_RESUME_CLIENT_ID=your_resume_client_id
+API_104_RESUME_CLIENT_SECRET=your_resume_client_secret</div>
+      
+      <h4>環境變數說明</h4>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>變數名稱</th>
+              <th>必填</th>
+              <th>預設值</th>
+              <th>說明</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>PORT</code></td>
+              <td><span class="tag optional">選填</span></td>
+              <td>3001</td>
+              <td>API 伺服器監聽 Port</td>
+            </tr>
+            <tr>
+              <td><code>NODE_ENV</code></td>
+              <td><span class="tag optional">選填</span></td>
+              <td>development</td>
+              <td>環境模式（production/development）</td>
+            </tr>
+            <tr>
+              <td><code>FRONTEND_URL</code></td>
+              <td><span class="tag required">必填</span></td>
+              <td>-</td>
+              <td>前端 URL，用於 CORS 和連結生成</td>
+            </tr>
+            <tr>
+              <td><code>API_104_*</code></td>
+              <td><span class="tag optional">選填</span></td>
+              <td>-</td>
+              <td>104 人力銀行 API 認證（如需整合）</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <h3>3.3 初始化資料庫</h3>
+      <div class="code-block-title">bash</div>
+      <div class="code-block has-title"># 初始化資料庫（首次部署必須執行）
+npm run init-db
+
+# 資料庫檔案位置
+# server/src/db/onboarding.db</div>
+      
+      <div class="highlight-box info">
+        <p><strong>注意：</strong>資料庫檔案 <code>onboarding.db</code> 需要定期備份。建議設定自動備份排程。</p>
+      </div>
+      
+      <h3>3.4 啟動伺服器</h3>
+      
+      <h4>開發環境</h4>
+      <div class="code-block-title">bash</div>
+      <div class="code-block has-title"># 使用 nodemon 自動重載
+npm run dev</div>
+      
+      <h4>生產環境（直接啟動）</h4>
+      <div class="code-block-title">bash</div>
+      <div class="code-block has-title"># 直接啟動
+npm start
+
+# 或
+node src/index.js</div>
+      
+      <h4>生產環境（使用 PM2）</h4>
+      <div class="code-block-title">bash</div>
+      <div class="code-block has-title"># 安裝 PM2
+npm install -g pm2
+
+# 啟動應用
+pm2 start src/index.js --name bombus-api
+
+# 設定開機自動啟動
+pm2 startup
+pm2 save
+
+# 查看狀態
+pm2 status
+
+# 查看日誌
+pm2 logs bombus-api</div>
+      
+      <h4>PM2 配置檔案（建議）</h4>
+      <p>在 <code>server/</code> 目錄下建立 <code>ecosystem.config.js</code>：</p>
+      
+      <div class="code-block-title">ecosystem.config.js</div>
+      <div class="code-block has-title">module.exports = {
+  apps: [{
+    name: 'bombus-api',
+    script: 'src/index.js',
+    instances: 1,
+    exec_mode: 'fork',
+    env: {
+      NODE_ENV: 'production',
+      PORT: 3001
+    },
+    error_file: './logs/err.log',
+    out_file: './logs/out.log',
+    log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+    max_memory_restart: '500M'
+  }]
+};</div>
+      
+      <div class="code-block-title">bash</div>
+      <div class="code-block has-title"># 使用配置檔案啟動
+pm2 start ecosystem.config.js</div>
+      
+      <h3>3.5 驗證部署</h3>
+      <div class="code-block-title">bash</div>
+      <div class="code-block has-title"># 測試 API 健康檢查
+curl http://localhost:3001/api/health
+
+# 預期回應
+# {"status":"ok","timestamp":"2026-02-05T..."}</div>
+      
+      <hr>
+      
+      <!-- 四、前端部署 -->
+      <h2 id="section-4" class="section-title">四、前端部署</h2>
+      
+      <h3>4.1 安裝依賴</h3>
+      <div class="code-block-title">bash</div>
+      <div class="code-block has-title"># 進入前端目錄
+cd bombus-system
+
+# 安裝依賴
+npm install</div>
+      
+      <h3>4.2 開發環境</h3>
+      <div class="code-block-title">bash</div>
+      <div class="code-block has-title"># 啟動開發伺服器（含 API 代理）
+npm start
+
+# 或指定 proxy 配置
+ng serve --proxy-config proxy.conf.json
+
+# 開發伺服器位址
+# http://localhost:4200</div>
+      
+      <div class="highlight-box">
+        <p><strong>開發代理配置：</strong>開發環境透過 <code>proxy.conf.json</code> 將 <code>/api</code> 和 <code>/uploads</code> 請求代理到後端 <code>http://localhost:3001</code>。</p>
+      </div>
+      
+      <h3>4.3 建置生產版本</h3>
+      <div class="code-block-title">bash</div>
+      <div class="code-block has-title"># 標準建置
+npm run build
+
+# 輸出目錄
+# dist/bombus-system/browser/</div>
+      
+      <h4>建置配置說明</h4>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>項目</th>
+              <th>設定值</th>
+              <th>說明</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>輸出目錄</td>
+              <td><code>dist/bombus-system/browser/</code></td>
+              <td>建置後的靜態檔案</td>
+            </tr>
+            <tr>
+              <td>輸出雜湊</td>
+              <td><code>all</code></td>
+              <td>所有檔案加入雜湊以利快取</td>
+            </tr>
+            <tr>
+              <td>初始預算</td>
+              <td>2 MB</td>
+              <td>超過會顯示警告</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <h3>4.4 部署靜態檔案</h3>
+      <p>將 <code>dist/bombus-system/browser/</code> 目錄下的所有檔案複製到 Web 伺服器的文件根目錄。</p>
+      
+      <div class="code-block-title">bash</div>
+      <div class="code-block has-title"># 複製到 Nginx 預設目錄
+sudo cp -r dist/bombus-system/browser/* /var/www/html/
+
+# 或複製到自訂目錄
+sudo cp -r dist/bombus-system/browser/* /var/www/bombus/</div>
+      
+      <hr>
+      
+      <!-- 五、Nginx 反向代理配置 -->
+      <h2 id="section-5" class="section-title">五、Nginx 反向代理配置</h2>
+      
+      <h3>5.1 安裝 Nginx</h3>
+      <div class="code-block-title">bash</div>
+      <div class="code-block has-title"># Ubuntu/Debian
+sudo apt update
+sudo apt install nginx
+
+# CentOS/RHEL
+sudo yum install nginx
+
+# macOS
+brew install nginx</div>
+      
+      <h3>5.2 Nginx 配置檔案</h3>
+      <p>建立配置檔案 <code>/etc/nginx/sites-available/bombus</code>：</p>
+      
+      <div class="code-block-title">nginx.conf</div>
+      <div class="code-block has-title">server {
+    listen 80;
+    server_name your-domain.com;
+    
+    # 前端靜態檔案
+    root /var/www/bombus;
+    index index.html;
+    
+    # Gzip 壓縮
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml;
+    gzip_min_length 1000;
+    
+    # 前端路由（SPA）
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+    
+    # API 代理
+    location /api {
+        proxy_pass http://localhost:3001;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+        
+        # 大檔案上傳支援
+        client_max_body_size 50M;
+    }
+    
+    # 上傳檔案服務
+    location /uploads {
+        proxy_pass http://localhost:3001;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+    
+    # 靜態資源快取
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+}</div>
+      
+      <h3>5.3 啟用配置</h3>
+      <div class="code-block-title">bash</div>
+      <div class="code-block has-title"># 建立軟連結
+sudo ln -s /etc/nginx/sites-available/bombus /etc/nginx/sites-enabled/
+
+# 測試配置
+sudo nginx -t
+
+# 重新載入 Nginx
+sudo systemctl reload nginx</div>
+      
+      <h3>5.4 HTTPS 配置（建議）</h3>
+      <p>使用 Let's Encrypt 免費憑證：</p>
+      
+      <div class="code-block-title">bash</div>
+      <div class="code-block has-title"># 安裝 Certbot
+sudo apt install certbot python3-certbot-nginx
+
+# 申請憑證並自動配置 Nginx
+sudo certbot --nginx -d your-domain.com
+
+# 自動更新憑證
+sudo certbot renew --dry-run</div>
+      
+      <hr>
+      
+      <!-- 六、Docker 部署 -->
+      <h2 id="section-6" class="section-title">六、Docker 部署（建議）</h2>
+      
+      <h3>6.1 後端 Dockerfile</h3>
+      <p>在 <code>server/</code> 目錄下建立 <code>Dockerfile</code>：</p>
+      
+      <div class="code-block-title">Dockerfile</div>
+      <div class="code-block has-title">FROM node:20-alpine
+
+WORKDIR /app
+
+# 複製依賴檔案
+COPY package*.json ./
+
+# 安裝生產依賴
+RUN npm install --production
+
+# 複製原始碼
+COPY . .
+
+# 建立上傳目錄
+RUN mkdir -p uploads
+
+# 暴露 Port
+EXPOSE 3001
+
+# 啟動指令
+CMD ["npm", "start"]</div>
+      
+      <h3>6.2 前端 Dockerfile</h3>
+      <p>在 <code>bombus-system/</code> 根目錄下建立 <code>Dockerfile</code>：</p>
+      
+      <div class="code-block-title">Dockerfile</div>
+      <div class="code-block has-title"># 建置階段
+FROM node:20-alpine AS build
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+RUN npm run build
+
+# 生產階段
+FROM nginx:alpine
+
+# 複製建置結果
+COPY --from=build /app/dist/bombus-system/browser /usr/share/nginx/html
+
+# 複製 Nginx 配置
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]</div>
+      
+      <h3>6.3 Docker Compose</h3>
+      <p>在專案根目錄建立 <code>docker-compose.yml</code>：</p>
+      
+      <div class="code-block-title">docker-compose.yml</div>
+      <div class="code-block has-title">version: '3.8'
+
+services:
+  # 後端 API
+  api:
+    build:
+      context: ./bombus-system/server
+      dockerfile: Dockerfile
+    container_name: bombus-api
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - FRONTEND_URL=http://localhost
+    volumes:
+      - ./bombus-system/server/src/db:/app/src/db
+      - ./bombus-system/server/uploads:/app/uploads
+    networks:
+      - bombus-network
+    
+  # 前端 + Nginx
+  web:
+    build:
+      context: ./bombus-system
+      dockerfile: Dockerfile
+    container_name: bombus-web
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - api
+    networks:
+      - bombus-network
+
+networks:
+  bombus-network:
+    driver: bridge</div>
+      
+      <h3>6.4 Docker 部署指令</h3>
+      <div class="code-block-title">bash</div>
+      <div class="code-block has-title"># 建置並啟動
+docker-compose up -d --build
+
+# 查看狀態
+docker-compose ps
+
+# 查看日誌
+docker-compose logs -f
+
+# 停止服務
+docker-compose down</div>
+      
+      <hr>
+      
+      <!-- 七、部署檢查清單 -->
+      <h2 id="section-7" class="section-title">七、部署檢查清單</h2>
+      
+      <h3>7.1 後端部署檢查</h3>
+      <ul class="checklist">
+        <li>Node.js 18+ 已安裝</li>
+        <li>npm 依賴已安裝 (<code>npm install</code>)</li>
+        <li>環境變數已設定 (<code>.env</code> 檔案)</li>
+        <li>資料庫已初始化 (<code>npm run init-db</code>)</li>
+        <li>上傳目錄已建立且有寫入權限 (<code>uploads/</code>)</li>
+        <li>PM2 已安裝並設定開機自動啟動</li>
+        <li>API 健康檢查通過 (<code>/api/health</code>)</li>
+        <li>資料庫備份排程已設定</li>
+      </ul>
+      
+      <h3>7.2 前端部署檢查</h3>
+      <ul class="checklist">
+        <li>前端依賴已安裝</li>
+        <li>生產版本已建置 (<code>npm run build</code>)</li>
+        <li>靜態檔案已複製到 Web 伺服器</li>
+        <li>index.html 可正常存取</li>
+        <li>靜態資源載入正常（JS、CSS、圖片）</li>
+        <li>SPA 路由正常運作</li>
+      </ul>
+      
+      <h3>7.3 Nginx 配置檢查</h3>
+      <ul class="checklist">
+        <li>Nginx 已安裝並啟動</li>
+        <li>配置檔案語法正確 (<code>nginx -t</code>)</li>
+        <li>API 代理正常轉發</li>
+        <li>上傳檔案路徑正確</li>
+        <li>HTTPS 憑證已設定（生產環境）</li>
+        <li>Gzip 壓縮已啟用</li>
+      </ul>
+      
+      <h3>7.4 安全性檢查</h3>
+      <ul class="checklist">
+        <li>環境變數檔案權限已限制（600）</li>
+        <li>資料庫檔案不對外公開</li>
+        <li>API Port（3001）不對外開放</li>
+        <li>104 API 認證資訊已保護</li>
+        <li>CORS 已正確設定</li>
+        <li>防火牆規則已設定</li>
+      </ul>
+      
+      <hr>
+      
+      <!-- 八、常見問題排解 -->
+      <h2 id="section-8" class="section-title">八、常見問題排解</h2>
+      
+      <h3>Q1: API 回傳 CORS 錯誤</h3>
+      <div class="highlight-box">
+        <p><strong>原因：</strong>前端與後端網域不同，且 CORS 未正確設定。</p>
+        <p><strong>解決方案：</strong></p>
+        <ol>
+          <li>確認 <code>FRONTEND_URL</code> 環境變數已正確設定</li>
+          <li>確認 Nginx 代理配置正確</li>
+          <li>確認前端 API 請求使用相對路徑 <code>/api</code></li>
+        </ol>
+      </div>
+      
+      <h3>Q2: 前端路由重新整理後顯示 404</h3>
+      <div class="highlight-box">
+        <p><strong>原因：</strong>SPA 路由需要伺服器配合，將所有請求導向 index.html。</p>
+        <p><strong>解決方案：</strong></p>
+        <ol>
+          <li>確認 Nginx 配置包含 <code>try_files $uri $uri/ /index.html;</code></li>
+          <li>或改用 Hash 路由策略</li>
+        </ol>
+      </div>
+      
+      <h3>Q3: 檔案上傳失敗（413 錯誤）</h3>
+      <div class="highlight-box">
+        <p><strong>原因：</strong>Nginx 預設限制請求大小為 1MB。</p>
+        <p><strong>解決方案：</strong></p>
+        <ol>
+          <li>在 Nginx 配置中加入 <code>client_max_body_size 50M;</code></li>
+          <li>重新載入 Nginx 配置</li>
+        </ol>
+      </div>
+      
+      <h3>Q4: 資料庫鎖定錯誤</h3>
+      <div class="highlight-box">
+        <p><strong>原因：</strong>SQLite 在高併發情況下可能發生鎖定。</p>
+        <p><strong>解決方案：</strong></p>
+        <ol>
+          <li>確保只有一個 Node.js 程序存取資料庫</li>
+          <li>PM2 設定 <code>instances: 1</code></li>
+          <li>如需高併發，考慮改用 PostgreSQL</li>
+        </ol>
+      </div>
+      
+      <h3>Q5: PM2 無法自動重啟</h3>
+      <div class="highlight-box">
+        <p><strong>原因：</strong>PM2 startup 未正確設定。</p>
+        <p><strong>解決方案：</strong></p>
+        <div class="code-block">pm2 startup
+# 執行輸出的指令
+pm2 save</div>
+      </div>
+      
+      <h3>Q6: 104 API 連線失敗</h3>
+      <div class="highlight-box">
+        <p><strong>原因：</strong>API 認證資訊錯誤或網路問題。</p>
+        <p><strong>解決方案：</strong></p>
+        <ol>
+          <li>確認 <code>.env</code> 中的 104 API 認證資訊正確</li>
+          <li>確認伺服器可以連線到 104 API 端點</li>
+          <li>檢查 104 API 帳號狀態是否正常</li>
+        </ol>
+      </div>
+      
+    </main>
+    
+  </div>
+</body>
+</html>
