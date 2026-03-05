@@ -7,6 +7,7 @@ import {
   OnInit
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { TenantAdminService } from '../../services/tenant-admin.service';
 import { Role, Permission, ScopeType } from '../../models/tenant-admin.model';
 
@@ -20,7 +21,7 @@ interface PermissionGroup {
   selector: 'app-role-management-page',
   templateUrl: './role-management-page.component.html',
   styleUrl: './role-management-page.component.scss',
-  imports: [CommonModule],
+  imports: [CommonModule, HeaderComponent],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RoleManagementPageComponent implements OnInit {

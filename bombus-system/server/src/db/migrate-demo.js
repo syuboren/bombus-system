@@ -301,17 +301,16 @@ async function seedRBACData(demoAdapter) {
   db.run('PRAGMA foreign_keys = OFF');
   db.run('BEGIN TRANSACTION');
 
-  // 1. 建立 org_units（集團根 + 預設子公司 + 7 部門）
+  // 1. 建立 org_units（母公司 + 7 部門）
   const orgUnits = [
     { id: 'org-root', name: 'Demo集團', type: 'group', parent_id: null, level: 0 },
-    { id: 'org-sub-default', name: 'Demo Company', type: 'subsidiary', parent_id: 'org-root', level: 1 },
-    { id: 'org-dept-ceo', name: '執行長辦公室', type: 'department', parent_id: 'org-sub-default', level: 2 },
-    { id: 'org-dept-admin', name: '行政部', type: 'department', parent_id: 'org-sub-default', level: 2 },
-    { id: 'org-dept-fin', name: '財務部', type: 'department', parent_id: 'org-sub-default', level: 2 },
-    { id: 'org-dept-proj', name: '專案部', type: 'department', parent_id: 'org-sub-default', level: 2 },
-    { id: 'org-dept-hr', name: '人資部', type: 'department', parent_id: 'org-sub-default', level: 2 },
-    { id: 'org-dept-sales', name: '業務部', type: 'department', parent_id: 'org-sub-default', level: 2 },
-    { id: 'org-dept-eng', name: '工程部', type: 'department', parent_id: 'org-sub-default', level: 2 },
+    { id: 'org-dept-ceo', name: '執行長辦公室', type: 'department', parent_id: 'org-root', level: 1 },
+    { id: 'org-dept-admin', name: '行政部', type: 'department', parent_id: 'org-root', level: 1 },
+    { id: 'org-dept-fin', name: '財務部', type: 'department', parent_id: 'org-root', level: 1 },
+    { id: 'org-dept-proj', name: '專案部', type: 'department', parent_id: 'org-root', level: 1 },
+    { id: 'org-dept-hr', name: '人資部', type: 'department', parent_id: 'org-root', level: 1 },
+    { id: 'org-dept-sales', name: '業務部', type: 'department', parent_id: 'org-root', level: 1 },
+    { id: 'org-dept-eng', name: '工程部', type: 'department', parent_id: 'org-root', level: 1 },
   ];
 
   for (const ou of orgUnits) {
@@ -465,7 +464,7 @@ async function seedRBACData(demoAdapter) {
   // 員工角色對應
   for (const emp of employees) {
     const userId = `user-emp-${emp.id}`;
-    const orgUnitId = DEPT_TO_ORG[emp.department] || 'org-sub-default';
+    const orgUnitId = DEPT_TO_ORG[emp.department] || 'org-root';
 
     if (emp.role === 'manager') {
       // managers → hr_manager（global scope）

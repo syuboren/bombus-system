@@ -6,6 +6,7 @@ import {
   OnInit
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { TenantAdminService } from '../../services/tenant-admin.service';
 import { AuditLog } from '../../../platform-admin/models/platform.model';
 
@@ -14,7 +15,7 @@ import { AuditLog } from '../../../platform-admin/models/platform.model';
   selector: 'app-tenant-audit-log-page',
   templateUrl: './tenant-audit-log-page.component.html',
   styleUrl: './tenant-audit-log-page.component.scss',
-  imports: [CommonModule],
+  imports: [CommonModule, HeaderComponent],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TenantAuditLogPageComponent implements OnInit {

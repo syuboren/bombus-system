@@ -49,10 +49,10 @@ export interface CompanyNode {
 /** 部門層級 */
 export type DepartmentLevel = 1 | 2 | 3 | 4 | 5;
 
-/** 協作關係類型 */
+/** @deprecated 使用 SimpleCollaborationType */
 export type CollaborationType = 'upstream' | 'downstream' | 'parallel' | 'support';
 
-/** 部門協作關係 */
+/** @deprecated 使用 SimpleCollaboration */
 export interface DepartmentCollaboration {
   id: string;
   sourceDepartmentId: string;
@@ -62,6 +62,9 @@ export interface DepartmentCollaboration {
   communicationChannel: string;
   frequency: 'daily' | 'weekly' | 'monthly' | 'as_needed';
 }
+
+/** 簡化協作關係類型 */
+export type SimpleCollaborationType = 'parallel' | 'downstream';
 
 /** 部門 */
 export interface Department {
@@ -198,5 +201,73 @@ export interface CompanyStats {
   employeeCount: number;
   managerCount: number;
   avgTenure: number;
+}
+
+// ============================================================
+// 統一組織架構（Unified Org Tree）
+// ============================================================
+
+/** 組織樹節點類型 */
+export type OrgNodeType = 'group' | 'subsidiary' | 'department';
+
+/** 統一組織樹節點 */
+export interface OrgTreeNode {
+  id: string;
+  name: string;
+  type: OrgNodeType;
+  parentId: string | null;
+  level: number;
+  managerId: string | null;
+  managerName: string | null;
+  employeeCount: number;
+  responsibilities: string[];
+  kpiItems: string[];
+  competencyFocus: string[];
+  // 公司詳情欄位（group/subsidiary）
+  code?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  description?: string;
+  taxId?: string;
+  status?: 'active' | 'inactive';
+  establishedDate?: string;
+  departmentCount?: number;
+}
+
+/** 部門員工（輕量版） */
+export interface DepartmentEmployee {
+  id: string;
+  name: string;
+  employeeNo: string;
+  position: string;
+  avatar: string | null;
+  status: string;
+}
+
+/** 部門職務配置 */
+export interface DepartmentPositionInfo {
+  id: string;
+  title: string;
+  track: string;
+  grade: number;
+  gradeTitle: string | null;
+}
+
+/** 錨點方向 */
+export type AnchorSide = 'top' | 'bottom' | 'left' | 'right';
+
+/** 簡化協作關係 */
+export interface SimpleCollaboration {
+  id: string;
+  sourceDeptId: string;
+  targetDeptId: string;
+  sourceName?: string;
+  targetName?: string;
+  relationType: SimpleCollaborationType;
+  description: string | null;
+  sourceAnchor?: AnchorSide | null;
+  targetAnchor?: AnchorSide | null;
+  createdAt?: string;
 }
 

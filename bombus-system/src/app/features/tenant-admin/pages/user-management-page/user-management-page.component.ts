@@ -6,6 +6,7 @@ import {
   OnInit
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { TenantAdminService } from '../../services/tenant-admin.service';
 import {
   TenantUser,
@@ -20,7 +21,7 @@ import {
   selector: 'app-user-management-page',
   templateUrl: './user-management-page.component.html',
   styleUrl: './user-management-page.component.scss',
-  imports: [CommonModule],
+  imports: [CommonModule, HeaderComponent],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UserManagementPageComponent implements OnInit {

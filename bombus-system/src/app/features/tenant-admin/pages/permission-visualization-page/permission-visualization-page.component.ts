@@ -7,6 +7,7 @@ import {
   OnInit
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { TenantAdminService } from '../../services/tenant-admin.service';
 import {
   OrgUnit,
@@ -26,7 +27,7 @@ interface PermissionGroup {
   selector: 'app-permission-visualization-page',
   templateUrl: './permission-visualization-page.component.html',
   styleUrl: './permission-visualization-page.component.scss',
-  imports: [CommonModule],
+  imports: [CommonModule, HeaderComponent],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PermissionVisualizationPageComponent implements OnInit {

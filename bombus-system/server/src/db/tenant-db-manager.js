@@ -73,6 +73,10 @@ class TenantDBManager {
     db.run('PRAGMA foreign_keys = ON');
 
     const adapter = new SqliteAdapter(db, dbPath);
+
+    // 執行冪等遷移（ALTER TABLE 對既有租戶 DB 補欄位）
+    this._runMigrations(db, adapter);
+
     const cacheEntry = {
       adapter,
       lastAccess: Date.now(),
@@ -179,6 +183,44 @@ class TenantDBManager {
     // 避免 timer 阻止 Node 進程退出
     if (entry.timer.unref) {
       entry.timer.unref();
+    }
+  }
+
+  /**
+   * 冪等遷移 — 在載入既有租戶 DB 時補欄位和新表
+   * @param {import('sql.js').Database} db
+   * @param {import('./db-adapter').SqliteAdapter} adapter
+   */
+  _runMigrations(db, adapter) {
+    let changed = false;
+
+    // departments 表新增欄位
+    const deptMigrations = [
+      'ALTER TABLE departments ADD COLUMN manager_id TEXT REFERENCES employees(id)',
+      'ALTER TABLE departments ADD COLUMN head_count INTEGER DEFAULT 0',
+      "ALTER TABLE departments ADD COLUMN responsibilities TEXT DEFAULT '[]'",
+      "ALTER TABLE departments ADD COLUMN kpi_items TEXT DEFAULT '[]'",
+      "ALTER TABLE departments ADD COLUMN competency_focus TEXT DEFAULT '[]'"
+    ];
+    for (const sql of deptMigrations) {
+      try { db.run(sql); changed = true; } catch (e) { /* 欄位已存在則忽略 */ }
+    }
+
+    // department_collaborations 新表
+    try {
+      db.run(`CREATE TABLE IF NOT EXISTS department_collaborations (
+        id TEXT PRIMARY KEY,
+        source_dept_id TEXT NOT NULL,
+        target_dept_id TEXT NOT NULL,
+        relation_type TEXT NOT NULL CHECK(relation_type IN ('parallel','downstream')),
+        description TEXT,
+        created_at TEXT DEFAULT (datetime('now'))
+      )`);
+      changed = true;
+    } catch (e) { /* 表已存在 */ }
+
+    if (changed) {
+      adapter.save();
     }
   }
 

@@ -1213,6 +1213,18 @@ const BUSINESS_TABLES_SQL = `
     created_at TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (job_description_id) REFERENCES job_descriptions(id)
   );
+
+  -- =====================================================
+  -- 部門協作關係
+  -- =====================================================
+  CREATE TABLE IF NOT EXISTS department_collaborations (
+    id TEXT PRIMARY KEY,
+    source_dept_id TEXT NOT NULL,
+    target_dept_id TEXT NOT NULL,
+    relation_type TEXT NOT NULL CHECK(relation_type IN ('parallel','downstream')),
+    description TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
 `;
 
 /**
@@ -1231,6 +1243,42 @@ function initTenantSchema(adapter) {
 
   // 再建立 RBAC 表
   db.exec(RBAC_TABLES_SQL);
+
+  // departments 表欄位遷移（冪等：try-catch 忽略已存在欄位）
+  const deptMigrations = [
+    'ALTER TABLE departments ADD COLUMN manager_id TEXT REFERENCES employees(id)',
+    'ALTER TABLE departments ADD COLUMN head_count INTEGER DEFAULT 0',
+    "ALTER TABLE departments ADD COLUMN responsibilities TEXT DEFAULT '[]'",
+    "ALTER TABLE departments ADD COLUMN kpi_items TEXT DEFAULT '[]'",
+    "ALTER TABLE departments ADD COLUMN competency_focus TEXT DEFAULT '[]'"
+  ];
+  for (const sql of deptMigrations) {
+    try { db.run(sql); } catch (e) { /* 欄位已存在則忽略 */ }
+  }
+
+  // department_collaborations 表欄位遷移（錨點欄位）
+  const collabMigrations = [
+    'ALTER TABLE department_collaborations ADD COLUMN source_anchor TEXT',
+    'ALTER TABLE department_collaborations ADD COLUMN target_anchor TEXT'
+  ];
+  for (const sql of collabMigrations) {
+    try { db.run(sql); } catch (e) { /* 欄位已存在則忽略 */ }
+  }
+
+  // org_units 表欄位遷移（公司詳情欄位）
+  const orgUnitMigrations = [
+    'ALTER TABLE org_units ADD COLUMN code TEXT',
+    'ALTER TABLE org_units ADD COLUMN address TEXT',
+    'ALTER TABLE org_units ADD COLUMN phone TEXT',
+    'ALTER TABLE org_units ADD COLUMN email TEXT',
+    'ALTER TABLE org_units ADD COLUMN description TEXT',
+    'ALTER TABLE org_units ADD COLUMN tax_id TEXT',
+    "ALTER TABLE org_units ADD COLUMN status TEXT DEFAULT 'active'",
+    'ALTER TABLE org_units ADD COLUMN established_date TEXT'
+  ];
+  for (const sql of orgUnitMigrations) {
+    try { db.run(sql); } catch (e) { /* 欄位已存在則忽略 */ }
+  }
 
   adapter.save();
 }

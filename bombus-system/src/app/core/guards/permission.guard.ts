@@ -21,6 +21,11 @@ export const permissionGuard: CanActivateFn = (route: ActivatedRouteSnapshot) =>
   const permissionService = inject(PermissionService);
   const router = inject(Router);
 
+  // 頁面重整時 rolesSignal 可能尚未從 currentUser 初始化，同步載入
+  if (permissionService.roles().length === 0) {
+    permissionService.loadPermissions().subscribe();
+  }
+
   // 檢查角色
   const requiredRoles = route.data['requiredRoles'] as string[] | undefined;
   if (requiredRoles && requiredRoles.length > 0) {

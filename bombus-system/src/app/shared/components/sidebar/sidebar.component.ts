@@ -159,16 +159,6 @@ export class SidebarComponent {
       title: '組織管理',
       items: [
         {
-          label: '集團組織圖',
-          icon: 'ri-building-4-line',
-          route: '/organization/group-structure'
-        },
-        {
-          label: '部門結構管理',
-          icon: 'ri-organization-chart',
-          route: '/organization/department-structure'
-        },
-        {
           label: '員工管理',
           icon: 'ri-user-settings-line',
           route: '/organization/employee-management'

@@ -7,7 +7,12 @@ import {
   Employee,
   DepartmentCollaboration,
   OrganizationStats,
-  CompanyStats
+  CompanyStats,
+  OrgTreeNode,
+  DepartmentEmployee,
+  DepartmentPositionInfo,
+  SimpleCollaboration,
+  AnchorSide
 } from '../models/organization.model';
 
 @Injectable({ providedIn: 'root' })
@@ -29,6 +34,22 @@ export class OrganizationService {
     return this.http.get<any>(`/api/organization/companies/${id}`).pipe(
       map(c => this.mapCompany(c)),
       catchError(() => of(undefined))
+    );
+  }
+
+  /** 取得公司完整詳情（含 subsidiaries / departments 陣列） */
+  getCompanyDetail(id: string): Observable<{
+    company: Company;
+    subsidiaries: { id: string; name: string; employeeCount: number }[];
+    departments: { id: string; name: string; employeeCount: number }[];
+  } | null> {
+    return this.http.get<any>(`/api/organization/companies/${id}`).pipe(
+      map(c => ({
+        company: this.mapCompany(c),
+        subsidiaries: c.subsidiaries || [],
+        departments: c.departments || []
+      })),
+      catchError(() => of(null))
     );
   }
 
@@ -73,9 +94,66 @@ export class OrganizationService {
     );
   }
 
+  /** @deprecated 使用 getCollaborations() */
   getDepartmentCollaborations(companyId?: string): Observable<DepartmentCollaboration[]> {
-    // 後端尚無此 API，回傳空陣列
     return of([]);
+  }
+
+  // ============================================================
+  // 統一組織樹 API
+  // ============================================================
+
+  getOrgTree(): Observable<OrgTreeNode[]> {
+    return this.http.get<OrgTreeNode[]>('/api/organization/tree').pipe(
+      catchError(() => of([]))
+    );
+  }
+
+  getDepartmentEmployees(deptId: string): Observable<DepartmentEmployee[]> {
+    return this.http.get<DepartmentEmployee[]>(`/api/organization/departments/${deptId}/employees`).pipe(
+      catchError(() => of([]))
+    );
+  }
+
+  getDepartmentPositions(deptId: string): Observable<DepartmentPositionInfo[]> {
+    return this.http.get<DepartmentPositionInfo[]>(`/api/organization/departments/${deptId}/positions`).pipe(
+      catchError(() => of([]))
+    );
+  }
+
+  getCollaborations(): Observable<SimpleCollaboration[]> {
+    return this.http.get<SimpleCollaboration[]>('/api/organization/collaborations').pipe(
+      catchError(() => of([]))
+    );
+  }
+
+  createCollaboration(data: {
+    sourceDeptId: string; targetDeptId: string; relationType: string;
+    description?: string; sourceAnchor?: AnchorSide | null; targetAnchor?: AnchorSide | null;
+  }): Observable<SimpleCollaboration> {
+    return this.http.post<SimpleCollaboration>('/api/organization/collaborations', data);
+  }
+
+  updateCollaboration(id: string, updates: {
+    relationType?: string; description?: string;
+    sourceAnchor?: AnchorSide | null; targetAnchor?: AnchorSide | null;
+  }): Observable<SimpleCollaboration> {
+    return this.http.put<SimpleCollaboration>(`/api/organization/collaborations/${id}`, updates);
+  }
+
+  deleteCollaboration(id: string): Observable<{ success: boolean }> {
+    return this.http.delete<{ success: boolean }>(`/api/organization/collaborations/${id}`);
+  }
+
+  updateDepartmentExtended(id: string, updates: {
+    name?: string;
+    code?: string;
+    managerId?: string;
+    responsibilities?: string[];
+    kpiItems?: string[];
+    competencyFocus?: { name: string; jobs: { name: string; description: string }[] }[];
+  }): Observable<any> {
+    return this.http.put(`/api/organization/departments/${id}`, updates);
   }
 
   // ============================================================
@@ -160,19 +238,35 @@ export class OrganizationService {
   // 公司 CRUD API
   // ============================================================
 
-  createCompany(company: Omit<Company, 'id'>): Observable<Company> {
+  createCompany(company: Omit<Company, 'id'> & Record<string, any>): Observable<Company> {
     return this.http.post<any>('/api/organization/companies', {
       name: company.name,
       type: company.type,
-      parentCompanyId: company.parentCompanyId
+      parentCompanyId: company.parentCompanyId,
+      code: company.code,
+      address: company.address,
+      phone: company.phone,
+      email: company.email,
+      description: company.description,
+      taxId: company.taxId,
+      status: company.status,
+      establishedDate: company.establishedDate
     }).pipe(
       map(c => this.mapCompany(c))
     );
   }
 
-  updateCompany(id: string, updates: Partial<Company>): Observable<Company | null> {
+  updateCompany(id: string, updates: Partial<Company> & Record<string, any>): Observable<Company | null> {
     return this.http.put<any>(`/api/organization/companies/${id}`, {
-      name: updates.name
+      name: updates.name,
+      code: updates.code,
+      address: updates.address,
+      phone: updates.phone,
+      email: updates.email,
+      description: updates.description,
+      taxId: updates.taxId,
+      status: updates.status,
+      establishedDate: updates.establishedDate
     }).pipe(
       map(c => this.mapCompany(c)),
       catchError(() => of(null))
@@ -237,7 +331,11 @@ export class OrganizationService {
       departmentCount: c.departmentCount || 0,
       status: c.status || 'active',
       address: c.address || '',
-      establishedDate: c.createdAt ? new Date(c.createdAt) : new Date()
+      phone: c.phone || '',
+      email: c.email || '',
+      taxId: c.taxId || c.tax_id || '',
+      description: c.description || '',
+      establishedDate: c.establishedDate ? new Date(c.establishedDate) : (c.createdAt ? new Date(c.createdAt) : new Date())
     };
   }
 

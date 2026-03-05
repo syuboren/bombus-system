@@ -1,4 +1,5 @@
 schema: spec-driven
+locale: tw
 tdd: true
 
 context: |

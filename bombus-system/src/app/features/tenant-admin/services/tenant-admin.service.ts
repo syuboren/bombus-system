@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import {
   OrgUnit,
   Role,
@@ -60,7 +60,9 @@ export class TenantAdminService {
   // ============================================================
 
   getPermissions(): Observable<Permission[]> {
-    return this.http.get<Permission[]>('/api/tenant-admin/permissions');
+    return this.http.get<{ permissions: Permission[]; grouped: Record<string, Permission[]> }>('/api/tenant-admin/permissions').pipe(
+      map(res => res.permissions)
+    );
   }
 
   // ============================================================
@@ -68,7 +70,9 @@ export class TenantAdminService {
   // ============================================================
 
   getUsers(): Observable<TenantUser[]> {
-    return this.http.get<TenantUser[]>('/api/tenant-admin/users');
+    return this.http.get<{ data: TenantUser[]; pagination: unknown }>('/api/tenant-admin/users').pipe(
+      map(res => res.data)
+    );
   }
 
   createUser(data: { email: string; name: string; password: string; employee_id?: string }): Observable<TenantUser> {

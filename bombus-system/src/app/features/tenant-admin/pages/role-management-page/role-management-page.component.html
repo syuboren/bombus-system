@@ -1,10 +1,10 @@
+<app-header pageTitle="角色權限管理" [breadcrumbs]="['系統設定']">
+  <button class="btn-primary" type="button" (click)="openCreateForm()">
+    <i class="ri-add-line"></i> 新增角色
+  </button>
+</app-header>
+
 <div class="role-management-page">
-  <div class="page-header">
-    <h1 class="page-title">角色管理</h1>
-    <button class="btn-primary" type="button" (click)="openCreateForm()">
-      <i class="ri-add-line"></i> 新增角色
-    </button>
-  </div>
 
   @if (loading()) {
     <div class="loading-state">

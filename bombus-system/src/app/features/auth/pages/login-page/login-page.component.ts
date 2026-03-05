@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { PermissionService } from '../../../../core/services/permission.service';
 import { LoginRequest, PlatformLoginRequest } from '../../models/auth.model';
 
 @Component({
@@ -15,6 +16,7 @@ import { LoginRequest, PlatformLoginRequest } from '../../models/auth.model';
 })
 export class LoginPageComponent implements OnInit {
   private authService = inject(AuthService);
+  private permissionService = inject(PermissionService);
   private router = inject(Router);
 
   // Login mode
@@ -114,7 +116,9 @@ export class LoginPageComponent implements OnInit {
     this.authService.login(request).subscribe({
       next: (response) => {
         if (response.success) {
-          this.router.navigate(['/dashboard']);
+          this.permissionService.loadPermissions().subscribe(() => {
+            this.router.navigate(['/dashboard']);
+          });
         } else {
           this.errorMessage.set(response.message);
         }

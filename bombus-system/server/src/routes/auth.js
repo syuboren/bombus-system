@@ -198,7 +198,12 @@ router.post('/login', async (req, res) => {
       if (plan && plan.features) {
         try {
           const parsed = JSON.parse(plan.features);
-          if (Array.isArray(parsed)) enabledFeatures = parsed;
+          if (Array.isArray(parsed)) {
+            enabledFeatures = parsed;
+          } else if (parsed && typeof parsed === 'object' && Array.isArray(parsed.modules)) {
+            // 支援物件格式 { modules: ['L1', 'L2', ...] }
+            enabledFeatures = parsed.modules;
+          }
         } catch (e) { /* ignore invalid JSON */ }
       }
     }
@@ -317,7 +322,11 @@ router.post('/refresh', (req, res) => {
         if (plan && plan.features) {
           try {
             const parsed = JSON.parse(plan.features);
-            if (Array.isArray(parsed)) enabledFeatures = parsed;
+            if (Array.isArray(parsed)) {
+              enabledFeatures = parsed;
+            } else if (parsed && typeof parsed === 'object' && Array.isArray(parsed.modules)) {
+              enabledFeatures = parsed.modules;
+            }
           } catch (e) { /* ignore */ }
         }
       }

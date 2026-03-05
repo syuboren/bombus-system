@@ -83,7 +83,7 @@ Ask these questions:
 
 Now — and only now — fix the bug.
 
-1. **Write a failing test** that reproduces the bug (use `/spectra:tdd` discipline)
+1. **Write a failing test** that reproduces the bug (fetch TDD discipline: `spectra instructions --skill tdd`)
 2. **Make the minimum change** to fix the root cause — not the symptoms
 3. **Run the test** — confirm it passes
 4. **Run the full test suite** — ensure no regressions

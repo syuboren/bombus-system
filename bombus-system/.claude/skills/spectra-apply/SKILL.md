@@ -104,7 +104,7 @@ Implement tasks from an OpenSpec change.
    Read `openspec/config.yaml` in the project root.
    If `tdd: true` is set, apply TDD discipline throughout implementation:
    - For each task, write a failing test FIRST, then implement to make it pass
-   - Follow the Red-Green-Refactor cycle from `/spectra:tdd`
+   - Fetch TDD instructions by running `spectra instructions --skill tdd`, then follow the Red-Green-Refactor cycle
    - For bug fixes, reproduce the bug with a failing test before fixing
 
    If `parallel_tasks: true` is set, check whether consecutive pending tasks have `[P]` markers (format: `- [ ] [P] Task description`). You SHALL dispatch consecutive `[P]` tasks as parallel agents. Only fall back to sequential when tasks have a data dependency (one task's output is another's input) or when tasks modify overlapping regions of the same file. Targeting the same file alone is NOT a reason to skip parallel dispatch — if the modified regions are disjoint, dispatch in parallel. If the environment does not support parallel execution, ignore `[P]` markers and execute tasks sequentially.
