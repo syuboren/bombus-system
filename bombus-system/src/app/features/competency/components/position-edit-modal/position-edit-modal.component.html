@@ -18,15 +18,28 @@
                 <h3 class="section-title">職位資訊</h3>
                 <div class="form-row">
                     <div class="form-group">
+                        <label class="form-label">子公司</label>
+                        <select class="form-select" [value]="selectedSubsidiaryId()"
+                            (change)="selectedSubsidiaryId.set($any($event.target).value); updateField('department', '')"
+                            [disabled]="saving()">
+                            <option value="">全部子公司</option>
+                            @for (sub of subsidiaries(); track sub.id) {
+                            <option [value]="sub.id">{{ sub.name }}</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="form-group">
                         <label class="form-label required">部門</label>
                         <select class="form-select" [value]="formData().department"
                             (change)="updateField('department', $any($event.target).value)" [disabled]="saving()">
                             <option value="">請選擇部門</option>
-                            @for (dept of departments(); track dept.id) {
+                            @for (dept of filteredDepartments(); track dept.id) {
                             <option [value]="dept.name">{{ dept.name }}</option>
                             }
                         </select>
                     </div>
+                </div>
+                <div class="form-row">
                     <div class="form-group">
                         <label class="form-label required">職等</label>
                         <select class="form-select" [value]="formData().grade"
@@ -36,8 +49,6 @@
                             }
                         </select>
                     </div>
-                </div>
-                <div class="form-row">
                     <div class="form-group">
                         <label class="form-label required">職位名稱</label>
                         <input type="text" class="form-input" [value]="formData().title"

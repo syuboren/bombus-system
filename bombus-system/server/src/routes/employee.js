@@ -272,17 +272,30 @@ router.get('/list', (req, res) => {
 
 /**
  * GET /api/employee/departments
- * 取得所有部門清單
+ * 取得所有部門清單（優先從 org_units 取，fallback 從 employees 取）
  */
 router.get('/departments', (req, res) => {
     try {
-        const departments = req.tenantDB.prepare(`
-            SELECT DISTINCT department
-            FROM employees
-            WHERE department IS NOT NULL
-            ORDER BY department
+        // 優先從 org_units 取部門（統一資料來源）
+        const fromOrgUnits = req.tenantDB.prepare(`
+            SELECT ou.name
+            FROM org_units ou
+            WHERE ou.type = 'department'
+            ORDER BY ou.name ASC
         `).all();
-        res.json(departments.map(d => d.department));
+
+        if (fromOrgUnits.length > 0) {
+            res.json(fromOrgUnits.map(d => d.name));
+        } else {
+            // Fallback：從 employees 取（向後相容）
+            const fromEmployees = req.tenantDB.prepare(`
+                SELECT DISTINCT department
+                FROM employees
+                WHERE department IS NOT NULL AND department != ''
+                ORDER BY department
+            `).all();
+            res.json(fromEmployees.map(d => d.department));
+        }
     } catch (error) {
         console.error('Error fetching departments:', error);
         res.status(500).json({ error: 'Failed to fetch departments' });

@@ -64,12 +64,23 @@
               (input)="searchQuery.set($any($event.target).value)">
           </div>
           <div class="filter-divider"></div>
+          @if (subsidiaries().length > 0) {
+          <div class="filter-item">
+            <select class="filter-select" [value]="selectedSubsidiaryId()"
+              (change)="selectedSubsidiaryId.set($any($event.target).value)">
+              <option value="">全部子公司</option>
+              @for (sub of subsidiaries(); track sub.id) {
+              <option [value]="sub.id">{{ sub.name }}</option>
+              }
+            </select>
+          </div>
+          }
           <div class="filter-item">
             <select class="filter-select" [value]="selectedDepartment()"
               (change)="selectedDepartment.set($any($event.target).value)">
               <option value="all">所有部門</option>
-              @for (dept of departments(); track dept) {
-              <option [value]="dept">{{ dept }}</option>
+              @for (dept of filteredDepartments(); track dept.id) {
+              <option [value]="dept.name">{{ dept.name }}</option>
               }
             </select>
           </div>

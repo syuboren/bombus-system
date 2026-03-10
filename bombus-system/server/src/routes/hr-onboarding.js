@@ -6,6 +6,8 @@
 const express = require('express');
 const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
+const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 // tenantDB is accessed via req.tenantDB (injected by middleware)
 
 // ============================================================
@@ -70,13 +72,16 @@ router.get('/pending-conversions', (req, res) => {
     // 使用子查詢取得每個候選人最新的 invitation_decision 記錄
     // 職位來源：從 jobs 表取得應徵職缺名稱，而非候選人目前工作職位
     const candidates = req.tenantDB.prepare(`
-      SELECT 
+      SELECT
         c.id,
         c.name,
         c.email,
         c.phone,
         c.avatar,
         j.title as position,
+        j.department as original_department,
+        jd.grade as original_grade,
+        jd.position_name as original_position_name,
         c.status,
         c.stage,
         d.candidate_response as offer_response,
@@ -84,6 +89,7 @@ router.get('/pending-conversions', (req, res) => {
         CAST((julianday('now') - julianday(d.responded_at)) AS INTEGER) as days_since_accepted
       FROM candidates c
       LEFT JOIN jobs j ON c.job_id = j.id
+      LEFT JOIN job_descriptions jd ON j.jd_id = jd.id
       LEFT JOIN (
         SELECT candidate_id, candidate_response, responded_at,
                ROW_NUMBER() OVER (PARTITION BY candidate_id ORDER BY responded_at DESC) as rn
@@ -104,7 +110,7 @@ router.get('/pending-conversions', (req, res) => {
  * POST /api/hr/onboarding/convert-candidate
  * 將候選人轉換為員工（試用期）
  */
-router.post('/convert-candidate', (req, res) => {
+router.post('/convert-candidate', async (req, res) => {
   try {
     const {
       candidate_id,
@@ -118,7 +124,8 @@ router.post('/convert-candidate', (req, res) => {
       hire_date,
       probation_months = 3,
       contract_type = 'full-time',
-      work_location
+      work_location,
+      org_unit_id    // 組織單位 ID（FK → org_units）
     } = req.body;
 
     // 驗證必填欄位
@@ -161,6 +168,24 @@ router.post('/convert-candidate', (req, res) => {
     const probation_end_date = calculateProbationEndDate(hire_date, probation_months);
     const now = new Date().toISOString();
 
+    // 預先檢查是否已有同 email 帳號，避免不必要的 bcrypt 運算
+    const preCheckUser = req.tenantDB.prepare(
+      'SELECT id FROM users WHERE email = ?'
+    ).get(candidate.email);
+
+    // 僅在需要建立新帳號時才計算密碼雜湊（async，須在 transaction 外執行）
+    let initialPassword = null;
+    let passwordHash = null;
+    if (!preCheckUser) {
+      initialPassword = crypto.randomBytes(12).toString('base64url');
+      passwordHash = await bcrypt.hash(initialPassword, 10);
+    }
+
+    // ─── 使用 transaction 保護所有寫入操作 ───
+    let createdUser = null;
+    let onboardingLinks = [];
+    req.tenantDB.transaction(() => {
+
     // 建立員工記錄
     req.tenantDB.prepare(`
       INSERT INTO employees (
@@ -168,8 +193,8 @@ router.post('/convert-candidate', (req, res) => {
         department, job_title, position, level, grade, role, manager_id,
         hire_date, contract_type, work_location, status,
         candidate_id, probation_end_date, probation_months,
-        onboarding_status, converted_at, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'probation', ?, ?, ?, 'pending', ?, ?)
+        onboarding_status, converted_at, org_unit_id, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'probation', ?, ?, ?, 'pending', ?, ?, ?)
     `).run(
       employee_id,
       employee_no,
@@ -191,8 +216,57 @@ router.post('/convert-candidate', (req, res) => {
       probation_end_date,
       probation_months,
       now,
+      org_unit_id || null,
       now
     );
+
+    // ─── 自動建立使用者帳號 + 指派 employee 角色 ───
+    {
+      const userId = uuidv4();
+
+      // 檢查是否已有同 email 帳號
+      const existingUser = req.tenantDB.prepare(
+        'SELECT id FROM users WHERE email = ?'
+      ).get(candidate.email);
+
+      if (!existingUser) {
+        // 建立帳號（must_change_password = 1）
+        req.tenantDB.prepare(`
+          INSERT INTO users (id, email, password_hash, name, employee_id, status, must_change_password)
+          VALUES (?, ?, ?, ?, ?, 'active', 1)
+        `).run(userId, candidate.email, passwordHash, candidate.name, employee_id);
+
+        // 查找 employee 系統角色並指派
+        const employeeRole = req.tenantDB.prepare(
+          "SELECT id FROM roles WHERE name = 'employee' AND is_system = 1"
+        ).get();
+
+        if (employeeRole) {
+          req.tenantDB.prepare(
+            'INSERT OR IGNORE INTO user_roles (user_id, role_id, org_unit_id) VALUES (?, ?, ?)'
+          ).run(userId, employeeRole.id, org_unit_id || null);
+        }
+
+        createdUser = {
+          user_id: userId,
+          email: candidate.email,
+          initial_password: initialPassword,
+          must_change_password: true,
+          default_role: employeeRole ? 'employee' : null
+        };
+      } else {
+        // 關聯既有帳號到新員工
+        req.tenantDB.prepare(
+          'UPDATE users SET employee_id = ? WHERE id = ? AND employee_id IS NULL'
+        ).run(employee_id, existingUser.id);
+
+        createdUser = {
+          user_id: existingUser.id,
+          email: candidate.email,
+          already_existed: true
+        };
+      }
+    }
 
     // 複製候選人學歷到員工學歷
     const candidateEducation = req.tenantDB.prepare(`
@@ -236,7 +310,6 @@ router.post('/convert-candidate', (req, res) => {
       WHERE is_public = 1 AND is_active = 1 AND is_required = 1
     `).all();
 
-    const onboardingLinks = [];
     for (const template of templates) {
       const token = generateToken();
       const submission_id = uuidv4();
@@ -277,6 +350,8 @@ router.post('/convert-candidate', (req, res) => {
       now
     );
 
+    }); // ─── end transaction ───
+
     res.status(201).json({
       success: true,
       data: {
@@ -289,6 +364,8 @@ router.post('/convert-candidate', (req, res) => {
         hire_date,
         probation_end_date,
         onboarding_status: 'pending',
+        org_unit_id: org_unit_id || null,
+        user_account: createdUser,
         onboarding_links: onboardingLinks
       }
     });
@@ -560,14 +637,28 @@ router.get('/next-employee-no', (req, res) => {
  */
 router.get('/departments', (req, res) => {
   try {
-    // 優先從 departments 資料表取得
-    const deptFromTable = req.tenantDB.prepare(`
-      SELECT id, name, code, sort_order FROM departments
-      ORDER BY sort_order
-    `).all();
+    const { parentId } = req.query;
 
-    if (deptFromTable.length > 0) {
-      res.json(deptFromTable);
+    // 統一從 org_units 取部門，LEFT JOIN departments 取 code/sort_order
+    let sql = `
+      SELECT ou.id, ou.name, d.code, d.sort_order
+      FROM org_units ou
+      LEFT JOIN departments d ON TRIM(d.name) = TRIM(ou.name) COLLATE NOCASE
+      WHERE ou.type = 'department'
+    `;
+    const params = [];
+
+    if (parentId) {
+      sql += ' AND ou.parent_id = ?';
+      params.push(parentId);
+    }
+
+    sql += ' ORDER BY d.sort_order ASC, ou.name ASC';
+
+    const deptFromOrgUnits = req.tenantDB.prepare(sql).all(...params);
+
+    if (deptFromOrgUnits.length > 0) {
+      res.json(deptFromOrgUnits);
     } else {
       // 向後相容：從員工資料取得
       const departments = req.tenantDB.prepare(`
@@ -712,6 +803,65 @@ router.get('/managers', (req, res) => {
   } catch (error) {
     console.error('Error fetching managers:', error);
     res.status(500).json({ error: 'Failed to fetch managers' });
+  }
+});
+
+/**
+ * @deprecated 請改用 GET /api/organization/org-units（相同資料）
+ * GET /api/hr/onboarding/org-units
+ * 保留供向後相容
+ */
+router.get('/org-units', (req, res) => {
+  try {
+    const orgUnits = req.tenantDB.prepare(`
+      SELECT id, name, type, parent_id, level
+      FROM org_units
+      ORDER BY level ASC, name ASC
+    `).all();
+    res.json(orgUnits);
+  } catch (error) {
+    console.error('Error fetching org units:', error);
+    res.status(500).json({ error: 'Failed to fetch org units' });
+  }
+});
+
+/**
+ * POST /api/hr/onboarding/test/seed-candidate
+ * 測試用 — 建立 offer_accepted 狀態的候選人（含職缺）
+ * 僅限 development 環境
+ */
+router.post('/test/seed-candidate', (req, res) => {
+  const allowedEnvs = ['development', 'test'];
+  if (!allowedEnvs.includes(process.env.NODE_ENV)) {
+    return res.status(403).json({ error: 'Only available in development/test environments' });
+  }
+
+  try {
+    const { name, email } = req.body;
+    if (!name || !email) {
+      return res.status(400).json({ error: 'name and email required' });
+    }
+
+    const jobId = uuidv4();
+    const candidateId = uuidv4();
+    const now = new Date().toISOString();
+
+    // 建立測試職缺
+    req.tenantDB.prepare(`
+      INSERT OR IGNORE INTO jobs (id, title, department, status, created_at)
+      VALUES (?, ?, '測試部', 'published', ?)
+    `).run(jobId, `測試職缺-${Date.now()}`, now);
+
+    // 建立候選人（offer_accepted 狀態）
+    req.tenantDB.prepare(`
+      INSERT INTO candidates (id, job_id, name, email, phone, status, stage, apply_date, created_at)
+      VALUES (?, ?, ?, ?, '0912345678', 'offer_accepted', 'Offered', ?, ?)
+    `).run(candidateId, jobId, name, email, now, now);
+
+    res.status(201).json({ id: candidateId, email, name, status: 'offer_accepted' });
+  } catch (error) {
+    console.error('Error seeding test candidate:', error);
+    res.status(500).json({ error: 'Failed to seed candidate' });
   }
 });
 

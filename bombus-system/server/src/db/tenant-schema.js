@@ -6,6 +6,26 @@
  * - L1~L6 業務表（從 db/index.js 提取的 69 張表）
  */
 
+// ─── 共用遷移常數（供 tenant-db-manager.js 共用） ───
+
+const EMPLOYEE_MIGRATIONS = [
+  'ALTER TABLE employees ADD COLUMN job_title TEXT',
+  'ALTER TABLE employees ADD COLUMN candidate_id TEXT',
+  'ALTER TABLE employees ADD COLUMN probation_end_date TEXT',
+  'ALTER TABLE employees ADD COLUMN probation_months INTEGER',
+  'ALTER TABLE employees ADD COLUMN onboarding_status TEXT',
+  'ALTER TABLE employees ADD COLUMN converted_at TEXT',
+  'ALTER TABLE employees ADD COLUMN org_unit_id TEXT REFERENCES org_units(id)'
+];
+
+const USER_MIGRATIONS = [
+  'ALTER TABLE users ADD COLUMN must_change_password INTEGER DEFAULT 0'
+];
+
+const INTERVIEW_MIGRATIONS = [
+  'ALTER TABLE interviews ADD COLUMN address TEXT'
+];
+
 // ─── RBAC 表 SQL ───
 
 const RBAC_TABLES_SQL = `
@@ -552,6 +572,7 @@ const BUSINESS_TABLES_SQL = `
     round INTEGER DEFAULT 1,
     interview_at TEXT,
     location TEXT,
+    address TEXT,
     meeting_link TEXT,
     evaluation_json TEXT,
     result TEXT DEFAULT 'Pending',
@@ -711,6 +732,41 @@ const BUSINESS_TABLES_SQL = `
     cost REAL DEFAULT 0,
     status TEXT DEFAULT 'completed',
     instructor TEXT,
+    notes TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS employee_performance (
+    id TEXT PRIMARY KEY,
+    employee_id TEXT NOT NULL,
+    year INTEGER NOT NULL,
+    quarter INTEGER,
+    review_type TEXT,
+    overall_score REAL,
+    goals_achieved INTEGER,
+    goals_total INTEGER,
+    strengths TEXT,
+    improvements TEXT,
+    reviewer_id TEXT,
+    reviewer_name TEXT,
+    review_date TEXT,
+    comments TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS employee_roi (
+    id TEXT PRIMARY KEY,
+    employee_id TEXT NOT NULL,
+    year INTEGER NOT NULL,
+    month INTEGER,
+    revenue_generated REAL DEFAULT 0,
+    cost_saved REAL DEFAULT 0,
+    projects_completed INTEGER DEFAULT 0,
+    training_cost REAL DEFAULT 0,
+    salary_cost REAL DEFAULT 0,
+    calculated_roi REAL,
     notes TEXT,
     created_at TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
@@ -1280,7 +1336,33 @@ function initTenantSchema(adapter) {
     try { db.run(sql); } catch (e) { /* 欄位已存在則忽略 */ }
   }
 
+  // employees 表欄位遷移（修復 convert-candidate 必需欄位 + 組織單位關聯）
+  for (const sql of EMPLOYEE_MIGRATIONS) {
+    try { db.run(sql); } catch (e) { /* 欄位已存在則忽略 */ }
+  }
+
+  // users 表欄位遷移（首次登入強制改密碼）
+  for (const sql of USER_MIGRATIONS) {
+    try { db.run(sql); } catch (e) { /* 欄位已存在則忽略 */ }
+  }
+
+  // 子公司資料關聯遷移：6 張表加入 org_unit_id（nullable, NULL = 全組織共用）
+  const subsidiaryMigrations = [
+    { table: 'job_descriptions', index: 'idx_jd_org_unit' },
+    { table: 'competencies', index: 'idx_comp_org_unit' },
+    { table: 'grade_salary_levels', index: 'idx_gsl_org_unit' },
+    { table: 'department_positions', index: 'idx_dp_org_unit' },
+    { table: 'promotion_criteria', index: 'idx_pc_org_unit' },
+    { table: 'career_paths', index: 'idx_cp_org_unit' }
+  ];
+  for (const { table, index } of subsidiaryMigrations) {
+    try {
+      db.run(`ALTER TABLE ${table} ADD COLUMN org_unit_id TEXT REFERENCES org_units(id)`);
+    } catch (e) { /* 欄位已存在則忽略 */ }
+    db.run(`CREATE INDEX IF NOT EXISTS ${index} ON ${table}(org_unit_id)`);
+  }
+
   adapter.save();
 }
 
-module.exports = { initTenantSchema, RBAC_TABLES_SQL, BUSINESS_TABLES_SQL };
+module.exports = { initTenantSchema, RBAC_TABLES_SQL, BUSINESS_TABLES_SQL, EMPLOYEE_MIGRATIONS, USER_MIGRATIONS, INTERVIEW_MIGRATIONS };

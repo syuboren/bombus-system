@@ -73,13 +73,21 @@ router.get('/:category', (req, res) => {
             });
         }
 
-        // 取得職能列表
-        const rows = req.tenantDB.prepare(`
+        // 取得職能列表（可依 org_unit_id 篩選）
+        const { org_unit_id } = req.query;
+        let sql = `
       SELECT id, code, name, type, category, description, created_at, updated_at
       FROM competencies
-      WHERE category = ?
-      ORDER BY code
-    `).all(category);
+      WHERE category = ?`;
+        const params = [category];
+
+        if (org_unit_id) {
+            sql += ` AND (org_unit_id IS NULL OR org_unit_id = ?)`;
+            params.push(org_unit_id);
+        }
+
+        sql += ` ORDER BY code`;
+        const rows = req.tenantDB.prepare(sql).all(...params);
 
         // 根據類別轉換資料格式
         const competencies = rows.map(row => {
@@ -190,7 +198,7 @@ router.get('/:category/:id', (req, res) => {
 router.post('/:category', (req, res) => {
     try {
         const { category } = req.params;
-        const { code, name, type, description, levels, behaviorIndicators, linkedCourses } = req.body;
+        const { code, name, type, description, levels, behaviorIndicators, linkedCourses, org_unit_id } = req.body;
 
         // 驗證必填欄位
         if (!code || !name) {
@@ -215,9 +223,9 @@ router.post('/:category', (req, res) => {
 
         // 新增職能主資料
         req.tenantDB.prepare(`
-      INSERT INTO competencies (id, code, name, type, category, description, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(id, code, name, competencyType, category, description || '', now, now);
+      INSERT INTO competencies (id, code, name, type, category, description, org_unit_id, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, code, name, competencyType, category, description || '', org_unit_id || null, now, now);
 
         if (category === 'ksa') {
             // 新增 KSA 詳細資訊
@@ -264,7 +272,7 @@ router.post('/:category', (req, res) => {
 router.put('/:category/:id', (req, res) => {
     try {
         const { category, id } = req.params;
-        const { code, name, type, description, levels, behaviorIndicators, linkedCourses } = req.body;
+        const { code, name, type, description, levels, behaviorIndicators, linkedCourses, org_unit_id } = req.body;
 
         // 檢查職能是否存在
         const existing = req.tenantDB.prepare(`SELECT id, code FROM competencies WHERE id = ? AND category = ?`).get(id, category);
@@ -292,9 +300,9 @@ router.put('/:category/:id', (req, res) => {
         // 更新職能主資料
         req.tenantDB.prepare(`
       UPDATE competencies
-      SET code = ?, name = ?, type = ?, description = ?, updated_at = ?
+      SET code = ?, name = ?, type = ?, description = ?, org_unit_id = ?, updated_at = ?
       WHERE id = ?
-    `).run(code || existing.code, name, competencyType, description || '', now, id);
+    `).run(code || existing.code, name, competencyType, description || '', org_unit_id || null, now, id);
 
         if (category === 'ksa') {
             // 更新 KSA 詳細資訊

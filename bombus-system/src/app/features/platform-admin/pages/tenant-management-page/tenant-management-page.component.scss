@@ -249,6 +249,17 @@ $module-color: $color-brand-main;
   @include status-badge-color($color-error);
 }
 
+.plan-inactive-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: $color-error;
+  background: $color-error-light;
+  border-radius: $radius-sm;
+}
+
 // ---------------------------------------------------------------
 // Pagination
 // ---------------------------------------------------------------

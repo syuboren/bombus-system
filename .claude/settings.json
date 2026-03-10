@@ -1,0 +1,26 @@
+{
+  "hooks": {
+    "postToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "command": "cd /Users/alifrt/Desktop/Bombus/bombus-system && npx tsc --noEmit 2>&1 | head -20",
+            "description": "編輯後進行 TypeScript 型別檢查"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "command": "if [ ! -f /tmp/bombus-env-checked-$PPID ]; then echo '--- 環境快速檢查 ---' && node -v && echo \"npm: $(npm -v)\" && (test -f /Users/alifrt/Desktop/Bombus/bombus-system/server/.env && echo '.env: OK' || echo '.env: MISSING') && (ls /Users/alifrt/Desktop/Bombus/bombus-system/server/data/tenants/*.db 2>/dev/null | wc -l | xargs -I{} echo 'tenant DBs: {}') && touch /tmp/bombus-env-checked-$PPID; fi",
+            "description": "首次 Bash 呼叫時自動檢查環境"
+          }
+        ]
+      }
+    ]
+  }
+}

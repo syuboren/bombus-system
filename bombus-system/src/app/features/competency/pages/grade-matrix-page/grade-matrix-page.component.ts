@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, signal, OnInit, computed, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, OnInit, computed, AfterViewInit, ViewChild, ElementRef, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
@@ -22,6 +22,7 @@ import { TrackEditModalComponent } from '../../components/track-edit-modal/track
 import { GradeEditModalComponent } from '../../components/grade-edit-modal/grade-edit-modal.component';
 import { PositionEditModalComponent } from '../../components/position-edit-modal/position-edit-modal.component';
 import { PromotionCriteriaEditModalComponent } from '../../components/promotion-criteria-edit-modal/promotion-criteria-edit-modal.component';
+import { OrgUnitService } from '../../../../core/services/org-unit.service';
 import * as echarts from 'echarts';
 
 // Employee interface for AI assistant
@@ -103,6 +104,7 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
   @ViewChild('radarChart') radarChartRef!: ElementRef;
   private radarChart: echarts.ECharts | null = null;
   private competencyService = inject(CompetencyService);
+  private orgUnitService = inject(OrgUnitService);
 
   // Page Info
   readonly pageTitle = '職等職級管理';
@@ -125,6 +127,11 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
   departments = signal<{ id: string; name: string; code: string }[]>([]);
   departmentPositions = signal<DepartmentPosition[]>([]);
   selectedDepartmentFilter = signal<string>('');
+
+  // 子公司→部門級聯篩選
+  selectedSubsidiaryId = signal<string>('');
+  subsidiaries = this.orgUnitService.subsidiaries;
+  filteredDepartments = computed(() => this.orgUnitService.filterDepartments(this.selectedSubsidiaryId()));
 
   // Active tab（擴展含 pending / history）
   activeTab = signal<'matrix' | 'career' | 'ai-assistant' | 'pending' | 'history'>('matrix');
@@ -247,9 +254,17 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
     return this.employees().find(e => e.id === id) || null;
   });
 
+  constructor() {
+    // 子公司切換時自動重新載入職等職級資料
+    effect(() => {
+      const orgUnitId = this.selectedSubsidiaryId();
+      this.loadDataNew();
+    }, { allowSignalWrites: true });
+  }
+
   ngOnInit(): void {
+    this.orgUnitService.loadOrgUnits().subscribe();
     this.loadData();
-    this.loadDataNew();
     this.loadEmployees();
     this.loadTracks();
   }
@@ -274,15 +289,17 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
 
   // 載入新版資料 (從 API)
   loadDataNew(): void {
-    this.competencyService.getGradeMatrixFromAPI().subscribe(data => {
+    const orgUnitId = this.selectedSubsidiaryId() || undefined;
+
+    this.competencyService.getGradeMatrixFromAPI(orgUnitId).subscribe(data => {
       this.gradesNew.set(data);
     });
 
-    this.competencyService.getCareerPathsFromAPI().subscribe(data => {
+    this.competencyService.getCareerPathsFromAPI(undefined, orgUnitId).subscribe(data => {
       this.careerPathsNew.set(data);
     });
 
-    this.competencyService.getPromotionCriteria().subscribe(data => {
+    this.competencyService.getPromotionCriteria(undefined, undefined, undefined, orgUnitId).subscribe(data => {
       this.promotionCriteria.set(data);
     });
 
@@ -291,7 +308,7 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
       this.departments.set(data);
     });
 
-    this.competencyService.getDepartmentPositions().subscribe(data => {
+    this.competencyService.getDepartmentPositions(undefined, undefined, undefined, orgUnitId).subscribe(data => {
       this.departmentPositions.set(data);
     });
   }

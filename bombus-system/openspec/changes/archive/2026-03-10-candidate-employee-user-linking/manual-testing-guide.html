@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>候選人→員工→使用者帳號 自動串連 — 手動測試指南</title>
+  <style>
+    :root {
+      --primary: #2563EB;
+      --primary-light: #DBEAFE;
+      --primary-dark: #1D4ED8;
+      --success: #059669;
+      --success-light: #D1FAE5;
+      --warning: #D97706;
+      --warning-light: #FEF3C7;
+      --danger: #DC2626;
+      --danger-light: #FEE2E2;
+      --gray-50: #F9FAFB;
+      --gray-100: #F3F4F6;
+      --gray-200: #E5E7EB;
+      --gray-300: #D1D5DB;
+      --gray-400: #9CA3AF;
+      --gray-500: #6B7280;
+      --gray-600: #4B5563;
+      --gray-700: #374151;
+      --gray-800: #1F2937;
+      --gray-900: #111827;
+      --code-bg: #1E293B;
+      --code-text: #E2E8F0;
+      --radius: 10px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 6px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.04);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans TC', sans-serif;
+      color: var(--gray-800);
+      background: var(--gray-50);
+      line-height: 1.7;
+      font-size: 15px;
+    }
+
+    /* ── Layout ── */
+    .page-wrapper {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ── Sidebar TOC ── */
+    .sidebar {
+      width: 280px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      background: #fff;
+      border-right: 1px solid var(--gray-200);
+      padding: 28px 0;
+      flex-shrink: 0;
+    }
+
+    .sidebar-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--gray-400);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 0 24px;
+      margin-bottom: 16px;
+    }
+
+    .toc-list {
+      list-style: none;
+    }
+
+    .toc-list a {
+      display: block;
+      padding: 7px 24px;
+      color: var(--gray-600);
+      text-decoration: none;
+      font-size: 13.5px;
+      border-left: 3px solid transparent;
+      transition: all 0.15s;
+    }
+
+    .toc-list a:hover,
+    .toc-list a.active {
+      color: var(--primary);
+      background: var(--primary-light);
+      border-left-color: var(--primary);
+    }
+
+    .toc-list .toc-scenario {
+      padding-left: 36px;
+      font-size: 13px;
+    }
+
+    /* ── Main Content ── */
+    .content {
+      flex: 1;
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 48px 48px 96px;
+    }
+
+    /* ── Header ── */
+    .doc-header {
+      margin-bottom: 40px;
+      padding-bottom: 28px;
+      border-bottom: 2px solid var(--gray-200);
+    }
+
+    .doc-header h1 {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--gray-900);
+      line-height: 1.3;
+      margin-bottom: 16px;
+    }
+
+    .doc-header .arrow {
+      color: var(--primary);
+    }
+
+    .doc-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .doc-meta-item {
+      font-size: 13px;
+      color: var(--gray-500);
+    }
+
+    .doc-meta-item strong {
+      color: var(--gray-700);
+    }
+
+    .doc-meta-item code {
+      background: var(--primary-light);
+      color: var(--primary);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    /* ── Sections ── */
+    h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--gray-900);
+      margin: 48px 0 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--primary-light);
+    }
+
+    h2 .section-num {
+      color: var(--primary);
+      margin-right: 6px;
+    }
+
+    h3 {
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--gray-800);
+      margin: 28px 0 12px;
+    }
+
+    p {
+      margin-bottom: 12px;
+    }
+
+    strong {
+      font-weight: 600;
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: #fff;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin: 16px 0;
+      box-shadow: var(--shadow);
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--gray-700);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-title .icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    /* ── Scenario Cards ── */
+    .scenario-card {
+      background: #fff;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius);
+      margin: 24px 0;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .scenario-header {
+      padding: 18px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--gray-100);
+    }
+
+    .scenario-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 800;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .badge-a { background: var(--primary); }
+    .badge-b { background: #7C3AED; }
+    .badge-c { background: var(--success); }
+    .badge-d { background: var(--warning); }
+    .badge-e { background: var(--gray-500); }
+    .badge-f { background: var(--danger); }
+
+    .scenario-header-text h3 {
+      margin: 0;
+      font-size: 17px;
+    }
+
+    .scenario-header-text .purpose {
+      font-size: 13px;
+      color: var(--gray-500);
+      margin-top: 2px;
+    }
+
+    .scenario-body {
+      padding: 24px;
+    }
+
+    .scenario-body h4 {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--gray-600);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin: 20px 0 10px;
+    }
+
+    .scenario-body h4:first-child {
+      margin-top: 0;
+    }
+
+    /* ── Prerequisites ── */
+    .prereq {
+      background: var(--gray-50);
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin: 8px 0 16px;
+      font-size: 14px;
+    }
+
+    .prereq-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 4px 0;
+    }
+
+    .prereq-item .check {
+      color: var(--success);
+      font-weight: 700;
+    }
+
+    /* ── Steps ── */
+    .steps {
+      list-style: none;
+      counter-reset: step-counter;
+      margin: 8px 0 16px;
+    }
+
+    .steps > li {
+      counter-increment: step-counter;
+      padding: 8px 0 8px 40px;
+      position: relative;
+      font-size: 14.5px;
+    }
+
+    .steps > li::before {
+      content: counter(step-counter);
+      position: absolute;
+      left: 0;
+      top: 8px;
+      width: 26px;
+      height: 26px;
+      background: var(--primary-light);
+      color: var(--primary);
+      border-radius: 50%;
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .steps .sub-items {
+      list-style: none;
+      margin: 6px 0 0;
+    }
+
+    .steps .sub-items li {
+      padding: 3px 0;
+      font-size: 14px;
+      color: var(--gray-600);
+    }
+
+    .steps .sub-items li strong {
+      color: var(--gray-800);
+    }
+
+    /* ── Tables ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 20px;
+      font-size: 14px;
+    }
+
+    thead th {
+      background: var(--gray-50);
+      color: var(--gray-600);
+      font-weight: 600;
+      font-size: 12.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 10px 14px;
+      text-align: left;
+      border-bottom: 2px solid var(--gray-200);
+    }
+
+    tbody td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--gray-100);
+      vertical-align: top;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    tbody tr:hover {
+      background: var(--gray-50);
+    }
+
+    .check-id {
+      font-weight: 700;
+      color: var(--primary);
+      white-space: nowrap;
+      font-size: 13px;
+    }
+
+    .check-item {
+      font-weight: 600;
+      color: var(--gray-700);
+    }
+
+    /* ── Code Blocks ── */
+    pre {
+      background: var(--code-bg);
+      color: var(--code-text);
+      border-radius: 8px;
+      padding: 18px 20px;
+      overflow-x: auto;
+      font-size: 13px;
+      line-height: 1.6;
+      margin: 12px 0 16px;
+      font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
+    }
+
+    pre .comment { color: #64748B; }
+    pre .string { color: #A5D6A7; }
+    pre .flag { color: #90CAF9; }
+    pre .url { color: #CE93D8; }
+    pre .var { color: #FFD54F; }
+    pre .cmd { color: #80CBC4; }
+
+    code {
+      background: var(--gray-100);
+      color: var(--gray-700);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+      color: inherit;
+    }
+
+    /* ── Info Boxes ── */
+    .info-box {
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin: 12px 0;
+      font-size: 14px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .info-box .icon-col {
+      font-size: 16px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .info-box.note {
+      background: var(--primary-light);
+      border: 1px solid #93C5FD;
+      color: var(--primary-dark);
+    }
+
+    .info-box.warning {
+      background: var(--warning-light);
+      border: 1px solid #FCD34D;
+      color: #92400E;
+    }
+
+    .info-box.tip {
+      background: var(--success-light);
+      border: 1px solid #6EE7B7;
+      color: #065F46;
+    }
+
+    .info-box.danger {
+      background: var(--danger-light);
+      border: 1px solid #FCA5A5;
+      color: #991B1B;
+    }
+
+    /* ── Screenshot Hint ── */
+    .screenshot-hint {
+      background: var(--gray-50);
+      border: 1px dashed var(--gray-300);
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin: 12px 0;
+      font-size: 13px;
+      color: var(--gray-500);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ── Test Record ── */
+    .test-record-table td:nth-child(4) {
+      min-width: 120px;
+    }
+
+    .result-cell {
+      display: flex;
+      gap: 12px;
+    }
+
+    .result-cell label {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .result-cell input[type="checkbox"] {
+      accent-color: var(--primary);
+    }
+
+    /* ── Automation Section ── */
+    .auto-test-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin: 16px 0;
+    }
+
+    .auto-test-card {
+      background: #fff;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .auto-test-card h4 {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .assertion-badge {
+      display: inline-block;
+      background: var(--success-light);
+      color: var(--success);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 2px 10px;
+      border-radius: 12px;
+    }
+
+    /* ── Design Notes ── */
+    .design-note {
+      background: #fff;
+      border: 1px solid var(--gray-200);
+      border-left: 4px solid var(--primary);
+      border-radius: 0 8px 8px 0;
+      padding: 16px 20px;
+      margin: 12px 0;
+    }
+
+    .design-note-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--gray-500);
+      margin-bottom: 8px;
+    }
+
+    .response-shape {
+      list-style: none;
+      margin: 8px 0;
+    }
+
+    .response-shape li {
+      padding: 6px 0;
+      font-size: 14px;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .response-shape .shape-num {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .shape-success .shape-num { background: var(--success-light); color: var(--success); }
+    .shape-link .shape-num { background: var(--primary-light); color: var(--primary); }
+    .shape-error .shape-num { background: var(--danger-light); color: var(--danger); }
+
+    /* ── Divider ── */
+    hr {
+      border: none;
+      border-top: 1px solid var(--gray-200);
+      margin: 40px 0;
+    }
+
+    /* ── Print ── */
+    @media print {
+      .sidebar { display: none; }
+      .content { max-width: 100%; padding: 20px; }
+      .scenario-card { break-inside: avoid; }
+      pre { white-space: pre-wrap; word-break: break-all; }
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 1024px) {
+      .sidebar { display: none; }
+      .content { padding: 24px; }
+      .auto-test-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-wrapper">
+
+    <!-- ═══ Sidebar TOC ═══ -->
+    <nav class="sidebar">
+      <div class="sidebar-title">Manual Testing Guide</div>
+      <ol class="toc-list">
+        <li><a href="#env">1. 測試環境準備</a></li>
+        <li><a href="#scenario-a" class="toc-scenario">A 候選人轉換 + 自動建帳</a></li>
+        <li><a href="#scenario-b" class="toc-scenario">B 首次登入強制改密碼</a></li>
+        <li><a href="#scenario-c" class="toc-scenario">C 改密碼後正常登入</a></li>
+        <li><a href="#scenario-d" class="toc-scenario">D 重複帳號保護</a></li>
+        <li><a href="#scenario-e" class="toc-scenario">E 非致命模式</a></li>
+        <li><a href="#scenario-f" class="toc-scenario">F 改密碼驗證邏輯</a></li>
+        <li><a href="#automation">8. 自動化測試參考</a></li>
+        <li><a href="#known-issues">9. 已知限制與注意事項</a></li>
+        <li><a href="#test-record">測試紀錄範本</a></li>
+      </ol>
+    </nav>
+
+    <!-- ═══ Main Content ═══ -->
+    <main class="content">
+
+      <!-- ── Header ── -->
+      <header class="doc-header">
+        <h1>候選人 <span class="arrow">&rarr;</span> 員工 <span class="arrow">&rarr;</span> 使用者帳號<br>自動串連 — 手動測試指南</h1>
+        <div class="doc-meta">
+          <span class="doc-meta-item"><strong>功能分支：</strong><code>feature/candidate-employee-user-linking</code></span>
+          <span class="doc-meta-item"><strong>最後更新：</strong>2026-03-07</span>
+        </div>
+      </header>
+
+      <!-- ══════════════════════════════════════════════ -->
+      <!-- 1. 測試環境準備 -->
+      <!-- ══════════════════════════════════════════════ -->
+      <section id="env">
+        <h2><span class="section-num">1.</span> 測試環境準備</h2>
+
+        <h3>啟動服務</h3>
+        <pre><code><span class="comment"># Terminal 1 — 後端 API 伺服器</span>
+<span class="cmd">cd</span> bombus-system/server && <span class="cmd">npm run</span> dev
+<span class="comment"># → 啟動於 http://localhost:3001</span>
+
+<span class="comment"># Terminal 2 — 前端開發伺服器</span>
+<span class="cmd">cd</span> bombus-system && <span class="cmd">npm</span> start
+<span class="comment"># → 啟動於 http://localhost:4200</span></code></pre>
+
+        <h3>測試帳號</h3>
+        <table>
+          <thead>
+            <tr><th>角色</th><th>租戶代碼</th><th>Email</th><th>密碼</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Admin（HR）</td>
+              <td><code>demo</code></td>
+              <td><code>admin@demo.com</code></td>
+              <td><code>admin123</code></td>
+            </tr>
+            <tr>
+              <td>新員工</td>
+              <td><code>demo</code></td>
+              <td>（轉換時由候選人 email 決定）</td>
+              <td>（初始密碼 = email）</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>前置條件</h3>
+        <div class="prereq">
+          <div class="prereq-item"><span class="check">&#10003;</span> <code>demo</code> 租戶已初始化（<code>cd bombus-system/server && npm run init-db</code>）</div>
+          <div class="prereq-item"><span class="check">&#10003;</span> 至少有一個候選人處於 <code>offer_accepted</code> 狀態</div>
+          <div class="prereq-item"><span class="check">&#10003;</span> 至少有一個部門存在（用於轉換 Modal 選擇）</div>
+        </div>
+
+        <h3>快速建立測試候選人（API Seed）</h3>
+        <p>如果沒有 <code>offer_accepted</code> 候選人，可透過 API 快速建立：</p>
+        <pre><code><span class="comment"># 1. 取得 Admin Token</span>
+<span class="var">TOKEN</span>=$(<span class="cmd">curl</span> <span class="flag">-s</span> <span class="url">http://localhost:3001/api/auth/login</span> \
+  <span class="flag">-H</span> <span class="string">'Content-Type: application/json'</span> \
+  <span class="flag">-d</span> <span class="string">'{"email":"admin@demo.com","password":"admin123","tenant_slug":"demo"}'</span> \
+  | python3 -c <span class="string">"import sys,json; print(json.load(sys.stdin)['access_token'])"</span>)
+
+<span class="comment"># 2. Seed 一個 offer_accepted 候選人</span>
+<span class="cmd">curl</span> <span class="flag">-X POST</span> <span class="url">http://localhost:3001/api/hr/onboarding/test/seed-candidate</span> \
+  <span class="flag">-H</span> <span class="string">"Content-Type: application/json"</span> \
+  <span class="flag">-H</span> <span class="string">"Authorization: Bearer $TOKEN"</span> \
+  <span class="flag">-d</span> <span class="string">'{"name":"王小明","email":"xiaoming.wang@example.com"}'</span></code></pre>
+
+        <div class="info-box warning">
+          <span class="icon-col">&#9888;</span>
+          <div><strong>注意：</strong><code>test/seed-candidate</code> 端點僅供測試用途，生產環境應移除。</div>
+        </div>
+      </section>
+
+      <hr>
+
+      <!-- ══════════════════════════════════════════════ -->
+      <!-- 場景 A -->
+      <!-- ══════════════════════════════════════════════ -->
+      <section id="scenario-a">
+        <h2><span class="section-num">2.</span> 測試場景</h2>
+
+        <div class="scenario-card">
+          <div class="scenario-header">
+            <div class="scenario-badge badge-a">A</div>
+            <div class="scenario-header-text">
+              <h3>候選人轉換 + 自動建帳</h3>
+              <div class="purpose">驗證 HR 將候選人轉換為員工時，系統自動建立使用者帳號並指派角色</div>
+            </div>
+          </div>
+          <div class="scenario-body">
+            <h4>操作步驟</h4>
+            <ol class="steps">
+              <li>以 <code>admin@demo.com</code> 登入（租戶代碼：<code>demo</code>）</li>
+              <li>從側邊欄導航到 <strong>員工管理 &rarr; 入職管理</strong>（<code>/employee/onboarding</code>）</li>
+              <li>在「入職進度」Tab 找到狀態為 <strong>待入職</strong> 的候選人</li>
+              <li>點擊該候選人的 <strong>「啟動入職」</strong> 按鈕</li>
+              <li>在轉換 Modal 中填寫：
+                <ul class="sub-items">
+                  <li><strong>部門：</strong>選擇一個可用部門（如「工程部」）</li>
+                  <li><strong>職等：</strong>選擇一個職等</li>
+                  <li><strong>職位：</strong>填寫或選擇職位（如「前端工程師」）</li>
+                  <li><strong>職稱：</strong>填寫（如「資深前端工程師」）</li>
+                  <li><strong>到職日：</strong>選擇一個未來日期</li>
+                  <li><strong>試用期：</strong>（選填）如 3 個月</li>
+                </ul>
+              </li>
+              <li>點擊 <strong>「確認轉入」</strong></li>
+            </ol>
+
+            <h4>預期結果</h4>
+            <table>
+              <thead>
+                <tr><th>#</th><th>檢查項目</th><th>預期行為</th></tr>
+              </thead>
+              <tbody>
+                <tr><td class="check-id">A1</td><td class="check-item">轉換成功畫面</td><td>Modal 顯示成功畫面，包含員工編號（如 <code>EMP-001</code>）</td></tr>
+                <tr><td class="check-id">A2</td><td class="check-item">帳號資訊區塊</td><td>成功畫面顯示「系統帳號資訊」區塊</td></tr>
+                <tr><td class="check-id">A3</td><td class="check-item">登入信箱</td><td>顯示候選人 email 作為登入帳號</td></tr>
+                <tr><td class="check-id">A4</td><td class="check-item">密碼提示</td><td>顯示「預設密碼為登入信箱」或類似提示（不直接顯示密碼）</td></tr>
+                <tr><td class="check-id">A5</td><td class="check-item">首次登入提醒</td><td>顯示「首次登入需變更密碼」提示</td></tr>
+                <tr><td class="check-id">A6</td><td class="check-item">預設角色</td><td>顯示指派角色為 <code>employee</code></td></tr>
+                <tr><td class="check-id">A7</td><td class="check-item">org_unit 自動匹配</td><td>如選擇的部門名稱在 org_units 中有對應，自動匹配；否則顯示手動選擇下拉</td></tr>
+              </tbody>
+            </table>
+
+            <div class="screenshot-hint">&#128247; 截圖參考：轉換 Modal 填寫完成狀態、轉換成功畫面（含帳號資訊區塊）</div>
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════ -->
+        <!-- 場景 B -->
+        <!-- ══════════════════════════════════════════════ -->
+        <div class="scenario-card" id="scenario-b">
+          <div class="scenario-header">
+            <div class="scenario-badge badge-b">B</div>
+            <div class="scenario-header-text">
+              <h3>首次登入強制改密碼</h3>
+              <div class="purpose">驗證新員工首次登入時被強制導向改密碼頁面</div>
+            </div>
+          </div>
+          <div class="scenario-body">
+            <div class="prereq">
+              <div class="prereq-item"><span class="check">&#10003;</span> 場景 A 已完成（已建立新員工帳號）</div>
+            </div>
+
+            <h4>操作步驟</h4>
+            <ol class="steps">
+              <li><strong>登出</strong> Admin 帳號（或開啟無痕視窗）</li>
+              <li>在登入頁面輸入：
+                <ul class="sub-items">
+                  <li><strong>租戶代碼：</strong><code>demo</code></li>
+                  <li><strong>Email：</strong>場景 A 中候選人的 email（如 <code>xiaoming.wang@example.com</code>）</li>
+                  <li><strong>密碼：</strong>與 email 相同</li>
+                </ul>
+              </li>
+              <li>點擊 <strong>「登入」</strong></li>
+            </ol>
+
+            <h4>預期結果</h4>
+            <table>
+              <thead>
+                <tr><th>#</th><th>檢查項目</th><th>預期行為</th></tr>
+              </thead>
+              <tbody>
+                <tr><td class="check-id">B1</td><td class="check-item">登入成功</td><td>不顯示登入錯誤訊息</td></tr>
+                <tr><td class="check-id">B2</td><td class="check-item">導向改密碼頁</td><td>自動導向 <code>/change-password</code>（<strong>不是</strong> <code>/dashboard</code>）</td></tr>
+                <tr><td class="check-id">B3</td><td class="check-item">首次登入提示</td><td>頁面顯示醒目提示：「首次登入，請變更密碼後才能繼續使用系統」</td></tr>
+                <tr><td class="check-id">B4</td><td class="check-item">表單欄位</td><td>顯示三個密碼欄位：目前密碼、新密碼、確認新密碼</td></tr>
+                <tr><td class="check-id">B5</td><td class="check-item">按鈕禁用</td><td>在欄位未填滿或驗證未通過前，「變更密碼」按鈕為禁用狀態</td></tr>
+              </tbody>
+            </table>
+
+            <div class="screenshot-hint">&#128247; 截圖參考：改密碼頁面（含首次登入提示）</div>
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════ -->
+        <!-- 場景 C -->
+        <!-- ══════════════════════════════════════════════ -->
+        <div class="scenario-card" id="scenario-c">
+          <div class="scenario-header">
+            <div class="scenario-badge badge-c">C</div>
+            <div class="scenario-header-text">
+              <h3>改密碼後正常登入</h3>
+              <div class="purpose">驗證密碼變更成功後，新密碼生效且不再被強制改密碼</div>
+            </div>
+          </div>
+          <div class="scenario-body">
+            <div class="prereq">
+              <div class="prereq-item"><span class="check">&#10003;</span> 場景 B 已完成（已導向改密碼頁面）</div>
+            </div>
+
+            <h4>操作步驟</h4>
+            <ol class="steps">
+              <li>在改密碼頁面填寫：
+                <ul class="sub-items">
+                  <li><strong>目前密碼：</strong>候選人 email（如 <code>xiaoming.wang@example.com</code>）</li>
+                  <li><strong>新密碼：</strong>一個符合要求的新密碼（&ge; 8 字元，如 <code>MyNewP@ss123</code>）</li>
+                  <li><strong>確認新密碼：</strong>與新密碼相同</li>
+                </ul>
+              </li>
+              <li>點擊 <strong>「變更密碼」</strong></li>
+              <li>觀察導向行為</li>
+              <li><strong>登出</strong></li>
+              <li>用<strong>新密碼</strong>重新登入</li>
+              <li>用<strong>舊密碼（email）</strong>嘗試登入</li>
+            </ol>
+
+            <h4>預期結果</h4>
+            <table>
+              <thead>
+                <tr><th>#</th><th>檢查項目</th><th>預期行為</th></tr>
+              </thead>
+              <tbody>
+                <tr><td class="check-id">C1</td><td class="check-item">成功通知</td><td>顯示成功通知（Toast 或 Notification）</td></tr>
+                <tr><td class="check-id">C2</td><td class="check-item">導向 Dashboard</td><td>自動導向 <code>/dashboard</code>（不是停留在改密碼頁）</td></tr>
+                <tr><td class="check-id">C3</td><td class="check-item">新密碼登入</td><td>用新密碼登入成功，直接進入 <code>/dashboard</code></td></tr>
+                <tr><td class="check-id">C4</td><td class="check-item">不再強制改密碼</td><td>登入後<strong>不再</strong>被導向 <code>/change-password</code></td></tr>
+                <tr><td class="check-id">C5</td><td class="check-item">舊密碼失效</td><td>用舊密碼（email）登入失敗，顯示錯誤訊息</td></tr>
+              </tbody>
+            </table>
+
+            <div class="screenshot-hint">&#128247; 截圖參考：改密碼成功後的 Dashboard、舊密碼登入失敗的錯誤訊息</div>
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════ -->
+        <!-- 場景 D -->
+        <!-- ══════════════════════════════════════════════ -->
+        <div class="scenario-card" id="scenario-d">
+          <div class="scenario-header">
+            <div class="scenario-badge badge-d">D</div>
+            <div class="scenario-header-text">
+              <h3>重複帳號保護</h3>
+              <div class="purpose">驗證候選人 email 與已存在帳號重複時，系統不建立重複帳號</div>
+            </div>
+          </div>
+          <div class="scenario-body">
+            <div class="prereq">
+              <div class="prereq-item"><span class="check">&#10003;</span> 場景 A 已完成（已有一個使用者帳號）</div>
+              <div class="prereq-item"><span class="check">&#10003;</span> 需要另一個使用相同 email 的 <code>offer_accepted</code> 候選人</div>
+            </div>
+
+            <h4>操作步驟</h4>
+            <ol class="steps">
+              <li>使用 Seed API 建立一個 email 與現有帳號相同的候選人：
+                <pre><code><span class="cmd">curl</span> <span class="flag">-X POST</span> <span class="url">http://localhost:3001/api/hr/onboarding/test/seed-candidate</span> \
+  <span class="flag">-H</span> <span class="string">"Content-Type: application/json"</span> \
+  <span class="flag">-H</span> <span class="string">"Authorization: Bearer $TOKEN"</span> \
+  <span class="flag">-d</span> <span class="string">'{"name":"王小明（二次入職）","email":"xiaoming.wang@example.com"}'</span></code></pre>
+              </li>
+              <li>以 Admin 登入，到入職管理頁面</li>
+              <li>對新建的候選人執行「啟動入職」&rarr; 填寫資料 &rarr; 確認轉入</li>
+            </ol>
+
+            <h4>預期結果</h4>
+            <table>
+              <thead>
+                <tr><th>#</th><th>檢查項目</th><th>預期行為</th></tr>
+              </thead>
+              <tbody>
+                <tr><td class="check-id">D1</td><td class="check-item">員工建立成功</td><td>轉換成功，生成新的員工編號</td></tr>
+                <tr><td class="check-id">D2</td><td class="check-item">帳號已連結提示</td><td>成功畫面的帳號資訊區塊顯示「已連結既有帳號」或類似提示</td></tr>
+                <tr><td class="check-id">D3</td><td class="check-item">無重複帳號</td><td>資料庫中不會出現兩筆相同 email 的 users 記錄</td></tr>
+                <tr><td class="check-id">D4</td><td class="check-item">employee_id 更新</td><td>既有帳號的 <code>employee_id</code> 已更新為新員工的 ID</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════ -->
+        <!-- 場景 E -->
+        <!-- ══════════════════════════════════════════════ -->
+        <div class="scenario-card" id="scenario-e">
+          <div class="scenario-header">
+            <div class="scenario-badge badge-e">E</div>
+            <div class="scenario-header-text">
+              <h3>非致命模式 — 帳號建立失敗不影響員工建立</h3>
+              <div class="purpose">驗證即使帳號建立失敗，員工記錄仍成功建立</div>
+            </div>
+          </div>
+          <div class="scenario-body">
+            <div class="info-box note">
+              <span class="icon-col">&#8505;</span>
+              <div>此場景在正常環境下難以手動觸發（需要模擬資料庫錯誤），主要由自動化測試覆蓋。</div>
+            </div>
+
+            <h4>驗證方式</h4>
+            <p>透過後端整合測試確認非致命模式邏輯：</p>
+            <pre><code><span class="cmd">cd</span> bombus-system/server && <span class="cmd">node</span> src/tests/test-candidate-user-linking.js</code></pre>
+
+            <div class="design-note">
+              <div class="design-note-title">設計說明</div>
+              <p>轉換 API 的回傳結構中，<code>user_account</code> 欄位可能有三種形態：</p>
+              <ul class="response-shape">
+                <li class="shape-success">
+                  <span class="shape-num">1</span>
+                  <div><strong>成功建帳：</strong><code>{ user_id, email, must_change_password: true, default_role: 'employee' }</code></div>
+                </li>
+                <li class="shape-link">
+                  <span class="shape-num">2</span>
+                  <div><strong>連結既有帳號：</strong><code>{ email, already_existed: true }</code></div>
+                </li>
+                <li class="shape-error">
+                  <span class="shape-num">3</span>
+                  <div><strong>建帳失敗：</strong><code>{ error: '...' }</code></div>
+                </li>
+              </ul>
+              <p>無論 <code>user_account</code> 結果如何，<code>employee_id</code> 和 <code>employee_no</code> 一定會回傳。</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════ -->
+        <!-- 場景 F -->
+        <!-- ══════════════════════════════════════════════ -->
+        <div class="scenario-card" id="scenario-f">
+          <div class="scenario-header">
+            <div class="scenario-badge badge-f">F</div>
+            <div class="scenario-header-text">
+              <h3>改密碼驗證邏輯</h3>
+              <div class="purpose">驗證改密碼 API 的各種邊界條件與錯誤處理</div>
+            </div>
+          </div>
+          <div class="scenario-body">
+            <div class="prereq">
+              <div class="prereq-item"><span class="check">&#10003;</span> 有一個已登入的使用者帳號（可用場景 B 的新員工帳號）</div>
+            </div>
+
+            <h4>測試案例</h4>
+            <table>
+              <thead>
+                <tr><th>#</th><th>操作</th><th>預期結果</th></tr>
+              </thead>
+              <tbody>
+                <tr><td class="check-id">F1</td><td>不輸入任何欄位，直接送出</td><td>按鈕為禁用狀態，無法送出</td></tr>
+                <tr><td class="check-id">F2</td><td>新密碼少於 8 字元（如 <code>1234567</code>）</td><td>顯示錯誤提示：「新密碼至少需要 8 個字元」</td></tr>
+                <tr><td class="check-id">F3</td><td>新密碼與確認密碼不一致</td><td>顯示錯誤提示：「兩次輸入的密碼不一致」，按鈕禁用</td></tr>
+                <tr><td class="check-id">F4</td><td>新密碼與目前密碼相同</td><td>送出後顯示錯誤：「新密碼不能與目前密碼相同」</td></tr>
+                <tr><td class="check-id">F5</td><td>目前密碼輸入錯誤</td><td>送出後顯示錯誤：「目前密碼錯誤」</td></tr>
+                <tr><td class="check-id">F6</td><td>所有欄位正確填寫</td><td>密碼變更成功，導向 Dashboard</td></tr>
+              </tbody>
+            </table>
+
+            <h4>API 層驗證（可選，使用 curl）</h4>
+            <pre><code><span class="comment"># 取得新員工 Token（使用場景 C 設定的新密碼）</span>
+<span class="var">NEW_TOKEN</span>=$(<span class="cmd">curl</span> <span class="flag">-s</span> <span class="url">http://localhost:3001/api/auth/login</span> \
+  <span class="flag">-H</span> <span class="string">'Content-Type: application/json'</span> \
+  <span class="flag">-d</span> <span class="string">'{"email":"xiaoming.wang@example.com","password":"MyNewP@ss123","tenant_slug":"demo"}'</span> \
+  | python3 -c <span class="string">"import sys,json; print(json.load(sys.stdin)['access_token'])"</span>)
+
+<span class="comment"># F2: 新密碼太短</span>
+<span class="cmd">curl</span> <span class="flag">-X POST</span> <span class="url">http://localhost:3001/api/auth/change-password</span> \
+  <span class="flag">-H</span> <span class="string">"Content-Type: application/json"</span> \
+  <span class="flag">-H</span> <span class="string">"Authorization: Bearer $NEW_TOKEN"</span> \
+  <span class="flag">-d</span> <span class="string">'{"current_password":"MyNewP@ss123","new_password":"1234567","tenant_slug":"demo"}'</span>
+<span class="comment"># 預期: 400 {"error":"新密碼至少需要 8 個字元"}</span>
+
+<span class="comment"># F4: 新舊密碼相同</span>
+<span class="cmd">curl</span> <span class="flag">-X POST</span> <span class="url">http://localhost:3001/api/auth/change-password</span> \
+  <span class="flag">-H</span> <span class="string">"Content-Type: application/json"</span> \
+  <span class="flag">-H</span> <span class="string">"Authorization: Bearer $NEW_TOKEN"</span> \
+  <span class="flag">-d</span> <span class="string">'{"current_password":"MyNewP@ss123","new_password":"MyNewP@ss123","tenant_slug":"demo"}'</span>
+<span class="comment"># 預期: 400 {"error":"新密碼不能與目前密碼相同"}</span>
+
+<span class="comment"># F5: 目前密碼錯誤</span>
+<span class="cmd">curl</span> <span class="flag">-X POST</span> <span class="url">http://localhost:3001/api/auth/change-password</span> \
+  <span class="flag">-H</span> <span class="string">"Content-Type: application/json"</span> \
+  <span class="flag">-H</span> <span class="string">"Authorization: Bearer $NEW_TOKEN"</span> \
+  <span class="flag">-d</span> <span class="string">'{"current_password":"wrongpassword","new_password":"AnotherP@ss456","tenant_slug":"demo"}'</span>
+<span class="comment"># 預期: 401 {"error":"目前密碼錯誤"}</span>
+
+<span class="comment"># 無 Token</span>
+<span class="cmd">curl</span> <span class="flag">-X POST</span> <span class="url">http://localhost:3001/api/auth/change-password</span> \
+  <span class="flag">-H</span> <span class="string">"Content-Type: application/json"</span> \
+  <span class="flag">-d</span> <span class="string">'{"current_password":"test","new_password":"test12345","tenant_slug":"demo"}'</span>
+<span class="comment"># 預期: 401 未授權</span></code></pre>
+          </div>
+        </div>
+      </section>
+
+      <hr>
+
+      <!-- ══════════════════════════════════════════════ -->
+      <!-- 8. 自動化測試 -->
+      <!-- ══════════════════════════════════════════════ -->
+      <section id="automation">
+        <h2><span class="section-num">8.</span> 自動化測試參考</h2>
+        <p>本功能有兩套自動化測試，可搭配手動測試使用：</p>
+
+        <div class="auto-test-grid">
+          <!-- 後端整合測試 -->
+          <div class="auto-test-card">
+            <h4>後端整合測試 <span class="assertion-badge">36 assertions</span></h4>
+            <pre><code><span class="cmd">cd</span> bombus-system/server && <span class="cmd">node</span> src/tests/test-candidate-user-linking.js</code></pre>
+            <table>
+              <thead>
+                <tr><th>Part</th><th>說明</th><th style="text-align:center">數量</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>A</td><td>端點正常性</td><td style="text-align:center">5</td></tr>
+                <tr><td>B</td><td>轉換 + 自動建帳 + 重複防護</td><td style="text-align:center">12</td></tr>
+                <tr><td>C</td><td>首次登入攔截 + employee 角色</td><td style="text-align:center">3</td></tr>
+                <tr><td>D</td><td>改密碼端點驗證</td><td style="text-align:center">6</td></tr>
+                <tr><td>E</td><td>改密碼後登入</td><td style="text-align:center">3</td></tr>
+                <tr><td>F</td><td>必填欄位 + 不存在候選人</td><td style="text-align:center">2</td></tr>
+                <tr><td>G</td><td>org-units 結構驗證</td><td style="text-align:center">5</td></tr>
+                <tr><td>H</td><td>未授權存取</td><td style="text-align:center">1</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Playwright E2E -->
+          <div class="auto-test-card">
+            <h4>Playwright E2E <span class="assertion-badge">25 assertions</span></h4>
+            <pre><code><span class="cmd">python3</span> src/tests/e2e-candidate-user-linking.py</code></pre>
+            <table>
+              <thead>
+                <tr><th>Part</th><th>說明</th><th style="text-align:center">數量</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>A</td><td>Admin 登入 &rarr; Dashboard</td><td style="text-align:center">1</td></tr>
+                <tr><td>B</td><td>導航到入職管理</td><td style="text-align:center">2</td></tr>
+                <tr><td>C</td><td>啟動入職</td><td style="text-align:center">2</td></tr>
+                <tr><td>D</td><td>轉換 Modal + 成功畫面</td><td style="text-align:center">11</td></tr>
+                <tr><td>E</td><td>新員工 &rarr; /change-password</td><td style="text-align:center">3</td></tr>
+                <tr><td>F</td><td>變更密碼 &rarr; Dashboard</td><td style="text-align:center">2</td></tr>
+                <tr><td>G</td><td>新密碼重新登入</td><td style="text-align:center">2</td></tr>
+                <tr><td>H</td><td>舊密碼登入失敗</td><td style="text-align:center">2</td></tr>
+              </tbody>
+            </table>
+            <div class="info-box tip" style="margin-top:12px">
+              <span class="icon-col">&#128161;</span>
+              <div>安裝 Playwright：<code>pip3 install playwright && python3 -m playwright install chromium</code></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <hr>
+
+      <!-- ══════════════════════════════════════════════ -->
+      <!-- 9. 已知限制 -->
+      <!-- ══════════════════════════════════════════════ -->
+      <section id="known-issues">
+        <h2><span class="section-num">9.</span> 已知限制與注意事項</h2>
+
+        <h3>設計限制</h3>
+        <table>
+          <thead>
+            <tr><th>項目</th><th>說明</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="check-item">初始密碼策略</td><td>使用候選人 email 作為初始密碼，安全性較低。由 <code>must_change_password</code> 強制改密碼機制緩解。</td></tr>
+            <tr><td class="check-item">Email 通知</td><td>系統尚未整合 email 服務，HR 需口頭或其他方式告知新員工帳號密碼。</td></tr>
+            <tr><td class="check-item">批量轉換</td><td>不支援批量轉換，每次只能轉換一位候選人。</td></tr>
+            <tr><td class="check-item">Token 過期</td><td>若在改密碼頁面停留超過 15 分鐘（Access Token 過期），將被導回登入頁。重新登入後會再次導向改密碼頁。</td></tr>
+          </tbody>
+        </table>
+
+        <h3>測試注意事項</h3>
+        <table>
+          <thead>
+            <tr><th>項目</th><th>說明</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="check-item">Rate Limit</td>
+              <td>頻繁登入可能觸發 auth rate limit（預設 100 次/15分鐘）。可透過 <code>server/.env</code> 的 <code>AUTH_RATE_LIMIT</code> 調高。</td>
+            </tr>
+            <tr>
+              <td class="check-item">Seed 端點</td>
+              <td><code>POST /api/hr/onboarding/test/seed-candidate</code> 為測試專用，生產環境部署前應移除。</td>
+            </tr>
+            <tr>
+              <td class="check-item">Demo 資料</td>
+              <td>測試會在 demo 租戶資料庫中建立額外記錄（員工、使用者），不影響其他租戶。</td>
+            </tr>
+            <tr>
+              <td class="check-item">瀏覽器快取</td>
+              <td>測試登出/登入場景時，建議使用無痕模式或手動清除 localStorage，避免殘留的認證資訊影響測試結果。</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <hr>
+
+      <!-- ══════════════════════════════════════════════ -->
+      <!-- 測試紀錄範本 -->
+      <!-- ══════════════════════════════════════════════ -->
+      <section id="test-record">
+        <h2>測試紀錄範本</h2>
+        <p>測試人員可使用以下表格記錄測試結果：</p>
+
+        <table class="test-record-table">
+          <thead>
+            <tr><th>場景</th><th>測試日期</th><th>測試人員</th><th>結果</th><th>備註</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>A — 候選人轉換 + 自動建帳</td>
+              <td></td>
+              <td></td>
+              <td class="result-cell">
+                <label><input type="checkbox"> Pass</label>
+                <label><input type="checkbox"> Fail</label>
+              </td>
+              <td></td>
+            </tr>
+            <tr>
+              <td>B — 首次登入強制改密碼</td>
+              <td></td>
+              <td></td>
+              <td class="result-cell">
+                <label><input type="checkbox"> Pass</label>
+                <label><input type="checkbox"> Fail</label>
+              </td>
+              <td></td>
+            </tr>
+            <tr>
+              <td>C — 改密碼後正常登入</td>
+              <td></td>
+              <td></td>
+              <td class="result-cell">
+                <label><input type="checkbox"> Pass</label>
+                <label><input type="checkbox"> Fail</label>
+              </td>
+              <td></td>
+            </tr>
+            <tr>
+              <td>D — 重複帳號保護</td>
+              <td></td>
+              <td></td>
+              <td class="result-cell">
+                <label><input type="checkbox"> Pass</label>
+                <label><input type="checkbox"> Fail</label>
+              </td>
+              <td></td>
+            </tr>
+            <tr>
+              <td>E — 非致命模式</td>
+              <td></td>
+              <td></td>
+              <td class="result-cell">
+                <label><input type="checkbox"> Pass</label>
+                <label><input type="checkbox"> Fail</label>
+              </td>
+              <td></td>
+            </tr>
+            <tr>
+              <td>F — 改密碼驗證邏輯</td>
+              <td></td>
+              <td></td>
+              <td class="result-cell">
+                <label><input type="checkbox"> Pass</label>
+                <label><input type="checkbox"> Fail</label>
+              </td>
+              <td></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ── Footer ── -->
+      <footer style="margin-top:60px; padding-top:20px; border-top:1px solid var(--gray-200); text-align:center; color:var(--gray-400); font-size:12px;">
+        Bombus HR SaaS &mdash; Candidate-Employee-User Linking Manual Testing Guide &mdash; 2026-03-07
+      </footer>
+
+    </main>
+  </div>
+</body>
+</html>

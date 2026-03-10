@@ -16,12 +16,12 @@ import {
   PendingCandidate,
   ConvertCandidateResponse,
   ManagerOption,
-  DepartmentOption,
   GradeLevel,
   SalaryLevel,
   PositionOption
 } from '../../services/onboarding.service';
 import { NotificationService } from '../../../../core/services/notification.service';
+import { OrgUnitService } from '../../../../core/services/org-unit.service';
 
 @Component({
   selector: 'app-onboarding-convert-modal',
@@ -43,6 +43,7 @@ export class OnboardingConvertModalComponent implements OnInit {
   // Services
   private onboardingService = inject(OnboardingService);
   private notificationService = inject(NotificationService);
+  private orgUnitService = inject(OrgUnitService);
 
   // Form State
   department = signal<string>('');
@@ -56,6 +57,8 @@ export class OnboardingConvertModalComponent implements OnInit {
   probationMonths = signal<number>(3);
   contractType = signal<string>('full-time');
   workLocation = signal<string>('');
+  orgUnitId = signal<string>('');
+  selectedSubsidiaryId = signal<string>('');
 
   // 角色選項
   roleOptions = [
@@ -64,7 +67,6 @@ export class OnboardingConvertModalComponent implements OnInit {
   ];
 
   // Options
-  departments = signal<DepartmentOption[]>([]);
   grades = signal<GradeLevel[]>([]);
   salaryLevels = signal<SalaryLevel[]>([]);
   positions = signal<PositionOption[]>([]);
@@ -108,6 +110,14 @@ export class OnboardingConvertModalComponent implements OnInit {
     });
   });
 
+  subsidiaryOrgUnits = this.orgUnitService.subsidiaries;
+
+  isSubsidiaryLocked = computed(() => !!this.orgUnitService.lockedSubsidiaryId());
+
+  departmentOrgUnits = computed(() =>
+    this.orgUnitService.filterDepartments(this.selectedSubsidiaryId())
+  );
+
   selectedGradeInfo = computed(() => {
     const grade = this.gradeNumber();
     if (!grade) return null;
@@ -133,12 +143,37 @@ export class OnboardingConvertModalComponent implements OnInit {
   ];
 
   constructor() {
-    // 當 candidate 輸入變化時，預填職位
     // 當 candidate 輸入變化時，預填職務（從應徵職位帶入）
     effect(() => {
       const cand = this.candidate();
       if (cand?.position) {
-        this.jobTitle.set(cand.position);  // 職務 = 應徵職位
+        this.jobTitle.set(cand.position);
+      }
+      if (cand?.original_grade) {
+        this.gradeNumber.set(Number(cand.original_grade));
+      }
+    }, { allowSignalWrites: true });
+
+    // 當 orgUnits 載入完成後，根據候選人原始部門自動匹配 orgUnit + 預填 position
+    effect(() => {
+      const units = this.orgUnitService.orgUnits();
+      const cand = this.candidate();
+      if (!units.length || !cand) return;
+
+      // 自動匹配部門 → orgUnit（僅在尚未選擇時）
+      if (cand.original_department && !this.orgUnitId()) {
+        const match = units.find(
+          u => u.type === 'department' && u.name === cand.original_department
+        );
+        if (match) {
+          this.orgUnitId.set(match.id);
+          this.department.set(match.name);
+        }
+      }
+
+      // 預填職位（需要 department 和 positions 都載入後）
+      if (cand.original_position_name && !this.position()) {
+        this.position.set(cand.original_position_name);
       }
     }, { allowSignalWrites: true });
   }
@@ -148,12 +183,6 @@ export class OnboardingConvertModalComponent implements OnInit {
   }
 
   loadOptions(): void {
-    // 載入部門列表
-    this.onboardingService.getDepartments().subscribe({
-      next: (depts) => this.departments.set(depts),
-      error: () => this.departments.set([])
-    });
-
     // 載入職等列表
     this.onboardingService.getGrades().subscribe({
       next: (grades) => this.grades.set(grades),
@@ -184,16 +213,36 @@ export class OnboardingConvertModalComponent implements OnInit {
       error: () => this.nextEmployeeNo.set('')
     });
 
+    // 載入組織單位（透過共用服務）
+    this.orgUnitService.loadOrgUnits().subscribe({
+      next: () => {
+        // 依使用者 scope 自動鎖定子公司
+        const locked = this.orgUnitService.lockedSubsidiaryId();
+        if (locked) {
+          this.selectedSubsidiaryId.set(locked);
+        }
+      }
+    });
+
     // 預設報到日期為今天 + 7 天
     const defaultDate = new Date();
     defaultDate.setDate(defaultDate.getDate() + 7);
     this.hireDate.set(defaultDate.toISOString().split('T')[0]);
   }
 
-  onDepartmentChange(dept: string): void {
-    this.department.set(dept);
-    // 當部門變化時，重置職位選擇
+  onOrgUnitDepartmentChange(orgUnitId: string): void {
+    this.orgUnitId.set(orgUnitId);
+    // 從 org_units 反查部門名稱
+    const unit = this.orgUnitService.orgUnits().find(u => u.id === orgUnitId);
+    this.department.set(unit?.name || '');
+    // 重置依賴部門的欄位
     this.position.set('');
+  }
+
+  onSubsidiaryChange(subId: string): void {
+    this.selectedSubsidiaryId.set(subId);
+    // 重置組織單位選擇（子公司變更後 org_unit 可能不再匹配）
+    this.orgUnitId.set('');
   }
 
   onGradeChange(grade: number | null): void {
@@ -238,7 +287,8 @@ export class OnboardingConvertModalComponent implements OnInit {
       hire_date: this.hireDate(),
       probation_months: this.probationMonths(),
       contract_type: this.contractType(),
-      work_location: this.workLocation() || undefined
+      work_location: this.workLocation() || undefined,
+      org_unit_id: this.orgUnitId() || undefined
     }).subscribe({
       next: (result) => {
         this.loading.set(false);

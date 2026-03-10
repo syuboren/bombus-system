@@ -12,11 +12,22 @@
   <!-- Filters -->
   <div class="filters">
     <div class="filter-item">
+      <label class="filter-label" for="talentSubsidiary">選擇子公司:</label>
+      <select id="talentSubsidiary" class="filter-select" [value]="selectedSubsidiaryId()"
+        (change)="selectedSubsidiaryId.set($any($event.target).value); selectedDepartment.set('all')">
+        <option value="">全部子公司</option>
+        @for (sub of subsidiaries(); track sub.id) {
+        <option [value]="sub.id">{{ sub.name }}</option>
+        }
+      </select>
+    </div>
+    <div class="filter-item">
       <label class="filter-label" for="talentDept">選擇部門:</label>
       <select id="talentDept" class="filter-select" [value]="selectedDepartment()"
         (change)="updateDepartment($any($event.target).value)">
-        @for (opt of departmentOptions; track opt.value) {
-        <option [value]="opt.value">{{ opt.label }}</option>
+        <option value="all">全部部門</option>
+        @for (dept of filteredDepartments(); track dept.id) {
+        <option [value]="dept.name">{{ dept.name }}</option>
         }
       </select>
     </div>

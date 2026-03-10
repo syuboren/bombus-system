@@ -527,10 +527,20 @@
           </div>
           <div class="filter-divider"></div>
           <div class="filter-item">
+            <label class="filter-label">子公司</label>
+            <select class="filter-select" [ngModel]="selectedSubsidiaryId()" (ngModelChange)="onSubsidiaryChange($event)">
+              <option value="">所有子公司</option>
+              @for (sub of subsidiaries(); track sub.id) {
+                <option [value]="sub.id">{{ sub.name }}</option>
+              }
+            </select>
+          </div>
+          <div class="filter-item">
             <label class="filter-label">部門</label>
             <select class="filter-select" [ngModel]="selectedDepartment()" (ngModelChange)="onDepartmentChange($event)">
-              @for (opt of departmentOptions; track opt.value) {
-                <option [value]="opt.value">{{ opt.label }}</option>
+              <option value="">全部部門</option>
+              @for (dept of filteredDepartments(); track dept.id) {
+                <option [value]="dept.name">{{ dept.name }}</option>
               }
             </select>
           </div>
@@ -679,10 +689,20 @@
           </div>
           <div class="filter-divider"></div>
           <div class="filter-item">
+            <label class="filter-label">子公司</label>
+            <select class="filter-select" [ngModel]="selectedSubsidiaryId()" (ngModelChange)="onSubsidiaryChange($event)">
+              <option value="">所有子公司</option>
+              @for (sub of subsidiaries(); track sub.id) {
+                <option [value]="sub.id">{{ sub.name }}</option>
+              }
+            </select>
+          </div>
+          <div class="filter-item">
             <label class="filter-label">部門</label>
             <select class="filter-select" [ngModel]="selectedDepartment()" (ngModelChange)="onDepartmentChange($event)">
-              @for (opt of departmentOptions; track opt.value) {
-                <option [value]="opt.value">{{ opt.label }}</option>
+              <option value="">全部部門</option>
+              @for (dept of filteredDepartments(); track dept.id) {
+                <option [value]="dept.name">{{ dept.name }}</option>
               }
             </select>
           </div>
@@ -695,7 +715,7 @@
             </select>
           </div>
           <div class="filter-spacer"></div>
-          <button 
+          <button
             class="btn-initialize" 
             (click)="initializeQuarterlyReviews()" 
             type="button"

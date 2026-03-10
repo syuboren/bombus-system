@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of, delay, map, catchError } from 'rxjs';
 import {
   CompetencyItem,
@@ -81,8 +81,10 @@ export class CompetencyService {
   // =====================================================
   // 核心職能 API (L1-L6 等級) - 從資料庫獲取
   // =====================================================
-  getCoreCompetenciesWithLevels(): Observable<CoreManagementCompetency[]> {
-    return this.http.get<{ success: boolean; data: any[] }>(`${this.apiUrl}/competencies?category=core`).pipe(
+  getCoreCompetenciesWithLevels(orgUnitId?: string): Observable<CoreManagementCompetency[]> {
+    let params = new HttpParams().set('category', 'core');
+    if (orgUnitId) params = params.set('org_unit_id', orgUnitId);
+    return this.http.get<{ success: boolean; data: any[] }>(`${this.apiUrl}/competencies`, { params }).pipe(
       map(response => {
         if (response.success && response.data) {
           return this.mapToCoreMgmtCompetencies(response.data, 'core');
@@ -96,8 +98,10 @@ export class CompetencyService {
   // =====================================================
   // 管理職能 API (L1-L6 等級) - 從資料庫獲取
   // =====================================================
-  getManagementCompetenciesWithLevels(): Observable<CoreManagementCompetency[]> {
-    return this.http.get<{ success: boolean; data: any[] }>(`${this.apiUrl}/competencies?category=management`).pipe(
+  getManagementCompetenciesWithLevels(orgUnitId?: string): Observable<CoreManagementCompetency[]> {
+    let params = new HttpParams().set('category', 'management');
+    if (orgUnitId) params = params.set('org_unit_id', orgUnitId);
+    return this.http.get<{ success: boolean; data: any[] }>(`${this.apiUrl}/competencies`, { params }).pipe(
       map(response => {
         if (response.success && response.data) {
           return this.mapToCoreMgmtCompetencies(response.data, 'management');
@@ -111,8 +115,10 @@ export class CompetencyService {
   // =====================================================
   // 專業職能 API (L1-L6 等級) - 從資料庫獲取
   // =====================================================
-  getProfessionalCompetenciesWithLevels(): Observable<CoreManagementCompetency[]> {
-    return this.http.get<{ success: boolean; data: any[] }>(`${this.apiUrl}/competencies?category=professional`).pipe(
+  getProfessionalCompetenciesWithLevels(orgUnitId?: string): Observable<CoreManagementCompetency[]> {
+    let params = new HttpParams().set('category', 'professional');
+    if (orgUnitId) params = params.set('org_unit_id', orgUnitId);
+    return this.http.get<{ success: boolean; data: any[] }>(`${this.apiUrl}/competencies`, { params }).pipe(
       map(response => {
         if (response.success && response.data) {
           return this.mapToCoreMgmtCompetencies(response.data, 'professional');
@@ -126,8 +132,10 @@ export class CompetencyService {
   // =====================================================
   // KSA 職能 API (無等級) - 從資料庫獲取
   // =====================================================
-  getKSACompetencies(ksaType?: CompetencyType): Observable<KSACompetencyItem[]> {
-    return this.http.get<{ success: boolean; data: any[] }>(`${this.apiUrl}/competencies?category=ksa`).pipe(
+  getKSACompetencies(ksaType?: CompetencyType, orgUnitId?: string): Observable<KSACompetencyItem[]> {
+    let params = new HttpParams().set('category', 'ksa');
+    if (orgUnitId) params = params.set('org_unit_id', orgUnitId);
+    return this.http.get<{ success: boolean; data: any[] }>(`${this.apiUrl}/competencies`, { params }).pipe(
       map(response => {
         if (response.success && response.data) {
           let items = this.mapToKSACompetencies(response.data);
@@ -1081,8 +1089,10 @@ export class CompetencyService {
   /**
    * 取得完整職等職級矩陣（從 API）
    */
-  getGradeMatrixFromAPI(): Observable<GradeLevelNew[]> {
-    return this.http.get<{ success: boolean; data: GradeLevelNew[] }>(`${this.apiUrl}/grade-matrix`).pipe(
+  getGradeMatrixFromAPI(orgUnitId?: string): Observable<GradeLevelNew[]> {
+    let params = new HttpParams();
+    if (orgUnitId) params = params.set('org_unit_id', orgUnitId);
+    return this.http.get<{ success: boolean; data: GradeLevelNew[] }>(`${this.apiUrl}/grade-matrix`, { params }).pipe(
       map(res => res.data),
       catchError(error => {
         console.error('Error fetching grade matrix from API:', error);
@@ -1107,14 +1117,14 @@ export class CompetencyService {
   /**
    * 取得晉升條件
    */
-  getPromotionCriteria(fromGrade?: number, toGrade?: number, track?: string): Observable<PromotionCriteria[]> {
-    let params = new URLSearchParams();
-    if (fromGrade) params.append('fromGrade', fromGrade.toString());
-    if (toGrade) params.append('toGrade', toGrade.toString());
-    if (track) params.append('track', track);
+  getPromotionCriteria(fromGrade?: number, toGrade?: number, track?: string, orgUnitId?: string): Observable<PromotionCriteria[]> {
+    let params = new HttpParams();
+    if (fromGrade) params = params.set('fromGrade', fromGrade.toString());
+    if (toGrade) params = params.set('toGrade', toGrade.toString());
+    if (track) params = params.set('track', track);
+    if (orgUnitId) params = params.set('org_unit_id', orgUnitId);
 
-    const url = `${this.apiUrl}/grade-matrix/promotion/criteria${params.toString() ? '?' + params.toString() : ''}`;
-    return this.http.get<{ success: boolean; data: PromotionCriteria[] }>(url).pipe(
+    return this.http.get<{ success: boolean; data: PromotionCriteria[] }>(`${this.apiUrl}/grade-matrix/promotion/criteria`, { params }).pipe(
       map(res => res.data),
       catchError(error => {
         console.error('Error fetching promotion criteria:', error);
@@ -1126,11 +1136,12 @@ export class CompetencyService {
   /**
    * 取得職涯路徑（從 API）
    */
-  getCareerPathsFromAPI(type?: string): Observable<CareerPathNew[]> {
-    let url = `${this.apiUrl}/grade-matrix/career/paths`;
-    if (type) url += `?type=${type}`;
+  getCareerPathsFromAPI(type?: string, orgUnitId?: string): Observable<CareerPathNew[]> {
+    let params = new HttpParams();
+    if (type) params = params.set('type', type);
+    if (orgUnitId) params = params.set('org_unit_id', orgUnitId);
 
-    return this.http.get<{ success: boolean; data: CareerPathNew[] }>(url).pipe(
+    return this.http.get<{ success: boolean; data: CareerPathNew[] }>(`${this.apiUrl}/grade-matrix/career/paths`, { params }).pipe(
       map(res => res.data),
       catchError(error => {
         console.error('Error fetching career paths from API:', error);
@@ -1168,14 +1179,14 @@ export class CompetencyService {
   /**
    * 取得部門職位對照表
    */
-  getDepartmentPositions(department?: string, grade?: number, track?: string): Observable<any[]> {
-    let params = new URLSearchParams();
-    if (department) params.append('department', department);
-    if (grade) params.append('grade', grade.toString());
-    if (track) params.append('track', track);
+  getDepartmentPositions(department?: string, grade?: number, track?: string, orgUnitId?: string): Observable<any[]> {
+    let params = new HttpParams();
+    if (department) params = params.set('department', department);
+    if (grade) params = params.set('grade', grade.toString());
+    if (track) params = params.set('track', track);
+    if (orgUnitId) params = params.set('org_unit_id', orgUnitId);
 
-    const url = `${this.apiUrl}/grade-matrix/positions/list${params.toString() ? '?' + params.toString() : ''}`;
-    return this.http.get<{ success: boolean; data: any[] }>(url).pipe(
+    return this.http.get<{ success: boolean; data: any[] }>(`${this.apiUrl}/grade-matrix/positions/list`, { params }).pipe(
       map(res => res.data),
       catchError(error => {
         console.error('Error fetching department positions:', error);
@@ -1354,13 +1365,12 @@ export class CompetencyService {
 
   /** 取得變更歷史（支援篩選） */
   getChangeHistory(filters?: { entityType?: string; dateFrom?: string; dateTo?: string }): Observable<ChangeRecord[]> {
-    let params = new URLSearchParams();
-    if (filters?.entityType) params.append('entityType', filters.entityType);
-    if (filters?.dateFrom) params.append('dateFrom', filters.dateFrom);
-    if (filters?.dateTo) params.append('dateTo', filters.dateTo);
+    let params = new HttpParams();
+    if (filters?.entityType) params = params.set('entityType', filters.entityType);
+    if (filters?.dateFrom) params = params.set('dateFrom', filters.dateFrom);
+    if (filters?.dateTo) params = params.set('dateTo', filters.dateTo);
 
-    const url = `${this.apiUrl}/grade-matrix/changes/history${params.toString() ? '?' + params.toString() : ''}`;
-    return this.http.get<{ success: boolean; data: ChangeRecord[] }>(url).pipe(
+    return this.http.get<{ success: boolean; data: ChangeRecord[] }>(`${this.apiUrl}/grade-matrix/changes/history`, { params }).pipe(
       map(res => res.data),
       catchError(error => { console.error('Error fetching change history:', error); return of([]); })
     );
@@ -1750,16 +1760,13 @@ export class CompetencyService {
   // 職務說明書相關 API (介接資料庫)
   // =====================================================
 
-  getJobDescriptions(params?: { status?: string; department?: string }): Observable<JobDescription[]> {
-    let url = `${this.apiUrl}/job-descriptions`;
-    if (params) {
-      const q = new URLSearchParams();
-      if (params.status) q.set('status', params.status);
-      if (params.department) q.set('department', params.department);
-      const qs = q.toString();
-      if (qs) url += '?' + qs;
-    }
-    return this.http.get<{ success: boolean; data: any[] }>(url).pipe(
+  getJobDescriptions(params?: { status?: string; department?: string; orgUnitId?: string }): Observable<JobDescription[]> {
+    let httpParams = new HttpParams();
+    if (params?.status) httpParams = httpParams.set('status', params.status);
+    if (params?.department) httpParams = httpParams.set('department', params.department);
+    if (params?.orgUnitId) httpParams = httpParams.set('org_unit_id', params.orgUnitId);
+
+    return this.http.get<{ success: boolean; data: any[] }>(`${this.apiUrl}/job-descriptions`, { params: httpParams }).pipe(
       map(res => (res.success && res.data ? res.data.map(d => this.mapApiToJobDescription(d)) : [])),
       catchError(() => of([]))
     );
@@ -1811,13 +1818,11 @@ export class CompetencyService {
   }
 
   getPositions(department?: string, grade?: number): Observable<any[]> {
-    let url = `${this.apiUrl}/grade-matrix/positions/list`;
-    const params = new URLSearchParams();
-    if (department) params.set('department', department);
-    if (grade != null) params.set('grade', String(grade));
-    const qs = params.toString();
-    if (qs) url += '?' + qs;
-    return this.http.get<{ success: boolean; data: any[] }>(url).pipe(
+    let params = new HttpParams();
+    if (department) params = params.set('department', department);
+    if (grade != null) params = params.set('grade', String(grade));
+
+    return this.http.get<{ success: boolean; data: any[] }>(`${this.apiUrl}/grade-matrix/positions/list`, { params }).pipe(
       map(res => (res.success && res.data ? res.data : [])),
       catchError(() => of([]))
     );
@@ -1889,7 +1894,8 @@ export class CompetencyService {
       dailyTasks: jd.dailyTasks ?? [],
       weeklyTasks: jd.weeklyTasks ?? [],
       monthlyTasks: jd.monthlyTasks ?? [],
-      createdBy: jd.createdBy
+      createdBy: jd.createdBy,
+      org_unit_id: (jd as any).org_unit_id || null
     };
   }
 
@@ -3635,7 +3641,8 @@ export class CompetencyService {
         levels: data.levels?.map(l => ({
           level: l.level,
           indicators: l.indicators
-        }))
+        })),
+        org_unit_id: data.org_unit_id || null
       }
     ).pipe(
       map(response => {
@@ -3667,7 +3674,8 @@ export class CompetencyService {
         levels: data.levels?.map(l => ({
           level: l.level,
           indicators: l.indicators
-        }))
+        })),
+        org_unit_id: data.org_unit_id || null
       }
     ).pipe(
       map(response => {
@@ -3708,7 +3716,8 @@ export class CompetencyService {
         type: data.ksaType,
         description: data.description,
         behaviorIndicators: data.behaviorIndicators,
-        linkedCourses: data.linkedCourses
+        linkedCourses: data.linkedCourses,
+        org_unit_id: data.org_unit_id || null
       }
     ).pipe(
       map(response => {
@@ -3734,7 +3743,8 @@ export class CompetencyService {
         type: data.ksaType,
         description: data.description,
         behaviorIndicators: data.behaviorIndicators,
-        linkedCourses: data.linkedCourses
+        linkedCourses: data.linkedCourses,
+        org_unit_id: data.org_unit_id || null
       }
     ).pipe(
       map(response => {
@@ -3742,6 +3752,38 @@ export class CompetencyService {
           return this.mapToKSACompetencies([response.data])[0];
         }
         throw new Error('更新 KSA 職能失敗');
+      })
+    );
+  }
+
+  /**
+   * 新增職涯路徑（進入審核流程）
+   */
+  createCareerPath(data: Partial<CareerPathNew>): Observable<CareerPathNew> {
+    return this.http.post<{ success: boolean; data: CareerPathNew }>(
+      `${this.apiUrl}/grade-matrix/career/paths`,
+      data
+    ).pipe(
+      map(res => res.data),
+      catchError(error => {
+        console.error('Error creating career path:', error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * 更新職涯路徑（進入審核流程）
+   */
+  updateCareerPath(id: string, data: Partial<CareerPathNew>): Observable<CareerPathNew> {
+    return this.http.put<{ success: boolean; data: CareerPathNew }>(
+      `${this.apiUrl}/grade-matrix/career/paths/${id}`,
+      data
+    ).pipe(
+      map(res => res.data),
+      catchError(error => {
+        console.error('Error updating career path:', error);
+        throw error;
       })
     );
   }

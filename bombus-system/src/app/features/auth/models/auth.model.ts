@@ -23,6 +23,7 @@ export interface TokenResponse {
   token_type: string;
   expires_in: string;
   user: User;
+  must_change_password?: boolean;
 }
 
 /**
@@ -67,6 +68,8 @@ export interface User {
   department?: string;
   /** @deprecated 向後相容，6.2 移除 */
   lastLogin?: Date;
+  must_change_password?: boolean;
+  tenant_slug?: string;
 }
 
 /**
@@ -122,4 +125,21 @@ export interface RememberedCredentials {
 export interface PlatformLoginRequest {
   email: string;
   password: string;
+}
+
+/**
+ * 變更密碼請求
+ */
+export interface ChangePasswordRequest {
+  current_password: string;
+  new_password: string;
+  tenant_slug: string;
+}
+
+/**
+ * 變更密碼回應
+ */
+export interface ChangePasswordResponse {
+  success: boolean;
+  message: string;
 }

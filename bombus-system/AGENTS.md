@@ -11,7 +11,7 @@ This project uses Spectra for Spec-Driven Development(SDD). Specs live in `opens
 - Tasks are ready to implement → `/spectra:apply`
 - There's an in-progress change to continue → `/spectra:ingest`
 - User asks about specs or how something works → `/spectra:ask`
-- Implementation is done → `/spectra:verify` then `/spectra:archive`
+- Implementation is done → `/spectra:archive`
 
 ## Workflow
 

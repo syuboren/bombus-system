@@ -137,6 +137,8 @@ export class EmployeeService {
     );
   }
 
+  // getDepartments 已移除，請使用 OrgUnitService.allDepartments
+
   getEmployees(): Observable<Employee[]> {
     return this.http.get<any[]>(`${this.apiUrl}/list`).pipe(
       map(data => data.map(e => this.transformEmployee(e))),

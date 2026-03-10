@@ -14,6 +14,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
+import { OrgUnitService } from '../../../../core/services/org-unit.service';
 import * as echarts from 'echarts';
 
 // ============================================
@@ -90,6 +91,12 @@ export class GoalTaskPageComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('departmentChart') departmentChartRef!: ElementRef;
 
   private cdr = inject(ChangeDetectorRef);
+  private orgUnitService = inject(OrgUnitService);
+
+  // 子公司→部門級聯篩選
+  selectedSubsidiaryId = signal<string>('');
+  subsidiaries = this.orgUnitService.subsidiaries;
+  filteredDepartments = computed(() => this.orgUnitService.filterDepartments(this.selectedSubsidiaryId()));
 
   // Charts
   private progressChart: echarts.ECharts | null = null;
@@ -114,11 +121,6 @@ export class GoalTaskPageComponent implements OnInit, AfterViewInit, OnDestroy {
   showGoalModal = signal(false);
 
   // Computed
-  readonly departments = computed(() => {
-    const depts = new Set(this.goals().map(g => g.department));
-    return Array.from(depts);
-  });
-
   readonly filteredGoals = computed(() => {
     let result = this.goals();
     
@@ -167,6 +169,7 @@ export class GoalTaskPageComponent implements OnInit, AfterViewInit, OnDestroy {
   });
 
   ngOnInit(): void {
+    this.orgUnitService.loadOrgUnits().subscribe();
     this.loadMockData();
   }
 

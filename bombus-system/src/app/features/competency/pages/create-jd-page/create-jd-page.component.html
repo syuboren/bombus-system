@@ -124,10 +124,20 @@
             [disabled]="isEditMode()">
         </div>
         <div class="form-group">
+          <label class="form-label">子公司</label>
+          <select class="form-select" [ngModel]="selectedSubsidiaryId()"
+            (ngModelChange)="selectedSubsidiaryId.set($event); department = ''" [disabled]="isEditMode()">
+            <option value="">全部子公司</option>
+            @for (sub of subsidiaries(); track sub.id) {
+            <option [value]="sub.id">{{ sub.name }}</option>
+            }
+          </select>
+        </div>
+        <div class="form-group">
           <label class="form-label">部門 <span class="required">*</span></label>
           <select class="form-select" [(ngModel)]="department" [disabled]="isEditMode()">
             <option value="">請選擇部門</option>
-            @for (d of departments(); track d.id) {
+            @for (d of filteredDepartments(); track d.id) {
             <option [value]="d.name">{{ d.name }}</option>
             }
           </select>

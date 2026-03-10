@@ -41,7 +41,7 @@ router.get('/generate-code', (req, res) => {
 
 router.get('/', (req, res) => {
   try {
-    const { status, department } = req.query;
+    const { status, department, org_unit_id } = req.query;
     let sql = 'SELECT * FROM job_descriptions WHERE 1=1';
     const params = [];
     if (status) {
@@ -51,6 +51,10 @@ router.get('/', (req, res) => {
     if (department) {
       sql += ' AND department = ?';
       params.push(department);
+    }
+    if (org_unit_id) {
+      sql += ' AND (org_unit_id IS NULL OR org_unit_id = ?)';
+      params.push(org_unit_id);
     }
     sql += ' ORDER BY created_at DESC';
     const list = req.tenantDB.prepare(sql).all(...params);
@@ -89,6 +93,7 @@ router.post('/', (req, res) => {
     const version = body.version || '1.0';
     const status = body.status || 'draft';
     const createdBy = body.createdBy || body.created_by || 'system';
+    const orgUnitId = body.orgUnitId || body.org_unit_id || null;
 
     const jsonColumns = [
       'responsibilities', 'jobPurpose', 'qualifications', 'vfp',
@@ -115,13 +120,13 @@ router.post('/', (req, res) => {
     req.tenantDB.prepare(`
       INSERT INTO job_descriptions (
         id, position_code, position_name, department, grade, grade_code, position_title,
-        summary, version, status,
+        summary, version, status, org_unit_id,
         ${dbCols.join(', ')},
         created_by, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ${dbCols.map(() => '?').join(', ')}, ?, datetime('now'), datetime('now'))
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ${dbCols.map(() => '?').join(', ')}, ?, datetime('now'), datetime('now'))
     `).run(
       id, positionCode, positionName, department, grade, gradeCode, positionTitle,
-      summary, version, status,
+      summary, version, status, orgUnitId,
       ...jsonValues,
       createdBy
     );
@@ -160,7 +165,8 @@ router.put('/:id', (req, res) => {
     ];
     const updates = [
       'position_code = ?', 'position_name = ?', 'department = ?', 'grade = ?',
-      'grade_code = ?', 'position_title = ?', 'summary = ?', 'version = ?', 'status = ?'
+      'grade_code = ?', 'position_title = ?', 'summary = ?', 'version = ?', 'status = ?',
+      'org_unit_id = ?'
     ];
     const values = [
       body.positionCode ?? body.position_code,
@@ -171,7 +177,8 @@ router.put('/:id', (req, res) => {
       body.positionTitle ?? body.position_title ?? null,
       body.summary ?? '',
       body.version ?? '1.0',
-      body.status ?? 'draft'
+      body.status ?? 'draft',
+      body.orgUnitId ?? body.org_unit_id ?? null
     ];
     jsonColumns.forEach((key, i) => {
       updates.push(`${dbCols[i]} = ?`);
@@ -240,6 +247,7 @@ function rowToJobDescription(row) {
     summary: row.summary || '',
     version: row.version || '1.0',
     status: row.status || 'draft',
+    orgUnitId: row.org_unit_id || null,
     currentVersion: row.current_version || row.version || '1.0',
     rejectedReason: row.rejected_reason || null,
     approvedBy: row.approved_by || null,

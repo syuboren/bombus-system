@@ -10,6 +10,8 @@ Update an existing OpenSpec change — from a Claude Code plan file or conversat
 
 **Claude Code only.** This skill can read plan files from `~/.claude/plans/` or use conversation context to update artifacts.
 
+**Prerequisites**: This skill requires the `spectra` CLI. If any `spectra` command fails with "command not found" or similar, report the error and STOP.
+
 **Input**: Optionally specify a plan file path or name.
 
 - `/spectra:ingest ~/.claude/plans/agile-discovering-rocket.md`
@@ -61,12 +63,28 @@ Update an existing OpenSpec change — from a Claude Code plan file or conversat
 
 3. **Check for active changes** (REQUIRED — ingest only updates existing changes)
 
-   Use the **Glob tool** to list directories under `openspec/changes/` (excluding `archive/`).
+   ```bash
+   spectra list --json
+   ```
+
+   Parse the JSON output to get the list of active changes.
    - If one active change exists → use the **AskUserQuestion tool** to confirm updating it
    - If multiple active changes exist → use the **AskUserQuestion tool** to let user pick which one to update
    - If no active changes → tell the user: "No active change found. Use `/spectra:propose` first to create one." and **stop**
 
 4. **Select the change**
+
+   After selecting the change, check if it is parked:
+
+   ```bash
+   spectra list --parked --json
+   ```
+
+   If the selected change appears in the `parked` array:
+   - Inform the user that this change is currently shelved (暫存)
+   - Use **AskUserQuestion tool** to ask: continue (un-shelve) or cancel
+   - If continue: run `spectra unpark "<name>"` then proceed
+   - If cancel: stop the workflow
 
    Read existing artifacts for context before updating.
 
@@ -80,7 +98,7 @@ Update an existing OpenSpec change — from a Claude Code plan file or conversat
 
    Use the `template` from instructions as the output structure. Apply `context` and `rules` as constraints but do NOT copy them into the file.
 
-   The instructions JSON includes `locale` — the language to write artifacts in. If present, you MUST write the artifact content in that language. Exception: spec files (specs/\*_/_.md) MUST always be written in English regardless of locale, because they use normative language (SHALL/MUST).
+   The instructions JSON includes `locale` — the language to write artifacts in. If present, you MUST write the artifact content in that language. Exception: spec files (specs/\*/\*.md) MUST always be written in English regardless of locale, because they use normative language (SHALL/MUST).
 
    **Plan-to-Artifact Mapping** (when using a plan file):
 
@@ -124,9 +142,16 @@ Update an existing OpenSpec change — from a Claude Code plan file or conversat
    spectra analyze <name> --json
    ```
 
-   Filter to **Critical and Warning only** (ignore Suggestion).
-   If clean → "Artifacts look consistent ✓"
-   If issues → fix and re-analyze (max 2 attempts).
+   1. Filter findings to **Critical and Warning only** (ignore Suggestion)
+   2. If no Critical/Warning findings → show "Artifacts look consistent ✓" and proceed
+   3. If Critical/Warning findings exist:
+      a. Show: "Found N issue(s), fixing... (attempt M/2)"
+      b. Fix each finding in the affected artifact
+      c. Re-run `spectra analyze <name> --json`
+      d. Repeat up to 2 total iterations
+   4. After 2 attempts, if findings remain:
+      - Show remaining findings as a summary
+      - Proceed normally (do NOT block)
 
 7. **Validation**
 
@@ -144,10 +169,13 @@ Update an existing OpenSpec change — from a Claude Code plan file or conversat
    - Artifacts created/updated
    - Validation result
 
-   Use the **AskUserQuestion tool** to ask what to do next:
-   - **Start implementation** → invoke `/spectra:apply <change-name>`
-   - **Review artifacts** → let user inspect before proceeding
-   - **Defer** → end workflow, user can run `/spectra:apply <change-name>` later
+   Use **AskUserQuestion tool** to confirm the workflow is complete. This ensures the workflow stops even when auto-accept is enabled. Provide exactly these options:
+   - **First option (will be auto-selected)**: "Done" — End the ingest workflow. Inform the user they can run `/spectra:apply <change-name>` when ready.
+   - **Second option**: "Apply" — Invoke `/spectra:apply <change-name>` to start implementation.
+
+   If **AskUserQuestion tool** is not available, display the summary and inform the user to run `/spectra:apply <change-name>` when ready. Then STOP — do not continue.
+
+   **After the user responds**, if they chose "Done", the workflow is OVER. If they chose "Apply", invoke `/spectra:apply <change-name>` to begin implementation.
 
 **Guardrails**
 

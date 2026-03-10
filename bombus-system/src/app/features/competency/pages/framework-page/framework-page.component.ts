@@ -1,4 +1,6 @@
-import { Component, ChangeDetectionStrategy, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, DestroyRef, inject, signal, computed, OnInit } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { switchMap, forkJoin } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
@@ -18,6 +20,7 @@ import {
 } from '../../models/competency.model';
 import { CompetencyEditModalComponent } from '../../components/competency-edit-modal/competency-edit-modal.component';
 import { KsaEditModalComponent } from '../../components/ksa-edit-modal/ksa-edit-modal.component';
+import { OrgUnitService } from '../../../../core/services/org-unit.service';
 
 type ActiveTab = 'core' | 'management' | 'professional' | 'ksa';
 
@@ -33,6 +36,34 @@ import { ViewToggleComponent } from '../../../../shared/components/view-toggle/v
 })
 export class FrameworkPageComponent implements OnInit {
   private competencyService = inject(CompetencyService);
+  private orgUnitService = inject(OrgUnitService);
+  private destroyRef = inject(DestroyRef);
+
+  // 子公司篩選
+  selectedSubsidiaryId = signal<string>('');
+  subsidiaries = this.orgUnitService.subsidiaries;
+  isSubsidiaryLocked = computed(() => !!this.orgUnitService.lockedSubsidiaryId());
+
+  constructor() {
+    // 使用 switchMap 確保快速切換子公司時，舊的 HTTP 請求會被取消
+    toObservable(this.selectedSubsidiaryId).pipe(
+      switchMap(orgUnitId => {
+        const id = orgUnitId || undefined;
+        return forkJoin({
+          core: this.competencyService.getCoreCompetenciesWithLevels(id),
+          management: this.competencyService.getManagementCompetenciesWithLevels(id),
+          professional: this.competencyService.getProfessionalCompetenciesWithLevels(id),
+          ksa: this.competencyService.getKSACompetencies(undefined, id)
+        });
+      }),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(({ core, management, professional, ksa }) => {
+      this.coreCompetencies.set(core);
+      this.managementCompetencies.set(management);
+      this.professionalCompetencies.set(professional);
+      this.ksaCompetencies.set(ksa);
+    });
+  }
 
   // Page Info
   readonly pageTitle = '職能模型基準';
@@ -118,6 +149,14 @@ export class FrameworkPageComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    // 載入組織架構，若有鎖定子公司則自動設定
+    this.orgUnitService.loadOrgUnits().subscribe({
+      next: () => {
+        const locked = this.orgUnitService.lockedSubsidiaryId();
+        if (locked) this.selectedSubsidiaryId.set(locked);
+      }
+    });
+
     this.loadData();
   }
 
@@ -134,31 +173,20 @@ export class FrameworkPageComponent implements OnInit {
       this.frameworks.set(data);
     });
 
-    // Load core competencies (L1-L6)
-    this.competencyService.getCoreCompetenciesWithLevels().subscribe(data => {
-      this.coreCompetencies.set(data);
-    });
-
-    // Load management competencies (L1-L6)
-    this.competencyService.getManagementCompetenciesWithLevels().subscribe(data => {
-      this.managementCompetencies.set(data);
-    });
-
-    // Load professional competencies (L1-L6)
-    this.competencyService.getProfessionalCompetenciesWithLevels().subscribe(data => {
-      this.professionalCompetencies.set(data);
-    });
-
-    // Load KSA competencies (no levels)
-    this.competencyService.getKSACompetencies().subscribe(data => {
-      this.ksaCompetencies.set(data);
-    });
+    // 四類職能資料由 constructor effect 處理（監聽 selectedSubsidiaryId 變化）
 
     // Load legacy KSA for card/list display
     this.competencyService.getCompetencies().subscribe(data => {
       this.legacyCompetencies.set(data);
       this.loading.set(false);
     });
+  }
+
+  /**
+   * 重新觸發職能資料載入（透過 re-emit selectedSubsidiaryId 觸發 constructor 的 reactive subscription）
+   */
+  private reloadCompetencyData(): void {
+    this.selectedSubsidiaryId.set(this.selectedSubsidiaryId());
   }
 
   // Tab methods
@@ -253,6 +281,11 @@ export class FrameworkPageComponent implements OnInit {
     }
 
     return result;
+  }
+
+  // 子公司篩選切換
+  onSubsidiaryChange(subId: string): void {
+    this.selectedSubsidiaryId.set(subId);
   }
 
   // Filter methods for KSA
@@ -411,7 +444,8 @@ export class FrameworkPageComponent implements OnInit {
    */
   onCompetencySaved(result: CoreManagementCompetency): void {
     this.showToast('職能儲存成功', 'success');
-    this.loadData(); // 重新載入資料
+    this.loadData();
+    this.reloadCompetencyData();
   }
 
   /**
@@ -423,6 +457,7 @@ export class FrameworkPageComponent implements OnInit {
         next: () => {
           this.showToast('職能刪除成功', 'success');
           this.loadData();
+          this.reloadCompetencyData();
         },
         error: (err) => {
           this.showToast(err.message || '刪除失敗', 'error');
@@ -478,6 +513,7 @@ export class FrameworkPageComponent implements OnInit {
   onKsaSaved(result: KSACompetencyItem): void {
     this.showToast('KSA 職能儲存成功', 'success');
     this.loadData();
+    this.reloadCompetencyData();
   }
 
   /**
@@ -490,6 +526,7 @@ export class FrameworkPageComponent implements OnInit {
         next: () => {
           this.showToast('KSA 職能刪除成功', 'success');
           this.loadData();
+          this.reloadCompetencyData();
         },
         error: (err) => {
           this.showToast(err.message || '刪除失敗', 'error');

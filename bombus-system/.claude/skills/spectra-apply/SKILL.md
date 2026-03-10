@@ -1,6 +1,6 @@
 ---
 name: spectra-apply
-description: "Implement tasks from an OpenSpec change"
+description: "Implement or resume tasks from an OpenSpec change"
 license: MIT
 compatibility: Requires openspec CLI.
 metadata:
@@ -15,6 +15,8 @@ Implement tasks from an OpenSpec change.
 
 **Task tracking is file-based only.** The tasks file's markdown checkboxes (`- [ ]` / `- [x]`) are the single source of truth for progress. Do NOT use any external task management system, built-in task tracker, or todo tool. When a task is done, edit the checkbox in the tasks file — that is the only way to record progress.
 
+**Prerequisites**: This skill requires the `spectra` CLI. If any `spectra` command fails with "command not found" or similar, report the error and STOP.
+
 **Steps**
 
 1. **Select the change**
@@ -25,14 +27,6 @@ Implement tasks from an OpenSpec change.
    - If ambiguous, run `spectra list --json` to get available changes and use the **AskUserQuestion tool** to let the user select
 
    Always announce: "Using change: <name>" and how to override (e.g., `/spectra:apply <other>`).
-
-   After selecting the change, mark it as in-progress:
-
-   ```bash
-   spectra in-progress add "<name>"
-   ```
-
-   This is a silent operation — do not show the output to the user.
 
 2. **Check status to understand the schema**
 
@@ -63,13 +57,27 @@ Implement tasks from an OpenSpec change.
      spectra unpark "<name>"
      ```
 
+     Then mark it as in-progress:
+
+     ```bash
+     spectra in-progress add "<name>"
+     ```
+
+     This is a silent operation — do not show the output to the user.
+
      Then re-run `spectra status --change "<name>" --json` and continue normally.
 
      If there is no AskUserQuestion tool available (non-Claude-Code environment):
      Inform the user that the change is shelved and they need to un-shelve it in Spectra first.
      STOP.
 
-   - **If the change is NOT in the parked list**: proceed normally.
+   - **If the change is NOT in the parked list**: mark it as in-progress and proceed normally.
+
+     ```bash
+     spectra in-progress add "<name>"
+     ```
+
+     This is a silent operation — do not show the output to the user.
 
    Parse the JSON to understand:
    - `schemaName`: The workflow being used (e.g., "spec-driven")
@@ -107,6 +115,12 @@ Implement tasks from an OpenSpec change.
    - Fetch TDD instructions by running `spectra instructions --skill tdd`, then follow the Red-Green-Refactor cycle
    - For bug fixes, reproduce the bug with a failing test before fixing
 
+   If `audit: true` is set, apply sharp-edges discipline throughout implementation:
+   - When designing APIs or interfaces, evaluate through 3 adversary lenses (Scoundrel, Lazy Developer, Confused Developer)
+   - When adding configuration options, verify defaults are secure and zero/empty values are safe
+   - When accepting parameters, check for type confusion and silent failures
+   - Fetch audit instructions by running `spectra instructions --skill audit`, follow the discipline checklist (not the standalone 3-agent workflow)
+
    If `parallel_tasks: true` is set, check whether consecutive pending tasks have `[P]` markers (format: `- [ ] [P] Task description`). You SHALL dispatch consecutive `[P]` tasks as parallel agents. Only fall back to sequential when tasks have a data dependency (one task's output is another's input) or when tasks modify overlapping regions of the same file. Targeting the same file alone is NOT a reason to skip parallel dispatch — if the modified regions are disjoint, dispatch in parallel. If the environment does not support parallel execution, ignore `[P]` markers and execute tasks sequentially.
 
 6. **Show current progress**
@@ -123,12 +137,17 @@ Implement tasks from an OpenSpec change.
 
    For each pending task:
    - Show which task is being worked on
+   - Re-read the sections of design and spec files that are relevant to this task's scope — do not rely on memory from earlier in the conversation, as context may have been compressed
+   - Before writing code, check:
+     1. **Reuse** — search adjacent modules and shared utilities for existing implementations before writing new code
+     2. **Quality** — derive values from existing state instead of duplicating; use existing types and constants over new literals
+     3. **Efficiency** — parallelize independent async operations; avoid unnecessary awaits; match operation scope to actual need
    - Make the code changes required
    - Keep changes minimal and focused
    - Mark task complete in the tasks file: `- [ ]` → `- [x]`
    - Continue to next task
 
-   **Parallel task dispatch**: When `parallel_tasks: true` is configured and you encounter consecutive `[P]`-marked tasks, you SHALL dispatch them as parallel agents using the Agent tool. Group consecutive `[P]` tasks into a batch and launch all agents in a single message. Non-`[P]` tasks are always sequential. If any `[P]` task fails, pause and report — do not continue with remaining parallel tasks in that group. Do NOT fall back to sequential execution for convenience or perceived risk — the `[P]` marker is an explicit signal that these tasks are safe to parallelize.
+   **Parallel task dispatch**: When consecutive `[P]`-marked tasks are found and `parallel_tasks: true` is configured (see Step 5), dispatch them as parallel agents in a single message. If any `[P]` task fails, pause and report.
 
    **Pause if:**
    - Task is unclear → ask for clarification

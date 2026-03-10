@@ -12,6 +12,7 @@ const initSqlJs = require('sql.js');
 const fs = require('fs');
 const path = require('path');
 const { SqliteAdapter } = require('./db-adapter');
+const { EMPLOYEE_MIGRATIONS, USER_MIGRATIONS, INTERVIEW_MIGRATIONS } = require('./tenant-schema');
 
 const TENANTS_DIR = path.join(__dirname, '../../data/tenants');
 const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 分鐘
@@ -218,6 +219,21 @@ class TenantDBManager {
       )`);
       changed = true;
     } catch (e) { /* 表已存在 */ }
+
+    // employees 表新增欄位（候選人→員工串連）
+    for (const sql of EMPLOYEE_MIGRATIONS) {
+      try { db.run(sql); changed = true; } catch (e) { /* 欄位已存在則忽略 */ }
+    }
+
+    // users 表新增欄位（首次登入強制改密碼）
+    for (const sql of USER_MIGRATIONS) {
+      try { db.run(sql); changed = true; } catch (e) { /* 欄位已存在則忽略 */ }
+    }
+
+    // interviews 表新增欄位
+    for (const sql of INTERVIEW_MIGRATIONS) {
+      try { db.run(sql); changed = true; } catch (e) { /* 欄位已存在則忽略 */ }
+    }
 
     if (changed) {
       adapter.save();

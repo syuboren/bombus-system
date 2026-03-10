@@ -8,6 +8,7 @@ import { JobService } from '../../services/job.service';
 import { Job, JobStats } from '../../models/job.model';
 import { CompetencyService } from '../../../competency/services/competency.service';
 import { JobDescription } from '../../../competency/models/competency.model';
+import { OrgUnitService } from '../../../../core/services/org-unit.service';
 
 // 新增候選人表單介面
 interface NewCandidateForm {
@@ -111,6 +112,7 @@ export class JobsPageComponent implements OnInit {
   private competencyService = inject(CompetencyService);
   private notificationService = inject(NotificationService);
   private cdr = inject(ChangeDetectorRef);
+  private orgUnitService = inject(OrgUnitService);
 
   // Signals
   jobs = signal<Job[]>([]);
@@ -212,6 +214,15 @@ export class JobsPageComponent implements OnInit {
   // JD 列表
   jobDescriptions = signal<JobDescription[]>([]);
 
+  // 子公司/部門篩選（頁面篩選列）
+  selectedSubsidiaryId = signal<string>('');
+  subsidiaries = this.orgUnitService.subsidiaries;
+  filteredDepartments = computed(() => this.orgUnitService.filterDepartments(this.selectedSubsidiaryId()));
+
+  // Modal 專用子公司篩選（獨立於頁面篩選列）
+  modalSubsidiaryId = signal<string>('');
+  modalFilteredDepartments = computed(() => this.orgUnitService.filterDepartments(this.modalSubsidiaryId()));
+
   // Filter signals
   searchQuery = signal<string>('');
   departmentFilter = signal<string>('');
@@ -301,6 +312,7 @@ export class JobsPageComponent implements OnInit {
     this.loadData();
     this.loadJobDescriptions();
     this.load104Jobs();
+    this.orgUnitService.loadOrgUnits().subscribe();
   }
 
   loadData(): void {
@@ -382,6 +394,7 @@ export class JobsPageComponent implements OnInit {
   }
 
   openModal(): void {
+    this.modalSubsidiaryId.set(this.selectedSubsidiaryId());
     this.showModal.set(true);
   }
 
@@ -763,6 +776,7 @@ export class JobsPageComponent implements OnInit {
   showEditModal = signal<boolean>(false);
 
   openEditModal(job: Job): void {
+    this.modalSubsidiaryId.set(this.selectedSubsidiaryId());
     this.editingJob.set(job);
 
     // 預設 104 設定

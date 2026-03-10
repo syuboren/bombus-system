@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   inject,
   signal,
+  computed,
   OnInit,
   OnDestroy,
   AfterViewInit,
@@ -13,6 +14,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TalentMapService } from '../../services/talent-map.service';
+import { OrgUnitService } from '../../../../core/services/org-unit.service';
 import { HeatmapCell, HeatmapStats, HeatmapFilter } from '../../models/talent-map.model';
 import * as echarts from 'echarts';
 
@@ -39,6 +41,7 @@ export class HeatmapTabComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('heatmapChart', { static: false }) heatmapChartRef!: ElementRef<HTMLDivElement>;
 
   private talentMapService = inject(TalentMapService);
+  private orgUnitService = inject(OrgUnitService);
   private cdr = inject(ChangeDetectorRef);
   private heatmapChart: echarts.ECharts | null = null;
   private resizeHandler = () => this.heatmapChart?.resize();
@@ -123,8 +126,12 @@ export class HeatmapTabComponent implements OnInit, AfterViewInit, OnDestroy {
     ]
   };
 
+  // 子公司→部門級聯篩選
+  selectedSubsidiaryId = signal<string>('');
+  subsidiaries = this.orgUnitService.subsidiaries;
+  filteredDepartments = computed(() => this.orgUnitService.filterDepartments(this.selectedSubsidiaryId()));
+
   // Options
-  readonly departmentOptions = this.talentMapService.departmentOptions;
   readonly competencyTypeOptions = this.talentMapService.competencyTypeOptions;
   readonly viewLevelOptions = this.talentMapService.viewLevelOptions;
 
@@ -153,6 +160,7 @@ export class HeatmapTabComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnInit(): void {
     window.addEventListener('resize', this.resizeHandler);
+    this.orgUnitService.loadOrgUnits().subscribe();
   }
 
   ngAfterViewInit(): void {

@@ -17,6 +17,7 @@
 - **WHEN** 一般租戶使用者嘗試存取 `/platform`
 - **THEN** 系統攔截並導向登入頁面或顯示無權限提示
 
+---
 ### Requirement: 租戶管理介面
 平台管理後台 SHALL 提供租戶管理介面，包含租戶列表、新增、編輯、暫停、退租等操作。
 
@@ -40,6 +41,7 @@
 - **WHEN** 平台管理員對 deleted 租戶點擊「恢復」
 - **THEN** 租戶狀態恢復為 active
 
+---
 ### Requirement: 方案管理介面
 平台管理後台 SHALL 提供訂閱方案管理介面。
 
@@ -51,6 +53,7 @@
 - **WHEN** 平台管理員新增或編輯方案
 - **THEN** 系統提供表單設定 name、max_users、max_subsidiaries、features
 
+---
 ### Requirement: 租戶自助管理入口
 系統 SHALL 提供租戶管理設定入口（路由 `/settings`），供租戶管理員（super_admin 或 subsidiary_admin）管理自己組織的設定。
 
@@ -62,6 +65,7 @@
 - **WHEN** 僅有 employee 角色的使用者存取 `/settings`
 - **THEN** 系統攔截並顯示無權限提示
 
+---
 ### Requirement: 組織架構管理介面
 租戶設定 SHALL 提供組織架構的視覺化編輯介面，與既有的組織管理模組（`features/organization/`）共用 Canvas/List 視圖模式，支援新增/編輯/刪除集團→子公司→部門的樹狀結構。
 
@@ -77,6 +81,7 @@
 - **WHEN** 管理員在子公司節點下點擊「新增部門」
 - **THEN** 系統顯示表單輸入名稱，提交後在 org_units 表新增記錄，樹狀圖即時更新
 
+---
 ### Requirement: 角色權限設定介面
 租戶設定 SHALL 提供角色管理介面，包含角色列表、角色 CRUD、權限矩陣設定。
 
@@ -92,6 +97,7 @@
 - **WHEN** 管理員新增角色
 - **THEN** 系統提供表單輸入角色名稱、選擇 scope_type、設定權限矩陣
 
+---
 ### Requirement: 使用者管理介面
 租戶設定 SHALL 提供使用者管理介面，包含使用者列表、新增、編輯、角色指派。使用者帳號 SHALL 與既有 employees 表的員工資料關聯。
 

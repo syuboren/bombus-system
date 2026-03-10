@@ -12,6 +12,7 @@ import { FormsModule } from '@angular/forms';
 import { QRCodeModule } from 'angularx-qrcode';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { MeetingService } from '../../services/meeting.service';
+import { OrgUnitService } from '../../../../core/services/org-unit.service';
 import {
   Meeting,
   MeetingAttendee,
@@ -55,13 +56,16 @@ interface CalendarDay {
 export class MeetingPageComponent implements OnInit {
   private meetingService = inject(MeetingService);
   private cdr = inject(ChangeDetectorRef);
+  private orgUnitService = inject(OrgUnitService);
 
   // 視圖模式
   viewMode = signal<ViewMode>('calendar');
 
   // 日曆層級切換
   calendarScope = signal<CalendarScope>('company');
-  departments = signal<string[]>([]);
+  selectedSubsidiaryId = signal<string>('');
+  subsidiaries = this.orgUnitService.subsidiaries;
+  filteredDepartments = computed(() => this.orgUnitService.filterDepartments(this.selectedSubsidiaryId()));
   selectedDepartment = signal<string>('');
   selectedEmployeeId = signal<string>(''); // 個人視角選擇的員工
   currentEmployeeId = signal<string>('1'); // TODO: 從登入狀態取得
@@ -206,16 +210,9 @@ export class MeetingPageComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.loadDepartments();
+    this.orgUnitService.loadOrgUnits().subscribe();
     this.loadData();
     this.generateCalendarDays();
-  }
-
-  private loadDepartments(): void {
-    this.meetingService.getDepartments().subscribe(depts => {
-      this.departments.set(depts);
-      this.cdr.detectChanges();
-    });
   }
 
   private loadData(): void {

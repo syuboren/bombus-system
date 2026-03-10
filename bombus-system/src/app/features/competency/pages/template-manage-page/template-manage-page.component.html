@@ -49,10 +49,20 @@
     <div class="toolbar">
       <div class="filter-bar">
         <div class="filter-item">
+          <label>子公司</label>
+          <select [ngModel]="selectedSubsidiaryId()" (ngModelChange)="onSubsidiaryChange($event)">
+            <option value="">所有子公司</option>
+            @for (sub of subsidiaries(); track sub.id) {
+              <option [value]="sub.id">{{ sub.name }}</option>
+            }
+          </select>
+        </div>
+        <div class="filter-item">
           <label>部門</label>
           <select [ngModel]="selectedDepartment()" (ngModelChange)="onDepartmentChange($event)">
-            @for (opt of departmentOptions; track opt.value) {
-              <option [value]="opt.value">{{ opt.label }}</option>
+            <option value="">全部部門</option>
+            @for (dept of filteredDepartments(); track dept.id) {
+              <option [value]="dept.name">{{ dept.name }}</option>
             }
           </select>
         </div>
@@ -174,20 +184,32 @@
         @if (editingTemplate()) {
           <div class="form-row">
             <div class="form-group">
-              <label>部門 <span class="required">*</span></label>
-              <select 
-                [ngModel]="editingTemplate()?.department"
-                (ngModelChange)="updateEditingField('department', $event)">
-                @for (opt of departmentOptions; track opt.value) {
-                  @if (opt.value) {
-                    <option [value]="opt.value">{{ opt.label }}</option>
-                  }
+              <label>子公司</label>
+              <select
+                [ngModel]="selectedSubsidiaryId()"
+                (ngModelChange)="onEditSubsidiaryChange($event)">
+                <option value="">所有子公司</option>
+                @for (sub of subsidiaries(); track sub.id) {
+                  <option [value]="sub.id">{{ sub.name }}</option>
                 }
               </select>
             </div>
             <div class="form-group">
+              <label>部門 <span class="required">*</span></label>
+              <select
+                [ngModel]="editingTemplate()?.department"
+                (ngModelChange)="updateEditingField('department', $event)">
+                <option value="">請選擇部門</option>
+                @for (dept of filteredDepartments(); track dept.id) {
+                  <option [value]="dept.name">{{ dept.name }}</option>
+                }
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
               <label>職位 <span class="required">*</span></label>
-              <select 
+              <select
                 [ngModel]="editingTemplate()?.position"
                 (ngModelChange)="updateEditingField('position', $event)">
                 @for (opt of positionOptions; track opt.value) {
@@ -278,21 +300,32 @@
           </h4>
           <div class="form-row">
             <div class="form-group">
-              <label>部門</label>
-              <select 
-                [ngModel]="copySource().department"
-                (ngModelChange)="updateCopySource('department', $event)">
-                <option value="">請選擇</option>
-                @for (opt of departmentOptions; track opt.value) {
-                  @if (opt.value) {
-                    <option [value]="opt.value">{{ opt.label }}</option>
-                  }
+              <label>子公司</label>
+              <select
+                [ngModel]="copySourceSubId()"
+                (ngModelChange)="onCopySourceSubChange($event)">
+                <option value="">所有子公司</option>
+                @for (sub of subsidiaries(); track sub.id) {
+                  <option [value]="sub.id">{{ sub.name }}</option>
                 }
               </select>
             </div>
             <div class="form-group">
+              <label>部門</label>
+              <select
+                [ngModel]="copySource().department"
+                (ngModelChange)="updateCopySource('department', $event)">
+                <option value="">請選擇</option>
+                @for (dept of copySourceDepts(); track dept.id) {
+                  <option [value]="dept.name">{{ dept.name }}</option>
+                }
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
               <label>職位</label>
-              <select 
+              <select
                 [ngModel]="copySource().position"
                 (ngModelChange)="updateCopySource('position', $event)">
                 <option value="">請選擇</option>
@@ -315,21 +348,32 @@
           </h4>
           <div class="form-row">
             <div class="form-group">
-              <label>部門</label>
-              <select 
-                [ngModel]="copyTarget().department"
-                (ngModelChange)="updateCopyTarget('department', $event)">
-                <option value="">請選擇</option>
-                @for (opt of departmentOptions; track opt.value) {
-                  @if (opt.value) {
-                    <option [value]="opt.value">{{ opt.label }}</option>
-                  }
+              <label>子公司</label>
+              <select
+                [ngModel]="copyTargetSubId()"
+                (ngModelChange)="onCopyTargetSubChange($event)">
+                <option value="">所有子公司</option>
+                @for (sub of subsidiaries(); track sub.id) {
+                  <option [value]="sub.id">{{ sub.name }}</option>
                 }
               </select>
             </div>
             <div class="form-group">
+              <label>部門</label>
+              <select
+                [ngModel]="copyTarget().department"
+                (ngModelChange)="updateCopyTarget('department', $event)">
+                <option value="">請選擇</option>
+                @for (dept of copyTargetDepts(); track dept.id) {
+                  <option [value]="dept.name">{{ dept.name }}</option>
+                }
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
               <label>職位</label>
-              <select 
+              <select
                 [ngModel]="copyTarget().position"
                 (ngModelChange)="updateCopyTarget('position', $event)">
                 <option value="">請選擇</option>

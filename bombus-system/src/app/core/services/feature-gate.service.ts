@@ -32,6 +32,7 @@ export class FeatureGateService {
   isModuleEnabled(prefix: string): boolean {
     const features = this.enabledFeatures();
     if (features.size === 0) return true;
+    if (features.has(prefix)) return true;
     for (const f of features) {
       if (f.startsWith(prefix + '.')) return true;
     }

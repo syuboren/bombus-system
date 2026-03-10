@@ -1,6 +1,7 @@
 schema: spec-driven
 locale: tw
 tdd: true
+audit: true
 
 context: |
   Domain: Bombus — HR SaaS 人力資源管理平台

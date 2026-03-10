@@ -23,6 +23,7 @@ export class CompetencyEditModalComponent {
     visible = input<boolean>(false);
     competency = input<CoreManagementCompetency | null>(null);
     category = input<'core' | 'management' | 'professional'>('core');
+    orgUnitId = input<string>('');
 
     // Outputs
     close = output<void>();
@@ -254,7 +255,8 @@ export class CompetencyEditModalComponent {
             code: data.code,
             name: data.name,
             definition: data.definition,
-            levels: cleanedLevels
+            levels: cleanedLevels,
+            org_unit_id: this.orgUnitId() || null
         };
 
         const request$ = this.isEditMode() && comp

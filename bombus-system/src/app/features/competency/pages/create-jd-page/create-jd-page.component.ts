@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { CompetencyService } from '../../services/competency.service';
+import { OrgUnitService } from '../../../../core/services/org-unit.service';
 import {
   CoreManagementCompetency,
   KSACompetencyItem,
@@ -51,6 +52,7 @@ interface CompetencySelection {
 })
 export class CreateJDPageComponent implements OnInit {
   private competencyService = inject(CompetencyService);
+  private orgUnitService = inject(OrgUnitService);
   router = inject(Router);
   private route = inject(ActivatedRoute);
 
@@ -83,6 +85,11 @@ export class CreateJDPageComponent implements OnInit {
   departments = signal<{ id: string; name: string; code: string; sort_order?: number }[]>([]);
   gradeLevels = signal<any[]>([]);
   positions = signal<any[]>([]);
+
+  // 子公司→部門級聯篩選
+  selectedSubsidiaryId = signal<string>('');
+  subsidiaries = this.orgUnitService.subsidiaries;
+  filteredDepartments = computed(() => this.orgUnitService.filterDepartments(this.selectedSubsidiaryId()));
 
   // 基本資訊
   basicInfo = signal({
@@ -189,6 +196,7 @@ export class CreateJDPageComponent implements OnInit {
       this.initEditMode(id);
     }
 
+    this.orgUnitService.loadOrgUnits().subscribe();
     this.loadCompetencies();
     this.loadDepartments();
     this.loadGradeLevels();
@@ -214,16 +222,17 @@ export class CreateJDPageComponent implements OnInit {
   }
 
   loadCompetencies(): void {
-    this.competencyService.getCoreCompetenciesWithLevels().subscribe(data => {
+    const orgUnitId = this.selectedSubsidiaryId();
+    this.competencyService.getCoreCompetenciesWithLevels(orgUnitId).subscribe(data => {
       this.coreCompetencies.set(data);
     });
-    this.competencyService.getManagementCompetenciesWithLevels().subscribe(data => {
+    this.competencyService.getManagementCompetenciesWithLevels(orgUnitId).subscribe(data => {
       this.managementCompetencies.set(data);
     });
-    this.competencyService.getProfessionalCompetenciesWithLevels().subscribe(data => {
+    this.competencyService.getProfessionalCompetenciesWithLevels(orgUnitId).subscribe(data => {
       this.professionalCompetencies.set(data);
     });
-    this.competencyService.getKSACompetencies().subscribe(data => {
+    this.competencyService.getKSACompetencies(undefined, orgUnitId).subscribe(data => {
       this.ksaCompetencies.set(data);
     });
   }
@@ -762,6 +771,8 @@ export class CreateJDPageComponent implements OnInit {
         updatedAt: new Date(),
         createdBy: 'Current User'
       };
+
+      jd.org_unit_id = this.selectedSubsidiaryId() || null;
 
       this.generatedJD.set(jd);
       this.isGenerating.set(false);

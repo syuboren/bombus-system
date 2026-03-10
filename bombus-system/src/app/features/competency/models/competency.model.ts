@@ -155,6 +155,7 @@ export interface CareerPathNew {
   toPosition: string;
   estimatedTime: string;
   steps: CareerStepNew[];
+  org_unit_id?: string | null;
 }
 
 // ---------------------------------------------------------------
@@ -183,6 +184,7 @@ export interface CoreManagementCompetency {
   type: 'core' | 'management';    // 核心職能 or 管理職能
   definition: string;             // 職能定義
   levels: CompetencyLevelIndicator[];  // L1-L6 等級指標
+  org_unit_id?: string | null;    // 所屬子公司（NULL = 共用）
   createdAt: Date;
   updatedAt: Date;
 }
@@ -198,6 +200,7 @@ export interface KSACompetencyItem {
   description: string;
   behaviorIndicators: string[];
   linkedCourses: string[];
+  org_unit_id?: string | null;    // 所屬子公司（NULL = 共用）
   createdAt: Date;
   updatedAt: Date;
 }
@@ -316,6 +319,7 @@ export interface JobDescription {
   version: string;
   status: 'draft' | 'pending_review' | 'rejected' | 'published' | 'archived';
   rejectedReason?: string;  // 退回原因
+  org_unit_id?: string | null;   // 所屬子公司（NULL = 共用）
   createdAt: Date;
   updatedAt: Date;
   createdBy: string;

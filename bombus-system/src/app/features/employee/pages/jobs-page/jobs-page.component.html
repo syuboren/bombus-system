@@ -39,16 +39,24 @@
           (input)="searchQuery.set($any($event.target).value)">
       </div>
       <div class="filter-divider"></div>
+      @if (subsidiaries().length > 0) {
+      <div class="filter-item">
+        <select class="filter-select" [value]="selectedSubsidiaryId()"
+          (change)="selectedSubsidiaryId.set($any($event.target).value)">
+          <option value="">全部子公司</option>
+          @for (sub of subsidiaries(); track sub.id) {
+          <option [value]="sub.id">{{ sub.name }}</option>
+          }
+        </select>
+      </div>
+      }
       <div class="filter-item">
         <select class="filter-select" [value]="departmentFilter()"
           (change)="departmentFilter.set($any($event.target).value)">
           <option value="">所有部門</option>
-          <option value="資訊部">資訊部</option>
-          <option value="人資部">人資部</option>
-          <option value="業務部">業務部</option>
-          <option value="產品部">產品部</option>
-          <option value="設計部">設計部</option>
-          <option value="行銷部">行銷部</option>
+          @for (dept of filteredDepartments(); track dept.id) {
+          <option [value]="dept.name">{{ dept.name }}</option>
+          }
         </select>
       </div>
       <div class="filter-item">
@@ -244,19 +252,26 @@
       <input type="text" class="form-input" placeholder="例如：資深前端工程師" [value]="newJob().title"
         (input)="updateJobField('title', $any($event.target).value)">
     </div>
+    @if (subsidiaries().length > 0) {
+    <div class="form-group">
+      <label class="form-label">所屬子公司</label>
+      <select class="form-select" [value]="modalSubsidiaryId()"
+        (change)="modalSubsidiaryId.set($any($event.target).value)">
+        <option value="">全部子公司</option>
+        @for (sub of subsidiaries(); track sub.id) {
+        <option [value]="sub.id">{{ sub.name }}</option>
+        }
+      </select>
+    </div>
+    }
     <div class="form-group">
       <label class="form-label">所屬部門 <span class="required">*</span></label>
       <select class="form-select" [value]="newJob().department"
         (change)="updateJobField('department', $any($event.target).value)">
         <option value="">請選擇部門</option>
-        <option value="財務部">財務部</option>
-        <option value="人資部">人資部</option>
-        <option value="專案部">專案部</option>
-        <option value="資訊部">資訊部</option>
-        <option value="業務部">業務部</option>
-        <option value="產品部">產品部</option>
-        <option value="設計部">設計部</option>
-        <option value="行銷部">行銷部</option>
+        @for (dept of modalFilteredDepartments(); track dept.id) {
+        <option [value]="dept.name">{{ dept.name }}</option>
+        }
       </select>
     </div>
     <div class="form-group">
@@ -982,17 +997,26 @@
       <input type="text" class="form-input" [value]="newJob().title"
         (input)="updateJobField('title', $any($event.target).value)" placeholder="例如：資深軟體工程師">
     </div>
+    @if (subsidiaries().length > 0) {
+    <div class="form-group">
+      <label class="form-label">所屬子公司</label>
+      <select class="form-select" [value]="modalSubsidiaryId()"
+        (change)="modalSubsidiaryId.set($any($event.target).value)">
+        <option value="">全部子公司</option>
+        @for (sub of subsidiaries(); track sub.id) {
+        <option [value]="sub.id">{{ sub.name }}</option>
+        }
+      </select>
+    </div>
+    }
     <div class="form-group">
       <label class="form-label">部門 <span class="required">*</span></label>
       <select class="form-select" [value]="newJob().department"
         (change)="updateJobField('department', $any($event.target).value)">
         <option value="">請選擇部門</option>
-        <option value="資訊部">資訊部</option>
-        <option value="人資部">人資部</option>
-        <option value="財務部">財務部</option>
-        <option value="業務部">業務部</option>
-        <option value="行銷部">行銷部</option>
-        <option value="專案部">專案部</option>
+        @for (dept of modalFilteredDepartments(); track dept.id) {
+        <option [value]="dept.name">{{ dept.name }}</option>
+        }
       </select>
     </div>
     <div class="form-group">

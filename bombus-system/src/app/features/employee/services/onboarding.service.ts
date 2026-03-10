@@ -6,6 +6,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { OrgUnit } from '../../../core/models/org-unit.model';
 import {
     Template,
     TemplateListItem,
@@ -408,6 +409,8 @@ export class OnboardingService {
     getManagers(): Observable<ManagerOption[]> {
         return this.http.get<ManagerOption[]>(`${this.hrOnboardingUrl}/managers`);
     }
+
+    // getOrgUnits 已移除，請使用 OrgUnitService.loadOrgUnits()
 }
 
 // ==================== HR Onboarding Interfaces ====================
@@ -419,6 +422,9 @@ export interface PendingCandidate {
     phone: string;
     avatar?: string;
     position: string;
+    original_department?: string;
+    original_grade?: number;
+    original_position_name?: string;
     status: string;
     stage: string;
     offer_response: string;
@@ -439,6 +445,7 @@ export interface ConvertCandidateRequest {
     probation_months?: number;
     contract_type?: string;
     work_location?: string;
+    org_unit_id?: string;
 }
 
 export interface ConvertCandidateResponse {
@@ -453,9 +460,21 @@ export interface ConvertCandidateResponse {
         hire_date: string;
         probation_end_date: string;
         onboarding_status: string;
+        org_unit_id?: string;
+        user_account?: {
+            user_id: string;
+            email: string;
+            must_change_password?: boolean;
+            default_role?: string | null;
+            already_existed?: boolean;
+            error?: string;
+        };
         onboarding_links: OnboardingLink[];
     };
 }
+
+/** @deprecated 請改用 core/models/org-unit.model.ts 的 OrgUnit */
+export type OrgUnitOption = OrgUnit;
 
 export interface OnboardingLink {
     template_id: string;

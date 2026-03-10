@@ -15,6 +15,7 @@ import { HeaderComponent } from '../../../../shared/components/header/header.com
 import { NotificationService } from '../../../../core/services/notification.service';
 import { EmployeeService } from '../../services/employee.service';
 import { OnboardingService } from '../../services/onboarding.service';
+import { OrgUnitService } from '../../../../core/services/org-unit.service';
 import {
   Employee,
   EmployeeDetail,
@@ -39,6 +40,7 @@ export class ProfilePageComponent implements OnInit, OnDestroy {
   private employeeService = inject(EmployeeService);
   private onboardingService = inject(OnboardingService);
   private notificationService = inject(NotificationService);
+  private orgUnitService = inject(OrgUnitService);
 
   private roiChart: echarts.ECharts | null = null;
   private resizeHandler = () => this.roiChart?.resize();
@@ -91,13 +93,13 @@ export class ProfilePageComponent implements OnInit, OnDestroy {
     return result;
   });
 
-  departments = computed(() => {
-    const depts = new Set(this.employees().map(e => e.department));
-    return Array.from(depts);
-  });
+  selectedSubsidiaryId = signal<string>('');
+  subsidiaries = this.orgUnitService.subsidiaries;
+  filteredDepartments = computed(() => this.orgUnitService.filterDepartments(this.selectedSubsidiaryId()));
 
   ngOnInit(): void {
     this.loadData();
+    this.orgUnitService.loadOrgUnits().subscribe();
     window.addEventListener('resize', this.resizeHandler);
   }
 

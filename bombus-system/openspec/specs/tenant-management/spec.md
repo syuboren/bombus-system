@@ -17,6 +17,7 @@
 - **WHEN** 平台管理員提交的 slug 與既有租戶重複
 - **THEN** 系統回傳 409 Conflict 錯誤，不建立任何資料
 
+---
 ### Requirement: 平台管理員可查詢租戶列表
 系統 SHALL 提供 API 端點查詢所有租戶，支援分頁與狀態篩選。
 
@@ -28,6 +29,7 @@
 - **WHEN** 平台管理員帶入 page=2&limit=10
 - **THEN** 系統回傳第 2 頁的 10 筆租戶資料，並附帶 total 筆數
 
+---
 ### Requirement: 平台管理員可暫停租戶
 系統 SHALL 允許平台管理員將租戶狀態設為 suspended。暫停後的租戶 SHALL 無法登入，但資料 SHALL 保留。
 
@@ -39,6 +41,7 @@
 - **WHEN** 平台管理員將 suspended 租戶設為 active
 - **THEN** 租戶狀態更新為 active，使用者可正常登入
 
+---
 ### Requirement: 平台管理員可退租並清除資料
 系統 SHALL 提供退租流程。退租 SHALL 將租戶狀態設為 deleted，並在確認後刪除租戶資料庫檔案。
 
@@ -58,6 +61,7 @@
 - **WHEN** 平台管理員嘗試永久刪除 active 或 suspended 的租戶
 - **THEN** 系統回傳 400 錯誤，要求先將租戶設為 deleted
 
+---
 ### Requirement: 租戶建立時自動建立管理員帳號
 系統 SHALL 在建立租戶時同時建立一個初始管理員帳號（super_admin 角色）。
 
@@ -65,6 +69,7 @@
 - **WHEN** 新租戶建立成功
 - **THEN** 系統在租戶資料庫中建立一個 super_admin 使用者，密碼 SHALL 使用 bcryptjs 雜湊儲存
 
+---
 ### Requirement: 訂閱方案管理
 系統 SHALL 允許平台管理員管理訂閱方案（CRUD），包含 max_users、max_subsidiaries 等限制。
 
@@ -76,6 +81,7 @@
 - **WHEN** 平台管理員將方案指派給租戶
 - **THEN** 租戶的 plan_id 更新為指定方案
 
+---
 ### Requirement: Demo 租戶資料遷移
 系統初始化時 SHALL 自動建立一個 demo 租戶，並將現有 onboarding.db 的完整測試資料正確遷移至 demo 租戶的資料庫。遷移 SHALL 涵蓋所有 55+ 張業務表的資料，不可遺漏。
 

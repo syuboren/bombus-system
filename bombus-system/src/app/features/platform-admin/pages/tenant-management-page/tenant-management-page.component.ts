@@ -349,6 +349,11 @@ export class TenantManagementPageComponent implements OnInit {
     return plan?.name || '未知方案';
   }
 
+  isPlanInactive(planId: string): boolean {
+    const plan = this.plans().find(p => p.id === planId);
+    return !!plan && !plan.is_active;
+  }
+
   totalPages(): number {
     return Math.ceil(this.totalCount() / this.pageSize);
   }

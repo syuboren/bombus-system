@@ -16,6 +16,8 @@ Create a complete OpenSpec change proposal — from requirement to validated art
 
 If no argument is provided, the workflow will extract requirements from conversation context or ask.
 
+**Prerequisites**: This skill requires the `spectra` CLI. If any `spectra` command fails with "command not found" or similar, report the error and STOP.
+
 **Steps**
 
 1. **Determine the requirement source**
@@ -224,18 +226,20 @@ If no argument is provided, the workflow will extract requirements from conversa
 
    If validation fails, fix errors and re-validate.
 
-10. **Show final status and ask about implementation**
+10. **Show final status and end workflow**
 
     Show summary:
     - Change name and location
     - List of artifacts created
     - Validation result
 
-    **You MUST stop here and ask the user.** Do NOT automatically proceed to implementation. Use **AskUserQuestion tool** to ask whether to start implementation:
-    - **Start implementation** → invoke `/spectra:apply <change-name>`
-    - **Defer** → end workflow, inform user they can run `/spectra:apply <change-name>` later
+    Use **AskUserQuestion tool** to ask what to do next. This ensures the workflow stops even when auto-accept is enabled. Provide exactly these options:
+    - **First option (will be auto-selected)**: "Park" — Execute `spectra park "<name>"` to stash the change, then inform the user they can run `/spectra:apply <change-name>` when ready (which will auto-unpark).
+    - **Second option**: "Apply" — Invoke `/spectra:apply <change-name>` to start implementation.
 
-    Only invoke `/spectra:apply` if the user explicitly chooses "Start implementation".
+    If **AskUserQuestion tool** is not available, execute `spectra park "<name>"` and inform the user to run `/spectra:apply <change-name>` when ready. Then STOP — do not continue.
+
+    **After the user responds**, if they chose "Park", execute `spectra park "<name>"` and the workflow is OVER. If they chose "Apply", invoke `/spectra:apply <change-name>` to begin implementation.
 
 **Artifact Creation Guidelines**
 
@@ -257,6 +261,6 @@ If no argument is provided, the workflow will extract requirements from conversa
 - **NEVER** write application code or implement features during this workflow
 - **NEVER** skip the artifact workflow to write code directly
 - **NEVER** reinterpret requirements by ignoring the proposal file
-- **NEVER** automatically start `/spectra:apply` — always ask the user first in Step 10 and wait for their explicit choice
+- **NEVER** invoke `/spectra:apply` — this workflow ends after artifact creation. The user decides when to start implementation
 - If **AskUserQuestion tool** is not available, ask the same questions as plain text and wait for the user's response
 <!-- SPECTRA:END -->

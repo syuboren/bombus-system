@@ -387,7 +387,7 @@ router.get('/departments', (req, res) => {
       `SELECT ou.id, ou.name, ou.parent_id as companyId, ou.level, ou.created_at,
               d.manager_id, d.head_count
        FROM org_units ou
-       LEFT JOIN departments d ON d.name = ou.name
+       LEFT JOIN departments d ON TRIM(d.name) = TRIM(ou.name) COLLATE NOCASE
        ${whereClause}
        ORDER BY ou.name ASC`,
       params
@@ -437,7 +437,7 @@ router.get('/departments/:id', (req, res) => {
     const dept = req.tenantDB.queryOne(
       `SELECT ou.*, d.manager_id, d.head_count
        FROM org_units ou
-       LEFT JOIN departments d ON d.name = ou.name
+       LEFT JOIN departments d ON TRIM(d.name) = TRIM(ou.name) COLLATE NOCASE
        WHERE ou.id = ? AND ou.type = 'department'`,
       [req.params.id]
     );
@@ -680,6 +680,20 @@ router.get('/stats', (req, res) => {
 //  統一組織樹
 // ══════════════════════════════════════════════════════════
 
+// ─── 組織單位列表（扁平，供前端子公司→部門級聯篩選） ───
+
+router.get('/org-units', (req, res) => {
+  try {
+    const orgUnits = req.tenantDB.prepare(
+      'SELECT id, name, type, parent_id, level FROM org_units ORDER BY level ASC, name ASC'
+    ).all();
+    res.json(orgUnits);
+  } catch (error) {
+    console.error('Error fetching org units:', error);
+    res.status(500).json({ error: 'Failed to fetch org units' });
+  }
+});
+
 // ─── 統一組織樹 ───
 
 router.get('/tree', (req, res) => {
@@ -690,7 +704,7 @@ router.get('/tree', (req, res) => {
              ou.tax_id, ou.status, ou.established_date,
              d.manager_id, d.head_count, d.responsibilities, d.kpi_items, d.competency_focus
       FROM org_units ou
-      LEFT JOIN departments d ON d.name = ou.name AND ou.type = 'department'
+      LEFT JOIN departments d ON TRIM(d.name) = TRIM(ou.name) COLLATE NOCASE AND ou.type = 'department'
       ORDER BY ou.level ASC, ou.name ASC
     `);
 
