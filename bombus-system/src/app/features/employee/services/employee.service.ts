@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import {
@@ -114,8 +114,10 @@ export class EmployeeService {
 
   // ===== API Methods =====
 
-  getEmployeeStats(): Observable<EmployeeStats> {
-    return this.http.get<any>(`${this.apiUrl}/stats`).pipe(
+  getEmployeeStats(orgUnitId?: string): Observable<EmployeeStats> {
+    let params = new HttpParams();
+    if (orgUnitId) params = params.set('org_unit_id', orgUnitId);
+    return this.http.get<any>(`${this.apiUrl}/stats`, { params }).pipe(
       map(data => ({
         totalEmployees: data.totalEmployees,
         activeCount: data.activeCount,
@@ -139,8 +141,10 @@ export class EmployeeService {
 
   // getDepartments 已移除，請使用 OrgUnitService.allDepartments
 
-  getEmployees(): Observable<Employee[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/list`).pipe(
+  getEmployees(orgUnitId?: string): Observable<Employee[]> {
+    let params = new HttpParams();
+    if (orgUnitId) params = params.set('org_unit_id', orgUnitId);
+    return this.http.get<any[]>(`${this.apiUrl}/list`, { params }).pipe(
       map(data => data.map(e => this.transformEmployee(e))),
       catchError(this.handleError)
     );

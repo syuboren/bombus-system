@@ -45,7 +45,7 @@ router.get('/', (req, res) => {
     const salaryParams = [];
 
     if (orgUnitId) {
-      salaryQuery += ` WHERE (org_unit_id IS NULL OR org_unit_id = ?)`;
+      salaryQuery += ` WHERE org_unit_id = ?`;
       salaryParams.push(orgUnitId);
     }
 
@@ -100,7 +100,7 @@ router.get('/promotion/criteria', (req, res) => {
     const params = [];
 
     if (org_unit_id) {
-      query += ` AND (org_unit_id IS NULL OR org_unit_id = ?)`;
+      query += ` AND org_unit_id = ?`;
       params.push(org_unit_id);
     }
     if (fromGrade) {
@@ -156,7 +156,7 @@ router.get('/career/paths', (req, res) => {
     const params = [];
 
     if (org_unit_id) {
-      query += ` AND (org_unit_id IS NULL OR org_unit_id = ?)`;
+      query += ` AND org_unit_id = ?`;
       params.push(org_unit_id);
     }
     if (type) {
@@ -346,7 +346,7 @@ router.get('/positions/list', (req, res) => {
     const params = [];
 
     if (org_unit_id) {
-      query += ` AND (dp.org_unit_id IS NULL OR dp.org_unit_id = ?)`;
+      query += ` AND dp.org_unit_id = ?`;
       params.push(org_unit_id);
     }
     if (department) {
@@ -1074,7 +1074,7 @@ router.get('/changes/history', (req, res) => {
 function applyCreate(req, entityType, data) {
   switch (entityType) {
     case 'track':
-      req.tenantDB.prepare(`INSERT INTO grade_tracks (id, code, name, icon, color, max_grade, sort_order, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(data.id, data.code, data.name, data.icon, data.color, data.maxGrade, data.sortOrder, data.isActive ? 1 : 0);
+      req.tenantDB.prepare(`INSERT INTO grade_tracks (id, code, name, icon, color, max_grade, sort_order, is_active, org_unit_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(data.id, data.code, data.name, data.icon, data.color, data.maxGrade, data.sortOrder, data.isActive ? 1 : 0, data.org_unit_id || null);
       break;
     case 'grade':
       req.tenantDB.prepare(`INSERT INTO grade_levels (id, grade, code_range, title_management, title_professional, education_requirement, responsibility_description) VALUES (?, ?, ?, ?, ?, ?, ?)`).run(data.id, data.grade, data.codeRange, data.titleManagement, data.titleProfessional, data.educationRequirement, data.responsibilityDescription);
@@ -1100,7 +1100,7 @@ function applyCreate(req, entityType, data) {
 function applyUpdate(req, entityType, entityId, data) {
   switch (entityType) {
     case 'track':
-      req.tenantDB.prepare(`UPDATE grade_tracks SET code = ?, name = ?, icon = ?, color = ?, max_grade = ?, sort_order = ?, is_active = ? WHERE id = ?`).run(data.code, data.name, data.icon, data.color, data.maxGrade, data.sortOrder, data.isActive ? 1 : 0, entityId);
+      req.tenantDB.prepare(`UPDATE grade_tracks SET code = ?, name = ?, icon = ?, color = ?, max_grade = ?, sort_order = ?, is_active = ?, org_unit_id = ? WHERE id = ?`).run(data.code, data.name, data.icon, data.color, data.maxGrade, data.sortOrder, data.isActive ? 1 : 0, data.org_unit_id || null, entityId);
       break;
     case 'grade':
       req.tenantDB.prepare(`UPDATE grade_levels SET code_range = ?, title_management = ?, title_professional = ?, education_requirement = ?, responsibility_description = ? WHERE id = ?`).run(data.codeRange, data.titleManagement, data.titleProfessional, data.educationRequirement, data.responsibilityDescription, entityId);

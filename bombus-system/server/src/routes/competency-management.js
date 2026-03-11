@@ -82,7 +82,7 @@ router.get('/:category', (req, res) => {
         const params = [category];
 
         if (org_unit_id) {
-            sql += ` AND (org_unit_id IS NULL OR org_unit_id = ?)`;
+            sql += ` AND org_unit_id = ?`;
             params.push(org_unit_id);
         }
 

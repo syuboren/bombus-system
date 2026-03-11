@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of, delay, map, catchError, forkJoin } from 'rxjs';
 import {
   Candidate,
@@ -183,8 +183,11 @@ export class InterviewService {
   /**
    * Get all candidates (API only)
    */
-  getCandidates(): Observable<Candidate[]> {
-    return this.http.get<any[]>('/api/recruitment/candidates').pipe(
+  getCandidates(orgUnitId?: string): Observable<Candidate[]> {
+    let params = new HttpParams();
+    if (orgUnitId) params = params.set('org_unit_id', orgUnitId);
+
+    return this.http.get<any[]>('/api/recruitment/candidates', { params }).pipe(
       map(apiCandidates => {
         // Map API format to frontend model
         return apiCandidates.map(c => {
@@ -243,8 +246,8 @@ export class InterviewService {
    * Filter: stage is 'Interview'/'Invited' or scoring_status is 'Scored'
    * Exclude: interview_declined (面試婉拒不應出現在面試列表)
    */
-  getScheduledCandidates(): Observable<Candidate[]> {
-    return this.getCandidates().pipe(
+  getScheduledCandidates(orgUnitId?: string): Observable<Candidate[]> {
+    return this.getCandidates(orgUnitId).pipe(
       map(candidates => candidates.filter(c => {
         // 排除「面試婉拒」的候選人 - 他們不應該出現在面試列表
         if (c.status === 'interview_declined') {

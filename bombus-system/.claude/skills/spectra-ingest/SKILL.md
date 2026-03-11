@@ -70,10 +70,16 @@ Update an existing OpenSpec change — from a Claude Code plan file or conversat
    spectra list --json
    ```
 
-   Parse the JSON output to get the list of active changes.
-   - If one active change exists → use the **AskUserQuestion tool** to confirm updating it
-   - If multiple active changes exist → use the **AskUserQuestion tool** to let user pick which one to update
-   - If no active changes → tell the user: "No active change found. Use `/spectra:propose` first to create one." and **stop**
+   Also check for parked changes:
+
+   ```bash
+   spectra list --parked --json
+   ```
+
+   Parse both JSON outputs to get the full list of changes (active + parked). Parked changes should be annotated with "(parked)" in any selection list.
+   - If one change exists (active or parked) → use the **AskUserQuestion tool** to confirm updating it
+   - If multiple changes exist → use the **AskUserQuestion tool** to let user pick which one to update
+   - If no changes at all (neither active nor parked) → tell the user: "No active change found. Use `/spectra:propose` first to create one." and **stop**
 
 4. **Select the change**
 
@@ -84,10 +90,14 @@ Update an existing OpenSpec change — from a Claude Code plan file or conversat
    ```
 
    If the selected change appears in the `parked` array:
-   - Inform the user that this change is currently shelved (暫存)
-   - Use **AskUserQuestion tool** to ask: continue (un-shelve) or cancel
+   - Inform the user that this change is currently parked（暫存）
+   - Use **AskUserQuestion tool** to ask: continue (unpark) or cancel
    - If continue: run `spectra unpark "<name>"` then proceed
    - If cancel: stop the workflow
+
+   If there is no AskUserQuestion tool available (non-Claude-Code environment):
+   Inform the user that this change is currently parked（暫存）and ask via plain text whether to unpark and continue, or cancel.
+   Wait for the user's response. If the user confirms, run `spectra unpark "<name>"` then proceed.
 
    Read existing artifacts for context before updating.
 

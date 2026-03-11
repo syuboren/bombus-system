@@ -1,4 +1,6 @@
-import { Component, ChangeDetectionStrategy, inject, signal, OnInit, computed, ChangeDetectorRef } from '@angular/core';
+import { Component, ChangeDetectionStrategy, DestroyRef, inject, signal, OnInit, computed, ChangeDetectorRef } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { switchMap, forkJoin } from 'rxjs';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
@@ -113,6 +115,7 @@ export class JobsPageComponent implements OnInit {
   private notificationService = inject(NotificationService);
   private cdr = inject(ChangeDetectorRef);
   private orgUnitService = inject(OrgUnitService);
+  private destroyRef = inject(DestroyRef);
 
   // Signals
   jobs = signal<Job[]>([]);
@@ -223,6 +226,35 @@ export class JobsPageComponent implements OnInit {
   modalSubsidiaryId = signal<string>('');
   modalFilteredDepartments = computed(() => this.orgUnitService.filterDepartments(this.modalSubsidiaryId()));
 
+  constructor() {
+    // 監聽子公司切換，自動重新載入職缺資料（含 104 職缺）
+    toObservable(this.selectedSubsidiaryId).pipe(
+      switchMap(orgUnitId => {
+        this.loading.set(true);
+        const id = orgUnitId || undefined;
+        return forkJoin({
+          stats: this.jobService.getJobStats(id),
+          jobs: this.jobService.getJobs(id),
+          jobs104: this.jobService.getSynced104Jobs(id)
+        });
+      }),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe({
+      next: ({ stats, jobs, jobs104 }) => {
+        this.stats.set(stats);
+        this.jobs.set(jobs);
+        this.jobs104.set(jobs104);
+        this.loading.set(false);
+        this.cdr?.markForCheck();
+      },
+      error: () => {
+        this.notificationService.error('載入職缺列表失敗');
+        this.loading.set(false);
+        this.cdr?.markForCheck();
+      }
+    });
+  }
+
   // Filter signals
   searchQuery = signal<string>('');
   departmentFilter = signal<string>('');
@@ -309,38 +341,20 @@ export class JobsPageComponent implements OnInit {
 
 
   ngOnInit(): void {
-    this.loadData();
+    // 職缺資料由 constructor 的 reactive subscription 自動載入（監聽 selectedSubsidiaryId）
     this.loadJobDescriptions();
     this.load104Jobs();
     this.orgUnitService.loadOrgUnits().subscribe();
   }
 
   loadData(): void {
-    this.loading.set(true);
-
-    this.jobService.getJobStats().subscribe({
-      next: (stats) => {
-        this.stats.set(stats);
-        this.cdr?.markForCheck();
-      }
-    });
-
-    this.jobService.getJobs().subscribe({
-      next: (jobs) => {
-        this.jobs.set(jobs);
-        this.loading.set(false);
-        this.cdr?.markForCheck();
-      },
-      error: () => {
-        this.notificationService.error('載入職缺列表失敗');
-        this.loading.set(false);
-        this.cdr?.markForCheck();
-      }
-    });
+    // 透過 re-emit selectedSubsidiaryId 觸發 constructor 的 reactive subscription
+    this.selectedSubsidiaryId.set(this.selectedSubsidiaryId());
   }
 
-  loadJobDescriptions(): void {
-    this.competencyService.getJobDescriptions().subscribe({
+  loadJobDescriptions(orgUnitId?: string): void {
+    const params = orgUnitId ? { orgUnitId } : undefined;
+    this.competencyService.getJobDescriptions(params).subscribe({
       next: (jds) => {
         this.jobDescriptions.set(jds);
         this.cdr?.markForCheck();
@@ -353,7 +367,8 @@ export class JobsPageComponent implements OnInit {
    */
   load104Jobs(): void {
     this.loading104.set(true);
-    this.jobService.getSynced104Jobs().subscribe({  // 改用資料庫資料
+    const orgUnitId = this.selectedSubsidiaryId() || undefined;
+    this.jobService.getSynced104Jobs(orgUnitId).subscribe({
       next: (jobs) => {
         this.jobs104.set(jobs);
         this.loading104.set(false);
@@ -395,7 +410,21 @@ export class JobsPageComponent implements OnInit {
 
   openModal(): void {
     this.modalSubsidiaryId.set(this.selectedSubsidiaryId());
+    this.loadJobDescriptions(this.selectedSubsidiaryId() || undefined);
     this.showModal.set(true);
+  }
+
+  onModalSubsidiaryChange(value: string): void {
+    this.modalSubsidiaryId.set(value);
+    this.loadJobDescriptions(value || undefined);
+    // 清空已選 JD（因為 JD 列表已變更）
+    this.newJob.update(current => ({
+      ...current,
+      jdId: '',
+      title: '',
+      department: '',
+      description: ''
+    }));
   }
 
   closeModal(): void {
@@ -443,7 +472,8 @@ export class JobsPageComponent implements OnInit {
       department: formData.department,
       description: formData.description,
       recruiter: formData.recruiter,
-      job104Data: job104Data  // 只傳 job104Data，不傳 syncTo104
+      job104Data: job104Data,  // 只傳 job104Data，不傳 syncTo104
+      org_unit_id: this.selectedSubsidiaryId() || this.modalSubsidiaryId() || undefined
     }).subscribe({
       next: () => {
         if (formData.syncTo104) {
@@ -921,7 +951,8 @@ export class JobsPageComponent implements OnInit {
       title: formData.title,
       department: formData.department,
       description: formData.description,
-      recruiter: formData.recruiter
+      recruiter: formData.recruiter,
+      org_unit_id: this.selectedSubsidiaryId() || this.modalSubsidiaryId() || undefined
     };
 
     // 如果是 104 職缺，需要同時更新 job104Data

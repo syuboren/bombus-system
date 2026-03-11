@@ -1056,7 +1056,7 @@ router.get('/competencies', (req, res) => {
       params.push(category);
     }
     if (org_unit_id) {
-      conditions.push('(org_unit_id IS NULL OR org_unit_id = ?)');
+      conditions.push('org_unit_id = ?');
       params.push(org_unit_id);
     }
     

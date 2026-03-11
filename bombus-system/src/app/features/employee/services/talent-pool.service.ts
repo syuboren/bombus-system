@@ -113,8 +113,11 @@ export class TalentPoolService {
   // 統計資料
   // =====================================================
 
-  getTalentPoolStats(): Observable<TalentPoolStats> {
-    return this.http.get<ApiResponse<TalentPoolStats>>(`${this.baseUrl}/stats`).pipe(
+  getTalentPoolStats(orgUnitId?: string): Observable<TalentPoolStats> {
+    let params = new HttpParams();
+    if (orgUnitId) params = params.set('org_unit_id', orgUnitId);
+
+    return this.http.get<ApiResponse<TalentPoolStats>>(`${this.baseUrl}/stats`, { params }).pipe(
       map(response => response.data),
       catchError(error => {
         console.error('Error fetching talent pool stats:', error);
@@ -148,13 +151,14 @@ export class TalentPoolService {
     tags?: string[];
     minScore?: number;
     maxScore?: number;
+    orgUnitId?: string;
     page?: number;
     limit?: number;
     sortBy?: string;
     sortOrder?: 'ASC' | 'DESC';
   }): Observable<{ talents: TalentCandidate[]; pagination: { page: number; limit: number; total: number; totalPages: number } }> {
     let params = new HttpParams();
-    
+
     if (filters) {
       if (filters.status) params = params.set('status', filters.status);
       if (filters.source) params = params.set('source', filters.source);
@@ -163,6 +167,7 @@ export class TalentPoolService {
       if (filters.tags?.length) params = params.set('tags', filters.tags.join(','));
       if (filters.minScore) params = params.set('minScore', filters.minScore.toString());
       if (filters.maxScore) params = params.set('maxScore', filters.maxScore.toString());
+      if (filters.orgUnitId) params = params.set('org_unit_id', filters.orgUnitId);
       if (filters.page) params = params.set('page', filters.page.toString());
       if (filters.limit) params = params.set('limit', filters.limit.toString());
       if (filters.sortBy) params = params.set('sortBy', filters.sortBy);
@@ -489,6 +494,7 @@ export class TalentPoolService {
     if (candidate.contactPriority !== undefined) result['contactPriority'] = candidate.contactPriority;
     if (candidate.notes !== undefined) result['notes'] = candidate.notes;
     if (candidate.resumeUrl !== undefined) result['resumeUrl'] = candidate.resumeUrl;
+    if (candidate.org_unit_id !== undefined) result['org_unit_id'] = candidate.org_unit_id;
     if (candidate.tags !== undefined) result['tags'] = candidate.tags.map(t => t.id);
     if (candidate.nextContactDate !== undefined) {
       result['nextContactDate'] = candidate.nextContactDate?.toISOString();

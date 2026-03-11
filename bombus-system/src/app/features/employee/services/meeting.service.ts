@@ -80,13 +80,14 @@ export class MeetingService {
   }
 
   // 取得所有會議
-  getMeetings(filters?: { 
+  getMeetings(filters?: {
     start?: Date;
     end?: Date;
     type?: string;
     scope?: 'company' | 'department' | 'personal';
     employeeId?: string;
     department?: string;
+    orgUnitId?: string;
   }): Observable<Meeting[]> {
     let params = new HttpParams();
     if (filters?.start) params = params.set('start', filters.start.toISOString());
@@ -95,6 +96,7 @@ export class MeetingService {
     if (filters?.scope) params = params.set('scope', filters.scope);
     if (filters?.employeeId) params = params.set('employeeId', filters.employeeId);
     if (filters?.department) params = params.set('department', filters.department);
+    if (filters?.orgUnitId) params = params.set('org_unit_id', filters.orgUnitId);
 
     return this.http.get<any[]>(this.apiUrl, { params }).pipe(
       map(list => list.map(item => this.mapToMeeting(item)))
@@ -236,8 +238,11 @@ export class MeetingService {
   }
 
   // 取得會議統計
-  getMeetingStats(): Observable<MeetingStats> {
-    return this.http.get<any>(`${this.apiUrl}/dashboard/stats`).pipe(
+  getMeetingStats(orgUnitId?: string): Observable<MeetingStats> {
+    let params = new HttpParams();
+    if (orgUnitId) params = params.set('org_unit_id', orgUnitId);
+
+    return this.http.get<any>(`${this.apiUrl}/dashboard/stats`, { params }).pipe(
       map(stats => ({
         ...stats,
         executionRate: stats.executionRate || 0

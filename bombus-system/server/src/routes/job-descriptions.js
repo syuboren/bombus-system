@@ -53,7 +53,7 @@ router.get('/', (req, res) => {
       params.push(department);
     }
     if (org_unit_id) {
-      sql += ' AND (org_unit_id IS NULL OR org_unit_id = ?)';
+      sql += ' AND org_unit_id = ?';
       params.push(org_unit_id);
     }
     sql += ' ORDER BY created_at DESC';

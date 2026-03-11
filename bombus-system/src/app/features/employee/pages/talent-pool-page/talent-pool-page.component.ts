@@ -1,15 +1,21 @@
 import {
   Component,
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   inject,
   signal,
   computed,
-  OnInit
+  OnInit,
+  DestroyRef
 } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { switchMap, forkJoin } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { NotificationService } from '../../../../core/services/notification.service';
+import { OrgUnitService } from '../../../../core/services/org-unit.service';
 import { TalentPoolService } from '../../services/talent-pool.service';
 import {
   TalentCandidate,
@@ -32,6 +38,13 @@ import {
 export class TalentPoolPageComponent implements OnInit {
   private talentPoolService = inject(TalentPoolService);
   private notificationService = inject(NotificationService);
+  private orgUnitService = inject(OrgUnitService);
+  private cdr = inject(ChangeDetectorRef);
+  private destroyRef = inject(DestroyRef);
+
+  // 子公司篩選
+  selectedSubsidiaryId = signal<string>('');
+  subsidiaries = this.orgUnitService.subsidiaries;
 
   // State
   stats = signal<TalentPoolStats | null>(null);
@@ -168,18 +181,52 @@ export class TalentPoolPageComponent implements OnInit {
   // 已選標籤數量
   selectedTagCount = computed(() => this.selectedTags().length);
 
+  constructor() {
+    // 子公司切換時重新載入
+    toObservable(this.selectedSubsidiaryId).pipe(
+      switchMap(orgUnitId => {
+        this.loading.set(true);
+        const id = orgUnitId || undefined;
+        return forkJoin({
+          stats: this.talentPoolService.getTalentPoolStats(id),
+          candidates: this.talentPoolService.getCandidates({ orgUnitId: id })
+        });
+      }),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe({
+      next: ({ stats, candidates }) => {
+        this.stats.set(stats);
+        this.candidates.set(candidates.talents);
+        this.loading.set(false);
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.notificationService.error('載入人才庫失敗');
+        this.loading.set(false);
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
   ngOnInit(): void {
-    this.loadData();
+    // 人才和統計由 constructor reactive subscription 載入
+    this.talentPoolService.getReminders().subscribe(reminders => {
+      this.reminders.set(reminders);
+    });
+    this.talentPoolService.getTags().subscribe(tags => {
+      this.tags.set(tags);
+    });
   }
 
   loadData(): void {
     this.loading.set(true);
+    const orgUnitId = this.selectedSubsidiaryId() || undefined;
 
-    this.talentPoolService.getTalentPoolStats().subscribe(stats => {
+    this.talentPoolService.getTalentPoolStats(orgUnitId).subscribe(stats => {
       this.stats.set(stats);
     });
 
-    this.talentPoolService.getCandidates().subscribe(result => {
+    this.talentPoolService.getCandidates({ orgUnitId }).subscribe(result => {
       this.candidates.set(result.talents);
       this.loading.set(false);
     });

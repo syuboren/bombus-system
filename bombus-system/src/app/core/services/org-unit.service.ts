@@ -50,6 +50,17 @@ export class OrgUnitService {
     );
   }
 
+  /** 清除快取，下次 loadOrgUnits() 會重新呼叫 API */
+  invalidateCache(): void {
+    this.loaded.set(false);
+  }
+
+  /** 強制重新載入（清除快取 + 立即呼叫 API） */
+  reloadOrgUnits(): Observable<OrgUnit[]> {
+    this.invalidateCache();
+    return this.loadOrgUnits();
+  }
+
   /** 依子公司 ID 篩選部門（空字串表示全部） */
   filterDepartments(subsidiaryId: string): OrgUnit[] {
     const depts = this.allDepartments();

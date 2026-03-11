@@ -6,7 +6,7 @@
     @if (stats(); as s) {
     <div class="stats-grid">
       <app-stat-card icon="ri-briefcase-line" label="進行中職缺" [value]="s.activeJobs" moduleType="l1" />
-      <app-stat-card icon="ri-user-search-line" label="本週新進履歷" [value]="s.newResumes" moduleType="l1" />
+      <app-stat-card icon="ri-user-search-line" label="新進履歷" [value]="s.newResumes" moduleType="l1" />
       <app-stat-card icon="ri-file-list-3-line" label="待審核履歷" [value]="s.pendingReview" moduleType="l1" />
       <app-stat-card icon="ri-calendar-check-line" label="已安排面試" [value]="s.scheduledInterviews" moduleType="l1" />
     </div>
@@ -116,10 +116,10 @@
             <td>
               @if (job.status === 'published') {
               <div class="candidate-count">
+                <span class="count-total">{{ job.totalCandidates }} 人</span>
                 @if (job.newCandidates > 0) {
                 <span class="count-badge count-badge--new">New {{ job.newCandidates }}</span>
                 }
-                <span class="count-total">/ {{ job.totalCandidates }} 人</span>
               </div>
               } @else {
               <span class="text-muted">-</span>
@@ -218,7 +218,20 @@
     </button>
   </div>
   <div class="modal__body">
-    <!-- 選擇職務說明書 (JD) -->
+    <!-- 所屬子公司（先選子公司，再選 JD） -->
+    @if (subsidiaries().length > 0) {
+    <div class="form-group">
+      <label class="form-label">所屬子公司</label>
+      <select class="form-select" [value]="modalSubsidiaryId()"
+        (change)="onModalSubsidiaryChange($any($event.target).value)">
+        <option value="">全部子公司</option>
+        @for (sub of subsidiaries(); track sub.id) {
+        <option [value]="sub.id">{{ sub.name }}</option>
+        }
+      </select>
+    </div>
+    }
+    <!-- 選擇職務說明書 (JD) — 依子公司篩選 -->
     <div class="form-group">
       <label class="form-label">
         <i class="ri-file-text-line"></i>
@@ -252,18 +265,6 @@
       <input type="text" class="form-input" placeholder="例如：資深前端工程師" [value]="newJob().title"
         (input)="updateJobField('title', $any($event.target).value)">
     </div>
-    @if (subsidiaries().length > 0) {
-    <div class="form-group">
-      <label class="form-label">所屬子公司</label>
-      <select class="form-select" [value]="modalSubsidiaryId()"
-        (change)="modalSubsidiaryId.set($any($event.target).value)">
-        <option value="">全部子公司</option>
-        @for (sub of subsidiaries(); track sub.id) {
-        <option [value]="sub.id">{{ sub.name }}</option>
-        }
-      </select>
-    </div>
-    }
     <div class="form-group">
       <label class="form-label">所屬部門 <span class="required">*</span></label>
       <select class="form-select" [value]="newJob().department"
@@ -1001,7 +1002,7 @@
     <div class="form-group">
       <label class="form-label">所屬子公司</label>
       <select class="form-select" [value]="modalSubsidiaryId()"
-        (change)="modalSubsidiaryId.set($any($event.target).value)">
+        (change)="onModalSubsidiaryChange($any($event.target).value)">
         <option value="">全部子公司</option>
         @for (sub of subsidiaries(); track sub.id) {
         <option [value]="sub.id">{{ sub.name }}</option>

@@ -49,6 +49,7 @@ export interface Job {
   source?: 'internal' | '104';
   job104No?: string;
   syncStatus?: '104_synced' | '104_pending' | 'local_only';
+  org_unit_id?: string;
 }
 
 // 104 職缺原始資料介面

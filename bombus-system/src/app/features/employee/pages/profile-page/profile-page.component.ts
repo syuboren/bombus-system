@@ -1,6 +1,7 @@
 import {
   Component,
   ChangeDetectionStrategy,
+  DestroyRef,
   inject,
   signal,
   computed,
@@ -9,6 +10,8 @@ import {
   ViewChild,
   OnDestroy
 } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { switchMap, forkJoin } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
@@ -41,6 +44,7 @@ export class ProfilePageComponent implements OnInit, OnDestroy {
   private onboardingService = inject(OnboardingService);
   private notificationService = inject(NotificationService);
   private orgUnitService = inject(OrgUnitService);
+  private destroyRef = inject(DestroyRef);
 
   private roiChart: echarts.ECharts | null = null;
   private resizeHandler = () => this.roiChart?.resize();
@@ -97,10 +101,37 @@ export class ProfilePageComponent implements OnInit, OnDestroy {
   subsidiaries = this.orgUnitService.subsidiaries;
   filteredDepartments = computed(() => this.orgUnitService.filterDepartments(this.selectedSubsidiaryId()));
 
+  constructor() {
+    // 監聽子公司切換，自動重新載入員工資料
+    toObservable(this.selectedSubsidiaryId).pipe(
+      switchMap(orgUnitId => {
+        this.loading.set(true);
+        this.selectedEmployee.set(null);
+        const id = orgUnitId || undefined;
+        return forkJoin({
+          stats: this.employeeService.getEmployeeStats(id),
+          employees: this.employeeService.getEmployees(id)
+        });
+      }),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(({ stats, employees }) => {
+      this.stats.set(stats);
+      this.employees.set(employees);
+      this.loading.set(false);
+    });
+  }
+
   ngOnInit(): void {
-    this.loadData();
     this.orgUnitService.loadOrgUnits().subscribe();
     window.addEventListener('resize', this.resizeHandler);
+
+    // 載入不受子公司篩選影響的資料
+    this.employeeService.getExpiringDocuments().subscribe(docs => {
+      this.expiringDocuments.set(docs);
+    });
+    this.employeeService.getDepartmentROI().subscribe(roi => {
+      this.departmentROI.set(roi);
+    });
   }
 
   ngOnDestroy(): void {
@@ -109,24 +140,8 @@ export class ProfilePageComponent implements OnInit, OnDestroy {
   }
 
   loadData(): void {
-    this.loading.set(true);
-
-    this.employeeService.getEmployeeStats().subscribe(stats => {
-      this.stats.set(stats);
-    });
-
-    this.employeeService.getEmployees().subscribe(employees => {
-      this.employees.set(employees);
-      this.loading.set(false);
-    });
-
-    this.employeeService.getExpiringDocuments().subscribe(docs => {
-      this.expiringDocuments.set(docs);
-    });
-
-    this.employeeService.getDepartmentROI().subscribe(roi => {
-      this.departmentROI.set(roi);
-    });
+    // 透過 re-emit selectedSubsidiaryId 觸發 constructor 的 reactive subscription
+    this.selectedSubsidiaryId.set(this.selectedSubsidiaryId());
   }
 
   selectEmployee(employee: Employee): void {

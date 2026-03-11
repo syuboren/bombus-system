@@ -5,7 +5,7 @@ category: Development
 tags: ["development", "security", "audit"]
 ---
 
-<!-- SPECTRA:START v1.0.0 -->
+<!-- SPECTRA:START v1.0.1 -->
 Audit changed code for security sharp edges — API design traps, dangerous defaults, and interfaces that make it easy to do the wrong thing.
 
 Good APIs don't require developers to "be careful" to stay secure. If the correct usage requires reading docs, remembering rules, or understanding cryptography, the API has failed.

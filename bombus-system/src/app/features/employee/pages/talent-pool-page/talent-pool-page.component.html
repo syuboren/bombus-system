@@ -56,6 +56,18 @@
               <input type="text" placeholder="搜尋姓名、職位、公司、技能…" [value]="searchQuery()"
                 (input)="searchQuery.set($any($event.target).value)">
             </div>
+            @if (subsidiaries().length > 0) {
+              <div class="filter-divider"></div>
+              <div class="filter-item">
+                <select class="filter-select" [ngModel]="selectedSubsidiaryId()"
+                  (ngModelChange)="selectedSubsidiaryId.set($event)">
+                  <option value="">全部子公司</option>
+                  @for (sub of subsidiaries(); track sub.id) {
+                    <option [value]="sub.id">{{ sub.name }}</option>
+                  }
+                </select>
+              </div>
+            }
             <div class="filter-divider"></div>
             <div class="filter-item">
               <select class="filter-select" [value]="selectedStatus()"

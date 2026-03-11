@@ -337,6 +337,7 @@ router.get('/', (req, res) => {
             tags,
             minScore,
             maxScore,
+            org_unit_id,
             page = 1,
             limit = 20,
             sortBy = 'added_date',
@@ -395,6 +396,10 @@ router.get('/', (req, res) => {
             const tagList = tags.split(',');
             query += ` AND ttm.tag_id IN (${tagList.map(() => '?').join(',')})`;
             params.push(...tagList);
+        }
+        if (org_unit_id) {
+            query += ` AND tp.org_unit_id = ?`;
+            params.push(org_unit_id);
         }
 
         query += ` GROUP BY tp.id`;
@@ -515,44 +520,47 @@ router.get('/', (req, res) => {
  */
 router.get('/stats', (req, res) => {
     try {
+        const { org_unit_id } = req.query;
+        const orgFilter = org_unit_id ? ` WHERE org_unit_id = ?` : '';
+        const orgFilterAnd = org_unit_id ? ` AND tp.org_unit_id = ?` : '';
+        const orgParams = org_unit_id ? [org_unit_id] : [];
 
         // 總人數與狀態分佈
         const statusStats = req.tenantDB.prepare(`
             SELECT status, COUNT(*) as count
-            FROM talent_pool
+            FROM talent_pool${org_unit_id ? ' WHERE org_unit_id = ?' : ''}
             GROUP BY status
-        `).all();
+        `).all(...orgParams);
 
         // 來源分佈
         const sourceStats = req.tenantDB.prepare(`
             SELECT source, COUNT(*) as count
-            FROM talent_pool
+            FROM talent_pool${org_unit_id ? ' WHERE org_unit_id = ?' : ''}
             GROUP BY source
-        `).all();
+        `).all(...orgParams);
 
         // 本月聯繫數
         const thisMonth = new Date();
         const monthStart = new Date(thisMonth.getFullYear(), thisMonth.getMonth(), 1).toISOString();
         const { contactedThisMonth } = req.tenantDB.prepare(`
             SELECT COUNT(*) as contactedThisMonth
-            FROM talent_contact_history
-            WHERE contact_date >= ?
-        `).get(monthStart);
+            FROM talent_contact_history${org_unit_id ? ' tch JOIN talent_pool tp ON tch.talent_id = tp.id WHERE tp.org_unit_id = ? AND tch.contact_date >= ?' : ' WHERE contact_date >= ?'}
+        `).get(...(org_unit_id ? [org_unit_id, monthStart] : [monthStart]));
 
         // 今年錄用數
         const yearStart = new Date(thisMonth.getFullYear(), 0, 1).toISOString();
         const { hiredThisYear } = req.tenantDB.prepare(`
             SELECT COUNT(*) as hiredThisYear
             FROM talent_pool
-            WHERE status = 'hired' AND updated_at >= ?
-        `).get(yearStart);
+            WHERE status = 'hired' AND updated_at >= ?${org_unit_id ? ' AND org_unit_id = ?' : ''}
+        `).get(...(org_unit_id ? [yearStart, org_unit_id] : [yearStart]));
 
         // 平均媒合分數
         const { avgMatchScore } = req.tenantDB.prepare(`
             SELECT AVG(match_score) as avgMatchScore
             FROM talent_pool
-            WHERE match_score > 0
-        `).get();
+            WHERE match_score > 0${org_unit_id ? ' AND org_unit_id = ?' : ''}
+        `).get(...orgParams);
 
         // 計算「待聯繫」數量：開啟待聯繫提醒且近 1 個月沒有聯繫的人才
         const oneMonthAgo = new Date();
@@ -562,12 +570,12 @@ router.get('/stats', (req, res) => {
         const { pendingContactCount } = req.tenantDB.prepare(`
             SELECT COUNT(*) as pendingContactCount
             FROM talent_pool tp
-            WHERE tp.contact_reminder_enabled = 1
+            WHERE tp.contact_reminder_enabled = 1${org_unit_id ? ' AND tp.org_unit_id = ?' : ''}
               AND NOT EXISTS (
-                  SELECT 1 FROM talent_contact_history tch 
+                  SELECT 1 FROM talent_contact_history tch
                   WHERE tch.talent_id = tp.id AND tch.contact_date >= ?
               )
-        `).get(oneMonthAgoStr);
+        `).get(...(org_unit_id ? [org_unit_id, oneMonthAgoStr] : [oneMonthAgoStr]));
 
         // 計算總數與百分比
         const totalCandidates = statusStats.reduce((sum, s) => sum + s.count, 0);
@@ -689,7 +697,8 @@ router.post('/', (req, res) => {
             originalJobId,
             originalJobTitle,
             notes,
-            tags
+            tags,
+            org_unit_id
         } = req.body;
 
         const id = uuidv4();
@@ -701,15 +710,15 @@ router.post('/', (req, res) => {
                 current_position, current_company, experience_years, education,
                 expected_salary, skills, resume_url, source, status,
                 match_score, contact_priority, decline_stage, decline_reason,
-                original_job_id, original_job_title, notes, added_date, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                original_job_id, original_job_title, notes, org_unit_id, added_date, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).run(
             id, candidateId || null, name, email, phone, avatar,
             currentPosition, currentCompany, experienceYears || 0, education,
             expectedSalary, skills ? JSON.stringify(skills) : null, resumeUrl,
             source || 'other', status || 'active', matchScore || 0,
             contactPriority || 'medium', declineStage, declineReason,
-            originalJobId, originalJobTitle, notes, now, now
+            originalJobId, originalJobTitle, notes, org_unit_id || null, now, now
         );
 
         // 設定標籤
@@ -761,7 +770,8 @@ router.put('/:id', (req, res) => {
             'name', 'email', 'phone', 'avatar', 'current_position', 'current_company',
             'experience_years', 'education', 'expected_salary', 'skills', 'resume_url',
             'source', 'status', 'match_score', 'contact_priority', 'decline_stage',
-            'decline_reason', 'last_contact_date', 'next_contact_date', 'notes'
+            'decline_reason', 'last_contact_date', 'next_contact_date', 'notes',
+            'org_unit_id'
         ];
 
         const setClauses = [];
@@ -1877,7 +1887,7 @@ router.post('/:id/apply-to-job', (req, res) => {
                     // 複製原始候選人的完整資料到新職缺
                     req.tenantDB.prepare(`
                         INSERT INTO candidates (
-                            id, job_id, status, stage, scoring_status, score, apply_date, resume_url, ai_summary,
+                            id, job_id, org_unit_id, status, stage, scoring_status, score, apply_date, resume_url, ai_summary,
                             resume_104_id, name, name_en, gender, email, phone, sub_phone, tel, contact_info,
                             address, birthday, reg_source, employment_status, military_status, military_retire_date,
                             introduction, motto, characteristic, personal_page, driving_licenses, transports,
@@ -1888,7 +1898,7 @@ router.post('/:id/apply-to-job', (req, res) => {
                             certificates, other_certificates, current_position, current_company, location,
                             education, experience, experience_years, skills, created_at
                         ) VALUES (
-                            ?, ?, 'new', 'Collected', 'Pending', 0, ?, ?, NULL,
+                            ?, ?, ?, 'new', 'Collected', 'Pending', 0, ?, ?, NULL,
                             ?, ?, ?, ?, ?, ?, ?, ?, ?,
                             ?, ?, ?, ?, ?, ?,
                             ?, ?, ?, ?, ?, ?,
@@ -1900,7 +1910,7 @@ router.post('/:id/apply-to-job', (req, res) => {
                             ?, ?, ?, ?, ?
                         )
                     `).run(
-                        candidateId, jobId, now, originalCandidate.resume_url,
+                        candidateId, jobId, job.org_unit_id || null, now, originalCandidate.resume_url,
                         originalCandidate.resume_104_id, originalCandidate.name, originalCandidate.name_en, originalCandidate.gender,
                         originalCandidate.email, originalCandidate.phone, originalCandidate.sub_phone, originalCandidate.tel, originalCandidate.contact_info,
                         originalCandidate.address, originalCandidate.birthday, originalCandidate.reg_source, originalCandidate.employment_status,
@@ -1996,14 +2006,15 @@ router.post('/:id/apply-to-job', (req, res) => {
             function createBasicCandidate() {
                 req.tenantDB.prepare(`
                     INSERT INTO candidates (
-                        id, job_id, name, email, phone, 
+                        id, job_id, org_unit_id, name, email, phone,
                         current_position, current_company, experience_years, education, skills,
                         expected_salary, avatar, resume_url,
                         status, stage, apply_date, created_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', 'Collected', ?, ?)
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', 'Collected', ?, ?)
                 `).run(
                     candidateId,
                     jobId,
+                    job.org_unit_id || null,
                     talent.name,
                     talent.email || talent.candidate_email,
                     talent.phone || talent.candidate_phone,

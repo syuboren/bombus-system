@@ -5,8 +5,12 @@ import {
   signal,
   computed,
   OnInit,
-  ChangeDetectorRef
+  ChangeDetectorRef,
+  DestroyRef
 } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { skip } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { QRCodeModule } from 'angularx-qrcode';
@@ -57,6 +61,17 @@ export class MeetingPageComponent implements OnInit {
   private meetingService = inject(MeetingService);
   private cdr = inject(ChangeDetectorRef);
   private orgUnitService = inject(OrgUnitService);
+  private destroyRef = inject(DestroyRef);
+
+  constructor() {
+    // 子公司切換時自動重新載入資料
+    toObservable(this.selectedSubsidiaryId).pipe(
+      skip(1), // 跳過初始值
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(() => {
+      this.loadData();
+    });
+  }
 
   // 視圖模式
   viewMode = signal<ViewMode>('calendar');
@@ -235,7 +250,7 @@ export class MeetingPageComponent implements OnInit {
       this.cdr.detectChanges();
     });
 
-    this.meetingService.getMeetingStats().subscribe(data => {
+    this.meetingService.getMeetingStats(filters.orgUnitId).subscribe(data => {
       this.stats.set(data);
       this.cdr.detectChanges();
     });
@@ -263,19 +278,19 @@ export class MeetingPageComponent implements OnInit {
   }
 
   // 建立日曆層級過濾條件
-  private buildScopeFilters(): { scope?: CalendarScope; employeeId?: string; department?: string } {
+  private buildScopeFilters(): { scope?: CalendarScope; employeeId?: string; department?: string; orgUnitId?: string } {
     const scope = this.calendarScope();
-    
+    const orgUnitId = this.selectedSubsidiaryId() || undefined;
+
     if (scope === 'personal') {
-      // 使用選擇的員工 ID，若無則使用當前登入用戶
       const employeeId = this.selectedEmployeeId() || this.currentEmployeeId();
-      return { scope, employeeId };
+      return { scope, employeeId, orgUnitId };
     } else if (scope === 'department') {
       const dept = this.selectedDepartment() || this.currentEmployeeDept();
-      return { scope, department: dept };
+      return { scope, department: dept, orgUnitId };
     }
-    
-    return { scope: 'company' };
+
+    return { scope: 'company', orgUnitId };
   }
 
   // 切換選擇的員工（個人視角）
@@ -893,7 +908,7 @@ export class MeetingPageComponent implements OnInit {
     const filesToUpload = (meetingData.attachments || []).filter(a => a.file);
     // 移除 file 屬性，只保留 metadata（後端不接受 File 物件）
     const cleanAttachments = (meetingData.attachments || []).map(({ file, ...rest }) => rest);
-    const cleanMeetingData = { ...meetingData, attachments: cleanAttachments };
+    const cleanMeetingData = { ...meetingData, attachments: cleanAttachments, org_unit_id: this.selectedSubsidiaryId() || undefined };
     
     console.log('Saving meeting:', cleanMeetingData);
 

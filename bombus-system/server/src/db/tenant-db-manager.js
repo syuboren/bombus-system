@@ -235,6 +235,44 @@ class TenantDBManager {
       try { db.run(sql); changed = true; } catch (e) { /* 欄位已存在則忽略 */ }
     }
 
+    // 子公司資料關聯遷移：10 張表加入 org_unit_id，預設歸屬到根組織
+    const subsidiaryMigrations = [
+      { table: 'job_descriptions', index: 'idx_jd_org_unit' },
+      { table: 'competencies', index: 'idx_comp_org_unit' },
+      { table: 'grade_salary_levels', index: 'idx_gsl_org_unit' },
+      { table: 'department_positions', index: 'idx_dp_org_unit' },
+      { table: 'promotion_criteria', index: 'idx_pc_org_unit' },
+      { table: 'career_paths', index: 'idx_cp_org_unit' },
+      { table: 'jobs', index: 'idx_jobs_org_unit' },
+      { table: 'candidates', index: 'idx_cand_org_unit' },
+      { table: 'talent_pool', index: 'idx_tp_org_unit' },
+      { table: 'meetings', index: 'idx_meet_org_unit' },
+      { table: 'grade_tracks', index: 'idx_gt_org_unit' }
+    ];
+    for (const { table, index } of subsidiaryMigrations) {
+      try {
+        db.run(`ALTER TABLE ${table} ADD COLUMN org_unit_id TEXT REFERENCES org_units(id)`);
+        changed = true;
+      } catch (e) { /* 欄位已存在則忽略 */ }
+      try {
+        db.run(`CREATE INDEX IF NOT EXISTS ${index} ON ${table}(org_unit_id)`);
+      } catch (e) { /* 索引已存在 */ }
+    }
+
+    // 將 org_unit_id 為 NULL 的既有資料歸屬到根組織（type=group 的頂層節點）
+    try {
+      const rootOrg = db.exec("SELECT id FROM org_units WHERE type = 'group' AND (parent_id IS NULL OR parent_id = '') LIMIT 1");
+      if (rootOrg.length && rootOrg[0].values.length) {
+        const rootId = rootOrg[0].values[0][0];
+        for (const { table } of subsidiaryMigrations) {
+          db.run(`UPDATE ${table} SET org_unit_id = ? WHERE org_unit_id IS NULL`, [rootId]);
+        }
+        // employees 表已有 org_unit_id 欄位（在 initTenantSchema 中建立），但既有資料可能為 NULL
+        db.run(`UPDATE employees SET org_unit_id = ? WHERE org_unit_id IS NULL`, [rootId]);
+        changed = true;
+      }
+    } catch (e) { /* org_units 表可能不存在 */ }
+
     if (changed) {
       adapter.save();
     }

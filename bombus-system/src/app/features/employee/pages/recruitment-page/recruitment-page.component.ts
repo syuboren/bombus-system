@@ -10,12 +10,17 @@ import {
   ViewChild,
   effect,
   ChangeDetectorRef,
-  NgZone
+  NgZone,
+  DestroyRef
 } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { switchMap } from 'rxjs/operators';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { NotificationService } from '../../../../core/services/notification.service';
+import { OrgUnitService } from '../../../../core/services/org-unit.service';
 import { InterviewService } from '../../services/interview.service';
 import { AIAnalysisService, AIAnalysisResult } from '../../services/ai-analysis.service';
 import { JobKeywordsService } from '../../services/job-keywords.service';
@@ -101,6 +106,12 @@ export class RecruitmentPageComponent implements OnInit, OnDestroy {
   private jobService = inject(JobService);
   private cdr = inject(ChangeDetectorRef);
   private ngZone = inject(NgZone);
+  private orgUnitService = inject(OrgUnitService);
+  private destroyRef = inject(DestroyRef);
+
+  // 子公司篩選
+  selectedSubsidiaryId = signal<string>('');
+  subsidiaries = this.orgUnitService.subsidiaries;
 
   private radarChart: echarts.ECharts | null = null;
   private resizeHandler = () => this.radarChart?.resize();
@@ -276,11 +287,30 @@ export class RecruitmentPageComponent implements OnInit, OnDestroy {
         setTimeout(() => this.initRadarChart(), 100);
       }
     }, { allowSignalWrites: true });
-    
+
+    // 子公司切換時重新載入候選人
+    toObservable(this.selectedSubsidiaryId).pipe(
+      switchMap(orgUnitId => {
+        this.loading.set(true);
+        return this.interviewService.getScheduledCandidates(orgUnitId || undefined);
+      }),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe({
+      next: (candidates) => {
+        this.candidates.set(candidates);
+        this.loading.set(false);
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.notificationService.error('載入候選人列表失敗');
+        this.loading.set(false);
+        this.cdr.markForCheck();
+      }
+    });
   }
 
   ngOnInit(): void {
-    this.loadCandidates();
+    // 候選人載入由 constructor 中的 reactive subscription 處理
     window.addEventListener('resize', this.resizeHandler);
   }
 
