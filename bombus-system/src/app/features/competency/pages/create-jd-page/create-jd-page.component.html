@@ -148,7 +148,7 @@
             [disabled]="isEditMode()">
             <option [value]="0">請選擇職等</option>
             @for (g of gradeLevels(); track g.grade) {
-            <option [value]="g.grade">Grade {{ g.grade }} - {{ g.titleManagement || g.titleProfessional || '' }}
+            <option [value]="g.grade">Grade {{ g.grade }} - {{ g.trackEntries?.[0]?.title || g.titleManagement || '' }}
             </option>
             }
           </select>

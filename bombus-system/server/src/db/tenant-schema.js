@@ -1136,6 +1136,20 @@ const BUSINESS_TABLES_SQL = `
     FOREIGN KEY (grade) REFERENCES grade_levels(grade)
   );
 
+  CREATE TABLE IF NOT EXISTS grade_track_entries (
+    id TEXT PRIMARY KEY,
+    grade INTEGER NOT NULL,
+    track TEXT NOT NULL CHECK(track IN ('management', 'professional')),
+    title TEXT NOT NULL DEFAULT '',
+    education_requirement TEXT DEFAULT '',
+    responsibility_description TEXT DEFAULT '',
+    org_unit_id TEXT REFERENCES org_units(id),
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now')),
+    UNIQUE(grade, track, org_unit_id),
+    FOREIGN KEY (grade) REFERENCES grade_levels(grade)
+  );
+
   CREATE TABLE IF NOT EXISTS department_positions (
     id TEXT PRIMARY KEY,
     department TEXT NOT NULL,

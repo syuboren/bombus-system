@@ -90,10 +90,13 @@
         </div>
         <div class="grades-timeline">
           @for (grade of gradesNew(); track grade.id) {
-          <div class="grade-card grade-card-new" (click)="openGradeDetailNew(grade)">
+          <div class="grade-card grade-card-new"
+            [class.editing]="editingGradeNumber() === grade.grade"
+            [class.dimmed]="editingGradeNumber() !== null && editingGradeNumber() !== grade.grade"
+            (click)="openGradeDetailNew(grade)">
             <div class="grade-badge">Grade {{ grade.grade }}</div>
             <div class="grade-code">{{ grade.codeRange }}</div>
-            <div class="grade-title">{{ grade.titleManagement }}</div>
+            <div class="grade-title">{{ getManagementTitle(grade) }}</div>
             <div class="grade-salary">
               {{ getSalaryRangeText(grade) }}
             </div>
@@ -130,10 +133,13 @@
       </div>
       <div class="grades-timeline">
         @for (grade of gradesNew(); track grade.id) {
-        @if (grade.grade < 7) { <div class="grade-card grade-card-new" (click)="openGradeDetailNew(grade)">
+        @if (grade.grade < 7) { <div class="grade-card grade-card-new"
+          [class.editing]="editingGradeNumber() === grade.grade"
+          [class.dimmed]="editingGradeNumber() !== null && editingGradeNumber() !== grade.grade"
+          (click)="openGradeDetailNew(grade)">
           <div class="grade-badge">Grade {{ grade.grade }}</div>
           <div class="grade-code">{{ grade.codeRange }}</div>
-          <div class="grade-title">{{ grade.titleProfessional }}</div>
+          <div class="grade-title">{{ getProfessionalTitle(grade) }}</div>
           <div class="grade-salary">
             {{ getSalaryRangeText(grade) }}
           </div>
@@ -898,11 +904,11 @@
         <div class="basic-info-grid">
           <div class="info-card">
             <span class="info-label">管理職職稱</span>
-            <span class="info-value">{{ grade.titleManagement }}</span>
+            <span class="info-value">{{ getManagementTitle(grade) }}</span>
           </div>
           <div class="info-card">
             <span class="info-label">專業職職稱</span>
-            <span class="info-value">{{ grade.titleProfessional }}</span>
+            <span class="info-value">{{ getProfessionalTitle(grade) }}</span>
           </div>
           <div class="info-card">
             <span class="info-label">職級代碼範圍</span>
@@ -934,28 +940,56 @@
         </div>
       </div>
 
-      <!-- 區塊3: 學歷與資格要求 -->
+      <!-- 區塊3: 學歷與資格要求（按軌道分列） -->
       <div class="detail-section education-section">
         <div class="detail-header">
           <i class="ri-graduation-cap-line"></i>
           <h4>學歷與資格要求</h4>
         </div>
         <div class="education-content">
+          @if (getTrackEducation(grade, 'management')) {
+          <div class="education-item">
+            <span class="track-label-sm">管理職</span>
+            <span>{{ getTrackEducation(grade, 'management') }}</span>
+          </div>
+          }
+          @if (getTrackEducation(grade, 'professional')) {
+          <div class="education-item">
+            <span class="track-label-sm">專業職</span>
+            <span>{{ getTrackEducation(grade, 'professional') }}</span>
+          </div>
+          }
+          @if (!getTrackEducation(grade, 'management') && !getTrackEducation(grade, 'professional')) {
           <div class="education-item">
             <i class="ri-book-open-line"></i>
-            <span>{{ grade.educationRequirement }}</span>
+            <span>尚未設定</span>
           </div>
+          }
         </div>
       </div>
 
-      <!-- 區塊4: 工作職責說明 -->
+      <!-- 區塊4: 工作職責說明（按軌道分列） -->
       <div class="detail-section responsibility-section">
         <div class="detail-header">
           <i class="ri-briefcase-line"></i>
           <h4>工作職責說明</h4>
         </div>
         <div class="responsibility-content">
-          <p>{{ grade.responsibilityDescription }}</p>
+          @if (getTrackResponsibility(grade, 'management')) {
+          <div class="responsibility-item">
+            <span class="track-label-sm">管理職</span>
+            <p>{{ getTrackResponsibility(grade, 'management') }}</p>
+          </div>
+          }
+          @if (getTrackResponsibility(grade, 'professional')) {
+          <div class="responsibility-item">
+            <span class="track-label-sm">專業職</span>
+            <p>{{ getTrackResponsibility(grade, 'professional') }}</p>
+          </div>
+          }
+          @if (!getTrackResponsibility(grade, 'management') && !getTrackResponsibility(grade, 'professional')) {
+          <p>尚未設定</p>
+          }
         </div>
       </div>
 
@@ -1107,11 +1141,11 @@
 </div>
 }
 
-<!-- edit modals -->
+<!-- edit modals / panels -->
 <app-track-edit-modal [visible]="showTrackEditModal()" [trackData]="editingTrack()" (closed)="closeTrackModal()"
   (saved)="onTrackSaved()" />
 
-<app-grade-edit-modal [visible]="showGradeEditModal()" [gradeData]="editingGrade()" (closed)="closeGradeEditModal()"
+<app-grade-edit-panel [visible]="showGradeEditPanel()" [gradeData]="editingGrade()" (closed)="closeGradeEditPanel()"
   (saved)="onGradeSaved()" />
 
 <app-position-edit-modal [visible]="showPositionEditModal()" [positionData]="editingPosition()"

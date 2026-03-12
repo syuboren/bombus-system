@@ -567,6 +567,84 @@ async function seedPlatformData(platformDB) {
 }
 
 // ═══════════════════════════════════════════
+// Grade Track Entries 遷移
+// ═══════════════════════════════════════════
+
+/**
+ * 將 grade_levels 中的 title_management / title_professional / education_requirement / responsibility_description
+ * 拆分至 grade_track_entries 表（idempotent）
+ * @param {import('sql.js').Database} db - tenant DB raw
+ */
+function migrateGradeTrackEntries(db) {
+  if (!tableExists(db, 'grade_levels') || !tableExists(db, 'grade_track_entries')) {
+    console.log('  ⏭ grade_track_entries: 跳過（表不存在）');
+    return;
+  }
+
+  // 檢查 grade_levels 是否有舊欄位可遷移
+  const columns = getTableColumns(db, 'grade_levels');
+  if (!columns.includes('title_management')) {
+    console.log('  ⏭ grade_track_entries: 跳過（grade_levels 已無舊欄位）');
+    return;
+  }
+
+  const readStmt = db.prepare(
+    'SELECT id, grade, title_management, title_professional, education_requirement, responsibility_description FROM grade_levels'
+  );
+  const grades = [];
+  while (readStmt.step()) {
+    grades.push(readStmt.getAsObject());
+  }
+  readStmt.free();
+
+  if (grades.length === 0) {
+    console.log('  ○ grade_track_entries: grade_levels 無資料');
+    return;
+  }
+
+  let migrated = 0;
+  for (const g of grades) {
+    // Management track entry
+    if (g.title_management) {
+      const stmt = db.prepare(
+        `INSERT OR IGNORE INTO grade_track_entries (id, grade, track, title, education_requirement, responsibility_description)
+         VALUES (?, ?, 'management', ?, ?, ?)`
+      );
+      stmt.bind([
+        g.id + '-mgmt',
+        g.grade,
+        g.title_management,
+        g.education_requirement || '',
+        g.responsibility_description || ''
+      ]);
+      stmt.step();
+      stmt.free();
+      migrated++;
+    }
+
+    // Professional track entry
+    if (g.title_professional) {
+      const stmt = db.prepare(
+        `INSERT OR IGNORE INTO grade_track_entries (id, grade, track, title, education_requirement, responsibility_description)
+         VALUES (?, ?, 'professional', ?, ?, ?)`
+      );
+      stmt.bind([
+        g.id + '-prof',
+        g.grade,
+        g.title_professional,
+        g.education_requirement || '',
+        g.responsibility_description || ''
+      ]);
+      stmt.step();
+      stmt.free();
+      migrated++;
+    }
+  }
+
+  console.log(`  ✅ grade_track_entries: ${migrated} 筆（從 ${grades.length} 個職等拆分）`);
+}
+
+// ═══════════════════════════════════════════
 // 主遷移流程
 // ═══════════════════════════════════════════
 
@@ -661,6 +739,10 @@ async function migrateDemoData() {
   if (allMatch) {
     console.log('  ✅ 所有表遷移記錄數驗證通過');
   }
+
+  // 9b. 遷移 grade_track_entries（從 grade_levels 拆分軌道資料）
+  migrateGradeTrackEntries(targetDB);
+  demoAdapter.save();
 
   // 10. 建立 RBAC 種子資料
   const rbacResult = await seedRBACData(demoAdapter);

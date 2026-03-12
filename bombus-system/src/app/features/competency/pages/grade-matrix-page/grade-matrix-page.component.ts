@@ -19,7 +19,7 @@ import {
   ChangeRecord
 } from '../../models/competency.model';
 import { TrackEditModalComponent } from '../../components/track-edit-modal/track-edit-modal.component';
-import { GradeEditModalComponent } from '../../components/grade-edit-modal/grade-edit-modal.component';
+import { GradeEditPanelComponent } from '../../components/grade-edit-panel/grade-edit-panel.component';
 import { PositionEditModalComponent } from '../../components/position-edit-modal/position-edit-modal.component';
 import { PromotionCriteriaEditModalComponent } from '../../components/promotion-criteria-edit-modal/promotion-criteria-edit-modal.component';
 import { OrgUnitService } from '../../../../core/services/org-unit.service';
@@ -95,7 +95,7 @@ interface DepartmentPosition {
 @Component({
   selector: 'app-grade-matrix-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, HeaderComponent, TrackEditModalComponent, GradeEditModalComponent, PositionEditModalComponent, PromotionCriteriaEditModalComponent],
+  imports: [CommonModule, FormsModule, HeaderComponent, TrackEditModalComponent, GradeEditPanelComponent, PositionEditModalComponent, PromotionCriteriaEditModalComponent],
   templateUrl: './grade-matrix-page.component.html',
   styleUrl: './grade-matrix-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -142,11 +142,14 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
   pendingChanges = signal<ChangeRecord[]>([]);
   changeHistory = signal<ChangeRecord[]>([]);
 
-  // Modal 顯示狀態
+  // Modal / Panel 顯示狀態
   showTrackEditModal = signal(false);
-  showGradeEditModal = signal(false);
+  showGradeEditPanel = signal(false);
   showPositionEditModal = signal(false);
   showPromotionEditModal = signal(false);
+
+  // 正在編輯的職等 grade number（用於卡片高亮）
+  editingGradeNumber = signal<number | null>(null);
 
   // Modal 編輯資料（null = 新增模式）
   editingTrack = signal<GradeTrackEntity | null>(null);
@@ -466,15 +469,20 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
     this.closeTrackModal();
   }
 
-  // --- 職等 CRUD ---
+  // --- 職等 CRUD（側邊面板） ---
   openEditGrade(grade: GradeLevelNew | null = null): void {
     this.editingGrade.set(grade);
-    this.showGradeEditModal.set(true);
+    this.editingGradeNumber.set(grade?.grade ?? null);
+    this.showGradeEditPanel.set(true);
   }
-  closeGradeEditModal(): void { this.showGradeEditModal.set(false); this.editingGrade.set(null); }
+  closeGradeEditPanel(): void {
+    this.showGradeEditPanel.set(false);
+    this.editingGrade.set(null);
+    this.editingGradeNumber.set(null);
+  }
   onGradeSaved(): void {
     this.loadDataNew();
-    this.closeGradeEditModal();
+    this.closeGradeEditPanel();
   }
 
   // --- 部門職位 CRUD ---
@@ -522,7 +530,7 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
 
   // 取得變更類型中文名稱
   getEntityTypeLabel(type: string): string {
-    const map: Record<string, string> = { track: '軌道', grade: '職等', salary: '薪資', position: '職位', promotion: '晉升條件' };
+    const map: Record<string, string> = { track: '軌道', grade: '職等', salary: '薪資', position: '職位', promotion: '晉升條件', 'track-entry': '軌道條目' };
     return map[type] || type;
   }
 
@@ -593,6 +601,26 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
       c.toGrade === grade &&
       (!track || c.track === track || c.track === 'both')
     ) || null;
+  }
+
+  // 從 trackEntries 取得管理職職稱
+  getManagementTitle(grade: GradeLevelNew): string {
+    return grade.trackEntries?.find(e => e.track === 'management')?.title || '';
+  }
+
+  // 從 trackEntries 取得專業職職稱
+  getProfessionalTitle(grade: GradeLevelNew): string {
+    return grade.trackEntries?.find(e => e.track === 'professional')?.title || '';
+  }
+
+  // 從 trackEntries 取得學歷要求（指定軌道）
+  getTrackEducation(grade: GradeLevelNew, track: string): string {
+    return grade.trackEntries?.find(e => e.track === track)?.educationRequirement || '';
+  }
+
+  // 從 trackEntries 取得職責描述（指定軌道）
+  getTrackResponsibility(grade: GradeLevelNew, track: string): string {
+    return grade.trackEntries?.find(e => e.track === track)?.responsibilityDescription || '';
   }
 
   // 取得職等的薪資範圍字串

@@ -52,7 +52,7 @@ export interface ChangeResponse {
 // 審核變更記錄（歷史查詢用）
 export interface ChangeRecord {
   id: string;
-  entityType: 'track' | 'grade' | 'salary' | 'position' | 'promotion';
+  entityType: 'track' | 'grade' | 'salary' | 'position' | 'promotion' | 'track-entry';
   entityId: string;
   action: 'create' | 'update' | 'delete';
   oldData: any;           // 變更前的完整 entity JSON snapshot
@@ -72,18 +72,34 @@ export interface SalaryLevel {
   order: number;
 }
 
+// 軌道條目（對應 DB grade_track_entries）
+export interface GradeTrackEntry {
+  id: string;
+  grade: number;                        // 所屬職等
+  track: 'management' | 'professional'; // 軌道類型
+  title: string;                        // 軌道職稱
+  educationRequirement: string;         // 學歷要求
+  responsibilityDescription: string;    // 職責描述
+  orgUnitId?: string | null;            // 子公司 ID
+}
+
 // 職等（對應 DB grade_levels）
 export interface GradeLevelNew {
   id: string;
   grade: number;                    // 1-7
   codeRange: string;                // BS01-BS04
-  titleManagement: string;          // 管理職稱
-  titleProfessional: string;        // 專業職稱
-  educationRequirement: string;     // 學歷要求
-  responsibilityDescription: string;// 職責描述
+  trackEntries: GradeTrackEntry[];  // 軌道條目（管理職 + 專業職）
   salaryLevels: SalaryLevel[];      // 職級薪資清單
   minSalary: number;                // 薪資下限
   maxSalary: number;                // 薪資上限
+  /** @deprecated 使用 trackEntries 取代，保留向後相容 */
+  titleManagement?: string;
+  /** @deprecated 使用 trackEntries 取代，保留向後相容 */
+  titleProfessional?: string;
+  /** @deprecated 使用 trackEntries 取代，保留向後相容 */
+  educationRequirement?: string;
+  /** @deprecated 使用 trackEntries 取代，保留向後相容 */
+  responsibilityDescription?: string;
 }
 
 // 晉升條件（對應 DB promotion_criteria）

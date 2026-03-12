@@ -1,0 +1,379 @@
+@import '../../../../../assets/styles/variables';
+@import '../../../../../assets/styles/mixins';
+
+$module-color: $color-l2-terracotta;
+$module-color-light: $color-l2-terracotta-light;
+$module-color-dark: $color-l2-terracotta-dark;
+$panel-width: 400px;
+
+// ---------------------------------------------------------------
+// Panel Overlay
+// ---------------------------------------------------------------
+.panel-overlay {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.15);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 200ms ease-out, visibility 200ms ease-out;
+
+  &.visible {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+// ---------------------------------------------------------------
+// Edit Panel
+// ---------------------------------------------------------------
+.edit-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: $panel-width;
+  z-index: 1001;
+  background: $color-pure-white;
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 200ms ease-out;
+
+  &.open {
+    transform: translateX(0);
+  }
+}
+
+// ---------------------------------------------------------------
+// Header
+// ---------------------------------------------------------------
+.panel-header {
+  @include flex-between;
+  padding: $spacing-md $spacing-lg;
+  border-bottom: 1px solid $color-soft-gray;
+  flex-shrink: 0;
+}
+
+.panel-title {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin: 0;
+}
+
+.close-btn {
+  @include flex-center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: $radius-md;
+  background: transparent;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: all $transition-fast;
+  font-size: 18px;
+
+  &:hover {
+    background: $color-cloud-gray;
+    color: $color-text-primary;
+  }
+}
+
+// ---------------------------------------------------------------
+// Content
+// ---------------------------------------------------------------
+.panel-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: $spacing-md $spacing-lg;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: $color-soft-gray;
+    border-radius: 2px;
+  }
+}
+
+// ---------------------------------------------------------------
+// Error
+// ---------------------------------------------------------------
+.error-message {
+  @include flex-start;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  margin-bottom: $spacing-md;
+  background: rgba(#e74c3c, 0.08);
+  border: 1px solid rgba(#e74c3c, 0.2);
+  border-radius: $radius-md;
+  color: #c0392b;
+  font-size: $font-size-sm;
+
+  i { font-size: 16px; }
+}
+
+// ---------------------------------------------------------------
+// Form Sections
+// ---------------------------------------------------------------
+.form-section {
+  margin-bottom: $spacing-lg;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.section-title {
+  @include flex-start;
+  gap: $spacing-xs;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $module-color-dark;
+  margin: 0 0 $spacing-md;
+  padding-bottom: $spacing-sm;
+  border-bottom: 1px solid $color-soft-gray;
+
+  i {
+    font-size: 16px;
+    color: $module-color;
+  }
+}
+
+.salary-count {
+  font-weight: $font-weight-normal;
+  color: $color-text-secondary;
+  font-size: $font-size-xs;
+}
+
+.form-group {
+  margin-bottom: $spacing-md;
+}
+
+.form-label {
+  display: block;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-xs;
+
+  &.required::after {
+    content: ' *';
+    color: #e74c3c;
+  }
+}
+
+.form-input,
+.form-textarea {
+  width: 100%;
+  padding: $spacing-sm $spacing-md;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  background: $color-pure-white;
+  transition: border-color $transition-fast;
+  box-sizing: border-box;
+
+  &:focus {
+    outline: none;
+    border-color: $module-color;
+    box-shadow: 0 0 0 2px rgba($module-color, 0.15);
+  }
+
+  &:disabled {
+    background: $color-cloud-gray;
+    cursor: not-allowed;
+  }
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 72px;
+}
+
+// ---------------------------------------------------------------
+// Salary List
+// ---------------------------------------------------------------
+.salary-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.salary-row {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+}
+
+.salary-index {
+  width: 24px;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.salary-code-input {
+  width: 80px;
+  padding: $spacing-xs $spacing-sm;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  flex-shrink: 0;
+
+  &:focus {
+    outline: none;
+    border-color: $module-color;
+  }
+}
+
+.salary-amount-input {
+  flex: 1;
+  padding: $spacing-xs $spacing-sm;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+
+  &:focus {
+    outline: none;
+    border-color: $module-color;
+  }
+}
+
+.remove-btn {
+  @include flex-center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: $radius-sm;
+  background: transparent;
+  color: $color-text-secondary;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-size: 14px;
+
+  &:hover {
+    background: rgba(#e74c3c, 0.1);
+    color: #e74c3c;
+  }
+}
+
+.add-salary-btn {
+  @include flex-center;
+  gap: $spacing-xs;
+  width: 100%;
+  padding: $spacing-sm;
+  margin-top: $spacing-sm;
+  border: 1px dashed $color-soft-gray;
+  border-radius: $radius-md;
+  background: transparent;
+  color: $module-color;
+  font-size: $font-size-sm;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    border-color: $module-color;
+    background: rgba($module-color, 0.05);
+  }
+}
+
+// ---------------------------------------------------------------
+// Track Tabs
+// ---------------------------------------------------------------
+.track-tabs {
+  display: flex;
+  gap: $spacing-xs;
+  margin-bottom: $spacing-md;
+}
+
+.track-tab {
+  @include flex-center;
+  gap: $spacing-xs;
+  flex: 1;
+  padding: $spacing-sm $spacing-md;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  background: transparent;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  i { font-size: 16px; }
+
+  &:hover {
+    border-color: $module-color-light;
+    color: $module-color-dark;
+  }
+
+  &.active {
+    background: $module-color;
+    border-color: $module-color;
+    color: white;
+  }
+}
+
+.track-form {
+  @include card;
+  padding: $spacing-md;
+}
+
+// ---------------------------------------------------------------
+// Footer
+// ---------------------------------------------------------------
+.panel-footer {
+  @include flex-end;
+  gap: $spacing-sm;
+  padding: $spacing-md $spacing-lg;
+  border-top: 1px solid $color-soft-gray;
+  flex-shrink: 0;
+}
+
+.btn {
+  @include flex-center;
+  gap: $spacing-xs;
+  padding: $spacing-sm $spacing-lg;
+  border: none;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.btn-secondary {
+  background: $color-cloud-gray;
+  color: $color-text-secondary;
+
+  &:hover:not(:disabled) {
+    background: darken($color-cloud-gray, 5%);
+  }
+}
+
+.btn-primary {
+  @include button-module($module-color);
+}
+
+// Spinner animation
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

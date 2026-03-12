@@ -28,6 +28,7 @@ import {
   PromotionCriteria,
   CareerPathNew,
   GradeTrackEntity,
+  GradeTrackEntry,
   ChangeResponse,
   ChangeRecord,
   SalaryLevel
@@ -1256,6 +1257,42 @@ export class CompetencyService {
     return this.http.delete<{ success: boolean; data: ChangeResponse }>(`${this.apiUrl}/grade-matrix/grades/${grade}`).pipe(
       map(res => res.data),
       catchError(error => { console.error('Error deleting grade:', error); throw error; })
+    );
+  }
+
+  // --- 軌道條目 (Track Entry) CRUD ---
+
+  /** 取得指定職等的軌道條目 */
+  getTrackEntries(grade: number, orgUnitId?: string): Observable<GradeTrackEntry[]> {
+    let params = new HttpParams();
+    if (orgUnitId) params = params.set('org_unit_id', orgUnitId);
+    return this.http.get<{ success: boolean; data: GradeTrackEntry[] }>(`${this.apiUrl}/grade-matrix/grades/${grade}/tracks`, { params }).pipe(
+      map(res => res.data),
+      catchError(error => { console.error('Error fetching track entries:', error); return of([]); })
+    );
+  }
+
+  /** 新增軌道條目（進入審核流程） */
+  createTrackEntry(grade: number, data: Partial<GradeTrackEntry>): Observable<ChangeResponse> {
+    return this.http.post<{ success: boolean; data: ChangeResponse }>(`${this.apiUrl}/grade-matrix/grades/${grade}/tracks`, data).pipe(
+      map(res => res.data),
+      catchError(error => { console.error('Error creating track entry:', error); throw error; })
+    );
+  }
+
+  /** 更新軌道條目（進入審核流程） */
+  updateTrackEntry(id: string, data: Partial<GradeTrackEntry>): Observable<ChangeResponse> {
+    return this.http.put<{ success: boolean; data: ChangeResponse }>(`${this.apiUrl}/grade-matrix/track-entries/${id}`, data).pipe(
+      map(res => res.data),
+      catchError(error => { console.error('Error updating track entry:', error); throw error; })
+    );
+  }
+
+  /** 刪除軌道條目（進入審核流程） */
+  deleteTrackEntry(id: string): Observable<ChangeResponse> {
+    return this.http.delete<{ success: boolean; data: ChangeResponse }>(`${this.apiUrl}/grade-matrix/track-entries/${id}`).pipe(
+      map(res => res.data),
+      catchError(error => { console.error('Error deleting track entry:', error); throw error; })
     );
   }
 

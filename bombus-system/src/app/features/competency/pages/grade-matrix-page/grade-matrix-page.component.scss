@@ -3117,4 +3117,39 @@ $module-color-dark: $color-l2-terracotta-dark;
   &:hover .btn-edit-card {
     opacity: 1;
   }
+
+  // 正在編輯的卡片高亮
+  &.editing {
+    border-color: $module-color !important;
+    border-width: 3px;
+    box-shadow: 0 0 0 3px rgba($module-color, 0.2), $shadow-md;
+  }
+
+  // 其他卡片降低透明度
+  &.dimmed {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+}
+
+// ---------------------------------------------------------------
+// Track Label (Detail Modal)
+// ---------------------------------------------------------------
+.track-label-sm {
+  display: inline-block;
+  padding: 2px 8px;
+  margin-right: $spacing-sm;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  background: rgba($module-color, 0.12);
+  color: $module-color-dark;
+}
+
+.responsibility-item {
+  margin-bottom: $spacing-md;
+
+  &:last-child { margin-bottom: 0; }
+
+  p { margin: $spacing-xs 0 0; }
 }

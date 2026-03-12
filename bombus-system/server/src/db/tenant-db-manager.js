@@ -259,6 +259,24 @@ class TenantDBManager {
       } catch (e) { /* 索引已存在 */ }
     }
 
+    // grade_track_entries 新表（軌道獨立實體）
+    try {
+      db.run(`CREATE TABLE IF NOT EXISTS grade_track_entries (
+        id TEXT PRIMARY KEY,
+        grade INTEGER NOT NULL,
+        track TEXT NOT NULL CHECK(track IN ('management', 'professional')),
+        title TEXT NOT NULL DEFAULT '',
+        education_requirement TEXT DEFAULT '',
+        responsibility_description TEXT DEFAULT '',
+        org_unit_id TEXT REFERENCES org_units(id),
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now')),
+        UNIQUE(grade, track, org_unit_id),
+        FOREIGN KEY (grade) REFERENCES grade_levels(grade)
+      )`);
+      changed = true;
+    } catch (e) { /* 表已存在 */ }
+
     // 將 org_unit_id 為 NULL 的既有資料歸屬到根組織（type=group 的頂層節點）
     try {
       const rootOrg = db.exec("SELECT id FROM org_units WHERE type = 'group' AND (parent_id IS NULL OR parent_id = '') LIMIT 1");
