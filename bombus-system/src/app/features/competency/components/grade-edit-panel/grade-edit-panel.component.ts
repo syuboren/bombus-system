@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, input, output, signal, inject, effect, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { GradeLevelNew, GradeTrackEntry, SalaryLevel } from '../../models/competency.model';
+import { GradeLevelNew, SalaryLevel } from '../../models/competency.model';
 import { CompetencyService } from '../../services/competency.service';
 
 @Component({
@@ -18,6 +18,9 @@ export class GradeEditPanelComponent {
   // --- Input / Output ---
   visible = input<boolean>(false);
   gradeData = input<GradeLevelNew | null>(null);
+  context = input<'overview' | 'track-detail'>('overview');
+  existingGrades = input<number[]>([]);
+  orgUnitId = input<string>('');
   closed = output<void>();
   saved = output<void>();
 
@@ -27,9 +30,15 @@ export class GradeEditPanelComponent {
   isEditMode = signal(false);
   activeTrackTab = signal<'management' | 'professional'>('management');
 
+  // 自動計算下一個可用職等
+  nextGrade = computed(() => {
+    const grades = this.existingGrades();
+    return grades.length > 0 ? Math.max(...grades) + 1 : 1;
+  });
+
   // 基本資訊
   formGrade = signal(1);
-  formCodeRange = signal('');
+  formCode = signal('');
 
   // 薪資列表
   formSalaryLevels = signal<SalaryLevel[]>([]);
@@ -58,7 +67,10 @@ export class GradeEditPanelComponent {
       if (isVisible && data) {
         this.isEditMode.set(true);
         this.formGrade.set(data.grade);
-        this.formCodeRange.set(data.codeRange || '');
+        // 從薪資代碼提取基礎前綴（如 BS01 → BS），而非使用 codeRange（BS01-BS03）
+        const firstCode = data.salaryLevels?.[0]?.code || '';
+        const prefix = firstCode.replace(/\d+$/, '');
+        this.formCode.set(prefix || data.codeRange || '');
         this.formSalaryLevels.set(data.salaryLevels ? data.salaryLevels.map(s => ({ ...s })) : []);
 
         // 從 trackEntries 載入軌道資料
@@ -83,8 +95,8 @@ export class GradeEditPanelComponent {
   }
 
   resetForm(): void {
-    this.formGrade.set(1);
-    this.formCodeRange.set('');
+    this.formGrade.set(this.nextGrade());
+    this.formCode.set('');
     this.formSalaryLevels.set([]);
     this.formManagement.set({ title: '', educationRequirement: '', responsibilityDescription: '' });
     this.formProfessional.set({ title: '', educationRequirement: '', responsibilityDescription: '' });
@@ -105,7 +117,19 @@ export class GradeEditPanelComponent {
 
   // --- 基本欄位更新 ---
   updateGrade(value: number): void { this.formGrade.set(value); }
-  updateCodeRange(value: string): void { this.formCodeRange.set(value); }
+  updateCode(value: string): void {
+    this.formCode.set(value);
+    this.regenerateSalaryCodes();
+  }
+
+  // --- 軌道職稱更新（overview 模式用） ---
+  updateTrackTitle(track: 'management' | 'professional', value: string): void {
+    if (track === 'management') {
+      this.formManagement.update(prev => ({ ...prev, title: value }));
+    } else {
+      this.formProfessional.update(prev => ({ ...prev, title: value }));
+    }
+  }
 
   // --- 軌道欄位更新 ---
   updateTrackField(field: 'title' | 'educationRequirement' | 'responsibilityDescription', value: string): void {
@@ -118,9 +142,13 @@ export class GradeEditPanelComponent {
 
   // --- 薪資列表操作 ---
   addSalaryLevel(): void {
+    const code = this.formCode().trim();
+    const maxNum = this.getMaxSalaryNum();
+    const nextNum = maxNum + 1;
+    const autoCode = code ? `${code}${String(nextNum).padStart(2, '0')}` : '';
     this.formSalaryLevels.update(prev => [
       ...prev,
-      { code: '', salary: 0, order: prev.length + 1 }
+      { code: autoCode, salary: 0, order: prev.length + 1 }
     ]);
   }
 
@@ -134,6 +162,32 @@ export class GradeEditPanelComponent {
 
   removeSalaryLevel(index: number): void {
     this.formSalaryLevels.update(prev => prev.filter((_, i) => i !== index));
+    this.regenerateSalaryCodes();
+  }
+
+  private getMaxSalaryNum(): number {
+    return this.formSalaryLevels().reduce((max, sal) => {
+      const match = sal.code?.match(/(\d+)$/);
+      return match ? Math.max(max, parseInt(match[1], 10)) : max;
+    }, 0);
+  }
+
+  // 重新產生所有薪資級別的代碼（保留既有編號，僅更新前綴）
+  private regenerateSalaryCodes(): void {
+    const code = this.formCode().trim();
+    if (!code) return;
+    this.formSalaryLevels.update(prev =>
+      prev.map((level, i) => {
+        // 保留既有的數字後綴，僅替換前綴
+        const match = level.code?.match(/(\d+)$/);
+        const num = match ? match[1] : String(i + 1).padStart(2, '0');
+        return {
+          ...level,
+          code: `${code}${num}`,
+          order: i + 1
+        };
+      })
+    );
   }
 
   // --- 驗證 ---
@@ -142,17 +196,25 @@ export class GradeEditPanelComponent {
       this.error.set('職等為必填且必須大於 0');
       return false;
     }
-    if (!this.formCodeRange().trim()) {
-      this.error.set('職等代碼範圍為必填');
+    // 新增模式檢查職等是否已存在
+    if (!this.isEditMode() && this.existingGrades().includes(this.formGrade())) {
+      this.error.set(`職等 ${this.formGrade()} 已存在，請勿重複新增`);
       return false;
     }
-    if (!this.formManagement().title.trim()) {
-      this.error.set('管理職稱謂為必填');
+    if (!this.formCode().trim()) {
+      this.error.set('職級代碼為必填');
       return false;
     }
-    if (!this.formProfessional().title.trim()) {
-      this.error.set('專業職稱謂為必填');
-      return false;
+    // overview 模式下不驗證軌道職稱（軌道資訊由各軌道 tab 管理）
+    if (this.context() !== 'overview') {
+      if (!this.formManagement().title.trim()) {
+        this.error.set('管理職稱謂為必填');
+        return false;
+      }
+      if (!this.formProfessional().title.trim()) {
+        this.error.set('專業職稱謂為必填');
+        return false;
+      }
     }
     return true;
   }
@@ -163,20 +225,35 @@ export class GradeEditPanelComponent {
     this.saving.set(true);
     this.error.set(null);
 
+    // 自動計算 codeRange：若有多筆薪資級別則組合為範圍字串
+    const levels = this.formSalaryLevels();
+    const code = this.formCode().trim();
+    let codeRange = code;
+    if (levels.length > 0) {
+      const first = levels[0].code || `${code}01`;
+      const last = levels[levels.length - 1].code || `${code}${String(levels.length).padStart(2, '0')}`;
+      codeRange = levels.length === 1 ? first : `${first}-${last}`;
+    }
+
     const mgmt = this.formManagement();
     const prof = this.formProfessional();
 
-    const payload: any = {
+    const payload: Record<string, unknown> = {
       grade: this.formGrade(),
-      codeRange: this.formCodeRange(),
-      salaryLevels: this.formSalaryLevels(),
+      codeRange,
+      salaryLevels: levels,
+      orgUnitId: this.orgUnitId() || null,
       managementTitle: mgmt.title,
-      managementEducation: mgmt.educationRequirement,
-      managementResponsibility: mgmt.responsibilityDescription,
-      professionalTitle: prof.title,
-      professionalEducation: prof.educationRequirement,
-      professionalResponsibility: prof.responsibilityDescription
+      professionalTitle: prof.title
     };
+
+    // track-detail 模式送完整軌道資訊
+    if (this.context() !== 'overview') {
+      payload['managementEducation'] = mgmt.educationRequirement;
+      payload['managementResponsibility'] = mgmt.responsibilityDescription;
+      payload['professionalEducation'] = prof.educationRequirement;
+      payload['professionalResponsibility'] = prof.responsibilityDescription;
+    }
 
     const observable = this.isEditMode()
       ? this.competencyService.updateGradeLevel(this.formGrade(), payload)

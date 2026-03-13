@@ -264,10 +264,11 @@ class TenantDBManager {
       db.run(`CREATE TABLE IF NOT EXISTS grade_track_entries (
         id TEXT PRIMARY KEY,
         grade INTEGER NOT NULL,
-        track TEXT NOT NULL CHECK(track IN ('management', 'professional')),
+        track TEXT NOT NULL,
         title TEXT NOT NULL DEFAULT '',
         education_requirement TEXT DEFAULT '',
         responsibility_description TEXT DEFAULT '',
+        required_skills_and_training TEXT DEFAULT '',
         org_unit_id TEXT REFERENCES org_units(id),
         created_at TEXT DEFAULT (datetime('now')),
         updated_at TEXT DEFAULT (datetime('now')),
@@ -277,16 +278,67 @@ class TenantDBManager {
       changed = true;
     } catch (e) { /* 表已存在 */ }
 
+    // grade_track_entries 新增 required_skills_and_training 欄位（既有表遷移）
+    try {
+      db.run("ALTER TABLE grade_track_entries ADD COLUMN required_skills_and_training TEXT DEFAULT ''");
+      changed = true;
+    } catch (e) { /* 欄位已存在則忽略 */ }
+
+    // grade_salary_levels 移除 code UNIQUE 約束，改為複合唯一索引 (code, org_unit_id)
+    // SQLite 不支援 ALTER TABLE DROP CONSTRAINT，需透過 recreate table 方式
+    try {
+      const tableInfo = db.exec("SELECT sql FROM sqlite_master WHERE type='table' AND name='grade_salary_levels'");
+      if (tableInfo.length && tableInfo[0].values.length) {
+        const createSql = tableInfo[0].values[0][0];
+        // 檢查是否仍有 `code TEXT UNIQUE` 約束
+        if (createSql && /code\s+TEXT\s+UNIQUE/i.test(createSql)) {
+          console.log('🔄 Migrating grade_salary_levels: removing code UNIQUE constraint...');
+          // 1. 建立新表（無 UNIQUE 在 code 上）
+          db.run(`CREATE TABLE grade_salary_levels_new (
+            id TEXT PRIMARY KEY,
+            grade INTEGER NOT NULL,
+            code TEXT NOT NULL,
+            salary INTEGER NOT NULL,
+            sort_order INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now')),
+            org_unit_id TEXT REFERENCES org_units(id),
+            FOREIGN KEY (grade) REFERENCES grade_levels(grade)
+          )`);
+          // 2. 複製資料
+          db.run(`INSERT INTO grade_salary_levels_new SELECT id, grade, code, salary, sort_order, created_at, org_unit_id FROM grade_salary_levels`);
+          // 3. 刪除舊表
+          db.run('DROP TABLE grade_salary_levels');
+          // 4. 重新命名
+          db.run('ALTER TABLE grade_salary_levels_new RENAME TO grade_salary_levels');
+          // 5. 重建索引
+          db.run('CREATE INDEX IF NOT EXISTS idx_gsl_org_unit ON grade_salary_levels(org_unit_id)');
+          console.log('✅ grade_salary_levels migration complete');
+          changed = true;
+        }
+      }
+    } catch (e) {
+      console.error('⚠️ grade_salary_levels migration failed:', e.message);
+    }
+
+    // 建立複合唯一索引（冪等）
+    try {
+      db.run("CREATE UNIQUE INDEX IF NOT EXISTS idx_gsl_code_org ON grade_salary_levels(code, COALESCE(org_unit_id, '__NULL__'))");
+    } catch (e) { /* 索引已存在或 org_unit_id 尚未加入 */ }
+
     // 將 org_unit_id 為 NULL 的既有資料歸屬到根組織（type=group 的頂層節點）
+    // 注意：grade_salary_levels 排除在外，因為 NULL 代表「集團預設」薪資
     try {
       const rootOrg = db.exec("SELECT id FROM org_units WHERE type = 'group' AND (parent_id IS NULL OR parent_id = '') LIMIT 1");
       if (rootOrg.length && rootOrg[0].values.length) {
         const rootId = rootOrg[0].values[0][0];
         for (const { table } of subsidiaryMigrations) {
+          if (table === 'grade_salary_levels') continue; // NULL = 集團預設，不歸屬到根組織
           db.run(`UPDATE ${table} SET org_unit_id = ? WHERE org_unit_id IS NULL`, [rootId]);
         }
         // employees 表已有 org_unit_id 欄位（在 initTenantSchema 中建立），但既有資料可能為 NULL
         db.run(`UPDATE employees SET org_unit_id = ? WHERE org_unit_id IS NULL`, [rootId]);
+        // grade_salary_levels 恢復：已被錯誤歸屬到根組織的薪資記錄轉回 NULL（集團預設）
+        db.run(`UPDATE grade_salary_levels SET org_unit_id = NULL WHERE org_unit_id = ?`, [rootId]);
         changed = true;
       }
     } catch (e) { /* org_units 表可能不存在 */ }

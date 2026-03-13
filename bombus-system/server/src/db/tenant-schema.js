@@ -1129,7 +1129,7 @@ const BUSINESS_TABLES_SQL = `
   CREATE TABLE IF NOT EXISTS grade_salary_levels (
     id TEXT PRIMARY KEY,
     grade INTEGER NOT NULL,
-    code TEXT UNIQUE NOT NULL,
+    code TEXT NOT NULL,
     salary INTEGER NOT NULL,
     sort_order INTEGER DEFAULT 0,
     created_at TEXT DEFAULT (datetime('now')),
@@ -1139,10 +1139,11 @@ const BUSINESS_TABLES_SQL = `
   CREATE TABLE IF NOT EXISTS grade_track_entries (
     id TEXT PRIMARY KEY,
     grade INTEGER NOT NULL,
-    track TEXT NOT NULL CHECK(track IN ('management', 'professional')),
+    track TEXT NOT NULL,
     title TEXT NOT NULL DEFAULT '',
     education_requirement TEXT DEFAULT '',
     responsibility_description TEXT DEFAULT '',
+    required_skills_and_training TEXT DEFAULT '',
     org_unit_id TEXT REFERENCES org_units(id),
     created_at TEXT DEFAULT (datetime('now')),
     updated_at TEXT DEFAULT (datetime('now')),
@@ -1375,6 +1376,12 @@ function initTenantSchema(adapter) {
     } catch (e) { /* 欄位已存在則忽略 */ }
     db.run(`CREATE INDEX IF NOT EXISTS ${index} ON ${table}(org_unit_id)`);
   }
+
+  // grade_salary_levels 複合唯一索引：同一 (code, org_unit_id) 組合不可重複
+  // COALESCE 處理 NULL（SQLite 中每個 NULL 在 UNIQUE 中被視為不同值）
+  try {
+    db.run("CREATE UNIQUE INDEX IF NOT EXISTS idx_gsl_code_org ON grade_salary_levels(code, COALESCE(org_unit_id, '__NULL__'))");
+  } catch (e) { /* 索引已存在 */ }
 
   adapter.save();
 }

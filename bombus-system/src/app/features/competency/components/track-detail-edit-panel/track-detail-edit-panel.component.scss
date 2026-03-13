@@ -4,7 +4,7 @@
 $module-color: $color-l2-terracotta;
 $module-color-light: $color-l2-terracotta-light;
 $module-color-dark: $color-l2-terracotta-dark;
-$panel-width: 400px;
+$panel-width: 420px;
 
 // ---------------------------------------------------------------
 // Panel Overlay
@@ -59,11 +59,33 @@ $panel-width: 400px;
   flex-shrink: 0;
 }
 
+.panel-header-info {
+  flex: 1;
+  min-width: 0;
+}
+
 .panel-title {
+  @include flex-start;
+  gap: $spacing-sm;
   font-size: $font-size-lg;
   font-weight: $font-weight-semibold;
   color: $color-text-primary;
   margin: 0;
+}
+
+.grade-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 28px;
+  padding: 0 $spacing-sm;
+  border-radius: $radius-md;
+  background: $module-color;
+  color: white;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+  flex-shrink: 0;
 }
 
 .close-btn {
@@ -145,10 +167,11 @@ $panel-width: 400px;
   }
 }
 
-.salary-count {
+.promotion-direction-label {
   font-weight: $font-weight-normal;
   color: $color-text-secondary;
   font-size: $font-size-xs;
+  margin-left: auto;
 }
 
 .form-group {
@@ -169,7 +192,8 @@ $panel-width: 400px;
 }
 
 .form-input,
-.form-textarea {
+.form-textarea,
+.form-select {
   width: 100%;
   padding: $spacing-sm $spacing-md;
   border: 1px solid $color-soft-gray;
@@ -195,155 +219,143 @@ $panel-width: 400px;
 .form-textarea {
   resize: vertical;
   min-height: 72px;
+  font-family: inherit;
+}
+
+.form-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236B6B6B' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
 }
 
 // ---------------------------------------------------------------
-// Salary List
+// Read-only Values
 // ---------------------------------------------------------------
-.salary-list {
-  display: flex;
-  flex-direction: column;
-  gap: $spacing-sm;
-}
-
-.salary-row {
-  display: flex;
-  align-items: center;
-  gap: $spacing-xs;
-}
-
-.salary-index {
-  width: 24px;
-  font-size: $font-size-xs;
-  color: $color-text-secondary;
-  text-align: right;
-  flex-shrink: 0;
-}
-
-.salary-code-input {
-  width: 80px;
-  padding: $spacing-xs $spacing-sm;
-  border: 1px solid $color-soft-gray;
-  border-radius: $radius-sm;
-  font-size: $font-size-xs;
-  flex-shrink: 0;
-
-  &:focus {
-    outline: none;
-    border-color: $module-color;
-  }
-}
-
-.salary-code-display {
-  width: 80px;
-  padding: $spacing-xs $spacing-sm;
-  background: $color-cloud-gray;
-  border-radius: $radius-sm;
-  font-size: $font-size-xs;
-  font-weight: $font-weight-semibold;
-  color: $module-color;
-  flex-shrink: 0;
-  text-align: center;
-}
-
-.form-hint {
+.read-only-value {
   display: block;
-  margin-top: 4px;
-  font-size: $font-size-xs;
-  color: $color-text-secondary;
-}
-
-.salary-amount-input {
-  flex: 1;
-  padding: $spacing-xs $spacing-sm;
-  border: 1px solid $color-soft-gray;
-  border-radius: $radius-sm;
-  font-size: $font-size-xs;
-
-  &:focus {
-    outline: none;
-    border-color: $module-color;
-  }
-}
-
-.remove-btn {
-  @include flex-center;
-  width: 24px;
-  height: 24px;
-  border: none;
-  border-radius: $radius-sm;
-  background: transparent;
-  color: $color-text-secondary;
-  cursor: pointer;
-  flex-shrink: 0;
-  font-size: 14px;
-
-  &:hover {
-    background: rgba(#e74c3c, 0.1);
-    color: #e74c3c;
-  }
-}
-
-.add-salary-btn {
-  @include flex-center;
-  gap: $spacing-xs;
-  width: 100%;
-  padding: $spacing-sm;
-  margin-top: $spacing-sm;
-  border: 1px dashed $color-soft-gray;
-  border-radius: $radius-md;
-  background: transparent;
-  color: $module-color;
+  padding: $spacing-sm $spacing-md;
   font-size: $font-size-sm;
-  cursor: pointer;
-  transition: all $transition-fast;
+  color: $color-text-primary;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+  min-height: 36px;
+}
 
-  &:hover {
-    border-color: $module-color;
-    background: rgba($module-color, 0.05);
+// ---------------------------------------------------------------
+// Section Divider
+// ---------------------------------------------------------------
+.section-divider {
+  height: 1px;
+  background: $color-soft-gray;
+  margin: $spacing-lg 0;
+}
+
+// ---------------------------------------------------------------
+// Highest Grade Notice
+// ---------------------------------------------------------------
+.highest-grade-notice {
+  @include flex-start;
+  gap: $spacing-sm;
+  padding: $spacing-md;
+  background: rgba($module-color, 0.06);
+  border-radius: $radius-md;
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+
+  i {
+    color: $module-color;
+    font-size: 16px;
   }
 }
 
 // ---------------------------------------------------------------
-// Track Tabs
+// Chip Input
 // ---------------------------------------------------------------
-.track-tabs {
+.chip-container {
   display: flex;
+  flex-wrap: wrap;
   gap: $spacing-xs;
-  margin-bottom: $spacing-md;
-}
-
-.track-tab {
-  @include flex-center;
-  gap: $spacing-xs;
-  flex: 1;
   padding: $spacing-sm $spacing-md;
   border: 1px solid $color-soft-gray;
   border-radius: $radius-md;
-  background: transparent;
-  font-size: $font-size-sm;
-  font-weight: $font-weight-medium;
-  color: $color-text-secondary;
-  cursor: pointer;
-  transition: all $transition-fast;
+  min-height: 40px;
+  align-items: center;
+  cursor: text;
+  transition: border-color $transition-fast;
 
-  i { font-size: 16px; }
-
-  &:hover {
-    border-color: $module-color-light;
-    color: $module-color-dark;
-  }
-
-  &.active {
-    background: $module-color;
+  &:focus-within {
     border-color: $module-color;
-    color: white;
+    box-shadow: 0 0 0 2px rgba($module-color, 0.15);
   }
 }
 
-.track-form {
-  @include card;
-  padding: $spacing-md;
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px $spacing-sm;
+  background: rgba($module-color, 0.12);
+  color: $color-text-primary;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  white-space: nowrap;
+
+  .chip-remove {
+    width: 18px;
+    height: 18px;
+    border: none;
+    background: transparent;
+    color: $color-text-secondary;
+    font-size: $font-size-sm;
+    cursor: pointer;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    transition: all $transition-fast;
+
+    &:hover:not(:disabled) {
+      background: rgba(#e74c3c, 0.1);
+      color: #e74c3c;
+    }
+  }
+}
+
+.chip-input {
+  flex: 1;
+  min-width: 100px;
+  border: none;
+  outline: none;
+  font-size: $font-size-xs;
+  color: $color-text-primary;
+  background: transparent;
+
+  &::placeholder {
+    color: $color-text-secondary;
+  }
+}
+
+// Chip 唯讀模式
+.chip-readonly-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-xs;
+}
+
+.chip-readonly {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px $spacing-sm;
+  background: rgba($module-color, 0.08);
+  color: $module-color-dark;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  white-space: nowrap;
 }
 
 // ---------------------------------------------------------------

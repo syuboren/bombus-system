@@ -27,13 +27,17 @@
           <label class="form-label required">職等</label>
           <input type="number" class="form-input" [value]="formGrade()"
             (input)="updateGrade(+$any($event.target).value)" min="1" max="20"
-            [disabled]="saving() || isEditMode()" />
+            disabled />
+          @if (!isEditMode()) {
+          <span class="form-hint">自動帶入下一個可用職等</span>
+          }
         </div>
         <div class="form-group">
-          <label class="form-label required">職級代碼範圍</label>
-          <input type="text" class="form-input" [value]="formCodeRange()"
-            (input)="updateCodeRange($any($event.target).value)" placeholder="例如：BS01-BS03"
+          <label class="form-label required">職級代碼</label>
+          <input type="text" class="form-input" [value]="formCode()"
+            (input)="updateCode($any($event.target).value)" placeholder="例如：BS05"
             [disabled]="saving()" />
+          <span class="form-hint">薪資級別將自動編號（如 BS0501、BS0502...）</span>
         </div>
       </section>
 
@@ -48,12 +52,10 @@
           @for (sal of formSalaryLevels(); track $index) {
           <div class="salary-row">
             <span class="salary-index">{{ $index + 1 }}.</span>
-            <input type="text" class="salary-code-input" [value]="sal.code"
-              (input)="updateSalaryLevel($index, 'code', $any($event.target).value)"
-              placeholder="BS01" [disabled]="saving()" />
+            <span class="salary-code-display">{{ sal.code }}</span>
             <input type="number" class="salary-amount-input" [value]="sal.salary"
               (input)="updateSalaryLevel($index, 'salary', +$any($event.target).value)"
-              placeholder="薪資" [disabled]="saving()" />
+              placeholder="薪資金額" [disabled]="saving()" />
             <button class="remove-btn" (click)="removeSalaryLevel($index)" [disabled]="saving()"
               type="button" title="移除">
               <i class="ri-close-line"></i>
@@ -66,7 +68,30 @@
         </button>
       </section>
 
-      <!-- 軌道 Tab 切換 -->
+      <!-- Overview 模式：軌道職稱（僅顯示職稱欄位） -->
+      @if (context() === 'overview') {
+      <section class="form-section">
+        <h3 class="section-title">
+          <i class="ri-git-branch-line"></i>
+          軌道職稱
+        </h3>
+        <div class="form-group">
+          <label class="form-label">管理職職稱</label>
+          <input type="text" class="form-input" [value]="formManagement().title"
+            (input)="updateTrackTitle('management', $any($event.target).value)"
+            placeholder="例如：副理" [disabled]="saving()" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">專業職職稱</label>
+          <input type="text" class="form-input" [value]="formProfessional().title"
+            (input)="updateTrackTitle('professional', $any($event.target).value)"
+            placeholder="例如：資深工程師" [disabled]="saving()" />
+        </div>
+      </section>
+      }
+
+      <!-- Track-detail 模式：完整軌道資訊（職稱 + 學歷 + 職責） -->
+      @if (context() === 'track-detail') {
       <section class="form-section">
         <h3 class="section-title">
           <i class="ri-git-branch-line"></i>
@@ -105,6 +130,7 @@
           </div>
         </div>
       </section>
+      }
     </div>
 
     <!-- Footer -->

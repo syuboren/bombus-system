@@ -35,4 +35,4 @@
 
 - [x] 7.1 執行 `npx ng build --configuration=development` 確認 Angular 建置無錯誤
 - [x] 7.2 啟動後端 server，執行遷移腳本，驗證 demo 租戶的 grade_track_entries 資料完整（每個職等各有 2 筆 track entry）
-- [ ] 7.3 端對端手動驗證：瀏覽模式 → 編輯模式 → 點擊卡片開面板 → 切換管理職/專業職 Tab → 編輯儲存 → 新增職等 → 確認矩陣更新
+- [x] 7.3 端對端手動驗證：瀏覽模式 → 編輯模式 → 點擊卡片開面板 → 切換管理職/專業職 Tab → 編輯儲存 → 新增職等 → 確認矩陣更新

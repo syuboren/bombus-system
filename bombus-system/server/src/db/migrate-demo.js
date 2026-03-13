@@ -302,6 +302,7 @@ async function seedRBACData(demoAdapter) {
   db.run('BEGIN TRANSACTION');
 
   // 1. 建立 org_units（母公司 + 7 部門）
+  // 注意：DEMO子公司由使用者透過 UI 建立，不在此處硬編碼
   const orgUnits = [
     { id: 'org-root', name: 'Demo集團', type: 'group', parent_id: null, level: 0 },
     { id: 'org-dept-ceo', name: '執行長辦公室', type: 'department', parent_id: 'org-root', level: 1 },
@@ -642,6 +643,88 @@ function migrateGradeTrackEntries(db) {
   }
 
   console.log(`  ✅ grade_track_entries: ${migrated} 筆（從 ${grades.length} 個職等拆分）`);
+
+  // 補填 required_skills_and_training 示範資料
+  const skillsData = {
+    1: { management: '基礎辦公軟體操作、時間管理、團隊溝通技巧', professional: '專業領域基礎知識、數據分析入門、文件撰寫能力' },
+    2: { management: '專案管理基礎、跨部門協調、簡報技巧', professional: '專業技術深化、問題解決方法論、技術文件撰寫' },
+    3: { management: '專案管理認證(PMP)、領導力培訓、預算管理', professional: '專業認證取得、研究方法論、技術架構設計' },
+    4: { management: '策略規劃、變革管理、高階主管教練課程', professional: '產業前沿技術、技術團隊領導、創新方法論' },
+    5: { management: '企業經營管理、組織發展、董事會治理', professional: '技術願景規劃、產學合作、專利與智財管理' },
+    6: { management: '集團戰略、國際化管理、企業社會責任', professional: '產業標準制定、技術策略顧問、跨國技術合作' },
+    7: { management: '全球領導力、企業轉型、永續經營策略', professional: '世界級技術領導、產業創新引領、技術生態系建構' }
+  };
+
+  for (const [grade, tracks] of Object.entries(skillsData)) {
+    for (const [track, skills] of Object.entries(tracks)) {
+      try {
+        const stmt = db.prepare(
+          `UPDATE grade_track_entries SET required_skills_and_training = ? WHERE grade = ? AND track = ? AND (required_skills_and_training IS NULL OR required_skills_and_training = '')`
+        );
+        stmt.bind([skills, parseInt(grade), track]);
+        stmt.step();
+        stmt.free();
+      } catch (e) { /* 忽略更新失敗 */ }
+    }
+  }
+  console.log('  ✅ grade_track_entries: required_skills_and_training 示範資料已補填');
+}
+
+/**
+ * 為既有子公司新增差異化薪資資料（覆寫集團預設）
+ * 動態查詢第一個 type=subsidiary 的組織單位，示範 Grade 3 和 Grade 5 的薪資覆寫
+ */
+function seedSubsidiarySalaryData(db) {
+  console.log('\n─── 子公司差異化薪資種子資料 ───');
+
+  // 動態查詢第一個子公司
+  let subsidiaryId = null;
+  let subsidiaryName = null;
+  try {
+    const result = db.exec("SELECT id, name FROM org_units WHERE type = 'subsidiary' LIMIT 1");
+    if (result.length && result[0].values.length) {
+      subsidiaryId = result[0].values[0][0];
+      subsidiaryName = result[0].values[0][1];
+    }
+  } catch (e) { /* org_units 可能為空 */ }
+
+  if (!subsidiaryId) {
+    console.log('  ⏭ 無子公司，跳過差異化薪資種子');
+    return;
+  }
+
+  console.log(`  目標子公司: ${subsidiaryName} (${subsidiaryId})`);
+
+  // 查詢現有集團預設薪資（Grade 3 和 Grade 5）
+  const grades = [3, 5];
+  for (const grade of grades) {
+    const existing = [];
+    try {
+      const result = db.exec(`SELECT code, salary, sort_order FROM grade_salary_levels WHERE grade = ${grade} AND org_unit_id IS NULL ORDER BY sort_order`);
+      if (result.length && result[0].values.length) {
+        for (const row of result[0].values) {
+          existing.push({ code: row[0], salary: row[1], sort_order: row[2] });
+        }
+      }
+    } catch (e) { /* 表可能為空 */ }
+
+    if (existing.length === 0) {
+      console.log(`  ⏭ Grade ${grade}: 無集團預設薪資，跳過`);
+      continue;
+    }
+
+    // 為子公司建立差異化薪資（薪資打 85 折，模擬不同地區薪資水準）
+    for (const sal of existing) {
+      const adjustedSalary = Math.round(sal.salary * 0.85);
+      const salId = `sal-sub-${sal.code}`;
+      try {
+        const stmt = db.prepare('INSERT OR IGNORE INTO grade_salary_levels (id, grade, code, salary, sort_order, org_unit_id) VALUES (?, ?, ?, ?, ?, ?)');
+        stmt.run([salId, grade, sal.code, adjustedSalary, sal.sort_order, subsidiaryId]);
+        stmt.free();
+      } catch (e) { /* 已存在則跳過 */ }
+    }
+    console.log(`  ✅ Grade ${grade}: ${subsidiaryName} 薪資 ${existing.length} 筆（集團的 85%）`);
+  }
 }
 
 // ═══════════════════════════════════════════
@@ -742,6 +825,10 @@ async function migrateDemoData() {
 
   // 9b. 遷移 grade_track_entries（從 grade_levels 拆分軌道資料）
   migrateGradeTrackEntries(targetDB);
+  demoAdapter.save();
+
+  // 9c. 子公司差異化薪資種子資料
+  seedSubsidiarySalaryData(targetDB);
   demoAdapter.save();
 
   // 10. 建立 RBAC 種子資料

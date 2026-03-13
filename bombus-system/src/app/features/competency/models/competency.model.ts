@@ -76,10 +76,11 @@ export interface SalaryLevel {
 export interface GradeTrackEntry {
   id: string;
   grade: number;                        // 所屬職等
-  track: 'management' | 'professional'; // 軌道類型
+  track: string;                        // 軌道類型（動態，如 'management' | 'professional' | 自訂）
   title: string;                        // 軌道職稱
   educationRequirement: string;         // 學歷要求
   responsibilityDescription: string;    // 職責描述
+  requiredSkillsAndTraining: string;    // 所需技能與培訓
   orgUnitId?: string | null;            // 子公司 ID
 }
 
