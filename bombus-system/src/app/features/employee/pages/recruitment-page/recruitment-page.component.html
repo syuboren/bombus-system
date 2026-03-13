@@ -25,6 +25,17 @@
         </div>
 
         <div class="search-section">
+          @if (subsidiaries().length > 0) {
+            <div class="subsidiary-filter">
+              <select [ngModel]="selectedSubsidiaryId()"
+                      (ngModelChange)="selectedSubsidiaryId.set($event)">
+                <option value="">全部子公司</option>
+                @for (sub of subsidiaries(); track sub.id) {
+                  <option [value]="sub.id">{{ sub.name }}</option>
+                }
+              </select>
+            </div>
+          }
           <div class="search-box">
             <i class="ri-search-line"></i>
             <input type="text" class="search-input" placeholder="搜尋候選人…" [value]="searchQuery()"

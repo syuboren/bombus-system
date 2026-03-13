@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of, delay, map, catchError } from 'rxjs';
 import {
   Job,
@@ -27,8 +27,10 @@ export class JobService {
 
   private readonly JOBS_API = '/api/jobs';
 
-  getJobs(): Observable<Job[]> {
-    return this.http.get<{ status: string; data: any[] }>(`${this.JOBS_API}`).pipe(
+  getJobs(orgUnitId?: string): Observable<Job[]> {
+    let params = new HttpParams();
+    if (orgUnitId) params = params.set('org_unit_id', orgUnitId);
+    return this.http.get<{ status: string; data: any[] }>(`${this.JOBS_API}`, { params }).pipe(
       map(response => response.data.map(job => this.mapDbJobToLocal(job))),
       catchError(error => {
         console.error('Failed to fetch jobs:', error);
@@ -41,8 +43,10 @@ export class JobService {
    * 取得已同步 104 的職缺（從資料庫）
    * 用於「104 職缺」分頁，顯示已關聯 104 的職缺
    */
-  getSynced104Jobs(): Observable<Job[]> {
-    return this.http.get<{ status: string; data: any[] }>(`${this.JOBS_API}`).pipe(
+  getSynced104Jobs(orgUnitId?: string): Observable<Job[]> {
+    let params = new HttpParams();
+    if (orgUnitId) params = params.set('org_unit_id', orgUnitId);
+    return this.http.get<{ status: string; data: any[] }>(`${this.JOBS_API}`, { params }).pipe(
       map(response => response.data
         .filter(job => job.job104_no)  // 只取有 104 編號的職缺
         .map(job => this.mapDbJobToLocal(job))
@@ -69,13 +73,15 @@ export class JobService {
   }
 
 
-  getJobStats(): Observable<JobStats> {
-    return this.http.get<{ status: string; data: any }>(`${this.JOBS_API}/stats/summary`).pipe(
+  getJobStats(orgUnitId?: string): Observable<JobStats> {
+    let params = new HttpParams();
+    if (orgUnitId) params = params.set('org_unit_id', orgUnitId);
+    return this.http.get<{ status: string; data: any }>(`${this.JOBS_API}/stats/summary`, { params }).pipe(
       map(response => ({
         activeJobs: response.data?.activeJobs || 0,
-        newResumes: 45,  // TODO: 從實際資料取得
-        pendingReview: 28,
-        scheduledInterviews: 8
+        newResumes: response.data?.newResumes || 0,
+        pendingReview: response.data?.pendingReview || 0,
+        scheduledInterviews: response.data?.scheduledInterviews || 0
       })),
       catchError(() => of({
         activeJobs: 0,
@@ -423,7 +429,7 @@ export class JobService {
    * 新增職缺 (可選同步至 104)
    */
   createJob(job: Partial<Job> & { syncTo104?: boolean; job104Data?: any }): Observable<Job> {
-    const payload = {
+    const payload: Record<string, unknown> = {
       title: job.title,
       department: job.department,
       description: job.description || '',
@@ -431,6 +437,7 @@ export class JobService {
       syncTo104: job.syncTo104 || false,
       job104Data: job.job104Data || null
     };
+    if (job.org_unit_id) payload['org_unit_id'] = job.org_unit_id;
 
     return this.http.post<{ status: string; data: any }>(`${this.JOBS_API}`, payload).pipe(
       map(response => this.mapDbJobToLocal(response.data)),

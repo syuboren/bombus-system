@@ -7,24 +7,29 @@
 ## Requirements
 
 ### Requirement: JWT 登入認證
-系統 SHALL 提供 `/api/auth/login` 端點，接受 email + password + tenant_slug，驗證成功後回傳 Access Token 和 Refresh Token。
+The system SHALL provide `/api/auth/login` endpoint that accepts email + password + tenant_slug, and upon successful verification, returns an Access Token and Refresh Token. The login query SHALL include the `must_change_password` column from the users table. The login response user object SHALL include `must_change_password: boolean` indicating whether the user is required to change their password on first login.
 
 #### Scenario: 成功登入
-- **WHEN** 使用者提交正確的 email、password 和 tenant_slug
-- **THEN** 系統驗證密碼雜湊，回傳 JWT Access Token（有效期 15 分鐘）和 Refresh Token（有效期 7 天），Token 內嵌 user_id、tenant_id、roles、scope
+- **WHEN** a user submits correct email, password, and tenant_slug
+- **THEN** the system verifies the password hash, returns a JWT Access Token (valid for 15 minutes) and Refresh Token (valid for 7 days), with the Token embedding user_id, tenant_id, roles, scope. The response user object SHALL include `must_change_password` reflecting the user's `must_change_password` database value.
 
 #### Scenario: 密碼錯誤
-- **WHEN** 使用者提交錯誤的密碼
-- **THEN** 系統回傳 401 Unauthorized，不透露是帳號還是密碼錯誤
+- **WHEN** a user submits an incorrect password
+- **THEN** the system returns 401 Unauthorized without revealing whether the account or password is wrong
 
 #### Scenario: 租戶已暫停
-- **WHEN** 使用者嘗試登入已暫停的租戶
-- **THEN** 系統回傳 403 Forbidden，提示租戶已暫停
+- **WHEN** a user attempts to log in to a suspended tenant
+- **THEN** the system returns 403 Forbidden indicating the tenant is suspended
 
 #### Scenario: 帳號已鎖定
-- **WHEN** 使用者帳號狀態為 locked 或 inactive
-- **THEN** 系統回傳 403 Forbidden
+- **WHEN** a user account status is locked or inactive
+- **THEN** the system returns 403 Forbidden
 
+#### Scenario: First login with must_change_password
+- **WHEN** a user logs in successfully and `must_change_password = 1` in the database
+- **THEN** the response user object SHALL contain `must_change_password: true`, and the frontend SHALL redirect to `/change-password` instead of `/dashboard`
+
+---
 ### Requirement: Token 刷新
 系統 SHALL 提供 `/api/auth/refresh` 端點，使用 Refresh Token 取得新的 Access Token。
 
@@ -40,6 +45,7 @@
 - **WHEN** 使用者提交已被登出撤銷的 Refresh Token
 - **THEN** 系統回傳 401 Unauthorized
 
+---
 ### Requirement: 登出
 系統 SHALL 提供 `/api/auth/logout` 端點，撤銷該使用者的 Refresh Token。
 
@@ -47,17 +53,23 @@
 - **WHEN** 使用者呼叫登出 API
 - **THEN** 系統刪除該使用者的 Refresh Token 記錄，後續使用該 Token 刷新 SHALL 失敗
 
+---
 ### Requirement: 密碼安全
-系統 SHALL 使用 bcryptjs 雜湊儲存密碼，密碼最低 8 字元。
+The system SHALL use bcryptjs to hash stored passwords, with a minimum password length of 8 characters. The system SHALL provide a `POST /api/auth/change-password` endpoint for users to change their password.
 
 #### Scenario: 註冊時密碼雜湊
-- **WHEN** 建立新使用者帳號
-- **THEN** 密碼使用 bcryptjs（cost factor 10）雜湊後儲存，原始密碼 SHALL 不被儲存
+- **WHEN** a new user account is created
+- **THEN** the password is hashed using bcryptjs (cost factor 10) before storage; the original password SHALL NOT be stored
 
 #### Scenario: 密碼不符最低長度
-- **WHEN** 提交少於 8 字元的密碼
-- **THEN** 系統回傳 400 錯誤
+- **WHEN** a password shorter than 8 characters is submitted
+- **THEN** the system returns a 400 error
 
+#### Scenario: Password change clears must_change_password flag
+- **WHEN** a user successfully changes their password via `/api/auth/change-password`
+- **THEN** the system sets `must_change_password = 0` for that user and returns `{ success: true }`
+
+---
 ### Requirement: Auth Middleware 保護路由
 系統 SHALL 提供 Auth Middleware，驗證請求的 JWT Access Token。所有受保護路由 SHALL 使用此中介層。
 
@@ -69,6 +81,7 @@
 - **WHEN** 請求未攜帶 Token 或 Token 無效/過期
 - **THEN** 中介層回傳 401 Unauthorized
 
+---
 ### Requirement: 平台管理員認證
 系統 SHALL 為平台管理員提供獨立的登入端點 `/api/auth/platform-login`，使用 platform.db 的 platform_admins 表驗證。
 
@@ -80,6 +93,7 @@
 - **WHEN** 平台管理員的 Token 嘗試存取需要 tenant_id 的 API
 - **THEN** 系統回傳 403 Forbidden（平台管理員需要明確指定操作對象租戶）
 
+---
 ### Requirement: 前端 AuthInterceptor 自動管理 Token
 前端 SHALL 提供 AuthInterceptor，自動在每個 HTTP 請求的 Header 中附加 JWT Access Token。
 
@@ -95,6 +109,7 @@
 - **WHEN** Refresh Token 過期且刷新失敗
 - **THEN** AuthInterceptor 清除本地 Token 並導向登入頁面
 
+---
 ### Requirement: 租戶選擇機制
 登入時使用者 SHALL 指定租戶（透過 tenant_slug）。系統 SHALL 支援以 email 域名自動建議匹配的租戶。
 

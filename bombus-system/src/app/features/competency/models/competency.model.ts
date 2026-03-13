@@ -52,7 +52,7 @@ export interface ChangeResponse {
 // 審核變更記錄（歷史查詢用）
 export interface ChangeRecord {
   id: string;
-  entityType: 'track' | 'grade' | 'salary' | 'position' | 'promotion';
+  entityType: 'track' | 'grade' | 'salary' | 'position' | 'promotion' | 'track-entry';
   entityId: string;
   action: 'create' | 'update' | 'delete';
   oldData: any;           // 變更前的完整 entity JSON snapshot
@@ -72,18 +72,35 @@ export interface SalaryLevel {
   order: number;
 }
 
+// 軌道條目（對應 DB grade_track_entries）
+export interface GradeTrackEntry {
+  id: string;
+  grade: number;                        // 所屬職等
+  track: string;                        // 軌道類型（動態，如 'management' | 'professional' | 自訂）
+  title: string;                        // 軌道職稱
+  educationRequirement: string;         // 學歷要求
+  responsibilityDescription: string;    // 職責描述
+  requiredSkillsAndTraining: string;    // 所需技能與培訓
+  orgUnitId?: string | null;            // 子公司 ID
+}
+
 // 職等（對應 DB grade_levels）
 export interface GradeLevelNew {
   id: string;
   grade: number;                    // 1-7
   codeRange: string;                // BS01-BS04
-  titleManagement: string;          // 管理職稱
-  titleProfessional: string;        // 專業職稱
-  educationRequirement: string;     // 學歷要求
-  responsibilityDescription: string;// 職責描述
+  trackEntries: GradeTrackEntry[];  // 軌道條目（管理職 + 專業職）
   salaryLevels: SalaryLevel[];      // 職級薪資清單
   minSalary: number;                // 薪資下限
   maxSalary: number;                // 薪資上限
+  /** @deprecated 使用 trackEntries 取代，保留向後相容 */
+  titleManagement?: string;
+  /** @deprecated 使用 trackEntries 取代，保留向後相容 */
+  titleProfessional?: string;
+  /** @deprecated 使用 trackEntries 取代，保留向後相容 */
+  educationRequirement?: string;
+  /** @deprecated 使用 trackEntries 取代，保留向後相容 */
+  responsibilityDescription?: string;
 }
 
 // 晉升條件（對應 DB promotion_criteria）
@@ -155,6 +172,7 @@ export interface CareerPathNew {
   toPosition: string;
   estimatedTime: string;
   steps: CareerStepNew[];
+  org_unit_id?: string | null;
 }
 
 // ---------------------------------------------------------------
@@ -183,6 +201,7 @@ export interface CoreManagementCompetency {
   type: 'core' | 'management';    // 核心職能 or 管理職能
   definition: string;             // 職能定義
   levels: CompetencyLevelIndicator[];  // L1-L6 等級指標
+  org_unit_id?: string | null;    // 所屬子公司（NULL = 共用）
   createdAt: Date;
   updatedAt: Date;
 }
@@ -198,6 +217,7 @@ export interface KSACompetencyItem {
   description: string;
   behaviorIndicators: string[];
   linkedCourses: string[];
+  org_unit_id?: string | null;    // 所屬子公司（NULL = 共用）
   createdAt: Date;
   updatedAt: Date;
 }
@@ -316,6 +336,7 @@ export interface JobDescription {
   version: string;
   status: 'draft' | 'pending_review' | 'rejected' | 'published' | 'archived';
   rejectedReason?: string;  // 退回原因
+  org_unit_id?: string | null;   // 所屬子公司（NULL = 共用）
   createdAt: Date;
   updatedAt: Date;
   createdBy: string;

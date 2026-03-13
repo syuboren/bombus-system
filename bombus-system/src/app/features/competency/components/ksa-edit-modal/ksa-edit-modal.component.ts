@@ -22,6 +22,7 @@ export class KsaEditModalComponent {
     // Inputs
     visible = input<boolean>(false);
     competency = input<KSACompetencyItem | null>(null);
+    orgUnitId = input<string>('');
 
     // Outputs
     close = output<void>();
@@ -179,7 +180,8 @@ export class KsaEditModalComponent {
             ksaType: data.ksaType,
             description: data.description,
             behaviorIndicators: cleanedIndicators,
-            linkedCourses: data.linkedCourses
+            linkedCourses: data.linkedCourses,
+            org_unit_id: this.orgUnitId() || null
         };
 
         const request$ = this.isEditMode() && comp

@@ -25,6 +25,7 @@
 - **WHEN** demo 租戶資料庫初始化
 - **THEN** org_units 表 SHALL 包含從現有 onboarding.db `departments` 表遷入的 7 個部門（執行長辦公室、行政部、財務部、專案部、人資部、業務部、工程部），以及一個預設的集團根節點
 
+---
 ### Requirement: 角色定義與管理
 系統 SHALL 支援建立自訂角色，每個角色 SHALL 綁定一個作用範圍（scope_type：global/subsidiary/department）。
 
@@ -40,6 +41,7 @@
 - **WHEN** 租戶管理員刪除 is_system=0 的角色
 - **THEN** 系統刪除該角色及其所有 role_permissions 和 user_roles 關聯（CASCADE）
 
+---
 ### Requirement: 權限定義
 系統 SHALL 使用 `resource:action` 格式定義權限。系統 SHALL 預載所有 L1~L6 模組對應的權限清單。
 
@@ -51,25 +53,31 @@
 - **WHEN** 租戶管理員查詢權限列表
 - **THEN** 系統回傳所有權限，按 resource 分組
 
+---
 ### Requirement: 使用者角色指派（Scoped Roles）
-系統 SHALL 支援將角色指派給使用者，並綁定作用範圍（org_unit_id）。
+The system SHALL support assigning roles to users with a bound scope (org_unit_id). In addition to manual assignment via the tenant admin interface, the system SHALL support automatic role assignment during candidate-to-employee conversion.
 
 #### Scenario: 指派集團級角色
-- **WHEN** 將 scope_type=global 的角色指派給使用者
-- **THEN** user_roles 中 org_unit_id 設為集團根節點的 ID，該使用者可存取所有子公司與部門
+- **WHEN** a role with scope_type=global is assigned to a user
+- **THEN** user_roles org_unit_id is set to the group root node ID, and the user can access all subsidiaries and departments
 
 #### Scenario: 指派子公司級角色
-- **WHEN** 將 scope_type=subsidiary 的角色指派給使用者，綁定某子公司
-- **THEN** user_roles 中 org_unit_id 設為該子公司 ID，使用者僅可存取該子公司及其部門
+- **WHEN** a role with scope_type=subsidiary is assigned to a user, bound to a subsidiary
+- **THEN** user_roles org_unit_id is set to that subsidiary ID, and the user can only access that subsidiary and its departments
 
 #### Scenario: 指派部門級角色
-- **WHEN** 將 scope_type=department 的角色指派給使用者，綁定某部門
-- **THEN** user_roles 中 org_unit_id 設為該部門 ID，使用者僅可存取該部門
+- **WHEN** a role with scope_type=department is assigned to a user, bound to a department
+- **THEN** user_roles org_unit_id is set to that department ID, and the user can only access that department
 
 #### Scenario: 同一使用者可擁有多個角色
-- **WHEN** 使用者被指派多個角色（如在 A 部門是主管，在 B 部門是員工）
-- **THEN** 系統 SHALL 合併所有角色的權限，取聯集
+- **WHEN** a user is assigned multiple roles (e.g., manager in dept A, employee in dept B)
+- **THEN** the system SHALL merge all role permissions, taking the union
 
+#### Scenario: Automatic employee role assignment during conversion
+- **WHEN** a candidate is converted to an employee and a new user account is created
+- **THEN** the system SHALL automatically assign the `employee` system role (is_system=1) to the new user, with org_unit_id set to the employee's assigned organizational unit (or NULL if no org unit is provided)
+
+---
 ### Requirement: 權限繼承
 系統 SHALL 實作範圍繼承：global 角色自動涵蓋所有 subsidiary 和 department；subsidiary 角色自動涵蓋該子公司下所有 department。
 
@@ -85,6 +93,7 @@
 - **WHEN** 擁有子公司 A 的 subsidiary 角色使用者，請求子公司 B 的資料
 - **THEN** 系統回傳 403 Forbidden
 
+---
 ### Requirement: Permission Middleware 檢查存取權限
 系統 SHALL 提供 Permission Middleware，根據路由所需權限與使用者角色/範圍進行存取控制。
 
@@ -96,6 +105,7 @@
 - **WHEN** 使用者缺少路由所需的權限
 - **THEN** 中介層回傳 403 Forbidden
 
+---
 ### Requirement: 預設角色初始化
 系統 SHALL 在租戶資料庫初始化時建立 5 個預設角色：super_admin、subsidiary_admin、hr_manager、dept_manager、employee。
 
@@ -103,6 +113,7 @@
 - **WHEN** 新租戶資料庫初始化
 - **THEN** roles 表包含 5 個 is_system=1 的預設角色，各自對應合理的預設權限
 
+---
 ### Requirement: 前端權限感知
 前端 SHALL 提供 PermissionService（Signal-based），在登入後從 Token 解析使用者權限並快取。元件層 SHALL 透過 PermissionDirective 或 PermissionService 控制 UI 元素的顯示/隱藏。
 
@@ -114,6 +125,7 @@
 - **WHEN** 使用者不具備存取 /settings 頁面的權限
 - **THEN** PermissionGuard 攔截並導向首頁或顯示無權限提示
 
+---
 ### Requirement: 權限範圍可視化
 前端 SHALL 提供權限可視化介面，以樹狀圖呈現組織架構與各角色的權限範圍，讓管理員直觀理解「誰可以看到什麼」。
 
@@ -125,29 +137,34 @@
 - **WHEN** 管理員選擇某位使用者
 - **THEN** 系統高亮顯示該使用者所有角色的作用範圍，並列出合併後的有效權限清單
 
+---
 ### Requirement: 既有組織管理模組整合
-系統 SHALL 將現有的組織管理模組（`features/organization/`）從 Mock 資料遷移至真實 API。OrganizationService 的 mock 方法 SHALL 替換為呼叫後端 API，後端 API 讀取租戶資料庫中的真實資料（來源為 onboarding.db 遷入的 `employees` 和 `departments` 表）。
+The system SHALL integrate the existing organization management module with real API data. The `employees` table SHALL include an `org_unit_id` column as a foreign key referencing `org_units(id)` to link employees to the organizational structure.
 
 #### Scenario: 集團組織圖使用真實資料
-- **WHEN** 使用者開啟集團組織圖頁面（`/organization/group-structure`）
-- **THEN** OrganizationService 從 `/api/organization/companies` 取得資料（取代 mockCompanies），畫布和列表視圖正常運作，Company 資料來自 org_units(type=group/subsidiary)
+- **WHEN** a user opens the group organization chart page (`/organization/group-structure`)
+- **THEN** OrganizationService fetches data from `/api/organization/companies` (replacing mockCompanies), with Company data sourced from org_units(type=group/subsidiary)
 
 #### Scenario: 部門結構管理使用真實資料
-- **WHEN** 使用者開啟部門結構管理頁面（`/organization/department-structure`）
-- **THEN** OrganizationService 從 `/api/organization/departments` 取得部門資料（取代 mockDepartments），資料來自 org_units(type=department) 和既有 departments 表
+- **WHEN** a user opens the department structure management page (`/organization/department-structure`)
+- **THEN** OrganizationService fetches department data from `/api/organization/departments` (replacing mockDepartments), sourced from org_units(type=department) and the existing departments table
 
 #### Scenario: 員工管理使用真實資料
-- **WHEN** 使用者開啟員工管理頁面（`/organization/employee-management`）
-- **THEN** OrganizationService 從 `/api/employee` 取得員工資料（取代 mockEmployees），多維篩選和分頁正常運作，資料來自既有 employees 表
+- **WHEN** a user opens the employee management page (`/organization/employee-management`)
+- **THEN** OrganizationService fetches employee data from `/api/employee` (replacing mockEmployees), with multi-dimensional filtering and pagination
 
 #### Scenario: CRUD 操作連接真實 API
-- **WHEN** 使用者在組織管理中建立/修改/刪除公司、部門或員工
-- **THEN** OrganizationService 呼叫對應的後端 API，資料持久化至租戶資料庫
+- **WHEN** a user creates/modifies/deletes companies, departments, or employees in organization management
+- **THEN** OrganizationService calls the corresponding backend API, and data is persisted to the tenant database
 
 #### Scenario: 組織管理受權限控制
-- **WHEN** 使用者不具備 organization:manage 權限
-- **THEN** 集團組織圖和部門結構的編輯功能（新增/修改/刪除）SHALL 隱藏，僅顯示唯讀模式
+- **WHEN** a user does not have organization:manage permission
+- **THEN** edit functions (create/modify/delete) in org chart and department structure SHALL be hidden, showing read-only mode only
 
 #### Scenario: 員工與使用者帳號關聯
-- **WHEN** 系統中同時存在 employees 表和 users 表
-- **THEN** 系統 SHALL 透過 employee_id 欄位將 users 表的登入帳號與 employees 表的員工檔案關聯，employees 表的 `role` 欄位（manager/employee）SHALL 對應到 RBAC 角色
+- **WHEN** both employees and users tables exist in the system
+- **THEN** the system SHALL link users to employees via the employee_id column. Employees with an `org_unit_id` SHALL have their corresponding user_roles scoped to that organizational unit.
+
+#### Scenario: Employee org_unit_id linked to org_units
+- **WHEN** an employee record has a non-null `org_unit_id`
+- **THEN** the `org_unit_id` SHALL reference a valid record in the `org_units` table, establishing the employee's position in the organizational hierarchy

@@ -16,6 +16,7 @@ import { HeaderComponent } from '../../../../shared/components/header/header.com
 import { HasPermissionDirective } from '../../../../shared/directives/has-permission.directive';
 import { OrganizationService } from '../../../organization/services/organization.service';
 import { TenantAdminService } from '../../services/tenant-admin.service';
+import { OrgUnitService } from '../../../../core/services/org-unit.service';
 import {
   OrgTreeNode,
   OrgNodeType,
@@ -55,6 +56,7 @@ interface UnifiedTreeNode {
 export class OrgStructurePageComponent implements OnInit, AfterViewInit {
   private orgService = inject(OrganizationService);
   private tenantAdminService = inject(TenantAdminService);
+  private orgUnitService = inject(OrgUnitService);
   private cdr = inject(ChangeDetectorRef);
 
   @ViewChild('canvasContainer') canvasContainerRef!: ElementRef<HTMLDivElement>;
@@ -319,6 +321,9 @@ export class OrgStructurePageComponent implements OnInit, AfterViewInit {
 
   loadData(): void {
     this.loading.set(true);
+
+    // 清除 OrgUnitService 快取，確保其他頁面的下拉選單能取得最新資料
+    this.orgUnitService.invalidateCache();
 
     this.orgService.getOrgTree().subscribe(data => {
       this.orgTree.set(data);

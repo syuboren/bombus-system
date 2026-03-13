@@ -11,7 +11,9 @@ import {
   ForgotPasswordRequest,
   ForgotPasswordResponse,
   RememberedCredentials,
-  PlatformLoginRequest
+  PlatformLoginRequest,
+  ChangePasswordRequest,
+  ChangePasswordResponse
 } from '../models/auth.model';
 
 const STORAGE_KEY = 'bombus_remembered_credentials';
@@ -117,12 +119,19 @@ export class AuthService {
         // 儲存 Token
         localStorage.setItem(ACCESS_TOKEN_KEY, tokenRes.access_token);
         localStorage.setItem(REFRESH_TOKEN_KEY, tokenRes.refresh_token);
-        localStorage.setItem(USER_KEY, JSON.stringify(tokenRes.user));
+
+        // 合併 must_change_password + tenant_slug 到 user
+        const user: User = {
+          ...tokenRes.user,
+          must_change_password: tokenRes.user.must_change_password || tokenRes.must_change_password,
+          tenant_slug: request.tenant_slug
+        };
+        localStorage.setItem(USER_KEY, JSON.stringify(user));
 
         // 清除舊版 key
         localStorage.removeItem(LEGACY_TOKEN_KEY);
 
-        this.currentUserSignal.set(tokenRes.user);
+        this.currentUserSignal.set(user);
 
         // 處理記住登入資訊
         if (request.rememberMe) {
@@ -134,7 +143,7 @@ export class AuthService {
         return {
           success: true,
           message: '登入成功',
-          user: tokenRes.user,
+          user,
           token: tokenRes.access_token
         } as LoginResponse;
       }),
@@ -249,6 +258,24 @@ export class AuthService {
       message: `密碼重設連結已發送至 ${request.email}`
     }).pipe(
       tap(() => this.isLoadingSignal.set(false))
+    );
+  }
+
+  /**
+   * 變更密碼
+   */
+  changePassword(request: ChangePasswordRequest): Observable<ChangePasswordResponse> {
+    return this.http.post<ChangePasswordResponse>('/api/auth/change-password', request).pipe(
+      tap(res => {
+        if (res.success) {
+          const user = this.currentUserSignal();
+          if (user) {
+            const updated = { ...user, must_change_password: false };
+            this.currentUserSignal.set(updated);
+            localStorage.setItem(USER_KEY, JSON.stringify(updated));
+          }
+        }
+      })
     );
   }
 

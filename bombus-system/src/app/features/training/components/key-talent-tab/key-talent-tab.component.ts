@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   inject,
   signal,
+  computed,
   OnInit,
   OnDestroy,
   AfterViewInit,
@@ -13,6 +14,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { TalentMapService } from '../../services/talent-map.service';
 import { NotificationService } from '../../../../core/services/notification.service';
+import { OrgUnitService } from '../../../../core/services/org-unit.service';
 import { KeyTalentMetric, RiskAlert, SuccessionPlan } from '../../models/talent-map.model';
 import * as echarts from 'echarts';
 
@@ -30,6 +32,7 @@ export class KeyTalentTabComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private talentMapService = inject(TalentMapService);
   private notificationService = inject(NotificationService);
+  private orgUnitService = inject(OrgUnitService);
   private cdr = inject(ChangeDetectorRef);
   private coverageChart: echarts.ECharts | null = null;
   private costChart: echarts.ECharts | null = null;
@@ -39,8 +42,10 @@ export class KeyTalentTabComponent implements OnInit, AfterViewInit, OnDestroy {
     this.costChart?.resize();
   };
 
-  // Options
-  readonly departmentOptions = this.talentMapService.departmentOptions;
+  // 子公司→部門級聯篩選
+  selectedSubsidiaryId = signal<string>('');
+  subsidiaries = this.orgUnitService.subsidiaries;
+  filteredDepartments = computed(() => this.orgUnitService.filterDepartments(this.selectedSubsidiaryId()));
 
   // Retention suggestions
   readonly retentionSuggestions = [
@@ -64,6 +69,7 @@ export class KeyTalentTabComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnInit(): void {
     window.addEventListener('resize', this.resizeHandler);
+    this.orgUnitService.loadOrgUnits().subscribe();
   }
 
   ngAfterViewInit(): void {

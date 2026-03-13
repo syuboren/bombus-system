@@ -81,10 +81,10 @@ function getMeetingDetails(req, meetingId) {
  */
 router.get('/conclusions', (req, res) => {
     try {
-        const { status, department } = req.query;
+        const { status, department, org_unit_id } = req.query;
 
         let query = `
-            SELECT 
+            SELECT
                 c.*,
                 m.title as meeting_title,
                 m.start_time as meeting_date,
@@ -94,6 +94,11 @@ router.get('/conclusions', (req, res) => {
             WHERE 1=1
         `;
         let params = [];
+
+        if (org_unit_id) {
+            query += ` AND m.org_unit_id = ?`;
+            params.push(org_unit_id);
+        }
 
         if (status) {
             // 處理逾期狀態
@@ -154,7 +159,7 @@ router.get('/conclusions', (req, res) => {
  */
 router.get('/', (req, res) => {
     try {
-        const { start, end, type, scope, employeeId, department } = req.query;
+        const { start, end, type, scope, employeeId, department, org_unit_id } = req.query;
 
         // 根據 scope 決定查詢方式
         let meetingIds = null;
@@ -213,6 +218,10 @@ router.get('/', (req, res) => {
             query += ` AND type = ?`;
             params.push(type);
         }
+        if (org_unit_id) {
+            query += ` AND org_unit_id = ?`;
+            params.push(org_unit_id);
+        }
 
         query += ` ORDER BY start_time ASC`;
 
@@ -244,6 +253,7 @@ router.post('/', (req, res) => {
         const {
             title, type, status, location, isOnline, meetingLink,
             startTime, endTime, duration, recurrence, recurrenceEndDate, notes,
+            org_unit_id,
             attendees = [], agenda = [], reminders = [], attachments = []
         } = req.body;
 
@@ -263,12 +273,12 @@ router.post('/', (req, res) => {
             INSERT INTO meetings (
                 id, title, type, status, location, is_online, meeting_link,
                 start_time, end_time, duration, recurrence, recurrence_end_date, notes,
-                created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                org_unit_id, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).run(
             id, title, type, status || 'scheduled', location, isOnline ? 1 : 0, meetingLink,
             startTime, endTime, calculatedDuration, recurrence, recurrenceEndDate, notes,
-            now, now
+            org_unit_id || null, now, now
         );
 
         // 2. Add Attendees
@@ -355,6 +365,7 @@ router.put('/:id', (req, res) => {
         const {
             title, type, status, location, isOnline, meetingLink,
             startTime, endTime, duration, recurrence, recurrenceEndDate, notes,
+            org_unit_id,
             attendees, agenda, reminders
         } = req.body;
 
@@ -381,12 +392,13 @@ router.put('/:id', (req, res) => {
                 recurrence = COALESCE(?, recurrence),
                 recurrence_end_date = COALESCE(?, recurrence_end_date),
                 notes = COALESCE(?, notes),
+                org_unit_id = COALESCE(?, org_unit_id),
                 updated_at = ?
             WHERE id = ?
         `).run(
             title, type, status, location, isOnline ? 1 : 0, meetingLink,
             startTime, endTime, duration, recurrence, recurrenceEndDate, notes,
-            now, meetingId
+            org_unit_id || null, now, meetingId
         );
 
         // 更新出席者 (若有提供)
@@ -702,12 +714,16 @@ router.patch('/conclusions/:id', (req, res) => {
  */
 router.get('/dashboard/stats', (req, res) => {
     try {
-        // Simple aggregation logic
-        const totalMeetings = req.tenantDB.prepare(`SELECT COUNT(*) as c FROM meetings`).get().c;
-        const completedMeetings = req.tenantDB.prepare(`SELECT COUNT(*) as c FROM meetings WHERE status = 'completed'`).get().c;
-        const totalDuration = req.tenantDB.prepare(`SELECT SUM(duration) as s FROM meetings`).get().s || 0;
+        const { org_unit_id } = req.query;
+        const orgFilter = org_unit_id ? ` WHERE org_unit_id = ?` : '';
+        const orgFilterAnd = org_unit_id ? ` AND m.org_unit_id = ?` : '';
+        const orgParams = org_unit_id ? [org_unit_id] : [];
 
-        const conclusions = req.tenantDB.prepare(`SELECT status, due_date FROM meeting_conclusions`).all();
+        const totalMeetings = req.tenantDB.prepare(`SELECT COUNT(*) as c FROM meetings${orgFilter}`).get(...orgParams).c;
+        const completedMeetings = req.tenantDB.prepare(`SELECT COUNT(*) as c FROM meetings WHERE status = 'completed'${org_unit_id ? ' AND org_unit_id = ?' : ''}`).get(...orgParams).c;
+        const totalDuration = req.tenantDB.prepare(`SELECT SUM(duration) as s FROM meetings${orgFilter}`).get(...orgParams).s || 0;
+
+        const conclusions = req.tenantDB.prepare(`SELECT mc.status, mc.due_date FROM meeting_conclusions mc${org_unit_id ? ' JOIN meetings m ON mc.meeting_id = m.id WHERE m.org_unit_id = ?' : ''}`).all(...orgParams);
         const totalConclusions = conclusions.length;
         const completedConclusions = conclusions.filter(c => c.status === 'completed').length;
         const overdueConclusions = conclusions.filter(c => {

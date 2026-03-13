@@ -1713,6 +1713,287 @@ $module-color-dark: $color-l2-terracotta-dark;
   gap: $spacing-xl;
 }
 
+// =====================================================
+// 矩陣子標籤頁
+// =====================================================
+.matrix-subtabs {
+  display: flex;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-lg;
+  padding: $spacing-xs;
+  background: $color-cloud-gray;
+  border-radius: $radius-full;
+  overflow-x: auto;
+  @include custom-scrollbar;
+}
+
+.subtab-btn {
+  @include button-base;
+  padding: $spacing-sm $spacing-lg;
+  border: none;
+  border-radius: $radius-full;
+  background: transparent;
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all $transition-fast;
+
+  i {
+    font-size: $font-size-base;
+  }
+
+  &:hover {
+    background: rgba($module-color, 0.08);
+    color: $module-color;
+  }
+
+  &.active {
+    background: $color-pure-white;
+    color: $module-color;
+    font-weight: $font-weight-semibold;
+    box-shadow: $shadow-sm;
+  }
+}
+
+// 共用：下拉篩選器樣式
+.filter-select-sm {
+  padding: $spacing-sm $spacing-md;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  background: $color-pure-white;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  cursor: pointer;
+  transition: border-color $transition-fast;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M2.5 4.5L6 8l3.5-3.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right $spacing-sm center;
+  padding-right: $spacing-xl;
+
+  &:focus {
+    outline: none;
+    border-color: $module-color;
+    box-shadow: 0 0 0 2px rgba($module-color, 0.1);
+  }
+
+  &:hover {
+    border-color: darken($color-soft-gray, 10%);
+  }
+}
+
+// Tab A 篩選器列（子公司篩選 + 操作按鈕）
+.overview-filter-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: $spacing-md;
+  margin-bottom: $spacing-md;
+}
+
+// 子標籤頁內的操作按鈕列
+.subtab-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-md;
+}
+
+// Tab A: 整體對照表
+.overview-table-wrapper {
+  overflow-x: auto;
+  @include custom-scrollbar;
+  @include card;
+  border-radius: $radius-md;
+}
+
+.overview-table {
+  @include data-table($module-color);
+
+  .th-grade {
+    width: 60px;
+    text-align: center;
+  }
+
+  .td-grade {
+    text-align: center;
+
+    .grade-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: $radius-full;
+      background: rgba($module-color, 0.12);
+      color: $module-color;
+      font-weight: $font-weight-bold;
+      font-size: $font-size-sm;
+    }
+  }
+
+  .td-salary {
+    white-space: nowrap;
+  }
+
+  .th-actions {
+    width: 48px;
+  }
+
+  .td-actions {
+    text-align: center;
+  }
+
+  .row-odd {
+    background: rgba($color-cloud-gray, 0.3);
+  }
+
+  .editing {
+    background: rgba($module-color, 0.06);
+  }
+
+  .dimmed {
+    opacity: 0.4;
+  }
+}
+
+.btn-edit-row {
+  @include button-base;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  background: $color-pure-white;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    border-color: $module-color;
+    color: $module-color;
+    background: rgba($module-color, 0.05);
+  }
+}
+
+// Tab B/C: 軌道明細
+.track-detail-section {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.track-filter-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: $spacing-md;
+
+  .track-filter-selects {
+    display: flex;
+    gap: $spacing-md;
+    align-items: center;
+  }
+
+  .track-filter-actions {
+    display: flex;
+    gap: $spacing-sm;
+    align-items: center;
+  }
+}
+
+.track-detail-table-wrapper {
+  overflow-x: auto;
+  @include custom-scrollbar;
+  @include card;
+  border-radius: $radius-md;
+}
+
+.track-detail-table {
+  @include data-table($module-color);
+
+  .th-grade {
+    width: 60px;
+    text-align: center;
+  }
+
+  .th-code {
+    width: 100px;
+  }
+
+  .th-department {
+    min-width: 100px;
+  }
+
+  .td-grade {
+    text-align: center;
+
+    .grade-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: $radius-full;
+      background: rgba($module-color, 0.12);
+      color: $module-color;
+      font-weight: $font-weight-bold;
+      font-size: $font-size-sm;
+    }
+  }
+
+  .td-code {
+    color: $color-text-secondary;
+    font-size: $font-size-sm;
+    font-family: monospace;
+  }
+
+  .td-position {
+    .position-inline-input {
+      width: 100%;
+      padding: $spacing-xs $spacing-sm;
+      border: 1px solid transparent;
+      border-radius: $radius-sm;
+      background: transparent;
+      font-size: $font-size-sm;
+      color: $color-text-primary;
+      transition: all $transition-fast;
+
+      &:focus {
+        outline: none;
+        border-color: $module-color;
+        background: $color-pure-white;
+        box-shadow: 0 0 0 2px rgba($module-color, 0.1);
+      }
+
+      &:hover:not(:focus) {
+        border-color: $color-soft-gray;
+        background: rgba($color-cloud-gray, 0.5);
+      }
+
+      &::placeholder {
+        color: $color-text-secondary;
+      }
+    }
+  }
+
+  .row-odd {
+    background: rgba($color-cloud-gray, 0.3);
+  }
+
+  .track-row {
+    cursor: pointer;
+
+    &.active {
+      background: rgba($module-color, 0.06);
+      border-left: 3px solid $module-color;
+    }
+  }
+}
+
 .track-section {
   &.track-management {
     .track-header.management {
@@ -3117,4 +3398,39 @@ $module-color-dark: $color-l2-terracotta-dark;
   &:hover .btn-edit-card {
     opacity: 1;
   }
+
+  // 正在編輯的卡片高亮
+  &.editing {
+    border-color: $module-color !important;
+    border-width: 3px;
+    box-shadow: 0 0 0 3px rgba($module-color, 0.2), $shadow-md;
+  }
+
+  // 其他卡片降低透明度
+  &.dimmed {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+}
+
+// ---------------------------------------------------------------
+// Track Label (Detail Modal)
+// ---------------------------------------------------------------
+.track-label-sm {
+  display: inline-block;
+  padding: 2px 8px;
+  margin-right: $spacing-sm;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  background: rgba($module-color, 0.12);
+  color: $module-color-dark;
+}
+
+.responsibility-item {
+  margin-bottom: $spacing-md;
+
+  &:last-child { margin-bottom: 0; }
+
+  p { margin: $spacing-xs 0 0; }
 }

@@ -217,7 +217,7 @@ router.get('/progress', (req, res) => {
  */
 router.get('/list', (req, res) => {
     try {
-        const { dept, status, all } = req.query;
+        const { dept, status, all, org_unit_id } = req.query;
 
         let query = `
             SELECT id, employee_no, name, email, phone, department, position,
@@ -227,6 +227,12 @@ router.get('/list', (req, res) => {
             WHERE 1=1
         `;
         let params = [];
+
+        // 子公司篩選
+        if (org_unit_id) {
+            query += ` AND org_unit_id = ?`;
+            params.push(org_unit_id);
+        }
 
         // 預設只顯示在職員工
         if (all !== 'true') {
@@ -272,17 +278,30 @@ router.get('/list', (req, res) => {
 
 /**
  * GET /api/employee/departments
- * 取得所有部門清單
+ * 取得所有部門清單（優先從 org_units 取，fallback 從 employees 取）
  */
 router.get('/departments', (req, res) => {
     try {
-        const departments = req.tenantDB.prepare(`
-            SELECT DISTINCT department
-            FROM employees
-            WHERE department IS NOT NULL
-            ORDER BY department
+        // 優先從 org_units 取部門（統一資料來源）
+        const fromOrgUnits = req.tenantDB.prepare(`
+            SELECT ou.name
+            FROM org_units ou
+            WHERE ou.type = 'department'
+            ORDER BY ou.name ASC
         `).all();
-        res.json(departments.map(d => d.department));
+
+        if (fromOrgUnits.length > 0) {
+            res.json(fromOrgUnits.map(d => d.name));
+        } else {
+            // Fallback：從 employees 取（向後相容）
+            const fromEmployees = req.tenantDB.prepare(`
+                SELECT DISTINCT department
+                FROM employees
+                WHERE department IS NOT NULL AND department != ''
+                ORDER BY department
+            `).all();
+            res.json(fromEmployees.map(d => d.department));
+        }
     } catch (error) {
         console.error('Error fetching departments:', error);
         res.status(500).json({ error: 'Failed to fetch departments' });
@@ -602,20 +621,24 @@ router.get('/documents/:id/download', (req, res) => {
 // GET /api/employee/stats - 員工統計
 router.get('/stats', (req, res) => {
     try {
+        const { org_unit_id } = req.query;
+        const orgFilter = org_unit_id ? ' AND org_unit_id = ?' : '';
+        const orgParams = org_unit_id ? [org_unit_id] : [];
+
         // 員工總數
         const totalEmployees = req.tenantDB.prepare(`
-            SELECT COUNT(*) as count FROM employees
-        `).get().count;
+            SELECT COUNT(*) as count FROM employees WHERE 1=1${orgFilter}
+        `).get(...orgParams).count;
 
         // 在職人數
         const activeCount = req.tenantDB.prepare(`
-            SELECT COUNT(*) as count FROM employees WHERE status = 'active'
-        `).get().count;
+            SELECT COUNT(*) as count FROM employees WHERE status = 'active'${orgFilter}
+        `).get(...orgParams).count;
 
         // 試用期人數
         const probationCount = req.tenantDB.prepare(`
-            SELECT COUNT(*) as count FROM employees WHERE status = 'probation'
-        `).get().count;
+            SELECT COUNT(*) as count FROM employees WHERE status = 'probation'${orgFilter}
+        `).get(...orgParams).count;
 
         // 平均年資（月）
         const avgTenureResult = req.tenantDB.prepare(`
@@ -623,8 +646,8 @@ router.get('/stats', (req, res) => {
                 (julianday('now') - julianday(hire_date)) / 30.44
             ) as avgMonths
             FROM employees
-            WHERE hire_date IS NOT NULL AND status IN ('active', 'probation')
-        `).get();
+            WHERE hire_date IS NOT NULL AND status IN ('active', 'probation')${orgFilter}
+        `).get(...orgParams);
         const avgTenure = avgTenureResult.avgMonths ? Math.round(avgTenureResult.avgMonths) : 0;
 
         // 30天內到期文件數（從 employee_documents 表或 employee_certifications 表）
@@ -638,7 +661,7 @@ router.get('/stats', (req, res) => {
 
         // 即將到職週年的員工（30天內）
         const upcomingAnniversaries = req.tenantDB.prepare(`
-            SELECT 
+            SELECT
                 id as employeeId,
                 name,
                 hire_date as date,
@@ -647,14 +670,14 @@ router.get('/stats', (req, res) => {
             WHERE hire_date IS NOT NULL
             AND (
                 (strftime('%m-%d', hire_date) BETWEEN strftime('%m-%d', 'now') AND strftime('%m-%d', 'now', '+30 days'))
-                OR 
-                (strftime('%m-%d', 'now') > strftime('%m-%d', 'now', '+30 days') 
-                 AND (strftime('%m-%d', hire_date) >= strftime('%m-%d', 'now') 
+                OR
+                (strftime('%m-%d', 'now') > strftime('%m-%d', 'now', '+30 days')
+                 AND (strftime('%m-%d', hire_date) >= strftime('%m-%d', 'now')
                       OR strftime('%m-%d', hire_date) <= strftime('%m-%d', 'now', '+30 days')))
             )
-            AND status IN ('active', 'probation')
+            AND status IN ('active', 'probation')${orgFilter}
             ORDER BY strftime('%m-%d', hire_date)
-        `).all();
+        `).all(...orgParams);
 
         res.json({
             totalEmployees,

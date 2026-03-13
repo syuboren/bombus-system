@@ -83,7 +83,7 @@ router.post('/login', async (req, res) => {
 
     // 查詢使用者
     const user = tenantDB.queryOne(
-      'SELECT id, email, password_hash, name, avatar, status FROM users WHERE email = ?',
+      'SELECT id, email, password_hash, name, avatar, status, must_change_password FROM users WHERE email = ?',
       [email]
     );
 
@@ -221,7 +221,8 @@ router.post('/login', async (req, res) => {
         roles,
         scope,
         tenant_id: tenant.id,
-        enabled_features: enabledFeatures
+        enabled_features: enabledFeatures,
+        must_change_password: !!user.must_change_password
       }
     });
   } catch (err) {
@@ -230,6 +231,90 @@ router.post('/login', async (req, res) => {
       error: 'InternalError',
       message: '登入過程發生錯誤'
     });
+  }
+});
+
+// ─── 變更密碼（首次登入 / 自願） ───
+
+router.post('/change-password', async (req, res) => {
+  const { current_password, new_password, tenant_slug } = req.body;
+
+  if (!current_password || !new_password || !tenant_slug) {
+    return res.status(400).json({
+      error: 'BadRequest',
+      message: '缺少必要欄位：current_password, new_password, tenant_slug'
+    });
+  }
+
+  if (new_password.length < 8) {
+    return res.status(400).json({
+      error: 'BadRequest',
+      message: '新密碼至少需要 8 個字元'
+    });
+  }
+
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Unauthorized', message: '未提供認證 Token' });
+  }
+
+  try {
+    const payload = jwt.verify(authHeader.substring(7), JWT_SECRET);
+    const platformDB = getPlatformDB();
+    const tenant = platformDB.queryOne(
+      'SELECT id FROM tenants WHERE slug = ?', [tenant_slug]
+    );
+    if (!tenant) {
+      return res.status(400).json({ error: 'BadRequest', message: '租戶不存在' });
+    }
+
+    // 驗證 JWT 的 tenant_id 與請求的 tenant_slug 一致（防止跨租戶攻擊）
+    if (payload.tid && payload.tid !== tenant.id) {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: '無權在此租戶修改密碼'
+      });
+    }
+
+    const tenantDB = tenantDBManager.getDB(tenant.id);
+    const user = tenantDB.queryOne(
+      'SELECT id, password_hash FROM users WHERE id = ?', [payload.sub]
+    );
+    if (!user) {
+      return res.status(404).json({ error: 'NotFound', message: '使用者不存在' });
+    }
+
+    const valid = await bcrypt.compare(current_password, user.password_hash);
+    if (!valid) {
+      return res.status(401).json({ error: 'Unauthorized', message: '目前密碼錯誤' });
+    }
+
+    if (current_password === new_password) {
+      return res.status(400).json({
+        error: 'BadRequest',
+        message: '新密碼不能與目前密碼相同'
+      });
+    }
+
+    const newHash = await bcrypt.hash(new_password, 10);
+    tenantDB.run(
+      "UPDATE users SET password_hash = ?, must_change_password = 0, updated_at = datetime('now') WHERE id = ?",
+      [newHash, user.id]
+    );
+
+    // 撤銷該使用者所有 refresh token（強制重新登入）
+    tenantDB.run(
+      'DELETE FROM refresh_tokens WHERE user_id = ?',
+      [user.id]
+    );
+
+    res.json({ success: true, message: '密碼已變更' });
+  } catch (err) {
+    if (err.name === 'TokenExpiredError' || err.name === 'JsonWebTokenError') {
+      return res.status(401).json({ error: 'Unauthorized', message: 'Token 無效' });
+    }
+    console.error('Change password error:', err);
+    res.status(500).json({ error: 'InternalError', message: '變更密碼失敗' });
   }
 });
 

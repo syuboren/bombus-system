@@ -9,6 +9,7 @@ import { MonthlyCheckModalComponent } from '../../components/monthly-check-modal
 import { WeeklyReportModalComponent } from '../../components/weekly-report-modal/weekly-report-modal.component';
 import { QuarterlyReviewModalComponent } from '../../components/quarterly-review-modal/quarterly-review-modal.component';
 import { AssessmentService } from '../../services/assessment.service';
+import { OrgUnitService } from '../../../../core/services/org-unit.service';
 import {
   MonthlyCheck,
   QuarterlyReview,
@@ -54,6 +55,7 @@ type TabType = 'overview' | 'monthly' | 'quarterly' | 'weekly';
 })
 export class AssessmentPageComponent implements OnInit {
   private assessmentService = inject(AssessmentService);
+  private orgUnitService = inject(OrgUnitService);
 
   // Page Info
   readonly pageTitle = '職能評估';
@@ -103,8 +105,13 @@ export class AssessmentPageComponent implements OnInit {
   currentQuarter = signal(Math.ceil((new Date().getMonth() + 1) / 3));
   currentWeek = signal(this.getWeekNumber(new Date()));
 
+  selectedSubsidiaryId = signal<string>('');
   selectedDepartment = signal('');
   selectedStatus = signal('');
+
+  // 組織架構篩選
+  subsidiaries = this.orgUnitService.subsidiaries;
+  filteredDepartments = computed(() => this.orgUnitService.filterDepartments(this.selectedSubsidiaryId()));
 
   // Modal control
   showMonthlyModal = signal(false);
@@ -116,15 +123,6 @@ export class AssessmentPageComponent implements OnInit {
   readonly yearOptions = getYearOptions();
   readonly monthOptions = MONTH_OPTIONS;
   readonly quarterOptions = QUARTER_OPTIONS;
-  readonly departmentOptions = [
-    { value: '', label: '全部部門' },
-    { value: '研發部', label: '研發部' },
-    { value: '業務部', label: '業務部' },
-    { value: '行銷部', label: '行銷部' },
-    { value: '人資部', label: '人資部' },
-    { value: '財務部', label: '財務部' }
-  ];
-  
   // 週別篩選相關
   selectedWeeklyMonth = signal(0); // 0 = 全部月份
   selectedWeek = signal(0); // 0 = 全部週別
@@ -221,6 +219,7 @@ export class AssessmentPageComponent implements OnInit {
   ]);
 
   ngOnInit(): void {
+    this.orgUnitService.loadOrgUnits().subscribe();
     this.loadOverview();
     this.loadMonthlyChecks();
   }
@@ -872,6 +871,12 @@ export class AssessmentPageComponent implements OnInit {
 
   onQuarterChange(quarter: number): void {
     this.currentQuarter.set(quarter);
+    this.refreshCurrentTab();
+  }
+
+  onSubsidiaryChange(value: string): void {
+    this.selectedSubsidiaryId.set(value);
+    this.selectedDepartment.set('');
     this.refreshCurrentTab();
   }
 

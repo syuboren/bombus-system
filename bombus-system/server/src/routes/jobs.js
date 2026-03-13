@@ -21,15 +21,20 @@ function generateJobId() {
  */
 router.get('/', (req, res) => {
     try {
-        const { status, department, search, limit = 50, offset = 0 } = req.query;
+        const { status, department, search, limit = 50, offset = 0, org_unit_id } = req.query;
 
         let sql = `
-            SELECT j.*, 
+            SELECT j.*,
             (SELECT COUNT(*) FROM candidates c WHERE c.job_id = j.id) as total_candidates,
             (SELECT COUNT(*) FROM candidates c WHERE c.job_id = j.id AND c.status = 'new') as new_candidates
             FROM jobs j WHERE 1=1
         `;
         const params = [];
+
+        if (org_unit_id) {
+            sql += ' AND j.org_unit_id = ?';
+            params.push(org_unit_id);
+        }
 
         if (status) {
             sql += ' AND status = ?';
@@ -68,26 +73,84 @@ router.get('/', (req, res) => {
  */
 router.get('/stats/summary', (req, res) => {
     try {
+        const { org_unit_id } = req.query;
         const stats = {
             activeJobs: 0,
             draftJobs: 0,
             syncedJobs: 0,
-            totalJobs: 0
+            totalJobs: 0,
+            newResumes: 0,
+            pendingReview: 0,
+            scheduledInterviews: 0
         };
 
-        const result = req.tenantDB.prepare(`
-            SELECT 
+        // 職缺統計
+        let statsSql = `
+            SELECT
                 COUNT(*) as total,
                 SUM(CASE WHEN status = 'published' THEN 1 ELSE 0 END) as active,
                 SUM(CASE WHEN status = 'draft' THEN 1 ELSE 0 END) as draft,
                 SUM(CASE WHEN job104_no IS NOT NULL THEN 1 ELSE 0 END) as synced
-            FROM jobs
-        `).get();
+            FROM jobs WHERE 1=1
+        `;
+        const statsParams = [];
+        if (org_unit_id) {
+            statsSql += ' AND org_unit_id = ?';
+            statsParams.push(org_unit_id);
+        }
+
+        const result = req.tenantDB.prepare(statsSql).get(...statsParams);
 
         stats.totalJobs = result?.total || 0;
         stats.activeJobs = result?.active || 0;
         stats.draftJobs = result?.draft || 0;
         stats.syncedJobs = result?.synced || 0;
+
+        // 新進履歷：status = 'new'（與列表 New 標籤一致）
+        const now = new Date();
+        let resumeSql = `
+            SELECT COUNT(*) as cnt FROM candidates c
+            JOIN jobs j ON c.job_id = j.id
+            WHERE c.status = 'new'
+        `;
+        const resumeParams = [];
+        if (org_unit_id) {
+            resumeSql += ' AND j.org_unit_id = ?';
+            resumeParams.push(org_unit_id);
+        }
+        const resumeResult = req.tenantDB.prepare(resumeSql).get(...resumeParams);
+        stats.newResumes = resumeResult?.cnt || 0;
+
+        // 待審核履歷：scoring_status = 'Pending'
+        let pendingSql = `
+            SELECT COUNT(*) as cnt FROM candidates c
+            JOIN jobs j ON c.job_id = j.id
+            WHERE c.scoring_status = 'Pending'
+        `;
+        const pendingParams = [];
+        if (org_unit_id) {
+            pendingSql += ' AND j.org_unit_id = ?';
+            pendingParams.push(org_unit_id);
+        }
+        const pendingResult = req.tenantDB.prepare(pendingSql).get(...pendingParams);
+        stats.pendingReview = pendingResult?.cnt || 0;
+
+        // 已安排面試：未取消 + 面試日期 >= 今天
+        const todayStr = now.toISOString().split('T')[0];
+        let interviewSql = `
+            SELECT COUNT(*) as cnt FROM interviews i
+            JOIN jobs j ON i.job_id = j.id
+            WHERE i.cancelled_at IS NULL
+              AND i.result = 'Pending'
+              AND i.interview_at >= ?
+        `;
+        const interviewParams = [todayStr];
+        if (org_unit_id) {
+            interviewSql += ' AND j.org_unit_id = ?';
+            interviewParams.push(org_unit_id);
+        }
+        const interviewResult = req.tenantDB.prepare(interviewSql).get(...interviewParams);
+        stats.scheduledInterviews = interviewResult?.cnt || 0;
 
         res.json({ status: 'success', data: stats });
     } catch (error) {
@@ -374,6 +437,7 @@ router.post('/', (req, res) => {
             description,
             recruiter = 'HR Admin',
             jdId,
+            org_unit_id,
             job104Data  // 保存 104 設定，但不立即同步
         } = req.body;
 
@@ -389,8 +453,8 @@ router.post('/', (req, res) => {
 
         // 儲存到資料庫
         req.tenantDB.prepare(`
-            INSERT INTO jobs (id, title, department, description, recruiter, status, jd_id, job104_no, sync_status, job104_data, synced_at, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO jobs (id, title, department, description, recruiter, status, jd_id, job104_no, sync_status, job104_data, synced_at, created_at, updated_at, org_unit_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).run(
             id,
             title,
@@ -404,7 +468,8 @@ router.post('/', (req, res) => {
             job104Data ? JSON.stringify(job104Data) : null,
             null,     // synced_at 在核准發布時才設定
             now,
-            now
+            now,
+            org_unit_id || null
         );
 
         console.log(`📝 Job created as draft: ${id}${job104Data ? ' (with 104 config)' : ''}`);
@@ -440,6 +505,7 @@ router.put('/:id', async (req, res) => {
             recruiter,
             status,
             jdId,
+            org_unit_id,
             job104Data  // 104 設定資料 (可選)
         } = req.body;
 
@@ -453,7 +519,7 @@ router.put('/:id', async (req, res) => {
 
         // 更新本地資料庫
         req.tenantDB.prepare(`
-            UPDATE jobs 
+            UPDATE jobs
             SET title = COALESCE(?, title),
                 department = COALESCE(?, department),
                 description = COALESCE(?, description),
@@ -461,6 +527,7 @@ router.put('/:id', async (req, res) => {
                 status = COALESCE(?, status),
                 jd_id = COALESCE(?, jd_id),
                 job104_data = COALESCE(?, job104_data),
+                org_unit_id = COALESCE(?, org_unit_id),
                 updated_at = ?
             WHERE id = ?
         `).run(
@@ -471,6 +538,7 @@ router.put('/:id', async (req, res) => {
             status || null,
             jdId || null,
             job104Data ? JSON.stringify(job104Data) : null,
+            org_unit_id || null,
             now,
             id
         );

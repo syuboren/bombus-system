@@ -1,4 +1,6 @@
-import { Component, ChangeDetectionStrategy, ChangeDetectorRef, inject, signal, OnInit, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, ChangeDetectorRef, DestroyRef, inject, signal, OnInit, computed } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { switchMap, forkJoin } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -6,6 +8,7 @@ import { ViewToggleComponent } from '../../../../shared/components/view-toggle/v
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { CompetencyService } from '../../services/competency.service';
 import { PdfExportService } from '../../services/pdf-export.service';
+import { OrgUnitService } from '../../../../core/services/org-unit.service';
 import {
   JobDescription,
   CompetencyRequirement,
@@ -31,7 +34,9 @@ import {
 export class JobDescriptionPageComponent implements OnInit {
   private competencyService = inject(CompetencyService);
   private pdfExportService = inject(PdfExportService);
+  private orgUnitService = inject(OrgUnitService);
   private cdr = inject(ChangeDetectorRef);
+  private destroyRef = inject(DestroyRef);
   router = inject(Router);
 
   // PDF Export state
@@ -52,8 +57,13 @@ export class JobDescriptionPageComponent implements OnInit {
 
   // Filter
   searchKeyword = signal('');
+  selectedSubsidiaryId = signal<string>('');
   selectedDepartment = signal<string>('');
   selectedStatus = signal<string>('');
+
+  // 組織架構篩選
+  subsidiaries = this.orgUnitService.subsidiaries;
+  filteredDepartments = computed(() => this.orgUnitService.filterDepartments(this.selectedSubsidiaryId()));
 
   // 職能需求選擇狀態（用於建立/編輯 JD）
   selectedCoreCompetencies = signal<Map<string, CompetencyGradeLevel>>(new Map());
@@ -99,14 +109,6 @@ export class JobDescriptionPageComponent implements OnInit {
   // Options
   readonly typeOptions = COMPETENCY_TYPE_OPTIONS;
   readonly levelOptions = COMPETENCY_GRADE_LEVEL_OPTIONS;
-  readonly departmentOptions = [
-    { value: '', label: '全部部門' },
-    { value: '研發部', label: '研發部' },
-    { value: '業務部', label: '業務部' },
-    { value: '行銷部', label: '行銷部' },
-    { value: '人資部', label: '人資部' },
-    { value: '財務部', label: '財務部' }
-  ];
   readonly statusOptions = [
     { value: '', label: '全部狀態' },
     { value: 'draft', label: '草稿' },
@@ -152,38 +154,68 @@ export class JobDescriptionPageComponent implements OnInit {
     };
   });
 
+  constructor() {
+    // 使用 switchMap 確保快速切換子公司時，舊的 HTTP 請求會被取消
+    toObservable(this.selectedSubsidiaryId).pipe(
+      switchMap(orgUnitId => forkJoin({
+        jds: this.competencyService.getJobDescriptions({ orgUnitId }),
+        core: this.competencyService.getCoreCompetenciesWithLevels(orgUnitId),
+        management: this.competencyService.getManagementCompetenciesWithLevels(orgUnitId),
+        ksa: this.competencyService.getKSACompetencies(undefined, orgUnitId)
+      })),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(({ jds, core, management, ksa }) => {
+      this.jobDescriptions.set(jds);
+      this.coreCompetencies.set(core);
+      this.managementCompetencies.set(management);
+      this.ksaCompetencies.set(ksa);
+      this.loading.set(false);
+    });
+  }
+
   ngOnInit(): void {
-    this.loadData();
+    this.orgUnitService.loadOrgUnits().subscribe();
+    // JD 和職能資料由 constructor effect 處理（監聽 selectedSubsidiaryId 變化）
   }
 
   loadData(): void {
     this.loading.set(true);
 
     // Load job descriptions
-    this.competencyService.getJobDescriptions().subscribe(data => {
-      this.jobDescriptions.set(data);
-    });
+    this.loadJobDescriptions();
 
-    // Load core competencies
-    this.competencyService.getCoreCompetenciesWithLevels().subscribe(data => {
+    // Load competencies filtered by subsidiary
+    this.loadCompetencies();
+  }
+
+  loadCompetencies(): void {
+    const orgUnitId = this.selectedSubsidiaryId();
+    this.competencyService.getCoreCompetenciesWithLevels(orgUnitId).subscribe(data => {
       this.coreCompetencies.set(data);
     });
-
-    // Load management competencies
-    this.competencyService.getManagementCompetenciesWithLevels().subscribe(data => {
+    this.competencyService.getManagementCompetenciesWithLevels(orgUnitId).subscribe(data => {
       this.managementCompetencies.set(data);
     });
-
-    // Load KSA competencies
-    this.competencyService.getKSACompetencies().subscribe(data => {
+    this.competencyService.getKSACompetencies(undefined, orgUnitId).subscribe(data => {
       this.ksaCompetencies.set(data);
       this.loading.set(false);
+    });
+  }
+
+  loadJobDescriptions(): void {
+    this.competencyService.getJobDescriptions({ orgUnitId: this.selectedSubsidiaryId() }).subscribe(data => {
+      this.jobDescriptions.set(data);
     });
   }
 
   // Filter handlers
   onSearchChange(value: string): void {
     this.searchKeyword.set(value);
+  }
+
+  onSubsidiaryChange(value: string): void {
+    this.selectedSubsidiaryId.set(value);
+    this.selectedDepartment.set('');
   }
 
   onDepartmentChange(value: string): void {

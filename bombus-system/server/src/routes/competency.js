@@ -1041,12 +1041,12 @@ function getWeekNumber(date) {
  */
 router.get('/competencies', (req, res) => {
   try {
-    const { type, category } = req.query;
-    
+    const { type, category, org_unit_id } = req.query;
+
     // 建構查詢條件
     let conditions = [];
     let params = [];
-    
+
     if (type) {
       conditions.push('type = ?');
       params.push(type);
@@ -1054,6 +1054,10 @@ router.get('/competencies', (req, res) => {
     if (category) {
       conditions.push('category = ?');
       params.push(category);
+    }
+    if (org_unit_id) {
+      conditions.push('org_unit_id = ?');
+      params.push(org_unit_id);
     }
     
     const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';

@@ -13,6 +13,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TalentMapService } from '../../services/talent-map.service';
+import { OrgUnitService } from '../../../../core/services/org-unit.service';
 import { NineBoxEmployee, NineBoxFilter, NineBoxCategory, NineBoxCategoryInfo } from '../../models/talent-map.model';
 import * as echarts from 'echarts';
 
@@ -29,6 +30,7 @@ export class NineBoxTabComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('scatterChart', { static: false }) scatterChartRef!: ElementRef<HTMLDivElement>;
 
   private talentMapService = inject(TalentMapService);
+  private orgUnitService = inject(OrgUnitService);
   private cdr = inject(ChangeDetectorRef);
   private distributionChart: echarts.ECharts | null = null;
   private scatterChart: echarts.ECharts | null = null;
@@ -39,13 +41,9 @@ export class NineBoxTabComponent implements OnInit, AfterViewInit, OnDestroy {
   };
 
   // Options
-  readonly departmentOptions = [
-    { value: 'all', label: '所有部門' },
-    { value: 'rd', label: '研發部' },
-    { value: 'hr', label: '人資部' },
-    { value: 'sales', label: '業務部' },
-    { value: 'marketing', label: '行銷部' }
-  ];
+  selectedSubsidiaryId = signal<string>('');
+  subsidiaries = this.orgUnitService.subsidiaries;
+  filteredDepartments = computed(() => this.orgUnitService.filterDepartments(this.selectedSubsidiaryId()));
   readonly levelOptions = this.talentMapService.levelOptions;
   readonly categories = this.talentMapService.nineBoxCategories;
 
@@ -75,6 +73,7 @@ export class NineBoxTabComponent implements OnInit, AfterViewInit, OnDestroy {
   ];
 
   ngOnInit(): void {
+    this.orgUnitService.loadOrgUnits().subscribe();
     window.addEventListener('resize', this.resizeHandler);
   }
 
@@ -102,6 +101,12 @@ export class NineBoxTabComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       }
     });
+  }
+
+  onSubsidiaryChange(value: string): void {
+    this.selectedSubsidiaryId.set(value);
+    this.filter.update(f => ({ ...f, department: 'all' }));
+    this.loadData();
   }
 
   updateFilter(key: keyof NineBoxFilter, value: string): void {

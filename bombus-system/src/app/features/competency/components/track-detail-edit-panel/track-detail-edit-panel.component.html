@@ -1,0 +1,257 @@
+<div class="panel-overlay" [class.visible]="visible()" (click)="onClose()">
+  <div class="edit-panel" [class.open]="visible()" (click)="$event.stopPropagation()">
+    <!-- Header -->
+    <div class="panel-header">
+      <div class="panel-header-info">
+        <h2 class="panel-title">
+          <span class="grade-badge">G{{ gradeNumber() }}</span>
+          {{ trackName() }}明細
+        </h2>
+      </div>
+      <button class="close-btn" (click)="onClose()" [disabled]="saving()" type="button">
+        <i class="ri-close-line"></i>
+      </button>
+    </div>
+
+    <!-- Content -->
+    <div class="panel-content">
+      @if (error()) {
+      <div class="error-message">
+        <i class="ri-error-warning-line"></i>
+        {{ error() }}
+      </div>
+      }
+
+      <!-- Section 1: 軌道資訊 -->
+      <section class="form-section">
+        <h3 class="section-title">
+          <i class="ri-git-branch-line"></i>
+          軌道資訊
+        </h3>
+
+        <div class="form-group">
+          <label class="form-label required">職稱</label>
+          @if (editMode()) {
+          <input type="text" class="form-input" [value]="formTrack().title"
+            (input)="updateTrackField('title', $any($event.target).value)"
+            placeholder="例如：副理" [disabled]="saving()" />
+          } @else {
+          <span class="read-only-value">{{ formTrack().title || '尚未設定' }}</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">學歷要求</label>
+          @if (editMode()) {
+          <input type="text" class="form-input" [value]="formTrack().educationRequirement"
+            (input)="updateTrackField('educationRequirement', $any($event.target).value)"
+            placeholder="例如：大學以上" [disabled]="saving()" />
+          } @else {
+          <span class="read-only-value">{{ formTrack().educationRequirement || '尚未設定' }}</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">職責描述</label>
+          @if (editMode()) {
+          <textarea class="form-textarea" rows="3" [value]="formTrack().responsibilityDescription"
+            (input)="updateTrackField('responsibilityDescription', $any($event.target).value)"
+            placeholder="請描述該軌道在此職等的工作職責..." [disabled]="saving()"></textarea>
+          } @else {
+          <span class="read-only-value">{{ formTrack().responsibilityDescription || '尚未設定' }}</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">所需技能與培訓</label>
+          @if (editMode()) {
+          <textarea class="form-textarea" rows="3" [value]="formTrack().requiredSkillsAndTraining"
+            (input)="updateTrackField('requiredSkillsAndTraining', $any($event.target).value)"
+            placeholder="請描述所需技能與培訓..." [disabled]="saving()"></textarea>
+          } @else {
+          <span class="read-only-value">{{ formTrack().requiredSkillsAndTraining || '尚未設定' }}</span>
+          }
+        </div>
+      </section>
+
+      <!-- Section 2: 晉升條件 -->
+      @if (!isHighestGrade()) {
+      <div class="section-divider"></div>
+      <section class="form-section">
+        <h3 class="section-title">
+          <i class="ri-arrow-up-double-line"></i>
+          晉升條件
+          <span class="promotion-direction-label">Grade {{ formPromotion().fromGrade }} → Grade {{ formPromotion().toGrade }}</span>
+        </h3>
+
+        <!-- 績效門檻 -->
+        <div class="form-group">
+          <label class="form-label">績效等級門檻</label>
+          @if (editMode()) {
+          <select class="form-select" [value]="formPromotion().performanceThreshold"
+            (change)="updatePromotionField('performanceThreshold', $any($event.target).value)"
+            [disabled]="saving()">
+            <option value="A+">A+ (卓越)</option>
+            <option value="A">A (優秀)</option>
+            <option value="B+">B+ (良好)</option>
+            <option value="B">B (合格)</option>
+          </select>
+          } @else {
+          <span class="read-only-value">{{ formPromotion().performanceThreshold || '尚未設定' }}</span>
+          }
+        </div>
+
+        <!-- 晉升程序 -->
+        <div class="form-group">
+          <label class="form-label">晉升程序</label>
+          @if (editMode()) {
+          <input type="text" class="form-input" [value]="formPromotion().promotionProcedure"
+            (input)="updatePromotionField('promotionProcedure', $any($event.target).value)"
+            placeholder="例如：主管推薦 + 能力評估" [disabled]="saving()" />
+          } @else {
+          <span class="read-only-value">{{ formPromotion().promotionProcedure || '尚未設定' }}</span>
+          }
+        </div>
+
+        <!-- 必備技能 (Chip) -->
+        <div class="form-group">
+          <label class="form-label">必備技能</label>
+          @if (editMode()) {
+          <div class="chip-container">
+            @for (skill of formPromotion().requiredSkills; track $index) {
+            <span class="chip">
+              {{ skill }}
+              <button class="chip-remove" (click)="removeChip('requiredSkills', $index)" [disabled]="saving()" type="button">×</button>
+            </span>
+            }
+            <input type="text" class="chip-input" [value]="chipInput().skills"
+              (input)="updateChipInput('skills', $any($event.target).value)"
+              (keydown)="onChipKeyDown($event, 'requiredSkills', chipInput().skills)"
+              placeholder="輸入技能後按 Enter..." [disabled]="saving()" />
+          </div>
+          } @else {
+            @if (formPromotion().requiredSkills.length > 0) {
+            <div class="chip-readonly-list">
+              @for (skill of formPromotion().requiredSkills; track $index) {
+              <span class="chip-readonly">{{ skill }}</span>
+              }
+            </div>
+            } @else {
+            <span class="read-only-value">尚未設定</span>
+            }
+          }
+        </div>
+
+        <!-- 必修課程 (Chip) -->
+        <div class="form-group">
+          <label class="form-label">必修課程</label>
+          @if (editMode()) {
+          <div class="chip-container">
+            @for (course of formPromotion().requiredCourses; track $index) {
+            <span class="chip">
+              {{ course }}
+              <button class="chip-remove" (click)="removeChip('requiredCourses', $index)" [disabled]="saving()" type="button">×</button>
+            </span>
+            }
+            <input type="text" class="chip-input" [value]="chipInput().courses"
+              (input)="updateChipInput('courses', $any($event.target).value)"
+              (keydown)="onChipKeyDown($event, 'requiredCourses', chipInput().courses)"
+              placeholder="輸入課程名稱後按 Enter..." [disabled]="saving()" />
+          </div>
+          } @else {
+            @if (formPromotion().requiredCourses.length > 0) {
+            <div class="chip-readonly-list">
+              @for (course of formPromotion().requiredCourses; track $index) {
+              <span class="chip-readonly">{{ course }}</span>
+              }
+            </div>
+            } @else {
+            <span class="read-only-value">尚未設定</span>
+            }
+          }
+        </div>
+
+        <!-- KPI 重點 (Chip) -->
+        <div class="form-group">
+          <label class="form-label">KPI 重點指標</label>
+          @if (editMode()) {
+          <div class="chip-container">
+            @for (kpi of formPromotion().kpiFocus; track $index) {
+            <span class="chip">
+              {{ kpi }}
+              <button class="chip-remove" (click)="removeChip('kpiFocus', $index)" [disabled]="saving()" type="button">×</button>
+            </span>
+            }
+            <input type="text" class="chip-input" [value]="chipInput().kpi"
+              (input)="updateChipInput('kpi', $any($event.target).value)"
+              (keydown)="onChipKeyDown($event, 'kpiFocus', chipInput().kpi)"
+              placeholder="輸入 KPI 指標後按 Enter..." [disabled]="saving()" />
+          </div>
+          } @else {
+            @if (formPromotion().kpiFocus.length > 0) {
+            <div class="chip-readonly-list">
+              @for (kpi of formPromotion().kpiFocus; track $index) {
+              <span class="chip-readonly">{{ kpi }}</span>
+              }
+            </div>
+            } @else {
+            <span class="read-only-value">尚未設定</span>
+            }
+          }
+        </div>
+
+        <!-- 附加條件 (Chip) -->
+        <div class="form-group">
+          <label class="form-label">附加條件</label>
+          @if (editMode()) {
+          <div class="chip-container">
+            @for (ac of formPromotion().additionalCriteria; track $index) {
+            <span class="chip">
+              {{ ac }}
+              <button class="chip-remove" (click)="removeChip('additionalCriteria', $index)" [disabled]="saving()" type="button">×</button>
+            </span>
+            }
+            <input type="text" class="chip-input" [value]="chipInput().criteria"
+              (input)="updateChipInput('criteria', $any($event.target).value)"
+              (keydown)="onChipKeyDown($event, 'additionalCriteria', chipInput().criteria)"
+              placeholder="輸入附加條件後按 Enter..." [disabled]="saving()" />
+          </div>
+          } @else {
+            @if (formPromotion().additionalCriteria.length > 0) {
+            <div class="chip-readonly-list">
+              @for (ac of formPromotion().additionalCriteria; track $index) {
+              <span class="chip-readonly">{{ ac }}</span>
+              }
+            </div>
+            } @else {
+            <span class="read-only-value">尚未設定</span>
+            }
+          }
+        </div>
+      </section>
+      } @else {
+      <div class="section-divider"></div>
+      <div class="highest-grade-notice">
+        <i class="ri-information-line"></i>
+        <span>已達最高職等，無需設定晉升條件</span>
+      </div>
+      }
+    </div>
+
+    <!-- Footer -->
+    <div class="panel-footer">
+      @if (editMode()) {
+      <button class="btn btn-secondary" (click)="onClose()" [disabled]="saving()" type="button">取消</button>
+      <button class="btn btn-primary" (click)="onSave()" [disabled]="saving()" type="button">
+        @if (saving()) {
+        <i class="ri-loader-4-line spinner"></i> 儲存中...
+        } @else {
+        <i class="ri-save-line"></i> 儲存
+        }
+      </button>
+      } @else {
+      <button class="btn btn-secondary" (click)="onClose()" type="button">關閉</button>
+      }
+    </div>
+  </div>
+</div>

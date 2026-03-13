@@ -68,10 +68,16 @@
             <option value="behind">落後</option>
             <option value="completed">已完成</option>
           </select>
+          <select class="form-select" [ngModel]="selectedSubsidiaryId()" (ngModelChange)="selectedSubsidiaryId.set($event); selectedDepartment.set('all')">
+            <option value="">全部子公司</option>
+            @for (sub of subsidiaries(); track sub.id) {
+              <option [value]="sub.id">{{ sub.name }}</option>
+            }
+          </select>
           <select class="form-select" [ngModel]="selectedDepartment()" (ngModelChange)="selectedDepartment.set($event)">
             <option value="all">全部部門</option>
-            @for (dept of departments(); track dept) {
-              <option [value]="dept">{{ dept }}</option>
+            @for (dept of filteredDepartments(); track dept.id) {
+              <option [value]="dept.name">{{ dept.name }}</option>
             }
           </select>
         </div>

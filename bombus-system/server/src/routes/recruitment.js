@@ -255,7 +255,7 @@ function importToTalentPool(req, candidateId, declineStage, declineReason = null
     try {
         // 取得候選人資料
         const candidate = req.tenantDB.prepare(`
-            SELECT c.*, j.title as job_title
+            SELECT c.*, j.title as job_title, j.org_unit_id as job_org_unit_id
             FROM candidates c
             LEFT JOIN jobs j ON c.job_id = j.id
             WHERE c.id = ?
@@ -295,8 +295,8 @@ function importToTalentPool(req, candidateId, declineStage, declineReason = null
                 current_position, current_company, experience_years, education,
                 expected_salary, skills, resume_url, source, status,
                 match_score, contact_priority, decline_stage, decline_reason,
-                original_job_id, original_job_title, added_date, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                original_job_id, original_job_title, org_unit_id, added_date, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).run(
             id,
             candidateId,
@@ -319,6 +319,7 @@ function importToTalentPool(req, candidateId, declineStage, declineReason = null
             declineReason,
             candidate.job_id,
             candidate.job_title,
+            candidate.job_org_unit_id || null,
             now,
             now
         );
@@ -600,14 +601,25 @@ router.patch('/candidates/:candidateId/evaluation', (req, res) => {
 // GET /api/recruitment/candidates
 router.get('/candidates', (req, res) => {
     try {
-        const candidates = req.tenantDB.prepare(`
+        const { org_unit_id } = req.query;
+
+        let query = `
             SELECT c.*, j.title as job_title,
             (SELECT ie.ai_analysis_result FROM interview_evaluations ie WHERE ie.candidate_id = c.id LIMIT 1) as ai_analysis_result
             FROM candidates c
             LEFT JOIN jobs j ON c.job_id = j.id
             WHERE EXISTS (SELECT 1 FROM interviews WHERE candidate_id = c.id)
-            ORDER BY c.created_at DESC
-        `).all();
+        `;
+        const params = [];
+
+        if (org_unit_id) {
+            query += ` AND j.org_unit_id = ?`;
+            params.push(org_unit_id);
+        }
+
+        query += ` ORDER BY c.created_at DESC`;
+
+        const candidates = req.tenantDB.prepare(query).all(...params);
         res.json(candidates);
     } catch (error) {
         console.error('Error fetching candidates:', error);

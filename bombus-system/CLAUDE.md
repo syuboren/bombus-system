@@ -1,5 +1,4 @@
-<!-- SPECTRA:START v1.0.0 -->
-
+<!-- SPECTRA:START v1.0.1 -->
 # Spectra Instructions
 
 This project uses Spectra for Spec-Driven Development(SDD). Specs live in `openspec/specs/`, change proposals in `openspec/changes/`.
@@ -11,7 +10,7 @@ This project uses Spectra for Spec-Driven Development(SDD). Specs live in `opens
 - Tasks are ready to implement → `/spectra:apply`
 - There's an in-progress change to continue → `/spectra:ingest`
 - User asks about specs or how something works → `/spectra:ask`
-- Implementation is done → `/spectra:verify` then `/spectra:archive`
+- Implementation is done → `/spectra:archive`
 
 ## Workflow
 
@@ -20,6 +19,9 @@ discuss? → propose → apply ⇄ ingest → archive
 - `discuss` is optional — skip if requirements are clear
 - Requirements change mid-work? Plan mode → `ingest` → resume `apply`
 
+## Parked Changes
+
+Changes can be parked（暫存）— temporarily moved out of `openspec/changes/`. Parked changes won't appear in `spectra list` but can be found with `spectra list --parked`. To restore: `spectra unpark <name>`. The `/spectra:apply` and `/spectra:ingest` skills handle parked changes automatically.
 <!-- SPECTRA:END -->
 
 # Bombus System - Angular 子專案規範

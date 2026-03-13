@@ -50,22 +50,50 @@
 
       <!-- 表單 -->
       <form class="convert-form">
+        <!-- 子公司選擇（若有組織單位） -->
+        @if (subsidiaryOrgUnits().length > 0) {
         <div class="form-row">
-          <!-- 部門 -->
+          <div class="form-group full-width">
+            <label for="subsidiary">所屬子公司</label>
+            <div class="input-with-icon">
+              <i class="ri-building-2-line"></i>
+              <select id="subsidiary"
+                [ngModel]="selectedSubsidiaryId()"
+                (ngModelChange)="onSubsidiaryChange($event)"
+                [ngModelOptions]="{standalone: true}"
+                [disabled]="isSubsidiaryLocked()">
+                <option value="">請選擇子公司</option>
+                @for (unit of subsidiaryOrgUnits(); track unit.id) {
+                <option [value]="unit.id">{{ unit.name }}{{ unit.type === 'group' ? ' (集團)' : '' }}</option>
+                }
+              </select>
+            </div>
+            @if (isSubsidiaryLocked()) {
+            <span class="hint">依據您的帳號權限自動鎖定</span>
+            }
+          </div>
+        </div>
+        }
+
+        <div class="form-row">
+          <!-- 部門（統一從 org_units 取值） -->
           <div class="form-group">
             <label for="department">
               部門 <span class="required">*</span>
             </label>
             <div class="input-with-icon">
               <i class="ri-building-line"></i>
-              <select id="department" [ngModel]="department()" (ngModelChange)="onDepartmentChange($event)"
+              <select id="department"
+                [ngModel]="orgUnitId()"
+                (ngModelChange)="onOrgUnitDepartmentChange($event)"
                 [ngModelOptions]="{standalone: true}">
                 <option value="">請選擇部門</option>
-                @for (dept of departments(); track dept.name) {
-                <option [value]="dept.name">{{ dept.name }}</option>
+                @for (unit of departmentOrgUnits(); track unit.id) {
+                <option [value]="unit.id">{{ unit.name }}</option>
                 }
               </select>
             </div>
+            <span class="hint">同時用於 HR 部門歸屬與 RBAC 權限範圍</span>
           </div>
 
           <!-- 職等 -->
@@ -304,6 +332,38 @@
             </button>
           </div>
         </div>
+        }
+      </div>
+      }
+
+      <!-- 系統帳號資訊 -->
+      @if (convertResult()?.data?.user_account; as account) {
+      <div class="user-account-info">
+        <h4><i class="ri-user-line"></i> 系統帳號</h4>
+        @if (account.error) {
+          <p class="warning-text">
+            <i class="ri-error-warning-line"></i> {{ account.error }}
+          </p>
+        } @else if (account.already_existed) {
+          <div class="info-item">
+            <span class="label">狀態</span>
+            <span class="value">已連結至既有帳號（{{ account.email }}）</span>
+          </div>
+        } @else {
+          <div class="info-item">
+            <span class="label">登入信箱</span>
+            <span class="value">{{ account.email }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">預設密碼</span>
+            <span class="value">同登入信箱（首次登入需變更）</span>
+          </div>
+          @if (account.default_role) {
+          <div class="info-item">
+            <span class="label">預設角色</span>
+            <span class="value">員工（employee）</span>
+          </div>
+          }
         }
       </div>
       }

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { AssessmentService } from '../../services/assessment.service';
 import { MonthlyCheckTemplate } from '../../models/assessment.model';
+import { OrgUnitService } from '../../../../core/services/org-unit.service';
 
 @Component({
   selector: 'app-template-manage-page',
@@ -15,6 +16,7 @@ import { MonthlyCheckTemplate } from '../../models/assessment.model';
 })
 export class TemplateManagePageComponent implements OnInit {
   private assessmentService = inject(AssessmentService);
+  private orgUnitService = inject(OrgUnitService);
 
   // Page Info
   readonly pageTitle = '指標模板管理';
@@ -40,17 +42,26 @@ export class TemplateManagePageComponent implements OnInit {
   copySource = signal({ department: '', position: '' });
   copyTarget = signal({ department: '', position: '' });
 
-  // Options
-  readonly departmentOptions = [
-    { value: '', label: '全部部門' },
-    { value: '研發部', label: '研發部' },
-    { value: '業務部', label: '業務部' },
-    { value: '行銷部', label: '行銷部' },
-    { value: '人資部', label: '人資部' },
-    { value: '財務部', label: '財務部' },
-    { value: '管理部', label: '管理部' }
-  ];
+  // 組織單位（子公司→部門級聯篩選）
+  subsidiaries = this.orgUnitService.subsidiaries;
 
+  // 篩選列 & 編輯 Modal 用
+  selectedSubsidiaryId = signal<string>('');
+  filteredDepartments = computed(() =>
+    this.orgUnitService.filterDepartments(this.selectedSubsidiaryId())
+  );
+
+  // 複製 Modal 用（來源/目標獨立）
+  copySourceSubId = signal<string>('');
+  copyTargetSubId = signal<string>('');
+  copySourceDepts = computed(() =>
+    this.orgUnitService.filterDepartments(this.copySourceSubId())
+  );
+  copyTargetDepts = computed(() =>
+    this.orgUnitService.filterDepartments(this.copyTargetSubId())
+  );
+
+  // Options
   readonly positionOptions = [
     { value: '', label: '全部職位' },
     { value: '工程師', label: '工程師' },
@@ -115,6 +126,7 @@ export class TemplateManagePageComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.orgUnitService.loadOrgUnits().subscribe();
     this.loadTemplates();
   }
 
@@ -135,6 +147,18 @@ export class TemplateManagePageComponent implements OnInit {
   }
 
   // Filter handlers
+  onSubsidiaryChange(subId: string): void {
+    this.selectedSubsidiaryId.set(subId);
+    // 切換子公司時重置部門篩選
+    this.selectedDepartment.set('');
+  }
+
+  onEditSubsidiaryChange(subId: string): void {
+    this.selectedSubsidiaryId.set(subId);
+    // 切換子公司時重置編輯 Modal 中的部門
+    this.updateEditingField('department', '');
+  }
+
   onDepartmentChange(dept: string): void {
     this.selectedDepartment.set(dept);
   }
@@ -236,11 +260,23 @@ export class TemplateManagePageComponent implements OnInit {
   openCopyModal(): void {
     this.copySource.set({ department: '', position: '' });
     this.copyTarget.set({ department: '', position: '' });
+    this.copySourceSubId.set('');
+    this.copyTargetSubId.set('');
     this.showCopyModal.set(true);
   }
 
   closeCopyModal(): void {
     this.showCopyModal.set(false);
+  }
+
+  onCopySourceSubChange(subId: string): void {
+    this.copySourceSubId.set(subId);
+    this.copySource.update(s => ({ ...s, department: '' }));
+  }
+
+  onCopyTargetSubChange(subId: string): void {
+    this.copyTargetSubId.set(subId);
+    this.copyTarget.update(t => ({ ...t, department: '' }));
   }
 
   updateCopySource(field: 'department' | 'position', value: string): void {

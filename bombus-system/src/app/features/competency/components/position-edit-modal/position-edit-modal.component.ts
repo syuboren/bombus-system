@@ -1,8 +1,9 @@
-import { Component, ChangeDetectionStrategy, input, output, signal, inject, effect } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, signal, computed, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { GradeTrackEntity } from '../../models/competency.model';
 import { CompetencyService } from '../../services/competency.service';
+import { OrgUnitService } from '../../../../core/services/org-unit.service';
 
 /**
  * 部門職位編輯 Modal 元件
@@ -18,10 +19,12 @@ import { CompetencyService } from '../../services/competency.service';
 })
 export class PositionEditModalComponent {
     private competencyService = inject(CompetencyService);
+    private orgUnitService = inject(OrgUnitService);
 
     // --- Input / Output ---
     visible = input<boolean>(false);
     positionData = input<any>(null);
+    orgUnitId = input<string>('');
     closed = output<void>();
     saved = output<void>();
 
@@ -34,6 +37,11 @@ export class PositionEditModalComponent {
     departments = signal<{ id: string; name: string; code: string }[]>([]);
     tracks = signal<GradeTrackEntity[]>([]);
     gradeOptions = signal<number[]>([1, 2, 3, 4, 5, 6, 7]);
+
+    // 子公司→部門級聯篩選
+    selectedSubsidiaryId = signal<string>('');
+    subsidiaries = this.orgUnitService.subsidiaries;
+    filteredDepartments = computed(() => this.orgUnitService.filterDepartments(this.selectedSubsidiaryId()));
 
     // 表單資料
     formData = signal<{
@@ -81,11 +89,13 @@ export class PositionEditModalComponent {
 
     // 載入部門與軌道下拉資料
     private loadDropdownData(): void {
+        this.orgUnitService.loadOrgUnits().subscribe();
         this.competencyService.getDepartments().subscribe(depts => this.departments.set(depts));
         this.competencyService.getTracks().subscribe(tracks => this.tracks.set(tracks.filter(t => t.isActive)));
     }
 
     resetForm(): void {
+        this.selectedSubsidiaryId.set('');
         this.formData.set({ department: '', grade: 1, title: '', track: 'professional', supervisedDepartments: null });
     }
 
@@ -123,9 +133,11 @@ export class PositionEditModalComponent {
         const data = this.formData();
         const posData = this.positionData();
 
+        const dataWithOrg = { ...data, org_unit_id: this.orgUnitId() || null };
+
         const observable = this.isEditMode() && posData
-            ? this.competencyService.updatePosition(posData.id, data)
-            : this.competencyService.createPosition(data);
+            ? this.competencyService.updatePosition(posData.id, dataWithOrg)
+            : this.competencyService.createPosition(dataWithOrg);
 
         observable.subscribe({
             next: () => { this.saving.set(false); this.saved.emit(); this.onClose(); },

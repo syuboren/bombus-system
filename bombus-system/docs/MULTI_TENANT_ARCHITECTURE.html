@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bombus 多租戶 SaaS 架構技術說明文件</title>
+<style>
+  :root {
+    --primary: #2563EB;
+    --primary-light: #EFF6FF;
+    --primary-dark: #1E40AF;
+    --accent: #059669;
+    --accent-light: #ECFDF5;
+    --warn: #D97706;
+    --warn-light: #FFFBEB;
+    --danger: #DC2626;
+    --danger-light: #FEF2F2;
+    --text: #1F2937;
+    --text-secondary: #6B7280;
+    --border: #E5E7EB;
+    --bg: #F9FAFB;
+    --card: #FFFFFF;
+    --code-bg: #F3F4F6;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans TC', sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.7;
+    font-size: 15px;
+  }
+
+  /* Header */
+  .doc-header {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: white;
+    padding: 48px 0 40px;
+    text-align: center;
+  }
+  .doc-header h1 { font-size: 32px; font-weight: 700; margin-bottom: 8px; }
+  .doc-header .meta { opacity: 0.85; font-size: 14px; }
+  .doc-header .meta span + span::before { content: ' · '; }
+
+  /* Layout */
+  .container { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+
+  /* TOC */
+  .toc {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin: -24px auto 32px;
+    position: relative;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+  }
+  .toc h2 { font-size: 18px; margin-bottom: 16px; color: var(--primary-dark); }
+  .toc ol { padding-left: 20px; columns: 2; column-gap: 32px; }
+  .toc li { margin-bottom: 6px; font-size: 14px; break-inside: avoid; }
+  .toc a { color: var(--primary); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* Sections */
+  section { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 32px; margin-bottom: 24px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+  h2 { font-size: 22px; color: var(--primary-dark); margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid var(--primary-light); }
+  h3 { font-size: 17px; color: var(--text); margin: 24px 0 12px; }
+  h4 { font-size: 15px; color: var(--text-secondary); margin: 16px 0 8px; }
+  p { margin-bottom: 12px; }
+  ul, ol { margin-bottom: 12px; padding-left: 24px; }
+  li { margin-bottom: 4px; }
+  strong { color: var(--text); }
+  hr { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; margin: 12px 0 20px; font-size: 14px; }
+  thead th { background: var(--primary-light); color: var(--primary-dark); font-weight: 600; text-align: left; padding: 10px 14px; border: 1px solid #DBEAFE; }
+  tbody td { padding: 9px 14px; border: 1px solid var(--border); vertical-align: top; }
+  tbody tr:nth-child(even) { background: #FAFBFC; }
+  tbody tr:hover { background: var(--primary-light); }
+
+  /* Code */
+  code {
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #B91C1C;
+  }
+  pre {
+    background: #1E293B;
+    color: #E2E8F0;
+    border-radius: 8px;
+    padding: 20px 24px;
+    overflow-x: auto;
+    margin: 12px 0 20px;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+
+  /* Special blocks */
+  .info-box {
+    padding: 16px 20px;
+    border-radius: 8px;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  .info-box.blue { background: var(--primary-light); border-left: 4px solid var(--primary); }
+  .info-box.green { background: var(--accent-light); border-left: 4px solid var(--accent); }
+  .info-box.yellow { background: var(--warn-light); border-left: 4px solid var(--warn); }
+  .info-box.red { background: var(--danger-light); border-left: 4px solid var(--danger); }
+
+  /* Architecture diagram */
+  .arch-diagram {
+    background: #0F172A;
+    color: #94A3B8;
+    border-radius: 8px;
+    padding: 24px;
+    overflow-x: auto;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 12.5px;
+    line-height: 1.5;
+    white-space: pre;
+    margin: 16px 0;
+  }
+  .arch-diagram .hl { color: #38BDF8; }
+  .arch-diagram .hl2 { color: #34D399; }
+  .arch-diagram .hl3 { color: #FBBF24; }
+  .arch-diagram .dim { color: #475569; }
+
+  /* Badge */
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .badge.green { background: #D1FAE5; color: #065F46; }
+  .badge.red { background: #FEE2E2; color: #991B1B; }
+  .badge.blue { background: #DBEAFE; color: #1E40AF; }
+  .badge.gray { background: #F3F4F6; color: #4B5563; }
+
+  /* Footer */
+  .doc-footer {
+    text-align: center;
+    padding: 32px 0;
+    color: var(--text-secondary);
+    font-size: 13px;
+  }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    .toc ol { columns: 1; }
+    section { padding: 20px; }
+    .doc-header h1 { font-size: 24px; }
+    pre { padding: 14px; font-size: 12px; }
+  }
+
+  /* Print */
+  @media print {
+    body { background: white; font-size: 12px; }
+    .doc-header { background: var(--primary-dark) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    section { break-inside: avoid; box-shadow: none; border: 1px solid #ccc; }
+    pre { background: #f5f5f5 !important; color: #333 !important; }
+  }
+
+  .sql-comment { color: #6A9955; }
+  .sql-keyword { color: #569CD6; }
+  .sql-string { color: #CE9178; }
+</style>
+</head>
+<body>
+
+<header class="doc-header">
+  <div class="container">
+    <h1>Bombus 多租戶 SaaS 架構<br>技術說明文件</h1>
+    <div class="meta">
+      <span>版本 1.0</span>
+      <span>最後更新：2026-03-06</span>
+      <span>對象：客戶端工程師、PM</span>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- TOC -->
+<nav class="toc">
+  <h2>目錄</h2>
+  <ol>
+    <li><a href="#sec1">系統概覽</a></li>
+    <li><a href="#sec2">技術棧</a></li>
+    <li><a href="#sec3">架構總覽</a></li>
+    <li><a href="#sec4">資料隔離策略</a></li>
+    <li><a href="#sec5">資料庫結構</a></li>
+    <li><a href="#sec6">認證與授權</a></li>
+    <li><a href="#sec7">後端架構</a></li>
+    <li><a href="#sec8">前端架構</a></li>
+    <li><a href="#sec9">管理介面</a></li>
+    <li><a href="#sec10">方案與功能閘門</a></li>
+    <li><a href="#sec11">安全機制</a></li>
+    <li><a href="#sec12">API 完整端點清單</a></li>
+    <li><a href="#sec13">環境設定與部署</a></li>
+    <li><a href="#sec14">遷移路徑</a></li>
+    <li><a href="#sec15">已知限制與風險</a></li>
+  </ol>
+</nav>
+
+<!-- 1. 系統概覽 -->
+<section id="sec1">
+  <h2>1. 系統概覽</h2>
+  <p>Bombus 是一套多租戶（Multi-Tenant）HR SaaS 系統，涵蓋六大功能模組：</p>
+  <table>
+    <thead><tr><th>模組</th><th>代號</th><th>說明</th></tr></thead>
+    <tbody>
+      <tr><td>員工管理</td><td><span class="badge blue">L1</span></td><td>招募、面試、員工檔案、入職管理、會議、人才庫</td></tr>
+      <tr><td>職能管理</td><td><span class="badge blue">L2</span></td><td>職等職級、職務說明書、職能框架、評估</td></tr>
+      <tr><td>教育訓練</td><td><span class="badge blue">L3</span></td><td>課程管理、學習地圖、九宮格、人才儀表板</td></tr>
+      <tr><td>專案管理</td><td><span class="badge blue">L4</span></td><td>專案列表、損益預測、報表</td></tr>
+      <tr><td>績效管理</td><td><span class="badge blue">L5</span></td><td>毛利監控、獎金分配、目標管理、考核</td></tr>
+      <tr><td>文化管理</td><td><span class="badge blue">L6</span></td><td>企業文化手冊、EAP、獎項、文件管理</td></tr>
+    </tbody>
+  </table>
+  <div class="info-box blue">
+    系統採用 <strong>Database-per-Tenant</strong> 資料隔離策略，每個租戶擁有獨立的 SQLite 資料庫檔案，實現物理級別的資料隔離。
+  </div>
+</section>
+
+<!-- 2. 技術棧 -->
+<section id="sec2">
+  <h2>2. 技術棧</h2>
+  <table>
+    <thead><tr><th>層級</th><th>技術</th><th>版本</th></tr></thead>
+    <tbody>
+      <tr><td>前端框架</td><td>Angular (Standalone Components)</td><td>18.2</td></tr>
+      <tr><td>前端語言</td><td>TypeScript</td><td>5.x</td></tr>
+      <tr><td>樣式</td><td>SCSS（莫蘭迪色系 Soft UI）</td><td>—</td></tr>
+      <tr><td>後端框架</td><td>Express.js</td><td>4.18</td></tr>
+      <tr><td>資料庫</td><td>sql.js (SQLite in-memory + file persistence)</td><td>—</td></tr>
+      <tr><td>認證</td><td>JWT (jsonwebtoken) + bcryptjs</td><td>—</td></tr>
+      <tr><td>安全</td><td>helmet, express-rate-limit, CORS</td><td>—</td></tr>
+      <tr><td>部署</td><td>GitHub Pages (前端) + Node.js Server (後端)</td><td>—</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 3. 架構總覽 -->
+<section id="sec3">
+  <h2>3. 架構總覽</h2>
+  <div class="arch-diagram"><span class="dim">┌──────────────────────────────────────────────────────────┐</span>
+<span class="dim">│</span>                     <span class="hl">Angular 18.2 SPA</span>                     <span class="dim">│</span>
+<span class="dim">│</span>                                                          <span class="dim">│</span>
+<span class="dim">│</span>  ┌────────────┐ ┌──────────────┐ ┌─────────────────────┐ <span class="dim">│</span>
+<span class="dim">│</span>  │ <span class="hl2">AuthService</span>│ │<span class="hl2">PermissionSvc</span> │ │<span class="hl2">FeatureGateService</span>  │ <span class="dim">│</span>
+<span class="dim">│</span>  │ (JWT管理)  │ │ (RBAC檢查)   │ │(方案功能閘門)       │ <span class="dim">│</span>
+<span class="dim">│</span>  └─────┬──────┘ └──────┬───────┘ └──────────┬──────────┘ <span class="dim">│</span>
+<span class="dim">│</span>        │               │                    │            <span class="dim">│</span>
+<span class="dim">│</span>  ┌─────▼───────────────▼────────────────────▼──────────┐ <span class="dim">│</span>
+<span class="dim">│</span>  │           <span class="hl3">AuthInterceptor</span> (自動附加 JWT)             │ <span class="dim">│</span>
+<span class="dim">│</span>  │           ↳ 401 攔截 → 自動刷新 Token               │ <span class="dim">│</span>
+<span class="dim">│</span>  └─────────────────────┬───────────────────────────────┘ <span class="dim">│</span>
+<span class="dim">└────────────────────────┼─────────────────────────────────┘</span>
+                         │ <span class="hl3">HTTP (proxy → :3001)</span>
+<span class="dim">┌────────────────────────▼─────────────────────────────────┐</span>
+<span class="dim">│</span>                   <span class="hl">Express.js 4.18</span>                         <span class="dim">│</span>
+<span class="dim">│</span>                                                          <span class="dim">│</span>
+<span class="dim">│</span>  Request → [<span class="hl2">helmet</span>] → [<span class="hl2">rate-limit</span>] → [<span class="hl2">CORS</span>]              <span class="dim">│</span>
+<span class="dim">│</span>    ↓                                                     <span class="dim">│</span>
+<span class="dim">│</span>  [<span class="hl3">Auth Middleware</span>]     ← JWT 驗證，解析 user/tenant       <span class="dim">│</span>
+<span class="dim">│</span>    ↓                                                     <span class="dim">│</span>
+<span class="dim">│</span>  [<span class="hl3">Tenant Middleware</span>]   ← 載入租戶 DB，注入 req.tenantDB   <span class="dim">│</span>
+<span class="dim">│</span>    ↓                                                     <span class="dim">│</span>
+<span class="dim">│</span>  [<span class="hl3">Permission MW</span>]       ← 檢查角色/權限（選用）            <span class="dim">│</span>
+<span class="dim">│</span>    ↓                                                     <span class="dim">│</span>
+<span class="dim">│</span>  [<span class="hl2">Route Handler</span>]       ← 使用 req.tenantDB 操作資料      <span class="dim">│</span>
+<span class="dim">│</span>                                                          <span class="dim">│</span>
+<span class="dim">│</span>  ┌─────────────────────────────────────────────────────┐ <span class="dim">│</span>
+<span class="dim">│</span>  │              <span class="hl">TenantDBManager</span> (單例)                  │ <span class="dim">│</span>
+<span class="dim">│</span>  │  ┌───────┐ ┌───────┐ ┌───────┐       <span class="hl3">LRU Cache</span>    │ <span class="dim">│</span>
+<span class="dim">│</span>  │  │Tenant │ │Tenant │ │Tenant │       30min 閒置    │ <span class="dim">│</span>
+<span class="dim">│</span>  │  │  A DB │ │  B DB │ │  C DB │       自動卸載      │ <span class="dim">│</span>
+<span class="dim">│</span>  │  └───────┘ └───────┘ └───────┘                      │ <span class="dim">│</span>
+<span class="dim">│</span>  └─────────────────────────────────────────────────────┘ <span class="dim">│</span>
+<span class="dim">│</span>  ┌──────────────────┐                                    <span class="dim">│</span>
+<span class="dim">│</span>  │  <span class="hl2">platform.db</span>     │  ← 常駐記憶體（租戶/方案/審計）    <span class="dim">│</span>
+<span class="dim">│</span>  └──────────────────┘                                    <span class="dim">│</span>
+<span class="dim">└──────────────────────────────────────────────────────────┘</span>
+
+<span class="hl2">server/data/</span>
+├── platform.db              ← 平台資料庫
+└── tenants/
+    ├── tenant_demo.db       ← Demo 租戶
+    ├── tenant_acme.db       ← ACME 集團
+    └── tenant_{id}.db       ← 各租戶獨立 DB</div>
+</section>
+
+<!-- 4. 資料隔離策略 -->
+<section id="sec4">
+  <h2>4. 資料隔離策略 — Database-per-Tenant</h2>
+
+  <h3>設計決策</h3>
+  <table>
+    <thead><tr><th>策略</th><th>Bombus 選擇</th><th>替代方案說明</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Database-per-Tenant</strong></td><td><span class="badge green">✅ 採用</span></td><td>—</td></tr>
+      <tr><td>Shared DB + tenant_id</td><td><span class="badge red">❌ 未採用</span></td><td>隔離弱，SQL 遺漏 WHERE 條件即洩漏</td></tr>
+      <tr><td>Table-prefix-per-Tenant</td><td><span class="badge red">❌ 未採用</span></td><td>管理複雜，sql.js 不支援 schema</td></tr>
+    </tbody>
+  </table>
+
+  <h3>優勢</h3>
+  <ul>
+    <li><strong>物理隔離</strong>：租戶 A 的資料庫檔案與租戶 B 完全獨立</li>
+    <li><strong>退租清除</strong>：刪除單一 <code>.db</code> 檔案即可，零殘留</li>
+    <li><strong>備份/還原</strong>：以租戶為單位匯出單一檔案</li>
+    <li><strong>效能獨立</strong>：單一租戶的大量查詢不影響其他租戶</li>
+    <li><strong>遷移友好</strong>：未來遷移 PostgreSQL Schema-per-Tenant 時邏輯層可直接對應</li>
+  </ul>
+
+  <h3>TenantDBManager 生命週期</h3>
+  <pre><code>1. Request 到達 → JWT 解析取得 tenant_id
+2. TenantMiddleware 呼叫 TenantDBManager.getDB(tenant_id)
+3. getDB() 檢查 LRU Cache：
+   ├─ 命中 → 更新 lastAccess，重設 idle timer，回傳 DBAdapter
+   └─ 未命中 → 從磁碟載入 .db 檔案 → 執行冪等遷移 → 放入 Cache
+4. 閒置 30 分鐘 → 自動持久化到磁碟 → 從記憶體卸載</code></pre>
+
+  <h3>關鍵檔案</h3>
+  <table>
+    <thead><tr><th>檔案</th><th>職責</th></tr></thead>
+    <tbody>
+      <tr><td><code>server/src/db/db-adapter.js</code></td><td>DBAdapter 抽象層（query / run / prepare / transaction）</td></tr>
+      <tr><td><code>server/src/db/platform-db.js</code></td><td>platform.db 初始化與管理</td></tr>
+      <tr><td><code>server/src/db/tenant-db-manager.js</code></td><td>多租戶 DB 實例管理（LRU Cache）</td></tr>
+      <tr><td><code>server/src/db/tenant-schema.js</code></td><td>租戶 DB Schema 定義（69+ 業務表 + 7 RBAC 表）</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 5. 資料庫結構 -->
+<section id="sec5">
+  <h2>5. 資料庫結構</h2>
+
+  <h3>5.1 平台資料庫 (platform.db)</h3>
+  <p>儲存跨租戶的平台級資料，伺服器啟動時自動載入，永遠常駐記憶體。</p>
+  <pre><code><span class="sql-comment">-- 租戶清單</span>
+<span class="sql-keyword">CREATE TABLE</span> tenants (
+  id <span class="sql-keyword">TEXT PRIMARY KEY</span>,
+  name <span class="sql-keyword">TEXT NOT NULL</span>,
+  slug <span class="sql-keyword">TEXT UNIQUE NOT NULL</span>,           <span class="sql-comment">-- URL 識別符（如 'demo', 'acme'）</span>
+  status <span class="sql-keyword">TEXT DEFAULT</span> <span class="sql-string">'active'</span>         <span class="sql-comment">-- active | suspended | deleted</span>
+    <span class="sql-keyword">CHECK</span>(status <span class="sql-keyword">IN</span> (<span class="sql-string">'active'</span>,<span class="sql-string">'suspended'</span>,<span class="sql-string">'deleted'</span>)),
+  plan_id <span class="sql-keyword">TEXT REFERENCES</span> subscription_plans(id),
+  db_file <span class="sql-keyword">TEXT NOT NULL</span>,
+  logo_url <span class="sql-keyword">TEXT</span>,
+  industry <span class="sql-keyword">TEXT</span>,
+  created_at <span class="sql-keyword">TEXT DEFAULT</span> (datetime(<span class="sql-string">'now'</span>)),
+  updated_at <span class="sql-keyword">TEXT DEFAULT</span> (datetime(<span class="sql-string">'now'</span>))
+);
+
+<span class="sql-comment">-- 訂閱方案</span>
+<span class="sql-keyword">CREATE TABLE</span> subscription_plans (
+  id <span class="sql-keyword">TEXT PRIMARY KEY</span>,
+  name <span class="sql-keyword">TEXT NOT NULL</span>,
+  max_users <span class="sql-keyword">INTEGER DEFAULT</span> 50,
+  max_storage_gb <span class="sql-keyword">INTEGER DEFAULT</span> 5,
+  features <span class="sql-keyword">TEXT DEFAULT</span> <span class="sql-string">'{}'</span>,          <span class="sql-comment">-- JSON 陣列：啟用的功能 ID</span>
+  price_monthly <span class="sql-keyword">REAL DEFAULT</span> 0,
+  price_yearly <span class="sql-keyword">REAL DEFAULT</span> 0,
+  is_active <span class="sql-keyword">INTEGER DEFAULT</span> 1,
+  created_at <span class="sql-keyword">TEXT DEFAULT</span> (datetime(<span class="sql-string">'now'</span>))
+);
+
+<span class="sql-comment">-- 平台管理員</span>
+<span class="sql-keyword">CREATE TABLE</span> platform_admins (
+  id <span class="sql-keyword">TEXT PRIMARY KEY</span>,
+  email <span class="sql-keyword">TEXT UNIQUE NOT NULL</span>,
+  password_hash <span class="sql-keyword">TEXT NOT NULL</span>,         <span class="sql-comment">-- bcryptjs hash</span>
+  name <span class="sql-keyword">TEXT NOT NULL</span>,
+  created_at <span class="sql-keyword">TEXT DEFAULT</span> (datetime(<span class="sql-string">'now'</span>))
+);
+
+<span class="sql-comment">-- 審計日誌（跨租戶）</span>
+<span class="sql-keyword">CREATE TABLE</span> audit_logs (
+  id <span class="sql-keyword">TEXT PRIMARY KEY</span>,
+  tenant_id <span class="sql-keyword">TEXT</span>,                      <span class="sql-comment">-- NULL = 平台級操作</span>
+  user_id <span class="sql-keyword">TEXT</span>,
+  action <span class="sql-keyword">TEXT NOT NULL</span>,
+  resource <span class="sql-keyword">TEXT</span>,
+  details <span class="sql-keyword">TEXT</span>,                        <span class="sql-comment">-- JSON 詳情</span>
+  ip <span class="sql-keyword">TEXT</span>,
+  created_at <span class="sql-keyword">TEXT DEFAULT</span> (datetime(<span class="sql-string">'now'</span>))
+);</code></pre>
+
+  <h3>5.2 RBAC 權限表（7 張）</h3>
+  <table>
+    <thead><tr><th>表名</th><th>說明</th><th>關鍵欄位</th></tr></thead>
+    <tbody>
+      <tr><td><code>users</code></td><td>使用者帳號</td><td>email, password_hash, employee_id FK, must_change_password</td></tr>
+      <tr><td><code>org_units</code></td><td>組織架構（樹狀）</td><td>type (group/subsidiary/department), parent_id, level</td></tr>
+      <tr><td><code>roles</code></td><td>角色定義</td><td>scope_type (global/subsidiary/department), is_system</td></tr>
+      <tr><td><code>permissions</code></td><td>權限定義</td><td>resource:action 格式（UNIQUE）</td></tr>
+      <tr><td><code>role_permissions</code></td><td>角色-權限關聯</td><td>role_id + permission_id</td></tr>
+      <tr><td><code>user_roles</code></td><td>使用者-角色指派</td><td>user_id + role_id + org_unit_id（範圍）</td></tr>
+      <tr><td><code>refresh_tokens</code></td><td>Refresh Token</td><td>token_hash, expires_at</td></tr>
+    </tbody>
+  </table>
+
+  <h3>5.3 業務表清單（依模組分類）</h3>
+  <table>
+    <thead><tr><th>模組</th><th>表名</th><th>說明</th></tr></thead>
+    <tbody>
+      <tr><td rowspan="2"><strong>共用</strong></td><td><code>departments</code></td><td>部門（含 manager_id, head_count）</td></tr>
+      <tr><td><code>department_collaborations</code></td><td>部門協作關係</td></tr>
+      <tr><td rowspan="13"><strong>L1 員工管理</strong></td><td><code>employees</code></td><td>員工基本資料（含 org_unit_id FK）</td></tr>
+      <tr><td><code>employee_education</code></td><td>教育背景</td></tr>
+      <tr><td><code>employee_experience</code></td><td>工作經歷</td></tr>
+      <tr><td><code>employee_certifications</code></td><td>證照資料</td></tr>
+      <tr><td><code>jobs</code></td><td>招募職缺</td></tr>
+      <tr><td><code>candidates</code></td><td>候選人</td></tr>
+      <tr><td><code>interviews</code></td><td>面試排程</td></tr>
+      <tr><td><code>interview_feedback</code></td><td>面試評估</td></tr>
+      <tr><td><code>offer_responses</code></td><td>Offer 回覆記錄</td></tr>
+      <tr><td><code>talent_pool</code></td><td>人才庫</td></tr>
+      <tr><td><code>onboarding_templates</code></td><td>入職文件範本</td></tr>
+      <tr><td><code>onboarding_submissions</code></td><td>入職文件提交</td></tr>
+      <tr><td><code>meetings</code></td><td>會議記錄</td></tr>
+      <tr><td rowspan="7"><strong>L2 職能管理</strong></td><td><code>grade_levels</code></td><td>職等（1-7 級）</td></tr>
+      <tr><td><code>grade_salary_levels</code></td><td>職級薪資（BS01-BS20）</td></tr>
+      <tr><td><code>department_positions</code></td><td>部門職位</td></tr>
+      <tr><td><code>job_descriptions</code></td><td>職務說明書</td></tr>
+      <tr><td><code>competency_frameworks</code></td><td>職能基準</td></tr>
+      <tr><td><code>competency_items</code></td><td>職能項目</td></tr>
+      <tr><td><code>employee_competency_assessments</code></td><td>職能評估</td></tr>
+      <tr><td rowspan="3"><strong>L3 教育訓練</strong></td><td><code>monthly_checks</code></td><td>月考核記錄</td></tr>
+      <tr><td><code>weekly_reports</code></td><td>週報</td></tr>
+      <tr><td><code>quarterly_reviews</code></td><td>季度評核</td></tr>
+    </tbody>
+  </table>
+  <div class="info-box blue">完整 Schema 定義見 <code>server/src/db/tenant-schema.js</code>（69+ 表）</div>
+</section>
+
+<!-- 6. 認證與授權 -->
+<section id="sec6">
+  <h2>6. 認證與授權</h2>
+
+  <h3>6.1 JWT 雙 Token 架構</h3>
+  <table>
+    <thead><tr><th>Token</th><th>效期</th><th>用途</th><th>儲存位置</th></tr></thead>
+    <tbody>
+      <tr><td>Access Token</td><td>15 分鐘</td><td>API 請求認證</td><td>前端 localStorage</td></tr>
+      <tr><td>Refresh Token</td><td>7 天</td><td>刷新 Access Token</td><td>前端 localStorage + 後端 DB（hash）</td></tr>
+    </tbody>
+  </table>
+
+  <h3>6.2 Access Token Payload</h3>
+  <pre><code>{
+  "sub": "user-uuid",           <span class="sql-comment">// 使用者 ID</span>
+  "tid": "tenant-uuid",         <span class="sql-comment">// 租戶 ID</span>
+  "email": "user@example.com",
+  "roles": ["hr_manager"],      <span class="sql-comment">// 角色名稱陣列</span>
+  "scope": {                    <span class="sql-comment">// 角色作用範圍</span>
+    "type": "subsidiary",
+    "id": "subsidiary-uuid"
+  },
+  "iat": 1234567890,
+  "exp": 1234568790
+}</code></pre>
+
+  <h3>6.3 Token 刷新流程</h3>
+  <pre><code>1. 前端發送 API 請求，附帶 Authorization: Bearer &lt;access_token&gt;
+2. 後端 Auth Middleware 驗證 Token：
+   ├─ 有效 → 繼續處理請求
+   └─ 過期 → 回傳 401
+3. 前端 AuthInterceptor 攔截 401：
+   a. 呼叫 POST /api/auth/refresh（附帶 refresh_token）
+   b. 後端驗證 refresh_token 有效性（查 DB + 比對 hash + 檢查過期）
+   c. 核發新的 access_token + refresh_token
+   d. 前端儲存新 Token，重送原始請求
+4. 若 refresh_token 也過期 → 導向登入頁</code></pre>
+
+  <h3>6.4 RBAC 權限模型</h3>
+  <pre><code>集團（Group）          ← level 0
+ └── 子公司（Subsidiary）  ← level 1
+      └── 部門（Department）   ← level 2
+           └── 使用者 + 角色</code></pre>
+
+  <h4>預設系統角色</h4>
+  <table>
+    <thead><tr><th>角色</th><th>scope_type</th><th>說明</th><th>權限範圍</th></tr></thead>
+    <tbody>
+      <tr><td><code>super_admin</code></td><td>global</td><td>集團超級管理員</td><td>所有資源的所有操作</td></tr>
+      <tr><td><code>subsidiary_admin</code></td><td>subsidiary</td><td>子公司管理員</td><td>該子公司下所有資源</td></tr>
+      <tr><td><code>hr_manager</code></td><td>subsidiary/dept</td><td>HR 主管</td><td>員工、招募、入職等</td></tr>
+      <tr><td><code>dept_manager</code></td><td>department</td><td>部門主管</td><td>該部門員工資料</td></tr>
+      <tr><td><code>employee</code></td><td>department</td><td>一般員工</td><td>唯讀自己的資料</td></tr>
+    </tbody>
+  </table>
+
+  <h4>權限繼承規則</h4>
+  <pre><code>global 角色
+ ├── 自動擁有所有 subsidiary 範圍的權限
+ └── 自動擁有所有 department 範圍的權限
+
+subsidiary 角色
+ └── 自動擁有該子公司下所有 department 的權限
+
+department 角色
+ └── 僅限於該部門</code></pre>
+</section>
+
+<!-- 7. 後端架構 -->
+<section id="sec7">
+  <h2>7. 後端架構</h2>
+
+  <h3>7.1 中介層管線 (Middleware Pipeline)</h3>
+  <pre><code>Request
+  │
+  ▼
+┌─────────────────────┐
+│ helmet              │  Content Security Policy, XSS Protection
+│ cors                │  Cross-Origin Resource Sharing
+│ express.json(50mb)  │  JSON Body Parser（支援大型 Base64 PDF）
+│ rate-limit          │  API: 1000/15min, Auth: 100/15min
+└─────────┬───────────┘
+          │
+    ┌─────▼─────┐
+    │ 路由分發  │
+    └─────┬─────┘
+          │
+  ┌───────┼────────┐──────────┐
+  ▼       ▼        ▼          ▼
+公開路由  認證路由  平台管理   業務路由
+/health   /auth    /platform  /employee, /recruitment ...
+                    │          │
+                    ▼          ▼
+              platformAdmin  authMiddleware
+              Middleware     + tenantMiddleware
+                             + [permissionMiddleware]</code></pre>
+
+  <h3>7.2 DBAdapter 抽象層</h3>
+  <p>為未來遷移 PostgreSQL 預留介面：</p>
+  <pre><code>class DBAdapter {
+  query(sql, params)         // SELECT → 回傳 rows 陣列
+  queryOne(sql, params)      // SELECT → 回傳單筆 row 或 null
+  run(sql, params)           // INSERT/UPDATE/DELETE → 回傳 { changes }
+  prepare(sql)               // Prepared Statement
+  transaction(fn)            // 交易封裝
+  save()                     // 持久化到磁碟
+  close()                    // 釋放記憶體
+}
+
+class SqliteAdapter extends DBAdapter { ... }
+// 未來：class PostgresAdapter extends DBAdapter { ... }</code></pre>
+
+  <h4>PostgreSQL 遷移影響評估</h4>
+  <table>
+    <thead><tr><th>需要改的</th><th>不需要改的</th></tr></thead>
+    <tbody>
+      <tr><td><code>SqliteAdapter</code> → <code>PostgresAdapter</code></td><td><code>DBAdapter</code> 介面</td></tr>
+      <tr><td>檔案操作 → Schema DDL</td><td><code>TenantDBManager</code> 公開 API</td></tr>
+      <tr><td>少量 SQL 型別差異</td><td>所有 Prepared Statements</td></tr>
+      <tr><td>—</td><td>JWT、RBAC、所有中介層</td></tr>
+      <tr><td>—</td><td><strong>前端完全不變</strong></td></tr>
+    </tbody>
+  </table>
+
+  <h3>7.3 TenantDBManager</h3>
+  <pre><code>class TenantDBManager {
+  async init()                              // 初始化 sql.js engine
+  getDB(tenantId): SqliteAdapter            // 取得租戶 DB（LRU Cache）
+  createTenantDB(tenantId, initSchema)      // 建立新租戶 DB
+  deleteTenantDB(tenantId)                  // 硬刪除租戶 DB
+  unloadDB(tenantId)                        // 卸載（持久化 + 從記憶體移除）
+  exists(tenantId): boolean                 // 檢查 DB 檔案是否存在
+  get loadedCount: number                   // 已載入的租戶數
+  closeAll()                                // 關閉所有連線
+}</code></pre>
+  <div class="info-box green">
+    <strong>LRU Cache</strong>：活躍租戶常駐記憶體，閒置 30 分鐘自動卸載。platform.db 永遠常駐。
+  </div>
+
+  <h3>7.4 API 路由分類</h3>
+  <table>
+    <thead><tr><th>類別</th><th>路徑前綴</th><th>保護方式</th></tr></thead>
+    <tbody>
+      <tr><td>健康檢查</td><td><code>/api/health</code></td><td>無</td></tr>
+      <tr><td>認證</td><td><code>/api/auth</code></td><td>authLimiter</td></tr>
+      <tr><td>平台管理</td><td><code>/api/platform</code></td><td>authMiddleware + platformAdminMiddleware</td></tr>
+      <tr><td>審計日誌</td><td><code>/api/audit</code></td><td>authMiddleware</td></tr>
+      <tr><td>租戶管理</td><td><code>/api/tenant-admin</code></td><td>authMiddleware + tenantMiddleware + requireRole</td></tr>
+      <tr><td>業務 API</td><td><code>/api/employee</code>, <code>/api/recruitment</code>, <code>/api/jobs</code> 等</td><td>authMiddleware + tenantMiddleware</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 8. 前端架構 -->
+<section id="sec8">
+  <h2>8. 前端架構</h2>
+
+  <h3>8.1 認證流程</h3>
+  <pre><code>使用者開啟登入頁 (/login)
+    │
+    ├── 租戶模式（Tenant Login）
+    │   ├─ 輸入：tenant_slug + email + password
+    │   ├─ POST /api/auth/login
+    │   ├─ 回傳：access_token + refresh_token + user
+    │   ├─ 儲存到 localStorage
+    │   ├─ 檢查 must_change_password → true 時導向 /change-password
+    │   └─ 載入 permissions → 導向 /dashboard
+    │
+    └── 平台模式（Platform Login）
+        ├─ 輸入：email + password
+        ├─ POST /api/auth/platform-login
+        └─ 導向 /platform（平台管理後台）</code></pre>
+
+  <h3>8.2 AuthInterceptor 功能</h3>
+  <ol>
+    <li><strong>自動附加 Token</strong>：所有 <code>/api/*</code> 請求自動加上 <code>Authorization: Bearer</code> header</li>
+    <li><strong>排除路徑</strong>：login, register, refresh 不附加 Token</li>
+    <li><strong>401 自動刷新</strong>：收到 401 自動呼叫 refresh endpoint，成功後重送原始請求</li>
+    <li><strong>並發保護</strong>：<code>refreshInProgress</code> + <code>BehaviorSubject</code> 佇列</li>
+    <li><strong>刷新失敗</strong>：導回登入頁</li>
+  </ol>
+
+  <h3>8.3 Route Guards</h3>
+  <table>
+    <thead><tr><th>Guard</th><th>保護邏輯</th></tr></thead>
+    <tbody>
+      <tr><td><code>authGuard</code></td><td>檢查 isLoggedIn signal，未登入導向 /login</td></tr>
+      <tr><td><code>permissionGuard</code></td><td>檢查路由 <code>data.requiredPermission</code></td></tr>
+      <tr><td><code>platformAdminGuard</code></td><td>檢查 isPlatformAdmin</td></tr>
+      <tr><td><code>featureGateGuard</code></td><td>檢查路由 <code>data.requiredFeaturePrefix</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>8.4 權限控制</h3>
+  <p><code>PermissionService</code>（Signal-based）提供 <code>hasPermission(resource, action)</code> 和 <code>hasRole(roleName)</code>。</p>
+  <p><code>*appHasPermission</code> Directive 可在模板中控制元素顯示：</p>
+  <pre><code>&lt;button *appHasPermission="'employee:write'"&gt;新增員工&lt;/button&gt;</code></pre>
+
+  <h3>8.5 功能閘門 (Feature Gate)</h3>
+  <p><code>FeatureGateService</code> 根據租戶訂閱方案控制功能可用性：</p>
+  <ul>
+    <li>精確比對：<code>isFeatureEnabled('L1.jobs')</code></li>
+    <li>模組比對：<code>isModuleEnabled('L1')</code> → 任何 L1.* 啟用即通過</li>
+    <li>優雅降級：無方案資料時全部功能預設開放</li>
+  </ul>
+</section>
+
+<!-- 9. 管理介面 -->
+<section id="sec9">
+  <h2>9. 管理介面</h2>
+
+  <h3>9.1 平台管理後台（路由 <code>/platform</code>）</h3>
+  <table>
+    <thead><tr><th>頁面</th><th>功能</th></tr></thead>
+    <tbody>
+      <tr><td>租戶管理</td><td>租戶列表（搜尋/篩選/分頁）、新增/編輯、軟刪除/硬刪除、狀態管理</td></tr>
+      <tr><td>方案管理</td><td>方案列表、功能模組勾選（L1~L6 子功能）、定價、使用量限制</td></tr>
+      <tr><td>審計日誌</td><td>跨租戶操作日誌查詢（分頁 + 篩選）</td></tr>
+    </tbody>
+  </table>
+
+  <h3>9.2 租戶管理設定（路由 <code>/settings</code>）</h3>
+  <table>
+    <thead><tr><th>頁面</th><th>功能</th></tr></thead>
+    <tbody>
+      <tr><td>組織架構</td><td>樹狀圖編輯（集團→子公司→部門）</td></tr>
+      <tr><td>角色權限</td><td>角色列表 CRUD、權限矩陣（resource × action）</td></tr>
+      <tr><td>使用者管理</td><td>使用者列表、帳號建立、角色指派（含 org_unit_id 範圍）</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 10. 方案與功能閘門 -->
+<section id="sec10">
+  <h2>10. 方案與功能閘門</h2>
+  <pre><code>subscription_plans.features = '["L1.jobs","L1.recruitment","L2.grade-matrix"]'
+                                    │
+                                    ▼
+tenant → plan → features → Login Response: enabled_features 陣列
+                                    │
+                                    ▼
+前端 FeatureGateService.enabledFeatures (Signal&lt;Set&lt;string&gt;&gt;)
+                                    │
+                    ┌───────────────┼───────────────┐
+                    ▼               ▼               ▼
+             featureGateGuard  FeatureGateService  側邊欄過濾
+             (路由層攔截)      .isFeatureEnabled() (隱藏未啟用模組)</code></pre>
+
+  <h3>功能 ID 體系</h3>
+  <table>
+    <thead><tr><th>模組</th><th>功能 ID</th><th>說明</th></tr></thead>
+    <tbody>
+      <tr><td rowspan="6">L1</td><td><code>L1.jobs</code></td><td>招募職缺管理</td></tr>
+      <tr><td><code>L1.recruitment</code></td><td>AI 智能面試</td></tr>
+      <tr><td><code>L1.talent-pool</code></td><td>人才庫管理</td></tr>
+      <tr><td><code>L1.profile</code></td><td>員工檔案管理</td></tr>
+      <tr><td><code>L1.meeting</code></td><td>會議管理</td></tr>
+      <tr><td><code>L1.onboarding</code></td><td>入職管理</td></tr>
+      <tr><td rowspan="4">L2</td><td><code>L2.grade-matrix</code></td><td>職等職級管理</td></tr>
+      <tr><td><code>L2.framework</code></td><td>職能模型基準</td></tr>
+      <tr><td><code>L2.job-description</code></td><td>職務說明書</td></tr>
+      <tr><td><code>L2.assessment</code></td><td>職能評估系統</td></tr>
+      <tr><td rowspan="3">L3</td><td><code>L3.course-management</code></td><td>課程管理</td></tr>
+      <tr><td><code>L3.learning-map</code></td><td>學習地圖</td></tr>
+      <tr><td><code>L3.nine-box</code></td><td>人才九宮格</td></tr>
+      <tr><td rowspan="2">L4</td><td><code>L4.list</code></td><td>專案列表</td></tr>
+      <tr><td><code>L4.profit-prediction</code></td><td>AI 損益預測</td></tr>
+      <tr><td rowspan="3">L5</td><td><code>L5.profit-dashboard</code></td><td>毛利監控</td></tr>
+      <tr><td><code>L5.bonus-distribution</code></td><td>獎金分配</td></tr>
+      <tr><td><code>L5.review</code></td><td>績效考核</td></tr>
+      <tr><td rowspan="3">L6</td><td><code>L6.handbook</code></td><td>企業文化手冊</td></tr>
+      <tr><td><code>L6.eap</code></td><td>EAP 員工協助</td></tr>
+      <tr><td><code>L6.documents</code></td><td>文件儲存庫</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 11. 安全機制 -->
+<section id="sec11">
+  <h2>11. 安全機制</h2>
+  <table>
+    <thead><tr><th>機制</th><th>實作</th><th>說明</th></tr></thead>
+    <tbody>
+      <tr><td>密碼加密</td><td>bcryptjs (salt rounds: 10)</td><td>所有密碼以 hash 儲存，不可逆</td></tr>
+      <tr><td>JWT Secret</td><td>環境變數 <code>JWT_SECRET</code></td><td>Token 簽名金鑰，生產環境須更換</td></tr>
+      <tr><td>HTTPS 防護</td><td>helmet</td><td>Content-Security-Policy, XSS 保護</td></tr>
+      <tr><td>Rate Limiting</td><td>express-rate-limit</td><td>API: 1000/15min, Auth: 可設定</td></tr>
+      <tr><td>SQL Injection</td><td>Prepared Statements</td><td>所有 SQL 使用參數化查詢</td></tr>
+      <tr><td>CORS</td><td>cors middleware</td><td>控制跨域請求</td></tr>
+      <tr><td>審計日誌</td><td>audit_logs 表</td><td>租戶 CRUD、登入、權限變更</td></tr>
+      <tr><td>租戶狀態檢查</td><td>Tenant Middleware</td><td>suspended/deleted 租戶回傳 403</td></tr>
+      <tr><td>首次登入改密碼</td><td><code>must_change_password</code></td><td>自動建立帳號強制變更</td></tr>
+      <tr><td>Refresh Token</td><td>Hash 後存入 DB</td><td>可從 DB 撤銷</td></tr>
+      <tr><td>刪除二次確認</td><td>硬刪除需 <code>confirm: true</code></td><td>防止意外刪除租戶</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 12. API 端點清單 -->
+<section id="sec12">
+  <h2>12. API 完整端點清單</h2>
+
+  <h3>認證 API (<code>/api/auth</code>)</h3>
+  <table>
+    <thead><tr><th>方法</th><th>路徑</th><th>說明</th><th>認證</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge green">POST</span></td><td><code>/api/auth/login</code></td><td>租戶使用者登入</td><td>無</td></tr>
+      <tr><td><span class="badge green">POST</span></td><td><code>/api/auth/platform-login</code></td><td>平台管理員登入</td><td>無</td></tr>
+      <tr><td><span class="badge green">POST</span></td><td><code>/api/auth/refresh</code></td><td>刷新 Access Token</td><td>需 refresh_token</td></tr>
+      <tr><td><span class="badge green">POST</span></td><td><code>/api/auth/logout</code></td><td>登出</td><td>Bearer Token</td></tr>
+      <tr><td><span class="badge green">POST</span></td><td><code>/api/auth/change-password</code></td><td>變更密碼</td><td>Bearer Token</td></tr>
+      <tr><td><span class="badge blue">GET</span></td><td><code>/api/auth/me</code></td><td>取得當前使用者</td><td>Bearer Token</td></tr>
+    </tbody>
+  </table>
+
+  <h3>平台管理 API (<code>/api/platform</code>)</h3>
+  <table>
+    <thead><tr><th>方法</th><th>路徑</th><th>說明</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge blue">GET</span></td><td><code>/api/platform/tenants</code></td><td>租戶列表</td></tr>
+      <tr><td><span class="badge green">POST</span></td><td><code>/api/platform/tenants</code></td><td>建立新租戶</td></tr>
+      <tr><td><span class="badge blue">GET</span></td><td><code>/api/platform/tenants/:id</code></td><td>租戶詳情</td></tr>
+      <tr><td><span class="badge gray">PUT</span></td><td><code>/api/platform/tenants/:id</code></td><td>更新租戶</td></tr>
+      <tr><td><span class="badge gray">PUT</span></td><td><code>/api/platform/tenants/:id/status</code></td><td>變更狀態</td></tr>
+      <tr><td><span class="badge red">DELETE</span></td><td><code>/api/platform/tenants/:id</code></td><td>軟刪除</td></tr>
+      <tr><td><span class="badge red">DELETE</span></td><td><code>/api/platform/tenants/:id/purge</code></td><td>硬刪除（需確認）</td></tr>
+      <tr><td><span class="badge blue">GET</span></td><td><code>/api/platform/plans</code></td><td>方案列表</td></tr>
+      <tr><td><span class="badge green">POST</span></td><td><code>/api/platform/plans</code></td><td>建立方案</td></tr>
+      <tr><td><span class="badge gray">PUT</span></td><td><code>/api/platform/plans/:id</code></td><td>更新方案</td></tr>
+    </tbody>
+  </table>
+
+  <h3>業務 API（需認證 + 租戶上下文）</h3>
+  <table>
+    <thead><tr><th>路徑前綴</th><th>說明</th></tr></thead>
+    <tbody>
+      <tr><td><code>/api/employee</code></td><td>員工 CRUD</td></tr>
+      <tr><td><code>/api/recruitment</code></td><td>招募管理</td></tr>
+      <tr><td><code>/api/jobs</code></td><td>職缺管理</td></tr>
+      <tr><td><code>/api/meetings</code></td><td>會議管理</td></tr>
+      <tr><td><code>/api/talent-pool</code></td><td>人才庫</td></tr>
+      <tr><td><code>/api/hr/onboarding</code></td><td>入職管理</td></tr>
+      <tr><td><code>/api/grade-matrix</code></td><td>職等職級矩陣</td></tr>
+      <tr><td><code>/api/job-descriptions</code></td><td>職務說明書</td></tr>
+      <tr><td><code>/api/competency-mgmt</code></td><td>職能基準庫</td></tr>
+      <tr><td><code>/api/organization</code></td><td>組織架構管理</td></tr>
+      <tr><td><code>/api/export</code></td><td>Excel 匯出</td></tr>
+      <tr><td><code>/api/upload</code></td><td>檔案上傳</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 13. 環境設定 -->
+<section id="sec13">
+  <h2>13. 環境設定與部署</h2>
+
+  <h3>環境變數 (server/.env)</h3>
+  <table>
+    <thead><tr><th>變數</th><th>說明</th><th>預設值</th></tr></thead>
+    <tbody>
+      <tr><td><code>PORT</code></td><td>後端服務埠</td><td>3001</td></tr>
+      <tr><td><code>JWT_SECRET</code></td><td>JWT 簽名金鑰</td><td>（開發用，生產環境須更換）</td></tr>
+      <tr><td><code>JWT_ACCESS_EXPIRES</code></td><td>Access Token 效期</td><td>15m</td></tr>
+      <tr><td><code>JWT_REFRESH_EXPIRES</code></td><td>Refresh Token 效期</td><td>7d</td></tr>
+      <tr><td><code>PLATFORM_ADMIN_EMAIL</code></td><td>平台管理員 email</td><td>—</td></tr>
+      <tr><td><code>PLATFORM_ADMIN_PASSWORD</code></td><td>平台管理員密碼</td><td>—</td></tr>
+      <tr><td><code>AUTH_RATE_LIMIT</code></td><td>認證頻率限制（次/15分鐘）</td><td>100</td></tr>
+    </tbody>
+  </table>
+
+  <h3>啟動指令</h3>
+  <pre><code># 後端
+cd bombus-system/server
+npm install
+npm run dev        # 開發模式（nodemon, port 3001）
+
+# 前端
+cd bombus-system
+npm install
+npm start          # 開發模式（port 4200, proxy → 3001）</code></pre>
+
+  <h3>Demo 帳號</h3>
+  <table>
+    <thead><tr><th>身份</th><th>Email</th><th>密碼</th><th>租戶</th></tr></thead>
+    <tbody>
+      <tr><td>租戶管理員</td><td><code>admin@demo.com</code></td><td><code>admin123</code></td><td>demo</td></tr>
+      <tr><td>平台管理員</td><td>見 .env</td><td>見 .env</td><td>—</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 14. 遷移路徑 -->
+<section id="sec14">
+  <h2>14. 遷移路徑</h2>
+
+  <h3>PostgreSQL 遷移影響評估</h3>
+  <table>
+    <thead><tr><th>需要新增/修改</th><th>工作量</th><th>說明</th></tr></thead>
+    <tbody>
+      <tr><td><code>PostgresAdapter</code></td><td>1 檔案</td><td>實作 DBAdapter 介面</td></tr>
+      <tr><td>TenantDBManager</td><td>修改連線管理</td><td>檔案操作 → Schema DDL</td></tr>
+      <tr><td>SQL 語法微調</td><td>少量</td><td>TEXT→VARCHAR, datetime('now')→NOW()</td></tr>
+      <tr><td>連線池設定</td><td>新增</td><td>pg-pool</td></tr>
+    </tbody>
+  </table>
+  <div class="info-box green">
+    <strong>不需要修改</strong>：所有 Route Handler SQL、所有中介層、所有前端程式碼。
+  </div>
+
+  <h3>擴展策略</h3>
+  <table>
+    <thead><tr><th>租戶規模</th><th>策略</th><th>說明</th></tr></thead>
+    <tbody>
+      <tr><td>&lt; 100</td><td>現行架構</td><td>所有 DB 可常駐記憶體</td></tr>
+      <tr><td>100-1000</td><td>LRU Cache 調優</td><td>調整 IDLE_TIMEOUT_MS，增加伺服器記憶體</td></tr>
+      <tr><td>1000+</td><td>遷移 PostgreSQL</td><td>Schema-per-Tenant，使用連線池</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 15. 已知限制 -->
+<section id="sec15">
+  <h2>15. 已知限制與風險</h2>
+  <table>
+    <thead><tr><th>風險</th><th>影響</th><th>緩解措施</th></tr></thead>
+    <tbody>
+      <tr><td>sql.js 記憶體限制</td><td>多租戶同時在線可能不足</td><td>LRU Cache 自動卸載；&lt;100 租戶可全部常駐</td></tr>
+      <tr><td>sql.js 無原生加密</td><td>DB 檔案明文儲存</td><td>遷移 PostgreSQL 使用 SSL + 加密存儲</td></tr>
+      <tr><td>JWT Secret 單一</td><td>洩漏影響全部租戶</td><td>使用強密碼；未來可改為租戶級 Secret</td></tr>
+      <tr><td>無 SSO/SAML</td><td>大型企業整合不便</td><td>原型階段，後續可擴展</td></tr>
+      <tr><td>無跨區域部署</td><td>單一伺服器</td><td>原型階段，後續可擴展</td></tr>
+      <tr><td>無自動備份</td><td>需手動備份</td><td>可設定 cron job 定期備份 data/ 目錄</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 附錄 A -->
+<section>
+  <h2>附錄 A：整合測試</h2>
+  <pre><code># 端對端流程測試（41/41）
+cd bombus-system/server && node src/tests/test-e2e-flow.js
+
+# 租戶隔離測試（22/22）
+cd bombus-system/server && node src/tests/test-tenant-isolation.js
+
+# Demo 租戶測試（32/32）
+cd bombus-system/server && node src/tests/test-demo-tenant.js
+
+# 權限繼承測試（24/24）
+cd bombus-system/server && node src/tests/test-permission-inheritance.js
+
+# 審計日誌測試（34/34）
+cd bombus-system/server && node src/tests/test-audit-logs.js
+
+# 候選人→員工→帳號串連測試（36/36）
+cd bombus-system/server && node src/tests/test-candidate-user-linking.js</code></pre>
+  <div class="info-box green"><strong>總計：189/189 assertions passed</strong></div>
+</section>
+
+<!-- 附錄 B -->
+<section>
+  <h2>附錄 B：核心檔案索引</h2>
+  <h3>後端</h3>
+  <table>
+    <thead><tr><th>檔案路徑</th><th>說明</th></tr></thead>
+    <tbody>
+      <tr><td><code>server/src/index.js</code></td><td>伺服器入口，路由註冊</td></tr>
+      <tr><td><code>server/src/db/db-adapter.js</code></td><td>DBAdapter 抽象層</td></tr>
+      <tr><td><code>server/src/db/platform-db.js</code></td><td>平台 DB 管理</td></tr>
+      <tr><td><code>server/src/db/tenant-db-manager.js</code></td><td>租戶 DB 實例管理</td></tr>
+      <tr><td><code>server/src/db/tenant-schema.js</code></td><td>租戶 Schema 定義</td></tr>
+      <tr><td><code>server/src/middleware/auth.js</code></td><td>JWT 認證中介層</td></tr>
+      <tr><td><code>server/src/middleware/tenant.js</code></td><td>租戶上下文中介層</td></tr>
+      <tr><td><code>server/src/middleware/permission.js</code></td><td>權限檢查中介層</td></tr>
+      <tr><td><code>server/src/routes/auth.js</code></td><td>認證路由</td></tr>
+      <tr><td><code>server/src/routes/platform.js</code></td><td>平台管理路由</td></tr>
+    </tbody>
+  </table>
+  <h3>前端</h3>
+  <table>
+    <thead><tr><th>檔案路徑</th><th>說明</th></tr></thead>
+    <tbody>
+      <tr><td><code>src/app/features/auth/models/auth.model.ts</code></td><td>Auth 資料模型</td></tr>
+      <tr><td><code>src/app/features/auth/services/auth.service.ts</code></td><td>認證服務</td></tr>
+      <tr><td><code>src/app/core/interceptors/auth.interceptor.ts</code></td><td>HTTP 攔截器</td></tr>
+      <tr><td><code>src/app/core/services/permission.service.ts</code></td><td>權限服務</td></tr>
+      <tr><td><code>src/app/core/services/feature-gate.service.ts</code></td><td>功能閘門服務</td></tr>
+      <tr><td><code>src/app/core/guards/auth.guard.ts</code></td><td>認證 Guard</td></tr>
+      <tr><td><code>src/app/core/guards/permission.guard.ts</code></td><td>權限 Guard</td></tr>
+      <tr><td><code>src/app/core/guards/feature-gate.guard.ts</code></td><td>功能閘門 Guard</td></tr>
+      <tr><td><code>src/app/shared/directives/has-permission.directive.ts</code></td><td>權限指令</td></tr>
+      <tr><td><code>src/app/features/platform-admin/</code></td><td>平台管理頁面</td></tr>
+    </tbody>
+  </table>
+</section>
+
+</div>
+
+<footer class="doc-footer">
+  <p>Bombus HR SaaS Platform &mdash; Multi-Tenant Architecture Document v1.0</p>
+  <p>&copy; 2026 南科智慧數據科技 NKST Data Technology</p>
+</footer>
+
+</body>
+</html>

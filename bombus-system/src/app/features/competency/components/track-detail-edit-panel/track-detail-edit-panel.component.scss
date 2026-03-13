@@ -1,0 +1,410 @@
+@import '../../../../../assets/styles/variables';
+@import '../../../../../assets/styles/mixins';
+
+$module-color: $color-l2-terracotta;
+$module-color-light: $color-l2-terracotta-light;
+$module-color-dark: $color-l2-terracotta-dark;
+$panel-width: 420px;
+
+// ---------------------------------------------------------------
+// Panel Overlay
+// ---------------------------------------------------------------
+.panel-overlay {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.15);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 200ms ease-out, visibility 200ms ease-out;
+
+  &.visible {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+// ---------------------------------------------------------------
+// Edit Panel
+// ---------------------------------------------------------------
+.edit-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: $panel-width;
+  z-index: 1001;
+  background: $color-pure-white;
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 200ms ease-out;
+
+  &.open {
+    transform: translateX(0);
+  }
+}
+
+// ---------------------------------------------------------------
+// Header
+// ---------------------------------------------------------------
+.panel-header {
+  @include flex-between;
+  padding: $spacing-md $spacing-lg;
+  border-bottom: 1px solid $color-soft-gray;
+  flex-shrink: 0;
+}
+
+.panel-header-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.panel-title {
+  @include flex-start;
+  gap: $spacing-sm;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin: 0;
+}
+
+.grade-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 28px;
+  padding: 0 $spacing-sm;
+  border-radius: $radius-md;
+  background: $module-color;
+  color: white;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+  flex-shrink: 0;
+}
+
+.close-btn {
+  @include flex-center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: $radius-md;
+  background: transparent;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: all $transition-fast;
+  font-size: 18px;
+
+  &:hover {
+    background: $color-cloud-gray;
+    color: $color-text-primary;
+  }
+}
+
+// ---------------------------------------------------------------
+// Content
+// ---------------------------------------------------------------
+.panel-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: $spacing-md $spacing-lg;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: $color-soft-gray;
+    border-radius: 2px;
+  }
+}
+
+// ---------------------------------------------------------------
+// Error
+// ---------------------------------------------------------------
+.error-message {
+  @include flex-start;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  margin-bottom: $spacing-md;
+  background: rgba(#e74c3c, 0.08);
+  border: 1px solid rgba(#e74c3c, 0.2);
+  border-radius: $radius-md;
+  color: #c0392b;
+  font-size: $font-size-sm;
+
+  i { font-size: 16px; }
+}
+
+// ---------------------------------------------------------------
+// Form Sections
+// ---------------------------------------------------------------
+.form-section {
+  margin-bottom: $spacing-lg;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.section-title {
+  @include flex-start;
+  gap: $spacing-xs;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $module-color-dark;
+  margin: 0 0 $spacing-md;
+  padding-bottom: $spacing-sm;
+  border-bottom: 1px solid $color-soft-gray;
+
+  i {
+    font-size: 16px;
+    color: $module-color;
+  }
+}
+
+.promotion-direction-label {
+  font-weight: $font-weight-normal;
+  color: $color-text-secondary;
+  font-size: $font-size-xs;
+  margin-left: auto;
+}
+
+.form-group {
+  margin-bottom: $spacing-md;
+}
+
+.form-label {
+  display: block;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-xs;
+
+  &.required::after {
+    content: ' *';
+    color: #e74c3c;
+  }
+}
+
+.form-input,
+.form-textarea,
+.form-select {
+  width: 100%;
+  padding: $spacing-sm $spacing-md;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  background: $color-pure-white;
+  transition: border-color $transition-fast;
+  box-sizing: border-box;
+
+  &:focus {
+    outline: none;
+    border-color: $module-color;
+    box-shadow: 0 0 0 2px rgba($module-color, 0.15);
+  }
+
+  &:disabled {
+    background: $color-cloud-gray;
+    cursor: not-allowed;
+  }
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 72px;
+  font-family: inherit;
+}
+
+.form-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236B6B6B' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
+
+// ---------------------------------------------------------------
+// Read-only Values
+// ---------------------------------------------------------------
+.read-only-value {
+  display: block;
+  padding: $spacing-sm $spacing-md;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  background: $color-cloud-gray;
+  border-radius: $radius-md;
+  min-height: 36px;
+}
+
+// ---------------------------------------------------------------
+// Section Divider
+// ---------------------------------------------------------------
+.section-divider {
+  height: 1px;
+  background: $color-soft-gray;
+  margin: $spacing-lg 0;
+}
+
+// ---------------------------------------------------------------
+// Highest Grade Notice
+// ---------------------------------------------------------------
+.highest-grade-notice {
+  @include flex-start;
+  gap: $spacing-sm;
+  padding: $spacing-md;
+  background: rgba($module-color, 0.06);
+  border-radius: $radius-md;
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+
+  i {
+    color: $module-color;
+    font-size: 16px;
+  }
+}
+
+// ---------------------------------------------------------------
+// Chip Input
+// ---------------------------------------------------------------
+.chip-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-xs;
+  padding: $spacing-sm $spacing-md;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  min-height: 40px;
+  align-items: center;
+  cursor: text;
+  transition: border-color $transition-fast;
+
+  &:focus-within {
+    border-color: $module-color;
+    box-shadow: 0 0 0 2px rgba($module-color, 0.15);
+  }
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px $spacing-sm;
+  background: rgba($module-color, 0.12);
+  color: $color-text-primary;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  white-space: nowrap;
+
+  .chip-remove {
+    width: 18px;
+    height: 18px;
+    border: none;
+    background: transparent;
+    color: $color-text-secondary;
+    font-size: $font-size-sm;
+    cursor: pointer;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    transition: all $transition-fast;
+
+    &:hover:not(:disabled) {
+      background: rgba(#e74c3c, 0.1);
+      color: #e74c3c;
+    }
+  }
+}
+
+.chip-input {
+  flex: 1;
+  min-width: 100px;
+  border: none;
+  outline: none;
+  font-size: $font-size-xs;
+  color: $color-text-primary;
+  background: transparent;
+
+  &::placeholder {
+    color: $color-text-secondary;
+  }
+}
+
+// Chip 唯讀模式
+.chip-readonly-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-xs;
+}
+
+.chip-readonly {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px $spacing-sm;
+  background: rgba($module-color, 0.08);
+  color: $module-color-dark;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  white-space: nowrap;
+}
+
+// ---------------------------------------------------------------
+// Footer
+// ---------------------------------------------------------------
+.panel-footer {
+  @include flex-end;
+  gap: $spacing-sm;
+  padding: $spacing-md $spacing-lg;
+  border-top: 1px solid $color-soft-gray;
+  flex-shrink: 0;
+}
+
+.btn {
+  @include flex-center;
+  gap: $spacing-xs;
+  padding: $spacing-sm $spacing-lg;
+  border: none;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.btn-secondary {
+  background: $color-cloud-gray;
+  color: $color-text-secondary;
+
+  &:hover:not(:disabled) {
+    background: darken($color-cloud-gray, 5%);
+  }
+}
+
+.btn-primary {
+  @include button-module($module-color);
+}
+
+// Spinner animation
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

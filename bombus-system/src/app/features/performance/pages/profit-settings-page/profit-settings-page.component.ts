@@ -3,12 +3,14 @@ import {
   ChangeDetectionStrategy,
   inject,
   signal,
+  computed,
   OnInit,
   ChangeDetectorRef
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
+import { OrgUnitService } from '../../../../core/services/org-unit.service';
 
 // ============================================
 // 資料模型
@@ -71,6 +73,12 @@ type SettingsTab = 'salary' | 'department' | 'position' | 'cost' | 'formula';
 })
 export class ProfitSettingsPageComponent implements OnInit {
   private cdr = inject(ChangeDetectorRef);
+  private orgUnitService = inject(OrgUnitService);
+
+  // 子公司→部門級聯篩選
+  selectedSubsidiaryId = signal<string>('');
+  subsidiaries = this.orgUnitService.subsidiaries;
+  filteredDepartments = computed(() => this.orgUnitService.filterDepartments(this.selectedSubsidiaryId()));
 
   // Tabs
   activeTab = signal<SettingsTab>('salary');
@@ -107,6 +115,7 @@ export class ProfitSettingsPageComponent implements OnInit {
   ];
 
   ngOnInit(): void {
+    this.orgUnitService.loadOrgUnits().subscribe();
     this.loadMockData();
   }
 
@@ -178,10 +187,6 @@ export class ProfitSettingsPageComponent implements OnInit {
     }
     
     return result;
-  }
-
-  get departments(): string[] {
-    return [...new Set(this.employeeSalaries().map(e => e.department))];
   }
 
   // Edit Methods

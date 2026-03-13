@@ -95,7 +95,12 @@
               </td>
               <td class="tenant-slug">{{ tenant.slug }}</td>
               <td>{{ getIndustryLabel(tenant.industry || '') }}</td>
-              <td>{{ getPlanName(tenant.plan_id) }}</td>
+              <td>
+                {{ getPlanName(tenant.plan_id) }}
+                @if (isPlanInactive(tenant.plan_id)) {
+                  <span class="plan-inactive-badge">已停用</span>
+                }
+              </td>
               <td>
                 <span class="status-badge" [class]="getStatusClass(tenant.status)">
                   {{ getStatusLabel(tenant.status) }}
@@ -240,7 +245,9 @@
               (change)="updateFormField('plan_id', $any($event.target).value)">
               <option value="" [selected]="!formData().plan_id">請選擇方案</option>
               @for (plan of plans(); track plan.id) {
-                <option [value]="plan.id" [selected]="formData().plan_id === plan.id">{{ plan.name }}</option>
+                @if (plan.is_active || plan.id === formData().plan_id) {
+                  <option [value]="plan.id" [selected]="formData().plan_id === plan.id">{{ plan.name }}{{ !plan.is_active ? ' (已停用)' : '' }}</option>
+                }
               }
             </select>
           </div>

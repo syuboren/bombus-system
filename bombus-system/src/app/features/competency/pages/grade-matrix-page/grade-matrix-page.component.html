@@ -54,243 +54,192 @@
           {{ editMode() ? '退出編輯' : '編輯模式' }}
         </button>
         @if (editMode()) {
-        <button class="btn-add" (click)="openEditGrade()" type="button">
-          <i class="ri-add-line"></i> 新增職等
-        </button>
-        <button class="btn-add" (click)="openEditPosition()" type="button">
-          <i class="ri-add-line"></i> 新增職位
-        </button>
         <button class="btn-add" (click)="openEditTrack()" type="button">
           <i class="ri-add-line"></i> 新增軌道
         </button>
-        <button class="btn-add" (click)="openEditPromotionCriteria()" type="button">
-          <i class="ri-add-line"></i> 新增晉升條件
-        </button>
         }
       </div>
     </div>
 
-    <!-- 新版雙軌制職等職級矩陣 -->
-    <div class="matrix-container matrix-dual-track">
-      <!-- 管理職軌道 -->
-      <div class="track-section track-management">
-        <div class="track-header management">
-          <div class="track-icon">
-            <i class="ri-team-line"></i>
-          </div>
-          <div class="track-info">
-            <h3 class="track-title">管理職</h3>
-            <p class="track-desc">團隊管理與領導發展路徑</p>
-          </div>
-          @if (editMode()) {
-          <button class="btn-edit-inline" (click)="openEditTrack(tracks()[0] || null)" type="button" title="編輯軌道">
-            <i class="ri-pencil-line"></i>
-          </button>
-          }
-        </div>
-        <div class="grades-timeline">
-          @for (grade of gradesNew(); track grade.id) {
-          <div class="grade-card grade-card-new" (click)="openGradeDetailNew(grade)">
-            <div class="grade-badge">Grade {{ grade.grade }}</div>
-            <div class="grade-code">{{ grade.codeRange }}</div>
-            <div class="grade-title">{{ grade.titleManagement }}</div>
-            <div class="grade-salary">
-              {{ getSalaryRangeText(grade) }}
-            </div>
-            @if (editMode()) {
-            <button class="btn-edit-card" (click)="openEditGrade(grade); $event.stopPropagation()" type="button"
-              title="編輯職等">
-              <i class="ri-pencil-line"></i>
-            </button>
-            }
-            @if (grade.grade < 7) { <div class="grade-arrow">
-              <i class="ri-arrow-right-line"></i>
-          </div>
-          }
-        </div>
-        }
-      </div>
-    </div>
-
-    <!-- 專業職軌道 (Grade 1-6，專業職沒有 Grade 7) -->
-    <div class="track-section track-professional">
-      <div class="track-header professional">
-        <div class="track-icon">
-          <i class="ri-code-box-line"></i>
-        </div>
-        <div class="track-info">
-          <h3 class="track-title">專業職</h3>
-          <p class="track-desc">技術專業人員發展路徑</p>
-        </div>
-        @if (editMode()) {
-        <button class="btn-edit-inline" (click)="openEditTrack(tracks()[1] || null)" type="button" title="編輯軌道">
-          <i class="ri-pencil-line"></i>
-        </button>
-        }
-      </div>
-      <div class="grades-timeline">
-        @for (grade of gradesNew(); track grade.id) {
-        @if (grade.grade < 7) { <div class="grade-card grade-card-new" (click)="openGradeDetailNew(grade)">
-          <div class="grade-badge">Grade {{ grade.grade }}</div>
-          <div class="grade-code">{{ grade.codeRange }}</div>
-          <div class="grade-title">{{ grade.titleProfessional }}</div>
-          <div class="grade-salary">
-            {{ getSalaryRangeText(grade) }}
-          </div>
-          @if (editMode()) {
-          <button class="btn-edit-card" (click)="openEditGrade(grade); $event.stopPropagation()" type="button"
-            title="編輯職等">
-            <i class="ri-pencil-line"></i>
-          </button>
-          }
-          @if (grade.grade < 6) { <div class="grade-arrow">
-            <i class="ri-arrow-right-line"></i>
-      </div>
+    <!-- 子標籤頁列 -->
+    <div class="matrix-subtabs">
+      <button class="subtab-btn" [class.active]="matrixSubTab() === 'overview'"
+        (click)="matrixSubTab.set('overview'); closeTrackDetailPanel()" type="button">
+        <i class="ri-table-line"></i> 職等職級薪資對照表
+      </button>
+      @for (track of tracks(); track track.id) {
+      <button class="subtab-btn" [class.active]="matrixSubTab() === 'track:' + track.code"
+        (click)="matrixSubTab.set('track:' + track.code); closeTrackDetailPanel()" type="button">
+        <i [class]="track.icon || 'ri-bookmark-line'"></i> {{ track.name }}
+      </button>
       }
     </div>
-    }
-    }
-</div>
-</div>
-</div>
 
-<!-- 部門職位對照表 -->
-<div class="department-positions-section">
-  <div class="section-header-inline">
-    <h4 class="section-title-inline">
-      <i class="ri-organization-chart"></i>
-      部門職位對照表
-    </h4>
-    <div class="section-filter">
-      <select class="filter-select-sm" [ngModel]="selectedDepartmentFilter()"
-        (ngModelChange)="onDepartmentFilterChange($event)">
-        <option value="">全部部門</option>
-        @for (dept of departments(); track dept.id) {
-        <option [value]="dept.name">{{ dept.name }}</option>
+    <!-- Tab A: 整體職等職級薪資對照表 -->
+    @if (matrixSubTab() === 'overview') {
+    <div class="overview-filter-bar">
+      <select class="filter-select-sm" [ngModel]="overviewSubsidiaryId()"
+        (ngModelChange)="onOverviewSubsidiaryChange($event)">
+        <option value="">集團預設</option>
+        @for (sub of subsidiaries(); track sub.id) {
+        <option [value]="sub.id">{{ sub.name }}</option>
         }
       </select>
+      @if (editMode()) {
+      <button class="btn-add" (click)="openEditGrade()" type="button">
+        <i class="ri-add-line"></i> 新增職等
+      </button>
+      }
     </div>
-  </div>
-
-  <!-- 部門職位矩陣表格 (合併版) -->
-  <div class="positions-matrix">
-    <table class="positions-table positions-table-combined">
-      <thead>
-        <tr>
-          <th class="th-grade">職等</th>
-          <th class="th-code">職級</th>
-          <th class="th-salary">薪資範圍</th>
-          @for (dept of departments(); track dept.id) {
-          @if (!selectedDepartmentFilter() || dept.name === selectedDepartmentFilter()) {
-          <th class="th-department">{{ dept.name }}</th>
-          }
-          }
-        </tr>
-      </thead>
-      <tbody>
-        @for (grade of gradesDescending(); track grade.id; let i = $index) {
-        <tr [class.row-odd]="i % 2 === 1">
-          <td class="td-grade">
-            <span class="grade-num">{{ grade.grade }}</span>
-          </td>
-          <td class="td-code">{{ grade.codeRange }}</td>
-          <td class="td-salary">
-            <span class="salary-range-text">{{ formatSalary(grade.minSalary) }} - {{ formatSalary(grade.maxSalary)
-              }}</span>
-          </td>
-          @for (dept of departments(); track dept.id) {
-          @if (!selectedDepartmentFilter() || dept.name === selectedDepartmentFilter()) {
-          <!-- 檢查是否應該顯示跨部門合併格 -->
-          @if (shouldShowCrossDeptCell(dept.name, grade.grade)) {
-          <td class="td-positions td-cross-dept" [attr.colspan]="getCrossDeptColspan(grade.grade)">
-            <!-- 主要跨部門職位（執行長）帶皇冠 -->
-            <div class="cross-dept-primary">
-              <span class="position-tag tag-cross-dept" title="跨部門高階主管">
-                <i class="ri-vip-crown-line"></i>
-                {{ getCrossDeptPositionForGrade(grade.grade)?.title }}
-              </span>
-            </div>
-            <!-- 次要跨部門職位（營運長等） -->
-            @if (getSecondaryCrossDeptPositionsForGrade(grade.grade).length > 0) {
-            <div class="cross-dept-secondary">
-              @for (secondaryPos of getSecondaryCrossDeptPositionsForGrade(grade.grade); track secondaryPos.id) {
-              <div class="secondary-pos-item">
-                <span class="position-tag tag-cross-dept-secondary">
-                  {{ secondaryPos.title }}
-                </span>
-                <span class="supervised-info">
-                  管轄：{{ secondaryPos.supervisedDepartments?.join('、') }}
-                </span>
-              </div>
-              }
-            </div>
+    <div class="overview-table-wrapper">
+      <table class="overview-table">
+        <thead>
+          <tr>
+            <th class="th-grade">職等</th>
+            <th>職級代碼</th>
+            @for (track of tracks(); track track.id) {
+            <th>{{ track.name }}職稱</th>
             }
-          </td>
-          } @else if (!isDeptCoveredByCrossDept(dept.name, grade.grade)) {
-          <!-- 一般部門職位（不被跨部門職位覆蓋） -->
-          <td class="td-positions">
-            @if (getManagementPosition(dept.name, grade.grade)) {
-            <span class="position-tag tag-management" title="管理職">
-              {{ getManagementPosition(dept.name, grade.grade) }}
+            <th>薪資範圍</th>
+            <th>薪資級數</th>
+            @if (editMode()) {
+            <th class="th-actions"></th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (grade of gradesDescending(); track grade.id; let i = $index) {
+          <tr [class.row-odd]="i % 2 === 1"
+            [class.editing]="editingGradeNumber() === grade.grade"
+            [class.dimmed]="editingGradeNumber() !== null && editingGradeNumber() !== grade.grade">
+            <td class="td-grade"><span class="grade-num">{{ grade.grade }}</span></td>
+            <td>{{ grade.codeRange }}</td>
+            @for (track of tracks(); track track.id) {
+            <td>{{ getTrackTitle(grade, track.code) || '-' }}</td>
+            }
+            <td class="td-salary">{{ getSalaryRangeText(grade) }}</td>
+            <td>{{ grade.salaryLevels.length }} 筆</td>
+            @if (editMode()) {
+            <td class="td-actions">
+              <button class="btn-edit-row" (click)="openEditGrade(grade); $event.stopPropagation()" type="button"
+                title="編輯職等">
+                <i class="ri-pencil-line"></i>
+              </button>
+            </td>
+            }
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 職級薪資對照表 -->
+    <div class="salary-reference">
+      <div class="reference-header">
+        <h4 class="reference-title">
+          <i class="ri-money-dollar-circle-line"></i>
+          職級薪資對照表
+        </h4>
+      </div>
+      <div class="reference-table">
+        @for (grade of gradesNew(); track grade.id) {
+        <div class="salary-group">
+          <div class="group-header">Grade {{ grade.grade }} ({{ grade.codeRange }})</div>
+          <div class="salary-levels">
+            @for (level of grade.salaryLevels; track level.code) {
+            <span class="salary-level">
+              <span class="level-code">{{ level.code }}</span>
+              <span class="level-salary">NT$ {{ formatSalary(level.salary) }}</span>
             </span>
             }
-            @if (getProfessionalPosition(dept.name, grade.grade)) {
-            <span class="position-tag tag-professional" title="專業職">
-              {{ getProfessionalPosition(dept.name, grade.grade) }}
-            </span>
-            }
-            @if (!hasPositions(dept.name, grade.grade)) {
-            <span class="no-position">-</span>
-            }
-          </td>
-          }
-          }
-          }
-        </tr>
-        }
-      </tbody>
-    </table>
-  </div>
-
-  <!-- 圖例說明 -->
-  <div class="positions-legend">
-    <span class="legend-item">
-      <span class="legend-tag tag-management">管理職</span>
-    </span>
-    <span class="legend-item">
-      <span class="legend-tag tag-professional">專業職</span>
-    </span>
-    <span class="legend-item">
-      <span class="legend-tag tag-cross-dept"><i class="ri-vip-crown-line"></i></span>
-      <span class="legend-label">跨部門高階主管</span>
-    </span>
-  </div>
-</div>
-
-<!-- 職級薪資對照表 -->
-<div class="salary-reference">
-  <div class="reference-header">
-    <h4 class="reference-title">
-      <i class="ri-money-dollar-circle-line"></i>
-      職級薪資對照表 (BS01-BS20)
-    </h4>
-  </div>
-  <div class="reference-table">
-    @for (grade of gradesNew(); track grade.id) {
-    <div class="salary-group">
-      <div class="group-header">Grade {{ grade.grade }} ({{ grade.codeRange }})</div>
-      <div class="salary-levels">
-        @for (level of grade.salaryLevels; track level.code) {
-        <span class="salary-level">
-          <span class="level-code">{{ level.code }}</span>
-          <span class="level-salary">NT$ {{ formatSalary(level.salary) }}</span>
-        </span>
+          </div>
+        </div>
         }
       </div>
     </div>
     }
-  </div>
-</div>
+
+    <!-- Tab B/C: 軌道明細表 -->
+    @if (activeTrackCode(); as trackCode) {
+    <div class="track-detail-section">
+      <div class="track-filter-bar">
+        <div class="track-filter-selects">
+          <select class="filter-select-sm" [ngModel]="selectedSubsidiaryId()"
+            (ngModelChange)="selectedSubsidiaryId.set($event); selectedDepartmentFilter.set('')">
+            <option value="">全部子公司</option>
+            @for (sub of subsidiaries(); track sub.id) {
+            <option [value]="sub.id">{{ sub.name }}</option>
+            }
+          </select>
+          <select class="filter-select-sm" [ngModel]="selectedDepartmentFilter()"
+            (ngModelChange)="onDepartmentFilterChange($event)">
+            <option value="">全部部門</option>
+            @for (dept of filteredDepartments(); track dept.id) {
+            <option [value]="dept.name">{{ dept.name }}</option>
+            }
+          </select>
+        </div>
+        @if (editMode()) {
+        <div class="track-filter-actions">
+          <button class="btn-add" (click)="openEditPosition()" type="button">
+            <i class="ri-add-line"></i> 新增職位
+          </button>
+        </div>
+        }
+      </div>
+
+      <div class="track-detail-table-wrapper">
+        <table class="track-detail-table">
+          <thead>
+            <tr>
+              <th class="th-grade">職等</th>
+              <th class="th-code">職級</th>
+              <th>職務級別</th>
+              @for (dept of departments(); track dept.id) {
+              @if (!selectedDepartmentFilter() || dept.name === selectedDepartmentFilter()) {
+              <th class="th-department">{{ dept.name }}</th>
+              }
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (grade of gradesDescending(); track grade.id; let i = $index) {
+            <tr class="track-row" [class.row-odd]="i % 2 === 1"
+              [class.active]="showTrackDetailPanel() && editingTrackGrade() === grade.grade"
+              (click)="openTrackDetailPanel(grade, trackCode)">
+              <td class="td-grade"><span class="grade-num">{{ grade.grade }}</span></td>
+              <td class="td-code">{{ grade.codeRange || '-' }}</td>
+              <td>{{ getTrackTitle(grade, trackCode) || '-' }}</td>
+              @for (dept of departments(); track dept.id) {
+              @if (!selectedDepartmentFilter() || dept.name === selectedDepartmentFilter()) {
+              <td class="td-position" (click)="$event.stopPropagation()">
+                @if (editMode()) {
+                <input class="position-inline-input" type="text"
+                  [value]="getPositionTitle(dept.name, grade.grade, trackCode)"
+                  (blur)="savePositionTitle(dept.name, grade.grade, trackCode, $any($event.target).value)"
+                  (keydown.enter)="$any($event.target).blur()"
+                  placeholder="-">
+                } @else {
+                {{ getPositionTitle(dept.name, grade.grade, trackCode) || '-' }}
+                }
+              </td>
+              }
+              }
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 圖例說明 -->
+      <div class="positions-legend">
+        <span class="legend-item">
+          <i class="ri-cursor-line"></i>
+          <span class="legend-label">點擊職等行開啟明細面板</span>
+        </span>
+      </div>
+    </div>
+    }
 </section>
 }
 
@@ -891,11 +840,11 @@
         <div class="basic-info-grid">
           <div class="info-card">
             <span class="info-label">管理職職稱</span>
-            <span class="info-value">{{ grade.titleManagement }}</span>
+            <span class="info-value">{{ getManagementTitle(grade) }}</span>
           </div>
           <div class="info-card">
             <span class="info-label">專業職職稱</span>
-            <span class="info-value">{{ grade.titleProfessional }}</span>
+            <span class="info-value">{{ getProfessionalTitle(grade) }}</span>
           </div>
           <div class="info-card">
             <span class="info-label">職級代碼範圍</span>
@@ -927,28 +876,56 @@
         </div>
       </div>
 
-      <!-- 區塊3: 學歷與資格要求 -->
+      <!-- 區塊3: 學歷與資格要求（按軌道分列） -->
       <div class="detail-section education-section">
         <div class="detail-header">
           <i class="ri-graduation-cap-line"></i>
           <h4>學歷與資格要求</h4>
         </div>
         <div class="education-content">
+          @if (getTrackEducation(grade, 'management')) {
+          <div class="education-item">
+            <span class="track-label-sm">管理職</span>
+            <span>{{ getTrackEducation(grade, 'management') }}</span>
+          </div>
+          }
+          @if (getTrackEducation(grade, 'professional')) {
+          <div class="education-item">
+            <span class="track-label-sm">專業職</span>
+            <span>{{ getTrackEducation(grade, 'professional') }}</span>
+          </div>
+          }
+          @if (!getTrackEducation(grade, 'management') && !getTrackEducation(grade, 'professional')) {
           <div class="education-item">
             <i class="ri-book-open-line"></i>
-            <span>{{ grade.educationRequirement }}</span>
+            <span>尚未設定</span>
           </div>
+          }
         </div>
       </div>
 
-      <!-- 區塊4: 工作職責說明 -->
+      <!-- 區塊4: 工作職責說明（按軌道分列） -->
       <div class="detail-section responsibility-section">
         <div class="detail-header">
           <i class="ri-briefcase-line"></i>
           <h4>工作職責說明</h4>
         </div>
         <div class="responsibility-content">
-          <p>{{ grade.responsibilityDescription }}</p>
+          @if (getTrackResponsibility(grade, 'management')) {
+          <div class="responsibility-item">
+            <span class="track-label-sm">管理職</span>
+            <p>{{ getTrackResponsibility(grade, 'management') }}</p>
+          </div>
+          }
+          @if (getTrackResponsibility(grade, 'professional')) {
+          <div class="responsibility-item">
+            <span class="track-label-sm">專業職</span>
+            <p>{{ getTrackResponsibility(grade, 'professional') }}</p>
+          </div>
+          }
+          @if (!getTrackResponsibility(grade, 'management') && !getTrackResponsibility(grade, 'professional')) {
+          <p>尚未設定</p>
+          }
         </div>
       </div>
 
@@ -1100,18 +1077,24 @@
 </div>
 }
 
-<!-- edit modals -->
+<!-- edit modals / panels -->
 <app-track-edit-modal [visible]="showTrackEditModal()" [trackData]="editingTrack()" (closed)="closeTrackModal()"
   (saved)="onTrackSaved()" />
 
-<app-grade-edit-modal [visible]="showGradeEditModal()" [gradeData]="editingGrade()" (closed)="closeGradeEditModal()"
-  (saved)="onGradeSaved()" />
+<app-grade-edit-panel [visible]="showGradeEditPanel()" [gradeData]="editingGrade()"
+  [existingGrades]="existingGradeNumbers()" [orgUnitId]="overviewSubsidiaryId()"
+  (closed)="closeGradeEditPanel()" (saved)="onGradeSaved()" />
 
 <app-position-edit-modal [visible]="showPositionEditModal()" [positionData]="editingPosition()"
-  (closed)="closePositionModal()" (saved)="onPositionSaved()" />
+  [orgUnitId]="selectedSubsidiaryId()" (closed)="closePositionModal()" (saved)="onPositionSaved()" />
 
 <app-promotion-criteria-edit-modal [visible]="showPromotionEditModal()" [criteriaData]="editingPromotion()"
-  (closed)="closePromotionModal()" (saved)="onPromotionCriteriaSaved()" />
+  [orgUnitId]="selectedSubsidiaryId()" (closed)="closePromotionModal()" (saved)="onPromotionCriteriaSaved()" />
+
+<app-track-detail-edit-panel [visible]="showTrackDetailPanel()" [gradeNumber]="editingTrackGrade()"
+  [trackCode]="editingTrackCode()" [trackName]="editingTrackName()" [trackEntry]="editingTrackEntry()"
+  [promotionCriteria]="editingTrackPromotion()" [editMode]="editMode()" [orgUnitId]="selectedSubsidiaryId()"
+  [maxGrade]="maxGradeNumber()" (closed)="closeTrackDetailPanel()" (saved)="onTrackDetailSaved()" />
 <!-- Career Path Detail Modal (新版) -->
 @if (showCareerPathModal() && selectedCareerPathNew(); as path) {
 <div class="modal-backdrop" (click)="closeCareerPathModal()"></div>

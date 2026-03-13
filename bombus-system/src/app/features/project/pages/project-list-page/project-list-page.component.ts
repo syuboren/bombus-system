@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { ProjectService } from '../../services/project.service';
 import { Project, ProjectStats, ProjectFilter, TeamMember, CreateProjectForm } from '../../models/project.model';
+import { OrgUnitService } from '../../../../core/services/org-unit.service';
 
 @Component({
   standalone: true,
@@ -16,6 +17,7 @@ import { Project, ProjectStats, ProjectFilter, TeamMember, CreateProjectForm } f
 })
 export class ProjectListPageComponent implements OnInit {
   private projectService = inject(ProjectService);
+  private orgUnitService = inject(OrgUnitService);
   private router = inject(Router);
 
   // State
@@ -27,8 +29,13 @@ export class ProjectListPageComponent implements OnInit {
 
   // Filter State
   searchText = signal('');
+  selectedSubsidiaryId = signal<string>('');
   selectedDepartment = signal('all');
   selectedStatus = signal('all');
+
+  // 組織架構篩選
+  subsidiaries = this.orgUnitService.subsidiaries;
+  filteredDepartments = computed(() => this.orgUnitService.filterDepartments(this.selectedSubsidiaryId()));
 
   // Create Form State
   newProject = signal<CreateProjectForm>({
@@ -60,6 +67,7 @@ export class ProjectListPageComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.orgUnitService.loadOrgUnits().subscribe();
     this.loadData();
   }
 
@@ -84,6 +92,11 @@ export class ProjectListPageComponent implements OnInit {
 
   onSearch(value: string): void {
     this.searchText.set(value);
+  }
+
+  onSubsidiaryChange(value: string): void {
+    this.selectedSubsidiaryId.set(value);
+    this.selectedDepartment.set('all');
   }
 
   onDepartmentChange(value: string): void {

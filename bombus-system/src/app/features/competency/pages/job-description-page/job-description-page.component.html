@@ -79,11 +79,21 @@
            The mixin sets .filter-item--search to flex: 1, which pushes others. -->
 
       <div class="filter-item">
+        <label class="filter-label">子公司</label>
+        <select class="filter-select" [ngModel]="selectedSubsidiaryId()" (ngModelChange)="onSubsidiaryChange($event)">
+          <option value="">所有子公司</option>
+          @for (sub of subsidiaries(); track sub.id) {
+          <option [value]="sub.id">{{ sub.name }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="filter-item">
         <label class="filter-label">部門篩選</label>
         <select class="filter-select" [ngModel]="selectedDepartment()" (ngModelChange)="onDepartmentChange($event)">
           <option value="">所有部門</option>
-          @for (opt of departmentOptions; track opt.value) {
-          <option [value]="opt.value">{{ opt.label }}</option>
+          @for (dept of filteredDepartments(); track dept.id) {
+          <option [value]="dept.name">{{ dept.name }}</option>
           }
         </select>
       </div>

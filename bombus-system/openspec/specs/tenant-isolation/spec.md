@@ -17,6 +17,7 @@
 - **WHEN** 使用者的 JWT 中 tenant_id 為 A，但請求試圖存取租戶 B 的資源
 - **THEN** 系統 SHALL 拒絕請求並回傳 403 Forbidden
 
+---
 ### Requirement: TenantDBManager 管理多資料庫實例
 系統 SHALL 提供 TenantDBManager 單例服務，負責載入、快取和卸載租戶資料庫實例。
 
@@ -32,6 +33,7 @@
 - **WHEN** 狀態為 suspended 或 deleted 的租戶使用者發送 API 請求
 - **THEN** Tenant Context Middleware 回傳 403，不載入租戶資料庫
 
+---
 ### Requirement: DBAdapter 抽象層
 系統 SHALL 提供 DBAdapter 介面，封裝資料庫操作。所有路由 SHALL 透過 DBAdapter 操作資料，不直接使用 sql.js API。
 
@@ -43,6 +45,7 @@
 - **WHEN** 路由處理器需要執行多步驟寫入
 - **THEN** 使用 `req.tenantDB.transaction(fn)` 封裝，確保原子性
 
+---
 ### Requirement: 租戶上下文中介層
 系統 SHALL 提供 Tenant Context Middleware，從 JWT Token 中解析 tenant_id 並注入租戶資料庫實例至 `req.tenantDB`。
 
@@ -54,6 +57,7 @@
 - **WHEN** JWT 中的 tenant_id 在 platform.db 中不存在
 - **THEN** 中介層回傳 401 Unauthorized
 
+---
 ### Requirement: 平台資料庫獨立存在
 系統 SHALL 維護獨立的 platform.db 儲存平台級資料（租戶清單、方案、平台管理員、審計日誌）。平台資料庫 SHALL 永遠常駐記憶體。
 
@@ -61,6 +65,7 @@
 - **WHEN** 平台管理員呼叫 `/api/platform/*` 端點
 - **THEN** 系統使用 platform.db 而非租戶 DB
 
+---
 ### Requirement: 租戶軟刪除與硬刪除分離
 系統 SHALL 預設採用軟刪除（狀態設為 deleted），保留租戶資料庫檔案。僅在平台管理員明確執行「永久刪除」時，才進行硬刪除（刪除資料庫檔案）。
 

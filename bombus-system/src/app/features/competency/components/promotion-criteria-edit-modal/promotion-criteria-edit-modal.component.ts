@@ -22,6 +22,7 @@ export class PromotionCriteriaEditModalComponent {
     // --- Input / Output ---
     visible = input<boolean>(false);
     criteriaData = input<PromotionCriteria | null>(null);
+    orgUnitId = input<string>('');
     closed = output<void>();
     saved = output<void>();
 
@@ -164,9 +165,11 @@ export class PromotionCriteriaEditModalComponent {
         const data = this.formData();
         const criteriaData = this.criteriaData();
 
+        const dataWithOrg = { ...data, org_unit_id: this.orgUnitId() || null };
+
         const observable = this.isEditMode() && criteriaData
-            ? this.competencyService.updatePromotionCriteria(criteriaData.id, data as any)
-            : this.competencyService.createPromotionCriteria(data as any);
+            ? this.competencyService.updatePromotionCriteria(criteriaData.id, dataWithOrg as any)
+            : this.competencyService.createPromotionCriteria(dataWithOrg as any);
 
         observable.subscribe({
             next: () => { this.saving.set(false); this.saved.emit(); this.onClose(); },

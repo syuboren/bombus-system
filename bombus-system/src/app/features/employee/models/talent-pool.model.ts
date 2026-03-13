@@ -58,6 +58,9 @@ export interface TalentCandidate {
   contactStatus?: ContactStatus;    // 聯繫狀態 (動態計算)
   latestContactDate?: Date;         // 最新聯繫日期
   recentContactCount?: number;      // 近 1 個月聯繫次數
+
+  // 子公司歸屬
+  org_unit_id?: string;
 }
 
 export interface TalentContactHistory {

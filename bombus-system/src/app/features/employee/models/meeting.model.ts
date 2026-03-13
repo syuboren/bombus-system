@@ -122,6 +122,7 @@ export interface Meeting {
   conclusions: MeetingConclusion[];
   notes: string;
   signInEnabled?: boolean; // 是否開啟簽到
+  org_unit_id?: string;
   createdAt: Date;
   updatedAt: Date;
 }

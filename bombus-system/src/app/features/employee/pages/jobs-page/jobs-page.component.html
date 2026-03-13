@@ -6,7 +6,7 @@
     @if (stats(); as s) {
     <div class="stats-grid">
       <app-stat-card icon="ri-briefcase-line" label="進行中職缺" [value]="s.activeJobs" moduleType="l1" />
-      <app-stat-card icon="ri-user-search-line" label="本週新進履歷" [value]="s.newResumes" moduleType="l1" />
+      <app-stat-card icon="ri-user-search-line" label="新進履歷" [value]="s.newResumes" moduleType="l1" />
       <app-stat-card icon="ri-file-list-3-line" label="待審核履歷" [value]="s.pendingReview" moduleType="l1" />
       <app-stat-card icon="ri-calendar-check-line" label="已安排面試" [value]="s.scheduledInterviews" moduleType="l1" />
     </div>
@@ -39,16 +39,24 @@
           (input)="searchQuery.set($any($event.target).value)">
       </div>
       <div class="filter-divider"></div>
+      @if (subsidiaries().length > 0) {
+      <div class="filter-item">
+        <select class="filter-select" [value]="selectedSubsidiaryId()"
+          (change)="selectedSubsidiaryId.set($any($event.target).value)">
+          <option value="">全部子公司</option>
+          @for (sub of subsidiaries(); track sub.id) {
+          <option [value]="sub.id">{{ sub.name }}</option>
+          }
+        </select>
+      </div>
+      }
       <div class="filter-item">
         <select class="filter-select" [value]="departmentFilter()"
           (change)="departmentFilter.set($any($event.target).value)">
           <option value="">所有部門</option>
-          <option value="資訊部">資訊部</option>
-          <option value="人資部">人資部</option>
-          <option value="業務部">業務部</option>
-          <option value="產品部">產品部</option>
-          <option value="設計部">設計部</option>
-          <option value="行銷部">行銷部</option>
+          @for (dept of filteredDepartments(); track dept.id) {
+          <option [value]="dept.name">{{ dept.name }}</option>
+          }
         </select>
       </div>
       <div class="filter-item">
@@ -108,10 +116,10 @@
             <td>
               @if (job.status === 'published') {
               <div class="candidate-count">
+                <span class="count-total">{{ job.totalCandidates }} 人</span>
                 @if (job.newCandidates > 0) {
                 <span class="count-badge count-badge--new">New {{ job.newCandidates }}</span>
                 }
-                <span class="count-total">/ {{ job.totalCandidates }} 人</span>
               </div>
               } @else {
               <span class="text-muted">-</span>
@@ -210,7 +218,20 @@
     </button>
   </div>
   <div class="modal__body">
-    <!-- 選擇職務說明書 (JD) -->
+    <!-- 所屬子公司（先選子公司，再選 JD） -->
+    @if (subsidiaries().length > 0) {
+    <div class="form-group">
+      <label class="form-label">所屬子公司</label>
+      <select class="form-select" [value]="modalSubsidiaryId()"
+        (change)="onModalSubsidiaryChange($any($event.target).value)">
+        <option value="">全部子公司</option>
+        @for (sub of subsidiaries(); track sub.id) {
+        <option [value]="sub.id">{{ sub.name }}</option>
+        }
+      </select>
+    </div>
+    }
+    <!-- 選擇職務說明書 (JD) — 依子公司篩選 -->
     <div class="form-group">
       <label class="form-label">
         <i class="ri-file-text-line"></i>
@@ -249,14 +270,9 @@
       <select class="form-select" [value]="newJob().department"
         (change)="updateJobField('department', $any($event.target).value)">
         <option value="">請選擇部門</option>
-        <option value="財務部">財務部</option>
-        <option value="人資部">人資部</option>
-        <option value="專案部">專案部</option>
-        <option value="資訊部">資訊部</option>
-        <option value="業務部">業務部</option>
-        <option value="產品部">產品部</option>
-        <option value="設計部">設計部</option>
-        <option value="行銷部">行銷部</option>
+        @for (dept of modalFilteredDepartments(); track dept.id) {
+        <option [value]="dept.name">{{ dept.name }}</option>
+        }
       </select>
     </div>
     <div class="form-group">
@@ -982,17 +998,26 @@
       <input type="text" class="form-input" [value]="newJob().title"
         (input)="updateJobField('title', $any($event.target).value)" placeholder="例如：資深軟體工程師">
     </div>
+    @if (subsidiaries().length > 0) {
+    <div class="form-group">
+      <label class="form-label">所屬子公司</label>
+      <select class="form-select" [value]="modalSubsidiaryId()"
+        (change)="onModalSubsidiaryChange($any($event.target).value)">
+        <option value="">全部子公司</option>
+        @for (sub of subsidiaries(); track sub.id) {
+        <option [value]="sub.id">{{ sub.name }}</option>
+        }
+      </select>
+    </div>
+    }
     <div class="form-group">
       <label class="form-label">部門 <span class="required">*</span></label>
       <select class="form-select" [value]="newJob().department"
         (change)="updateJobField('department', $any($event.target).value)">
         <option value="">請選擇部門</option>
-        <option value="資訊部">資訊部</option>
-        <option value="人資部">人資部</option>
-        <option value="財務部">財務部</option>
-        <option value="業務部">業務部</option>
-        <option value="行銷部">行銷部</option>
-        <option value="專案部">專案部</option>
+        @for (dept of modalFilteredDepartments(); track dept.id) {
+        <option [value]="dept.name">{{ dept.name }}</option>
+        }
       </select>
     </div>
     <div class="form-group">

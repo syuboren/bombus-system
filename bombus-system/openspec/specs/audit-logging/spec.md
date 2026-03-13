@@ -25,6 +25,7 @@
 - **WHEN** demo 租戶執行 onboarding.db 資料遷移
 - **THEN** 系統記錄 action=data_migration，details 包含遷移的表名和記錄數
 
+---
 ### Requirement: 審計日誌查詢
 系統 SHALL 提供 API 端點查詢審計日誌，支援依租戶、使用者、動作類型、時間範圍篩選。
 
@@ -40,6 +41,7 @@
 - **WHEN** 查詢帶入 from 和 to 時間參數
 - **THEN** 系統回傳指定時間範圍內的日誌
 
+---
 ### Requirement: 審計日誌不可修改
 audit_logs 表的記錄 SHALL 為唯寫（append-only），不提供 UPDATE 或 DELETE 的 API。
 
@@ -47,6 +49,7 @@ audit_logs 表的記錄 SHALL 為唯寫（append-only），不提供 UPDATE 或 
 - **WHEN** 任何 API 請求嘗試修改或刪除審計日誌記錄
 - **THEN** 系統回傳 405 Method Not Allowed
 
+---
 ### Requirement: 審計日誌前端查詢介面
 平台管理後台與租戶設定 SHALL 提供審計日誌查詢頁面，以表格呈現日誌記錄。
 

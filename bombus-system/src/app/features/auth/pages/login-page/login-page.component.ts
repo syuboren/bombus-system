@@ -116,6 +116,10 @@ export class LoginPageComponent implements OnInit {
     this.authService.login(request).subscribe({
       next: (response) => {
         if (response.success) {
+          if (response.user?.must_change_password) {
+            this.router.navigate(['/change-password']);
+            return;
+          }
           this.permissionService.loadPermissions().subscribe(() => {
             this.router.navigate(['/dashboard']);
           });

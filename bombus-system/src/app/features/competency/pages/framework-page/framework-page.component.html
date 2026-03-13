@@ -58,6 +58,25 @@
   </section>
   }
 
+  <!-- 子公司篩選 -->
+  @if (subsidiaries().length > 0) {
+  <section class="filter-section">
+    <div class="filter-bar">
+      <div class="filter-group">
+        <label class="filter-label">所屬子公司</label>
+        <select class="filter-select" [value]="selectedSubsidiaryId()"
+          (change)="onSubsidiaryChange($any($event.target).value)"
+          [disabled]="isSubsidiaryLocked()">
+          <option value="">全部子公司</option>
+          @for (sub of subsidiaries(); track sub.id) {
+            <option [value]="sub.id">{{ sub.name }}</option>
+          }
+        </select>
+      </div>
+    </div>
+  </section>
+  }
+
   <!-- Tab Navigation -->
   <section class="tab-section">
     <div class="tab-nav">
@@ -606,11 +625,11 @@
 
 <!-- 職能編輯 Modal (核心/管理/專業) -->
 <app-competency-edit-modal [visible]="showEditModal()" [category]="editCategory()" [competency]="editingCompetency()"
-  (close)="closeEditModal()" (saved)="onCompetencySaved($event)" />
+  [orgUnitId]="selectedSubsidiaryId()" (close)="closeEditModal()" (saved)="onCompetencySaved($event)" />
 
 <!-- KSA 編輯 Modal -->
-<app-ksa-edit-modal [visible]="showKsaEditModal()" [competency]="editingKsaCompetency()" (close)="closeKsaEditModal()"
-  (saved)="onKsaSaved($event)" />
+<app-ksa-edit-modal [visible]="showKsaEditModal()" [competency]="editingKsaCompetency()"
+  [orgUnitId]="selectedSubsidiaryId()" (close)="closeKsaEditModal()" (saved)="onKsaSaved($event)" />
 
 <!-- Toast 訊息 -->
 @if (toastMessage()) {
