@@ -474,6 +474,36 @@ function createChangeRecord(req, entityType, entityId, action, oldData, newData,
   return { changeId, status: 'pending' };
 }
 
+/**
+ * 批量寫入薪資級別（刪除既有 → 重新插入）
+ */
+function upsertSalaryLevels(db, grade, salaryLevels, orgUnitId) {
+  if (!salaryLevels || !Array.isArray(salaryLevels)) return;
+  const org = orgUnitId || null;
+  db.prepare('DELETE FROM grade_salary_levels WHERE grade = ? AND (org_unit_id IS ? OR org_unit_id = ?)').run(grade, org, org);
+  for (let i = 0; i < salaryLevels.length; i++) {
+    const sl = salaryLevels[i];
+    const slId = `sal-${grade}-${i + 1}-${generateId().substring(0, 8)}`;
+    db.prepare('INSERT INTO grade_salary_levels (id, grade, code, salary, sort_order, org_unit_id) VALUES (?, ?, ?, ?, ?, ?)').run(slId, grade, sl.code, sl.salary, i + 1, org);
+  }
+}
+
+/**
+ * 同步更新軌道條目（upsert by grade + track）
+ */
+function upsertTrackEntries(db, grade, trackUpdates) {
+  for (const tu of trackUpdates) {
+    if (tu.title === undefined) continue;
+    const existing = db.prepare('SELECT id FROM grade_track_entries WHERE grade = ? AND track = ?').get(grade, tu.track);
+    if (existing) {
+      db.prepare("UPDATE grade_track_entries SET title = ?, education_requirement = ?, responsibility_description = ?, updated_at = datetime('now') WHERE id = ?").run(tu.title || '', tu.education || '', tu.responsibility || '', existing.id);
+    } else if (tu.title) {
+      const teId = `gte-${generateId()}`;
+      db.prepare('INSERT INTO grade_track_entries (id, grade, track, title, education_requirement, responsibility_description) VALUES (?, ?, ?, ?, ?, ?)').run(teId, grade, tu.track, tu.title, tu.education || '', tu.responsibility || '');
+    }
+  }
+}
+
 // =====================================================
 // 軌道管理 API（CRUD）
 // =====================================================
@@ -768,16 +798,7 @@ router.post('/grades', (req, res) => {
     };
 
     const { changeId, status } = createChangeRecord(req, 'grade', entityId, 'create', null, newData, changedBy || 'system');
-
-    // 同步建立薪資級別
-    if (salaryLevels && Array.isArray(salaryLevels)) {
-      const org = orgUnitId || null;
-      for (let i = 0; i < salaryLevels.length; i++) {
-        const sl = salaryLevels[i];
-        const slId = `sal-${grade}-${i + 1}-${generateId().substring(0, 8)}`;
-        req.tenantDB.prepare('INSERT INTO grade_salary_levels (id, grade, code, salary, sort_order, org_unit_id) VALUES (?, ?, ?, ?, ?, ?)').run(slId, grade, sl.code, sl.salary, i + 1, org);
-      }
-    }
+    upsertSalaryLevels(req.tenantDB, grade, salaryLevels, orgUnitId);
 
     res.status(201).json({ success: true, data: { changeId, status, message: '職等已新增' } });
   } catch (error) {
@@ -804,34 +825,11 @@ router.put('/grades/:grade', (req, res) => {
     const newData = { ...oldData, codeRange: codeRange || existing.code_range, titleManagement: managementTitle !== undefined ? managementTitle : existing.title_management, titleProfessional: professionalTitle !== undefined ? professionalTitle : existing.title_professional };
 
     const { changeId, status } = createChangeRecord(req, 'grade', existing.id, 'update', oldData, newData, changedBy || 'system');
-
-    // 同步更新薪資級別（直接操作，不走 change record）
-    if (salaryLevels && Array.isArray(salaryLevels)) {
-      const org = orgUnitId || null;
-      // 刪除既有薪資級別，重新建立
-      req.tenantDB.prepare('DELETE FROM grade_salary_levels WHERE grade = ? AND (org_unit_id IS ? OR org_unit_id = ?)').run(gradeNum, org, org);
-      for (let i = 0; i < salaryLevels.length; i++) {
-        const sl = salaryLevels[i];
-        const slId = `sal-${gradeNum}-${i + 1}-${generateId().substring(0, 8)}`;
-        req.tenantDB.prepare('INSERT INTO grade_salary_levels (id, grade, code, salary, sort_order, org_unit_id) VALUES (?, ?, ?, ?, ?, ?)').run(slId, gradeNum, sl.code, sl.salary, i + 1, org);
-      }
-    }
-
-    // 同步更新軌道條目（title, education, responsibility）
-    const trackUpdates = [
+    upsertSalaryLevels(req.tenantDB, gradeNum, salaryLevels, orgUnitId);
+    upsertTrackEntries(req.tenantDB, gradeNum, [
       { track: 'management', title: managementTitle, education: managementEducation, responsibility: managementResponsibility },
       { track: 'professional', title: professionalTitle, education: professionalEducation, responsibility: professionalResponsibility }
-    ];
-    for (const tu of trackUpdates) {
-      if (tu.title === undefined) continue;
-      const existingEntry = req.tenantDB.prepare('SELECT id FROM grade_track_entries WHERE grade = ? AND track = ?').get(gradeNum, tu.track);
-      if (existingEntry) {
-        req.tenantDB.prepare('UPDATE grade_track_entries SET title = ?, education_requirement = ?, responsibility_description = ?, updated_at = datetime(\'now\') WHERE id = ?').run(tu.title || '', tu.education || '', tu.responsibility || '', existingEntry.id);
-      } else if (tu.title) {
-        const teId = `gte-${generateId()}`;
-        req.tenantDB.prepare('INSERT INTO grade_track_entries (id, grade, track, title, education_requirement, responsibility_description) VALUES (?, ?, ?, ?, ?, ?)').run(teId, gradeNum, tu.track, tu.title, tu.education || '', tu.responsibility || '');
-      }
-    }
+    ]);
 
     res.json({ success: true, data: { changeId, status, message: '職等已更新' } });
   } catch (error) {
