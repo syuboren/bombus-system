@@ -111,8 +111,14 @@
           @for (grade of gradesDescending(); track grade.id; let i = $index) {
           <tr [class.row-odd]="i % 2 === 1"
             [class.editing]="editingGradeNumber() === grade.grade"
-            [class.dimmed]="editingGradeNumber() !== null && editingGradeNumber() !== grade.grade">
-            <td class="td-grade"><span class="grade-num">{{ grade.grade }}</span></td>
+            [class.dimmed]="editingGradeNumber() !== null && editingGradeNumber() !== grade.grade"
+            [class.has-pending]="editMode() && hasPendingForGrade(grade.grade)">
+            <td class="td-grade">
+              <span class="grade-num">{{ grade.grade }}</span>
+              @if (editMode() && hasPendingForGrade(grade.grade)) {
+              <span class="pending-badge"><i class="ri-time-line"></i> 待審核</span>
+              }
+            </td>
             <td>{{ grade.codeRange }}</td>
             @for (track of tracks(); track track.id) {
             <td>{{ getTrackTitle(grade, track.code) || '-' }}</td>
@@ -166,7 +172,6 @@
         <div class="track-filter-selects">
           <select class="filter-select-sm" [ngModel]="selectedSubsidiaryId()"
             (ngModelChange)="selectedSubsidiaryId.set($event); selectedDepartmentFilter.set('')">
-            <option value="">全部子公司</option>
             @for (sub of subsidiaries(); track sub.id) {
             <option [value]="sub.id">{{ sub.name }}</option>
             }
@@ -179,19 +184,13 @@
             }
           </select>
         </div>
-        @if (editMode()) {
-        <div class="track-filter-actions">
-          <button class="btn-add" (click)="openEditPosition()" type="button">
-            <i class="ri-add-line"></i> 新增職位
-          </button>
-        </div>
-        }
       </div>
 
       <div class="track-detail-table-wrapper">
         <table class="track-detail-table">
           <thead>
             <tr>
+              <th class="th-action"></th>
               <th class="th-grade">職等</th>
               <th class="th-code">職級</th>
               <th>職務級別</th>
@@ -203,24 +202,35 @@
             </tr>
           </thead>
           <tbody>
-            @for (grade of gradesDescending(); track grade.id; let i = $index) {
+            @for (grade of trackFilteredGradesDescending(); track grade.id; let i = $index) {
             <tr class="track-row" [class.row-odd]="i % 2 === 1"
               [class.active]="showTrackDetailPanel() && editingTrackGrade() === grade.grade"
+              [class.has-pending]="editMode() && hasPendingForGrade(grade.grade)"
               (click)="openTrackDetailPanel(grade, trackCode)">
-              <td class="td-grade"><span class="grade-num">{{ grade.grade }}</span></td>
+              <td class="td-action" (click)="$event.stopPropagation()">
+                <button class="btn-row-detail"
+                  [class.active]="showTrackDetailPanel() && editingTrackGrade() === grade.grade"
+                  (click)="openTrackDetailPanel(grade, trackCode)" type="button">
+                  <i [class]="editMode() ? 'ri-pencil-line' : 'ri-file-list-3-line'"></i>
+                </button>
+              </td>
+              <td class="td-grade">
+                <span class="grade-num">{{ grade.grade }}</span>
+                @if (editMode() && hasPendingForGrade(grade.grade)) {
+                <span class="pending-badge"><i class="ri-time-line"></i> 待審核</span>
+                }
+              </td>
               <td class="td-code">{{ grade.codeRange || '-' }}</td>
               <td>{{ getTrackTitle(grade, trackCode) || '-' }}</td>
               @for (dept of departments(); track dept.id) {
               @if (!selectedDepartmentFilter() || dept.name === selectedDepartmentFilter()) {
-              <td class="td-position" (click)="$event.stopPropagation()">
-                @if (editMode()) {
-                <input class="position-inline-input" type="text"
-                  [value]="getPositionTitle(dept.name, grade.grade, trackCode)"
-                  (blur)="savePositionTitle(dept.name, grade.grade, trackCode, $any($event.target).value)"
-                  (keydown.enter)="$any($event.target).blur()"
-                  placeholder="-">
+              <td class="td-position">
+                @if (getPositionsFor(dept.name, grade.grade, trackCode).length > 0) {
+                  @for (pos of getPositionsFor(dept.name, grade.grade, trackCode); track pos.id; let last = $last) {
+                  <span class="position-title-item">{{ pos.title }}</span>@if (!last) {<span class="position-sep">、</span>}
+                  }
                 } @else {
-                {{ getPositionTitle(dept.name, grade.grade, trackCode) || '-' }}
+                -
                 }
               </td>
               }
@@ -734,7 +744,7 @@
         <tr>
           <th>類型</th>
           <th>操作</th>
-          <th>實體 ID</th>
+          <th>變更內容</th>
           <th>提交者</th>
           <th>提交時間</th>
           <th>操作</th>
@@ -746,7 +756,7 @@
           <td><span class="entity-badge">{{ getEntityTypeLabel(change.entityType) }}</span></td>
           <td><span class="action-badge" [class]="'action-' + change.action">{{ getActionLabel(change.action) }}</span>
           </td>
-          <td class="td-entity-id">{{ change.entityId }}</td>
+          <td class="td-change-desc">{{ getChangeDescription(change) }}</td>
           <td>{{ change.changedBy }}</td>
           <td>{{ change.createdAt }}</td>
           <td class="td-actions">
@@ -785,7 +795,7 @@
         <tr>
           <th>類型</th>
           <th>操作</th>
-          <th>實體 ID</th>
+          <th>變更內容</th>
           <th>提交者</th>
           <th>審核者</th>
           <th>狀態</th>
@@ -798,7 +808,7 @@
           <td><span class="entity-badge">{{ getEntityTypeLabel(change.entityType) }}</span></td>
           <td><span class="action-badge" [class]="'action-' + change.action">{{ getActionLabel(change.action) }}</span>
           </td>
-          <td class="td-entity-id">{{ change.entityId }}</td>
+          <td class="td-change-desc">{{ getChangeDescription(change) }}</td>
           <td>{{ change.changedBy }}</td>
           <td>{{ change.approvedBy || '-' }}</td>
           <td><span class="status-badge" [class]="getStatusClass(change.status)">{{ change.status }}</span></td>
@@ -1083,6 +1093,7 @@
 
 <app-grade-edit-panel [visible]="showGradeEditPanel()" [gradeData]="editingGrade()"
   [existingGrades]="existingGradeNumbers()" [orgUnitId]="overviewSubsidiaryId()"
+  [tracks]="tracks()"
   (closed)="closeGradeEditPanel()" (saved)="onGradeSaved()" />
 
 <app-position-edit-modal [visible]="showPositionEditModal()" [positionData]="editingPosition()"
@@ -1094,7 +1105,8 @@
 <app-track-detail-edit-panel [visible]="showTrackDetailPanel()" [gradeNumber]="editingTrackGrade()"
   [trackCode]="editingTrackCode()" [trackName]="editingTrackName()" [trackEntry]="editingTrackEntry()"
   [promotionCriteria]="editingTrackPromotion()" [editMode]="editMode()" [orgUnitId]="selectedSubsidiaryId()"
-  [maxGrade]="maxGradeNumber()" (closed)="closeTrackDetailPanel()" (saved)="onTrackDetailSaved()" />
+  [maxGrade]="activeTrack()?.maxGrade || maxGradeNumber()" [positions]="editingTrackPositions()" [departments]="departments()"
+  (closed)="closeTrackDetailPanel()" (saved)="onTrackDetailSaved()" (positionSaved)="onPositionInPanelSaved()" />
 <!-- Career Path Detail Modal (新版) -->
 @if (showCareerPathModal() && selectedCareerPathNew(); as path) {
 <div class="modal-backdrop" (click)="closeCareerPathModal()"></div>

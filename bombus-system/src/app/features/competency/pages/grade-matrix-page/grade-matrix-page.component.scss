@@ -1915,6 +1915,41 @@ $module-color-dark: $color-l2-terracotta-dark;
 .track-detail-table {
   @include data-table($module-color);
 
+  .th-action {
+    width: 40px;
+    padding: 0;
+  }
+
+  .td-action {
+    padding: $spacing-xs;
+    text-align: center;
+  }
+
+  .btn-row-detail {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: $radius-sm;
+    background: transparent;
+    color: $color-text-secondary;
+    cursor: pointer;
+    transition: all $transition-fast;
+    font-size: $font-size-sm;
+
+    &:hover {
+      background: rgba($module-color, 0.1);
+      color: $module-color;
+    }
+
+    &.active {
+      background: rgba($module-color, 0.15);
+      color: $module-color;
+    }
+  }
+
   .th-grade {
     width: 60px;
     text-align: center;
@@ -3302,6 +3337,36 @@ $module-color-dark: $color-l2-terracotta-dark;
   &.status-rejected {
     background: rgba($color-error, 0.12);
     color: $color-error;
+  }
+}
+
+// Pending Badge (待審核標籤)
+.pending-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px;
+  font-size: 10px;
+  font-weight: $font-weight-medium;
+  color: darken($color-warning, 15%);
+  background: rgba($color-warning, 0.12);
+  border: 1px solid rgba($color-warning, 0.25);
+  border-radius: $radius-sm;
+  margin-left: 6px;
+  white-space: nowrap;
+  line-height: 1.4;
+
+  i {
+    font-size: 10px;
+  }
+}
+
+// 有待審核變更的行高亮
+tr.has-pending {
+  background: rgba($color-warning, 0.04) !important;
+
+  &:hover {
+    background: rgba($color-warning, 0.08) !important;
   }
 }
 

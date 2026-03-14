@@ -149,6 +149,20 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
     return tab.startsWith('track:') ? tab.substring(6) : null;
   });
 
+  // 當前活躍軌道實體（用於取得 maxGrade 等屬性）
+  activeTrack = computed(() => {
+    const code = this.activeTrackCode();
+    return code ? this.tracks().find(t => t.code === code) || null : null;
+  });
+
+  // 依軌道 maxGrade 篩選後的職等（Tab B/C 用）
+  trackFilteredGradesDescending = computed(() => {
+    const track = this.activeTrack();
+    const grades = this.gradesDescending();
+    if (!track) return grades;
+    return grades.filter(g => g.grade <= track.maxGrade);
+  });
+
   // 現有職等編號列表（用於新增時驗證重複）
   existingGradeNumbers = computed(() => this.gradesNew().map(g => g.grade));
 
@@ -157,6 +171,13 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
     const grades = this.existingGradeNumbers();
     return grades.length > 0 ? Math.max(...grades) : 7;
   });
+
+  // 當前面板對應的職位（grade + track 篩選）
+  editingTrackPositions = computed(() =>
+    this.departmentPositions().filter(p =>
+      p.grade === this.editingTrackGrade() && p.track === this.editingTrackCode()
+    )
+  );
 
   // --- Phase 5: 編輯模式 & CRUD ---
   editMode = signal(false);
@@ -221,62 +242,6 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
     return grades;
   });
 
-  // 按部門分組的職位資料
-  positionsByDepartment = computed(() => {
-    const positions = this.departmentPositions();
-    const deptFilter = this.selectedDepartmentFilter();
-
-    // 先按部門篩選
-    const filtered = deptFilter
-      ? positions.filter(p => p.department === deptFilter)
-      : positions;
-
-    // 按部門分組
-    const grouped: Record<string, DepartmentPosition[]> = {};
-    for (const pos of filtered) {
-      if (!grouped[pos.department]) {
-        grouped[pos.department] = [];
-      }
-      grouped[pos.department].push(pos);
-    }
-
-    // 每個部門內按職等排序
-    for (const dept of Object.keys(grouped)) {
-      grouped[dept].sort((a, b) => b.grade - a.grade);
-    }
-
-    return grouped;
-  });
-
-  // 按職等分組的職位資料 (用於矩陣表格)
-  positionsByGrade = computed(() => {
-    const positions = this.departmentPositions();
-    const grouped: Record<number, DepartmentPosition[]> = {};
-
-    for (const pos of positions) {
-      if (!grouped[pos.grade]) {
-        grouped[pos.grade] = [];
-      }
-      grouped[pos.grade].push(pos);
-    }
-
-    return grouped;
-  });
-
-  // 跨部門高階主管（有管轄部門的職位）
-  crossDepartmentExecutives = computed(() => {
-    return this.departmentPositions().filter(p =>
-      p.supervisedDepartments && p.supervisedDepartments.length > 0
-    );
-  });
-
-  // 一般部門職位（不包含跨部門高階主管）
-  regularDepartmentPositions = computed(() => {
-    return this.departmentPositions().filter(p =>
-      !p.supervisedDepartments || p.supervisedDepartments.length === 0
-    );
-  });
-
   selectedEmployee = computed(() => {
     const id = this.selectedEmployeeId();
     return this.employees().find(e => e.id === id) || null;
@@ -291,10 +256,17 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
   }
 
   ngOnInit(): void {
-    this.orgUnitService.loadOrgUnits().subscribe();
+    this.orgUnitService.loadOrgUnits().subscribe(() => {
+      // Tab B/C 預設選取第一間子公司
+      const subs = this.subsidiaries();
+      if (subs.length > 0 && !this.selectedSubsidiaryId()) {
+        this.selectedSubsidiaryId.set(subs[0].id);
+      }
+    });
     this.loadData();
     this.loadEmployees();
     this.loadTracks();
+    this.loadPendingChanges();
   }
 
   ngAfterViewInit(): void {
@@ -351,67 +323,10 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
     this.selectedDepartmentFilter.set(value);
   }
 
-  // 取得部門的職位 (按職等)
-  getPositionsForDepartment(department: string, grade: number): DepartmentPosition[] {
+  // 取得特定部門、職等、軌道的所有職位
+  getPositionsFor(department: string, grade: number, track: string): DepartmentPosition[] {
     return this.departmentPositions().filter(p =>
-      p.department === department && p.grade === grade
-    );
-  }
-
-  // 取得職等的所有職位
-  getPositionsForGrade(grade: number): DepartmentPosition[] {
-    return this.departmentPositions().filter(p => p.grade === grade);
-  }
-
-  // 取得特定部門、職等、軌道的完整職位物件
-  getPosition(department: string, grade: number, track: string): DepartmentPosition | undefined {
-    return this.departmentPositions().find(p =>
       p.department === department && p.grade === grade && p.track === track
-    );
-  }
-
-  // 取得特定部門、職等、軌道的職位名稱
-  getPositionTitle(department: string, grade: number, track: string): string {
-    return this.getPosition(department, grade, track)?.title || '';
-  }
-
-  // 儲存部門職位名稱（inline 編輯）
-  savePositionTitle(department: string, grade: number, track: string, newTitle: string): void {
-    const trimmed = newTitle.trim();
-    const existing = this.getPosition(department, grade, track);
-
-    if (existing) {
-      // 更新既有職位
-      if (trimmed === existing.title) return; // 沒有變化
-      if (!trimmed) return; // 不允許清空
-      this.competencyService.updatePosition(existing.id, { title: trimmed }).subscribe({
-        next: () => {
-          this.departmentPositions.update(prev =>
-            prev.map(p => p.id === existing.id ? { ...p, title: trimmed } : p)
-          );
-        },
-        error: (err) => console.error('Error updating position:', err)
-      });
-    } else if (trimmed) {
-      // 新增職位
-      const payload = { department, grade, track, title: trimmed, org_unit_id: this.selectedSubsidiaryId() || null };
-      this.competencyService.createPosition(payload).subscribe({
-        next: () => {
-          // 重新載入職位資料
-          const orgUnitId = this.overviewSubsidiaryId() || undefined;
-          this.competencyService.getDepartmentPositions(undefined, undefined, undefined, orgUnitId).subscribe(data => {
-            this.departmentPositions.set(data);
-          });
-        },
-        error: (err) => console.error('Error creating position:', err)
-      });
-    }
-  }
-
-  // 檢查部門在該職等是否有職位
-  hasPositions(department: string, grade: number): boolean {
-    return this.departmentPositions().some(p =>
-      p.department === department && p.grade === grade
     );
   }
 
@@ -419,62 +334,6 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
   gradesDescending = computed(() => {
     return [...this.gradesNew()].sort((a, b) => b.grade - a.grade);
   });
-
-  // 取得特定職等的跨部門職位（返回所有跨部門職位，按管轄範圍排序）
-  getCrossDeptPositionsForGrade(grade: number): DepartmentPosition[] {
-    return this.departmentPositions()
-      .filter(p => p.grade === grade && p.supervisedDepartments && p.supervisedDepartments.length > 0)
-      .sort((a, b) => (b.supervisedDepartments?.length || 0) - (a.supervisedDepartments?.length || 0));
-  }
-
-  // 取得特定職等的主要跨部門職位（管轄範圍最大的）
-  getCrossDeptPositionForGrade(grade: number): DepartmentPosition | null {
-    const positions = this.getCrossDeptPositionsForGrade(grade);
-    return positions.length > 0 ? positions[0] : null;
-  }
-
-  // 取得特定職等的次要跨部門職位（除了主要的以外）
-  getSecondaryCrossDeptPositionsForGrade(grade: number): DepartmentPosition[] {
-    const positions = this.getCrossDeptPositionsForGrade(grade);
-    return positions.slice(1);
-  }
-
-  // 檢查部門是否被跨部門職位覆蓋（用於決定是否跳過渲染）
-  isDeptCoveredByCrossDept(department: string, grade: number): boolean {
-    const crossDeptPos = this.getCrossDeptPositionForGrade(grade);
-    if (!crossDeptPos || !crossDeptPos.supervisedDepartments) return false;
-    return crossDeptPos.supervisedDepartments.includes(department);
-  }
-
-  // 取得跨部門職位的 colspan（管轄部門數量）
-  getCrossDeptColspan(grade: number): number {
-    const crossDeptPos = this.getCrossDeptPositionForGrade(grade);
-    if (!crossDeptPos || !crossDeptPos.supervisedDepartments) return 1;
-
-    // 計算在顯示的部門中有多少被管轄
-    const deptFilter = this.selectedDepartmentFilter();
-    if (deptFilter) {
-      // 如果有篩選，檢查篩選的部門是否在管轄範圍內
-      return crossDeptPos.supervisedDepartments.includes(deptFilter) ? 1 : 0;
-    }
-    return crossDeptPos.supervisedDepartments.length;
-  }
-
-  // 檢查是否應該顯示跨部門合併格（只在第一個被管轄的部門顯示）
-  shouldShowCrossDeptCell(department: string, grade: number): boolean {
-    const crossDeptPos = this.getCrossDeptPositionForGrade(grade);
-    if (!crossDeptPos || !crossDeptPos.supervisedDepartments) return false;
-
-    const deptFilter = this.selectedDepartmentFilter();
-    if (deptFilter) {
-      // 如果有篩選，只有篩選的部門等於第一個管轄部門時才顯示
-      return crossDeptPos.supervisedDepartments.includes(deptFilter);
-    }
-
-    // 取得第一個被管轄的部門
-    const firstSupervisedDept = crossDeptPos.supervisedDepartments[0];
-    return department === firstSupervisedDept;
-  }
 
   loadEmployees(): void {
     // Mock employee data
@@ -502,6 +361,20 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
   // --- 待審核載入 ---
   loadPendingChanges(): void {
     this.competencyService.getPendingChanges().subscribe(data => this.pendingChanges.set(data));
+  }
+
+  // 有待審核變更的職等集合（用於表格顯示 badge）
+  pendingGrades = computed(() => {
+    const set = new Set<number>();
+    for (const change of this.pendingChanges()) {
+      const data = change.newData || change.oldData;
+      if (data?.grade) set.add(data.grade);
+    }
+    return set;
+  });
+
+  hasPendingForGrade(grade: number): boolean {
+    return this.pendingGrades().has(grade);
   }
 
   // --- 變更歷史載入 ---
@@ -539,6 +412,7 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
   }
   onGradeSaved(): void {
     this.loadDataNew();
+    this.loadPendingChanges();
     this.closeGradeEditPanel();
   }
 
@@ -550,6 +424,7 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
   closePositionModal(): void { this.showPositionEditModal.set(false); this.editingPosition.set(null); }
   onPositionSaved(): void {
     this.loadDataNew();
+    this.loadPendingChanges();
     this.closePositionModal();
   }
 
@@ -595,7 +470,17 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
 
   onTrackDetailSaved(): void {
     this.loadDataNew();
+    this.loadPendingChanges();
     this.closeTrackDetailPanel();
+  }
+
+  onPositionInPanelSaved(): void {
+    // 重新載入職位資料（不關閉面板）
+    const orgUnitId = this.overviewSubsidiaryId() || undefined;
+    this.competencyService.getDepartmentPositions(undefined, undefined, undefined, orgUnitId).subscribe(data => {
+      this.departmentPositions.set(data);
+    });
+    this.loadPendingChanges();
   }
 
   // 取得從指定職等晉升的晉升條件（搜尋 fromGrade）
@@ -638,6 +523,32 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
   getActionLabel(action: string): string {
     const map: Record<string, string> = { create: '新增', update: '更新', delete: '刪除' };
     return map[action] || action;
+  }
+
+  // 取得變更內容的可讀描述
+  getChangeDescription(change: ChangeRecord): string {
+    const data = change.newData || change.oldData;
+    if (!data) return '—';
+
+    const descParts = (...items: (string | undefined | false)[]): string =>
+      items.filter(Boolean).join(' ') || '—';
+
+    switch (change.entityType) {
+      case 'grade':
+        return descParts(`職等 ${data.grade}`, data.codeRange && `(${data.codeRange})`);
+      case 'position':
+        return descParts(data.department, data.grade && `Grade ${data.grade}`, data.track && this.getTrackLabel(data.track), data.title && `「${data.title}」`);
+      case 'track-entry':
+        return descParts(data.grade && `Grade ${data.grade}`, data.track && this.getTrackLabel(data.track), data.title && `「${data.title}」`);
+      case 'promotion':
+        return descParts(data.fromGrade && data.toGrade && `Grade ${data.fromGrade} → ${data.toGrade}`, data.track && this.getTrackLabel(data.track));
+      case 'salary':
+        return descParts(data.grade && `Grade ${data.grade}`, data.code);
+      case 'track':
+        return data.name || data.code || '—';
+      default:
+        return '—';
+    }
   }
 
   // 取得狀態 CSS class
@@ -692,15 +603,6 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
     this.showCareerPathModal.set(false);
     this.selectedCareerPath.set(null);
     this.selectedCareerPathNew.set(null);
-  }
-
-  // 取得特定職等的晉升條件
-  getPromotionToGrade(grade: number, track?: string): PromotionCriteria | null {
-    const criteria = this.promotionCriteria();
-    return criteria.find(c =>
-      c.toGrade === grade &&
-      (!track || c.track === track || c.track === 'both')
-    ) || null;
   }
 
   // 取得完整 trackEntry
