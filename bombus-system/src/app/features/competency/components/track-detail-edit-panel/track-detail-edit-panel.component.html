@@ -30,7 +30,7 @@
         </h3>
 
         <div class="form-group">
-          <label class="form-label required">職稱</label>
+          <label class="form-label required">職務級別</label>
           @if (editMode()) {
           <input type="text" class="form-input" [value]="formTrack().title"
             (input)="updateTrackField('title', $any($event.target).value)"
@@ -236,6 +236,61 @@
         <span>已達最高職等，無需設定晉升條件</span>
       </div>
       }
+      <!-- Section 3: 部門職位 -->
+      <div class="section-divider"></div>
+      <section class="form-section">
+        <h3 class="section-title">
+          <i class="ri-building-2-line"></i>
+          部門職位
+        </h3>
+
+        @if (positions().length > 0) {
+        <div class="position-list">
+          @for (entry of positionsByDept() | keyvalue; track entry.key) {
+          <div class="position-group">
+            <div class="position-group-header">{{ entry.key }}</div>
+            @for (pos of entry.value; track pos.id) {
+            <div class="position-item">
+              <span class="position-title">{{ pos.title }}</span>
+              @if (editMode()) {
+              <button class="btn-position-delete" (click)="deletePosition(pos.id)"
+                [disabled]="savingPosition()" type="button">
+                <i class="ri-close-line"></i>
+              </button>
+              }
+            </div>
+            }
+          </div>
+          }
+        </div>
+        } @else {
+        <div class="position-empty">尚無部門職位</div>
+        }
+
+        @if (editMode()) {
+        <div class="position-add-form">
+          <select class="form-select form-select-sm" [value]="newPositionDept()"
+            (change)="newPositionDept.set($any($event.target).value)" [disabled]="savingPosition()">
+            <option value="">選擇部門</option>
+            @for (dept of departments(); track dept.id) {
+            <option [value]="dept.name">{{ dept.name }}</option>
+            }
+          </select>
+          <input type="text" class="form-input form-input-sm" [value]="newPositionTitle()"
+            (input)="newPositionTitle.set($any($event.target).value)"
+            (keydown.enter)="addPosition()"
+            placeholder="職位名稱" [disabled]="savingPosition()" />
+          <button class="btn btn-primary btn-sm" (click)="addPosition()"
+            [disabled]="savingPosition() || !newPositionDept() || !newPositionTitle().trim()" type="button">
+            @if (savingPosition()) {
+            <i class="ri-loader-4-line spinner"></i>
+            } @else {
+            <i class="ri-add-line"></i>
+            }
+          </button>
+        </div>
+        }
+      </section>
     </div>
 
     <!-- Footer -->

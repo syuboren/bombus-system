@@ -1,8 +1,9 @@
 import { Component, ChangeDetectionStrategy, input, output, signal, inject, effect, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { GradeLevelNew, SalaryLevel } from '../../models/competency.model';
+import { GradeLevelNew, GradeTrackEntity, SalaryLevel } from '../../models/competency.model';
 import { CompetencyService } from '../../services/competency.service';
+import { NotificationService } from '../../../../core/services/notification.service';
 
 @Component({
   selector: 'app-grade-edit-panel',
@@ -14,6 +15,7 @@ import { CompetencyService } from '../../services/competency.service';
 })
 export class GradeEditPanelComponent {
   private competencyService = inject(CompetencyService);
+  private notificationService = inject(NotificationService);
 
   // --- Input / Output ---
   visible = input<boolean>(false);
@@ -21,6 +23,7 @@ export class GradeEditPanelComponent {
   context = input<'overview' | 'track-detail'>('overview');
   existingGrades = input<number[]>([]);
   orgUnitId = input<string>('');
+  tracks = input<GradeTrackEntity[]>([]);
   closed = output<void>();
   saved = output<void>();
 
@@ -29,6 +32,13 @@ export class GradeEditPanelComponent {
   error = signal<string | null>(null);
   isEditMode = signal(false);
   activeTrackTab = signal<'management' | 'professional'>('management');
+
+  // 判斷軌道是否超出該職等範圍（應鎖定不可編輯）
+  isTrackDisabled = (trackCode: string): boolean => {
+    const track = this.tracks().find(t => t.code === trackCode);
+    if (!track) return false;
+    return this.formGrade() > track.maxGrade;
+  };
 
   // 自動計算下一個可用職等
   nextGrade = computed(() => {
@@ -207,11 +217,11 @@ export class GradeEditPanelComponent {
     }
     // overview 模式下不驗證軌道職稱（軌道資訊由各軌道 tab 管理）
     if (this.context() !== 'overview') {
-      if (!this.formManagement().title.trim()) {
+      if (!this.isTrackDisabled('management') && !this.formManagement().title.trim()) {
         this.error.set('管理職稱謂為必填');
         return false;
       }
-      if (!this.formProfessional().title.trim()) {
+      if (!this.isTrackDisabled('professional') && !this.formProfessional().title.trim()) {
         this.error.set('專業職稱謂為必填');
         return false;
       }
@@ -262,6 +272,7 @@ export class GradeEditPanelComponent {
     observable.subscribe({
       next: () => {
         this.saving.set(false);
+        this.notificationService.info('變更已送出，等待審核');
         this.saved.emit();
         this.onClose();
       },

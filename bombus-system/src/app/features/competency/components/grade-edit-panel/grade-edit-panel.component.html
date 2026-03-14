@@ -77,15 +77,25 @@
         </h3>
         <div class="form-group">
           <label class="form-label">管理職職稱</label>
+          @if (isTrackDisabled('management')) {
+          <input type="text" class="form-input" [value]="formManagement().title"
+            placeholder="此職等不適用管理職" disabled />
+          } @else {
           <input type="text" class="form-input" [value]="formManagement().title"
             (input)="updateTrackTitle('management', $any($event.target).value)"
             placeholder="例如：副理" [disabled]="saving()" />
+          }
         </div>
         <div class="form-group">
           <label class="form-label">專業職職稱</label>
+          @if (isTrackDisabled('professional')) {
+          <input type="text" class="form-input" [value]="formProfessional().title"
+            placeholder="此職等不適用專業職" disabled />
+          } @else {
           <input type="text" class="form-input" [value]="formProfessional().title"
             (input)="updateTrackTitle('professional', $any($event.target).value)"
             placeholder="例如：資深工程師" [disabled]="saving()" />
+          }
         </div>
       </section>
       }

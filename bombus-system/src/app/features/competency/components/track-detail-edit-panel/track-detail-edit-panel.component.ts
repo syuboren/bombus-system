@@ -3,7 +3,19 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { switchMap, of } from 'rxjs';
 import { GradeTrackEntry, PromotionCriteria } from '../../models/competency.model';
+
+interface DepartmentPosition {
+  id: string;
+  department: string;
+  grade: number;
+  title: string;
+  track: string;
+  gradeTitleManagement: string;
+  gradeTitleProfessional: string;
+  supervisedDepartments: string[] | null;
+}
 import { CompetencyService } from '../../services/competency.service';
+import { NotificationService } from '../../../../core/services/notification.service';
 
 @Component({
   selector: 'app-track-detail-edit-panel',
@@ -15,6 +27,7 @@ import { CompetencyService } from '../../services/competency.service';
 })
 export class TrackDetailEditPanelComponent {
   private competencyService = inject(CompetencyService);
+  private notificationService = inject(NotificationService);
 
   // --- Input / Output ---
   visible = input<boolean>(false);
@@ -26,8 +39,11 @@ export class TrackDetailEditPanelComponent {
   editMode = input<boolean>(false);
   orgUnitId = input<string>('');
   maxGrade = input<number>(7);
+  positions = input<DepartmentPosition[]>([]);
+  departments = input<{ id: string; name: string; code: string }[]>([]);
   closed = output<void>();
   saved = output<void>();
+  positionSaved = output<void>();
 
   // --- 表單狀態 ---
   saving = signal(false);
@@ -72,6 +88,21 @@ export class TrackDetailEditPanelComponent {
   // Chip 輸入暫存
   chipInput = signal<{ skills: string; courses: string; kpi: string; criteria: string }>({
     skills: '', courses: '', kpi: '', criteria: ''
+  });
+
+  // 職位新增表單
+  newPositionDept = signal('');
+  newPositionTitle = signal('');
+  savingPosition = signal(false);
+
+  // 按部門分組的職位
+  positionsByDept = computed(() => {
+    const grouped: Record<string, DepartmentPosition[]> = {};
+    for (const pos of this.positions()) {
+      if (!grouped[pos.department]) grouped[pos.department] = [];
+      grouped[pos.department].push(pos);
+    }
+    return grouped;
   });
 
   // 是否為最高職等（隱藏晉升條件）
@@ -198,9 +229,9 @@ export class TrackDetailEditPanelComponent {
   onSave(): void {
     const trackData = this.formTrack();
 
-    // 驗證職稱必填
+    // 驗證職務級別必填
     if (!trackData.title.trim()) {
-      this.error.set('職稱為必填欄位');
+      this.error.set('職務級別為必填欄位');
       return;
     }
 
@@ -256,6 +287,7 @@ export class TrackDetailEditPanelComponent {
     ).subscribe({
       next: () => {
         this.saving.set(false);
+        this.notificationService.info('變更已送出，等待審核');
         this.saved.emit();
         this.onClose();
       },
@@ -264,6 +296,51 @@ export class TrackDetailEditPanelComponent {
         const msg = err?.error?.error?.message || '儲存失敗，請稍後再試';
         // 區分軌道條目 vs 晉升條件失敗
         this.error.set(msg);
+      }
+    });
+  }
+
+  // --- 職位管理 ---
+  addPosition(): void {
+    const dept = this.newPositionDept();
+    const title = this.newPositionTitle().trim();
+    if (!dept || !title) return;
+
+    this.savingPosition.set(true);
+    const payload = {
+      department: dept,
+      grade: this.gradeNumber(),
+      track: this.trackCode(),
+      title,
+      org_unit_id: this.orgUnitId() || null
+    };
+
+    this.competencyService.createPosition(payload).subscribe({
+      next: () => {
+        this.savingPosition.set(false);
+        this.newPositionDept.set('');
+        this.newPositionTitle.set('');
+        this.notificationService.info('變更已送出，等待審核');
+        this.positionSaved.emit();
+      },
+      error: (err) => {
+        this.savingPosition.set(false);
+        this.error.set(err?.error?.error?.message || '新增職位失敗');
+      }
+    });
+  }
+
+  deletePosition(id: string): void {
+    this.savingPosition.set(true);
+    this.competencyService.deletePosition(id).subscribe({
+      next: () => {
+        this.savingPosition.set(false);
+        this.notificationService.info('變更已送出，等待審核');
+        this.positionSaved.emit();
+      },
+      error: (err) => {
+        this.savingPosition.set(false);
+        this.error.set(err?.error?.error?.message || '刪除職位失敗');
       }
     });
   }

@@ -399,6 +399,110 @@ $panel-width: 420px;
   @include button-module($module-color);
 }
 
+// --- 部門職位 Section ---
+.position-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.position-group {
+  .position-group-header {
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-text-secondary;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding-bottom: $spacing-xs;
+    border-bottom: 1px solid $color-cloud-gray;
+    margin-bottom: $spacing-xs;
+  }
+}
+
+.position-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $radius-sm;
+  background: rgba($color-cloud-gray, 0.3);
+
+  .position-title {
+    font-size: $font-size-sm;
+    color: $color-text-primary;
+  }
+
+  .btn-position-delete {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border: none;
+    border-radius: $radius-sm;
+    background: transparent;
+    color: $color-text-secondary;
+    cursor: pointer;
+    transition: all $transition-fast;
+    font-size: $font-size-xs;
+
+    &:hover:not(:disabled) {
+      background: rgba($color-error, 0.1);
+      color: $color-error;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.position-empty {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  text-align: center;
+  padding: $spacing-md;
+}
+
+.position-add-form {
+  display: flex;
+  gap: $spacing-xs;
+  margin-top: $spacing-sm;
+  align-items: center;
+
+  .form-select-sm {
+    flex: 1;
+    padding: $spacing-xs $spacing-sm;
+    font-size: $font-size-sm;
+    border: 1px solid $color-soft-gray;
+    border-radius: $radius-sm;
+    background: $color-pure-white;
+    color: $color-text-primary;
+  }
+
+  .form-input-sm {
+    flex: 1;
+    padding: $spacing-xs $spacing-sm;
+    font-size: $font-size-sm;
+    border: 1px solid $color-soft-gray;
+    border-radius: $radius-sm;
+    background: $color-pure-white;
+    color: $color-text-primary;
+
+    &::placeholder {
+      color: $color-text-secondary;
+    }
+  }
+
+  .btn-sm {
+    padding: $spacing-xs $spacing-sm;
+    font-size: $font-size-sm;
+    min-width: 36px;
+    height: 32px;
+  }
+}
+
 // Spinner animation
 .spinner {
   animation: spin 1s linear infinite;

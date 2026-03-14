@@ -149,6 +149,20 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
     return tab.startsWith('track:') ? tab.substring(6) : null;
   });
 
+  // 當前活躍軌道實體（用於取得 maxGrade 等屬性）
+  activeTrack = computed(() => {
+    const code = this.activeTrackCode();
+    return code ? this.tracks().find(t => t.code === code) || null : null;
+  });
+
+  // 依軌道 maxGrade 篩選後的職等（Tab B/C 用）
+  trackFilteredGradesDescending = computed(() => {
+    const track = this.activeTrack();
+    const grades = this.gradesDescending();
+    if (!track) return grades;
+    return grades.filter(g => g.grade <= track.maxGrade);
+  });
+
   // 現有職等編號列表（用於新增時驗證重複）
   existingGradeNumbers = computed(() => this.gradesNew().map(g => g.grade));
 
@@ -157,6 +171,13 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
     const grades = this.existingGradeNumbers();
     return grades.length > 0 ? Math.max(...grades) : 7;
   });
+
+  // 當前面板對應的職位（grade + track 篩選）
+  editingTrackPositions = computed(() =>
+    this.departmentPositions().filter(p =>
+      p.grade === this.editingTrackGrade() && p.track === this.editingTrackCode()
+    )
+  );
 
   // --- Phase 5: 編輯模式 & CRUD ---
   editMode = signal(false);
@@ -291,10 +312,17 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
   }
 
   ngOnInit(): void {
-    this.orgUnitService.loadOrgUnits().subscribe();
+    this.orgUnitService.loadOrgUnits().subscribe(() => {
+      // Tab B/C 預設選取第一間子公司
+      const subs = this.subsidiaries();
+      if (subs.length > 0 && !this.selectedSubsidiaryId()) {
+        this.selectedSubsidiaryId.set(subs[0].id);
+      }
+    });
     this.loadData();
     this.loadEmployees();
     this.loadTracks();
+    this.loadPendingChanges();
   }
 
   ngAfterViewInit(): void {
@@ -370,9 +398,16 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
     );
   }
 
-  // 取得特定部門、職等、軌道的職位名稱
+  // 取得特定部門、職等、軌道的職位名稱（第一筆）
   getPositionTitle(department: string, grade: number, track: string): string {
     return this.getPosition(department, grade, track)?.title || '';
+  }
+
+  // 取得特定部門、職等、軌道的所有職位
+  getPositionsFor(department: string, grade: number, track: string): DepartmentPosition[] {
+    return this.departmentPositions().filter(p =>
+      p.department === department && p.grade === grade && p.track === track
+    );
   }
 
   // 儲存部門職位名稱（inline 編輯）
@@ -504,6 +539,20 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
     this.competencyService.getPendingChanges().subscribe(data => this.pendingChanges.set(data));
   }
 
+  // 有待審核變更的職等集合（用於表格顯示 badge）
+  pendingGrades = computed(() => {
+    const set = new Set<number>();
+    for (const change of this.pendingChanges()) {
+      const data = change.newData || change.oldData;
+      if (data?.grade) set.add(data.grade);
+    }
+    return set;
+  });
+
+  hasPendingForGrade(grade: number): boolean {
+    return this.pendingGrades().has(grade);
+  }
+
   // --- 變更歷史載入 ---
   loadChangeHistory(): void {
     this.competencyService.getChangeHistory().subscribe(data => this.changeHistory.set(data));
@@ -539,6 +588,7 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
   }
   onGradeSaved(): void {
     this.loadDataNew();
+    this.loadPendingChanges();
     this.closeGradeEditPanel();
   }
 
@@ -550,6 +600,7 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
   closePositionModal(): void { this.showPositionEditModal.set(false); this.editingPosition.set(null); }
   onPositionSaved(): void {
     this.loadDataNew();
+    this.loadPendingChanges();
     this.closePositionModal();
   }
 
@@ -595,7 +646,17 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
 
   onTrackDetailSaved(): void {
     this.loadDataNew();
+    this.loadPendingChanges();
     this.closeTrackDetailPanel();
+  }
+
+  onPositionInPanelSaved(): void {
+    // 重新載入職位資料（不關閉面板）
+    const orgUnitId = this.overviewSubsidiaryId() || undefined;
+    this.competencyService.getDepartmentPositions(undefined, undefined, undefined, orgUnitId).subscribe(data => {
+      this.departmentPositions.set(data);
+    });
+    this.loadPendingChanges();
   }
 
   // 取得從指定職等晉升的晉升條件（搜尋 fromGrade）
@@ -638,6 +699,57 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
   getActionLabel(action: string): string {
     const map: Record<string, string> = { create: '新增', update: '更新', delete: '刪除' };
     return map[action] || action;
+  }
+
+  // 取得變更內容的可讀描述
+  getChangeDescription(change: ChangeRecord): string {
+    const data = change.newData || change.oldData;
+    if (!data) return '—';
+
+    const trackLabel = (track: string) => {
+      const m: Record<string, string> = { management: '管理職', professional: '專業職', both: '通用' };
+      return m[track] || track;
+    };
+
+    switch (change.entityType) {
+      case 'grade': {
+        const parts = [`職等 ${data.grade}`];
+        if (data.codeRange) parts.push(`(${data.codeRange})`);
+        return parts.join(' ');
+      }
+      case 'position': {
+        const parts: string[] = [];
+        if (data.department) parts.push(data.department);
+        if (data.grade) parts.push(`Grade ${data.grade}`);
+        if (data.track) parts.push(trackLabel(data.track));
+        if (data.title) parts.push(`「${data.title}」`);
+        return parts.join(' ') || '—';
+      }
+      case 'track-entry': {
+        const parts: string[] = [];
+        if (data.grade) parts.push(`Grade ${data.grade}`);
+        if (data.track) parts.push(trackLabel(data.track));
+        if (data.title) parts.push(`「${data.title}」`);
+        return parts.join(' ') || '—';
+      }
+      case 'promotion': {
+        const parts: string[] = [];
+        if (data.fromGrade && data.toGrade) parts.push(`Grade ${data.fromGrade} → ${data.toGrade}`);
+        if (data.track) parts.push(trackLabel(data.track));
+        return parts.join(' ') || '—';
+      }
+      case 'salary': {
+        const parts: string[] = [];
+        if (data.grade) parts.push(`Grade ${data.grade}`);
+        if (data.code) parts.push(data.code);
+        return parts.join(' ') || '—';
+      }
+      case 'track': {
+        return data.name || data.code || '—';
+      }
+      default:
+        return '—';
+    }
   }
 
   // 取得狀態 CSS class
