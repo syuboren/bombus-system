@@ -1,0 +1,607 @@
+{
+  "tableName": "department_positions",
+  "columns": [
+    "id",
+    "department",
+    "grade",
+    "title",
+    "track",
+    "supervised_departments",
+    "created_at",
+    "org_unit_id"
+  ],
+  "rows": [
+    [
+      "pos-ceo-7-m",
+      "執行長辦公室",
+      7,
+      "執行長",
+      "management",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-coo-7-m",
+      "執行長辦公室",
+      7,
+      "營運長",
+      "management",
+      "[\"行政部\",\"財務部\",\"專案部\",\"人資部\",\"業務部\",\"工程部\"]",
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-admin-6-m",
+      "行政部",
+      6,
+      "行政長",
+      "management",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-fin-6-m",
+      "財務部",
+      6,
+      "財務長",
+      "management",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-sales-6-m",
+      "業務部",
+      6,
+      "業務長",
+      "management",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-eng-6-m",
+      "工程部",
+      6,
+      "技術長",
+      "management",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-fin-6-p",
+      "財務部",
+      6,
+      "高級主辦會計",
+      "professional",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-proj-6-p",
+      "專案部",
+      6,
+      "高級專案經理",
+      "professional",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-hr-6-p",
+      "人資部",
+      6,
+      "高階管理師",
+      "professional",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-sales-6-p",
+      "業務部",
+      6,
+      "銷售專家",
+      "professional",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-eng-6-p",
+      "工程部",
+      6,
+      "產品經理",
+      "professional",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-admin-5-m",
+      "行政部",
+      5,
+      "經理",
+      "management",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-fin-5-m",
+      "財務部",
+      5,
+      "經理",
+      "management",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-proj-5-m",
+      "專案部",
+      5,
+      "經理",
+      "management",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-hr-5-m",
+      "人資部",
+      5,
+      "經理",
+      "management",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-sales-5-m",
+      "業務部",
+      5,
+      "經理",
+      "management",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-eng-5-m",
+      "工程部",
+      5,
+      "經理",
+      "management",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-ceo-5-p",
+      "執行長辦公室",
+      5,
+      "高階特別助理",
+      "professional",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-admin-5-p",
+      "行政部",
+      5,
+      "高級專員",
+      "professional",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-fin-5-p",
+      "財務部",
+      5,
+      "主辦會計",
+      "professional",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-proj-5-p",
+      "專案部",
+      5,
+      "專案經理",
+      "professional",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-hr-5-p",
+      "人資部",
+      5,
+      "專案管理師",
+      "professional",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-sales-5-p",
+      "業務部",
+      5,
+      "銷售經理",
+      "professional",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-eng-5-p",
+      "工程部",
+      5,
+      "高階工程師",
+      "professional",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-admin-4-m",
+      "行政部",
+      4,
+      "副理",
+      "management",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-fin-4-m",
+      "財務部",
+      4,
+      "副理",
+      "management",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-proj-4-m",
+      "專案部",
+      4,
+      "副理",
+      "management",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-hr-4-m",
+      "人資部",
+      4,
+      "副理",
+      "management",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-sales-4-m",
+      "業務部",
+      4,
+      "副理",
+      "management",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-eng-4-m",
+      "工程部",
+      4,
+      "副理",
+      "management",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-ceo-4-p",
+      "執行長辦公室",
+      4,
+      "執行長秘書",
+      "professional",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-admin-4-p",
+      "行政部",
+      4,
+      "資深專員",
+      "professional",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-fin-4-p",
+      "財務部",
+      4,
+      "成本會計",
+      "professional",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-proj-4-p",
+      "專案部",
+      4,
+      "專案管理師",
+      "professional",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-hr-4-p",
+      "人資部",
+      4,
+      "管理師",
+      "professional",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-sales-4-p",
+      "業務部",
+      4,
+      "資深業務",
+      "professional",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-eng-4-p",
+      "工程部",
+      4,
+      "資深工程師",
+      "professional",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-admin-3-m",
+      "行政部",
+      3,
+      "MA",
+      "management",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-fin-3-m",
+      "財務部",
+      3,
+      "MA",
+      "management",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-proj-3-m",
+      "專案部",
+      3,
+      "MA",
+      "management",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-hr-3-m",
+      "人資部",
+      3,
+      "MA",
+      "management",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-sales-3-m",
+      "業務部",
+      3,
+      "MA",
+      "management",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-eng-3-m",
+      "工程部",
+      3,
+      "MA",
+      "management",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-ceo-3-p",
+      "執行長辦公室",
+      3,
+      "主管秘書",
+      "professional",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-admin-3-p",
+      "行政部",
+      3,
+      "專員",
+      "professional",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-fin-3-p",
+      "財務部",
+      3,
+      "會計",
+      "professional",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-proj-3-p",
+      "專案部",
+      3,
+      "專員",
+      "professional",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-hr-3-p",
+      "人資部",
+      3,
+      "專員",
+      "professional",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-sales-3-p",
+      "業務部",
+      3,
+      "業務",
+      "professional",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-eng-3-p",
+      "工程部",
+      3,
+      "工程師",
+      "professional",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-ceo-2-p",
+      "執行長辦公室",
+      2,
+      "執行秘書",
+      "professional",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-admin-2-p",
+      "行政部",
+      2,
+      "專員",
+      "professional",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-fin-2-p",
+      "財務部",
+      2,
+      "會計",
+      "professional",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-proj-2-p",
+      "專案部",
+      2,
+      "專員",
+      "professional",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-hr-2-p",
+      "人資部",
+      2,
+      "專員",
+      "professional",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-sales-2-p",
+      "業務部",
+      2,
+      "業務",
+      "professional",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-eng-2-p",
+      "工程部",
+      2,
+      "工程師",
+      "professional",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-all-1",
+      "全部門",
+      1,
+      "新人",
+      "both",
+      null,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "pos-9216fd49-4eaa-4722-95c7-8dd011a8d02c",
+      "工程部",
+      4,
+      "資深主任",
+      "professional",
+      null,
+      "2026-03-14 18:22:34",
+      "org-root"
+    ]
+  ],
+  "rowCount": 59,
+  "exportedAt": "2026-03-15T16:50:32.771Z"
+}

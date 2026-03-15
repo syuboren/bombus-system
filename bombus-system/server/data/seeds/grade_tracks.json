@@ -1,0 +1,43 @@
+{
+  "tableName": "grade_tracks",
+  "columns": [
+    "id",
+    "code",
+    "name",
+    "icon",
+    "color",
+    "max_grade",
+    "sort_order",
+    "is_active",
+    "created_at",
+    "org_unit_id"
+  ],
+  "rows": [
+    [
+      "track-mgmt",
+      "management",
+      "管理職",
+      "ri-briefcase-line",
+      "#6B7B8D",
+      7,
+      1,
+      1,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "track-prof",
+      "professional",
+      "專業職",
+      "ri-code-s-slash-line",
+      "#8B9DAF",
+      6,
+      2,
+      1,
+      "2026-03-10 05:22:14",
+      "org-root"
+    ]
+  ],
+  "rowCount": 2,
+  "exportedAt": "2026-03-15T16:50:32.771Z"
+}

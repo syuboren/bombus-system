@@ -1,0 +1,43 @@
+{
+  "tableName": "system_config",
+  "columns": [
+    "key",
+    "value",
+    "description",
+    "updated_at"
+  ],
+  "rows": [
+    [
+      "monthly_check_self_deadline",
+      "5",
+      "員工自評截止日(每月幾號)",
+      "2026-03-10 05:22:13"
+    ],
+    [
+      "monthly_check_manager_deadline",
+      "7",
+      "主管審核截止日(每月幾號)",
+      "2026-03-10 05:22:13"
+    ],
+    [
+      "monthly_check_hr_deadline",
+      "10",
+      "HR結案截止日(每月幾號)",
+      "2026-03-10 05:22:13"
+    ],
+    [
+      "monthly_reminder_day",
+      "25",
+      "月度提醒日(每月幾號)",
+      "2026-03-10 05:22:13"
+    ],
+    [
+      "weekly_report_deadline",
+      "friday",
+      "週報截止日(星期幾)",
+      "2026-03-10 05:22:13"
+    ]
+  ],
+  "rowCount": 5,
+  "exportedAt": "2026-03-15T16:50:32.771Z"
+}
