@@ -86,10 +86,22 @@ export class MeetingPageComponent implements OnInit {
   currentEmployeeId = signal<string>('1'); // TODO: 從登入狀態取得
   currentEmployeeDept = signal<string>('研發部'); // TODO: 從登入狀態取得
 
+  // Modal 出席人員部門篩選（獨立於全域 selectedDepartment）
+  modalAttendeeDept = signal<string>('');
+
   // 資料
   meetings = signal<Meeting[]>([]);
   calendarEvents = signal<CalendarEvent[]>([]);
   attendees = signal<MeetingAttendee[]>([]);
+  modalFilteredAttendees = computed(() => {
+    const dept = this.modalAttendeeDept();
+    if (!dept) return this.attendees();
+    return this.attendees().filter(a => a.department === dept);
+  });
+  // Modal 歸屬部門下拉（依 modal 選的子公司級聯）
+  modalDepartments = computed(() =>
+    this.orgUnitService.filterDepartments(this.newMeeting()?.org_unit_id || '')
+  );
   stats = signal<MeetingStats | null>(null);
   departmentStats = signal<DepartmentMeetingStats[]>([]);
   personalLoads = signal<PersonalMeetingLoad[]>([]);
@@ -284,7 +296,8 @@ export class MeetingPageComponent implements OnInit {
 
     if (scope === 'personal') {
       const employeeId = this.selectedEmployeeId() || this.currentEmployeeId();
-      return { scope, employeeId, orgUnitId };
+      const department = this.selectedDepartment() || undefined;
+      return { scope, employeeId, department, orgUnitId };
     } else if (scope === 'department') {
       const dept = this.selectedDepartment() || this.currentEmployeeDept();
       return { scope, department: dept, orgUnitId };
@@ -435,6 +448,7 @@ export class MeetingPageComponent implements OnInit {
       agenda: [],
       attachments: []
     });
+    this.modalAttendeeDept.set('');
   }
 
   closeAddMeetingModal(): void {
@@ -908,7 +922,12 @@ export class MeetingPageComponent implements OnInit {
     const filesToUpload = (meetingData.attachments || []).filter(a => a.file);
     // 移除 file 屬性，只保留 metadata（後端不接受 File 物件）
     const cleanAttachments = (meetingData.attachments || []).map(({ file, ...rest }) => rest);
-    const cleanMeetingData = { ...meetingData, attachments: cleanAttachments, org_unit_id: this.selectedSubsidiaryId() || undefined };
+    const cleanMeetingData = {
+      ...meetingData,
+      attachments: cleanAttachments,
+      org_unit_id: meetingData.org_unit_id || this.selectedSubsidiaryId() || undefined,
+      department: meetingData.department || undefined
+    };
     
     console.log('Saving meeting:', cleanMeetingData);
 

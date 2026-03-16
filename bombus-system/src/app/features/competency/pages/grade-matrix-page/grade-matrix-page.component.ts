@@ -515,7 +515,7 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
 
   // 取得變更類型中文名稱
   getEntityTypeLabel(type: string): string {
-    const map: Record<string, string> = { track: '軌道', grade: '職等', salary: '薪資', position: '職位', promotion: '晉升條件', 'track-entry': '軌道條目' };
+    const map: Record<string, string> = { track: '軌道', grade: '職等', salary: '薪資', position: '職位', promotion: '晉升條件', 'track-entry': '軌道條目', 'track-detail': '軌道明細' };
     return map[type] || type;
   }
 
@@ -530,25 +530,197 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
     const data = change.newData || change.oldData;
     if (!data) return '—';
 
-    const descParts = (...items: (string | undefined | false)[]): string =>
+    const label = this.getEntityLabel(change);
+
+    // track-detail 特殊處理（合併描述）
+    if (change.entityType === 'track-detail') {
+      const details = this.getTrackDetailDescription(change);
+      if (details.length > 0) return `${label}：${details.join('、')}`;
+      return label;
+    }
+
+    // update 操作：比較新舊資料，顯示具體差異
+    if (change.action === 'update' && change.oldData && change.newData) {
+      const diffs = this.getFieldDiffs(change);
+      if (diffs.length > 0) return `${label}：${diffs.join('、')}`;
+    }
+
+    // create 操作：列出已設定的欄位
+    if (change.action === 'create' && data) {
+      const extras = this.getCreateDetails(change.entityType, data);
+      if (extras.length > 0) return `${label}：${extras.join('、')}`;
+    }
+
+    return label;
+  }
+
+  // 取得 create 操作中已設定的欄位摘要
+  private getCreateDetails(entityType: string, data: Record<string, unknown>): string[] {
+    const details: string[] = [];
+    switch (entityType) {
+      case 'track-entry':
+        if (data['educationRequirement']) details.push(`學歷要求「${data['educationRequirement']}」`);
+        if (data['responsibilityDescription']) details.push('職責描述已設定');
+        if (data['requiredSkillsAndTraining']) details.push('所需技能與培訓已設定');
+        break;
+      case 'promotion':
+        if (data['performanceThreshold']) details.push(`績效門檻 ${data['performanceThreshold']}`);
+        if (data['promotionProcedure']) details.push(`晉升程序「${data['promotionProcedure']}」`);
+        if ((data['requiredSkills'] as string[])?.length) details.push(`必備技能 ${(data['requiredSkills'] as string[]).length} 項`);
+        if ((data['requiredCourses'] as string[])?.length) details.push(`必修課程 ${(data['requiredCourses'] as string[]).length} 項`);
+        if ((data['kpiFocus'] as string[])?.length) details.push(`KPI 指標 ${(data['kpiFocus'] as string[]).length} 項`);
+        if ((data['additionalCriteria'] as string[])?.length) details.push(`附加條件 ${(data['additionalCriteria'] as string[]).length} 項`);
+        break;
+      case 'grade':
+        if (data['salaryLevels'] && (data['salaryLevels'] as unknown[]).length > 0) {
+          details.push(`薪資 ${(data['salaryLevels'] as unknown[]).length} 筆`);
+        }
+        if (data['managementTitle']) details.push(`管理職「${data['managementTitle']}」`);
+        if (data['professionalTitle']) details.push(`專業職「${data['professionalTitle']}」`);
+        break;
+    }
+    return details;
+  }
+
+  // 取得 track-detail 合併變更的描述
+  private getTrackDetailDescription(change: ChangeRecord): string[] {
+    const diffs: string[] = [];
+    const o = change.oldData || {} as Record<string, unknown>;
+    const n = change.newData || {} as Record<string, unknown>;
+    const ote = (o['trackEntry'] || {}) as Record<string, string>;
+    const nte = (n['trackEntry'] || {}) as Record<string, string>;
+    const opromo = (o['promotion'] || null) as Record<string, unknown> | null;
+    const npromo = (n['promotion'] || null) as Record<string, unknown> | null;
+
+    // 軌道條目差異
+    if (change.action === 'create' || !ote['title']) {
+      // 新增模式：列出已設定欄位
+      if (nte['educationRequirement']) diffs.push(`學歷要求「${nte['educationRequirement']}」`);
+      if (nte['responsibilityDescription']) diffs.push('職責描述已設定');
+      if (nte['requiredSkillsAndTraining']) diffs.push('所需技能與培訓已設定');
+    } else {
+      // 更新模式：比較差異
+      if (ote['title'] !== nte['title']) diffs.push(`職稱 ${ote['title'] || '(空)'} → ${nte['title'] || '(空)'}`);
+      if (ote['educationRequirement'] !== nte['educationRequirement']) diffs.push('學歷要求已變更');
+      if (ote['responsibilityDescription'] !== nte['responsibilityDescription']) diffs.push('職責描述已變更');
+      if (ote['requiredSkillsAndTraining'] !== nte['requiredSkillsAndTraining']) diffs.push('所需技能與培訓已變更');
+    }
+
+    // 晉升條件差異
+    if (npromo) {
+      if (!opromo) {
+        diffs.push('晉升條件已設定');
+      } else {
+        if (opromo['performanceThreshold'] !== npromo['performanceThreshold']) diffs.push(`績效門檻 ${opromo['performanceThreshold']} → ${npromo['performanceThreshold']}`);
+        if (opromo['promotionProcedure'] !== npromo['promotionProcedure']) diffs.push('晉升程序已變更');
+        if (JSON.stringify(opromo['requiredSkills']) !== JSON.stringify(npromo['requiredSkills'])) diffs.push('必備技能已變更');
+        if (JSON.stringify(opromo['requiredCourses']) !== JSON.stringify(npromo['requiredCourses'])) diffs.push('必修課程已變更');
+        if (JSON.stringify(opromo['kpiFocus']) !== JSON.stringify(npromo['kpiFocus'])) diffs.push('KPI 指標已變更');
+        if (JSON.stringify(opromo['additionalCriteria']) !== JSON.stringify(npromo['additionalCriteria'])) diffs.push('附加條件已變更');
+      }
+    }
+
+    // 職位變更
+    const posAdds = (n['positionAdds'] || []) as { department: string; title: string }[];
+    const posDeletes = (n['positionDeletes'] || []) as string[];
+    if (posAdds.length > 0) diffs.push(`新增職位 ${posAdds.map(p => `${p.department}「${p.title}」`).join('、')}`);
+    if (posDeletes.length > 0) diffs.push(`刪除職位 ${posDeletes.length} 筆`);
+
+    return diffs;
+  }
+
+  // 取得實體的基本標籤
+  private getEntityLabel(change: ChangeRecord): string {
+    const data = change.newData || change.oldData;
+    const parts = (...items: (string | undefined | false)[]): string =>
       items.filter(Boolean).join(' ') || '—';
 
     switch (change.entityType) {
       case 'grade':
-        return descParts(`職等 ${data.grade}`, data.codeRange && `(${data.codeRange})`);
+        return parts(`職等 ${data.grade}`, data.codeRange && `(${data.codeRange})`);
       case 'position':
-        return descParts(data.department, data.grade && `Grade ${data.grade}`, data.track && this.getTrackLabel(data.track), data.title && `「${data.title}」`);
+        return parts(data.department, data.grade && `Grade ${data.grade}`, data.track && this.getTrackLabel(data.track), data.title && `「${data.title}」`);
       case 'track-entry':
-        return descParts(data.grade && `Grade ${data.grade}`, data.track && this.getTrackLabel(data.track), data.title && `「${data.title}」`);
+        return parts(data.grade && `Grade ${data.grade}`, data.track && this.getTrackLabel(data.track), data.title && `「${data.title}」`);
       case 'promotion':
-        return descParts(data.fromGrade && data.toGrade && `Grade ${data.fromGrade} → ${data.toGrade}`, data.track && this.getTrackLabel(data.track));
+        return parts(data.fromGrade && data.toGrade && `Grade ${data.fromGrade} → ${data.toGrade}`, data.track && this.getTrackLabel(data.track));
       case 'salary':
-        return descParts(data.grade && `Grade ${data.grade}`, data.code);
+        return parts(data.grade && `Grade ${data.grade}`, data.code);
+      case 'track-detail': {
+        const te = data['trackEntry'] as Record<string, unknown> | undefined;
+        const teTitle = te?.['title'] as string | undefined;
+        return parts(data['grade'] && `Grade ${data['grade']}`, data['track'] && this.getTrackLabel(data['track'] as string), teTitle && `「${teTitle}」`);
+      }
       case 'track':
         return data.name || data.code || '—';
       default:
         return '—';
     }
+  }
+
+  // 比較新舊資料，回傳各欄位的差異描述
+  private getFieldDiffs(change: ChangeRecord): string[] {
+    const o = change.oldData;
+    const n = change.newData;
+    const diffs: string[] = [];
+    const fmt = (v: number) => v?.toLocaleString('zh-TW') ?? '0';
+
+    switch (change.entityType) {
+      case 'grade':
+        if (o.codeRange !== n.codeRange) diffs.push(`代碼 ${o.codeRange} → ${n.codeRange}`);
+        if (o.managementTitle !== undefined && o.managementTitle !== n.managementTitle) {
+          diffs.push(`管理職 ${o.managementTitle || '(空)'} → ${n.managementTitle || '(空)'}`);
+        }
+        if (o.professionalTitle !== undefined && o.professionalTitle !== n.professionalTitle) {
+          diffs.push(`專業職 ${o.professionalTitle || '(空)'} → ${n.professionalTitle || '(空)'}`);
+        }
+        // 薪資級別比較（以位置比對，避免代碼前綴變更時誤判為全部新增/刪除）
+        if (o.salaryLevels && n.salaryLevels) {
+          const salaryDiffs: string[] = [];
+          const maxLen = Math.max(o.salaryLevels.length, n.salaryLevels.length);
+          for (let i = 0; i < maxLen; i++) {
+            const oldSal = o.salaryLevels[i] as { code: string; salary: number } | undefined;
+            const newSal = n.salaryLevels[i] as { code: string; salary: number } | undefined;
+            if (!oldSal && newSal) {
+              salaryDiffs.push(`${newSal.code} 新增 ${fmt(newSal.salary)}`);
+            } else if (oldSal && !newSal) {
+              salaryDiffs.push(`${oldSal.code} 已刪除`);
+            } else if (oldSal && newSal && oldSal.salary !== newSal.salary) {
+              salaryDiffs.push(`${newSal.code} ${fmt(oldSal.salary)} → ${fmt(newSal.salary)}`);
+            }
+          }
+          if (salaryDiffs.length > 0) {
+            diffs.push(`薪資 ${salaryDiffs.join('、')}`);
+          }
+        }
+        break;
+      case 'salary':
+        if (o.code !== n.code) diffs.push(`代碼 ${o.code} → ${n.code}`);
+        if (o.salary !== n.salary) diffs.push(`薪資 ${fmt(o.salary)} → ${fmt(n.salary)}`);
+        break;
+      case 'track':
+        if (o.name !== n.name) diffs.push(`名稱 ${o.name} → ${n.name}`);
+        if (o.maxGrade !== n.maxGrade) diffs.push(`最高職等 ${o.maxGrade} → ${n.maxGrade}`);
+        if (o.color !== n.color) diffs.push(`顏色已變更`);
+        break;
+      case 'track-entry':
+        if (o.title !== n.title) diffs.push(`職稱 ${o.title || '(空)'} → ${n.title || '(空)'}`);
+        if (o.educationRequirement !== n.educationRequirement) diffs.push(`學歷要求已變更`);
+        if (o.responsibilityDescription !== n.responsibilityDescription) diffs.push(`職責描述已變更`);
+        if (o.requiredSkillsAndTraining !== n.requiredSkillsAndTraining) diffs.push(`所需技能與培訓已變更`);
+        break;
+      case 'position':
+        if (o.title !== n.title) diffs.push(`職稱 ${o.title} → ${n.title}`);
+        if (o.department !== n.department) diffs.push(`部門 ${o.department} → ${n.department}`);
+        if (o.track !== n.track) diffs.push(`軌道 ${this.getTrackLabel(o.track)} → ${this.getTrackLabel(n.track)}`);
+        if (o.grade !== n.grade) diffs.push(`職等 ${o.grade} → ${n.grade}`);
+        break;
+      case 'promotion':
+        if (o.performanceThreshold !== n.performanceThreshold) diffs.push(`績效門檻 ${o.performanceThreshold} → ${n.performanceThreshold}`);
+        if (o.track !== n.track) diffs.push(`軌道 ${this.getTrackLabel(o.track)} → ${this.getTrackLabel(n.track)}`);
+        break;
+    }
+    return diffs;
   }
 
   // 取得狀態 CSS class

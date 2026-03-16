@@ -44,15 +44,15 @@ export interface GradeTrackEntity {
 
 // 審核變更回應（CUD 操作返回值）
 export interface ChangeResponse {
-  changeId: string;       // grade_change_history.id
-  status: 'pending' | 'approved' | 'rejected';
+  changeId: string | null;
+  status: 'pending' | 'approved' | 'rejected' | 'no_change';
   message: string;
 }
 
 // 審核變更記錄（歷史查詢用）
 export interface ChangeRecord {
   id: string;
-  entityType: 'track' | 'grade' | 'salary' | 'position' | 'promotion' | 'track-entry';
+  entityType: 'track' | 'grade' | 'salary' | 'position' | 'promotion' | 'track-entry' | 'track-detail';
   entityId: string;
   action: 'create' | 'update' | 'delete';
   oldData: any;           // 變更前的完整 entity JSON snapshot

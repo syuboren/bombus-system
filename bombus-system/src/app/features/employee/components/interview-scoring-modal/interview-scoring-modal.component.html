@@ -11,7 +11,7 @@
       <button class="btn-icon" (click)="toggleReferencePanel()" type="button" title="參考資料">
         <i class="ri-layout-right-line"></i>
       </button>
-      <button class="btn-close" (click)="close.emit()" type="button">
+      <button class="btn-close" (click)="tryClose()" type="button">
         <i class="ri-close-line"></i>
       </button>
     </div>
@@ -289,7 +289,7 @@
       }
     </div>
     <div class="footer-right">
-      <button class="btn btn-secondary" (click)="close.emit()" type="button" [disabled]="loading()">
+      <button class="btn btn-secondary" (click)="tryClose()" type="button" [disabled]="loading()">
         取消
       </button>
       <button class="btn btn-primary" (click)="submit()" type="button" [disabled]="loading() || !isValid()">

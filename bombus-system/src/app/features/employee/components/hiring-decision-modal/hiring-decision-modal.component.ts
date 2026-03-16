@@ -46,6 +46,14 @@ export class HiringDecisionModalComponent {
         };
     });
 
+    tryClose(): void {
+        if (this.loading()) return;
+        if ((this.decision() || this.reason()) && !confirm('您有未儲存的變更，確定要離開嗎？')) return;
+        this.decision.set(null);
+        this.reason.set('');
+        this.close.emit();
+    }
+
     submit() {
         if (!this.decision()) {
             this.notificationService.warning('請選擇決策結果');

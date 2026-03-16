@@ -1272,6 +1272,14 @@ export class CompetencyService {
     );
   }
 
+  /** 軌道明細合併儲存（軌道條目 + 晉升條件 + 職位 → 單一變更記錄） */
+  saveTrackDetail(payload: Record<string, unknown>): Observable<ChangeResponse> {
+    return this.http.post<{ success: boolean; data: ChangeResponse }>(`${this.apiUrl}/grade-matrix/track-detail-save`, payload).pipe(
+      map(res => res.data),
+      catchError(error => { console.error('Error saving track detail:', error); throw error; })
+    );
+  }
+
   /** 新增軌道條目（進入審核流程） */
   createTrackEntry(grade: number, data: Partial<GradeTrackEntry>): Observable<ChangeResponse> {
     return this.http.post<{ success: boolean; data: ChangeResponse }>(`${this.apiUrl}/grade-matrix/grades/${grade}/tracks`, data).pipe(

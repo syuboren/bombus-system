@@ -46,33 +46,26 @@ router.get('/', (req, res) => {
     const salaryParams = [];
 
     if (orgUnitId) {
-      // 子公司薪資 + 集團預設（fallback），非 NULL 優先
-      salaryQuery += ` WHERE (org_unit_id = ? OR org_unit_id IS NULL) ORDER BY grade, org_unit_id DESC, sort_order`;
+      // 嚴格篩選：僅回傳該子公司專屬薪資（不 fallback 到集團預設）
+      salaryQuery += ` WHERE org_unit_id = ? ORDER BY grade, sort_order`;
       salaryParams.push(orgUnitId);
     } else {
-      // W3 修正：未提供 org_unit_id 時，僅回傳集團預設值
+      // 集團預設：僅回傳 org_unit_id IS NULL
       salaryQuery += ` WHERE org_unit_id IS NULL ORDER BY grade, sort_order`;
     }
 
-    let salaryLevels = req.tenantDB.prepare(salaryQuery).all(...salaryParams);
-
-    // 當提供 org_unit_id 時，per-grade dedup：同一 grade 若有子公司記錄則忽略集團預設
-    if (orgUnitId) {
-      const gradeHasSubsidiary = new Set();
-      for (const s of salaryLevels) {
-        if (s.org_unit_id) gradeHasSubsidiary.add(s.grade);
-      }
-      salaryLevels = salaryLevels.filter(s =>
-        s.org_unit_id || !gradeHasSubsidiary.has(s.grade)
-      );
-    }
+    const salaryLevels = req.tenantDB.prepare(salaryQuery).all(...salaryParams);
 
     // 取得所有軌道項目（支援 org_unit_id 篩選）
-    let trackQuery = `SELECT * FROM grade_track_entries WHERE 1=1`;
+    let trackQuery = `SELECT * FROM grade_track_entries WHERE `;
     const trackParams = [];
     if (orgUnitId) {
-      trackQuery += ` AND (org_unit_id = ? OR org_unit_id IS NULL)`;
+      // 嚴格篩選：僅回傳該子公司專屬軌道條目
+      trackQuery += `org_unit_id = ?`;
       trackParams.push(orgUnitId);
+    } else {
+      // 集團預設：僅回傳 org_unit_id IS NULL
+      trackQuery += `(org_unit_id IS NULL OR org_unit_id = '')`;
     }
     trackQuery += ` ORDER BY grade, track`;
     const allTrackEntries = req.tenantDB.prepare(trackQuery).all(...trackParams);
@@ -480,7 +473,12 @@ function createChangeRecord(req, entityType, entityId, action, oldData, newData,
 function upsertSalaryLevels(db, grade, salaryLevels, orgUnitId) {
   if (!salaryLevels || !Array.isArray(salaryLevels)) return;
   const org = orgUnitId || null;
-  db.prepare('DELETE FROM grade_salary_levels WHERE grade = ? AND (org_unit_id IS ? OR org_unit_id = ?)').run(grade, org, org);
+  // 嚴格匹配 org_unit_id：集團預設 (NULL) 與子公司資料分開處理
+  if (org) {
+    db.prepare('DELETE FROM grade_salary_levels WHERE grade = ? AND org_unit_id = ?').run(grade, org);
+  } else {
+    db.prepare('DELETE FROM grade_salary_levels WHERE grade = ? AND (org_unit_id IS NULL OR org_unit_id = \'\')').run(grade);
+  }
   for (let i = 0; i < salaryLevels.length; i++) {
     const sl = salaryLevels[i];
     const slId = `sal-${grade}-${i + 1}-${generateId().substring(0, 8)}`;
@@ -489,17 +487,21 @@ function upsertSalaryLevels(db, grade, salaryLevels, orgUnitId) {
 }
 
 /**
- * 同步更新軌道條目（upsert by grade + track）
+ * 同步更新軌道條目（upsert by grade + track + org_unit_id）
  */
-function upsertTrackEntries(db, grade, trackUpdates) {
+function upsertTrackEntries(db, grade, trackUpdates, orgUnitId) {
+  const org = orgUnitId || null;
   for (const tu of trackUpdates) {
     if (tu.title === undefined) continue;
-    const existing = db.prepare('SELECT id FROM grade_track_entries WHERE grade = ? AND track = ?').get(grade, tu.track);
+    // 嚴格匹配 org_unit_id：集團預設 (NULL) 與子公司資料分開處理
+    const existing = org
+      ? db.prepare('SELECT id FROM grade_track_entries WHERE grade = ? AND track = ? AND org_unit_id = ?').get(grade, tu.track, org)
+      : db.prepare('SELECT id FROM grade_track_entries WHERE grade = ? AND track = ? AND (org_unit_id IS NULL OR org_unit_id = \'\')').get(grade, tu.track);
     if (existing) {
       db.prepare("UPDATE grade_track_entries SET title = ?, education_requirement = ?, responsibility_description = ?, updated_at = datetime('now') WHERE id = ?").run(tu.title || '', tu.education || '', tu.responsibility || '', existing.id);
     } else if (tu.title) {
       const teId = `gte-${generateId()}`;
-      db.prepare('INSERT INTO grade_track_entries (id, grade, track, title, education_requirement, responsibility_description) VALUES (?, ?, ?, ?, ?, ?)').run(teId, grade, tu.track, tu.title, tu.education || '', tu.responsibility || '');
+      db.prepare('INSERT INTO grade_track_entries (id, grade, track, title, education_requirement, responsibility_description, org_unit_id) VALUES (?, ?, ?, ?, ?, ?, ?)').run(teId, grade, tu.track, tu.title, tu.education || '', tu.responsibility || '', org);
     }
   }
 }
@@ -654,8 +656,10 @@ router.get('/grades/:grade/tracks', (req, res) => {
     const params = [gradeNum];
 
     if (org_unit_id) {
-      query += ` AND (org_unit_id = ? OR org_unit_id IS NULL)`;
+      query += ` AND org_unit_id = ?`;
       params.push(org_unit_id);
+    } else {
+      query += ` AND (org_unit_id IS NULL OR org_unit_id = '')`;
     }
 
     query += ` ORDER BY track`;
@@ -780,27 +784,28 @@ router.post('/grades', (req, res) => {
     }
 
     const entityId = `grade-${grade}`;
+    const org = orgUnitId || null;
     const trackEntries = [];
     if (managementTitle) {
-      trackEntries.push({ id: entityId + '-mgmt', grade, track: 'management', title: managementTitle, educationRequirement: managementEducation || '', responsibilityDescription: managementResponsibility || '' });
+      trackEntries.push({ id: entityId + '-mgmt', grade, track: 'management', title: managementTitle, educationRequirement: managementEducation || '', responsibilityDescription: managementResponsibility || '', org_unit_id: org });
     }
     if (professionalTitle) {
-      trackEntries.push({ id: entityId + '-prof', grade, track: 'professional', title: professionalTitle, educationRequirement: professionalEducation || '', responsibilityDescription: professionalResponsibility || '' });
+      trackEntries.push({ id: entityId + '-prof', grade, track: 'professional', title: professionalTitle, educationRequirement: professionalEducation || '', responsibilityDescription: professionalResponsibility || '', org_unit_id: org });
     }
 
     const newData = {
       id: entityId,
       grade,
       codeRange,
-      titleManagement: managementTitle || '',
-      titleProfessional: professionalTitle || '',
-      trackEntries
+      trackEntries,
+      salaryLevels: salaryLevels ? salaryLevels.map(s => ({ ...s })) : [],
+      orgUnitId: org
     };
 
     const { changeId, status } = createChangeRecord(req, 'grade', entityId, 'create', null, newData, changedBy || 'system');
-    upsertSalaryLevels(req.tenantDB, grade, salaryLevels, orgUnitId);
+    // 資料不立即寫入 — 等待審核通過後由 applyCreate() 套用
 
-    res.status(201).json({ success: true, data: { changeId, status, message: '職等已新增' } });
+    res.status(201).json({ success: true, data: { changeId, status, message: '新增申請已送出，等待審核' } });
   } catch (error) {
     console.error('Error creating grade:', error);
     res.status(500).json({ success: false, error: { code: 'INTERNAL_ERROR', message: error.message } });
@@ -821,17 +826,50 @@ router.put('/grades/:grade', (req, res) => {
       return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: '找不到此職等' } });
     }
 
-    const oldData = { id: existing.id, grade: existing.grade, codeRange: existing.code_range, titleManagement: existing.title_management, titleProfessional: existing.title_professional };
-    const newData = { ...oldData, codeRange: codeRange || existing.code_range, titleManagement: managementTitle !== undefined ? managementTitle : existing.title_management, titleProfessional: professionalTitle !== undefined ? professionalTitle : existing.title_professional };
+    // 查詢既有薪資與軌道資料作為變更前快照
+    const org = orgUnitId || null;
+    const oldSalaries = org
+      ? req.tenantDB.prepare('SELECT code, salary FROM grade_salary_levels WHERE grade = ? AND org_unit_id = ? ORDER BY sort_order').all(gradeNum, org)
+      : req.tenantDB.prepare('SELECT code, salary FROM grade_salary_levels WHERE grade = ? AND (org_unit_id IS NULL OR org_unit_id = \'\') ORDER BY sort_order').all(gradeNum);
+    const oldTracks = org
+      ? req.tenantDB.prepare('SELECT track, title, education_requirement, responsibility_description FROM grade_track_entries WHERE grade = ? AND org_unit_id = ?').all(gradeNum, org)
+      : req.tenantDB.prepare('SELECT track, title, education_requirement, responsibility_description FROM grade_track_entries WHERE grade = ? AND (org_unit_id IS NULL OR org_unit_id = \'\')').all(gradeNum);
+
+    const oldMgmt = oldTracks.find(t => t.track === 'management');
+    const oldProf = oldTracks.find(t => t.track === 'professional');
+
+    const oldData = {
+      id: existing.id, grade: existing.grade, codeRange: existing.code_range,
+      salaryLevels: oldSalaries.map(s => ({ code: s.code, salary: s.salary })),
+      managementTitle: oldMgmt?.title || '',
+      professionalTitle: oldProf?.title || '',
+      managementEducation: oldMgmt?.education_requirement || '',
+      managementResponsibility: oldMgmt?.responsibility_description || '',
+      professionalEducation: oldProf?.education_requirement || '',
+      professionalResponsibility: oldProf?.responsibility_description || '',
+      orgUnitId: org
+    };
+    const newData = {
+      ...oldData,
+      codeRange: codeRange || existing.code_range,
+      salaryLevels: salaryLevels ? salaryLevels.map(s => ({ code: s.code, salary: s.salary })) : oldData.salaryLevels,
+      managementTitle: managementTitle !== undefined ? (managementTitle || '') : oldData.managementTitle,
+      professionalTitle: professionalTitle !== undefined ? (professionalTitle || '') : oldData.professionalTitle,
+      managementEducation: managementEducation !== undefined ? (managementEducation || '') : oldData.managementEducation,
+      managementResponsibility: managementResponsibility !== undefined ? (managementResponsibility || '') : oldData.managementResponsibility,
+      professionalEducation: professionalEducation !== undefined ? (professionalEducation || '') : oldData.professionalEducation,
+      professionalResponsibility: professionalResponsibility !== undefined ? (professionalResponsibility || '') : oldData.professionalResponsibility
+    };
+
+    // 無實際變更時不建立審核記錄
+    if (JSON.stringify(oldData) === JSON.stringify(newData)) {
+      return res.json({ success: true, data: { changeId: null, status: 'no_change', message: '無任何變更' } });
+    }
 
     const { changeId, status } = createChangeRecord(req, 'grade', existing.id, 'update', oldData, newData, changedBy || 'system');
-    upsertSalaryLevels(req.tenantDB, gradeNum, salaryLevels, orgUnitId);
-    upsertTrackEntries(req.tenantDB, gradeNum, [
-      { track: 'management', title: managementTitle, education: managementEducation, responsibility: managementResponsibility },
-      { track: 'professional', title: professionalTitle, education: professionalEducation, responsibility: professionalResponsibility }
-    ]);
+    // 資料不立即寫入 — 等待審核通過後由 applyUpdate() 套用
 
-    res.json({ success: true, data: { changeId, status, message: '職等已更新' } });
+    res.json({ success: true, data: { changeId, status, message: '變更已送出，等待審核' } });
   } catch (error) {
     console.error('Error updating grade:', error);
     res.status(500).json({ success: false, error: { code: 'INTERNAL_ERROR', message: error.message } });
@@ -971,6 +1009,156 @@ router.delete('/salaries/:id', (req, res) => {
     res.json({ success: true, data: { changeId, status, message: '薪資刪除申請已送出，等待審核' } });
   } catch (error) {
     console.error('Error deleting salary level:', error);
+    res.status(500).json({ success: false, error: { code: 'INTERNAL_ERROR', message: error.message } });
+  }
+});
+
+// =====================================================
+// 軌道明細合併儲存 API（軌道條目 + 晉升條件 + 職位 → 單一變更記錄）
+// =====================================================
+
+/**
+ * POST /api/grade-matrix/track-detail-save
+ * 將軌道條目、晉升條件、職位新增/刪除合併為單一變更記錄
+ */
+router.post('/track-detail-save', (req, res) => {
+  try {
+    const { grade, track, orgUnitId, trackEntry, promotion, positionAdds, positionDeletes, changedBy } = req.body;
+
+    if (!grade || !track) {
+      return res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'grade 和 track 為必填' } });
+    }
+    if (!trackEntry) {
+      return res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'trackEntry 為必填' } });
+    }
+
+    const org = orgUnitId || null;
+    const gradeNum = parseInt(grade);
+
+    // --- 建立 oldData 快照 ---
+    // 軌道條目：優先以前端傳入的 ID 查找（避免 org_unit_id 不一致找不到）
+    let oldTrackEntryRow = null;
+    if (trackEntry.id) {
+      oldTrackEntryRow = req.tenantDB.prepare('SELECT * FROM grade_track_entries WHERE id = ?').get(trackEntry.id);
+    }
+    if (!oldTrackEntryRow) {
+      oldTrackEntryRow = org
+        ? req.tenantDB.prepare('SELECT * FROM grade_track_entries WHERE grade = ? AND track = ? AND org_unit_id = ?').get(gradeNum, track, org)
+        : req.tenantDB.prepare('SELECT * FROM grade_track_entries WHERE grade = ? AND track = ? AND (org_unit_id IS NULL OR org_unit_id = \'\')').get(gradeNum, track);
+    }
+    const oldTrackEntry = oldTrackEntryRow ? snapshotTrackEntry(oldTrackEntryRow) : null;
+
+    // 晉升條件：優先以前端傳入的 ID 查找
+    let oldPromotion = null;
+    if (promotion) {
+      let oldPromoRow = null;
+      if (promotion.id) {
+        oldPromoRow = req.tenantDB.prepare('SELECT * FROM promotion_criteria WHERE id = ?').get(promotion.id);
+      }
+      if (!oldPromoRow) {
+        oldPromoRow = org
+          ? req.tenantDB.prepare('SELECT * FROM promotion_criteria WHERE from_grade = ? AND track = ? AND org_unit_id = ?').get(gradeNum, track, org)
+          : req.tenantDB.prepare('SELECT * FROM promotion_criteria WHERE from_grade = ? AND track = ? AND (org_unit_id IS NULL OR org_unit_id = \'\')').get(gradeNum, track);
+      }
+      if (oldPromoRow) {
+        oldPromotion = {
+          id: oldPromoRow.id,
+          fromGrade: oldPromoRow.from_grade,
+          toGrade: oldPromoRow.to_grade,
+          track: oldPromoRow.track,
+          performanceThreshold: oldPromoRow.performance_threshold,
+          promotionProcedure: oldPromoRow.promotion_procedure,
+          requiredSkills: JSON.parse(oldPromoRow.required_skills || '[]'),
+          requiredCourses: JSON.parse(oldPromoRow.required_courses || '[]'),
+          kpiFocus: JSON.parse(oldPromoRow.kpi_focus || '[]'),
+          additionalCriteria: JSON.parse(oldPromoRow.additional_criteria || '[]')
+        };
+      }
+    }
+
+    // 現有職位
+    const existingPositions = org
+      ? req.tenantDB.prepare('SELECT id, department, title FROM department_positions WHERE grade = ? AND track = ? AND org_unit_id = ?').all(gradeNum, track, org)
+      : req.tenantDB.prepare('SELECT id, department, title FROM department_positions WHERE grade = ? AND track = ? AND (org_unit_id IS NULL OR org_unit_id = \'\')').all(gradeNum, track);
+
+    const oldData = {
+      grade: gradeNum,
+      track,
+      orgUnitId: org,
+      trackEntry: oldTrackEntry,
+      promotion: oldPromotion,
+      positions: existingPositions.map(p => ({ id: p.id, department: p.department, title: p.title }))
+    };
+
+    // --- 建立 newData ---
+    const trackEntryId = trackEntry.id || oldTrackEntry?.id || `gte-${generateId()}`;
+    const newTrackEntry = {
+      id: trackEntryId,
+      title: trackEntry.title,
+      educationRequirement: trackEntry.educationRequirement || '',
+      responsibilityDescription: trackEntry.responsibilityDescription || '',
+      requiredSkillsAndTraining: trackEntry.requiredSkillsAndTraining || ''
+    };
+
+    let newPromotion = null;
+    if (promotion) {
+      const promoId = promotion.id || oldPromotion?.id || `promo-${generateId()}`;
+      newPromotion = {
+        id: promoId,
+        fromGrade: promotion.fromGrade,
+        toGrade: promotion.toGrade,
+        track: promotion.track || track,
+        performanceThreshold: promotion.performanceThreshold || 'A',
+        promotionProcedure: promotion.promotionProcedure || '',
+        requiredSkills: promotion.requiredSkills || [],
+        requiredCourses: promotion.requiredCourses || [],
+        kpiFocus: promotion.kpiFocus || [],
+        additionalCriteria: promotion.additionalCriteria || []
+      };
+    }
+
+    // 為每個新增職位產生 ID
+    const newPositionAdds = (positionAdds || []).map(p => ({
+      id: `pos-${generateId()}`,
+      department: p.department,
+      title: p.title
+    }));
+
+    const newData = {
+      grade: gradeNum,
+      track,
+      orgUnitId: org,
+      trackEntry: newTrackEntry,
+      promotion: newPromotion,
+      positionAdds: newPositionAdds,
+      positionDeletes: positionDeletes || []
+    };
+
+    // --- 檢查是否有實際變更 ---
+    const hasTrackChange = JSON.stringify(oldTrackEntry ? {
+      title: oldTrackEntry.title,
+      educationRequirement: oldTrackEntry.educationRequirement,
+      responsibilityDescription: oldTrackEntry.responsibilityDescription,
+      requiredSkillsAndTraining: oldTrackEntry.requiredSkillsAndTraining
+    } : null) !== JSON.stringify({
+      title: newTrackEntry.title,
+      educationRequirement: newTrackEntry.educationRequirement,
+      responsibilityDescription: newTrackEntry.responsibilityDescription,
+      requiredSkillsAndTraining: newTrackEntry.requiredSkillsAndTraining
+    });
+    const hasPromoChange = promotion && (JSON.stringify(oldPromotion) !== JSON.stringify(newPromotion));
+    const hasPositionChange = newPositionAdds.length > 0 || (positionDeletes && positionDeletes.length > 0);
+
+    if (!hasTrackChange && !hasPromoChange && !hasPositionChange) {
+      return res.json({ success: true, data: { status: 'no_change', message: '未偵測到任何變更' } });
+    }
+
+    const action = oldTrackEntry ? 'update' : 'create';
+    const { changeId, status } = createChangeRecord(req, 'track-detail', trackEntryId, action, oldData, newData, changedBy || 'system');
+
+    res.json({ success: true, data: { changeId, status, message: '變更已送出，等待審核' } });
+  } catch (error) {
+    console.error('Error saving track detail:', error);
     res.status(500).json({ success: false, error: { code: 'INTERNAL_ERROR', message: error.message } });
   }
 });
@@ -1305,12 +1493,16 @@ function applyCreate(req, entityType, data) {
       req.tenantDB.prepare(`INSERT INTO grade_tracks (id, code, name, icon, color, max_grade, sort_order, is_active, org_unit_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(data.id, data.code, data.name, data.icon, data.color, data.maxGrade, data.sortOrder, data.isActive ? 1 : 0, data.org_unit_id || null);
       break;
     case 'grade':
-      req.tenantDB.prepare(`INSERT INTO grade_levels (id, grade, code_range, title_management, title_professional, education_requirement, responsibility_description) VALUES (?, ?, ?, ?, ?, ?, ?)`).run(data.id, data.grade, data.codeRange, data.titleManagement || '', data.titleProfessional || '', data.educationRequirement || '', data.responsibilityDescription || '');
-      // 自動建立 track entries（如果 newData 含 trackEntries）
+      req.tenantDB.prepare(`INSERT INTO grade_levels (id, grade, code_range) VALUES (?, ?, ?)`).run(data.id, data.grade, data.codeRange);
+      // 軌道職稱統一寫入 grade_track_entries（單一真理來源）
       if (data.trackEntries && Array.isArray(data.trackEntries)) {
         for (const te of data.trackEntries) {
           req.tenantDB.prepare(`INSERT OR IGNORE INTO grade_track_entries (id, grade, track, title, education_requirement, responsibility_description, required_skills_and_training, org_unit_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(te.id, te.grade, te.track, te.title, te.educationRequirement || '', te.responsibilityDescription || '', te.requiredSkillsAndTraining || '', te.org_unit_id || null);
         }
+      }
+      // 套用薪資級距
+      if (data.salaryLevels && data.salaryLevels.length > 0) {
+        upsertSalaryLevels(req.tenantDB, data.grade, data.salaryLevels, data.orgUnitId || null);
       }
       break;
     case 'track-entry':
@@ -1328,6 +1520,52 @@ function applyCreate(req, entityType, data) {
     case 'career':
       req.tenantDB.prepare(`INSERT INTO career_paths (id, from_grade, to_grade, track, required_experience, required_certifications, org_unit_id) VALUES (?, ?, ?, ?, ?, ?, ?)`).run(data.id, data.fromGrade, data.toGrade, data.track, data.requiredExperience || '', data.requiredCertifications || '', data.org_unit_id || null);
       break;
+    case 'track-detail':
+      applyTrackDetailChange(req, data);
+      break;
+  }
+}
+
+/**
+ * 套用軌道明細合併變更（軌道條目 + 晉升條件 + 職位）
+ */
+function applyTrackDetailChange(req, data) {
+  const org = data.orgUnitId || null;
+
+  // 1. 軌道條目（UPDATE 時保留原有 org_unit_id，避免 org 篩選不一致導致資料消失）
+  if (data.trackEntry) {
+    const te = data.trackEntry;
+    const existing = req.tenantDB.prepare('SELECT id FROM grade_track_entries WHERE id = ?').get(te.id);
+    if (existing) {
+      req.tenantDB.prepare(`UPDATE grade_track_entries SET title = ?, education_requirement = ?, responsibility_description = ?, required_skills_and_training = ?, updated_at = datetime('now') WHERE id = ?`).run(te.title, te.educationRequirement || '', te.responsibilityDescription || '', te.requiredSkillsAndTraining || '', te.id);
+    } else {
+      req.tenantDB.prepare(`INSERT INTO grade_track_entries (id, grade, track, title, education_requirement, responsibility_description, required_skills_and_training, org_unit_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(te.id, data.grade, data.track, te.title, te.educationRequirement || '', te.responsibilityDescription || '', te.requiredSkillsAndTraining || '', org);
+    }
+  }
+
+  // 2. 晉升條件（UPDATE 時保留原有 org_unit_id）
+  if (data.promotion && data.promotion.id) {
+    const promo = data.promotion;
+    const existing = req.tenantDB.prepare('SELECT id FROM promotion_criteria WHERE id = ?').get(promo.id);
+    if (existing) {
+      req.tenantDB.prepare(`UPDATE promotion_criteria SET from_grade = ?, to_grade = ?, track = ?, required_skills = ?, required_courses = ?, performance_threshold = ?, kpi_focus = ?, additional_criteria = ?, promotion_procedure = ? WHERE id = ?`).run(promo.fromGrade, promo.toGrade, promo.track, JSON.stringify(promo.requiredSkills), JSON.stringify(promo.requiredCourses), promo.performanceThreshold, JSON.stringify(promo.kpiFocus), JSON.stringify(promo.additionalCriteria), promo.promotionProcedure, promo.id);
+    } else {
+      req.tenantDB.prepare(`INSERT INTO promotion_criteria (id, from_grade, to_grade, track, required_skills, required_courses, performance_threshold, kpi_focus, additional_criteria, promotion_procedure, org_unit_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(promo.id, promo.fromGrade, promo.toGrade, promo.track, JSON.stringify(promo.requiredSkills), JSON.stringify(promo.requiredCourses), promo.performanceThreshold, JSON.stringify(promo.kpiFocus), JSON.stringify(promo.additionalCriteria), promo.promotionProcedure, org);
+    }
+  }
+
+  // 3. 職位新增
+  if (data.positionAdds && data.positionAdds.length > 0) {
+    for (const pos of data.positionAdds) {
+      req.tenantDB.prepare(`INSERT INTO department_positions (id, department, grade, title, track, org_unit_id) VALUES (?, ?, ?, ?, ?, ?)`).run(pos.id, pos.department, data.grade, pos.title, data.track, org);
+    }
+  }
+
+  // 4. 職位刪除
+  if (data.positionDeletes && data.positionDeletes.length > 0) {
+    for (const id of data.positionDeletes) {
+      req.tenantDB.prepare(`DELETE FROM department_positions WHERE id = ?`).run(id);
+    }
   }
 }
 
@@ -1340,7 +1578,22 @@ function applyUpdate(req, entityType, entityId, data) {
       req.tenantDB.prepare(`UPDATE grade_tracks SET code = ?, name = ?, icon = ?, color = ?, max_grade = ?, sort_order = ?, is_active = ?, org_unit_id = ? WHERE id = ?`).run(data.code, data.name, data.icon, data.color, data.maxGrade, data.sortOrder, data.isActive ? 1 : 0, data.org_unit_id || null, entityId);
       break;
     case 'grade':
-      req.tenantDB.prepare(`UPDATE grade_levels SET code_range = ?, title_management = ?, title_professional = ?, education_requirement = ?, responsibility_description = ? WHERE id = ?`).run(data.codeRange, data.titleManagement || '', data.titleProfessional || '', data.educationRequirement || '', data.responsibilityDescription || '', entityId);
+      req.tenantDB.prepare(`UPDATE grade_levels SET code_range = ? WHERE id = ?`).run(data.codeRange, entityId);
+      // 套用薪資級距
+      if (data.salaryLevels) {
+        upsertSalaryLevels(req.tenantDB, data.grade, data.salaryLevels, data.orgUnitId || null);
+      }
+      // 套用軌道資訊
+      const gradeTrackUpdates = [];
+      if (data.managementTitle !== undefined) {
+        gradeTrackUpdates.push({ track: 'management', title: data.managementTitle, education: data.managementEducation || '', responsibility: data.managementResponsibility || '' });
+      }
+      if (data.professionalTitle !== undefined) {
+        gradeTrackUpdates.push({ track: 'professional', title: data.professionalTitle, education: data.professionalEducation || '', responsibility: data.professionalResponsibility || '' });
+      }
+      if (gradeTrackUpdates.length > 0) {
+        upsertTrackEntries(req.tenantDB, data.grade, gradeTrackUpdates, data.orgUnitId || null);
+      }
       break;
     case 'track-entry':
       req.tenantDB.prepare(`UPDATE grade_track_entries SET title = ?, education_requirement = ?, responsibility_description = ?, required_skills_and_training = ?, org_unit_id = ?, updated_at = datetime('now') WHERE id = ?`).run(data.title, data.educationRequirement || '', data.responsibilityDescription || '', data.requiredSkillsAndTraining || '', data.org_unit_id || null, entityId);
@@ -1356,6 +1609,9 @@ function applyUpdate(req, entityType, entityId, data) {
       break;
     case 'career':
       req.tenantDB.prepare(`UPDATE career_paths SET from_grade = ?, to_grade = ?, track = ?, required_experience = ?, required_certifications = ?, org_unit_id = ? WHERE id = ?`).run(data.fromGrade, data.toGrade, data.track, data.requiredExperience || '', data.requiredCertifications || '', data.org_unit_id || null, entityId);
+      break;
+    case 'track-detail':
+      applyTrackDetailChange(req, data);
       break;
   }
 }

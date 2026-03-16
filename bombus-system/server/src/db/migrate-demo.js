@@ -873,6 +873,9 @@ async function migrateDemoData() {
     }
   });
 
+  // 儲存 platform.db（確保租戶註冊、方案、管理員、審計日誌寫入磁碟）
+  platformDB.save();
+
   // 11. 關閉 source DB
   sourceDB.close();
 

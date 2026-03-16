@@ -121,6 +121,7 @@ export class InterviewScoringModalComponent {
   // State: 追蹤上一次的 visible 狀態，用於偵測開啟事件
   // ============================================================
   private previousVisible = false;
+  private _initialSnapshot = '';
 
   // ============================================================
   // Constructor: 初始化 Effect 載入已儲存的評分資料
@@ -144,6 +145,7 @@ export class InterviewScoringModalComponent {
           console.log('No existing evaluation for candidate:', candidate.id, ', resetting form');
           this.resetForm();
         }
+        this._initialSnapshot = this._captureSnapshot();
       }
     }, { allowSignalWrites: true });
   }
@@ -361,6 +363,31 @@ export class InterviewScoringModalComponent {
   getAssessmentOther(code: string): string {
     const assessment = this.comprehensiveAssessment() as unknown as Record<string, string>;
     return assessment[`${code}_other`] || '';
+  }
+
+  // ============================================================
+  // Methods: Dirty Check
+  // ============================================================
+  private _captureSnapshot(): string {
+    return JSON.stringify({
+      scoringItems: this.scoringItems(),
+      processChecklist: this.processChecklist(),
+      comprehensiveAssessment: this.comprehensiveAssessment(),
+      prosComment: this.prosComment(),
+      consComment: this.consComment(),
+      recommendation: this.recommendation(),
+      remark: this.remark()
+    });
+  }
+
+  private hasUnsavedChanges(): boolean {
+    return this._initialSnapshot !== '' && this._captureSnapshot() !== this._initialSnapshot;
+  }
+
+  tryClose(): void {
+    if (this.loading()) return;
+    if (this.hasUnsavedChanges() && !confirm('您有未儲存的變更，確定要離開嗎？')) return;
+    this.close.emit();
   }
 
   // ============================================================

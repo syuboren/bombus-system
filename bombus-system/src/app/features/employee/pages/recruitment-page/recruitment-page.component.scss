@@ -99,6 +99,9 @@
 }
 
 .search-section {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
   padding: $spacing-md $spacing-lg;
   border-bottom: 1px solid $color-soft-gray;
 }

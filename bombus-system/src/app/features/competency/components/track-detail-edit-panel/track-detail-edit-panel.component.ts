@@ -1,7 +1,6 @@
 import { Component, ChangeDetectionStrategy, input, output, signal, inject, effect, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { switchMap, of } from 'rxjs';
 import { GradeTrackEntry, PromotionCriteria } from '../../models/competency.model';
 import { CompetencyService } from '../../services/competency.service';
 import { NotificationService } from '../../../../core/services/notification.service';
@@ -90,12 +89,27 @@ export class TrackDetailEditPanelComponent {
   // 職位新增表單
   newPositionDept = signal('');
   newPositionTitle = signal('');
-  savingPosition = signal(false);
 
-  // 按部門分組的職位
+  // 職位本地暫存（不立即送 API，按儲存時一起送出）
+  private _pendingIdCounter = 0;
+  pendingNewPositions = signal<{ id: string; department: string; title: string }[]>([]);
+  pendingDeleteIds = signal<string[]>([]);
+
+  // 按部門分組的職位（合併既有 + 本地新增 - 本地刪除）
   positionsByDept = computed(() => {
+    const deleteIds = this.pendingDeleteIds();
+    const existingFiltered = this.positions().filter(p => !deleteIds.includes(p.id));
+    const pending = this.pendingNewPositions().map(p => ({
+      id: p.id,
+      department: p.department,
+      grade: this.gradeNumber(),
+      title: p.title,
+      track: this.trackCode()
+    }));
+    const all = [...existingFiltered, ...pending];
+
     const grouped: Record<string, DepartmentPosition[]> = {};
-    for (const pos of this.positions()) {
+    for (const pos of all) {
       if (!grouped[pos.department]) grouped[pos.department] = [];
       grouped[pos.department].push(pos);
     }
@@ -154,13 +168,19 @@ export class TrackDetailEditPanelComponent {
 
     // 清空 chip 輸入
     this.chipInput.set({ skills: '', courses: '', kpi: '', criteria: '' });
+
+    // 清空職位暫存
+    this.pendingNewPositions.set([]);
+    this.pendingDeleteIds.set([]);
+    this.newPositionDept.set('');
+    this.newPositionTitle.set('');
   }
 
   onClose(): void {
-    if (!this.saving()) {
-      this.error.set(null);
-      this.closed.emit();
-    }
+    if (this.saving()) return;
+    if ((this.isTrackDirty() || this.isPromotionDirty() || this.hasPositionChanges()) && !confirm('您有未儲存的變更，確定要離開嗎？')) return;
+    this.error.set(null);
+    this.closed.emit();
   }
 
   // --- 軌道欄位更新 ---
@@ -210,12 +230,11 @@ export class TrackDetailEditPanelComponent {
     this.chipInput.update(prev => ({ ...prev, [field]: value }));
   }
 
-  // --- Dirty check：比對表單值與原始輸入 ---
+  // --- Dirty check：比對表單值與原始輸入（title 唯讀，不列入比對）---
   private isTrackDirty(): boolean {
     const entry = this.trackEntry();
     const form = this.formTrack();
     return (
-      form.title !== (entry?.title || '') ||
       form.educationRequirement !== (entry?.educationRequirement || '') ||
       form.responsibilityDescription !== (entry?.responsibilityDescription || '') ||
       form.requiredSkillsAndTraining !== (entry?.requiredSkillsAndTraining || '')
@@ -248,83 +267,72 @@ export class TrackDetailEditPanelComponent {
     );
   }
 
-  // --- 合併儲存 ---
+  // --- 合併儲存（軌道條目 + 晉升條件 + 職位 → 單一變更記錄）---
   onSave(): void {
     const trackData = this.formTrack();
-
-    // 驗證職務級別必填
-    if (!trackData.title.trim()) {
-      this.error.set('職務級別為必填欄位');
-      return;
-    }
+    const entry = this.trackEntry();
 
     const trackDirty = this.isTrackDirty();
     const promoDirty = this.isPromotionDirty();
+    const positionDirty = this.hasPositionChanges();
 
     // 沒有任何變更 → 直接關閉
-    if (!trackDirty && !promoDirty) {
-      this.onClose();
+    if (!trackDirty && !promoDirty && !positionDirty) {
+      this.error.set(null);
+      this.closed.emit();
       return;
     }
 
     this.saving.set(true);
     this.error.set(null);
 
-    const entry = this.trackEntry();
-    const grade = this.gradeNumber();
-    const orgUnit = this.orgUnitId() || null;
+    const promoData = this.formPromotion();
 
-    // 步驟 1: 儲存軌道條目（僅在有變更時）
-    let trackSave$ = of(null as unknown);
-    if (trackDirty) {
-      const trackPayload: Record<string, unknown> = {
-        title: trackData.title,
+    // 組合 payload — 後端會建立單一筆變更記錄
+    // title 唯讀，直接帶入原始值（由「編輯職等」管理）
+    const payload: Record<string, unknown> = {
+      grade: this.gradeNumber(),
+      track: this.trackCode(),
+      orgUnitId: this.orgUnitId() || null,
+      trackEntry: {
+        id: entry?.id || null,
+        title: entry?.title || '',
         educationRequirement: trackData.educationRequirement,
         responsibilityDescription: trackData.responsibilityDescription,
-        requiredSkillsAndTraining: trackData.requiredSkillsAndTraining,
-        org_unit_id: orgUnit
-      };
+        requiredSkillsAndTraining: trackData.requiredSkillsAndTraining
+      },
+      promotion: this.isHighestGrade() ? null : {
+        id: this.promotionCriteria()?.id || null,
+        fromGrade: promoData.fromGrade,
+        toGrade: promoData.toGrade,
+        track: promoData.track,
+        performanceThreshold: promoData.performanceThreshold,
+        promotionProcedure: promoData.promotionProcedure,
+        requiredSkills: promoData.requiredSkills,
+        requiredCourses: promoData.requiredCourses,
+        kpiFocus: promoData.kpiFocus,
+        additionalCriteria: promoData.additionalCriteria
+      },
+      positionAdds: this.pendingNewPositions().map(p => ({
+        department: p.department,
+        title: p.title
+      })),
+      positionDeletes: this.pendingDeleteIds()
+    };
 
-      trackSave$ = entry?.id
-        ? this.competencyService.updateTrackEntry(entry.id, trackPayload as Partial<GradeTrackEntry>)
-        : this.competencyService.createTrackEntry(grade, {
-            ...trackPayload,
-            track: this.trackCode()
-          } as Partial<GradeTrackEntry>);
-    }
-
-    // 步驟 2: 串聯儲存晉升條件（僅在有變更時）
-    trackSave$.pipe(
-      switchMap(() => {
-        if (!promoDirty) return of(null);
-        if (this.isHighestGrade()) return of(null);
-        if (!this.hasExistingPromotion() && !this.hasPromotionContent()) return of(null);
-
-        const promoData = this.formPromotion();
-        const promoPayload: Record<string, unknown> = {
-          fromGrade: promoData.fromGrade,
-          toGrade: promoData.toGrade,
-          track: promoData.track,
-          performanceThreshold: promoData.performanceThreshold,
-          promotionProcedure: promoData.promotionProcedure,
-          requiredSkills: promoData.requiredSkills,
-          requiredCourses: promoData.requiredCourses,
-          kpiFocus: promoData.kpiFocus,
-          additionalCriteria: promoData.additionalCriteria,
-          org_unit_id: orgUnit
-        };
-
-        const existingPromo = this.promotionCriteria();
-        return existingPromo?.id
-          ? this.competencyService.updatePromotionCriteria(existingPromo.id, promoPayload as Partial<PromotionCriteria>)
-          : this.competencyService.createPromotionCriteria(promoPayload as Partial<PromotionCriteria>);
-      })
-    ).subscribe({
-      next: () => {
+    this.competencyService.saveTrackDetail(payload).subscribe({
+      next: (resp) => {
         this.saving.set(false);
+        if (resp.status === 'no_change') {
+          this.notificationService.info('未偵測到任何變更');
+          return;
+        }
         this.notificationService.info('變更已送出，等待審核');
         this.saved.emit();
-        this.onClose();
+        this.positionSaved.emit();
+        // 直接關閉，跳過 dirty check（資料已送出審核）
+        this.error.set(null);
+        this.closed.emit();
       },
       error: (err) => {
         this.saving.set(false);
@@ -334,48 +342,27 @@ export class TrackDetailEditPanelComponent {
     });
   }
 
-  // --- 職位管理 ---
+  // --- 職位管理（本地暫存，儲存時一起送出）---
   addPosition(): void {
     const dept = this.newPositionDept();
     const title = this.newPositionTitle().trim();
     if (!dept || !title) return;
 
-    this.savingPosition.set(true);
-    const payload = {
-      department: dept,
-      grade: this.gradeNumber(),
-      track: this.trackCode(),
-      title,
-      org_unit_id: this.orgUnitId() || null
-    };
-
-    this.competencyService.createPosition(payload).subscribe({
-      next: () => {
-        this.savingPosition.set(false);
-        this.newPositionDept.set('');
-        this.newPositionTitle.set('');
-        this.notificationService.info('變更已送出，等待審核');
-        this.positionSaved.emit();
-      },
-      error: (err) => {
-        this.savingPosition.set(false);
-        this.error.set(err?.error?.error?.message || '新增職位失敗');
-      }
-    });
+    const id = `pending-${this._pendingIdCounter++}`;
+    this.pendingNewPositions.update(prev => [...prev, { id, department: dept, title }]);
+    this.newPositionDept.set('');
+    this.newPositionTitle.set('');
   }
 
   deletePosition(id: string): void {
-    this.savingPosition.set(true);
-    this.competencyService.deletePosition(id).subscribe({
-      next: () => {
-        this.savingPosition.set(false);
-        this.notificationService.info('變更已送出，等待審核');
-        this.positionSaved.emit();
-      },
-      error: (err) => {
-        this.savingPosition.set(false);
-        this.error.set(err?.error?.error?.message || '刪除職位失敗');
-      }
-    });
+    if (id.startsWith('pending-')) {
+      this.pendingNewPositions.update(prev => prev.filter(p => p.id !== id));
+    } else {
+      this.pendingDeleteIds.update(prev => [...prev, id]);
+    }
+  }
+
+  private hasPositionChanges(): boolean {
+    return this.pendingNewPositions().length > 0 || this.pendingDeleteIds().length > 0;
   }
 }

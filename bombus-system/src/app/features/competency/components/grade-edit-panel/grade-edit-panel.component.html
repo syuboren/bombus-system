@@ -1,8 +1,14 @@
-<div class="panel-overlay" [class.visible]="visible()" (click)="onClose()">
-  <div class="edit-panel" [class.open]="visible()" (click)="$event.stopPropagation()">
+<div class="panel-overlay" [class.visible]="visible()">
+  <div class="edit-panel" [class.open]="visible()">
     <!-- Header -->
     <div class="panel-header">
-      <h2 class="panel-title">{{ isEditMode() ? '編輯職等' : '新增職等' }}</h2>
+      <div class="panel-title-group">
+        <h2 class="panel-title">{{ isEditMode() ? '編輯職等' : '新增職等' }}</h2>
+        <span class="org-badge" [class.is-subsidiary]="orgUnitId()">
+          <i class="ri-building-line"></i>
+          {{ currentOrgName() }}
+        </span>
+      </div>
       <button class="close-btn" (click)="onClose()" [disabled]="saving()" type="button">
         <i class="ri-close-line"></i>
       </button>
@@ -73,10 +79,10 @@
       <section class="form-section">
         <h3 class="section-title">
           <i class="ri-git-branch-line"></i>
-          軌道職稱
+          軌道職務級別
         </h3>
         <div class="form-group">
-          <label class="form-label">管理職職稱</label>
+          <label class="form-label">管理職職務級別</label>
           @if (isTrackDisabled('management')) {
           <input type="text" class="form-input" [value]="formManagement().title"
             placeholder="此職等不適用管理職" disabled />
@@ -87,7 +93,7 @@
           }
         </div>
         <div class="form-group">
-          <label class="form-label">專業職職稱</label>
+          <label class="form-label">專業職職務級別</label>
           @if (isTrackDisabled('professional')) {
           <input type="text" class="form-input" [value]="formProfessional().title"
             placeholder="此職等不適用專業職" disabled />

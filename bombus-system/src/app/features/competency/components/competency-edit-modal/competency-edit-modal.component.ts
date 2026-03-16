@@ -41,6 +41,7 @@ export class CompetencyEditModalComponent {
     saving = signal(false);
     error = signal<string | null>(null);
     expandedLevels = signal<Set<CompetencyGradeLevel>>(new Set(['L1']));
+    private _initialSnapshot = '';
 
     // 等級列表（L1-L6）
     readonly gradeLabels: { level: CompetencyGradeLevel; label: string }[] = [
@@ -97,6 +98,7 @@ export class CompetencyEditModalComponent {
                     // 新增模式：重置表單
                     this.resetForm();
                 }
+                this._initialSnapshot = this._captureSnapshot();
             }
         }, { allowSignalWrites: true });
     }
@@ -118,13 +120,18 @@ export class CompetencyEditModalComponent {
         this.expandedLevels.set(new Set(['L1']));
     }
 
-    /**
-     * 關閉 Modal
-     */
+    private _captureSnapshot(): string {
+        return JSON.stringify(this.formData());
+    }
+
+    private hasUnsavedChanges(): boolean {
+        return this._initialSnapshot !== '' && this._captureSnapshot() !== this._initialSnapshot;
+    }
+
     onClose(): void {
-        if (!this.saving()) {
-            this.close.emit();
-        }
+        if (this.saving()) return;
+        if (this.hasUnsavedChanges() && !confirm('您有未儲存的變更，確定要離開嗎？')) return;
+        this.close.emit();
     }
 
     /**
