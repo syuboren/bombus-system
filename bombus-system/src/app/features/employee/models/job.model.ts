@@ -29,7 +29,7 @@ export type CandidateStatus =
   | 'pending_ai' | 'pending_decision' 
   | 'offered' | 'offer_accepted' | 'onboarded'
   // 終止狀態（公司決定）
-  | 'not_invited' | 'not_hired'
+  | 'rejected' | 'not_invited' | 'not_hired'
   // 終止狀態（候選人婉拒）
   | 'invite_declined' | 'interview_declined' | 'offer_declined';
 
@@ -142,6 +142,9 @@ export interface JobCandidate {
   meetingLink?: string;           // 線上面試連結
   interviewCancelToken?: string;  // 面試取消連結 Token
   interviewResult?: string;       // 面試結果
+  // AI 履歷解析
+  aiOverallScore?: number;        // AI 分析總分 (0-100)
+  aiAnalyzedAt?: string;          // AI 分析時間
   // 擴充欄位 (來自 104 Resume API)
   currentPosition?: string;    // 目前職位
   currentCompany?: string;     // 目前公司

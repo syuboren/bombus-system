@@ -116,10 +116,6 @@ export class JobCandidatesPageComponent implements OnInit {
   loadData(): void {
     this.loading.set(true);
 
-    this.jobService.getCandidateStats().subscribe({
-      next: (stats) => this.stats.set(stats)
-    });
-
     // 載入職缺標題
     if (this.jobId()) {
       this.jobService.getJobById(this.jobId()).subscribe({
@@ -139,16 +135,36 @@ export class JobCandidatesPageComponent implements OnInit {
           existingCandidates.map(c => [c.id, { aiScoringStatus: c.aiScoringStatus, displayScore: c.displayScore }])
         );
 
-        const candidatesWithUI: CandidateWithUI[] = candidates.map(c => ({
-          ...c,
-          // 保留現有的 AI 評分狀態，如果候選人是新的則設為 pending
-          aiScoringStatus: existingState.get(c.id)?.aiScoringStatus || 'pending',
-          displayScore: existingState.get(c.id)?.displayScore || 0
-        }));
+        const candidatesWithUI: CandidateWithUI[] = candidates.map(c => {
+          // 如果候選人已有 AI 分析結果，直接標記為已評分
+          if (c.aiOverallScore !== undefined) {
+            const score = c.aiOverallScore;
+            return {
+              ...c,
+              scoreLevel: (score >= 80 ? 'high' : score >= 60 ? 'medium' : 'low') as any,
+              aiScoringStatus: 'scored' as const,
+              displayScore: score
+            };
+          }
+          // 否則保留現有的 AI 評分狀態
+          return {
+            ...c,
+            aiScoringStatus: existingState.get(c.id)?.aiScoringStatus || 'pending',
+            displayScore: existingState.get(c.id)?.displayScore || 0
+          };
+        });
 
         // 確保 Signal 更新會觸發變更檢測
         this.candidates.set(candidatesWithUI);
         this.loading.set(false);
+
+        // 動態計算 KPI 統計
+        this.stats.set({
+          total: candidates.length,
+          pending: candidates.filter(c => c.status === 'new').length,
+          aiRecommended: candidates.filter(c => c.aiOverallScore !== undefined && c.aiOverallScore >= 70).length,
+          scheduled: candidates.filter(c => c.status === 'interview' || c.interviewId).length
+        });
       },
       error: () => {
         this.notificationService.error('載入候選人列表失敗');
@@ -193,8 +209,9 @@ export class JobCandidatesPageComponent implements OnInit {
         );
       } else if (status === 'not_continued') {
         // 流程結束（公司決定）：不邀請、未錄取
-        result = result.filter(c => 
-          c.status === 'not_invited' || 
+        result = result.filter(c =>
+          c.status === 'rejected' ||
+          c.status === 'not_invited' ||
           c.status === 'not_hired'
         );
       } else {
@@ -232,8 +249,9 @@ export class JobCandidatesPageComponent implements OnInit {
 
     if (statusKey === 'not_continued') {
       // 流程結束（公司決定）：不邀請、未錄取
-      return all.filter(c => 
-        c.status === 'not_invited' || 
+      return all.filter(c =>
+        c.status === 'rejected' ||
+        c.status === 'not_invited' ||
         c.status === 'not_hired'
       ).length;
     }
@@ -241,7 +259,7 @@ export class JobCandidatesPageComponent implements OnInit {
     return all.filter(c => c.status === statusKey).length;
   }
 
-  // 批量 AI 評分 (Existing logic)
+  // 批量 AI 評分 — 呼叫後端為每位候選人產生模擬分析
   batchAIScoring(): void {
     const pendingCandidates = this.candidates().filter(c => c.aiScoringStatus === 'pending');
 
@@ -254,45 +272,48 @@ export class JobCandidatesPageComponent implements OnInit {
     this.aiScoringProgress.set(0);
     this.aiScoringMessage.set('正在初始化 AI 評分引擎...');
 
+    const jobId = this.jobId();
+    let completed = 0;
+    const total = pendingCandidates.length;
+
     const messages = [
       '正在分析職位需求與職能基準...',
       '正在解析候選人履歷內容...',
       '正在進行職能匹配度計算...',
-      '正在生成評分報告...',
-      '評分完成！'
+      '正在生成評分報告...'
     ];
 
-    let currentStep = 0;
-    const totalSteps = messages.length;
-    const stepDuration = 800;
-
-    const interval = setInterval(() => {
-      currentStep++;
-      const progress = Math.min((currentStep / totalSteps) * 100, 100);
-      this.aiScoringProgress.set(progress);
-
-      if (currentStep < messages.length) {
-        this.aiScoringMessage.set(messages[currentStep]);
-      }
-
-      if (currentStep >= totalSteps) {
-        clearInterval(interval);
-
-        const updatedCandidates = this.candidates().map(c => {
-          if (c.aiScoringStatus === 'pending') {
-            return { ...c, aiScoringStatus: 'scored' as const };
-          }
-          return c;
-        });
-        this.candidates.set(updatedCandidates);
-
+    // 逐一呼叫後端 API
+    const processNext = (index: number) => {
+      if (index >= total) {
+        this.aiScoringProgress.set(100);
+        this.aiScoringMessage.set('評分完成！');
         setTimeout(() => {
           this.isAIScoring.set(false);
-          this.notificationService.success(`已完成 ${pendingCandidates.length} 位候選人的 AI 評分`);
-          this.animateScores();
+          this.notificationService.success(`已完成 ${total} 位候選人的 AI 評分`);
+          this.loadData(); // 重新載入資料（含 AI 分數）
         }, 500);
+        return;
       }
-    }, stepDuration);
+
+      const candidate = pendingCandidates[index];
+      const msgIndex = Math.min(Math.floor((index / total) * messages.length), messages.length - 1);
+      this.aiScoringMessage.set(messages[msgIndex]);
+      this.aiScoringProgress.set(Math.round((index / total) * 90));
+
+      this.jobService.generateMockAnalysis(jobId, candidate.id).subscribe({
+        next: () => {
+          completed++;
+          processNext(index + 1);
+        },
+        error: () => {
+          completed++;
+          processNext(index + 1); // 繼續處理下一位
+        }
+      });
+    };
+
+    processNext(0);
   }
 
   private animateScores(): void {
@@ -588,6 +609,7 @@ export class JobCandidatesPageComponent implements OnInit {
       offer_accepted: 'status--offer-accepted',
       onboarded: 'status--hired',
       // 流程結束（公司決定）
+      rejected: 'status--not-continued',
       not_invited: 'status--not-continued',
       not_hired: 'status--not-continued',
       // 候選人婉拒
@@ -624,6 +646,7 @@ export class JobCandidatesPageComponent implements OnInit {
       offered: '待回覆 Offer',
       offer_accepted: '已錄取同意',
       onboarded: '已報到',
+      rejected: '未錄取',
       not_invited: '不邀請',
       not_hired: '未錄取',
       invite_declined: '邀請婉拒',

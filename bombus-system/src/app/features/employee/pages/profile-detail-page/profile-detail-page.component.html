@@ -758,9 +758,15 @@
               <div class="no-analysis">
                 <i class="ri-error-warning-line"></i>
                 <p>尚無 AI 解析報告</p>
-                <button class="btn btn-l1" type="button">
-                  <i class="ri-magic-line"></i>
-                  開始分析
+                <button class="btn btn-l1" type="button"
+                  (click)="generateAnalysis()" [disabled]="analyzing()">
+                  @if (analyzing()) {
+                    <i class="ri-loader-4-line spinner"></i>
+                    分析中...
+                  } @else {
+                    <i class="ri-magic-line"></i>
+                    開始分析
+                  }
                 </button>
               </div>
             }

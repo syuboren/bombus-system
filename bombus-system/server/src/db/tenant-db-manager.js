@@ -247,7 +247,8 @@ class TenantDBManager {
       { table: 'candidates', index: 'idx_cand_org_unit' },
       { table: 'talent_pool', index: 'idx_tp_org_unit' },
       { table: 'meetings', index: 'idx_meet_org_unit' },
-      { table: 'grade_tracks', index: 'idx_gt_org_unit' }
+      { table: 'grade_tracks', index: 'idx_gt_org_unit' },
+      { table: 'grade_change_history', index: 'idx_gch_org_unit' }
     ];
     for (const { table, index } of subsidiaryMigrations) {
       try {

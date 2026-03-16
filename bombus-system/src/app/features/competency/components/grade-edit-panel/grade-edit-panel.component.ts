@@ -26,6 +26,7 @@ export class GradeEditPanelComponent {
   orgUnitId = input<string>('');
   subsidiaries = input<OrgUnit[]>([]);
   tracks = input<GradeTrackEntity[]>([]);
+  allGrades = input<GradeLevelNew[]>([]);
   closed = output<void>();
   saved = output<void>();
 
@@ -206,27 +207,50 @@ export class GradeEditPanelComponent {
   }
 
   private getMaxSalaryNum(): number {
-    return this.formSalaryLevels().reduce((max, sal) => {
+    // 先看本職等表單中的最大編號
+    const currentMax = this.formSalaryLevels().reduce((max, sal) => {
       const match = sal.code?.match(/(\d+)$/);
       return match ? Math.max(max, parseInt(match[1], 10)) : max;
     }, 0);
+
+    // 再看前一個職等（grade - 1）的最大編號，確保接續
+    const prevGradeMax = this.getPreviousGradeMaxNum();
+
+    return Math.max(currentMax, prevGradeMax);
   }
 
-  // 重新產生所有薪資級別的代碼（保留既有編號，僅更新前綴）
+  /** 取得前一個職等（同前綴）的最大薪資代碼編號 */
+  private getPreviousGradeMaxNum(): number {
+    const currentGrade = this.formGrade();
+    const prefix = this.formCode().trim();
+    if (!prefix || currentGrade <= 1) return 0;
+
+    const grades = this.allGrades();
+    // 找 grade < currentGrade 的所有職等，取同前綴的最大編號
+    let maxNum = 0;
+    for (const g of grades) {
+      if (g.grade >= currentGrade) continue;
+      for (const sal of g.salaryLevels || []) {
+        const m = sal.code?.match(/^([A-Za-z]+)(\d+)$/);
+        if (m && m[1] === prefix) {
+          maxNum = Math.max(maxNum, parseInt(m[2], 10));
+        }
+      }
+    }
+    return maxNum;
+  }
+
+  /** 重新產生所有薪資級別的代碼（從前一職等最大編號接續） */
   private regenerateSalaryCodes(): void {
     const code = this.formCode().trim();
     if (!code) return;
+    const startNum = this.getPreviousGradeMaxNum();
     this.formSalaryLevels.update(prev =>
-      prev.map((level, i) => {
-        // 保留既有的數字後綴，僅替換前綴
-        const match = level.code?.match(/(\d+)$/);
-        const num = match ? match[1] : String(i + 1).padStart(2, '0');
-        return {
-          ...level,
-          code: `${code}${num}`,
-          order: i + 1
-        };
-      })
+      prev.map((level, i) => ({
+        ...level,
+        code: `${code}${String(startNum + i + 1).padStart(2, '0')}`,
+        order: i + 1
+      }))
     );
   }
 

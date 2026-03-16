@@ -104,13 +104,23 @@ export class JobService {
     );
   }
 
-  getCandidateStats(): Observable<CandidateStats> {
-    return of({
-      total: 15,
-      pending: 3,
-      aiRecommended: 5,
-      scheduled: 2
-    }).pipe(delay(200));
+  getCandidateStats(jobId: string): Observable<CandidateStats> {
+    if (!jobId) {
+      return of({ total: 0, pending: 0, aiRecommended: 0, scheduled: 0 });
+    }
+    return this.getCandidates(jobId).pipe(
+      map(candidates => {
+        const total = candidates.length;
+        const pending = candidates.filter(c => c.status === 'new').length;
+        const aiRecommended = candidates.filter(c =>
+          c.aiOverallScore !== undefined && c.aiOverallScore >= 70
+        ).length;
+        const scheduled = candidates.filter(c =>
+          c.status === 'interview' || c.interviewId
+        ).length;
+        return { total, pending, aiRecommended, scheduled };
+      })
+    );
   }
 
   getCandidateDetail(candidateId: string): Observable<CandidateDetail | null> {
@@ -758,8 +768,20 @@ export class JobService {
       interviewAddress: dbCandidate.interview_address,
       meetingLink: dbCandidate.meeting_link,
       interviewCancelToken: dbCandidate.interview_cancel_token,
-      interviewResult: dbCandidate.interview_result
+      interviewResult: dbCandidate.interview_result,
+      // AI 履歷解析
+      aiOverallScore: dbCandidate.ai_overall_score ?? undefined,
+      aiAnalyzedAt: dbCandidate.ai_analyzed_at ?? undefined
     };
+  }
+
+  /**
+   * 產生模擬 AI 履歷解析報告
+   */
+  generateMockAnalysis(jobId: string, candidateId: string): Observable<{ status: string; overallScore: number }> {
+    return this.http.post<{ status: string; overallScore: number }>(
+      `${this.JOBS_API}/${jobId}/candidates/${candidateId}/generate-mock-analysis`, {}
+    );
   }
 
   private getRandomColor(): string {

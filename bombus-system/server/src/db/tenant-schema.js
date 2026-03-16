@@ -1369,7 +1369,8 @@ function initTenantSchema(adapter) {
     { table: 'department_positions', index: 'idx_dp_org_unit' },
     { table: 'promotion_criteria', index: 'idx_pc_org_unit' },
     { table: 'career_paths', index: 'idx_cp_org_unit' },
-    { table: 'meetings', index: 'idx_meeting_org_unit' }
+    { table: 'meetings', index: 'idx_meeting_org_unit' },
+    { table: 'grade_change_history', index: 'idx_gch_org_unit' }
   ];
   for (const { table, index } of subsidiaryMigrations) {
     try {

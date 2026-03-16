@@ -728,6 +728,15 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
     return `status-${status}`;
   }
 
+  getStatusLabel(status: string): string {
+    const labels: Record<string, string> = {
+      pending: '待審核',
+      approved: '已核准',
+      rejected: '已駁回'
+    };
+    return labels[status] || status;
+  }
+
   onTypeChange(value: string): void {
     this.selectedType.set(value);
   }

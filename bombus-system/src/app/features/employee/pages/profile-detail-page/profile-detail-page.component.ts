@@ -36,6 +36,7 @@ export class ProfileDetailPageComponent implements OnInit {
   candidate = signal<CandidateFull | null>(null);
   resumeAnalysis = signal<CandidateResumeAnalysis | null>(null);
   loading = signal<boolean>(false);
+  analyzing = signal<boolean>(false);
   candidateId = signal<string>('');
   jobId = signal<string>('');
   jobTitle = signal<string>('');  // 職缺標題
@@ -250,6 +251,7 @@ export class ProfileDetailPageComponent implements OnInit {
       offered: '待回覆 Offer',
       offer_accepted: '已錄取同意',
       onboarded: '已報到',
+      rejected: '未錄取',
       not_invited: '不邀請',
       not_hired: '未錄取',
       invite_declined: '邀請婉拒',
@@ -279,6 +281,7 @@ export class ProfileDetailPageComponent implements OnInit {
       offered: 'status--offered',
       offer_accepted: 'status--offer-accepted',
       onboarded: 'status--hired',
+      rejected: 'status--not-continued',
       not_invited: 'status--not-continued',
       not_hired: 'status--not-continued',
       invite_declined: 'status--declined',
@@ -430,6 +433,23 @@ export class ProfileDetailPageComponent implements OnInit {
       },
       error: () => {
         this.notificationService.error('無法取得 Offer 回覆連結');
+      }
+    });
+  }
+
+  // 產生模擬 AI 分析
+  generateAnalysis(): void {
+    if (this.analyzing() || !this.jobId() || !this.candidateId()) return;
+    this.analyzing.set(true);
+    this.jobService.generateMockAnalysis(this.jobId(), this.candidateId()).subscribe({
+      next: () => {
+        this.loadCandidate(this.candidateId());
+        this.analyzing.set(false);
+        this.notificationService.success('AI 分析已完成');
+      },
+      error: () => {
+        this.notificationService.error('分析失敗，請稍後再試');
+        this.analyzing.set(false);
       }
     });
   }

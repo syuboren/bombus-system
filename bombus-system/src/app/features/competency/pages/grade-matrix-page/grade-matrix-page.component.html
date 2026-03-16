@@ -745,6 +745,7 @@
           <th>類型</th>
           <th>操作</th>
           <th>變更內容</th>
+          <th>來源子公司</th>
           <th>提交者</th>
           <th>提交時間</th>
           <th>操作</th>
@@ -757,6 +758,7 @@
           <td><span class="action-badge" [class]="'action-' + change.action">{{ getActionLabel(change.action) }}</span>
           </td>
           <td class="td-change-desc">{{ getChangeDescription(change) }}</td>
+          <td>{{ change.orgUnitName || '全公司' }}</td>
           <td>{{ change.changedBy }}</td>
           <td>{{ change.createdAt }}</td>
           <td class="td-actions">
@@ -796,6 +798,7 @@
           <th>類型</th>
           <th>操作</th>
           <th>變更內容</th>
+          <th>來源子公司</th>
           <th>提交者</th>
           <th>審核者</th>
           <th>狀態</th>
@@ -809,9 +812,10 @@
           <td><span class="action-badge" [class]="'action-' + change.action">{{ getActionLabel(change.action) }}</span>
           </td>
           <td class="td-change-desc">{{ getChangeDescription(change) }}</td>
+          <td>{{ change.orgUnitName || '全公司' }}</td>
           <td>{{ change.changedBy }}</td>
           <td>{{ change.approvedBy || '-' }}</td>
-          <td><span class="status-badge" [class]="getStatusClass(change.status)">{{ change.status }}</span></td>
+          <td><span class="status-badge" [class]="getStatusClass(change.status)">{{ getStatusLabel(change.status) }}</span></td>
           <td>{{ change.createdAt }}</td>
         </tr>
         }
@@ -1093,7 +1097,7 @@
 
 <app-grade-edit-panel [visible]="showGradeEditPanel()" [gradeData]="editingGrade()"
   [existingGrades]="existingGradeNumbers()" [orgUnitId]="overviewSubsidiaryId()"
-  [subsidiaries]="subsidiaries()" [tracks]="tracks()"
+  [subsidiaries]="subsidiaries()" [tracks]="tracks()" [allGrades]="gradesNew()"
   (closed)="closeGradeEditPanel()" (saved)="onGradeSaved()" />
 
 <app-position-edit-modal [visible]="showPositionEditModal()" [positionData]="editingPosition()"

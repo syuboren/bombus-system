@@ -63,6 +63,8 @@ export interface ChangeRecord {
   rejectReason?: string;
   createdAt: string;
   approvedAt?: string;
+  orgUnitId?: string | null;
+  orgUnitName?: string | null;
 }
 
 // 職級薪資（對應 DB grade_salary_levels）

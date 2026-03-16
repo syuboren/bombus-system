@@ -5,6 +5,7 @@
 
 const express = require('express');
 const router = express.Router();
+const { v4: uuidv4 } = require('uuid');
 // tenantDB is accessed via req.tenantDB (injected by middleware)
 const job104Service = require('../services/104/job.service');
 
@@ -241,9 +242,9 @@ router.get('/:id/candidates', (req, res) => {
         const candidates = req.tenantDB.prepare(`
             SELECT c.*,
             j.title as job_title,
-            ii.response_token, 
-            ii.candidate_response, 
-            ii.selected_slots, 
+            ii.response_token,
+            ii.candidate_response,
+            ii.selected_slots,
             ii.status as invitation_status,
             ii.reschedule_note,
             ii.responded_at,
@@ -254,20 +255,23 @@ router.get('/:id/candidates', (req, res) => {
             i.meeting_link,
             i.address as interview_address,
             i.cancel_token as interview_cancel_token,
-            i.result as interview_result
+            i.result as interview_result,
+            cra.overall_match_score as ai_overall_score,
+            cra.analyzed_at as ai_analyzed_at
             FROM candidates c
             LEFT JOIN jobs j ON c.job_id = j.id
             LEFT JOIN interview_invitations ii ON ii.id = (
-                SELECT id FROM interview_invitations 
-                WHERE candidate_id = c.id 
+                SELECT id FROM interview_invitations
+                WHERE candidate_id = c.id
                 ORDER BY created_at DESC LIMIT 1
             )
             LEFT JOIN interviews i ON i.id = (
-                SELECT id FROM interviews 
+                SELECT id FROM interviews
                 WHERE candidate_id = c.id AND result != 'Cancelled'
                 ORDER BY created_at DESC LIMIT 1
             )
-            WHERE c.job_id = ? 
+            LEFT JOIN candidate_resume_analysis cra ON cra.candidate_id = c.id AND cra.job_id = c.job_id
+            WHERE c.job_id = ?
             ORDER BY c.apply_date DESC
         `).all(id);
 
@@ -1020,6 +1024,220 @@ router.get('/:jobId/candidates/:candidateId/full', (req, res) => {
     res.json(fullData);
   } catch (error) {
     console.error('Error fetching candidate full data:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================================
+// Mock AI Resume Analysis Generator
+// ============================================================
+
+const MOCK_JD_REQUIREMENTS = {
+  tech: [
+    '5年以上前端開發經驗', '熟悉 Angular 框架', '熟悉 TypeScript',
+    '具備 RxJS 使用經驗', '熟悉 RESTful API 設計', '了解 Git 版本控制', '具備 CI/CD 經驗'
+  ],
+  pm: [
+    '3年以上產品管理經驗', '具備 Agile/Scrum 經驗', '熟悉數據分析工具',
+    '良好的跨部門溝通能力', '具備技術背景佳'
+  ],
+  design: [
+    '3年以上 UI/UX 設計經驗', '熟悉 Figma 或 Sketch', '具備用戶研究經驗',
+    '了解前端技術佳', '具備視覺設計能力'
+  ],
+  hr: [
+    '3年以上人力資源經驗', '熟悉勞基法規', '具備招募面試經驗',
+    '良好的溝通協調能力', '具備員工關係處理經驗'
+  ],
+  finance: [
+    '3年以上財會經驗', '具備會計師證照佳', '熟悉 ERP 系統',
+    '了解稅務法規', '具備成本分析能力'
+  ]
+};
+
+const MOCK_TECH_SKILLS = ['Angular', 'TypeScript', 'JavaScript', 'React', 'Vue.js', 'Node.js', 'Python', 'Java', 'Docker', 'Kubernetes', 'AWS', 'GCP', 'Git', 'CI/CD', 'PostgreSQL', 'MongoDB'];
+const MOCK_SOFT_SKILLS = ['團隊協作', '溝通能力', '問題解決', '時間管理', '專案管理', '領導能力', '創新思維', '學習能力'];
+const MOCK_WRITING_STYLES = ['專業、條理清晰', '簡潔扼要、重點明確', '詳細完整、資訊豐富', '具邏輯性、結構完整', '客觀中立、數據導向'];
+const MOCK_CONTENT_FEATURES = [
+  { type: '量化描述', description: '履歷中包含具體數字與成果量化，有助於評估實際貢獻程度' },
+  { type: '描述完整度', description: '工作職責與專案成果描述詳細，易於了解實際工作內容' },
+  { type: '技能標註', description: '明確標示所使用的技術與工具，便於技能匹配分析' },
+  { type: '經歷連貫性', description: '工作經歷時間連續，無明顯空窗期' },
+  { type: '專業術語', description: '使用正確的專業術語，顯示對領域的熟悉度' }
+];
+const MOCK_AREAS_TO_CLARIFY = [
+  '團隊規模與管理範圍未明確說明', '跨部門協作經驗描述較簡略', '離職原因未說明',
+  '專案成果的具體量化數據', '技術深度與廣度需進一步確認', '英文能力實際應用情境'
+];
+const MOCK_TECH_VERIFICATION = [
+  '專案的具體架構設計經驗', '進階特性的使用經驗', '效能優化的具體實作方式',
+  '複雜場景的應用經驗', '流程的設計與維護經驗', '測試策略與覆蓋率', '大型專案的技術決策過程'
+];
+const MOCK_EXP_SUPPLEMENT = [
+  '團隊協作中的具體角色與貢獻', '跨部門合作的實際案例', '過往專案遇到的挑戰與解決方式',
+  '技術選型的考量因素', '如何保持技術學習與成長', '對新技術的學習方法'
+];
+
+function randomInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+function randomPick(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+function randomSlice(arr, min, max) {
+  const shuffled = [...arr].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, randomInt(min, max));
+}
+
+function determineCandidateType(candidate) {
+  const skills = (candidate.skills || '').toLowerCase();
+  if (skills.includes('angular') || skills.includes('react') || skills.includes('javascript') || skills.includes('typescript')) return 'tech';
+  if (skills.includes('design') || skills.includes('figma') || skills.includes('ui')) return 'design';
+  if (skills.includes('product') || skills.includes('project') || skills.includes('agile')) return 'pm';
+  if (skills.includes('招募') || skills.includes('人資') || skills.includes('人才') || skills.includes('面試') || skills.includes('勞基法')) return 'hr';
+  if (skills.includes('會計') || skills.includes('財務') || skills.includes('審計') || skills.includes('稅務') || skills.includes('erp')) return 'finance';
+  return 'hr';
+}
+
+function generateMockAnalysisData(candidate, job) {
+  const type = determineCandidateType(candidate);
+  const requirements = MOCK_JD_REQUIREMENTS[type] || MOCK_JD_REQUIREMENTS.hr;
+  const baseScore = candidate.score || randomInt(60, 95);
+
+  const requirementScore = Math.min(100, Math.max(30, baseScore + randomInt(-10, 10)));
+  const keywordScore = Math.min(100, Math.max(30, baseScore + randomInt(-8, 12)));
+  const experienceScore = Math.min(100, Math.max(30, baseScore + randomInt(-5, 15)));
+  const overallScore = Math.round(requirementScore * 0.4 + keywordScore * 0.35 + experienceScore * 0.25);
+
+  const matchedCount = Math.max(1, Math.floor(requirements.length * (requirementScore / 100)));
+  const company = candidate.current_company || '前公司';
+  const evidences = [
+    '履歷中明確提及相關經驗',
+    `從 ${company} 的工作描述可見`,
+    '技能列表中包含相關技術',
+    `工作經歷顯示 ${candidate.experience_years || 3} 年相關經驗`,
+    '專案經驗中有相關實作'
+  ];
+
+  const matchedRequirements = requirements.slice(0, matchedCount).map(req => ({
+    requirement: req,
+    evidence: randomPick(evidences)
+  }));
+  const unmatchedRequirements = requirements.slice(matchedCount).map(req => ({
+    requirement: req,
+    note: '履歷中未見相關描述'
+  }));
+
+  let candidateSkills = [];
+  try { candidateSkills = JSON.parse(candidate.skills || '[]'); } catch (e) { candidateSkills = []; }
+
+  const extractedTechSkills = candidateSkills
+    .filter(s => MOCK_TECH_SKILLS.some(ts => ts.toLowerCase() === s.toLowerCase()))
+    .slice(0, randomInt(3, 6));
+  if (extractedTechSkills.length === 0 && candidateSkills.length > 0) {
+    extractedTechSkills.push(...candidateSkills.slice(0, Math.min(3, candidateSkills.length)));
+  }
+
+  const jdRequiredTotal = randomInt(7, 10);
+  const jdRequiredMatch = Math.min(jdRequiredTotal, Math.floor(jdRequiredTotal * (keywordScore / 100)));
+  const jdBonusTotal = randomInt(5, 8);
+  const jdBonusMatch = Math.floor(jdBonusTotal * randomInt(40, 80) / 100);
+
+  const relevanceLevel = experienceScore >= 85 ? 5 : experienceScore >= 75 ? 4 : experienceScore >= 65 ? 3 : 2;
+  const experienceAnalysis = [{
+    firm: company,
+    job: candidate.current_position || '專員',
+    duration: `${Math.min(candidate.experience_years || 2, 8)} 年`,
+    relevance_level: relevanceLevel,
+    relevance_reasons: randomSlice(['職務類型與職缺一致', '技術棧高度重疊', '產業經驗相關', '管理經驗匹配'], 2, 3)
+  }];
+
+  return {
+    overall_match_score: overallScore,
+    requirement_match_score: requirementScore,
+    keyword_match_score: keywordScore,
+    experience_relevance_score: experienceScore,
+    matched_requirements: JSON.stringify(matchedRequirements),
+    unmatched_requirements: JSON.stringify(unmatchedRequirements),
+    bonus_skills: JSON.stringify(randomSlice(candidateSkills.length > 0 ? candidateSkills : ['團隊合作', '溝通能力'], 1, 3)),
+    extracted_tech_skills: JSON.stringify(extractedTechSkills),
+    extracted_soft_skills: JSON.stringify(randomSlice(MOCK_SOFT_SKILLS, 3, 5)),
+    jd_required_match_count: jdRequiredMatch,
+    jd_required_total_count: jdRequiredTotal,
+    jd_bonus_match_count: jdBonusMatch,
+    jd_bonus_total_count: jdBonusTotal,
+    experience_analysis: JSON.stringify(experienceAnalysis),
+    total_relevant_years: candidate.experience_years || randomInt(2, 8),
+    jd_required_years: randomInt(3, 5),
+    writing_style: randomPick(MOCK_WRITING_STYLES),
+    analysis_confidence: randomInt(85, 98),
+    content_features: JSON.stringify(randomSlice(MOCK_CONTENT_FEATURES, 2, 4)),
+    areas_to_clarify: JSON.stringify(randomSlice(MOCK_AREAS_TO_CLARIFY, 2, 4)),
+    tech_verification_points: JSON.stringify(randomSlice(MOCK_TECH_VERIFICATION, 3, 5)),
+    experience_supplement_points: JSON.stringify(randomSlice(MOCK_EXP_SUPPLEMENT, 3, 5)),
+    analyzed_at: new Date().toISOString(),
+    analysis_engine_version: 'Bombus AI v2.1',
+    resume_word_count: randomInt(800, 2500)
+  };
+}
+
+/**
+ * POST /api/jobs/:jobId/candidates/:candidateId/generate-mock-analysis
+ * 產生模擬 AI 履歷解析報告
+ */
+router.post('/:jobId/candidates/:candidateId/generate-mock-analysis', (req, res) => {
+  try {
+    const { jobId, candidateId } = req.params;
+
+    const candidate = req.tenantDB.prepare(`
+      SELECT id, job_id, name, score, skills, experience_years, current_company, current_position
+      FROM candidates WHERE id = ? AND job_id = ?
+    `).get(candidateId, jobId);
+
+    if (!candidate) {
+      return res.status(404).json({ error: '候選人不存在' });
+    }
+
+    const job = req.tenantDB.prepare('SELECT id, title FROM jobs WHERE id = ?').get(jobId);
+
+    const data = generateMockAnalysisData(candidate, job);
+    const id = uuidv4();
+
+    // UPSERT: 刪除舊資料再插入
+    req.tenantDB.prepare('DELETE FROM candidate_resume_analysis WHERE candidate_id = ? AND job_id = ?')
+      .run(candidateId, jobId);
+
+    req.tenantDB.prepare(`
+      INSERT INTO candidate_resume_analysis (
+        id, candidate_id, job_id,
+        overall_match_score, requirement_match_score, keyword_match_score, experience_relevance_score,
+        matched_requirements, unmatched_requirements, bonus_skills,
+        extracted_tech_skills, extracted_soft_skills,
+        jd_required_match_count, jd_required_total_count,
+        jd_bonus_match_count, jd_bonus_total_count,
+        experience_analysis, total_relevant_years, jd_required_years,
+        writing_style, analysis_confidence, content_features, areas_to_clarify,
+        tech_verification_points, experience_supplement_points,
+        analyzed_at, analysis_engine_version, resume_word_count,
+        created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      id, candidateId, jobId,
+      data.overall_match_score, data.requirement_match_score, data.keyword_match_score, data.experience_relevance_score,
+      data.matched_requirements, data.unmatched_requirements, data.bonus_skills,
+      data.extracted_tech_skills, data.extracted_soft_skills,
+      data.jd_required_match_count, data.jd_required_total_count,
+      data.jd_bonus_match_count, data.jd_bonus_total_count,
+      data.experience_analysis, data.total_relevant_years, data.jd_required_years,
+      data.writing_style, data.analysis_confidence, data.content_features, data.areas_to_clarify,
+      data.tech_verification_points, data.experience_supplement_points,
+      data.analyzed_at, data.analysis_engine_version, data.resume_word_count,
+      new Date().toISOString()
+    );
+
+    res.json({ status: 'ok', overallScore: data.overall_match_score });
+  } catch (error) {
+    console.error('Error generating mock analysis:', error);
     res.status(500).json({ error: error.message });
   }
 });

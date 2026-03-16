@@ -1435,7 +1435,7 @@
   text-align: center;
   color: $color-text-secondary;
 
-  i {
+  > i {
     font-size: 48px;
     color: $color-soft-gray;
     margin-bottom: $spacing-md;
@@ -1444,6 +1444,10 @@
   p {
     margin-bottom: $spacing-md;
   }
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
 }
 
 // ---------------------------------------------------------------
