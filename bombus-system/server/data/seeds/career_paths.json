@@ -1,0 +1,79 @@
+{
+  "tableName": "career_paths",
+  "columns": [
+    "id",
+    "type",
+    "name",
+    "description",
+    "from_position",
+    "to_position",
+    "estimated_time",
+    "steps",
+    "created_at",
+    "org_unit_id"
+  ],
+  "rows": [
+    [
+      "path-vertical-mgmt",
+      "vertical",
+      "管理職垂直晉升",
+      "從新人級一路晉升至營運管理級，走管理職發展路線",
+      "新人級 (Grade 1)",
+      "營運管理 (Grade 7)",
+      "10-15年",
+      "[{\"order\":1,\"title\":\"新人級 (BS01)\",\"grade\":1,\"description\":\"培養工作技能、技術支援、基礎執行\",\"duration\":\"1年\",\"required_courses\":[\"通識必修課程\"],\"performance_threshold\":85},{\"order\":2,\"title\":\"專員級 (BS02-BS04)\",\"grade\":2,\"description\":\"基礎行政與專案執行\",\"duration\":\"1-2年\",\"required_courses\":[\"專員必修課程\"],\"performance_threshold\":90},{\"order\":3,\"title\":\"儲備幹部 (BS05-BS07)\",\"grade\":3,\"description\":\"學習管理技能，準備晉升\",\"duration\":\"2-3年\",\"required_courses\":[\"儲備幹部必修課程\"],\"performance_threshold\":100},{\"order\":4,\"title\":\"基層管理 - 副理 (BS08-BS10)\",\"grade\":4,\"description\":\"負責日常管理、員工培訓\",\"duration\":\"2-3年\",\"required_courses\":[\"基層管理必修課程\"],\"performance_threshold\":100},{\"order\":5,\"title\":\"中階管理 - 經理 (BS11-BS13)\",\"grade\":5,\"description\":\"帶領團隊完成部門目標，提升績效\",\"duration\":\"2-3年\",\"required_courses\":[\"中階管理必修課程\"],\"performance_threshold\":110},{\"order\":6,\"title\":\"高階管理 VP (BS14-BS16)\",\"grade\":6,\"description\":\"領導中階主管，確保業務策略執行\",\"duration\":\"3-5年\",\"required_courses\":[\"高階管理必修課程\"],\"performance_threshold\":120},{\"order\":7,\"title\":\"營運管理 (BS17-BS20)\",\"grade\":7,\"description\":\"企業決策與經營戰略\",\"duration\":\"持續\",\"required_courses\":[\"經營管理必修課程\"],\"performance_threshold\":120}]",
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "path-vertical-prof",
+      "vertical",
+      "專業職垂直晉升",
+      "從新人級一路晉升至專家等級，走專業職發展路線",
+      "新人級 (Grade 1)",
+      "專家等級 (Grade 6)",
+      "8-12年",
+      "[{\"order\":1,\"title\":\"新人級 (BS01)\",\"grade\":1,\"description\":\"培養工作技能、技術支援、基礎執行\",\"duration\":\"1年\",\"required_courses\":[\"通識必修課程\"],\"performance_threshold\":85},{\"order\":2,\"title\":\"專員級 (BS02-BS04)\",\"grade\":2,\"description\":\"基礎行政與專案執行\",\"duration\":\"1-2年\",\"required_courses\":[\"專員必修課程\"],\"performance_threshold\":90},{\"order\":3,\"title\":\"資深等級 (BS05-BS07)\",\"grade\":3,\"description\":\"專員、會計、工程師等專業角色\",\"duration\":\"2-3年\",\"required_courses\":[\"資深等級必修課程\"],\"performance_threshold\":100},{\"order\":4,\"title\":\"中階等級 (BS08-BS10)\",\"grade\":4,\"description\":\"資深專員、成本會計、資深工程師\",\"duration\":\"2-3年\",\"required_courses\":[\"中階等級必修課程\"],\"performance_threshold\":100},{\"order\":5,\"title\":\"高階等級 (BS11-BS13)\",\"grade\":5,\"description\":\"主辦會計、專案經理、高階工程師\",\"duration\":\"2-3年\",\"required_courses\":[\"高階等級必修課程\"],\"performance_threshold\":110},{\"order\":6,\"title\":\"專家等級 (BS14-BS16)\",\"grade\":6,\"description\":\"高級主辦會計、高級專案經理、產品經理\",\"duration\":\"持續\",\"required_courses\":[],\"performance_threshold\":120}]",
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "path-horizontal",
+      "horizontal",
+      "橫向專業深化",
+      "在專業職軌道持續深化，從資深等級發展為技術專家",
+      "資深等級 (Grade 3)",
+      "專家等級 (Grade 6)",
+      "5-8年",
+      "[{\"order\":1,\"title\":\"專業認證取得\",\"grade\":3,\"description\":\"取得相關專業證照與認證\",\"duration\":\"1年\",\"required_courses\":[],\"performance_threshold\":100},{\"order\":2,\"title\":\"專業技術提升\",\"grade\":4,\"description\":\"深化專業領域技能，成為團隊技術指導\",\"duration\":\"2-3年\",\"required_courses\":[\"中階等級必修課程\"],\"performance_threshold\":100},{\"order\":3,\"title\":\"技術專家\",\"grade\":6,\"description\":\"成為領域專家，負責技術標準制定\",\"duration\":\"持續\",\"required_courses\":[\"高階等級必修課程\"],\"performance_threshold\":110}]",
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "path-cross-dept",
+      "cross-department",
+      "跨部門發展",
+      "從業務專員轉型為專案管理師，跨部門發展職涯",
+      "業務專員 (Grade 3)",
+      "專案經理 (Grade 5)",
+      "3-5年",
+      "[{\"order\":1,\"title\":\"輪調學習\",\"grade\":3,\"description\":\"了解目標部門的業務流程與專案開發流程\",\"duration\":\"6個月\",\"required_courses\":[],\"performance_threshold\":90},{\"order\":2,\"title\":\"跨部門專案參與\",\"grade\":4,\"description\":\"參與跨部門專案，累積專案管理經驗\",\"duration\":\"1-2年\",\"required_courses\":[\"中階等級必修課程\"],\"performance_threshold\":100},{\"order\":3,\"title\":\"專案經理\",\"grade\":5,\"description\":\"主導專案執行，技術標準制定\",\"duration\":\"持續\",\"required_courses\":[\"高階等級必修課程\"],\"performance_threshold\":110}]",
+      "2026-03-10 05:22:14",
+      "org-root"
+    ],
+    [
+      "path-mgmt-switch",
+      "cross-department",
+      "專業職轉管理職",
+      "從專業職軌道轉為管理職軌道發展",
+      "資深工程師 (Grade 4 專業職)",
+      "經理 (Grade 5 管理職)",
+      "2-4年",
+      "[{\"order\":1,\"title\":\"儲備幹部培訓\",\"grade\":4,\"description\":\"參加管理職儲備幹部培訓計畫\",\"duration\":\"6個月-1年\",\"required_courses\":[\"儲備幹部必修課程\"],\"performance_threshold\":100},{\"order\":2,\"title\":\"副理職務代理\",\"grade\":4,\"description\":\"代理副理職務，累積管理經驗\",\"duration\":\"1年\",\"required_courses\":[\"基層管理必修課程\"],\"performance_threshold\":100},{\"order\":3,\"title\":\"經理\",\"grade\":5,\"description\":\"正式晉升為管理職經理\",\"duration\":\"持續\",\"required_courses\":[\"中階管理必修課程\"],\"performance_threshold\":110}]",
+      "2026-03-10 05:22:14",
+      "org-root"
+    ]
+  ],
+  "rowCount": 5,
+  "exportedAt": "2026-03-15T16:50:32.771Z"
+}

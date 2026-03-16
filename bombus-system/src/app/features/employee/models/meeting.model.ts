@@ -123,6 +123,7 @@ export interface Meeting {
   notes: string;
   signInEnabled?: boolean; // 是否開啟簽到
   org_unit_id?: string;
+  department?: string;
   createdAt: Date;
   updatedAt: Date;
 }

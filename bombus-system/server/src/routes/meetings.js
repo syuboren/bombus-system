@@ -222,6 +222,11 @@ router.get('/', (req, res) => {
             query += ` AND org_unit_id = ?`;
             params.push(org_unit_id);
         }
+        // 篩選會議自身的 department 欄位（scope='department' 時已用 attendee 篩選，不重複套用）
+        if (department && scope !== 'department') {
+            query += ` AND department = ?`;
+            params.push(department);
+        }
 
         query += ` ORDER BY start_time ASC`;
 
@@ -253,7 +258,7 @@ router.post('/', (req, res) => {
         const {
             title, type, status, location, isOnline, meetingLink,
             startTime, endTime, duration, recurrence, recurrenceEndDate, notes,
-            org_unit_id,
+            org_unit_id, department,
             attendees = [], agenda = [], reminders = [], attachments = []
         } = req.body;
 
@@ -273,12 +278,12 @@ router.post('/', (req, res) => {
             INSERT INTO meetings (
                 id, title, type, status, location, is_online, meeting_link,
                 start_time, end_time, duration, recurrence, recurrence_end_date, notes,
-                org_unit_id, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                org_unit_id, department, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).run(
             id, title, type, status || 'scheduled', location, isOnline ? 1 : 0, meetingLink,
             startTime, endTime, calculatedDuration, recurrence, recurrenceEndDate, notes,
-            org_unit_id || null, now, now
+            org_unit_id || null, department || null, now, now
         );
 
         // 2. Add Attendees
@@ -365,7 +370,7 @@ router.put('/:id', (req, res) => {
         const {
             title, type, status, location, isOnline, meetingLink,
             startTime, endTime, duration, recurrence, recurrenceEndDate, notes,
-            org_unit_id,
+            org_unit_id, department,
             attendees, agenda, reminders
         } = req.body;
 
@@ -393,12 +398,13 @@ router.put('/:id', (req, res) => {
                 recurrence_end_date = COALESCE(?, recurrence_end_date),
                 notes = COALESCE(?, notes),
                 org_unit_id = COALESCE(?, org_unit_id),
+                department = COALESCE(?, department),
                 updated_at = ?
             WHERE id = ?
         `).run(
             title, type, status, location, isOnline ? 1 : 0, meetingLink,
             startTime, endTime, duration, recurrence, recurrenceEndDate, notes,
-            org_unit_id || null, now, meetingId
+            org_unit_id || null, department || null, now, meetingId
         );
 
         // 更新出席者 (若有提供)

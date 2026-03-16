@@ -44,6 +44,13 @@ export class ScheduleInterviewModalComponent {
     { id: 'INT-004', name: '陳協理', department: '業務部', title: '業務協理' }
   ];
 
+  tryClose(): void {
+    if (this.loading()) return;
+    if (this.interviewDate() && !confirm('您有未儲存的變更，確定要離開嗎？')) return;
+    this.resetForm();
+    this.close.emit();
+  }
+
   getInitial(name: string): string {
     return name?.charAt(0) || '';
   }

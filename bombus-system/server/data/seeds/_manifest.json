@@ -1,0 +1,236 @@
+{
+  "version": 1,
+  "exportedAt": "2026-03-15T16:50:32.771Z",
+  "tables": {
+    "candidate_apply_questions": {
+      "rowCount": 20,
+      "columns": 7
+    },
+    "candidate_apply_records": {
+      "rowCount": 10,
+      "columns": 7
+    },
+    "candidate_attachments": {
+      "rowCount": 10,
+      "columns": 9
+    },
+    "candidate_education": {
+      "rowCount": 13,
+      "columns": 12
+    },
+    "candidate_experiences": {
+      "rowCount": 16,
+      "columns": 19
+    },
+    "candidate_interview_forms": {
+      "rowCount": 1,
+      "columns": 12
+    },
+    "candidate_languages": {
+      "rowCount": 24,
+      "columns": 12
+    },
+    "candidate_projects": {
+      "rowCount": 10,
+      "columns": 11
+    },
+    "candidate_recommenders": {
+      "rowCount": 10,
+      "columns": 9
+    },
+    "candidate_resume_analysis": {
+      "rowCount": 10,
+      "columns": 30
+    },
+    "candidate_specialities": {
+      "rowCount": 49,
+      "columns": 7
+    },
+    "candidates": {
+      "rowCount": 16,
+      "columns": 64
+    },
+    "career_paths": {
+      "rowCount": 5,
+      "columns": 10
+    },
+    "competencies": {
+      "rowCount": 70,
+      "columns": 9
+    },
+    "competency_ksa_details": {
+      "rowCount": 53,
+      "columns": 4
+    },
+    "competency_levels": {
+      "rowCount": 102,
+      "columns": 4
+    },
+    "department_positions": {
+      "rowCount": 59,
+      "columns": 8
+    },
+    "departments": {
+      "rowCount": 7,
+      "columns": 10
+    },
+    "employee_certifications": {
+      "rowCount": 9,
+      "columns": 6
+    },
+    "employee_education": {
+      "rowCount": 15,
+      "columns": 7
+    },
+    "employee_job_changes": {
+      "rowCount": 26,
+      "columns": 15
+    },
+    "employee_performance": {
+      "rowCount": 44,
+      "columns": 15
+    },
+    "employee_roi": {
+      "rowCount": 44,
+      "columns": 12
+    },
+    "employee_skills": {
+      "rowCount": 39,
+      "columns": 4
+    },
+    "employee_training": {
+      "rowCount": 44,
+      "columns": 13
+    },
+    "employees": {
+      "rowCount": 12,
+      "columns": 25
+    },
+    "grade_change_history": {
+      "rowCount": 24,
+      "columns": 12
+    },
+    "grade_levels": {
+      "rowCount": 7,
+      "columns": 8
+    },
+    "grade_salary_levels": {
+      "rowCount": 20,
+      "columns": 7
+    },
+    "grade_track_entries": {
+      "rowCount": 14,
+      "columns": 10
+    },
+    "grade_tracks": {
+      "rowCount": 2,
+      "columns": 10
+    },
+    "interview_evaluations": {
+      "rowCount": 4,
+      "columns": 21
+    },
+    "interview_invitations": {
+      "rowCount": 5,
+      "columns": 15
+    },
+    "interviews": {
+      "rowCount": 2,
+      "columns": 17
+    },
+    "invitation_decisions": {
+      "rowCount": 1,
+      "columns": 10
+    },
+    "job_description_approvals": {
+      "rowCount": 29,
+      "columns": 10
+    },
+    "job_description_versions": {
+      "rowCount": 7,
+      "columns": 11
+    },
+    "job_descriptions": {
+      "rowCount": 11,
+      "columns": 31
+    },
+    "jobs": {
+      "rowCount": 12,
+      "columns": 15
+    },
+    "monthly_check_items": {
+      "rowCount": 855,
+      "columns": 12
+    },
+    "monthly_check_templates": {
+      "rowCount": 425,
+      "columns": 11
+    },
+    "monthly_checks": {
+      "rowCount": 36,
+      "columns": 14
+    },
+    "promotion_criteria": {
+      "rowCount": 10,
+      "columns": 12
+    },
+    "quarterly_review_sections": {
+      "rowCount": 37,
+      "columns": 6
+    },
+    "quarterly_reviews": {
+      "rowCount": 12,
+      "columns": 16
+    },
+    "satisfaction_questions": {
+      "rowCount": 12,
+      "columns": 4
+    },
+    "satisfaction_surveys": {
+      "rowCount": 48,
+      "columns": 5
+    },
+    "submissions": {
+      "rowCount": 12,
+      "columns": 17
+    },
+    "system_config": {
+      "rowCount": 5,
+      "columns": 4
+    },
+    "talent_tags": {
+      "rowCount": 10,
+      "columns": 8
+    },
+    "template_versions": {
+      "rowCount": 3,
+      "columns": 6
+    },
+    "weekly_problem_items": {
+      "rowCount": 44,
+      "columns": 7
+    },
+    "weekly_project_items": {
+      "rowCount": 56,
+      "columns": 10
+    },
+    "weekly_report_items": {
+      "rowCount": 243,
+      "columns": 9
+    },
+    "weekly_reports": {
+      "rowCount": 60,
+      "columns": 21
+    },
+    "weekly_todo_items": {
+      "rowCount": 165,
+      "columns": 9
+    },
+    "weekly_training_items": {
+      "rowCount": 32,
+      "columns": 9
+    }
+  },
+  "totalTables": 57,
+  "totalRows": 2921
+}

@@ -32,6 +32,7 @@ export class PositionEditModalComponent {
     saving = signal(false);
     error = signal<string | null>(null);
     isEditMode = signal(false);
+    private _initialSnapshot = '';
 
     // 下拉選單資料（動態載入）
     departments = signal<{ id: string; name: string; code: string }[]>([]);
@@ -79,9 +80,11 @@ export class PositionEditModalComponent {
                     track: data.track || 'professional',
                     supervisedDepartments: data.supervisedDepartments || null
                 });
+                this._initialSnapshot = this._captureSnapshot();
             } else if (isVisible && !data) {
                 this.isEditMode.set(false);
                 this.resetForm();
+                this._initialSnapshot = this._captureSnapshot();
             }
             this.error.set(null);
         }, { allowSignalWrites: true });
@@ -99,8 +102,18 @@ export class PositionEditModalComponent {
         this.formData.set({ department: '', grade: 1, title: '', track: 'professional', supervisedDepartments: null });
     }
 
+    private _captureSnapshot(): string {
+        return JSON.stringify(this.formData());
+    }
+
+    private hasUnsavedChanges(): boolean {
+        return this._initialSnapshot !== '' && this._captureSnapshot() !== this._initialSnapshot;
+    }
+
     onClose(): void {
-        if (!this.saving()) { this.resetForm(); this.error.set(null); this.closed.emit(); }
+        if (this.saving()) return;
+        if (this.hasUnsavedChanges() && !confirm('您有未儲存的變更，確定要離開嗎？')) return;
+        this.resetForm(); this.error.set(null); this.closed.emit();
     }
 
     updateField(field: string, value: any): void {

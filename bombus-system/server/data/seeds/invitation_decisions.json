@@ -1,0 +1,31 @@
+{
+  "tableName": "invitation_decisions",
+  "columns": [
+    "id",
+    "candidate_id",
+    "decision",
+    "decided_by",
+    "reason",
+    "decided_at",
+    "response_token",
+    "reply_deadline",
+    "candidate_response",
+    "responded_at"
+  ],
+  "rows": [
+    [
+      "9f12c7b0-42fb-491b-ab4c-8d7efab63cef",
+      "C011",
+      "Rejected",
+      "USER-CURRENT",
+      "早期階段婉拒",
+      "2026-01-25T11:44:48.822Z",
+      null,
+      null,
+      null,
+      null
+    ]
+  ],
+  "rowCount": 1,
+  "exportedAt": "2026-03-15T16:50:32.771Z"
+}

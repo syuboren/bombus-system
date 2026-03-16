@@ -55,36 +55,72 @@
               個人
             </button>
           </div>
-          @if (calendarScope() === 'department') {
+          @if (calendarScope() === 'company') {
           @if (subsidiaries().length > 0) {
-          <div class="department-select">
-            <select [value]="selectedSubsidiaryId()" (change)="selectedSubsidiaryId.set($any($event.target).value)">
-              <option value="">全部子公司</option>
-              @for (sub of subsidiaries(); track sub.id) {
-              <option [value]="sub.id">{{ sub.name }}</option>
-              }
-            </select>
+          <div class="scope-filters">
+            <div class="department-select">
+              <select [value]="selectedSubsidiaryId()" (change)="selectedSubsidiaryId.set($any($event.target).value)">
+                <option value="">全部子公司</option>
+                @for (sub of subsidiaries(); track sub.id) {
+                <option [value]="sub.id">{{ sub.name }}</option>
+                }
+              </select>
+            </div>
           </div>
           }
-          <div class="department-select">
-            <select [value]="selectedDepartment()" (change)="setSelectedDepartment($any($event.target).value)">
-              <option value="">全部部門</option>
-              @for (dept of filteredDepartments(); track dept.id) {
-              <option [value]="dept.name">{{ dept.name }}</option>
-              }
-            </select>
+          }
+          @if (calendarScope() === 'department') {
+          <div class="scope-filters">
+            @if (subsidiaries().length > 0) {
+            <div class="department-select">
+              <select [value]="selectedSubsidiaryId()" (change)="selectedSubsidiaryId.set($any($event.target).value)">
+                <option value="">全部子公司</option>
+                @for (sub of subsidiaries(); track sub.id) {
+                <option [value]="sub.id">{{ sub.name }}</option>
+                }
+              </select>
+            </div>
+            }
+            <div class="department-select">
+              <select [value]="selectedDepartment()" (change)="setSelectedDepartment($any($event.target).value)">
+                <option value="">全部部門</option>
+                @for (dept of filteredDepartments(); track dept.id) {
+                <option [value]="dept.name">{{ dept.name }}</option>
+                }
+              </select>
+            </div>
           </div>
           }
           @if (calendarScope() === 'personal') {
-          <div class="employee-select">
-            <select (change)="setSelectedEmployee($any($event.target).value)">
-              <option value="">-- 選擇員工 --</option>
-              @for (employee of attendees(); track employee.id) {
-              <option [value]="employee.id" [selected]="employee.id === selectedEmployeeId()">
-                {{ employee.name }} ({{ employee.department }})
-              </option>
-              }
-            </select>
+          <div class="scope-filters">
+            @if (subsidiaries().length > 0) {
+            <div class="department-select">
+              <select [value]="selectedSubsidiaryId()" (change)="selectedSubsidiaryId.set($any($event.target).value)">
+                <option value="">全部子公司</option>
+                @for (sub of subsidiaries(); track sub.id) {
+                <option [value]="sub.id">{{ sub.name }}</option>
+                }
+              </select>
+            </div>
+            }
+            <div class="department-select">
+              <select [value]="selectedDepartment()" (change)="setSelectedDepartment($any($event.target).value)">
+                <option value="">全部部門</option>
+                @for (dept of filteredDepartments(); track dept.id) {
+                <option [value]="dept.name">{{ dept.name }}</option>
+                }
+              </select>
+            </div>
+            <div class="employee-select">
+              <select (change)="setSelectedEmployee($any($event.target).value)">
+                <option value="">-- 選擇員工 --</option>
+                @for (employee of attendees(); track employee.id) {
+                <option [value]="employee.id" [selected]="employee.id === selectedEmployeeId()">
+                  {{ employee.name }} ({{ employee.department }})
+                </option>
+                }
+              </select>
+            </div>
           </div>
           }
         </div>
@@ -225,6 +261,24 @@
     @if (viewMode() === 'list') {
     <div class="list-view">
       <div class="filter-bar">
+        @if (subsidiaries().length > 0) {
+        <div class="filter-item">
+          <select class="filter-select" [value]="selectedSubsidiaryId()" (change)="selectedSubsidiaryId.set($any($event.target).value)">
+            <option value="">全部子公司</option>
+            @for (sub of subsidiaries(); track sub.id) {
+            <option [value]="sub.id">{{ sub.name }}</option>
+            }
+          </select>
+        </div>
+        }
+        <div class="filter-item">
+          <select class="filter-select" [value]="selectedDepartment()" (change)="setSelectedDepartment($any($event.target).value)">
+            <option value="">全部部門</option>
+            @for (dept of filteredDepartments(); track dept.id) {
+            <option [value]="dept.name">{{ dept.name }}</option>
+            }
+          </select>
+        </div>
         <div class="filter-item">
           <select class="filter-select">
             <option value="">全部類型</option>
@@ -614,6 +668,30 @@
             </div>
           </div>
 
+          <!-- 歸屬組織 -->
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">歸屬子公司</label>
+              <select class="form-select" [value]="newMeeting().org_unit_id || ''"
+                (change)="updateNewMeeting('org_unit_id', $any($event.target).value)">
+                <option value="">-- 不指定 --</option>
+                @for (sub of subsidiaries(); track sub.id) {
+                <option [value]="sub.id">{{ sub.name }}</option>
+                }
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">歸屬部門</label>
+              <select class="form-select" [value]="newMeeting().department || ''"
+                (change)="updateNewMeeting('department', $any($event.target).value)">
+                <option value="">-- 不指定 --</option>
+                @for (dept of modalDepartments(); track dept.id) {
+                <option [value]="dept.name">{{ dept.name }}</option>
+                }
+              </select>
+            </div>
+          </div>
+
           <!-- Google 風格時間選擇器 -->
           <div class="time-picker-section">
             <div class="time-picker-header">
@@ -733,8 +811,16 @@
           @if (hasError('attendees')) {
           <span class="error-message section-error">{{ getError('attendees') }}</span>
           }
+          <div class="attendee-dept-filter">
+            <select class="form-select" [value]="modalAttendeeDept()" (change)="modalAttendeeDept.set($any($event.target).value)">
+              <option value="">全部部門</option>
+              @for (dept of modalDepartments(); track dept.id) {
+              <option [value]="dept.name">{{ dept.name }}</option>
+              }
+            </select>
+          </div>
           <div class="attendee-grid">
-            @for (attendee of attendees(); track attendee.id) {
+            @for (attendee of modalFilteredAttendees(); track attendee.id) {
             <label class="attendee-option" [class.selected]="isAttendeeSelected(attendee.id)" [class.is-organizer]="attendee.id === newMeeting().organizer?.id">
               <input type="checkbox" [checked]="isAttendeeSelected(attendee.id)" (change)="toggleAttendee(attendee)" />
               <span class="attendee-avatar">{{ attendee.avatar }}</span>

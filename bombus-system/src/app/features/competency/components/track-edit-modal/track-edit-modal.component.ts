@@ -41,6 +41,7 @@ export class TrackEditModalComponent {
 
     // 是否為編輯模式
     isEditMode = signal(false);
+    private _initialSnapshot = '';
 
     // 預設圖示選項
     iconOptions = [
@@ -78,9 +79,11 @@ export class TrackEditModalComponent {
                     maxGrade: data.maxGrade || 7,
                     sortOrder: data.sortOrder || 0
                 });
+                this._initialSnapshot = this._captureSnapshot();
             } else if (isVisible && !data) {
                 this.isEditMode.set(false);
                 this.resetForm();
+                this._initialSnapshot = this._captureSnapshot();
             }
             this.error.set(null);
         }, { allowSignalWrites: true });
@@ -98,13 +101,21 @@ export class TrackEditModalComponent {
         });
     }
 
+    private _captureSnapshot(): string {
+        return JSON.stringify(this.formData());
+    }
+
+    private hasUnsavedChanges(): boolean {
+        return this._initialSnapshot !== '' && this._captureSnapshot() !== this._initialSnapshot;
+    }
+
     // 關閉 Modal
     onClose(): void {
-        if (!this.saving()) {
-            this.resetForm();
-            this.error.set(null);
-            this.closed.emit();
-        }
+        if (this.saving()) return;
+        if (this.hasUnsavedChanges() && !confirm('您有未儲存的變更，確定要離開嗎？')) return;
+        this.resetForm();
+        this.error.set(null);
+        this.closed.emit();
     }
 
     // 更新表單欄位

@@ -111,6 +111,12 @@ $module-color: $color-l1-sage;
   }
 }
 
+.scope-filters {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
 .department-select,
 .employee-select {
   select {

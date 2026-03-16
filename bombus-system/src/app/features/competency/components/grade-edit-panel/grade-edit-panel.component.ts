@@ -1,9 +1,10 @@
-import { Component, ChangeDetectionStrategy, input, output, signal, inject, effect, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, signal, inject, effect, computed, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { GradeLevelNew, GradeTrackEntity, SalaryLevel } from '../../models/competency.model';
 import { CompetencyService } from '../../services/competency.service';
 import { NotificationService } from '../../../../core/services/notification.service';
+import { OrgUnit } from '../../../../core/models/org-unit.model';
 
 @Component({
   selector: 'app-grade-edit-panel',
@@ -23,9 +24,18 @@ export class GradeEditPanelComponent {
   context = input<'overview' | 'track-detail'>('overview');
   existingGrades = input<number[]>([]);
   orgUnitId = input<string>('');
+  subsidiaries = input<OrgUnit[]>([]);
   tracks = input<GradeTrackEntity[]>([]);
   closed = output<void>();
   saved = output<void>();
+
+  // 目前選擇的公司名稱（用於顯示提示）
+  currentOrgName = computed(() => {
+    const id = this.orgUnitId();
+    if (!id) return '集團預設';
+    const sub = this.subsidiaries().find(s => s.id === id);
+    return sub?.name || id;
+  });
 
   // --- 表單狀態 ---
   saving = signal(false);
@@ -63,6 +73,9 @@ export class GradeEditPanelComponent {
     title: '', educationRequirement: '', responsibilityDescription: ''
   });
 
+  // 初始快照（dirty check 用）
+  private _initialSnapshot = '';
+
   // 目前 Tab 對應的表單資料
   activeTrackForm = computed(() => {
     return this.activeTrackTab() === 'management'
@@ -96,9 +109,11 @@ export class GradeEditPanelComponent {
           educationRequirement: prof?.educationRequirement || '',
           responsibilityDescription: prof?.responsibilityDescription || ''
         });
+        this._initialSnapshot = untracked(() => this._captureSnapshot());
       } else if (isVisible && !data) {
         this.isEditMode.set(false);
         this.resetForm();
+        this._initialSnapshot = untracked(() => this._captureSnapshot());
       }
       this.error.set(null);
     }, { allowSignalWrites: true });
@@ -113,12 +128,27 @@ export class GradeEditPanelComponent {
     this.activeTrackTab.set('management');
   }
 
+  // --- Dirty Check ---
+  private _captureSnapshot(): string {
+    return JSON.stringify({
+      grade: this.formGrade(),
+      code: this.formCode(),
+      salaryLevels: this.formSalaryLevels(),
+      management: this.formManagement(),
+      professional: this.formProfessional()
+    });
+  }
+
+  private hasUnsavedChanges(): boolean {
+    return this._initialSnapshot !== '' && this._captureSnapshot() !== this._initialSnapshot;
+  }
+
   onClose(): void {
-    if (!this.saving()) {
-      this.resetForm();
-      this.error.set(null);
-      this.closed.emit();
-    }
+    if (this.saving()) return;
+    if (this.hasUnsavedChanges() && !confirm('您有未儲存的變更，確定要離開嗎？')) return;
+    this.resetForm();
+    this.error.set(null);
+    this.closed.emit();
   }
 
   setTrackTab(tab: 'management' | 'professional'): void {
@@ -270,11 +300,18 @@ export class GradeEditPanelComponent {
       : this.competencyService.createGradeLevel(payload);
 
     observable.subscribe({
-      next: () => {
+      next: (resp) => {
         this.saving.set(false);
+        if (resp.status === 'no_change') {
+          this.notificationService.info('未偵測到任何變更');
+          return;
+        }
         this.notificationService.info('變更已送出，等待審核');
         this.saved.emit();
-        this.onClose();
+        // 直接關閉，跳過 dirty check（資料已送出審核）
+        this.resetForm();
+        this.error.set(null);
+        this.closed.emit();
       },
       error: (err) => {
         this.saving.set(false);

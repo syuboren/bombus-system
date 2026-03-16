@@ -30,14 +30,9 @@
         </h3>
 
         <div class="form-group">
-          <label class="form-label required">職務級別</label>
-          @if (editMode()) {
-          <input type="text" class="form-input" [value]="formTrack().title"
-            (input)="updateTrackField('title', $any($event.target).value)"
-            placeholder="例如：副理" [disabled]="saving()" />
-          } @else {
+          <label class="form-label">職務級別</label>
           <span class="read-only-value">{{ formTrack().title || '尚未設定' }}</span>
-          }
+          <span class="form-hint">職務級別由「編輯職等」統一管理</span>
         </div>
 
         <div class="form-group">
@@ -244,17 +239,17 @@
           部門職位
         </h3>
 
-        @if (positions().length > 0) {
+        @if ((positionsByDept() | keyvalue).length > 0) {
         <div class="position-list">
           @for (entry of positionsByDept() | keyvalue; track entry.key) {
           <div class="position-group">
             <div class="position-group-header">{{ entry.key }}</div>
             @for (pos of entry.value; track pos.id) {
-            <div class="position-item">
+            <div class="position-item" [class.pending-add]="pos.id.startsWith('pending-')">
               <span class="position-title">{{ pos.title }}</span>
               @if (editMode()) {
               <button class="btn-position-delete" (click)="deletePosition(pos.id)"
-                [disabled]="savingPosition()" type="button">
+                [disabled]="saving()" type="button">
                 <i class="ri-close-line"></i>
               </button>
               }
@@ -270,7 +265,7 @@
         @if (editMode()) {
         <div class="position-add-form">
           <select class="form-select form-select-sm" [value]="newPositionDept()"
-            (change)="newPositionDept.set($any($event.target).value)" [disabled]="savingPosition()">
+            (change)="newPositionDept.set($any($event.target).value)" [disabled]="saving()">
             <option value="">選擇部門</option>
             @for (dept of departments(); track dept.id) {
             <option [value]="dept.name">{{ dept.name }}</option>
@@ -279,14 +274,10 @@
           <input type="text" class="form-input form-input-sm" [value]="newPositionTitle()"
             (input)="newPositionTitle.set($any($event.target).value)"
             (keydown.enter)="addPosition()"
-            placeholder="職位名稱" [disabled]="savingPosition()" />
+            placeholder="職位名稱" [disabled]="saving()" />
           <button class="btn btn-primary btn-sm" (click)="addPosition()"
-            [disabled]="savingPosition() || !newPositionDept() || !newPositionTitle().trim()" type="button">
-            @if (savingPosition()) {
-            <i class="ri-loader-4-line spinner"></i>
-            } @else {
+            [disabled]="saving() || !newPositionDept() || !newPositionTitle().trim()" type="button">
             <i class="ri-add-line"></i>
-            }
           </button>
         </div>
         }

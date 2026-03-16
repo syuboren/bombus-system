@@ -95,6 +95,9 @@
       <table class="overview-table">
         <thead>
           <tr>
+            @if (editMode()) {
+            <th class="th-action"></th>
+            }
             <th class="th-grade">職等</th>
             <th>職級代碼</th>
             @for (track of tracks(); track track.id) {
@@ -102,9 +105,6 @@
             }
             <th>薪資範圍</th>
             <th>薪資級數</th>
-            @if (editMode()) {
-            <th class="th-actions"></th>
-            }
           </tr>
         </thead>
         <tbody>
@@ -113,6 +113,14 @@
             [class.editing]="editingGradeNumber() === grade.grade"
             [class.dimmed]="editingGradeNumber() !== null && editingGradeNumber() !== grade.grade"
             [class.has-pending]="editMode() && hasPendingForGrade(grade.grade)">
+            @if (editMode()) {
+            <td class="td-action">
+              <button class="btn-edit-row" (click)="openEditGrade(grade); $event.stopPropagation()" type="button"
+                title="編輯職等">
+                <i class="ri-pencil-line"></i>
+              </button>
+            </td>
+            }
             <td class="td-grade">
               <span class="grade-num">{{ grade.grade }}</span>
               @if (editMode() && hasPendingForGrade(grade.grade)) {
@@ -125,14 +133,6 @@
             }
             <td class="td-salary">{{ getSalaryRangeText(grade) }}</td>
             <td>{{ grade.salaryLevels.length }} 筆</td>
-            @if (editMode()) {
-            <td class="td-actions">
-              <button class="btn-edit-row" (click)="openEditGrade(grade); $event.stopPropagation()" type="button"
-                title="編輯職等">
-                <i class="ri-pencil-line"></i>
-              </button>
-            </td>
-            }
           </tr>
           }
         </tbody>
@@ -849,11 +849,11 @@
         </div>
         <div class="basic-info-grid">
           <div class="info-card">
-            <span class="info-label">管理職職稱</span>
+            <span class="info-label">管理職職務級別</span>
             <span class="info-value">{{ getManagementTitle(grade) }}</span>
           </div>
           <div class="info-card">
-            <span class="info-label">專業職職稱</span>
+            <span class="info-label">專業職職務級別</span>
             <span class="info-value">{{ getProfessionalTitle(grade) }}</span>
           </div>
           <div class="info-card">
@@ -1093,7 +1093,7 @@
 
 <app-grade-edit-panel [visible]="showGradeEditPanel()" [gradeData]="editingGrade()"
   [existingGrades]="existingGradeNumbers()" [orgUnitId]="overviewSubsidiaryId()"
-  [tracks]="tracks()"
+  [subsidiaries]="subsidiaries()" [tracks]="tracks()"
   (closed)="closeGradeEditPanel()" (saved)="onGradeSaved()" />
 
 <app-position-edit-modal [visible]="showPositionEditModal()" [positionData]="editingPosition()"

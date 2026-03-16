@@ -1,0 +1,35 @@
+{
+  "tableName": "candidate_interview_forms",
+  "columns": [
+    "id",
+    "interview_id",
+    "form_token",
+    "form_data",
+    "status",
+    "time_limit_minutes",
+    "started_at",
+    "submitted_at",
+    "locked_at",
+    "current_step",
+    "last_saved_at",
+    "created_at"
+  ],
+  "rows": [
+    [
+      "00eab67c-d8c3-4b21-97a5-87c5e92d35e4",
+      "9f1e2070-eaa8-41dc-a7cd-c7a25c706bb3",
+      "60ad2ad4-eac5-48a7-9788-ff6eae984e8d",
+      null,
+      "Pending",
+      60,
+      null,
+      null,
+      null,
+      1,
+      null,
+      "2026-02-05T09:19:35.916Z"
+    ]
+  ],
+  "rowCount": 1,
+  "exportedAt": "2026-03-15T16:50:32.771Z"
+}

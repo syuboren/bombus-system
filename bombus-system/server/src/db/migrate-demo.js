@@ -831,6 +831,20 @@ async function migrateDemoData() {
   seedSubsidiarySalaryData(targetDB);
   demoAdapter.save();
 
+  // 9d. 從 JSON 種子檔還原遺失的業務資料（fallback safety net）
+  try {
+    const { importSeeds } = require('./seed-import');
+    const seedResult = await importSeeds(targetDB);
+    if (seedResult.imported > 0) {
+      console.log(`\n  ✅ 從 JSON 種子檔補回 ${seedResult.tables} 張表，${seedResult.imported} 筆資料`);
+      demoAdapter.save();
+    } else {
+      console.log('\n  ○ JSON 種子檔：所有表已有資料，無需補回');
+    }
+  } catch (e) {
+    console.log(`\n  ○ JSON 種子檔不可用，跳過 (${e.message})`);
+  }
+
   // 10. 建立 RBAC 種子資料
   const rbacResult = await seedRBACData(demoAdapter);
 
@@ -858,6 +872,9 @@ async function migrateDemoData() {
       details: migrationDetails
     }
   });
+
+  // 儲存 platform.db（確保租戶註冊、方案、管理員、審計日誌寫入磁碟）
+  platformDB.save();
 
   // 11. 關閉 source DB
   sourceDB.close();

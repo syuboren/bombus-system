@@ -312,6 +312,15 @@ export class OnboardingConvertModalComponent implements OnInit {
   }
 
   closeModal(): void {
+    if (this.showSuccess()) {
+      this.showSuccess.set(false);
+      this.convertResult.set(null);
+      this.close.emit();
+      return;
+    }
+    const hasUserChanges = !!(this.salaryLevelCode() || this.managerId() ||
+      this.workLocation() || this.contractType() !== 'full-time' || this.probationMonths() !== 3);
+    if (hasUserChanges && !confirm('您有未儲存的變更，確定要離開嗎？')) return;
     this.showSuccess.set(false);
     this.convertResult.set(null);
     this.close.emit();

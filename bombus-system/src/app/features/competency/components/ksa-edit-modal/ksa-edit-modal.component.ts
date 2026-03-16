@@ -41,6 +41,7 @@ export class KsaEditModalComponent {
     // UI state
     saving = signal(false);
     error = signal<string | null>(null);
+    private _initialSnapshot = '';
 
     // KSA 類型選項
     readonly ksaTypes: { value: CompetencyType; label: string; icon: string }[] = [
@@ -76,6 +77,7 @@ export class KsaEditModalComponent {
                     // 新增模式：重置表單
                     this.resetForm();
                 }
+                this._initialSnapshot = this._captureSnapshot();
             }
         }, { allowSignalWrites: true });
     }
@@ -95,13 +97,18 @@ export class KsaEditModalComponent {
         this.error.set(null);
     }
 
-    /**
-     * 關閉 Modal
-     */
+    private _captureSnapshot(): string {
+        return JSON.stringify(this.formData());
+    }
+
+    private hasUnsavedChanges(): boolean {
+        return this._initialSnapshot !== '' && this._captureSnapshot() !== this._initialSnapshot;
+    }
+
     onClose(): void {
-        if (!this.saving()) {
-            this.close.emit();
-        }
+        if (this.saving()) return;
+        if (this.hasUnsavedChanges() && !confirm('您有未儲存的變更，確定要離開嗎？')) return;
+        this.close.emit();
     }
 
     /**

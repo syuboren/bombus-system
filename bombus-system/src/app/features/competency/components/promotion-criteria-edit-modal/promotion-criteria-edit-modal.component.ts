@@ -62,6 +62,7 @@ export class PromotionCriteriaEditModalComponent {
     chipInput = signal<{ skills: string; courses: string; kpi: string; criteria: string }>({
         skills: '', courses: '', kpi: '', criteria: ''
     });
+    private _initialSnapshot = '';
 
     constructor() {
         effect(() => {
@@ -86,9 +87,11 @@ export class PromotionCriteriaEditModalComponent {
                     additionalCriteria: [...(data.additionalCriteria || [])],
                     promotionProcedure: data.promotionProcedure || ''
                 });
+                this._initialSnapshot = this._captureSnapshot();
             } else if (isVisible && !data) {
                 this.isEditMode.set(false);
                 this.resetForm();
+                this._initialSnapshot = this._captureSnapshot();
             }
             this.error.set(null);
         }, { allowSignalWrites: true });
@@ -104,8 +107,18 @@ export class PromotionCriteriaEditModalComponent {
         this.chipInput.set({ skills: '', courses: '', kpi: '', criteria: '' });
     }
 
+    private _captureSnapshot(): string {
+        return JSON.stringify(this.formData());
+    }
+
+    private hasUnsavedChanges(): boolean {
+        return this._initialSnapshot !== '' && this._captureSnapshot() !== this._initialSnapshot;
+    }
+
     onClose(): void {
-        if (!this.saving()) { this.resetForm(); this.error.set(null); this.closed.emit(); }
+        if (this.saving()) return;
+        if (this.hasUnsavedChanges() && !confirm('您有未儲存的變更，確定要離開嗎？')) return;
+        this.resetForm(); this.error.set(null); this.closed.emit();
     }
 
     updateField(field: string, value: any): void {

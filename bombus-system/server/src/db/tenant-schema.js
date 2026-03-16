@@ -1368,7 +1368,8 @@ function initTenantSchema(adapter) {
     { table: 'grade_salary_levels', index: 'idx_gsl_org_unit' },
     { table: 'department_positions', index: 'idx_dp_org_unit' },
     { table: 'promotion_criteria', index: 'idx_pc_org_unit' },
-    { table: 'career_paths', index: 'idx_cp_org_unit' }
+    { table: 'career_paths', index: 'idx_cp_org_unit' },
+    { table: 'meetings', index: 'idx_meeting_org_unit' }
   ];
   for (const { table, index } of subsidiaryMigrations) {
     try {
@@ -1376,6 +1377,9 @@ function initTenantSchema(adapter) {
     } catch (e) { /* 欄位已存在則忽略 */ }
     db.run(`CREATE INDEX IF NOT EXISTS ${index} ON ${table}(org_unit_id)`);
   }
+
+  // meetings 表加 department 欄位
+  try { db.run('ALTER TABLE meetings ADD COLUMN department TEXT'); } catch (e) { /* 欄位已存在 */ }
 
   // grade_salary_levels 複合唯一索引：同一 (code, org_unit_id) 組合不可重複
   // COALESCE 處理 NULL（SQLite 中每個 NULL 在 UNIQUE 中被視為不同值）

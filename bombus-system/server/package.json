@@ -6,7 +6,10 @@
     "scripts": {
         "start": "node src/index.js",
         "dev": "nodemon src/index.js",
-        "init-db": "node src/db/init.js"
+        "init-db": "node src/db/init.js",
+        "seed:export": "node src/db/seed-export.js",
+        "seed:import": "node src/db/seed-import.js",
+        "seed:verify": "node src/db/seed-verify.js"
     },
     "dependencies": {
         "axios": "^1.13.2",

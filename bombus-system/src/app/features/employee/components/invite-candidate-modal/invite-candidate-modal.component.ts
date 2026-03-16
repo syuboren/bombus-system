@@ -29,6 +29,13 @@ export class InviteCandidateModalComponent {
     proposedSlots = signal<string[]>(['']);
     loading = signal<boolean>(false);
 
+    tryClose(): void {
+        if (this.loading()) return;
+        const hasContent = this.proposedSlots().some(s => !!s.trim());
+        if (hasContent && !confirm('您有未儲存的變更，確定要離開嗎？')) return;
+        this.close.emit();
+    }
+
     addSlot() {
         this.proposedSlots.update(slots => [...slots, '']);
     }

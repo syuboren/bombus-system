@@ -1,0 +1,117 @@
+{
+  "tableName": "talent_tags",
+  "columns": [
+    "id",
+    "name",
+    "color",
+    "category",
+    "description",
+    "usage_count",
+    "created_at",
+    "updated_at"
+  ],
+  "rows": [
+    [
+      "tag-tech-lead",
+      "技術主管",
+      "#EF4444",
+      "experience",
+      null,
+      0,
+      "2026-03-10 05:22:13",
+      null
+    ],
+    [
+      "tag-senior",
+      "資深工程師",
+      "#F97316",
+      "experience",
+      null,
+      0,
+      "2026-03-10 05:22:13",
+      null
+    ],
+    [
+      "tag-full-stack",
+      "全端開發",
+      "#8B5CF6",
+      "skill",
+      null,
+      0,
+      "2026-03-10 05:22:13",
+      null
+    ],
+    [
+      "tag-frontend",
+      "前端專長",
+      "#3B82F6",
+      "skill",
+      null,
+      0,
+      "2026-03-10 05:22:13",
+      null
+    ],
+    [
+      "tag-backend",
+      "後端專長",
+      "#10B981",
+      "skill",
+      null,
+      0,
+      "2026-03-10 05:22:13",
+      null
+    ],
+    [
+      "tag-ai-ml",
+      "AI/ML",
+      "#EC4899",
+      "skill",
+      null,
+      0,
+      "2026-03-10 05:22:13",
+      null
+    ],
+    [
+      "tag-cloud",
+      "雲端架構",
+      "#06B6D4",
+      "skill",
+      null,
+      0,
+      "2026-03-10 05:22:13",
+      null
+    ],
+    [
+      "tag-management",
+      "管理經驗",
+      "#F59E0B",
+      "experience",
+      null,
+      0,
+      "2026-03-10 05:22:13",
+      null
+    ],
+    [
+      "tag-high-potential",
+      "高潛力",
+      "#84CC16",
+      "personality",
+      null,
+      0,
+      "2026-03-10 05:22:13",
+      null
+    ],
+    [
+      "tag-referred",
+      "內部推薦",
+      "#6366F1",
+      "custom",
+      null,
+      0,
+      "2026-03-10 05:22:13",
+      null
+    ]
+  ],
+  "rowCount": 10,
+  "exportedAt": "2026-03-15T16:50:32.771Z"
+}
