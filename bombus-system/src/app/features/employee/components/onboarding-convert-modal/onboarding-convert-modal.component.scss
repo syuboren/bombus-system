@@ -558,13 +558,42 @@
       font-size: 14px;
       font-weight: 500;
       color: #1A1A1A;
+
+      &.password-value {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        code {
+          background: #FEF3C7;
+          color: #92400E;
+          padding: 2px 8px;
+          border-radius: 4px;
+          font-family: monospace;
+          font-size: 13px;
+          letter-spacing: 0.5px;
+        }
+
+        .copy-btn {
+          background: none;
+          border: none;
+          cursor: pointer;
+          color: #6B7280;
+          padding: 2px;
+          font-size: 14px;
+
+          &:hover {
+            color: #3B82F6;
+          }
+        }
+      }
     }
   }
 
   .warning-text {
     color: #DC2626;
     font-size: 13px;
-    margin: 0;
+    margin: 8px 0 0;
 
     i {
       margin-right: 4px;

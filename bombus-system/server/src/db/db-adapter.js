@@ -85,6 +85,7 @@ class SqliteAdapter extends DBAdapter {
     super();
     this._db = sqlJsDb;
     this._filePath = filePath;
+    this._inTransaction = false;
   }
 
   /** @returns {import('sql.js').Database} 底層 sql.js 實例 */
@@ -140,9 +141,16 @@ class SqliteAdapter extends DBAdapter {
       stmt.step();
       stmt.free();
       const changes = this._db.getRowsModified();
-      this.save();
+      // 在交易內不呼叫 save()：sql.js 的 export() 會破壞活躍的交易狀態
+      if (!this._inTransaction) {
+        this.save();
+      }
       return { changes };
     } catch (e) {
+      // 在交易內必須拋出錯誤以觸發 ROLLBACK，確保原子性
+      if (this._inTransaction) {
+        throw e;
+      }
       console.error('SQL Error (run):', e.message, 'SQL:', sql, 'Params:', params);
       return { changes: 0 };
     }
@@ -150,14 +158,22 @@ class SqliteAdapter extends DBAdapter {
 
   transaction(fn) {
     this._db.run('BEGIN TRANSACTION');
+    this._inTransaction = true;
     try {
       const result = fn(this);
       this._db.run('COMMIT');
       this.save();
       return result;
     } catch (e) {
-      this._db.run('ROLLBACK');
+      try {
+        this._db.run('ROLLBACK');
+      } catch (rollbackErr) {
+        // 交易可能已因錯誤自動回滾
+        console.error('Rollback warning:', rollbackErr.message);
+      }
       throw e;
+    } finally {
+      this._inTransaction = false;
     }
   }
 

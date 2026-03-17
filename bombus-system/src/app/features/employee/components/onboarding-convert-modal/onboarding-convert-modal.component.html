@@ -69,7 +69,7 @@
               </select>
             </div>
             @if (isSubsidiaryLocked()) {
-            <span class="hint">依據您的帳號權限自動鎖定</span>
+            <span class="hint">依據應徵職缺自動鎖定</span>
             }
           </div>
         </div>
@@ -356,8 +356,16 @@
           </div>
           <div class="info-item">
             <span class="label">預設密碼</span>
-            <span class="value">同登入信箱（首次登入需變更）</span>
+            <span class="value password-value">
+              <code>{{ account.initial_password }}</code>
+              <button class="copy-btn" (click)="copyText(account.initial_password || '')" type="button">
+                <i class="ri-file-copy-line"></i>
+              </button>
+            </span>
           </div>
+          <p class="warning-text">
+            <i class="ri-error-warning-line"></i> 請立即記錄此密碼，視窗關閉後無法再查看。首次登入需變更密碼。
+          </p>
           @if (account.default_role) {
           <div class="info-item">
             <span class="label">預設角色</span>

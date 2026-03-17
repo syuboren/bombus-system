@@ -80,6 +80,7 @@ router.get('/pending-conversions', (req, res) => {
         c.avatar,
         j.title as position,
         j.department as original_department,
+        j.org_unit_id as job_org_unit_id,
         jd.grade as original_grade,
         jd.position_name as original_position_name,
         c.status,
@@ -707,17 +708,53 @@ router.get('/grades', (req, res) => {
  */
 router.get('/salary-levels', (req, res) => {
   try {
-    const { grade } = req.query;
+    const { grade, org_unit_id } = req.query;
 
+    // 如果指定了 org_unit_id，優先回傳該組織的職級；若該職等無對應資料則退回集團預設 (NULL)
+    if (org_unit_id) {
+      const gradeFilter = grade ? parseInt(grade, 10) : null;
+      if (grade && isNaN(gradeFilter)) {
+        return res.status(400).json({ error: 'Invalid grade parameter' });
+      }
+
+      // 查詢所有職等（或指定職等）的薪資碼
+      const allGrades = gradeFilter
+        ? [gradeFilter]
+        : req.tenantDB.prepare('SELECT DISTINCT grade FROM grade_levels ORDER BY grade').all().map(r => r.grade);
+
+      const results = [];
+      for (const g of allGrades) {
+        // 先查該組織的職級
+        let levels = req.tenantDB.prepare(`
+          SELECT gsl.id, gsl.grade, gsl.code, gsl.salary, gsl.sort_order,
+                 gl.title_management, gl.title_professional, gsl.org_unit_id
+          FROM grade_salary_levels gsl
+          JOIN grade_levels gl ON gsl.grade = gl.grade
+          WHERE gsl.grade = ? AND gsl.org_unit_id = ?
+          ORDER BY gsl.sort_order
+        `).all(g, org_unit_id);
+
+        // 若該組織無資料，退回集團預設 (org_unit_id IS NULL)
+        if (levels.length === 0) {
+          levels = req.tenantDB.prepare(`
+            SELECT gsl.id, gsl.grade, gsl.code, gsl.salary, gsl.sort_order,
+                   gl.title_management, gl.title_professional, gsl.org_unit_id
+            FROM grade_salary_levels gsl
+            JOIN grade_levels gl ON gsl.grade = gl.grade
+            WHERE gsl.grade = ? AND gsl.org_unit_id IS NULL
+            ORDER BY gsl.sort_order
+          `).all(g);
+        }
+        results.push(...levels);
+      }
+      return res.json(results);
+    }
+
+    // 無指定 org_unit_id：回傳全部（向後相容）
     let query = `
-      SELECT 
-        gsl.id,
-        gsl.grade,
-        gsl.code,
-        gsl.salary,
-        gsl.sort_order,
-        gl.title_management,
-        gl.title_professional
+      SELECT
+        gsl.id, gsl.grade, gsl.code, gsl.salary, gsl.sort_order,
+        gl.title_management, gl.title_professional, gsl.org_unit_id
       FROM grade_salary_levels gsl
       JOIN grade_levels gl ON gsl.grade = gl.grade
     `;
@@ -743,10 +780,10 @@ router.get('/salary-levels', (req, res) => {
  */
 router.get('/positions', (req, res) => {
   try {
-    const { department, grade, track } = req.query;
+    const { department, grade, track, org_unit_id } = req.query;
 
     let query = `
-      SELECT 
+      SELECT
         dp.id,
         dp.department,
         dp.grade,
@@ -773,6 +810,11 @@ router.get('/positions', (req, res) => {
     if (track) {
       query += ` AND (dp.track = ? OR dp.track = 'both')`;
       params.push(track);
+    }
+
+    if (org_unit_id) {
+      query += ` AND (dp.org_unit_id = ? OR dp.org_unit_id IS NULL)`;
+      params.push(org_unit_id);
     }
 
     query += ` ORDER BY dp.grade DESC, dp.department, dp.track`;

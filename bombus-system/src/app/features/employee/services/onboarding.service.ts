@@ -386,19 +386,23 @@ export class OnboardingService {
     /**
      * 取得職級薪資列表
      */
-    getSalaryLevels(grade?: number): Observable<SalaryLevel[]> {
-        const params = grade ? `?grade=${grade}` : '';
-        return this.http.get<SalaryLevel[]>(`${this.hrOnboardingUrl}/salary-levels${params}`);
+    getSalaryLevels(grade?: number, orgUnitId?: string): Observable<SalaryLevel[]> {
+        const params = new URLSearchParams();
+        if (grade) params.append('grade', grade.toString());
+        if (orgUnitId) params.append('org_unit_id', orgUnitId);
+        const qs = params.toString();
+        return this.http.get<SalaryLevel[]>(`${this.hrOnboardingUrl}/salary-levels${qs ? '?' + qs : ''}`);
     }
 
     /**
      * 取得職位列表
      */
-    getPositions(department?: string, grade?: number, track?: string): Observable<PositionOption[]> {
+    getPositions(department?: string, grade?: number, track?: string, orgUnitId?: string): Observable<PositionOption[]> {
         const params = new URLSearchParams();
         if (department) params.append('department', department);
         if (grade) params.append('grade', grade.toString());
         if (track) params.append('track', track);
+        if (orgUnitId) params.append('org_unit_id', orgUnitId);
         const queryString = params.toString();
         return this.http.get<PositionOption[]>(`${this.hrOnboardingUrl}/positions${queryString ? '?' + queryString : ''}`);
     }
@@ -425,6 +429,7 @@ export interface PendingCandidate {
     original_department?: string;
     original_grade?: number;
     original_position_name?: string;
+    job_org_unit_id?: string;
     status: string;
     stage: string;
     offer_response: string;
@@ -464,6 +469,7 @@ export interface ConvertCandidateResponse {
         user_account?: {
             user_id: string;
             email: string;
+            initial_password?: string;
             must_change_password?: boolean;
             default_role?: string | null;
             already_existed?: boolean;

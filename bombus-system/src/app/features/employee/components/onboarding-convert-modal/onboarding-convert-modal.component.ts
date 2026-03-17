@@ -112,7 +112,10 @@ export class OnboardingConvertModalComponent implements OnInit {
 
   subsidiaryOrgUnits = this.orgUnitService.subsidiaries;
 
-  isSubsidiaryLocked = computed(() => !!this.orgUnitService.lockedSubsidiaryId());
+  // 子公司鎖定：若候選人職缺已指定 org_unit_id 或使用者 scope 限定，則鎖定
+  isSubsidiaryLocked = computed(() =>
+    !!this.orgUnitService.lockedSubsidiaryId() || !!this.candidate().job_org_unit_id
+  );
 
   departmentOrgUnits = computed(() =>
     this.orgUnitService.filterDepartments(this.selectedSubsidiaryId())
@@ -189,18 +192,6 @@ export class OnboardingConvertModalComponent implements OnInit {
       error: () => this.grades.set([])
     });
 
-    // 載入所有職級薪資
-    this.onboardingService.getSalaryLevels().subscribe({
-      next: (levels) => this.salaryLevels.set(levels),
-      error: () => this.salaryLevels.set([])
-    });
-
-    // 載入所有職位
-    this.onboardingService.getPositions().subscribe({
-      next: (positions) => this.positions.set(positions),
-      error: () => this.positions.set([])
-    });
-
     // 載入主管列表
     this.onboardingService.getManagers().subscribe({
       next: (mgrs) => this.managers.set(mgrs),
@@ -213,14 +204,22 @@ export class OnboardingConvertModalComponent implements OnInit {
       error: () => this.nextEmployeeNo.set('')
     });
 
-    // 載入組織單位（透過共用服務）
+    // 載入組織單位，然後根據候選人職缺或使用者 scope 設定子公司
     this.orgUnitService.loadOrgUnits().subscribe({
       next: () => {
-        // 依使用者 scope 自動鎖定子公司
+        // 優先從候選人職缺帶入子公司
+        const jobOrgId = this.candidate().job_org_unit_id;
         const locked = this.orgUnitService.lockedSubsidiaryId();
-        if (locked) {
-          this.selectedSubsidiaryId.set(locked);
+        const subId = jobOrgId || locked || '';
+        if (subId) {
+          this.selectedSubsidiaryId.set(subId);
         }
+        // 子公司確定後，載入對應的職級和職位
+        this._loadSalaryLevelsAndPositions(subId);
+      },
+      error: () => {
+        // 組織單位載入失敗時，仍載入不篩選組織的職級和職位
+        this._loadSalaryLevelsAndPositions('');
       }
     });
 
@@ -228,6 +227,21 @@ export class OnboardingConvertModalComponent implements OnInit {
     const defaultDate = new Date();
     defaultDate.setDate(defaultDate.getDate() + 7);
     this.hireDate.set(defaultDate.toISOString().split('T')[0]);
+  }
+
+  /** 根據 org_unit_id 載入職級薪資和職位 */
+  private _loadSalaryLevelsAndPositions(orgUnitId: string): void {
+    // 載入職級薪資（依子公司篩選，無則退回集團預設）
+    this.onboardingService.getSalaryLevels(undefined, orgUnitId || undefined).subscribe({
+      next: (levels) => this.salaryLevels.set(levels),
+      error: () => this.salaryLevels.set([])
+    });
+
+    // 載入職位（依子公司篩選）
+    this.onboardingService.getPositions(undefined, undefined, undefined, orgUnitId || undefined).subscribe({
+      next: (positions) => this.positions.set(positions),
+      error: () => this.positions.set([])
+    });
   }
 
   onOrgUnitDepartmentChange(orgUnitId: string): void {
@@ -243,6 +257,11 @@ export class OnboardingConvertModalComponent implements OnInit {
     this.selectedSubsidiaryId.set(subId);
     // 重置組織單位選擇（子公司變更後 org_unit 可能不再匹配）
     this.orgUnitId.set('');
+    this.department.set('');
+    this.salaryLevelCode.set('');
+    this.position.set('');
+    // 重新載入該子公司的職級薪資和職位
+    this._loadSalaryLevelsAndPositions(subId);
   }
 
   onGradeChange(grade: number | null): void {
@@ -308,6 +327,12 @@ export class OnboardingConvertModalComponent implements OnInit {
     const fullUrl = window.location.origin + url;
     navigator.clipboard.writeText(fullUrl).then(() => {
       this.notificationService.success('連結已複製');
+    });
+  }
+
+  copyText(text: string): void {
+    navigator.clipboard.writeText(text).then(() => {
+      this.notificationService.success('已複製到剪貼簿');
     });
   }
 
