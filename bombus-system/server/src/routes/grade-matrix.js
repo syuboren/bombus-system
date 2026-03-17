@@ -70,33 +70,17 @@ router.get('/', (req, res) => {
       `).all(orgUnitId);
     }
 
-    // 將薪資 + 軌道資料合併到對應的職等（per-grade fallback）
+    // 子公司：薪資和軌道條目都不 fallback（Tab A 顯示子公司自己的資料）
     const result = grades.map(g => {
-      // 薪資：子公司有該職等的資料就用子公司的，否則 fallback 到集團預設
-      let gradeSalaries;
-      if (orgUnitId) {
-        const orgGradeSalaries = orgSalaryLevels.filter(s => s.grade === g.grade);
-        gradeSalaries = orgGradeSalaries.length > 0
-          ? orgGradeSalaries
-          : defaultSalaryLevels.filter(s => s.grade === g.grade);
-      } else {
-        gradeSalaries = defaultSalaryLevels.filter(s => s.grade === g.grade);
-      }
+      const gradeSalaries = (orgUnitId ? orgSalaryLevels : defaultSalaryLevels)
+        .filter(s => s.grade === g.grade);
       const salaries = gradeSalaries.map(s => s.salary);
 
-      // 軌道條目：同樣 per-grade fallback
-      let gradeTrackEntries;
-      if (orgUnitId) {
-        const orgGradeTracks = orgTrackEntries.filter(t => t.grade === g.grade);
-        gradeTrackEntries = orgGradeTracks.length > 0
-          ? orgGradeTracks
-          : defaultTrackEntries.filter(t => t.grade === g.grade);
-      } else {
-        gradeTrackEntries = defaultTrackEntries.filter(t => t.grade === g.grade);
-      }
+      const gradeTrackEntries = (orgUnitId ? orgTrackEntries : defaultTrackEntries)
+        .filter(t => t.grade === g.grade);
 
-      // codeRange：從實際薪資級距動態計算（不依賴 grade_levels.code_range）
-      let codeRange = g.code_range; // 集團預設
+      // codeRange：有指定 orgUnitId 時只用該組織薪資碼，無指定才用 grade_levels.code_range
+      let codeRange = orgUnitId ? '' : g.code_range;
       if (gradeSalaries.length > 0) {
         const codes = gradeSalaries.map(s => s.code).filter(Boolean);
         if (codes.length === 1) {
@@ -106,7 +90,7 @@ router.get('/', (req, res) => {
         }
       }
 
-      return {
+      const gradeObj = {
         id: g.id,
         grade: g.grade,
         codeRange,
@@ -119,6 +103,20 @@ router.get('/', (req, res) => {
         maxSalary: salaries.length > 0 ? Math.max(...salaries) : 0,
         trackEntries: gradeTrackEntries.map(mapTrackEntry)
       };
+
+      // 子公司模式：附帶集團預設值供 Tab B/C fallback
+      if (orgUnitId) {
+        const defTracks = defaultTrackEntries.filter(t => t.grade === g.grade);
+        const mgmt = defTracks.find(t => t.track === 'management');
+        const prof = defTracks.find(t => t.track === 'professional');
+        gradeObj.defaults = {
+          codeRange: g.code_range || '',
+          managementTitle: mgmt ? mgmt.title : '',
+          professionalTitle: prof ? prof.title : ''
+        };
+      }
+
+      return gradeObj;
     });
 
     res.json({ success: true, data: result });
@@ -374,6 +372,17 @@ router.get('/positions/list', (req, res) => {
   try {
     const { department, grade, track, org_unit_id } = req.query;
 
+    // 整體 fallback：子公司若完全沒有建立 department_positions，則使用集團預設（org_unit_id IS NULL）
+    let effectiveOrgUnitId = org_unit_id || null;
+    if (org_unit_id) {
+      const orgCount = req.tenantDB.prepare(
+        `SELECT COUNT(*) as count FROM department_positions WHERE org_unit_id = ?`
+      ).get(org_unit_id);
+      if (!orgCount || orgCount.count === 0) {
+        effectiveOrgUnitId = null; // fallback to group defaults
+      }
+    }
+
     let query = `
       SELECT
         dp.id,
@@ -390,9 +399,11 @@ router.get('/positions/list', (req, res) => {
     `;
     const params = [];
 
-    if (org_unit_id) {
+    if (effectiveOrgUnitId) {
       query += ` AND dp.org_unit_id = ?`;
-      params.push(org_unit_id);
+      params.push(effectiveOrgUnitId);
+    } else {
+      query += ` AND (dp.org_unit_id IS NULL OR dp.org_unit_id = '')`;
     }
     if (department) {
       query += ` AND dp.department = ?`;

@@ -827,9 +827,9 @@ async function migrateDemoData() {
   migrateGradeTrackEntries(targetDB);
   demoAdapter.save();
 
-  // 9c. 子公司差異化薪資種子資料
-  seedSubsidiarySalaryData(targetDB);
-  demoAdapter.save();
+  // 9c. 子公司差異化薪資種子資料（已停用：不自動對新建子公司塞種子資料）
+  // seedSubsidiarySalaryData(targetDB);
+  // demoAdapter.save();
 
   // 9d. 從 JSON 種子檔還原遺失的業務資料（fallback safety net）
   try {

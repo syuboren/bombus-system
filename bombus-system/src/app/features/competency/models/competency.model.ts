@@ -95,6 +95,8 @@ export interface GradeLevelNew {
   salaryLevels: SalaryLevel[];      // 職級薪資清單
   minSalary: number;                // 薪資下限
   maxSalary: number;                // 薪資上限
+  /** 集團預設值（子公司模式時由 API 提供，供 Tab B/C fallback） */
+  defaults?: { codeRange: string; managementTitle: string; professionalTitle: string };
   /** @deprecated 使用 trackEntries 取代，保留向後相容 */
   titleManagement?: string;
   /** @deprecated 使用 trackEntries 取代，保留向後相容 */

@@ -247,10 +247,16 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
     return this.employees().find(e => e.id === id) || null;
   });
 
+  /** 根據當前 tab 決定使用哪個子公司 ID 載入資料 */
+  private activeOrgUnitId = computed(() => {
+    const tab = this.matrixSubTab();
+    return tab === 'overview' ? this.overviewSubsidiaryId() : this.selectedSubsidiaryId();
+  });
+
   constructor() {
-    // Tab A 子公司切換時自動重新載入薪資資料
+    // 切換 tab 或子公司下拉時自動重新載入資料
     effect(() => {
-      const orgUnitId = this.overviewSubsidiaryId();
+      const orgUnitId = this.activeOrgUnitId();
       this.loadDataNew();
     }, { allowSignalWrites: true });
   }
@@ -287,9 +293,9 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
     });
   }
 
-  // 載入新版資料 (從 API)（W2 修正：薪資查詢讀取 overviewSubsidiaryId）
+  // 載入新版資料 (從 API)（根據 activeOrgUnitId 載入對應子公司資料）
   loadDataNew(): void {
-    const orgUnitId = this.overviewSubsidiaryId() || undefined;
+    const orgUnitId = this.activeOrgUnitId() || undefined;
 
     this.competencyService.getGradeMatrixFromAPI(orgUnitId).subscribe(data => {
       this.gradesNew.set(data);
@@ -476,7 +482,7 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
 
   onPositionInPanelSaved(): void {
     // 重新載入職位資料（不關閉面板）
-    const orgUnitId = this.overviewSubsidiaryId() || undefined;
+    const orgUnitId = this.activeOrgUnitId() || undefined;
     this.competencyService.getDepartmentPositions(undefined, undefined, undefined, orgUnitId).subscribe(data => {
       this.departmentPositions.set(data);
     });
@@ -791,9 +797,17 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
     return grade.trackEntries?.find(e => e.track === trackCode);
   }
 
-  // 取得指定軌道的職稱
+  // 取得指定軌道的職稱（僅組織自有資料）
   getTrackTitle(grade: GradeLevelNew, trackCode: string): string {
     return this.getTrackEntry(grade, trackCode)?.title || '';
+  }
+
+  // 取得指定軌道的職稱（含集團預設 fallback，用於 Tab B/C）
+  getTrackTitleWithFallback(grade: GradeLevelNew, trackCode: string): string {
+    const own = this.getTrackTitle(grade, trackCode);
+    if (own) return own;
+    if (!grade.defaults) return '';
+    return trackCode === 'management' ? grade.defaults.managementTitle : grade.defaults.professionalTitle;
   }
 
   getManagementTitle(grade: GradeLevelNew): string {

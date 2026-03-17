@@ -194,7 +194,7 @@
               <th class="th-grade">職等</th>
               <th class="th-code">職級</th>
               <th>職務級別</th>
-              @for (dept of departments(); track dept.id) {
+              @for (dept of filteredDepartments(); track dept.id) {
               @if (!selectedDepartmentFilter() || dept.name === selectedDepartmentFilter()) {
               <th class="th-department">{{ dept.name }}</th>
               }
@@ -220,9 +220,9 @@
                 <span class="pending-badge"><i class="ri-time-line"></i> 待審核</span>
                 }
               </td>
-              <td class="td-code">{{ grade.codeRange || '-' }}</td>
-              <td>{{ getTrackTitle(grade, trackCode) || '-' }}</td>
-              @for (dept of departments(); track dept.id) {
+              <td class="td-code">{{ grade.codeRange || grade.defaults?.codeRange || '-' }}</td>
+              <td>{{ getTrackTitleWithFallback(grade, trackCode) || '-' }}</td>
+              @for (dept of filteredDepartments(); track dept.id) {
               @if (!selectedDepartmentFilter() || dept.name === selectedDepartmentFilter()) {
               <td class="td-position">
                 @if (getPositionsFor(dept.name, grade.grade, trackCode).length > 0) {

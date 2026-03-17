@@ -54,21 +54,12 @@ router.get('/companies', (req, res) => {
         [c.id]
       );
 
-      // 計算此公司下所有部門的員工數
-      const depts = req.tenantDB.query(
-        "SELECT name FROM org_units WHERE parent_id = ? AND type = 'department'",
+      // 計算此公司下所有部門的員工數（透過 org_unit_id 限定所屬公司，避免同名部門跨公司汙染）
+      const empResult = req.tenantDB.queryOne(
+        `SELECT COUNT(*) as count FROM employees WHERE org_unit_id = ?`,
         [c.id]
       );
-      const deptNames = depts.map(d => d.name);
-      let employeeCount = 0;
-      if (deptNames.length > 0) {
-        const placeholders = deptNames.map(() => '?').join(',');
-        const empResult = req.tenantDB.queryOne(
-          `SELECT COUNT(*) as count FROM employees WHERE department IN (${placeholders})`,
-          deptNames
-        );
-        employeeCount = empResult ? empResult.count : 0;
-      }
+      const employeeCount = empResult ? empResult.count : 0;
 
       return {
         id: c.id,
@@ -138,23 +129,21 @@ router.get('/companies/:id', (req, res) => {
       "SELECT id, name FROM org_units WHERE parent_id = ? AND type = 'subsidiary' ORDER BY name ASC",
       [company.id]
     ).map(s => {
-      const empDepts = req.tenantDB.query(
-        "SELECT name FROM org_units WHERE parent_id = ? AND type = 'department'", [s.id]
+      const empCount = req.tenantDB.queryOne(
+        'SELECT COUNT(*) as count FROM employees WHERE org_unit_id = ?', [s.id]
       );
-      let empCount = 0;
-      for (const d of empDepts) {
-        const c = req.tenantDB.queryOne('SELECT COUNT(*) as count FROM employees WHERE department = ?', [d.name]);
-        empCount += c ? c.count : 0;
-      }
-      return { id: s.id, name: s.name, employeeCount: empCount };
+      return { id: s.id, name: s.name, employeeCount: empCount ? empCount.count : 0 };
     });
 
-    // 直屬部門列表
+    // 直屬部門列表（透過 org_unit_id 限定所屬公司，避免同名部門跨公司汙染）
     const departments = req.tenantDB.query(
       "SELECT id, name FROM org_units WHERE parent_id = ? AND type = 'department' ORDER BY name ASC",
       [company.id]
     ).map(d => {
-      const c = req.tenantDB.queryOne('SELECT COUNT(*) as count FROM employees WHERE department = ?', [d.name]);
+      const c = req.tenantDB.queryOne(
+        'SELECT COUNT(*) as count FROM employees WHERE department = ? AND org_unit_id = ?',
+        [d.name, company.id]
+      );
       return { id: d.id, name: d.name, employeeCount: c ? c.count : 0 };
     });
 
@@ -192,21 +181,16 @@ router.get('/companies/:id/subsidiaries', (req, res) => {
     );
 
     const result = subs.map(s => {
-      const empDepts = req.tenantDB.query(
-        "SELECT name FROM org_units WHERE parent_id = ? AND type = 'department'", [s.id]
+      const empCount = req.tenantDB.queryOne(
+        'SELECT COUNT(*) as count FROM employees WHERE org_unit_id = ?', [s.id]
       );
-      let employeeCount = 0;
-      for (const d of empDepts) {
-        const c = req.tenantDB.queryOne('SELECT COUNT(*) as count FROM employees WHERE department = ?', [d.name]);
-        employeeCount += c ? c.count : 0;
-      }
       return {
         id: s.id,
         name: s.name,
         code: s.code || s.name,
         type: 'subsidiary',
         parentCompanyId: s.parent_id,
-        employeeCount,
+        employeeCount: empCount ? empCount.count : 0,
         status: s.status || 'active',
         createdAt: s.created_at
       };
@@ -394,10 +378,10 @@ router.get('/departments', (req, res) => {
     );
 
     const result = departments.map(dept => {
-      // 員工數
+      // 員工數（透過 org_unit_id 限定所屬公司，避免同名部門跨公司汙染）
       const empCount = req.tenantDB.queryOne(
-        'SELECT COUNT(*) as count FROM employees WHERE department = ?',
-        [dept.name]
+        'SELECT COUNT(*) as count FROM employees WHERE department = ? AND org_unit_id = ?',
+        [dept.name, dept.companyId]
       );
 
       // 主管名
@@ -447,8 +431,8 @@ router.get('/departments/:id', (req, res) => {
     }
 
     const empCount = req.tenantDB.queryOne(
-      'SELECT COUNT(*) as count FROM employees WHERE department = ?',
-      [dept.name]
+      'SELECT COUNT(*) as count FROM employees WHERE department = ? AND org_unit_id = ?',
+      [dept.name, dept.parent_id]
     );
 
     res.json({
@@ -620,10 +604,10 @@ router.delete('/departments/:id', (req, res) => {
     });
   }
 
-  // 檢查有無員工
+  // 檢查有無員工（透過 org_unit_id 限定所屬公司，避免同名部門跨公司汙染）
   const empCount = req.tenantDB.queryOne(
-    'SELECT COUNT(*) as count FROM employees WHERE department = ?',
-    [dept.name]
+    'SELECT COUNT(*) as count FROM employees WHERE department = ? AND org_unit_id = ?',
+    [dept.name, dept.parent_id]
   );
 
   if (empCount && empCount.count > 0) {
@@ -709,12 +693,12 @@ router.get('/tree', (req, res) => {
     `);
 
     const result = nodes.map(node => {
-      // 員工數（僅部門節點）
+      // 員工數（透過 org_unit_id 限定所屬公司，避免同名部門跨公司汙染）
       let employeeCount = 0;
       if (node.type === 'department') {
         const emp = req.tenantDB.queryOne(
-          'SELECT COUNT(*) as count FROM employees WHERE department = ?',
-          [node.name]
+          'SELECT COUNT(*) as count FROM employees WHERE department = ? AND org_unit_id = ?',
+          [node.name, node.parent_id]
         );
         employeeCount = emp ? emp.count : 0;
       }
@@ -727,14 +711,11 @@ router.get('/tree', (req, res) => {
           [node.id]
         );
         departmentCount = dc ? dc.count : 0;
-        // 也計算員工數（所有直屬部門的員工總和）
-        const depts = req.tenantDB.query(
-          "SELECT name FROM org_units WHERE parent_id = ? AND type = 'department'", [node.id]
+        // 員工數：直接用 org_unit_id 計算此公司/子公司的員工總數
+        const ec = req.tenantDB.queryOne(
+          'SELECT COUNT(*) as count FROM employees WHERE org_unit_id = ?', [node.id]
         );
-        for (const dept of depts) {
-          const ec = req.tenantDB.queryOne('SELECT COUNT(*) as count FROM employees WHERE department = ?', [dept.name]);
-          employeeCount += ec ? ec.count : 0;
-        }
+        employeeCount = ec ? ec.count : 0;
       }
 
       // 主管名
@@ -785,7 +766,7 @@ router.get('/tree', (req, res) => {
 router.get('/departments/:id/employees', (req, res) => {
   try {
     const dept = req.tenantDB.queryOne(
-      "SELECT name FROM org_units WHERE id = ? AND type = 'department'",
+      "SELECT name, parent_id FROM org_units WHERE id = ? AND type = 'department'",
       [req.params.id]
     );
 
@@ -793,12 +774,13 @@ router.get('/departments/:id/employees', (req, res) => {
       return res.status(404).json({ error: 'NotFound', message: '部門不存在' });
     }
 
+    // 透過 org_unit_id 限定所屬公司，避免同名部門跨公司汙染
     const employees = req.tenantDB.query(
       `SELECT id, name, employee_no, position, avatar, status
        FROM employees
-       WHERE department = ?
+       WHERE department = ? AND org_unit_id = ?
        ORDER BY name ASC`,
-      [dept.name]
+      [dept.name, dept.parent_id]
     );
 
     res.json(employees.map(e => ({

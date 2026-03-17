@@ -338,8 +338,23 @@ class TenantDBManager {
         }
         // employees 表已有 org_unit_id 欄位（在 initTenantSchema 中建立），但既有資料可能為 NULL
         db.run(`UPDATE employees SET org_unit_id = ? WHERE org_unit_id IS NULL`, [rootId]);
-        // grade_salary_levels 恢復：已被錯誤歸屬到根組織的薪資記錄轉回 NULL（集團預設）
-        db.run(`UPDATE grade_salary_levels SET org_unit_id = NULL WHERE org_unit_id = ?`, [rootId]);
+        // 注意：不再重設 grade_salary_levels 的 org_unit_id，因為使用者可能透過 Demo集團視圖
+        // 儲存了特定公司的薪資碼（如 DE 系列），強制 reset 會導致資料混入集團預設
+
+        // 一次性修正：將被錯誤歸入集團預設 (NULL) 的非 BS 前綴薪資碼歸還給根組織
+        try {
+          const misplacedCount = db.exec(
+            "SELECT COUNT(*) FROM grade_salary_levels WHERE org_unit_id IS NULL AND code NOT LIKE 'BS%'"
+          );
+          if (misplacedCount.length && misplacedCount[0].values[0][0] > 0) {
+            db.run(
+              `UPDATE grade_salary_levels SET org_unit_id = ? WHERE org_unit_id IS NULL AND code NOT LIKE 'BS%'`,
+              [rootId]
+            );
+            console.log(`  ✅ 已修正 ${misplacedCount[0].values[0][0]} 筆非 BS 薪資碼歸屬（NULL → ${rootId}）`);
+          }
+        } catch (e) { /* 忽略 */ }
+
         changed = true;
       }
     } catch (e) { /* org_units 表可能不存在 */ }
