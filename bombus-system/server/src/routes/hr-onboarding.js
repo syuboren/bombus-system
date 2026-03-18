@@ -8,6 +8,7 @@ const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
+const { requireFeaturePerm } = require('../middleware/permission');
 // tenantDB is accessed via req.tenantDB (injected by middleware)
 
 // ============================================================
@@ -67,7 +68,7 @@ function generateToken() {
  * GET /api/hr/onboarding/pending-conversions
  * 取得待入職候選人列表（status = 'offer_accepted'）
  */
-router.get('/pending-conversions', (req, res) => {
+router.get('/pending-conversions', requireFeaturePerm('L1.onboarding', 'view'), (req, res) => {
   try {
     // 使用子查詢取得每個候選人最新的 invitation_decision 記錄
     // 職位來源：從 jobs 表取得應徵職缺名稱，而非候選人目前工作職位
@@ -111,7 +112,7 @@ router.get('/pending-conversions', (req, res) => {
  * POST /api/hr/onboarding/convert-candidate
  * 將候選人轉換為員工（試用期）
  */
-router.post('/convert-candidate', async (req, res) => {
+router.post('/convert-candidate', requireFeaturePerm('L1.onboarding', 'edit'), async (req, res) => {
   try {
     const {
       candidate_id,
@@ -380,7 +381,7 @@ router.post('/convert-candidate', async (req, res) => {
  * GET /api/hr/onboarding/in-progress
  * 取得入職中員工列表（onboarding_status != 'completed'）
  */
-router.get('/in-progress', (req, res) => {
+router.get('/in-progress', requireFeaturePerm('L1.onboarding', 'view'), (req, res) => {
   try {
     const employees = req.tenantDB.prepare(`
       SELECT 
@@ -464,7 +465,7 @@ router.get('/in-progress', (req, res) => {
  * GET /api/hr/onboarding/progress/:employeeId
  * 取得單一員工的入職進度詳情
  */
-router.get('/progress/:employeeId', (req, res) => {
+router.get('/progress/:employeeId', requireFeaturePerm('L1.onboarding', 'view'), (req, res) => {
   try {
     const { employeeId } = req.params;
 
@@ -622,7 +623,7 @@ router.get('/progress/:employeeId', (req, res) => {
  * GET /api/hr/onboarding/next-employee-no
  * 預覽下一個員工編號
  */
-router.get('/next-employee-no', (req, res) => {
+router.get('/next-employee-no', requireFeaturePerm('L1.onboarding', 'view'), (req, res) => {
   try {
     const employeeNo = generateEmployeeNo(req);
     res.json({ employee_no: employeeNo });
@@ -636,7 +637,7 @@ router.get('/next-employee-no', (req, res) => {
  * GET /api/hr/onboarding/departments
  * 取得部門列表（用於下拉選單）
  */
-router.get('/departments', (req, res) => {
+router.get('/departments', requireFeaturePerm('L1.onboarding', 'view'), (req, res) => {
   try {
     const { parentId } = req.query;
 
@@ -680,7 +681,7 @@ router.get('/departments', (req, res) => {
  * GET /api/hr/onboarding/grades
  * 取得職等列表
  */
-router.get('/grades', (req, res) => {
+router.get('/grades', requireFeaturePerm('L1.onboarding', 'view'), (req, res) => {
   try {
     const grades = req.tenantDB.prepare(`
       SELECT 
@@ -706,7 +707,7 @@ router.get('/grades', (req, res) => {
  * GET /api/hr/onboarding/salary-levels
  * 取得職級薪資列表
  */
-router.get('/salary-levels', (req, res) => {
+router.get('/salary-levels', requireFeaturePerm('L1.onboarding', 'view'), (req, res) => {
   try {
     const { grade, org_unit_id } = req.query;
 
@@ -778,7 +779,7 @@ router.get('/salary-levels', (req, res) => {
  * GET /api/hr/onboarding/positions
  * 取得職位列表（可依部門/職等篩選）
  */
-router.get('/positions', (req, res) => {
+router.get('/positions', requireFeaturePerm('L1.onboarding', 'view'), (req, res) => {
   try {
     const { department, grade, track, org_unit_id } = req.query;
 
@@ -831,7 +832,7 @@ router.get('/positions', (req, res) => {
  * GET /api/hr/onboarding/managers
  * 取得可選主管列表
  */
-router.get('/managers', (req, res) => {
+router.get('/managers', requireFeaturePerm('L1.onboarding', 'view'), (req, res) => {
   try {
     const managers = req.tenantDB.prepare(`
       SELECT id, name, department, position
@@ -853,7 +854,7 @@ router.get('/managers', (req, res) => {
  * GET /api/hr/onboarding/org-units
  * 保留供向後相容
  */
-router.get('/org-units', (req, res) => {
+router.get('/org-units', requireFeaturePerm('L1.onboarding', 'view'), (req, res) => {
   try {
     const orgUnits = req.tenantDB.prepare(`
       SELECT id, name, type, parent_id, level
@@ -872,7 +873,7 @@ router.get('/org-units', (req, res) => {
  * 測試用 — 建立 offer_accepted 狀態的候選人（含職缺）
  * 僅限 development 環境
  */
-router.post('/test/seed-candidate', (req, res) => {
+router.post('/test/seed-candidate', requireFeaturePerm('L1.onboarding', 'edit'), (req, res) => {
   const allowedEnvs = ['development', 'test'];
   if (!allowedEnvs.includes(process.env.NODE_ENV)) {
     return res.status(403).json({ error: 'Only available in development/test environments' });

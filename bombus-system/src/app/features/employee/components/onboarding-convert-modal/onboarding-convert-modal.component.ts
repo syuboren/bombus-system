@@ -58,7 +58,7 @@ export class OnboardingConvertModalComponent implements OnInit {
   contractType = signal<string>('full-time');
   workLocation = signal<string>('');
   orgUnitId = signal<string>('');
-  selectedSubsidiaryId = signal<string>('');
+  selectedSubsidiaryId = signal<string>(this.orgUnitService.lockedSubsidiaryId() || '');
 
   // 角色選項
   roleOptions = [
@@ -110,12 +110,8 @@ export class OnboardingConvertModalComponent implements OnInit {
     });
   });
 
-  subsidiaryOrgUnits = this.orgUnitService.subsidiaries;
-
-  // 子公司鎖定：若候選人職缺已指定 org_unit_id 或使用者 scope 限定，則鎖定
-  isSubsidiaryLocked = computed(() =>
-    !!this.orgUnitService.lockedSubsidiaryId() || !!this.candidate().job_org_unit_id
-  );
+  subsidiaryOrgUnits = this.orgUnitService.visibleSubsidiaries;
+  isSubsidiaryLocked = this.orgUnitService.isSubsidiaryLocked;
 
   departmentOrgUnits = computed(() =>
     this.orgUnitService.filterDepartments(this.selectedSubsidiaryId())

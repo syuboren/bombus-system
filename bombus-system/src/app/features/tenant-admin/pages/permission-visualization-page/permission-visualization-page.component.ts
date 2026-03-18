@@ -13,14 +13,10 @@ import {
   OrgUnit,
   TenantUser,
   UserRole,
-  Role,
-  Permission
+  RoleFeaturePerm,
+  ActionLevel
 } from '../../models/tenant-admin.model';
-
-interface PermissionGroup {
-  resource: string;
-  permissions: Permission[];
-}
+import { mergeFeaturePerms, groupByModule, MODULE_LABELS, MODULE_ORDER } from '../../utils/merge-feature-perms';
 
 @Component({
   standalone: true,
@@ -35,8 +31,6 @@ export class PermissionVisualizationPageComponent implements OnInit {
 
   orgUnits = signal<OrgUnit[]>([]);
   users = signal<TenantUser[]>([]);
-  roles = signal<Role[]>([]);
-  allPermissions = signal<Permission[]>([]);
   loading = signal(true);
 
   // User query
@@ -44,38 +38,18 @@ export class PermissionVisualizationPageComponent implements OnInit {
   userRoles = signal<UserRole[]>([]);
   loadingUserRoles = signal(false);
 
+  // Feature permissions
+  featurePermsList = signal<RoleFeaturePerm[]>([]);
+
   expandedNodes = signal<Set<string>>(new Set());
 
   tree = computed(() => this.buildTree(this.orgUnits()));
 
-  permissionGroups = computed<PermissionGroup[]>(() => {
-    const perms = this.allPermissions();
-    const grouped = new Map<string, Permission[]>();
-    perms.forEach(p => {
-      if (!grouped.has(p.resource)) {
-        grouped.set(p.resource, []);
-      }
-      grouped.get(p.resource)!.push(p);
-    });
-    return Array.from(grouped.entries()).map(([resource, permissions]) => ({
-      resource,
-      permissions
-    }));
-  });
+  featurePermsByModule = computed(() => groupByModule(this.featurePermsList()));
 
-  effectivePermissionIds = computed(() => {
-    const roles = this.userRoles();
-    const allRoles = this.roles();
-    const ids = new Set<string>();
-
-    roles.forEach(ur => {
-      const role = allRoles.find(r => r.id === ur.role_id);
-      if (role?.permissions) {
-        role.permissions.forEach(p => ids.add(p.permission_id));
-      }
-    });
-    return ids;
-  });
+  featureModuleOrder = computed(() =>
+    MODULE_ORDER.filter(m => this.featurePermsByModule().has(m))
+  );
 
   scopeHighlightIds = computed(() => {
     const roles = this.userRoles();
@@ -97,7 +71,7 @@ export class PermissionVisualizationPageComponent implements OnInit {
     let completed = 0;
     const checkDone = () => {
       completed++;
-      if (completed >= 4) this.loading.set(false);
+      if (completed >= 2) this.loading.set(false);
     };
 
     this.tenantAdminService.getOrgUnits().subscribe({
@@ -113,16 +87,6 @@ export class PermissionVisualizationPageComponent implements OnInit {
     this.tenantAdminService.getUsers().subscribe({
       next: (users) => { this.users.set(users); checkDone(); },
       error: () => { this.users.set([]); checkDone(); }
-    });
-
-    this.tenantAdminService.getRoles().subscribe({
-      next: (roles) => { this.roles.set(roles); checkDone(); },
-      error: () => { this.roles.set([]); checkDone(); }
-    });
-
-    this.tenantAdminService.getPermissions().subscribe({
-      next: (perms) => { this.allPermissions.set(perms); checkDone(); },
-      error: () => { this.allPermissions.set([]); checkDone(); }
     });
   }
 
@@ -168,6 +132,7 @@ export class PermissionVisualizationPageComponent implements OnInit {
     this.selectedUserId.set(userId);
     if (!userId) {
       this.userRoles.set([]);
+      this.featurePermsList.set([]);
       return;
     }
     this.loadingUserRoles.set(true);
@@ -175,6 +140,7 @@ export class PermissionVisualizationPageComponent implements OnInit {
       next: (roles) => {
         this.userRoles.set(roles);
         this.loadingUserRoles.set(false);
+        this.loadUserFeaturePerms(roles);
       },
       error: () => {
         this.userRoles.set([]);
@@ -183,18 +149,38 @@ export class PermissionVisualizationPageComponent implements OnInit {
     });
   }
 
+  private loadUserFeaturePerms(userRoles: UserRole[]): void {
+    if (userRoles.length === 0) {
+      this.featurePermsList.set([]);
+      return;
+    }
+
+    let loaded = 0;
+    const total = userRoles.length;
+    const allPerms: RoleFeaturePerm[][] = [];
+
+    for (const ur of userRoles) {
+      this.tenantAdminService.getRoleFeaturePerms(ur.role_id).subscribe({
+        next: (perms) => {
+          allPerms.push(perms);
+          loaded++;
+          if (loaded === total) {
+            this.featurePermsList.set(mergeFeaturePerms(allPerms));
+          }
+        },
+        error: () => {
+          loaded++;
+          if (loaded === total) {
+            this.featurePermsList.set(mergeFeaturePerms(allPerms));
+          }
+        }
+      });
+    }
+  }
+
   // ============================================================
   // Helpers
   // ============================================================
-
-  getTypeLabel(type: string): string {
-    const labels: Record<string, string> = {
-      group: '集團',
-      subsidiary: '子公司',
-      department: '部門'
-    };
-    return labels[type] || type;
-  }
 
   getTypeIcon(type: string): string {
     const icons: Record<string, string> = {
@@ -214,42 +200,26 @@ export class PermissionVisualizationPageComponent implements OnInit {
     return labels[scopeType] || scopeType;
   }
 
-  getResourceLabel(resource: string): string {
-    const labels: Record<string, string> = {
-      employee: '員工管理',
-      recruitment: '招募管理',
-      organization: '組織管理',
-      competency: '職能管理',
-      training: '教育訓練',
-      performance: '績效管理',
-      culture: '文化管理',
-      project: '專案管理',
-      grade_matrix: '職等職級',
-      job_descriptions: '職務說明書',
-      meetings: '會議管理',
-      talent_pool: '人才庫',
-      reports: '報表',
-      settings: '系統設定'
-    };
-    return labels[resource] || resource;
+  getModuleLabel(module: string): string {
+    return MODULE_LABELS[module] || module;
   }
 
-  getActionLabel(action: string): string {
+  getActionLevelLabel(level: ActionLevel): string {
     const labels: Record<string, string> = {
-      read: '讀取',
-      create: '建立',
-      update: '更新',
-      delete: '刪除',
-      manage: '管理',
-      export: '匯出',
-      approve: '審核',
-      assign: '指派'
+      none: '無權限',
+      view: '僅查看',
+      edit: '可編輯'
     };
-    return labels[action] || action;
+    return labels[level] || level;
   }
 
-  isPermissionActive(permId: string): boolean {
-    return this.effectivePermissionIds().has(permId);
+  getActionLevelClass(level: ActionLevel): string {
+    const classes: Record<string, string> = {
+      none: 'level--none',
+      view: 'level--view',
+      edit: 'level--edit'
+    };
+    return classes[level] || '';
   }
 
   getSelectedUserName(): string {

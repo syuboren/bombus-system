@@ -9,6 +9,7 @@ const { v4: uuidv4 } = require('uuid');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { requireFeaturePerm, buildScopeFilter } = require('../middleware/permission');
 
 // Configure upload for meeting attachments
 const uploadDir = path.join(__dirname, '../../uploads/meetings');
@@ -79,9 +80,12 @@ function getMeetingDetails(req, meetingId) {
  *   - status: 狀態過濾 (pending | in-progress | completed | overdue)
  *   - department: 部門過濾
  */
-router.get('/conclusions', (req, res) => {
+router.get('/conclusions', requireFeaturePerm('L1.meeting', 'view'), (req, res) => {
     try {
         const { status, department, org_unit_id } = req.query;
+
+        // Scope 過濾（透過 meetings 的 org_unit_id）
+        const scopeFilter = buildScopeFilter(req, { tableAlias: 'm' });
 
         let query = `
             SELECT
@@ -94,6 +98,11 @@ router.get('/conclusions', (req, res) => {
             WHERE 1=1
         `;
         let params = [];
+
+        if (scopeFilter.clause !== '1=1') {
+            query += ` AND ${scopeFilter.clause}`;
+            params.push(...scopeFilter.params);
+        }
 
         if (org_unit_id) {
             query += ` AND m.org_unit_id = ?`;
@@ -157,7 +166,7 @@ router.get('/conclusions', (req, res) => {
  *   - employeeId: 員工 ID (personal scope 需要)
  *   - department: 部門名稱 (department scope 需要)
  */
-router.get('/', (req, res) => {
+router.get('/', requireFeaturePerm('L1.meeting', 'view'), (req, res) => {
     try {
         const { start, end, type, scope, employeeId, department, org_unit_id } = req.query;
 
@@ -190,10 +199,17 @@ router.get('/', (req, res) => {
                 meetingIds = [];
             }
         }
-        // scope === 'company' 或未指定時，顯示所有會議
+        // scope === 'company' 或未指定時，依 buildScopeFilter 限制
+        const scopeFilter = buildScopeFilter(req);
 
         let query = `SELECT * FROM meetings WHERE 1=1`;
         let params = [];
+
+        // 套用 scope 過濾
+        if (scopeFilter.clause !== '1=1') {
+            query += ` AND ${scopeFilter.clause}`;
+            params.push(...scopeFilter.params);
+        }
 
         // 如果有 scope 過濾，限制會議 ID
         if (meetingIds !== null) {
@@ -253,7 +269,7 @@ router.get('/', (req, res) => {
  * POST /api/meetings
  * Create a new meeting
  */
-router.post('/', (req, res) => {
+router.post('/', requireFeaturePerm('L1.meeting', 'edit'), (req, res) => {
     try {
         const {
             title, type, status, location, isOnline, meetingLink,
@@ -347,7 +363,7 @@ router.post('/', (req, res) => {
  * GET /api/meetings/:id
  * Get meeting details
  */
-router.get('/:id', (req, res) => {
+router.get('/:id', requireFeaturePerm('L1.meeting', 'view'), (req, res) => {
     try {
         const meeting = getMeetingDetails(req, req.params.id);
         if (!meeting) {
@@ -364,7 +380,7 @@ router.get('/:id', (req, res) => {
  * PUT /api/meetings/:id
  * Update meeting
  */
-router.put('/:id', (req, res) => {
+router.put('/:id', requireFeaturePerm('L1.meeting', 'edit'), (req, res) => {
     try {
         const meetingId = req.params.id;
         const {
@@ -484,7 +500,7 @@ router.put('/:id', (req, res) => {
  * DELETE /api/meetings/:id
  * Delete/Cancel meeting
  */
-router.delete('/:id', (req, res) => {
+router.delete('/:id', requireFeaturePerm('L1.meeting', 'edit'), (req, res) => {
     try {
         const meetingId = req.params.id;
         const { softDelete } = req.query; // 若 softDelete=true，只更新狀態為 cancelled
@@ -524,7 +540,7 @@ router.delete('/:id', (req, res) => {
  * POST /api/meetings/:id/check-in
  * Attendee Check-in
  */
-router.post('/:id/check-in', (req, res) => {
+router.post('/:id/check-in', requireFeaturePerm('L1.meeting', 'edit'), (req, res) => {
     try {
         const { employeeId, name } = req.body; // Check-in by ID or Name
         const meetingId = req.params.id;
@@ -558,7 +574,7 @@ router.post('/:id/check-in', (req, res) => {
  * PATCH /api/meetings/:id/complete
  * Complete a meeting with notes and conclusions
  */
-router.patch('/:id/complete', (req, res) => {
+router.patch('/:id/complete', requireFeaturePerm('L1.meeting', 'edit'), (req, res) => {
     try {
         const meetingId = req.params.id;
         const { notes, conclusions = [] } = req.body;
@@ -602,7 +618,7 @@ router.patch('/:id/complete', (req, res) => {
  * POST /api/meetings/:id/upload
  * Upload attachment
  */
-router.post('/:id/upload', upload.single('file'), (req, res) => {
+router.post('/:id/upload', requireFeaturePerm('L1.meeting', 'edit'), upload.single('file'), (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ error: 'No file uploaded' });
@@ -644,7 +660,7 @@ router.post('/:id/upload', upload.single('file'), (req, res) => {
  * POST /api/meetings/:id/conclusions
  * Add Conclusion / Action Item
  */
-router.post('/:id/conclusions', (req, res) => {
+router.post('/:id/conclusions', requireFeaturePerm('L1.meeting', 'edit'), (req, res) => {
     try {
         const meetingId = req.params.id;
         const { content, responsibleId, responsibleName, department, dueDate, agendaItemId } = req.body;
@@ -672,7 +688,7 @@ router.post('/:id/conclusions', (req, res) => {
  * PATCH /api/meetings/conclusions/:id
  * Update Conclusion Progress
  */
-router.patch('/conclusions/:id', (req, res) => {
+router.patch('/conclusions/:id', requireFeaturePerm('L1.meeting', 'edit'), (req, res) => {
     try {
         const { status, progress, note } = req.body;
         const id = req.params.id;
@@ -718,18 +734,47 @@ router.patch('/conclusions/:id', (req, res) => {
  * GET /api/meetings/dashboard/stats
  * Dashboard Statistics
  */
-router.get('/dashboard/stats', (req, res) => {
+router.get('/dashboard/stats', requireFeaturePerm('L1.meeting', 'view'), (req, res) => {
     try {
         const { org_unit_id } = req.query;
-        const orgFilter = org_unit_id ? ` WHERE org_unit_id = ?` : '';
-        const orgFilterAnd = org_unit_id ? ` AND m.org_unit_id = ?` : '';
-        const orgParams = org_unit_id ? [org_unit_id] : [];
 
-        const totalMeetings = req.tenantDB.prepare(`SELECT COUNT(*) as c FROM meetings${orgFilter}`).get(...orgParams).c;
-        const completedMeetings = req.tenantDB.prepare(`SELECT COUNT(*) as c FROM meetings WHERE status = 'completed'${org_unit_id ? ' AND org_unit_id = ?' : ''}`).get(...orgParams).c;
-        const totalDuration = req.tenantDB.prepare(`SELECT SUM(duration) as s FROM meetings${orgFilter}`).get(...orgParams).s || 0;
+        // Scope 過濾
+        const scopeFilter = buildScopeFilter(req);
+        const hasScopeFilter = scopeFilter.clause !== '1=1';
 
-        const conclusions = req.tenantDB.prepare(`SELECT mc.status, mc.due_date FROM meeting_conclusions mc${org_unit_id ? ' JOIN meetings m ON mc.meeting_id = m.id WHERE m.org_unit_id = ?' : ''}`).all(...orgParams);
+        // 構建 WHERE 條件（scope + org_unit_id）
+        const conditions = [];
+        const baseParams = [];
+        if (hasScopeFilter) {
+            conditions.push(scopeFilter.clause);
+            baseParams.push(...scopeFilter.params);
+        }
+        if (org_unit_id) {
+            conditions.push('org_unit_id = ?');
+            baseParams.push(org_unit_id);
+        }
+        const whereClause = conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : '';
+
+        const totalMeetings = req.tenantDB.prepare(`SELECT COUNT(*) as c FROM meetings${whereClause}`).get(...baseParams).c;
+        const completedConditions = ['status = \'completed\'', ...conditions];
+        const completedMeetings = req.tenantDB.prepare(`SELECT COUNT(*) as c FROM meetings WHERE ${completedConditions.join(' AND ')}`).get(...baseParams).c;
+        const totalDuration = req.tenantDB.prepare(`SELECT SUM(duration) as s FROM meetings${whereClause}`).get(...baseParams).s || 0;
+
+        // conclusions 需要 JOIN meetings 做 scope 過濾
+        const mScopeFilter = buildScopeFilter(req, { tableAlias: 'm' });
+        const mHasScopeFilter = mScopeFilter.clause !== '1=1';
+        let conclusionConditions = [];
+        let conclusionParams = [];
+        if (mHasScopeFilter) {
+            conclusionConditions.push(mScopeFilter.clause);
+            conclusionParams.push(...mScopeFilter.params);
+        }
+        if (org_unit_id) {
+            conclusionConditions.push('m.org_unit_id = ?');
+            conclusionParams.push(org_unit_id);
+        }
+        const conclusionWhere = conclusionConditions.length > 0 ? ` WHERE ${conclusionConditions.join(' AND ')}` : '';
+        const conclusions = req.tenantDB.prepare(`SELECT mc.status, mc.due_date FROM meeting_conclusions mc JOIN meetings m ON mc.meeting_id = m.id${conclusionWhere}`).all(...conclusionParams);
         const totalConclusions = conclusions.length;
         const completedConclusions = conclusions.filter(c => c.status === 'completed').length;
         const overdueConclusions = conclusions.filter(c => {

@@ -8,6 +8,7 @@ const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
 // tenantDB is accessed via req.tenantDB (injected by middleware)
 const job104Service = require('../services/104/job.service');
+const { requireFeaturePerm, buildScopeFilter } = require('../middleware/permission');
 
 // 生成職缺 ID
 function generateJobId() {
@@ -20,7 +21,7 @@ function generateJobId() {
  * GET /api/jobs
  * 取得職缺列表
  */
-router.get('/', (req, res) => {
+router.get('/', requireFeaturePerm('L1.jobs', 'view'), (req, res) => {
     try {
         const { status, department, search, limit = 50, offset = 0, org_unit_id } = req.query;
 
@@ -31,6 +32,13 @@ router.get('/', (req, res) => {
             FROM jobs j WHERE 1=1
         `;
         const params = [];
+
+        // Apply scope filtering
+        const scopeFilter = buildScopeFilter(req);
+        if (scopeFilter.clause) {
+            sql += ` AND ${scopeFilter.clause}`;
+            params.push(...scopeFilter.params);
+        }
 
         if (org_unit_id) {
             sql += ' AND j.org_unit_id = ?';
@@ -72,7 +80,7 @@ router.get('/', (req, res) => {
  * GET /api/jobs/stats/summary
  * 取得職缺統計 (必須在 /:id 之前)
  */
-router.get('/stats/summary', (req, res) => {
+router.get('/stats/summary', requireFeaturePerm('L1.jobs', 'view'), (req, res) => {
     try {
         const { org_unit_id } = req.query;
         const stats = {
@@ -85,7 +93,8 @@ router.get('/stats/summary', (req, res) => {
             scheduledInterviews: 0
         };
 
-        // 職缺統計
+        // 職缺統計 — 套用 scope 過濾
+        const scopeFilter = buildScopeFilter(req);
         let statsSql = `
             SELECT
                 COUNT(*) as total,
@@ -95,6 +104,10 @@ router.get('/stats/summary', (req, res) => {
             FROM jobs WHERE 1=1
         `;
         const statsParams = [];
+        if (scopeFilter.clause) {
+            statsSql += ` AND ${scopeFilter.clause}`;
+            statsParams.push(...scopeFilter.params);
+        }
         if (org_unit_id) {
             statsSql += ' AND org_unit_id = ?';
             statsParams.push(org_unit_id);
@@ -108,6 +121,8 @@ router.get('/stats/summary', (req, res) => {
         stats.syncedJobs = result?.synced || 0;
 
         // 新進履歷：status = 'new'（與列表 New 標籤一致）
+        // 子查詢使用 tableAlias 'j' 對應 JOIN jobs j
+        const joinScopeFilter = buildScopeFilter(req, { tableAlias: 'j' });
         const now = new Date();
         let resumeSql = `
             SELECT COUNT(*) as cnt FROM candidates c
@@ -115,6 +130,10 @@ router.get('/stats/summary', (req, res) => {
             WHERE c.status = 'new'
         `;
         const resumeParams = [];
+        if (joinScopeFilter.clause !== '1=1') {
+            resumeSql += ` AND ${joinScopeFilter.clause}`;
+            resumeParams.push(...joinScopeFilter.params);
+        }
         if (org_unit_id) {
             resumeSql += ' AND j.org_unit_id = ?';
             resumeParams.push(org_unit_id);
@@ -129,6 +148,10 @@ router.get('/stats/summary', (req, res) => {
             WHERE c.scoring_status = 'Pending'
         `;
         const pendingParams = [];
+        if (joinScopeFilter.clause !== '1=1') {
+            pendingSql += ` AND ${joinScopeFilter.clause}`;
+            pendingParams.push(...joinScopeFilter.params);
+        }
         if (org_unit_id) {
             pendingSql += ' AND j.org_unit_id = ?';
             pendingParams.push(org_unit_id);
@@ -146,6 +169,10 @@ router.get('/stats/summary', (req, res) => {
               AND i.interview_at >= ?
         `;
         const interviewParams = [todayStr];
+        if (joinScopeFilter.clause !== '1=1') {
+            interviewSql += ` AND ${joinScopeFilter.clause}`;
+            interviewParams.push(...joinScopeFilter.params);
+        }
         if (org_unit_id) {
             interviewSql += ' AND j.org_unit_id = ?';
             interviewParams.push(org_unit_id);
@@ -164,7 +191,7 @@ router.get('/stats/summary', (req, res) => {
  * GET /api/jobs/104/jobs
  * 取得 104 職缺列表 (從 DB 撈取已同步職缺 Mock)
  */
-router.get('/104/jobs', (req, res) => {
+router.get('/104/jobs', requireFeaturePerm('L1.jobs', 'view'), (req, res) => {
     try {
         const jobs = req.tenantDB.prepare(`
             SELECT * FROM jobs 
@@ -206,7 +233,7 @@ router.get('/104/jobs', (req, res) => {
  * GET /api/jobs/:id
  * 取得單一職缺
  */
-router.get('/:id', (req, res) => {
+router.get('/:id', requireFeaturePerm('L1.jobs', 'view'), (req, res) => {
     try {
         const { id } = req.params;
         const job = req.tenantDB.prepare('SELECT * FROM jobs WHERE id = ?').get(id);
@@ -235,7 +262,7 @@ router.get('/:id', (req, res) => {
  * GET /api/jobs/:id/candidates
  * 取得特定職缺的應徵者列表
  */
-router.get('/:id/candidates', (req, res) => {
+router.get('/:id/candidates', requireFeaturePerm('L1.jobs', 'view'), (req, res) => {
     try {
         const { id } = req.params;
 
@@ -286,7 +313,7 @@ router.get('/:id/candidates', (req, res) => {
  * PATCH /api/jobs/:id/status
  * 更新職缺狀態 (整合 104 同步)
  */
-router.patch('/:id/status', async (req, res) => {
+router.patch('/:id/status', requireFeaturePerm('L1.jobs', 'edit'), async (req, res) => {
     try {
         const { id } = req.params;
         const { status } = req.body;
@@ -433,7 +460,7 @@ router.patch('/:id/status', async (req, res) => {
  * POST /api/jobs
  * 新增職缺 (永遠建立為 draft，不立即同步 104)
  */
-router.post('/', (req, res) => {
+router.post('/', requireFeaturePerm('L1.jobs', 'edit'), (req, res) => {
     try {
         const {
             title,
@@ -499,7 +526,7 @@ router.post('/', (req, res) => {
  * PUT /api/jobs/:id
  * 更新職缺 (若已同步 104 則同步更新)
  */
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireFeaturePerm('L1.jobs', 'edit'), async (req, res) => {
     try {
         const { id } = req.params;
         const {
@@ -631,7 +658,7 @@ router.put('/:id', async (req, res) => {
  * DELETE /api/jobs/:id
  * 刪除職缺 (若已同步 104 則同步刪除)
  */
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireFeaturePerm('L1.jobs', 'edit'), async (req, res) => {
     try {
         const { id } = req.params;
         console.log('🗑️ Deleting job:', id);
@@ -669,7 +696,7 @@ router.delete('/:id', async (req, res) => {
  * POST /api/jobs/:id/sync-104
  * 將現有職缺同步至 104
  */
-router.post('/:id/sync-104', async (req, res) => {
+router.post('/:id/sync-104', requireFeaturePerm('L1.jobs', 'edit'), async (req, res) => {
     try {
         const { id } = req.params;
         const { job104Data } = req.body;
@@ -750,7 +777,7 @@ router.post('/:id/sync-104', async (req, res) => {
  * POST /api/jobs/:id/sync-from-104
  * 從 104 同步職缺資料回本地
  */
-router.post('/:id/sync-from-104', async (req, res) => {
+router.post('/:id/sync-from-104', requireFeaturePerm('L1.jobs', 'edit'), async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -875,7 +902,7 @@ router.post('/debug/reset-candidates', (req, res) => {
  * GET /api/jobs/:jobId/candidates/:candidateId/full
  * 取得候選人完整履歷資料與 AI 解析報告
  */
-router.get('/:jobId/candidates/:candidateId/full', (req, res) => {
+router.get('/:jobId/candidates/:candidateId/full', requireFeaturePerm('L1.jobs', 'view'), (req, res) => {
   try {
     const { jobId, candidateId } = req.params;
 
@@ -1185,7 +1212,7 @@ function generateMockAnalysisData(candidate, job) {
  * POST /api/jobs/:jobId/candidates/:candidateId/generate-mock-analysis
  * 產生模擬 AI 履歷解析報告
  */
-router.post('/:jobId/candidates/:candidateId/generate-mock-analysis', (req, res) => {
+router.post('/:jobId/candidates/:candidateId/generate-mock-analysis', requireFeaturePerm('L1.jobs', 'edit'), (req, res) => {
   try {
     const { jobId, candidateId } = req.params;
 

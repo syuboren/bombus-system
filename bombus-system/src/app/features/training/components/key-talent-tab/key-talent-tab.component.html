@@ -14,8 +14,8 @@
     <div class="filter-item">
       <label class="filter-label" for="talentSubsidiary">選擇子公司:</label>
       <select id="talentSubsidiary" class="filter-select" [value]="selectedSubsidiaryId()"
-        (change)="selectedSubsidiaryId.set($any($event.target).value); selectedDepartment.set('all')">
-        <option value="">全部子公司</option>
+        (change)="selectedSubsidiaryId.set($any($event.target).value); selectedDepartment.set('all')" [disabled]="isSubsidiaryLocked()">
+        @if (!isSubsidiaryLocked()) {<option value="">全部子公司</option>}
         @for (sub of subsidiaries(); track sub.id) {
         <option [value]="sub.id">{{ sub.name }}</option>
         }

@@ -121,7 +121,9 @@ export class LoginPageComponent implements OnInit {
             return;
           }
           this.permissionService.loadPermissions().subscribe(() => {
-            this.router.navigate(['/dashboard']);
+            this.permissionService.loadFeaturePerms().subscribe(() => {
+              this.router.navigate(['/dashboard']);
+            });
           });
         } else {
           this.errorMessage.set(response.message);

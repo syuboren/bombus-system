@@ -19,6 +19,7 @@ import { NotificationService } from '../../../../core/services/notification.serv
 import { EmployeeService } from '../../services/employee.service';
 import { OnboardingService } from '../../services/onboarding.service';
 import { OrgUnitService } from '../../../../core/services/org-unit.service';
+import { FeatureGateService } from '../../../../core/services/feature-gate.service';
 import {
   Employee,
   EmployeeDetail,
@@ -45,6 +46,11 @@ export class ProfilePageComponent implements OnInit, OnDestroy {
   private notificationService = inject(NotificationService);
   private orgUnitService = inject(OrgUnitService);
   private destroyRef = inject(DestroyRef);
+  private featureGateService = inject(FeatureGateService);
+
+  // Permission check
+  readonly canEdit = computed(() => this.featureGateService.canEdit('L1.profile'));
+  readonly viewScope = computed(() => this.featureGateService.getFeaturePerm('L1.profile')?.view_scope || 'company');
 
   private roiChart: echarts.ECharts | null = null;
   private resizeHandler = () => this.roiChart?.resize();
@@ -97,8 +103,13 @@ export class ProfilePageComponent implements OnInit, OnDestroy {
     return result;
   });
 
-  selectedSubsidiaryId = signal<string>('');
-  subsidiaries = this.orgUnitService.subsidiaries;
+  selectedSubsidiaryId = signal<string>(
+    this.featureGateService.getFeaturePerm('L1.profile')?.view_scope === 'self'
+      ? ''
+      : (this.orgUnitService.lockedSubsidiaryId() || '')
+  );
+  subsidiaries = this.orgUnitService.visibleSubsidiaries;
+  isSubsidiaryLocked = this.orgUnitService.isSubsidiaryLocked;
   filteredDepartments = computed(() => this.orgUnitService.filterDepartments(this.selectedSubsidiaryId()));
 
   constructor() {
@@ -148,28 +159,35 @@ export class ProfilePageComponent implements OnInit, OnDestroy {
     this.loading.set(true);
     this.activeTab.set('info');
 
-    this.employeeService.getEmployeeById(employee.id).subscribe(detail => {
-      this.selectedEmployee.set(detail || null);
-      this.loading.set(false);
+    this.employeeService.getEmployeeById(employee.id).subscribe({
+      next: (detail) => {
+        this.selectedEmployee.set(detail || null);
+        this.loading.set(false);
 
-      if (detail) {
-        this.employeeService.getAuditLogs(employee.id).subscribe(logs => {
-          this.auditLogs.set(logs);
-        });
+        if (detail) {
+          this.employeeService.getAuditLogs(employee.id).subscribe(logs => {
+            this.auditLogs.set(logs);
+          });
 
-        // Load onboarding documents
-        this.onboardingService.getEmployeeSubmissions(employee.id).subscribe({
-          next: (submissions) => this.signatureSubmissions.set(submissions),
-          error: () => this.signatureSubmissions.set([])
-        });
+          // Load onboarding documents
+          this.onboardingService.getEmployeeSubmissions(employee.id).subscribe({
+            next: (submissions) => this.signatureSubmissions.set(submissions),
+            error: () => this.signatureSubmissions.set([])
+          });
 
-        this.onboardingService.getUploadedDocuments(employee.id).subscribe({
-          next: (documents) => this.uploadedDocuments.set(documents),
-          error: () => this.uploadedDocuments.set([])
-        });
+          this.onboardingService.getUploadedDocuments(employee.id).subscribe({
+            next: (documents) => this.uploadedDocuments.set(documents),
+            error: () => this.uploadedDocuments.set([])
+          });
 
-        // Initialize ROI chart after a brief delay to ensure DOM is ready
-        setTimeout(() => this.initROIChart(), 100);
+          // Initialize ROI chart after a brief delay to ensure DOM is ready
+          setTimeout(() => this.initROIChart(), 100);
+        }
+      },
+      error: () => {
+        this.selectedEmployee.set(null);
+        this.loading.set(false);
+        this.notificationService.error('無法載入員工資料');
       }
     });
   }

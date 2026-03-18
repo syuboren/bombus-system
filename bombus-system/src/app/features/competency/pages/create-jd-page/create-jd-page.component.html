@@ -126,8 +126,8 @@
         <div class="form-group">
           <label class="form-label">子公司</label>
           <select class="form-select" [ngModel]="selectedSubsidiaryId()"
-            (ngModelChange)="selectedSubsidiaryId.set($event); department = ''" [disabled]="isEditMode()">
-            <option value="">全部子公司</option>
+            (ngModelChange)="selectedSubsidiaryId.set($event); department = ''" [disabled]="isEditMode() || isSubsidiaryLocked()">
+            @if (!isSubsidiaryLocked()) {<option value="">全部子公司</option>}
             @for (sub of subsidiaries(); track sub.id) {
             <option [value]="sub.id">{{ sub.name }}</option>
             }

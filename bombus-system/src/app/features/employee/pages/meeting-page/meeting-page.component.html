@@ -26,10 +26,12 @@
         </button>
       </div>
       <div class="filter-divider"></div>
+      @if (canEdit()) {
       <button class="btn-primary" (click)="openAddMeetingModal()">
         <i class="ri-add-line"></i>
         <span>新增會議</span>
       </button>
+      }
     </div>
 
     <!-- 日曆視圖 -->
@@ -39,16 +41,20 @@
         <!-- 日曆層級切換 -->
         <div class="calendar-scope-bar">
           <div class="scope-toggle">
+            @if (viewScope() === 'company') {
             <button class="scope-btn" [class.active]="calendarScope() === 'company'"
               (click)="setCalendarScope('company')" type="button">
               <i class="ri-building-line"></i>
               公司
             </button>
+            }
+            @if (viewScope() !== 'self') {
             <button class="scope-btn" [class.active]="calendarScope() === 'department'"
               (click)="setCalendarScope('department')" type="button">
               <i class="ri-team-line"></i>
               部門
             </button>
+            }
             <button class="scope-btn" [class.active]="calendarScope() === 'personal'"
               (click)="setCalendarScope('personal')" type="button">
               <i class="ri-user-line"></i>
@@ -56,11 +62,13 @@
             </button>
           </div>
           @if (calendarScope() === 'company') {
-          @if (subsidiaries().length > 0) {
+          @if (viewScope() !== 'self' && viewScope() !== 'department' && subsidiaries().length > 0) {
           <div class="scope-filters">
             <div class="department-select">
-              <select [value]="selectedSubsidiaryId()" (change)="selectedSubsidiaryId.set($any($event.target).value)">
+              <select [value]="selectedSubsidiaryId()" [disabled]="isSubsidiaryLocked()" (change)="selectedSubsidiaryId.set($any($event.target).value)">
+                @if (!isSubsidiaryLocked()) {
                 <option value="">全部子公司</option>
+                }
                 @for (sub of subsidiaries(); track sub.id) {
                 <option [value]="sub.id">{{ sub.name }}</option>
                 }
@@ -71,10 +79,12 @@
           }
           @if (calendarScope() === 'department') {
           <div class="scope-filters">
-            @if (subsidiaries().length > 0) {
+            @if (viewScope() !== 'self' && viewScope() !== 'department' && subsidiaries().length > 0) {
             <div class="department-select">
-              <select [value]="selectedSubsidiaryId()" (change)="selectedSubsidiaryId.set($any($event.target).value)">
+              <select [value]="selectedSubsidiaryId()" [disabled]="isSubsidiaryLocked()" (change)="selectedSubsidiaryId.set($any($event.target).value)">
+                @if (!isSubsidiaryLocked()) {
                 <option value="">全部子公司</option>
+                }
                 @for (sub of subsidiaries(); track sub.id) {
                 <option [value]="sub.id">{{ sub.name }}</option>
                 }
@@ -93,16 +103,19 @@
           }
           @if (calendarScope() === 'personal') {
           <div class="scope-filters">
-            @if (subsidiaries().length > 0) {
+            @if (viewScope() !== 'self' && viewScope() !== 'department' && subsidiaries().length > 0) {
             <div class="department-select">
-              <select [value]="selectedSubsidiaryId()" (change)="selectedSubsidiaryId.set($any($event.target).value)">
+              <select [value]="selectedSubsidiaryId()" [disabled]="isSubsidiaryLocked()" (change)="selectedSubsidiaryId.set($any($event.target).value)">
+                @if (!isSubsidiaryLocked()) {
                 <option value="">全部子公司</option>
+                }
                 @for (sub of subsidiaries(); track sub.id) {
                 <option [value]="sub.id">{{ sub.name }}</option>
                 }
               </select>
             </div>
             }
+            @if (viewScope() !== 'self') {
             <div class="department-select">
               <select [value]="selectedDepartment()" (change)="setSelectedDepartment($any($event.target).value)">
                 <option value="">全部部門</option>
@@ -111,6 +124,7 @@
                 }
               </select>
             </div>
+            }
             <div class="employee-select">
               <select (change)="setSelectedEmployee($any($event.target).value)">
                 <option value="">-- 選擇員工 --</option>
@@ -261,10 +275,12 @@
     @if (viewMode() === 'list') {
     <div class="list-view">
       <div class="filter-bar">
-        @if (subsidiaries().length > 0) {
+        @if (viewScope() !== 'self' && viewScope() !== 'department' && subsidiaries().length > 0) {
         <div class="filter-item">
-          <select class="filter-select" [value]="selectedSubsidiaryId()" (change)="selectedSubsidiaryId.set($any($event.target).value)">
+          <select class="filter-select" [value]="selectedSubsidiaryId()" [disabled]="isSubsidiaryLocked()" (change)="selectedSubsidiaryId.set($any($event.target).value)">
+            @if (!isSubsidiaryLocked()) {
             <option value="">全部子公司</option>
+            }
             @for (sub of subsidiaries(); track sub.id) {
             <option [value]="sub.id">{{ sub.name }}</option>
             }
@@ -1259,7 +1275,7 @@
     </div>
     <div class="modal-footer">
       <!-- 已排程或進行中狀態：可刪除、取消 -->
-      @if (selectedMeeting()!.status === 'scheduled' || selectedMeeting()!.status === 'in-progress') {
+      @if ((selectedMeeting()!.status === 'scheduled' || selectedMeeting()!.status === 'in-progress') && canEdit()) {
       <div class="footer-left">
         <button class="btn-danger-outline" (click)="deleteMeeting()">
           <i class="ri-delete-bin-line"></i>
@@ -1273,9 +1289,9 @@
       }
       <div class="footer-right">
         <button class="btn-secondary" (click)="closeMeetingDetailModal()">關閉</button>
-        
+
         <!-- 已排程或進行中狀態：可編輯、完成會議 -->
-        @if (selectedMeeting()!.status === 'scheduled' || selectedMeeting()!.status === 'in-progress') {
+        @if ((selectedMeeting()!.status === 'scheduled' || selectedMeeting()!.status === 'in-progress') && canEdit()) {
         <button class="btn-secondary" (click)="openEditMeetingModal(selectedMeeting()!)">
           <i class="ri-edit-line"></i>
           編輯會議

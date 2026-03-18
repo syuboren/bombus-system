@@ -63,14 +63,17 @@ export interface AuditLog {
   user_id: string;
   action: string;
   resource: string;
-  details: string;
+  details: Record<string, unknown> | string | null;
   ip_address: string;
   created_at: string;
 }
 
 export interface AuditLogListResponse {
   data: AuditLog[];
-  total: number;
-  page: number;
-  limit: number;
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }

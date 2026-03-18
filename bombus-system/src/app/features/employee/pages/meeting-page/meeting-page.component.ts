@@ -17,6 +17,7 @@ import { QRCodeModule } from 'angularx-qrcode';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { MeetingService } from '../../services/meeting.service';
 import { OrgUnitService } from '../../../../core/services/org-unit.service';
+import { FeatureGateService } from '../../../../core/services/feature-gate.service';
 import {
   Meeting,
   MeetingAttendee,
@@ -62,6 +63,11 @@ export class MeetingPageComponent implements OnInit {
   private cdr = inject(ChangeDetectorRef);
   private orgUnitService = inject(OrgUnitService);
   private destroyRef = inject(DestroyRef);
+  private featureGateService = inject(FeatureGateService);
+
+  // Permission check
+  readonly canEdit = computed(() => this.featureGateService.canEdit('L1.meeting'));
+  readonly viewScope = computed(() => this.featureGateService.getFeaturePerm('L1.meeting')?.view_scope || 'company');
 
   constructor() {
     // 子公司切換時自動重新載入資料
@@ -76,10 +82,18 @@ export class MeetingPageComponent implements OnInit {
   // 視圖模式
   viewMode = signal<ViewMode>('calendar');
 
-  // 日曆層級切換
-  calendarScope = signal<CalendarScope>('company');
-  selectedSubsidiaryId = signal<string>('');
-  subsidiaries = this.orgUnitService.subsidiaries;
+  // 日曆層級切換 — 預設值依 viewScope 決定（self→personal, department→department, company→company）
+  calendarScope = signal<CalendarScope>(
+    (() => {
+      const vs = this.featureGateService.getFeaturePerm('L1.meeting')?.view_scope;
+      if (vs === 'self') return 'personal' as CalendarScope;
+      if (vs === 'department') return 'department' as CalendarScope;
+      return 'company' as CalendarScope;
+    })()
+  );
+  selectedSubsidiaryId = signal<string>(this.orgUnitService.lockedSubsidiaryId() || '');
+  subsidiaries = this.orgUnitService.visibleSubsidiaries;
+  isSubsidiaryLocked = this.orgUnitService.isSubsidiaryLocked;
   filteredDepartments = computed(() => this.orgUnitService.filterDepartments(this.selectedSubsidiaryId()));
   selectedDepartment = signal<string>('');
   selectedEmployeeId = signal<string>(''); // 個人視角選擇的員工

@@ -27,11 +27,24 @@ export class OrgUnitService {
     this.orgUnits().filter(u => u.type === 'department')
   );
 
-  /** 根據使用者 RBAC scope 自動鎖定的子公司 ID（null 表示不鎖定） */
+  /** 根據使用者角色自動鎖定的子公司 ID（null 表示不鎖定，只有 super_admin 不鎖定） */
   lockedSubsidiaryId = computed(() => {
     const user = this.authService.currentUser();
-    return user?.scope?.type === 'subsidiary' ? (user.scope.id || null) : null;
+    if (!user) return null;
+    if (user.roles?.includes('super_admin')) return null;
+    return user.subsidiary_id || null;
   });
+
+  /** 可見的子公司列表（鎖定時只顯示所屬子公司） */
+  visibleSubsidiaries = computed(() => {
+    const locked = this.lockedSubsidiaryId();
+    const all = this.subsidiaries();
+    if (!locked) return all;
+    return all.filter(s => s.id === locked);
+  });
+
+  /** 是否處於子公司鎖定狀態 */
+  isSubsidiaryLocked = computed(() => !!this.lockedSubsidiaryId());
 
   /** 載入全部 org_units（帶快取，僅呼叫一次 API） */
   loadOrgUnits(): Observable<OrgUnit[]> {

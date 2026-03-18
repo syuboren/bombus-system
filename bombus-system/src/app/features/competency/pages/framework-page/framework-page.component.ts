@@ -21,6 +21,7 @@ import {
 import { CompetencyEditModalComponent } from '../../components/competency-edit-modal/competency-edit-modal.component';
 import { KsaEditModalComponent } from '../../components/ksa-edit-modal/ksa-edit-modal.component';
 import { OrgUnitService } from '../../../../core/services/org-unit.service';
+import { FeatureGateService } from '../../../../core/services/feature-gate.service';
 
 type ActiveTab = 'core' | 'management' | 'professional' | 'ksa';
 
@@ -38,11 +39,15 @@ export class FrameworkPageComponent implements OnInit {
   private competencyService = inject(CompetencyService);
   private orgUnitService = inject(OrgUnitService);
   private destroyRef = inject(DestroyRef);
+  private featureGateService = inject(FeatureGateService);
+
+  // Permission check
+  readonly canEdit = computed(() => this.featureGateService.canEdit('L2.framework'));
 
   // 子公司篩選
-  selectedSubsidiaryId = signal<string>('');
-  subsidiaries = this.orgUnitService.subsidiaries;
-  isSubsidiaryLocked = computed(() => !!this.orgUnitService.lockedSubsidiaryId());
+  selectedSubsidiaryId = signal<string>(this.orgUnitService.lockedSubsidiaryId() || '');
+  subsidiaries = this.orgUnitService.visibleSubsidiaries;
+  isSubsidiaryLocked = this.orgUnitService.isSubsidiaryLocked;
 
   constructor() {
     // 使用 switchMap 確保快速切換子公司時，舊的 HTTP 請求會被取消

@@ -246,60 +246,93 @@ $module-color: $color-brand-main;
 }
 
 // ---------------------------------------------------------------
-// Effective Permissions
+// Feature Permissions
 // ---------------------------------------------------------------
 .effective-permissions {
   padding-top: $spacing-lg;
   border-top: 1px solid $color-soft-gray;
 }
 
-.perm-groups {
-  @include flex-column;
-  gap: $spacing-md;
+// ---------------------------------------------------------------
+// Feature Permission Table
+// ---------------------------------------------------------------
+.feature-perm-table {
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  overflow: hidden;
 }
 
-.perm-group {
-  @include flex-start;
-  gap: $spacing-md;
-  align-items: flex-start;
-  padding: $spacing-sm 0;
+.fpt-header {
+  display: grid;
+  grid-template-columns: 1fr 100px 100px 100px;
+  gap: $spacing-sm;
+  padding: $spacing-xs $spacing-md;
+  background: $color-cloud-gray;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-secondary;
   border-bottom: 1px solid $color-soft-gray;
+}
 
-  &:last-child {
-    border-bottom: none;
+.fpt-module {
+  padding: $spacing-xs $spacing-md;
+  background: rgba($module-color, 0.04);
+  border-top: 1px solid $color-soft-gray;
+}
+
+.fpt-module-label {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+}
+
+.fpt-row {
+  display: grid;
+  grid-template-columns: 1fr 100px 100px 100px;
+  gap: $spacing-sm;
+  padding: $spacing-xs $spacing-md;
+  align-items: center;
+  border-top: 1px solid rgba($color-soft-gray, 0.5);
+}
+
+.fpt-col {
+  &--name {
+    font-size: $font-size-sm;
+    color: $color-text-primary;
+    padding-left: $spacing-md;
+  }
+
+  &--level, &--scope {
+    text-align: center;
   }
 }
 
-.perm-resource {
-  font-size: $font-size-sm;
-  font-weight: $font-weight-medium;
-  color: $color-text-dark;
-  min-width: 100px;
-  flex-shrink: 0;
-}
-
-.perm-actions {
-  display: flex;
-  gap: $spacing-xs;
-  flex-wrap: wrap;
-}
-
-.perm-tag {
-  @include flex-start;
-  gap: 2px;
+.fp-tag {
+  display: inline-block;
   font-size: $font-size-xs;
-  padding: 2px 8px;
+  padding: 2px $spacing-sm;
   border-radius: $radius-full;
   background: $color-cloud-gray;
-  color: $color-muted-gray;
+  color: $color-text-secondary;
 
-  i {
-    font-size: 10px;
+  &.level--none {
+    color: $color-muted-gray;
   }
 
-  &--active {
+  &.level--view {
+    @include status-badge-color($color-info);
+  }
+
+  &.level--edit {
     @include status-badge-color($color-success);
   }
+}
+
+.fp-placeholder {
+  font-size: $font-size-sm;
+  color: $color-muted-gray;
+  text-align: center;
+  display: block;
 }
 
 // ---------------------------------------------------------------

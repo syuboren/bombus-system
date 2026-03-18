@@ -7,64 +7,131 @@ import {
   OnInit
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { TenantAdminService } from '../../services/tenant-admin.service';
-import { Role, Permission, ScopeType } from '../../models/tenant-admin.model';
+import { NotificationService } from '../../../../core/services/notification.service';
+import {
+  Role,
+  RoleUser,
+  Feature,
+  RoleFeaturePerm,
+  FeaturePermPayload,
+  ActionLevel,
+  PermScope
+} from '../../models/tenant-admin.model';
 
-interface PermissionGroup {
-  resource: string;
-  permissions: Permission[];
+interface FeaturePermState {
+  feature_id: string;
+  action_level: ActionLevel;
+  edit_scope: PermScope | null;
+  view_scope: PermScope | null;
 }
+
+const MODULE_LABELS: Record<string, string> = {
+  L1: 'L1 員工管理',
+  L2: 'L2 職能管理',
+  L3: 'L3 教育訓練',
+  L4: 'L4 專案管理',
+  L5: 'L5 績效管理',
+  L6: 'L6 文化管理',
+  SYS: '系統管理'
+};
+
+const ACTION_LEVEL_OPTIONS: { value: ActionLevel; label: string }[] = [
+  { value: 'none', label: '無權限' },
+  { value: 'view', label: '僅查看' },
+  { value: 'edit', label: '可編輯' }
+];
+
+const SCOPE_OPTIONS: { value: PermScope; label: string }[] = [
+  { value: 'self', label: '個人' },
+  { value: 'department', label: '部門' },
+  { value: 'company', label: '全公司' }
+];
+
+const SCOPE_RANK: Record<string, number> = { self: 1, department: 2, company: 3 };
 
 @Component({
   standalone: true,
   selector: 'app-role-management-page',
   templateUrl: './role-management-page.component.html',
   styleUrl: './role-management-page.component.scss',
-  imports: [CommonModule, HeaderComponent],
+  imports: [CommonModule, FormsModule, HeaderComponent],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RoleManagementPageComponent implements OnInit {
   private tenantAdminService = inject(TenantAdminService);
+  private notificationService = inject(NotificationService);
 
+  // Data
   roles = signal<Role[]>([]);
-  allPermissions = signal<Permission[]>([]);
+  features = signal<Feature[]>([]);
   loading = signal(true);
 
-  // Form
+  // Role CRUD Form
   showForm = signal(false);
-  editingRole = signal<Role | null>(null);
+  formEditingRole = signal<Role | null>(null);
   formName = signal('');
   formDescription = signal('');
-  formScopeType = signal<ScopeType>('global');
-  selectedPermissions = signal<Set<string>>(new Set());
+
+  // Feature permission editing
+  editingRole = signal<Role | null>(null);
+  featurePermStates = signal<Map<string, FeaturePermState>>(new Map());
+  saving = signal(false);
+
+  // View mode (read-only)
+  showFeatureView = signal(false);
+  viewRole = signal<Role | null>(null);
+  viewFeaturePerms = signal<RoleFeaturePerm[]>([]);
+
+  // Module collapse
+  collapsedModules = signal<Set<string>>(new Set());
 
   // Delete
   showDeleteConfirm = signal(false);
   deletingRole = signal<Role | null>(null);
 
-  // Permission matrix view
-  showPermissionMatrix = signal(false);
-  matrixRole = signal<Role | null>(null);
+  // Role users
+  showRoleUsers = signal(false);
+  roleUsersRole = signal<Role | null>(null);
+  roleUsers = signal<RoleUser[]>([]);
+  loadingRoleUsers = signal(false);
 
-  permissionGroups = computed<PermissionGroup[]>(() => {
-    const perms = this.allPermissions();
-    const grouped = new Map<string, Permission[]>();
-    perms.forEach(p => {
-      if (!grouped.has(p.resource)) {
-        grouped.set(p.resource, []);
-      }
-      grouped.get(p.resource)!.push(p);
-    });
-    return Array.from(grouped.entries()).map(([resource, permissions]) => ({
-      resource,
-      permissions
-    }));
+  // Expose constants to template
+  readonly moduleLabels = MODULE_LABELS;
+  readonly actionLevelOptions = ACTION_LEVEL_OPTIONS;
+  readonly scopeOptions = SCOPE_OPTIONS;
+
+  // Computed: features grouped by module
+  featuresByModule = computed(() => {
+    const grouped = new Map<string, Feature[]>();
+    for (const f of this.features()) {
+      if (!grouped.has(f.module)) grouped.set(f.module, []);
+      grouped.get(f.module)!.push(f);
+    }
+    return grouped;
+  });
+
+  moduleOrder = computed(() => {
+    const order = ['L1', 'L2', 'L3', 'L4', 'L5', 'L6', 'SYS'];
+    return order.filter(m => this.featuresByModule().has(m));
+  });
+
+  // Computed: view mode features grouped by module
+  viewFeaturesByModule = computed(() => {
+    const perms = this.viewFeaturePerms();
+    const grouped = new Map<string, RoleFeaturePerm[]>();
+    for (const p of perms) {
+      if (!grouped.has(p.module)) grouped.set(p.module, []);
+      grouped.get(p.module)!.push(p);
+    }
+    return grouped;
   });
 
   ngOnInit(): void {
     this.loadRoles();
-    this.loadPermissions();
+    this.loadFeatures();
   }
 
   loadRoles(): void {
@@ -81,10 +148,10 @@ export class RoleManagementPageComponent implements OnInit {
     });
   }
 
-  loadPermissions(): void {
-    this.tenantAdminService.getPermissions().subscribe({
-      next: (perms) => this.allPermissions.set(perms),
-      error: () => this.allPermissions.set([])
+  loadFeatures(): void {
+    this.tenantAdminService.getFeatures().subscribe({
+      next: (res) => this.features.set(res.features),
+      error: () => this.features.set([])
     });
   }
 
@@ -93,41 +160,35 @@ export class RoleManagementPageComponent implements OnInit {
   // ============================================================
 
   openCreateForm(): void {
-    this.editingRole.set(null);
+    this.formEditingRole.set(null);
     this.formName.set('');
     this.formDescription.set('');
-    this.formScopeType.set('global');
-    this.selectedPermissions.set(new Set());
     this.showForm.set(true);
   }
 
   openEditForm(role: Role): void {
-    this.editingRole.set(role);
+    this.formEditingRole.set(role);
     this.formName.set(role.name);
     this.formDescription.set(role.description || '');
-    this.formScopeType.set(role.scope_type);
-    const permIds = new Set((role.permissions || []).map(p => p.permission_id));
-    this.selectedPermissions.set(permIds);
     this.showForm.set(true);
   }
 
   closeForm(): void {
     this.showForm.set(false);
-    this.editingRole.set(null);
+    this.formEditingRole.set(null);
   }
 
   saveForm(): void {
-    const editing = this.editingRole();
-    const data: Partial<Role> & { permission_ids?: string[] } = {
+    const editing = this.formEditingRole();
+    const data: Partial<Role> = {
       name: this.formName(),
-      description: this.formDescription(),
-      scope_type: this.formScopeType()
+      description: this.formDescription()
     };
-    (data as Record<string, unknown>)['permission_ids'] = Array.from(this.selectedPermissions());
 
     if (editing) {
       this.tenantAdminService.updateRole(editing.id, data).subscribe({
         next: () => {
+          this.notificationService.success('角色已更新');
           this.closeForm();
           this.loadRoles();
         }
@@ -135,6 +196,7 @@ export class RoleManagementPageComponent implements OnInit {
     } else {
       this.tenantAdminService.createRole(data).subscribe({
         next: () => {
+          this.notificationService.success('角色已建立');
           this.closeForm();
           this.loadRoles();
         }
@@ -159,120 +221,244 @@ export class RoleManagementPageComponent implements OnInit {
         next: () => {
           this.closeDeleteConfirm();
           this.loadRoles();
+          this.notificationService.success('角色已刪除');
         }
       });
     }
   }
 
   // ============================================================
-  // Permission Matrix
+  // Role Users
   // ============================================================
 
-  togglePermission(permissionId: string): void {
-    this.selectedPermissions.update(set => {
-      const next = new Set(set);
-      if (next.has(permissionId)) {
-        next.delete(permissionId);
+  openRoleUsers(role: Role): void {
+    this.roleUsersRole.set(role);
+    this.roleUsers.set([]);
+    this.loadingRoleUsers.set(true);
+    this.showRoleUsers.set(true);
+
+    this.tenantAdminService.getRoleUsers(role.id).subscribe({
+      next: (users) => {
+        this.roleUsers.set(users);
+        this.loadingRoleUsers.set(false);
+      },
+      error: () => {
+        this.roleUsers.set([]);
+        this.loadingRoleUsers.set(false);
+      }
+    });
+  }
+
+  closeRoleUsers(): void {
+    this.showRoleUsers.set(false);
+    this.roleUsersRole.set(null);
+    this.roleUsers.set([]);
+  }
+
+  // ============================================================
+  // Feature Permission Editing
+  // ============================================================
+
+  openFeaturePermEdit(role: Role): void {
+    this.editingRole.set(role);
+    this.collapsedModules.set(new Set());
+    this.featurePermStates.set(new Map());
+    this.saving.set(false);
+
+    this.tenantAdminService.getRoleFeaturePerms(role.id).subscribe({
+      next: (perms) => {
+        const states = new Map<string, FeaturePermState>();
+        for (const p of perms) {
+          states.set(p.feature_id, {
+            feature_id: p.feature_id,
+            action_level: p.action_level,
+            edit_scope: p.edit_scope,
+            view_scope: p.view_scope
+          });
+        }
+        this.featurePermStates.set(states);
+      }
+    });
+  }
+
+  closeFeaturePermEdit(): void {
+    this.editingRole.set(null);
+    this.featurePermStates.set(new Map());
+  }
+
+  getFeaturePermState(featureId: string): FeaturePermState {
+    return this.featurePermStates().get(featureId) || {
+      feature_id: featureId,
+      action_level: 'none',
+      edit_scope: null,
+      view_scope: null
+    };
+  }
+
+  onActionLevelChange(featureId: string, level: ActionLevel): void {
+    this.featurePermStates.update(map => {
+      const next = new Map(map);
+      const current = next.get(featureId) || {
+        feature_id: featureId, action_level: 'none', edit_scope: null, view_scope: null
+      };
+
+      if (level === 'none') {
+        next.set(featureId, { ...current, action_level: 'none', edit_scope: null, view_scope: null });
+      } else if (level === 'view') {
+        next.set(featureId, {
+          ...current,
+          action_level: 'view',
+          edit_scope: null,
+          view_scope: current.view_scope || 'self'
+        });
       } else {
-        next.add(permissionId);
+        // edit
+        const editScope = current.edit_scope || 'self';
+        const viewScope = current.view_scope || editScope;
+        // Ensure view_scope >= edit_scope
+        const correctedViewScope = (SCOPE_RANK[viewScope] >= SCOPE_RANK[editScope]) ? viewScope : editScope;
+        next.set(featureId, {
+          ...current,
+          action_level: 'edit',
+          edit_scope: editScope,
+          view_scope: correctedViewScope
+        });
       }
       return next;
     });
   }
 
-  isPermissionSelected(permissionId: string): boolean {
-    return this.selectedPermissions().has(permissionId);
-  }
+  onEditScopeChange(featureId: string, scope: PermScope): void {
+    this.featurePermStates.update(map => {
+      const next = new Map(map);
+      const current = next.get(featureId);
+      if (!current) return next;
 
-  selectAllInGroup(group: PermissionGroup): void {
-    this.selectedPermissions.update(set => {
-      const next = new Set(set);
-      group.permissions.forEach(p => next.add(p.id));
+      let viewScope = current.view_scope || scope;
+      // Auto-correct: view_scope must >= edit_scope
+      if (SCOPE_RANK[viewScope] < SCOPE_RANK[scope]) {
+        viewScope = scope;
+      }
+      next.set(featureId, { ...current, edit_scope: scope, view_scope: viewScope });
       return next;
     });
   }
 
-  deselectAllInGroup(group: PermissionGroup): void {
-    this.selectedPermissions.update(set => {
-      const next = new Set(set);
-      group.permissions.forEach(p => next.delete(p.id));
+  onViewScopeChange(featureId: string, scope: PermScope): void {
+    this.featurePermStates.update(map => {
+      const next = new Map(map);
+      const current = next.get(featureId);
+      if (!current) return next;
+
+      // Ensure view_scope >= edit_scope
+      if (current.edit_scope && SCOPE_RANK[scope] < SCOPE_RANK[current.edit_scope]) {
+        return next; // Reject invalid selection
+      }
+      next.set(featureId, { ...current, view_scope: scope });
       return next;
     });
   }
 
-  isGroupFullySelected(group: PermissionGroup): boolean {
-    return group.permissions.every(p => this.selectedPermissions().has(p.id));
+  saveFeaturePerms(): void {
+    const role = this.editingRole();
+    if (!role) return;
+
+    const perms: FeaturePermPayload[] = [];
+    for (const [, state] of this.featurePermStates()) {
+      perms.push({
+        feature_id: state.feature_id,
+        action_level: state.action_level,
+        edit_scope: state.edit_scope,
+        view_scope: state.view_scope
+      });
+    }
+
+    this.saving.set(true);
+    this.tenantAdminService.updateRoleFeaturePerms(role.id, perms).subscribe({
+      next: () => {
+        this.saving.set(false);
+        this.closeFeaturePermEdit();
+        this.notificationService.success(`${role.name} 的功能權限已更新`);
+        this.loadRoles();
+      },
+      error: () => {
+        this.saving.set(false);
+        this.notificationService.error('儲存失敗，請稍後再試');
+      }
+    });
   }
 
   // ============================================================
-  // View Permission Matrix (read-only)
+  // View Feature Perms (Read-Only)
   // ============================================================
 
-  viewPermissions(role: Role): void {
-    this.matrixRole.set(role);
-    const permIds = new Set((role.permissions || []).map(p => p.permission_id));
-    this.selectedPermissions.set(permIds);
-    this.showPermissionMatrix.set(true);
+  viewFeaturePermissions(role: Role): void {
+    this.viewRole.set(role);
+    this.viewFeaturePerms.set([]);
+    this.collapsedModules.set(new Set());
+    this.showFeatureView.set(true);
+
+    this.tenantAdminService.getRoleFeaturePerms(role.id).subscribe({
+      next: (perms) => this.viewFeaturePerms.set(perms)
+    });
   }
 
-  closePermissionMatrix(): void {
-    this.showPermissionMatrix.set(false);
-    this.matrixRole.set(null);
+  closeFeatureView(): void {
+    this.showFeatureView.set(false);
+    this.viewRole.set(null);
+    this.viewFeaturePerms.set([]);
+  }
+
+  // ============================================================
+  // Module Collapse
+  // ============================================================
+
+  toggleModule(module: string): void {
+    this.collapsedModules.update(set => {
+      const next = new Set(set);
+      if (next.has(module)) {
+        next.delete(module);
+      } else {
+        next.add(module);
+      }
+      return next;
+    });
+  }
+
+  isModuleCollapsed(module: string): boolean {
+    return this.collapsedModules().has(module);
   }
 
   // ============================================================
   // Helpers
   // ============================================================
 
-  getScopeLabel(scopeType: ScopeType): string {
-    const labels: Record<ScopeType, string> = {
+  getModuleLabel(module: string): string {
+    return MODULE_LABELS[module] || module;
+  }
+
+  getActionLevelLabel(level: ActionLevel): string {
+    const found = ACTION_LEVEL_OPTIONS.find(o => o.value === level);
+    return found?.label || level;
+  }
+
+  getScopeLabel(scopeOrType: string): string {
+    const scopeLabels: Record<string, string> = {
+      self: '個人',
+      department: '部門',
+      company: '全公司',
       global: '全域',
-      subsidiary: '子公司',
-      department: '部門'
+      subsidiary: '子公司'
     };
-    return labels[scopeType] || scopeType;
+    return scopeLabels[scopeOrType] || scopeOrType;
   }
 
-  getScopeClass(scopeType: ScopeType): string {
-    const classes: Record<ScopeType, string> = {
-      global: 'scope--global',
-      subsidiary: 'scope--subsidiary',
-      department: 'scope--department'
+  getActionLevelClass(level: ActionLevel): string {
+    const classes: Record<ActionLevel, string> = {
+      none: 'level--none',
+      view: 'level--view',
+      edit: 'level--edit'
     };
-    return classes[scopeType] || '';
-  }
-
-  getActionLabel(action: string): string {
-    const labels: Record<string, string> = {
-      read: '讀取',
-      create: '建立',
-      update: '更新',
-      delete: '刪除',
-      manage: '管理',
-      export: '匯出',
-      approve: '審核',
-      assign: '指派'
-    };
-    return labels[action] || action;
-  }
-
-  getResourceLabel(resource: string): string {
-    const labels: Record<string, string> = {
-      employee: '員工管理',
-      recruitment: '招募管理',
-      organization: '組織管理',
-      competency: '職能管理',
-      training: '教育訓練',
-      performance: '績效管理',
-      culture: '文化管理',
-      project: '專案管理',
-      grade_matrix: '職等職級',
-      job_descriptions: '職務說明書',
-      meetings: '會議管理',
-      talent_pool: '人才庫',
-      reports: '報表',
-      settings: '系統設定'
-    };
-    return labels[resource] || resource;
+    return classes[level] || '';
   }
 }

@@ -8,6 +8,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
+const { requireFeaturePerm, buildScopeFilter, checkEditScope, getUserDepartmentIds } = require('../middleware/permission');
 // tenantDB is accessed via req.tenantDB (injected by middleware)
 
 // 確保上傳目錄存在
@@ -59,7 +60,7 @@ const TYPE_LABELS = {
  * GET /api/employee/templates
  * 取得員工可見的公開模版列表 (is_public = 1 且 is_active = 1)
  */
-router.get('/templates', (req, res) => {
+router.get('/templates', requireFeaturePerm('L1.profile', 'view'), (req, res) => {
     try {
         const templates = req.tenantDB.prepare(`
             SELECT id, name, version, is_required, description, created_at
@@ -79,7 +80,7 @@ router.get('/templates', (req, res) => {
  * GET /api/employee/submissions
  * 取得當前員工的提交記錄 (需要 employee_id 參數)
  */
-router.get('/submissions', (req, res) => {
+router.get('/submissions', requireFeaturePerm('L1.profile', 'view'), (req, res) => {
     try {
         const { employee_id } = req.query;
 
@@ -119,7 +120,7 @@ router.get('/submissions', (req, res) => {
  * GET /api/employee/progress
  * 取得員工入職進度摘要
  */
-router.get('/progress', (req, res) => {
+router.get('/progress', requireFeaturePerm('L1.profile', 'view'), (req, res) => {
     try {
         const { employee_id } = req.query;
 
@@ -215,7 +216,7 @@ router.get('/progress', (req, res) => {
  *   - status: 依狀態過濾 (active, probation, resigned)
  *   - all: 設為 true 時包含非在職員工
  */
-router.get('/list', (req, res) => {
+router.get('/list', requireFeaturePerm('L1.profile', 'view'), (req, res) => {
     try {
         const { dept, status, all, org_unit_id } = req.query;
 
@@ -228,10 +229,16 @@ router.get('/list', (req, res) => {
         `;
         let params = [];
 
-        // 子公司篩選
+        // 子公司/部門篩選（階層式：包含所有子組織）
         if (org_unit_id) {
-            query += ` AND org_unit_id = ?`;
-            params.push(org_unit_id);
+            const childIds = getUserDepartmentIds(req.tenantDB, org_unit_id);
+            if (childIds.length > 0) {
+                query += ` AND org_unit_id IN (${childIds.map(() => '?').join(',')})`;
+                params.push(...childIds);
+            } else {
+                query += ` AND org_unit_id = ?`;
+                params.push(org_unit_id);
+            }
         }
 
         // 預設只顯示在職員工
@@ -248,6 +255,11 @@ router.get('/list', (req, res) => {
             query += ` AND status = ?`;
             params.push(status);
         }
+
+        // Apply scope filter
+        const scope = buildScopeFilter(req, { employeeIdColumn: 'id', orgUnitColumn: 'org_unit_id' });
+        query += ` AND ${scope.clause}`;
+        params.push(...scope.params);
 
         query += ` ORDER BY department, name`;
 
@@ -280,7 +292,7 @@ router.get('/list', (req, res) => {
  * GET /api/employee/departments
  * 取得所有部門清單（優先從 org_units 取，fallback 從 employees 取）
  */
-router.get('/departments', (req, res) => {
+router.get('/departments', requireFeaturePerm('L1.profile', 'view'), (req, res) => {
     try {
         // 優先從 org_units 取部門（統一資料來源）
         const fromOrgUnits = req.tenantDB.prepare(`
@@ -315,7 +327,7 @@ router.get('/departments', (req, res) => {
  * GET /api/employee/documents
  * 取得員工已上傳的文件列表
  */
-router.get('/documents', (req, res) => {
+router.get('/documents', requireFeaturePerm('L1.profile', 'view'), (req, res) => {
     try {
         const { employee_id } = req.query;
 
@@ -344,7 +356,7 @@ router.get('/documents', (req, res) => {
  * GET /api/employee/documents/progress
  * 取得員工文件上傳進度
  */
-router.get('/documents/progress', (req, res) => {
+router.get('/documents/progress', requireFeaturePerm('L1.profile', 'view'), (req, res) => {
     try {
         const { employee_id } = req.query;
 
@@ -391,7 +403,7 @@ router.get('/documents/progress', (req, res) => {
  * POST /api/employee/documents
  * 上傳員工入職文件
  */
-router.post('/documents', upload.single('file'), (req, res) => {
+router.post('/documents', requireFeaturePerm('L1.profile', 'edit'), upload.single('file'), (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ error: 'No file uploaded' });
@@ -489,7 +501,7 @@ router.post('/documents', upload.single('file'), (req, res) => {
  * PUT /api/employee/documents/:id
  * 重新上傳文件（覆蓋原有檔案）
  */
-router.put('/documents/:id', upload.single('file'), (req, res) => {
+router.put('/documents/:id', requireFeaturePerm('L1.profile', 'edit'), upload.single('file'), (req, res) => {
     try {
         const { id } = req.params;
 
@@ -552,7 +564,7 @@ router.put('/documents/:id', upload.single('file'), (req, res) => {
  * DELETE /api/employee/documents/:id
  * 刪除員工上傳的文件
  */
-router.delete('/documents/:id', (req, res) => {
+router.delete('/documents/:id', requireFeaturePerm('L1.profile', 'edit'), (req, res) => {
     try {
         const { id } = req.params;
 
@@ -587,7 +599,7 @@ router.delete('/documents/:id', (req, res) => {
  * GET /api/employee/documents/:id/download
  * 下載員工上傳的文件
  */
-router.get('/documents/:id/download', (req, res) => {
+router.get('/documents/:id/download', requireFeaturePerm('L1.profile', 'view'), (req, res) => {
     try {
         const { id } = req.params;
 
@@ -619,26 +631,40 @@ router.get('/documents/:id/download', (req, res) => {
  * 取得單一員工完整資料 (含學歷、技能、證照)
  */
 // GET /api/employee/stats - 員工統計
-router.get('/stats', (req, res) => {
+router.get('/stats', requireFeaturePerm('L1.profile', 'view'), (req, res) => {
     try {
         const { org_unit_id } = req.query;
-        const orgFilter = org_unit_id ? ' AND org_unit_id = ?' : '';
-        const orgParams = org_unit_id ? [org_unit_id] : [];
+        let orgFilter = '';
+        let orgParams = [];
+        if (org_unit_id) {
+            const childIds = getUserDepartmentIds(req.tenantDB, org_unit_id);
+            if (childIds.length > 0) {
+                orgFilter = ` AND org_unit_id IN (${childIds.map(() => '?').join(',')})`;
+                orgParams = childIds;
+            } else {
+                orgFilter = ' AND org_unit_id = ?';
+                orgParams = [org_unit_id];
+            }
+        }
+
+        // Scope 過濾
+        const scope = buildScopeFilter(req, { employeeIdColumn: 'id', orgUnitColumn: 'org_unit_id' });
+        const scopeFilter = ` AND ${scope.clause}`;
 
         // 員工總數
         const totalEmployees = req.tenantDB.prepare(`
-            SELECT COUNT(*) as count FROM employees WHERE 1=1${orgFilter}
-        `).get(...orgParams).count;
+            SELECT COUNT(*) as count FROM employees WHERE 1=1${orgFilter}${scopeFilter}
+        `).get(...orgParams, ...scope.params).count;
 
         // 在職人數
         const activeCount = req.tenantDB.prepare(`
-            SELECT COUNT(*) as count FROM employees WHERE status = 'active'${orgFilter}
-        `).get(...orgParams).count;
+            SELECT COUNT(*) as count FROM employees WHERE status = 'active'${orgFilter}${scopeFilter}
+        `).get(...orgParams, ...scope.params).count;
 
         // 試用期人數
         const probationCount = req.tenantDB.prepare(`
-            SELECT COUNT(*) as count FROM employees WHERE status = 'probation'${orgFilter}
-        `).get(...orgParams).count;
+            SELECT COUNT(*) as count FROM employees WHERE status = 'probation'${orgFilter}${scopeFilter}
+        `).get(...orgParams, ...scope.params).count;
 
         // 平均年資（月）
         const avgTenureResult = req.tenantDB.prepare(`
@@ -646,18 +672,20 @@ router.get('/stats', (req, res) => {
                 (julianday('now') - julianday(hire_date)) / 30.44
             ) as avgMonths
             FROM employees
-            WHERE hire_date IS NOT NULL AND status IN ('active', 'probation')${orgFilter}
-        `).get(...orgParams);
+            WHERE hire_date IS NOT NULL AND status IN ('active', 'probation')${orgFilter}${scopeFilter}
+        `).get(...orgParams, ...scope.params);
         const avgTenure = avgTenureResult.avgMonths ? Math.round(avgTenureResult.avgMonths) : 0;
 
-        // 30天內到期文件數（從 employee_documents 表或 employee_certifications 表）
-        // 這裡先查證照到期數
+        // 30天內到期文件數（從 employee_certifications 表，需 JOIN employees 做 scope 過濾）
+        const certScope = buildScopeFilter(req, { tableAlias: 'e', employeeIdColumn: 'id', orgUnitColumn: 'org_unit_id' });
         const expiringDocuments = req.tenantDB.prepare(`
             SELECT COUNT(*) as count
-            FROM employee_certifications
-            WHERE expiry_date IS NOT NULL
-            AND date(expiry_date) BETWEEN date('now') AND date('now', '+30 days')
-        `).get().count;
+            FROM employee_certifications ec
+            JOIN employees e ON ec.employee_id = e.id
+            WHERE ec.expiry_date IS NOT NULL
+            AND date(ec.expiry_date) BETWEEN date('now') AND date('now', '+30 days')
+            AND ${certScope.clause}
+        `).get(...certScope.params).count;
 
         // 即將到職週年的員工（30天內）
         const upcomingAnniversaries = req.tenantDB.prepare(`
@@ -675,9 +703,9 @@ router.get('/stats', (req, res) => {
                  AND (strftime('%m-%d', hire_date) >= strftime('%m-%d', 'now')
                       OR strftime('%m-%d', hire_date) <= strftime('%m-%d', 'now', '+30 days')))
             )
-            AND status IN ('active', 'probation')${orgFilter}
+            AND status IN ('active', 'probation')${orgFilter}${scopeFilter}
             ORDER BY strftime('%m-%d', hire_date)
-        `).all(...orgParams);
+        `).all(...orgParams, ...scope.params);
 
         res.json({
             totalEmployees,
@@ -694,10 +722,11 @@ router.get('/stats', (req, res) => {
 });
 
 // GET /api/employee/expiring-documents - 30天內到期文件列表
-router.get('/expiring-documents', (req, res) => {
+router.get('/expiring-documents', requireFeaturePerm('L1.profile', 'view'), (req, res) => {
     try {
+        const scope = buildScopeFilter(req, { tableAlias: 'e', employeeIdColumn: 'id', orgUnitColumn: 'org_unit_id' });
         const expiringCerts = req.tenantDB.prepare(`
-            SELECT 
+            SELECT
                 ec.id,
                 ec.employee_id as employeeId,
                 e.name as employeeName,
@@ -709,8 +738,9 @@ router.get('/expiring-documents', (req, res) => {
             JOIN employees e ON ec.employee_id = e.id
             WHERE ec.expiry_date IS NOT NULL
             AND date(ec.expiry_date) BETWEEN date('now') AND date('now', '+30 days')
+            AND ${scope.clause}
             ORDER BY ec.expiry_date ASC
-        `).all();
+        `).all(...scope.params);
 
         res.json(expiringCerts);
     } catch (error) {
@@ -720,7 +750,7 @@ router.get('/expiring-documents', (req, res) => {
 });
 
 // GET /api/employee/department-roi - 部門 ROI 概覽（暫時回傳 mock）
-router.get('/department-roi', (req, res) => {
+router.get('/department-roi', requireFeaturePerm('L1.profile', 'view'), (req, res) => {
     try {
         // Mock 資料，未來功能
         const mockData = [
@@ -738,7 +768,7 @@ router.get('/department-roi', (req, res) => {
 });
 
 // GET /api/employee/:id/audit-logs - 員工操作記錄（暫時回傳空陣列）
-router.get('/:id/audit-logs', (req, res) => {
+router.get('/:id/audit-logs', requireFeaturePerm('L1.profile', 'view'), (req, res) => {
     try {
         // 未來功能，暫時回傳空陣列
         res.json([]);
@@ -748,14 +778,15 @@ router.get('/:id/audit-logs', (req, res) => {
     }
 });
 
-router.get('/:id', (req, res) => {
+router.get('/:id', requireFeaturePerm('L1.profile', 'view'), (req, res) => {
     try {
         const { id } = req.params;
 
-        // 取得員工主資料
+        // Scope 驗證：確認目標員工在使用者的 view_scope 範圍內
+        const scope = buildScopeFilter(req, { employeeIdColumn: 'id', orgUnitColumn: 'org_unit_id' });
         const employee = req.tenantDB.prepare(`
-            SELECT * FROM employees WHERE id = ?
-        `).get(id);
+            SELECT * FROM employees WHERE id = ? AND ${scope.clause}
+        `).get(id, ...scope.params);
 
         if (!employee) {
             return res.status(404).json({ error: 'Employee not found' });

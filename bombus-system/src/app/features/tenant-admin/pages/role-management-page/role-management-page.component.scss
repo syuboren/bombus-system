@@ -16,20 +16,8 @@ $module-color: $color-brand-main;
 }
 
 // ---------------------------------------------------------------
-// Page Header
+// Buttons
 // ---------------------------------------------------------------
-.page-header {
-  @include flex-between;
-  margin-bottom: $spacing-xl;
-
-  .page-title {
-    font-size: $font-size-2xl;
-    font-weight: $font-weight-bold;
-    color: $color-text-dark;
-    margin: 0;
-  }
-}
-
 .btn-primary {
   @include button-primary;
 }
@@ -110,11 +98,6 @@ $module-color: $color-brand-main;
     flex-wrap: wrap;
   }
 
-  &__meta {
-    @include flex-start;
-    gap: $spacing-md;
-  }
-
   &__actions {
     @include flex-start;
     gap: $spacing-sm;
@@ -161,107 +144,258 @@ $module-color: $color-brand-main;
   line-height: $line-height-relaxed;
 }
 
-.permission-count {
-  font-size: $font-size-sm;
-  color: $color-text-secondary;
+// ---------------------------------------------------------------
+// Role Card Stats
+// ---------------------------------------------------------------
+.role-card__stats {
+  padding: $spacing-xs 0;
+}
+
+.stat-link {
   @include flex-start;
   gap: $spacing-xs;
+  font-size: $font-size-sm;
+  color: $module-color;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color $transition-fast;
 
   i {
     font-size: 14px;
   }
-}
 
-// ---------------------------------------------------------------
-// Permission Matrix
-// ---------------------------------------------------------------
-.permission-matrix-section {
-  margin-top: $spacing-lg;
-  padding-top: $spacing-lg;
-  border-top: 1px solid $color-soft-gray;
-}
-
-.section-title {
-  font-size: $font-size-base;
-  font-weight: $font-weight-semibold;
-  color: $color-text-dark;
-  margin: 0 0 $spacing-md;
-}
-
-.permission-matrix {
-  @include flex-column;
-  gap: $spacing-sm;
-}
-
-.perm-group {
-  @include card;
-  border: 1px solid $color-soft-gray;
-  padding: $spacing-md;
-
-  &__header {
-    margin-bottom: $spacing-sm;
-    padding-bottom: $spacing-sm;
-    border-bottom: 1px solid $color-soft-gray;
+  &:hover {
+    color: darken($color-brand-main, 12%);
+    text-decoration: underline;
   }
 
-  &__label {
-    font-size: $font-size-sm;
-    font-weight: $font-weight-semibold;
-    color: $color-text-dark;
-    @include flex-start;
-    gap: $spacing-sm;
-    cursor: pointer;
+  &--disabled {
+    color: $color-muted-gray;
+    cursor: default;
 
-    input[type='checkbox'] {
-      accent-color: $module-color;
+    &:hover {
+      color: $color-muted-gray;
+      text-decoration: none;
     }
   }
+}
 
-  &__actions {
-    display: flex;
-    gap: $spacing-sm;
-    flex-wrap: wrap;
+// ---------------------------------------------------------------
+// User List (Role Users Modal)
+// ---------------------------------------------------------------
+.user-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  @include flex-column;
+  gap: 0;
+}
+
+.user-list-item {
+  @include flex-start;
+  gap: $spacing-md;
+  padding: $spacing-md 0;
+  border-bottom: 1px solid $color-soft-gray;
+
+  &:last-child {
+    border-bottom: none;
   }
 }
 
-.perm-checkbox {
-  @include flex-start;
-  gap: $spacing-xs;
+.user-avatar {
+  @include flex-center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba($module-color, 0.12);
+  color: $module-color;
   font-size: $font-size-sm;
-  color: $color-text-primary;
+  font-weight: $font-weight-semibold;
+  flex-shrink: 0;
+}
+
+.user-detail {
+  @include flex-column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+
+  &__name {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: $color-text-dark;
+    @include text-truncate;
+  }
+
+  &__email {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    @include text-truncate;
+  }
+}
+
+.scope-tag {
+  font-size: $font-size-xs;
+  padding: 2px $spacing-sm;
+  border-radius: $radius-full;
+  @include status-badge-color($color-l1-sage);
+  flex-shrink: 0;
+}
+
+// ---------------------------------------------------------------
+// Feature Permission Matrix (3-column progressive)
+// ---------------------------------------------------------------
+.feature-perm-matrix {
+  @include flex-column;
+  gap: 0;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  overflow: hidden;
+}
+
+.fp-header-row {
+  display: grid;
+  grid-template-columns: 1fr 140px 140px 140px;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  background: $color-cloud-gray;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid $color-soft-gray;
+
+  @include media-max-md {
+    grid-template-columns: 1fr 100px 100px 100px;
+    font-size: 10px;
+    padding: $spacing-xs $spacing-sm;
+  }
+}
+
+.fp-module-section {
+  & + & {
+    border-top: 1px solid $color-soft-gray;
+  }
+}
+
+.fp-module-header {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  background: rgba($color-brand-main, 0.04);
   cursor: pointer;
-  padding: $spacing-xs $spacing-sm;
-  border-radius: $radius-sm;
+  user-select: none;
+  transition: background $transition-fast;
+
+  &:hover {
+    background: rgba($color-brand-main, 0.08);
+  }
+
+  i {
+    font-size: 18px;
+    color: $color-text-secondary;
+    transition: transform $transition-fast;
+
+    &.collapsed {
+      transform: rotate(-90deg);
+    }
+  }
+}
+
+.fp-module-label {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+}
+
+.fp-module-count {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  margin-left: auto;
+}
+
+.fp-row {
+  display: grid;
+  grid-template-columns: 1fr 140px 140px 140px;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  align-items: center;
+  border-top: 1px solid rgba($color-soft-gray, 0.5);
   transition: background $transition-fast;
 
   &:hover {
     background: $color-cloud-gray;
   }
 
-  input[type='checkbox'] {
-    accent-color: $module-color;
+  @include media-max-md {
+    grid-template-columns: 1fr 100px 100px 100px;
+    padding: $spacing-xs $spacing-sm;
   }
 }
 
-.perm-action {
-  font-size: $font-size-xs;
+.fp-col {
+  &--feature {
+    padding-left: $spacing-md;
+  }
 }
 
-// Permission tags (read-only view)
-.perm-tag {
-  @include flex-start;
-  gap: $spacing-xs;
+.fp-feature-name {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+}
+
+.fp-select {
+  @include input-base;
+  padding: 4px 8px;
   font-size: $font-size-xs;
-  padding: $spacing-xs $spacing-sm;
+  min-width: 0;
+  width: 100%;
+
+  &.level--none {
+    color: $color-text-secondary;
+    background: $color-cloud-gray;
+  }
+
+  &.level--view {
+    color: $color-info;
+    border-color: rgba($color-info, 0.3);
+    background: rgba($color-info, 0.04);
+  }
+
+  &.level--edit {
+    color: $color-success;
+    border-color: rgba($color-success, 0.3);
+    background: rgba($color-success, 0.04);
+  }
+}
+
+.fp-placeholder {
+  font-size: $font-size-sm;
+  color: $color-muted-gray;
+  text-align: center;
+  display: block;
+}
+
+// Read-only tags
+.fp-tag {
+  display: inline-block;
+  font-size: $font-size-xs;
+  padding: 2px $spacing-sm;
   border-radius: $radius-full;
   background: $color-cloud-gray;
   color: $color-text-secondary;
 
-  i {
-    font-size: 12px;
+  &.level--none {
+    color: $color-muted-gray;
   }
 
-  &--active {
+  &.level--view {
+    @include status-badge-color($color-info);
+  }
+
+  &.level--edit {
     @include status-badge-color($color-success);
   }
 }
@@ -269,12 +403,6 @@ $module-color: $color-brand-main;
 .text-muted {
   color: $color-text-secondary;
   font-size: $font-size-sm;
-}
-
-.selected-count {
-  font-size: $font-size-sm;
-  color: $color-text-secondary;
-  margin-right: auto;
 }
 
 // ---------------------------------------------------------------
@@ -319,6 +447,10 @@ $module-color: $color-brand-main;
     max-width: 720px;
   }
 
+  &--xl {
+    max-width: 900px;
+  }
+
   &--sm {
     max-width: 400px;
   }
@@ -342,6 +474,10 @@ $module-color: $color-brand-main;
 
 .modal-title {
   @include modal-title;
+
+  i {
+    margin-right: $spacing-xs;
+  }
 }
 
 .modal-close {
@@ -398,4 +534,11 @@ $module-color: $color-brand-main;
   strong {
     color: $color-error;
   }
+}
+
+// ---------------------------------------------------------------
+// Utility
+// ---------------------------------------------------------------
+.spin {
+  animation: spin 1s linear infinite;
 }

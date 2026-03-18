@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bombus 權限管理系統 — 運作邏輯與操作說明</title>
+  <style>
+    /* ========================================
+       Design Tokens
+       ======================================== */
+    :root {
+      --color-primary: #5B7A6B;
+      --color-primary-light: #E8F0EB;
+      --color-primary-dark: #3D5A4B;
+      --color-accent: #8B6F5E;
+      --color-accent-light: #F5EDE8;
+      --color-bg: #FAFBFA;
+      --color-surface: #FFFFFF;
+      --color-text: #2C3E35;
+      --color-text-secondary: #6B7C73;
+      --color-text-muted: #9AA89F;
+      --color-border: #D8E0DB;
+      --color-border-light: #EDF1EE;
+      --color-success: #5B8A6F;
+      --color-warning: #C4956A;
+      --color-danger: #B85C5C;
+      --color-info: #5B7A9A;
+      --color-tag-none: #E0E0E0;
+      --color-tag-view: #D4E6F1;
+      --color-tag-edit: #D5EDDA;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --radius-xs: 6px;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+      --transition: 0.2s ease;
+    }
+
+    /* ========================================
+       Reset & Base
+       ======================================== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+      background: var(--color-bg);
+      color: var(--color-text);
+      line-height: 1.7;
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ========================================
+       Layout
+       ======================================== */
+    .page-wrapper {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+
+    /* ========================================
+       Cover Header
+       ======================================== */
+    .cover {
+      text-align: center;
+      padding: 60px 32px;
+      background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+      color: white;
+      border-radius: var(--radius);
+      margin-bottom: 48px;
+      box-shadow: var(--shadow-md);
+    }
+    .cover h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      letter-spacing: 0.02em;
+    }
+    .cover .subtitle {
+      font-size: 1rem;
+      opacity: 0.85;
+      margin-bottom: 20px;
+    }
+    .cover .meta {
+      display: inline-flex;
+      gap: 16px;
+      font-size: 0.85rem;
+      opacity: 0.7;
+    }
+
+    /* ========================================
+       Table of Contents
+       ======================================== */
+    .toc {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      padding: 28px 32px;
+      margin-bottom: 48px;
+      box-shadow: var(--shadow-sm);
+    }
+    .toc h2 {
+      font-size: 1.1rem;
+      color: var(--color-primary);
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--color-primary-light);
+    }
+    .toc ol {
+      list-style: none;
+      counter-reset: toc-counter;
+      padding: 0;
+    }
+    .toc ol li {
+      counter-increment: toc-counter;
+      margin-bottom: 8px;
+    }
+    .toc ol li a {
+      color: var(--color-text);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+      border-radius: var(--radius-xs);
+      transition: background var(--transition), color var(--transition);
+    }
+    .toc ol li a::before {
+      content: counter(toc-counter);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--color-primary-light);
+      color: var(--color-primary);
+      font-size: 0.8rem;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .toc ol li a:hover {
+      background: var(--color-primary-light);
+      color: var(--color-primary);
+    }
+
+    /* ========================================
+       Sections
+       ======================================== */
+    .section {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      padding: 36px 32px;
+      margin-bottom: 32px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    h2 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--color-primary-dark);
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--color-primary-light);
+    }
+
+    h3 {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--color-text);
+      margin: 28px 0 12px;
+    }
+
+    h4 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--color-primary);
+      margin: 20px 0 8px;
+    }
+
+    p { margin-bottom: 14px; }
+
+    /* ========================================
+       Scenario Blocks
+       ======================================== */
+    .scenario {
+      background: var(--color-accent-light);
+      border-left: 4px solid var(--color-accent);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      padding: 16px 20px;
+      margin: 16px 0;
+    }
+    .scenario .scenario-title {
+      font-weight: 600;
+      color: var(--color-accent);
+      margin-bottom: 6px;
+      font-size: 0.95rem;
+    }
+    .scenario p { margin-bottom: 6px; font-size: 0.95rem; }
+
+    /* ========================================
+       Steps
+       ======================================== */
+    .steps {
+      list-style: none;
+      padding: 0;
+      margin: 12px 0;
+    }
+    .steps li {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--color-border-light);
+    }
+    .steps li:last-child { border-bottom: none; }
+    .steps .step-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--color-primary);
+      color: white;
+      font-size: 0.8rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    /* ========================================
+       Tables
+       ======================================== */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 0.92rem;
+    }
+    thead th {
+      background: var(--color-primary-light);
+      color: var(--color-primary-dark);
+      font-weight: 600;
+      text-align: left;
+      padding: 10px 14px;
+      border-bottom: 2px solid var(--color-primary);
+    }
+    tbody td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--color-border-light);
+    }
+    tbody tr:hover { background: var(--color-bg); }
+
+    /* ========================================
+       Tags / Badges
+       ======================================== */
+    .tag {
+      display: inline-block;
+      font-size: 0.8rem;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: 500;
+    }
+    .tag--none { background: var(--color-tag-none); color: #777; }
+    .tag--view { background: var(--color-tag-view); color: #2D6A9F; }
+    .tag--edit { background: var(--color-tag-edit); color: #2D7A42; }
+    .tag--system { background: var(--color-primary-light); color: var(--color-primary-dark); }
+    .tag--scope { background: #F0EDE8; color: var(--color-accent); }
+
+    /* ========================================
+       Info / Warning / Tip Boxes
+       ======================================== */
+    .callout {
+      border-radius: var(--radius-sm);
+      padding: 14px 18px;
+      margin: 16px 0;
+      font-size: 0.92rem;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .callout .icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 1px; }
+    .callout--info { background: #E8F0F8; border: 1px solid #B8D4E8; }
+    .callout--info .icon { color: var(--color-info); }
+    .callout--warning { background: #FFF5EC; border: 1px solid #E8D0B8; }
+    .callout--warning .icon { color: var(--color-warning); }
+    .callout--tip { background: var(--color-primary-light); border: 1px solid #B8D0C0; }
+    .callout--tip .icon { color: var(--color-success); }
+
+    /* ========================================
+       Diagram Box
+       ======================================== */
+    .diagram {
+      background: #F6F8F7;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      padding: 20px 24px;
+      margin: 16px 0;
+      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      font-size: 0.85rem;
+      line-height: 1.8;
+      white-space: pre;
+      overflow-x: auto;
+      color: var(--color-text);
+    }
+
+    /* ========================================
+       Permission Matrix Preview
+       ======================================== */
+    .perm-matrix {
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      margin: 16px 0;
+    }
+    .perm-matrix .pm-header {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr 1fr 1fr;
+      background: var(--color-primary-light);
+      padding: 8px 14px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--color-primary-dark);
+      border-bottom: 2px solid var(--color-primary);
+    }
+    .perm-matrix .pm-module {
+      background: #F2F6F3;
+      padding: 8px 14px;
+      font-weight: 600;
+      font-size: 0.88rem;
+      border-bottom: 1px solid var(--color-border-light);
+      color: var(--color-primary);
+    }
+    .perm-matrix .pm-row {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr 1fr 1fr;
+      padding: 8px 14px;
+      font-size: 0.85rem;
+      border-bottom: 1px solid var(--color-border-light);
+      align-items: center;
+    }
+    .perm-matrix .pm-row:hover { background: var(--color-bg); }
+    .perm-matrix .pm-placeholder { color: var(--color-text-muted); }
+
+    /* ========================================
+       Merge Example
+       ======================================== */
+    .merge-demo {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto 1fr;
+      gap: 12px;
+      align-items: center;
+      margin: 20px 0;
+    }
+    .merge-card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      text-align: center;
+    }
+    .merge-card h5 {
+      font-size: 0.82rem;
+      color: var(--color-text-secondary);
+      margin-bottom: 8px;
+    }
+    .merge-card .merge-val {
+      font-size: 0.88rem;
+      font-weight: 600;
+      margin: 4px 0;
+    }
+    .merge-op {
+      font-size: 1.5rem;
+      color: var(--color-primary);
+      font-weight: 700;
+      text-align: center;
+    }
+    .merge-card--result {
+      background: var(--color-primary-light);
+      border-color: var(--color-primary);
+    }
+
+    /* ========================================
+       Flow Steps (Horizontal)
+       ======================================== */
+    .flow {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: center;
+      margin: 20px 0;
+      flex-wrap: wrap;
+    }
+    .flow-step {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      padding: 12px 18px;
+      text-align: center;
+      min-width: 140px;
+    }
+    .flow-step .flow-num {
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      line-height: 24px;
+      border-radius: 50%;
+      background: var(--color-primary);
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .flow-step .flow-label {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--color-text);
+    }
+    .flow-step .flow-desc {
+      font-size: 0.78rem;
+      color: var(--color-text-secondary);
+      margin-top: 4px;
+    }
+    .flow-arrow {
+      font-size: 1.2rem;
+      color: var(--color-primary);
+    }
+
+    /* ========================================
+       FAQ
+       ======================================== */
+    .faq-item {
+      border-bottom: 1px solid var(--color-border-light);
+      padding: 16px 0;
+    }
+    .faq-item:last-child { border-bottom: none; }
+    .faq-q {
+      font-weight: 600;
+      color: var(--color-primary-dark);
+      margin-bottom: 8px;
+      font-size: 1rem;
+    }
+    .faq-a {
+      color: var(--color-text);
+      font-size: 0.95rem;
+    }
+
+    /* ========================================
+       Role Card Grid
+       ======================================== */
+    .role-cards {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+      margin: 16px 0;
+    }
+    .role-card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      padding: 20px;
+      transition: box-shadow var(--transition);
+    }
+    .role-card:hover { box-shadow: var(--shadow-md); }
+    .role-card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .role-card-header h4 {
+      margin: 0;
+      font-size: 1.05rem;
+    }
+    .role-card-desc {
+      font-size: 0.9rem;
+      color: var(--color-text-secondary);
+      margin-bottom: 12px;
+      font-style: italic;
+    }
+
+    /* ========================================
+       Responsive
+       ======================================== */
+    @media (max-width: 640px) {
+      .page-wrapper { padding: 20px 16px 60px; }
+      .cover { padding: 40px 20px; }
+      .cover h1 { font-size: 1.5rem; }
+      .section { padding: 24px 20px; }
+      .merge-demo { grid-template-columns: 1fr; }
+      .merge-op { transform: rotate(90deg); }
+      .flow { flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+      .perm-matrix .pm-header,
+      .perm-matrix .pm-row {
+        grid-template-columns: 1.2fr 0.8fr 0.8fr 0.8fr;
+        font-size: 0.78rem;
+        padding: 6px 8px;
+      }
+    }
+
+    /* ========================================
+       Print
+       ======================================== */
+    @media print {
+      body { background: white; font-size: 11pt; }
+      .page-wrapper { max-width: 100%; padding: 0; }
+      .cover { break-after: page; }
+      .section { break-inside: avoid; box-shadow: none; border: 1px solid #ccc; }
+      .toc { break-after: page; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="page-wrapper">
+
+  <!-- ============================================================ -->
+  <!-- Cover -->
+  <!-- ============================================================ -->
+  <div class="cover">
+    <h1>Bombus 權限管理系統</h1>
+    <div class="subtitle">運作邏輯與操作說明</div>
+    <div class="meta">
+      <span>適用對象：系統管理員、HR 主管</span>
+      <span>v1.0 | 2026-03-18</span>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- TOC -->
+  <!-- ============================================================ -->
+  <div class="toc">
+    <h2>目錄</h2>
+    <ol>
+      <li><a href="#sec1">什麼是權限管理？為什麼需要它？</a></li>
+      <li><a href="#sec2">核心觀念：三層架構一次搞懂</a></li>
+      <li><a href="#sec3">角色管理 — 建立組織的「職務模板」</a></li>
+      <li><a href="#sec4">功能權限設定 — 決定每個角色「能做什麼」</a></li>
+      <li><a href="#sec5">使用者管理 — 把角色指派給真人</a></li>
+      <li><a href="#sec6">多角色合併 — 一個人有多個角色怎麼辦？</a></li>
+      <li><a href="#sec7">系統預設角色說明</a></li>
+      <li><a href="#sec8">常見情境操作指南</a></li>
+      <li><a href="#sec9">常見問題 FAQ</a></li>
+    </ol>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- Section 1 -->
+  <!-- ============================================================ -->
+  <div class="section" id="sec1">
+    <h2>1. 什麼是權限管理？為什麼需要它？</h2>
+
+    <p>想像公司是一棟大樓：</p>
+
+    <table>
+      <thead>
+        <tr><th>比喻</th><th>系統對應</th><th>作用</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>大門鑰匙</td>
+          <td>登入帳號密碼</td>
+          <td>讓你進入系統</td>
+        </tr>
+        <tr>
+          <td>樓層門禁卡</td>
+          <td>角色權限</td>
+          <td>決定你能使用哪些功能</td>
+        </tr>
+        <tr>
+          <td>門禁等級</td>
+          <td>操作等級 + 資料範圍</td>
+          <td>決定你能做什麼、看多大範圍</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout--tip">
+      <span class="icon">&#x1F4A1;</span>
+      <div><strong>一句話總結</strong>：權限管理 = 「誰」可以對「哪些功能」做「什麼程度的操作」，看到「多大範圍的資料」。</div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- Section 2 -->
+  <!-- ============================================================ -->
+  <div class="section" id="sec2">
+    <h2>2. 核心觀念：三層架構一次搞懂</h2>
+
+    <p>Bombus 的權限系統由三層組成，就像疊積木一樣：</p>
+
+    <div class="diagram">第一層  角色 (Role)               組織裡的「職務模板」
+        &#x25BC;                           例如：HR 經理、部門主管、一般員工
+第二層  功能權限 (Feature Perm)     每個角色可以操作哪些功能、到什麼程度
+        &#x25BC;                           例如：員工檔案「可編輯」，招募「僅查看」
+第三層  使用者指派 (Assignment)      把角色分配給真實的人
+                                    例如：王小明 &#x2192; HR 經理</div>
+
+    <h3>操作順序建議</h3>
+
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-num">1</div>
+        <div class="flow-label">建立角色</div>
+        <div class="flow-desc">建立職務模板</div>
+      </div>
+      <div class="flow-arrow">&#x27A1;</div>
+      <div class="flow-step">
+        <div class="flow-num">2</div>
+        <div class="flow-label">設定功能權限</div>
+        <div class="flow-desc">配置門禁卡</div>
+      </div>
+      <div class="flow-arrow">&#x27A1;</div>
+      <div class="flow-step">
+        <div class="flow-num">3</div>
+        <div class="flow-label">指派給使用者</div>
+        <div class="flow-desc">發卡給員工</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- Section 3 -->
+  <!-- ============================================================ -->
+  <div class="section" id="sec3">
+    <h2>3. 角色管理 — 建立組織的「職務模板」</h2>
+
+    <h3>什麼是角色？</h3>
+    <p>角色就像公司裡的「職位名牌」，代表一組權限的集合。</p>
+
+    <table>
+      <thead>
+        <tr><th>角色名稱</th><th>類比</th><th>用途</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>超級管理員</td><td>大樓管理員</td><td>所有功能全開，負責系統維護</td></tr>
+        <tr><td>HR 經理</td><td>HR 部門主管</td><td>管理招募、員工檔案、人才庫</td></tr>
+        <tr><td>部門主管</td><td>各部門經理</td><td>查看部門員工資料、管理會議</td></tr>
+        <tr><td>一般員工</td><td>普通員工</td><td>查看自己的資料、參加會議</td></tr>
+      </tbody>
+    </table>
+
+    <h3>如何新增角色？</h3>
+
+    <div class="scenario">
+      <div class="scenario-title">&#x1F3AC; 場景</div>
+      <p>公司新設了「訓練專員」職位，需要建立對應的系統角色。</p>
+    </div>
+
+    <ol class="steps">
+      <li><span class="step-num">1</span><span>進入「系統設定 &rarr; 角色權限管理」頁面</span></li>
+      <li><span class="step-num">2</span><span>點擊右上角「<strong>新增角色</strong>」按鈕</span></li>
+      <li><span class="step-num">3</span><span>填寫角色名稱：<code>訓練專員</code></span></li>
+      <li><span class="step-num">4</span><span>填寫說明（選填）：<code>負責教育訓練課程規劃與執行</code></span></li>
+      <li><span class="step-num">5</span><span>點擊「<strong>建立角色</strong>」</span></li>
+    </ol>
+
+    <div class="callout callout--info">
+      <span class="icon">&#x2139;&#xFE0F;</span>
+      <div>角色建立後，還需要進一步設定「功能權限」（第 4 節），角色才能真正發揮作用。</div>
+    </div>
+
+    <h3>角色卡片上的資訊</h3>
+    <p>每張角色卡片會顯示：</p>
+    <ul style="margin-left:20px; margin-bottom:14px;">
+      <li><strong>角色名稱</strong> — 例如「HR 經理」</li>
+      <li><span class="tag tag--system">系統角色</span> 標籤 — 系統預設角色會標示</li>
+      <li><strong>已指派 N 位使用者</strong> — 點擊可查看使用該角色的人員名單</li>
+      <li><strong>操作按鈕</strong> — 檢視功能權限、編輯功能權限、編輯角色、刪除</li>
+    </ul>
+
+    <div class="callout callout--warning">
+      <span class="icon">&#x26A0;&#xFE0F;</span>
+      <div>
+        <strong>注意</strong>：系統角色無法刪除，但可以編輯名稱。如果有使用者正在使用該角色，刪除後該使用者將失去對應的權限。
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- Section 4 -->
+  <!-- ============================================================ -->
+  <div class="section" id="sec4">
+    <h2>4. 功能權限設定 — 決定每個角色「能做什麼」</h2>
+
+    <p>為每個角色設定功能權限時，需要決定兩件事：</p>
+
+    <h4>維度一：操作等級（能做什麼？）</h4>
+    <table>
+      <thead>
+        <tr><th>操作等級</th><th>說明</th><th>類比</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="tag tag--none">無權限</span></td>
+          <td>完全看不到這個功能</td>
+          <td>這層樓你進不去</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag--view">僅查看</span></td>
+          <td>只能看，不能新增、修改、刪除</td>
+          <td>可以透過玻璃看，但門鎖著</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag--edit">可編輯</span></td>
+          <td>可以看、新增、修改、刪除</td>
+          <td>有鑰匙可以自由進出</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h4>維度二：資料範圍（能看/改多大範圍？）</h4>
+    <table>
+      <thead>
+        <tr><th>資料範圍</th><th>說明</th><th>類比</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="tag tag--scope">個人</span></td>
+          <td>只能看到/編輯自己的資料</td>
+          <td>只能進自己的辦公室</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag--scope">部門</span></td>
+          <td>能看到/編輯自己部門所有人的資料</td>
+          <td>能進整個部門區域</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag--scope">全公司</span></td>
+          <td>能看到/編輯公司所有人的資料</td>
+          <td>能進大樓所有房間</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>重要規則：查看範圍 &ge; 編輯範圍</h3>
+    <p>系統會自動確保「你能看到的範圍」不小於「你能編輯的範圍」。</p>
+
+    <table>
+      <thead>
+        <tr><th>設定</th><th>是否合理？</th><th>說明</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>編輯：部門、查看：全公司</td>
+          <td style="color: var(--color-success); font-weight:600;">&#x2705; 合理</td>
+          <td>能看全公司，但只能改自己部門</td>
+        </tr>
+        <tr>
+          <td>編輯：個人、查看：部門</td>
+          <td style="color: var(--color-success); font-weight:600;">&#x2705; 合理</td>
+          <td>能看部門資料，但只能改自己的</td>
+        </tr>
+        <tr>
+          <td>編輯：全公司、查看：部門</td>
+          <td style="color: var(--color-danger); font-weight:600;">&#x274C; 不允許</td>
+          <td>能改全公司但只看得到部門？矛盾！</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>如何設定角色的功能權限？</h3>
+
+    <div class="scenario">
+      <div class="scenario-title">&#x1F3AC; 場景</div>
+      <p>剛建立的「訓練專員」角色，需要設定他能使用哪些功能。</p>
+    </div>
+
+    <ol class="steps">
+      <li><span class="step-num">1</span><span>在角色卡片上點擊「<strong>編輯功能權限</strong>」</span></li>
+      <li><span class="step-num">2</span><span>系統會展開一個權限矩陣表，包含三大模組的所有功能（如下方預覽）</span></li>
+      <li><span class="step-num">3</span><span>逐一調整每個功能的操作等級與範圍</span></li>
+      <li><span class="step-num">4</span><span>點擊「<strong>儲存功能權限</strong>」</span></li>
+    </ol>
+
+    <h4>權限矩陣預覽</h4>
+    <div class="perm-matrix">
+      <div class="pm-header">
+        <span>功能名稱</span><span>操作等級</span><span>編輯範圍</span><span>查看範圍</span>
+      </div>
+      <div class="pm-module">&#x25BC; L1 員工管理</div>
+      <div class="pm-row">
+        <span>招募職缺管理</span>
+        <span><span class="tag tag--view">僅查看</span></span>
+        <span class="pm-placeholder">&mdash;</span>
+        <span><span class="tag tag--scope">全公司</span></span>
+      </div>
+      <div class="pm-row">
+        <span>員工檔案管理</span>
+        <span><span class="tag tag--edit">可編輯</span></span>
+        <span><span class="tag tag--scope">部門</span></span>
+        <span><span class="tag tag--scope">全公司</span></span>
+      </div>
+      <div class="pm-row">
+        <span>人才庫管理</span>
+        <span><span class="tag tag--none">無權限</span></span>
+        <span class="pm-placeholder">&mdash;</span>
+        <span class="pm-placeholder">&mdash;</span>
+      </div>
+      <div class="pm-module">&#x25BC; L2 職能管理</div>
+      <div class="pm-row">
+        <span>職等職級矩陣</span>
+        <span><span class="tag tag--view">僅查看</span></span>
+        <span class="pm-placeholder">&mdash;</span>
+        <span><span class="tag tag--scope">全公司</span></span>
+      </div>
+    </div>
+
+    <div class="callout callout--tip">
+      <span class="icon">&#x1F4A1;</span>
+      <div>
+        <strong>操作技巧</strong>：
+        <ul style="margin-top:6px; margin-left:16px;">
+          <li>選擇「無權限」→ 編輯和查看範圍自動隱藏</li>
+          <li>選擇「僅查看」→ 只需設定查看範圍</li>
+          <li>選擇「可編輯」→ 需設定兩項範圍，系統會自動確保查看 &ge; 編輯</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- Section 5 -->
+  <!-- ============================================================ -->
+  <div class="section" id="sec5">
+    <h2>5. 使用者管理 — 把角色指派給真人</h2>
+
+    <p>建立好角色並設定完權限後，最後一步就是把角色「發」給真正的使用者。</p>
+
+    <h3>指派時的「作用範圍」</h3>
+    <table>
+      <thead>
+        <tr><th>作用範圍</th><th>說明</th><th>使用時機</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>全域</strong></td><td>角色權限在整個組織內生效</td><td>大多數情況使用此項</td></tr>
+        <tr><td><strong>子公司</strong></td><td>角色權限僅在指定子公司內生效</td><td>集團企業中限定管理範圍</td></tr>
+        <tr><td><strong>部門</strong></td><td>角色權限僅在指定部門內生效</td><td>指定某人為特定部門主管</td></tr>
+      </tbody>
+    </table>
+
+    <h3>如何為使用者指派角色？</h3>
+
+    <div class="scenario">
+      <div class="scenario-title">&#x1F3AC; 場景</div>
+      <p>新進員工李小華入職，需要給她「HR 經理」的權限，限定在「人資部」。</p>
+    </div>
+
+    <ol class="steps">
+      <li><span class="step-num">1</span><span>進入「系統設定 &rarr; 使用者管理」頁面</span></li>
+      <li><span class="step-num">2</span><span>找到「李小華」，點擊「<strong>角色管理</strong>」按鈕</span></li>
+      <li><span class="step-num">3</span><span>在「指派新角色」區塊，角色選擇「HR 經理」— 下方會自動顯示<strong>功能權限預覽</strong></span></li>
+      <li><span class="step-num">4</span><span>作用範圍選擇「部門」，組織單位選擇「人資部」</span></li>
+      <li><span class="step-num">5</span><span>點擊「<strong>指派</strong>」</span></li>
+    </ol>
+
+    <div class="callout callout--info">
+      <span class="icon">&#x1F441;&#xFE0F;</span>
+      <div>
+        <strong>功能權限預覽</strong>：在選擇角色的同時，系統會立即顯示該角色的功能權限摘要，讓你在指派前確認「這個角色真的適合給這位員工嗎？」
+      </div>
+    </div>
+
+    <h3>其他操作</h3>
+    <table>
+      <thead>
+        <tr><th>操作</th><th>說明</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>移除角色</strong></td><td>點擊角色旁邊的 &#x2715; 按鈕即可移除</td></tr>
+        <tr><td><strong>查看角色權限</strong></td><td>點擊「查看權限」展開完整的功能權限表格</td></tr>
+        <tr><td><strong>有效權限（合併後）</strong></td><td>當使用者有多個角色時，底部按鈕可查看合併後的最終權限</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- Section 6 -->
+  <!-- ============================================================ -->
+  <div class="section" id="sec6">
+    <h2>6. 多角色合併 — 一個人有多個角色怎麼辦？</h2>
+
+    <h3>合併原則：取最大值</h3>
+    <p>Bombus 採用「<strong>寬鬆合併</strong>」策略 — 當一個使用者有多個角色時，每項功能取<strong>最高的操作等級</strong>和<strong>最廣的資料範圍</strong>。</p>
+
+    <div class="callout callout--tip">
+      <span class="icon">&#x1F4A1;</span>
+      <div><strong>類比</strong>：你同時拿著兩張門禁卡，系統會把兩張卡能進的房間都打開給你。</div>
+    </div>
+
+    <h3>合併範例</h3>
+
+    <div class="scenario">
+      <div class="scenario-title">&#x1F3AC; 場景</div>
+      <p>陳經理同時擁有「部門主管」和「HR 經理」兩個角色。<br>以下是「員工檔案管理」這個功能的合併過程：</p>
+    </div>
+
+    <div class="merge-demo">
+      <div class="merge-card">
+        <h5>部門主管</h5>
+        <div class="merge-val"><span class="tag tag--edit">可編輯</span></div>
+        <div class="merge-val">編輯：<span class="tag tag--scope">個人</span></div>
+        <div class="merge-val">查看：<span class="tag tag--scope">部門</span></div>
+      </div>
+      <div class="merge-op">+</div>
+      <div class="merge-card">
+        <h5>HR 經理</h5>
+        <div class="merge-val"><span class="tag tag--edit">可編輯</span></div>
+        <div class="merge-val">編輯：<span class="tag tag--scope">全公司</span></div>
+        <div class="merge-val">查看：<span class="tag tag--scope">全公司</span></div>
+      </div>
+      <div class="merge-op">=</div>
+      <div class="merge-card merge-card--result">
+        <h5>合併後（有效權限）</h5>
+        <div class="merge-val"><span class="tag tag--edit">可編輯</span></div>
+        <div class="merge-val">編輯：<span class="tag tag--scope">全公司</span></div>
+        <div class="merge-val">查看：<span class="tag tag--scope">全公司</span></div>
+      </div>
+    </div>
+
+    <h3>等級排序（由低到高）</h3>
+    <table>
+      <thead>
+        <tr><th>項目</th><th colspan="3">排序（由低到高）</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>操作等級</td>
+          <td><span class="tag tag--none">無權限</span></td>
+          <td><span class="tag tag--view">僅查看</span></td>
+          <td><span class="tag tag--edit">可編輯</span></td>
+        </tr>
+        <tr>
+          <td>資料範圍</td>
+          <td><span class="tag tag--scope">個人</span></td>
+          <td><span class="tag tag--scope">部門</span></td>
+          <td><span class="tag tag--scope">全公司</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- Section 7 -->
+  <!-- ============================================================ -->
+  <div class="section" id="sec7">
+    <h2>7. 系統預設角色說明</h2>
+    <p>系統初始化時自動建立 5 個預設角色，涵蓋最常見的企業職務分工：</p>
+
+    <div class="role-cards">
+
+      <!-- super_admin -->
+      <div class="role-card">
+        <div class="role-card-header">
+          <h4>超級管理員</h4>
+          <span class="tag tag--system">系統角色</span>
+        </div>
+        <div class="role-card-desc">系統的最高管理者，通常是 IT 或人資主管。</div>
+        <table>
+          <thead><tr><th>功能模組</th><th>操作等級</th><th>編輯範圍</th><th>查看範圍</th></tr></thead>
+          <tbody>
+            <tr><td>L1 員工管理（全部）</td><td><span class="tag tag--edit">可編輯</span></td><td>全公司</td><td>全公司</td></tr>
+            <tr><td>L2 職能管理（全部）</td><td><span class="tag tag--edit">可編輯</span></td><td>全公司</td><td>全公司</td></tr>
+            <tr><td>組織 / 使用者 / 匯出</td><td><span class="tag tag--edit">可編輯</span></td><td>全公司</td><td>全公司</td></tr>
+            <tr><td>審計日誌</td><td><span class="tag tag--view">僅查看</span></td><td>&mdash;</td><td>全公司</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- subsidiary_admin -->
+      <div class="role-card">
+        <div class="role-card-header">
+          <h4>子公司管理員</h4>
+          <span class="tag tag--system">系統角色</span>
+        </div>
+        <div class="role-card-desc">集團中各子公司的管理者，管理範圍限定在子公司內。</div>
+        <table>
+          <thead><tr><th>功能模組</th><th>操作等級</th><th>編輯範圍</th><th>查看範圍</th></tr></thead>
+          <tbody>
+            <tr><td>招募 / 員工 / 人才庫</td><td><span class="tag tag--edit">可編輯</span></td><td>全公司</td><td>全公司</td></tr>
+            <tr><td>會議管理</td><td><span class="tag tag--edit">可編輯</span></td><td>個人</td><td>全公司</td></tr>
+            <tr><td>職等 / 職涯 / 職務說明</td><td><span class="tag tag--edit">可編輯</span></td><td>全公司</td><td>全公司</td></tr>
+            <tr><td>職能評估 / 落差分析</td><td><span class="tag tag--view">僅查看</span></td><td>&mdash;</td><td>全公司</td></tr>
+            <tr><td>使用者 / 匯出 / 審計</td><td><span class="tag tag--view">僅查看</span></td><td>&mdash;</td><td>全公司</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- hr_manager -->
+      <div class="role-card">
+        <div class="role-card-header">
+          <h4>HR 經理</h4>
+          <span class="tag tag--system">系統角色</span>
+        </div>
+        <div class="role-card-desc">人力資源部門主管，專注於招募與人員管理。</div>
+        <table>
+          <thead><tr><th>功能模組</th><th>操作等級</th><th>編輯範圍</th><th>查看範圍</th></tr></thead>
+          <tbody>
+            <tr><td>招募 / 員工 / 人才庫</td><td><span class="tag tag--edit">可編輯</span></td><td>全公司</td><td>全公司</td></tr>
+            <tr><td>會議管理</td><td><span class="tag tag--edit">可編輯</span></td><td>全公司</td><td>全公司</td></tr>
+            <tr><td>職等 / 職涯 / 職務 / 職能庫</td><td><span class="tag tag--edit">可編輯</span></td><td>全公司</td><td>全公司</td></tr>
+            <tr><td>AI 面試 / 評估 / 落差</td><td><span class="tag tag--view">僅查看</span></td><td>&mdash;</td><td>全公司</td></tr>
+            <tr><td>匯出功能</td><td><span class="tag tag--view">僅查看</span></td><td>&mdash;</td><td>全公司</td></tr>
+            <tr><td>組織 / 使用者 / 審計</td><td><span class="tag tag--none">無權限</span></td><td>&mdash;</td><td>&mdash;</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- dept_manager -->
+      <div class="role-card">
+        <div class="role-card-header">
+          <h4>部門主管</h4>
+          <span class="tag tag--system">系統角色</span>
+        </div>
+        <div class="role-card-desc">各部門經理，管理部門內的日常事務。</div>
+        <table>
+          <thead><tr><th>功能模組</th><th>操作等級</th><th>編輯範圍</th><th>查看範圍</th></tr></thead>
+          <tbody>
+            <tr><td>員工檔案</td><td><span class="tag tag--edit">可編輯</span></td><td>個人</td><td>部門</td></tr>
+            <tr><td>會議 / AI 面試</td><td><span class="tag tag--edit">可編輯</span></td><td>全公司</td><td>全公司</td></tr>
+            <tr><td>職等 / 職涯 / 職務 / 職能庫</td><td><span class="tag tag--view">僅查看</span></td><td>&mdash;</td><td>全公司</td></tr>
+            <tr><td>人才庫</td><td><span class="tag tag--view">僅查看</span></td><td>&mdash;</td><td>部門</td></tr>
+            <tr><td>招募 / 匯出 / 系統管理</td><td><span class="tag tag--none">無權限</span></td><td>&mdash;</td><td>&mdash;</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- employee -->
+      <div class="role-card">
+        <div class="role-card-header">
+          <h4>一般員工</h4>
+          <span class="tag tag--system">系統角色</span>
+        </div>
+        <div class="role-card-desc">普通員工，主要查看個人資料。</div>
+        <table>
+          <thead><tr><th>功能模組</th><th>操作等級</th><th>編輯範圍</th><th>查看範圍</th></tr></thead>
+          <tbody>
+            <tr><td>員工檔案</td><td><span class="tag tag--edit">可編輯</span></td><td>個人</td><td>個人</td></tr>
+            <tr><td>會議管理</td><td><span class="tag tag--edit">可編輯</span></td><td>個人</td><td>全公司</td></tr>
+            <tr><td>職等 / 職涯 / 職務 / 職能庫</td><td><span class="tag tag--view">僅查看</span></td><td>&mdash;</td><td>全公司</td></tr>
+            <tr><td>職能評估 / 落差分析</td><td><span class="tag tag--view">僅查看</span></td><td>&mdash;</td><td>全公司</td></tr>
+            <tr><td>招募 / AI 面試 / 人才庫</td><td><span class="tag tag--none">無權限</span></td><td>&mdash;</td><td>&mdash;</td></tr>
+            <tr><td>系統管理（全部）</td><td><span class="tag tag--none">無權限</span></td><td>&mdash;</td><td>&mdash;</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- Section 8 -->
+  <!-- ============================================================ -->
+  <div class="section" id="sec8">
+    <h2>8. 常見情境操作指南</h2>
+
+    <!-- Scenario A -->
+    <div class="scenario">
+      <div class="scenario-title">&#x1F3AC; 情境 A：新員工入職</div>
+      <p>小美剛加入行銷部，需要基本的系統使用權限。</p>
+    </div>
+    <ol class="steps">
+      <li><span class="step-num">1</span><span><strong>使用者管理</strong> &rarr; 確認小美的帳號已建立</span></li>
+      <li><span class="step-num">2</span><span>點擊小美的「<strong>角色管理</strong>」</span></li>
+      <li><span class="step-num">3</span><span>指派角色 &rarr; 選擇「一般員工」，作用範圍「全域」</span></li>
+      <li><span class="step-num">4</span><span>點擊「<strong>指派</strong>」&rarr; 完成！</span></li>
+    </ol>
+    <p><strong>結果</strong>：小美可以查看自己的員工檔案、參加會議、查看職能資料。</p>
+
+    <!-- Scenario B -->
+    <div class="scenario" style="margin-top:28px;">
+      <div class="scenario-title">&#x1F3AC; 情境 B：員工升任部門主管</div>
+      <p>小明原本是一般員工，現在升任為行銷部主管。</p>
+    </div>
+    <ol class="steps">
+      <li><span class="step-num">1</span><span><strong>使用者管理</strong> &rarr; 找到小明，點擊「角色管理」</span></li>
+      <li><span class="step-num">2</span><span>保留原有的「一般員工」角色（不需移除）</span></li>
+      <li><span class="step-num">3</span><span>新增指派 &rarr; 選擇「部門主管」，作用範圍「部門」&rarr;「行銷部」</span></li>
+      <li><span class="step-num">4</span><span>點擊「<strong>指派</strong>」</span></li>
+    </ol>
+    <p><strong>結果</strong>：小明的權限自動合併 — 除了原本的個人功能外，現在還能查看行銷部所有員工資料、管理部門會議。</p>
+
+    <!-- Scenario C -->
+    <div class="scenario" style="margin-top:28px;">
+      <div class="scenario-title">&#x1F3AC; 情境 C：建立全新的自訂角色</div>
+      <p>公司需要一個「招募專員」角色，只負責招募相關功能。</p>
+    </div>
+    <ol class="steps">
+      <li><span class="step-num">1</span><span><strong>角色管理</strong> &rarr; 點擊「新增角色」，名稱填「招募專員」</span></li>
+      <li><span class="step-num">2</span><span>建立後，點擊「<strong>編輯功能權限</strong>」</span></li>
+      <li><span class="step-num">3</span><span>設定：招募 / AI 面試 / 人才庫 &rarr; 可編輯（全公司）；員工檔案 &rarr; 僅查看；其餘 &rarr; 無權限</span></li>
+      <li><span class="step-num">4</span><span>儲存功能權限</span></li>
+      <li><span class="step-num">5</span><span>到<strong>使用者管理</strong>，將此角色指派給相關人員</span></li>
+    </ol>
+
+    <!-- Scenario D -->
+    <div class="scenario" style="margin-top:28px;">
+      <div class="scenario-title">&#x1F3AC; 情境 D：確認使用者的實際權限</div>
+      <p>主管想確認「李小華」目前到底有哪些權限。</p>
+    </div>
+    <ol class="steps">
+      <li><span class="step-num">1</span><span><strong>使用者管理</strong> &rarr; 找到李小華，點擊「角色管理」</span></li>
+      <li><span class="step-num">2</span><span>查看「目前角色」區塊，列出所有已指派角色</span></li>
+      <li><span class="step-num">3</span><span>點擊各角色的「<strong>查看權限</strong>」展開細節</span></li>
+      <li><span class="step-num">4</span><span>點擊底部「<strong>有效權限（合併後）</strong>」查看最終結果</span></li>
+    </ol>
+
+    <!-- Scenario E -->
+    <div class="scenario" style="margin-top:28px;">
+      <div class="scenario-title">&#x1F3AC; 情境 E：暫時撤銷權限（員工請長假）</div>
+      <p></p>
+    </div>
+    <table>
+      <thead><tr><th>方式</th><th>做法</th><th>效果</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>停用帳號</strong>（推薦）</td>
+          <td>使用者管理 &rarr; 編輯 &rarr; 狀態改為「停用」</td>
+          <td>完全無法登入，回來時改回「啟用」即恢復</td>
+        </tr>
+        <tr>
+          <td><strong>移除角色</strong></td>
+          <td>角色管理 &rarr; 移除所有角色</td>
+          <td>可登入但無功能權限，需手動重新指派</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Scenario F -->
+    <div class="scenario" style="margin-top:28px;">
+      <div class="scenario-title">&#x1F3AC; 情境 F：查看某角色被哪些人使用</div>
+      <p></p>
+    </div>
+    <ol class="steps">
+      <li><span class="step-num">1</span><span><strong>角色管理</strong> &rarr; 找到目標角色卡片</span></li>
+      <li><span class="step-num">2</span><span>卡片上顯示「已指派 N 位使用者」</span></li>
+      <li><span class="step-num">3</span><span>點擊連結，彈出使用者清單（姓名、Email、作用範圍）</span></li>
+    </ol>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- Section 9 -->
+  <!-- ============================================================ -->
+  <div class="section" id="sec9">
+    <h2>9. 常見問題 FAQ</h2>
+
+    <div class="faq-item">
+      <div class="faq-q">Q1：修改角色的功能權限後，已指派的使用者會立即生效嗎？</div>
+      <div class="faq-a"><strong>是的</strong>。權限即時生效，所有擁有該角色的使用者在下次操作時就會套用新權限，無需登出再登入。</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">Q2：一個使用者可以有幾個角色？</div>
+      <div class="faq-a"><strong>沒有上限</strong>。系統會自動合併所有角色的權限，取最高等級和最廣範圍。</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">Q3：刪除角色後，已指派的使用者會怎樣？</div>
+      <div class="faq-a">使用者會<strong>立即失去</strong>該角色提供的所有權限。如果只有這一個角色，他將失去所有功能存取權（但仍可登入系統）。</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">Q4：「作用範圍」和「資料範圍」有什麼不同？</div>
+      <div class="faq-a">
+        <table>
+          <thead><tr><th>概念</th><th>設定位置</th><th>說明</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><strong>資料範圍</strong>（個人/部門/全公司）</td>
+              <td>角色的功能權限設定</td>
+              <td>決定在功能內能看到/編輯多大範圍的資料</td>
+            </tr>
+            <tr>
+              <td><strong>作用範圍</strong>（全域/子公司/部門）</td>
+              <td>使用者的角色指派</td>
+              <td>決定這個角色在哪個組織範圍內生效</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">Q5：系統角色和自訂角色有什麼差別？</div>
+      <div class="faq-a">
+        <table>
+          <thead><tr><th>項目</th><th>系統角色</th><th>自訂角色</th></tr></thead>
+          <tbody>
+            <tr><td>來源</td><td>系統初始化自動建立</td><td>管理員手動建立</td></tr>
+            <tr><td>能否刪除</td><td style="color:var(--color-danger);">&#x274C; 不能</td><td style="color:var(--color-success);">&#x2705; 可以</td></tr>
+            <tr><td>能否修改名稱</td><td style="color:var(--color-success);">&#x2705; 可以</td><td style="color:var(--color-success);">&#x2705; 可以</td></tr>
+            <tr><td>能否修改權限</td><td style="color:var(--color-success);">&#x2705; 可以</td><td style="color:var(--color-success);">&#x2705; 可以</td></tr>
+            <tr><td>標示</td><td>有 <span class="tag tag--system">系統角色</span> 標籤</td><td>無標籤</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">Q6：如果所有管理員都被移除角色，系統會怎樣？</div>
+      <div class="faq-a"><strong>平台管理員</strong>（Platform Admin）始終擁有最高權限，不受角色設定影響。如果發生權限設定錯誤，平台管理員可以登入並修復。</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">Q7：可以讓同一個角色在不同部門有不同的權限嗎？</div>
+      <div class="faq-a">
+        <strong>不行</strong>。角色的功能權限是全域統一的。但你可以：
+        <ul style="margin-top:8px; margin-left:20px;">
+          <li>建立多個角色（如「行銷部主管」、「研發部主管」），各自設定不同權限</li>
+          <li>或使用同一個「部門主管」角色，但在指派時指定不同的部門</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- Feature List -->
+  <!-- ============================================================ -->
+  <div class="section">
+    <h2>附錄：系統功能完整清單</h2>
+    <p>以下是系統中所有 16 個可管理的功能，按模組分類：</p>
+
+    <h3>L1 員工管理（5 個功能）</h3>
+    <table>
+      <thead><tr><th>功能</th><th>說明</th></tr></thead>
+      <tbody>
+        <tr><td>招募職缺管理</td><td>建立/管理招募職缺、篩選履歷</td></tr>
+        <tr><td>AI 智能面試</td><td>AI 輔助面試排程與評估</td></tr>
+        <tr><td>員工檔案管理</td><td>維護員工個人資料、合約、異動紀錄</td></tr>
+        <tr><td>人才庫管理</td><td>儲存/搜尋/管理潛在人才</td></tr>
+        <tr><td>會議管理</td><td>會議排程、記錄、追蹤</td></tr>
+      </tbody>
+    </table>
+
+    <h3>L2 職能管理（7 個功能）</h3>
+    <table>
+      <thead><tr><th>功能</th><th>說明</th></tr></thead>
+      <tbody>
+        <tr><td>職等職級矩陣</td><td>定義組織職等職級架構與薪資級距</td></tr>
+        <tr><td>職涯發展路徑</td><td>規劃員工職涯發展方向</td></tr>
+        <tr><td>AI 職涯規劃助手</td><td>AI 輔助職涯建議</td></tr>
+        <tr><td>職務說明書</td><td>建立/維護各職位的職責與要求</td></tr>
+        <tr><td>職能基準庫</td><td>定義組織需要的各項職能</td></tr>
+        <tr><td>職能評估系統</td><td>進行員工職能評估</td></tr>
+        <tr><td>職能落差分析</td><td>分析員工職能與職位要求的落差</td></tr>
+      </tbody>
+    </table>
+
+    <h3>系統管理（4 個功能）</h3>
+    <table>
+      <thead><tr><th>功能</th><th>說明</th></tr></thead>
+      <tbody>
+        <tr><td>組織架構管理</td><td>管理集團/子公司/部門架構</td></tr>
+        <tr><td>使用者管理</td><td>建立/管理系統使用者帳號</td></tr>
+        <tr><td>匯出功能</td><td>將資料匯出為報表</td></tr>
+        <tr><td>審計日誌</td><td>查看系統操作紀錄</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Footer -->
+  <div style="text-align:center; padding:32px 0; color:var(--color-text-muted); font-size:0.85rem;">
+    <p>Bombus HR SaaS &mdash; 權限管理系統操作說明 v1.0</p>
+    <p>有任何問題？請聯繫您的系統管理員或 Bombus 技術支援團隊。</p>
+  </div>
+
+</div>
+
+</body>
+</html>

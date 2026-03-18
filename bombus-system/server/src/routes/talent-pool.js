@@ -27,6 +27,7 @@
 const express = require('express');
 const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
+const { requireFeaturePerm, buildScopeFilter } = require('../middleware/permission');
 // tenantDB is accessed via req.tenantDB (injected by middleware)
 
 // =====================================================
@@ -327,7 +328,7 @@ function autoTagTalent(req, candidateId, talentId) {
  * GET /api/talent-pool
  * 取得人才列表 (支援篩選、分頁、搜尋)
  */
-router.get('/', (req, res) => {
+router.get('/', requireFeaturePerm('L1.talent-pool', 'view'), (req, res) => {
     try {
         const {
             status,
@@ -344,13 +345,16 @@ router.get('/', (req, res) => {
             sortOrder = 'DESC'
         } = req.query;
 
+        // Scope 過濾
+        const scopeFilter = buildScopeFilter(req, { tableAlias: 'tp' });
+
         // 計算一個月前的日期
         const oneMonthAgo = new Date();
         oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
         const oneMonthAgoStr = oneMonthAgo.toISOString();
 
         let query = `
-            SELECT 
+            SELECT
                 tp.*,
                 GROUP_CONCAT(DISTINCT tt.name) as tag_names,
                 GROUP_CONCAT(DISTINCT tt.id) as tag_ids,
@@ -365,6 +369,12 @@ router.get('/', (req, res) => {
             WHERE 1=1
         `;
         const params = [];
+
+        // 套用 scope 過濾
+        if (scopeFilter.clause !== '1=1') {
+            query += ` AND ${scopeFilter.clause}`;
+            params.push(...scopeFilter.params);
+        }
 
         // 篩選條件
         if (status) {
@@ -518,64 +528,122 @@ router.get('/', (req, res) => {
  * GET /api/talent-pool/stats
  * 取得人才庫統計資料
  */
-router.get('/stats', (req, res) => {
+router.get('/stats', requireFeaturePerm('L1.talent-pool', 'view'), (req, res) => {
     try {
         const { org_unit_id } = req.query;
-        const orgFilter = org_unit_id ? ` WHERE org_unit_id = ?` : '';
-        const orgFilterAnd = org_unit_id ? ` AND tp.org_unit_id = ?` : '';
-        const orgParams = org_unit_id ? [org_unit_id] : [];
+
+        // Scope 過濾
+        const scopeFilter = buildScopeFilter(req);
+        const hasScopeFilter = scopeFilter.clause !== '1=1';
+
+        // 構建基本 WHERE 條件
+        const conditions = [];
+        const baseParams = [];
+        if (hasScopeFilter) {
+            conditions.push(scopeFilter.clause);
+            baseParams.push(...scopeFilter.params);
+        }
+        if (org_unit_id) {
+            conditions.push('org_unit_id = ?');
+            baseParams.push(org_unit_id);
+        }
+        const whereClause = conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : '';
 
         // 總人數與狀態分佈
         const statusStats = req.tenantDB.prepare(`
             SELECT status, COUNT(*) as count
-            FROM talent_pool${org_unit_id ? ' WHERE org_unit_id = ?' : ''}
+            FROM talent_pool${whereClause}
             GROUP BY status
-        `).all(...orgParams);
+        `).all(...baseParams);
 
         // 來源分佈
         const sourceStats = req.tenantDB.prepare(`
             SELECT source, COUNT(*) as count
-            FROM talent_pool${org_unit_id ? ' WHERE org_unit_id = ?' : ''}
+            FROM talent_pool${whereClause}
             GROUP BY source
-        `).all(...orgParams);
+        `).all(...baseParams);
 
-        // 本月聯繫數
+        // 本月聯繫數（需 JOIN talent_pool 做 scope 過濾）
         const thisMonth = new Date();
         const monthStart = new Date(thisMonth.getFullYear(), thisMonth.getMonth(), 1).toISOString();
+        const tpScopeFilter = buildScopeFilter(req, { tableAlias: 'tp' });
+        const tpHasScope = tpScopeFilter.clause !== '1=1';
+        let contactConditions = ['tch.contact_date >= ?'];
+        let contactParams = [monthStart];
+        if (tpHasScope) {
+            contactConditions.push(tpScopeFilter.clause);
+            contactParams.push(...tpScopeFilter.params);
+        }
+        if (org_unit_id) {
+            contactConditions.push('tp.org_unit_id = ?');
+            contactParams.push(org_unit_id);
+        }
         const { contactedThisMonth } = req.tenantDB.prepare(`
             SELECT COUNT(*) as contactedThisMonth
-            FROM talent_contact_history${org_unit_id ? ' tch JOIN talent_pool tp ON tch.talent_id = tp.id WHERE tp.org_unit_id = ? AND tch.contact_date >= ?' : ' WHERE contact_date >= ?'}
-        `).get(...(org_unit_id ? [org_unit_id, monthStart] : [monthStart]));
+            FROM talent_contact_history tch
+            JOIN talent_pool tp ON tch.talent_id = tp.id
+            WHERE ${contactConditions.join(' AND ')}
+        `).get(...contactParams);
 
         // 今年錄用數
         const yearStart = new Date(thisMonth.getFullYear(), 0, 1).toISOString();
+        let hiredConditions = ["status = 'hired'", 'updated_at >= ?'];
+        let hiredParams = [yearStart];
+        if (hasScopeFilter) {
+            hiredConditions.push(scopeFilter.clause);
+            hiredParams.push(...scopeFilter.params);
+        }
+        if (org_unit_id) {
+            hiredConditions.push('org_unit_id = ?');
+            hiredParams.push(org_unit_id);
+        }
         const { hiredThisYear } = req.tenantDB.prepare(`
             SELECT COUNT(*) as hiredThisYear
             FROM talent_pool
-            WHERE status = 'hired' AND updated_at >= ?${org_unit_id ? ' AND org_unit_id = ?' : ''}
-        `).get(...(org_unit_id ? [yearStart, org_unit_id] : [yearStart]));
+            WHERE ${hiredConditions.join(' AND ')}
+        `).get(...hiredParams);
 
         // 平均媒合分數
+        let avgConditions = ['match_score > 0'];
+        let avgParams = [];
+        if (hasScopeFilter) {
+            avgConditions.push(scopeFilter.clause);
+            avgParams.push(...scopeFilter.params);
+        }
+        if (org_unit_id) {
+            avgConditions.push('org_unit_id = ?');
+            avgParams.push(org_unit_id);
+        }
         const { avgMatchScore } = req.tenantDB.prepare(`
             SELECT AVG(match_score) as avgMatchScore
             FROM talent_pool
-            WHERE match_score > 0${org_unit_id ? ' AND org_unit_id = ?' : ''}
-        `).get(...orgParams);
+            WHERE ${avgConditions.join(' AND ')}
+        `).get(...avgParams);
 
-        // 計算「待聯繫」數量：開啟待聯繫提醒且近 1 個月沒有聯繫的人才
+        // 計算「待聯繫」數量
         const oneMonthAgo = new Date();
         oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
         const oneMonthAgoStr = oneMonthAgo.toISOString();
-
+        let pendingConditions = ['tp.contact_reminder_enabled = 1'];
+        let pendingParams = [];
+        if (tpHasScope) {
+            pendingConditions.push(tpScopeFilter.clause);
+            pendingParams.push(...tpScopeFilter.params);
+        }
+        if (org_unit_id) {
+            pendingConditions.push('tp.org_unit_id = ?');
+            pendingParams.push(org_unit_id);
+        }
+        pendingParams.push(oneMonthAgoStr);
         const { pendingContactCount } = req.tenantDB.prepare(`
             SELECT COUNT(*) as pendingContactCount
             FROM talent_pool tp
-            WHERE tp.contact_reminder_enabled = 1${org_unit_id ? ' AND tp.org_unit_id = ?' : ''}
+            WHERE ${pendingConditions.join(' AND ')}
               AND NOT EXISTS (
                   SELECT 1 FROM talent_contact_history tch
                   WHERE tch.talent_id = tp.id AND tch.contact_date >= ?
               )
-        `).get(...(org_unit_id ? [org_unit_id, oneMonthAgoStr] : [oneMonthAgoStr]));
+        `).get(...pendingParams);
 
         // 計算總數與百分比
         const totalCandidates = statusStats.reduce((sum, s) => sum + s.count, 0);
@@ -610,7 +678,7 @@ router.get('/stats', (req, res) => {
  * GET /api/talent-pool/:id
  * 取得單一人才詳情
  */
-router.get('/:id', (req, res) => {
+router.get('/:id', requireFeaturePerm('L1.talent-pool', 'view'), (req, res) => {
     try {
         const { id } = req.params;
 
@@ -673,7 +741,7 @@ router.get('/:id', (req, res) => {
  * POST /api/talent-pool
  * 新增人才到人才庫
  */
-router.post('/', (req, res) => {
+router.post('/', requireFeaturePerm('L1.talent-pool', 'edit'), (req, res) => {
     try {
         const {
             candidateId,
@@ -753,7 +821,7 @@ router.post('/', (req, res) => {
  * PUT /api/talent-pool/:id
  * 更新人才資料
  */
-router.put('/:id', (req, res) => {
+router.put('/:id', requireFeaturePerm('L1.talent-pool', 'edit'), (req, res) => {
     try {
         const { id } = req.params;
         const updates = req.body;
@@ -831,7 +899,7 @@ router.put('/:id', (req, res) => {
  * DELETE /api/talent-pool/clear-all
  * 清空所有人才庫資料（測試用）
  */
-router.delete('/clear-all', (req, res) => {
+router.delete('/clear-all', requireFeaturePerm('L1.talent-pool', 'edit'), (req, res) => {
     try {
         // 刪除關聯的標籤映射
         req.tenantDB.prepare(`DELETE FROM talent_tag_mapping`).run();
@@ -854,7 +922,7 @@ router.delete('/clear-all', (req, res) => {
     }
 });
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', requireFeaturePerm('L1.talent-pool', 'edit'), (req, res) => {
     try {
         const { id } = req.params;
 
@@ -882,7 +950,7 @@ router.delete('/:id', (req, res) => {
  * GET /api/talent-pool/:id/contacts
  * 取得人才的聯繫紀錄
  */
-router.get('/:id/contacts', (req, res) => {
+router.get('/:id/contacts', requireFeaturePerm('L1.talent-pool', 'view'), (req, res) => {
     try {
         const { id } = req.params;
 
@@ -906,7 +974,7 @@ router.get('/:id/contacts', (req, res) => {
  * POST /api/talent-pool/:id/contacts
  * 新增聯繫紀錄
  */
-router.post('/:id/contacts', (req, res) => {
+router.post('/:id/contacts', requireFeaturePerm('L1.talent-pool', 'edit'), (req, res) => {
     try {
         const { id: talentId } = req.params;
         const {
@@ -957,10 +1025,10 @@ router.post('/:id/contacts', (req, res) => {
 /**
  * PUT /api/talent-pool/:id/contact-reminder
  * 設定待聯繫提醒
- * 
+ *
  * 開啟後，如果 1 個月內沒有新增聯繫紀錄，狀態會顯示為「待聯繫」
  */
-router.put('/:id/contact-reminder', (req, res) => {
+router.put('/:id/contact-reminder', requireFeaturePerm('L1.talent-pool', 'edit'), (req, res) => {
     try {
         const { id } = req.params;
         const { enabled } = req.body;
@@ -993,7 +1061,7 @@ router.put('/:id/contact-reminder', (req, res) => {
  * GET /api/talent-pool/reminders
  * 取得提醒列表 (支援篩選)
  */
-router.get('/reminders/list', (req, res) => {
+router.get('/reminders/list', requireFeaturePerm('L1.talent-pool', 'view'), (req, res) => {
     try {
         const { completed, upcoming, assignedTo } = req.query;
 
@@ -1038,7 +1106,7 @@ router.get('/reminders/list', (req, res) => {
  * POST /api/talent-pool/:id/reminders
  * 新增提醒
  */
-router.post('/:id/reminders', (req, res) => {
+router.post('/:id/reminders', requireFeaturePerm('L1.talent-pool', 'edit'), (req, res) => {
     try {
         const { id: talentId } = req.params;
         const {
@@ -1078,7 +1146,7 @@ router.post('/:id/reminders', (req, res) => {
  * PUT /api/talent-pool/reminders/:reminderId
  * 更新提醒 (包含完成)
  */
-router.put('/reminders/:reminderId', (req, res) => {
+router.put('/reminders/:reminderId', requireFeaturePerm('L1.talent-pool', 'edit'), (req, res) => {
     try {
         const { reminderId } = req.params;
         const { isCompleted, reminderDate, reminderType, message, assignedTo } = req.body;
@@ -1132,7 +1200,7 @@ router.put('/reminders/:reminderId', (req, res) => {
  * DELETE /api/talent-pool/reminders/:reminderId
  * 刪除提醒
  */
-router.delete('/reminders/:reminderId', (req, res) => {
+router.delete('/reminders/:reminderId', requireFeaturePerm('L1.talent-pool', 'edit'), (req, res) => {
     try {
         const { reminderId } = req.params;
 
@@ -1156,7 +1224,7 @@ router.delete('/reminders/:reminderId', (req, res) => {
  * GET /api/talent-pool/tags
  * 取得所有標籤
  */
-router.get('/tags/list', (req, res) => {
+router.get('/tags/list', requireFeaturePerm('L1.talent-pool', 'view'), (req, res) => {
     try {
         const { category } = req.query;
 
@@ -1186,7 +1254,7 @@ router.get('/tags/list', (req, res) => {
  * POST /api/talent-pool/tags
  * 新增標籤
  */
-router.post('/tags', (req, res) => {
+router.post('/tags', requireFeaturePerm('L1.talent-pool', 'edit'), (req, res) => {
     try {
         const { name, color, category, description } = req.body;
 
@@ -1220,7 +1288,7 @@ router.post('/tags', (req, res) => {
  * PUT /api/talent-pool/tags/:tagId
  * 更新標籤
  */
-router.put('/tags/:tagId', (req, res) => {
+router.put('/tags/:tagId', requireFeaturePerm('L1.talent-pool', 'edit'), (req, res) => {
     try {
         const { tagId } = req.params;
         const { name, color, category, description } = req.body;
@@ -1250,7 +1318,7 @@ router.put('/tags/:tagId', (req, res) => {
  * DELETE /api/talent-pool/tags/:tagId
  * 刪除標籤
  */
-router.delete('/tags/:tagId', (req, res) => {
+router.delete('/tags/:tagId', requireFeaturePerm('L1.talent-pool', 'edit'), (req, res) => {
     try {
         const { tagId } = req.params;
 
@@ -1270,7 +1338,7 @@ router.delete('/tags/:tagId', (req, res) => {
  * POST /api/talent-pool/:id/tags
  * 為人才設定標籤 (取代現有標籤)
  */
-router.post('/:id/tags', (req, res) => {
+router.post('/:id/tags', requireFeaturePerm('L1.talent-pool', 'edit'), (req, res) => {
     try {
         const { id: talentId } = req.params;
         const { tagIds } = req.body;
@@ -1317,7 +1385,7 @@ router.post('/:id/tags', (req, res) => {
  * POST /api/talent-pool/import-from-candidate
  * 從候選人匯入到人才庫
  */
-router.post('/import-from-candidate', (req, res) => {
+router.post('/import-from-candidate', requireFeaturePerm('L1.talent-pool', 'edit'), (req, res) => {
     try {
         const {
             candidateId,
@@ -1414,13 +1482,13 @@ router.post('/import-from-candidate', (req, res) => {
 /**
  * POST /api/talent-pool/import-declined
  * 批量匯入所有已婉拒的候選人到人才庫
- * 
+ *
  * 只有以下三種狀態的候選人會被納入人才庫：
  * - invite_declined: 邀請婉拒（候選人婉拒面試邀請）
  * - interview_declined: 面試婉拒（候選人取消已排定的面試）
  * - offer_declined: Offer 婉拒（候選人婉拒錄取通知）
  */
-router.post('/import-declined', (req, res) => {
+router.post('/import-declined', requireFeaturePerm('L1.talent-pool', 'edit'), (req, res) => {
     try {
 
         // 找出所有已婉拒但尚未在人才庫中的候選人
@@ -1544,7 +1612,7 @@ router.post('/import-declined', (req, res) => {
  * POST /api/talent-pool/retag-all
  * 為所有現有人才庫成員重新執行自動標籤
  */
-router.post('/retag-all', (req, res) => {
+router.post('/retag-all', requireFeaturePerm('L1.talent-pool', 'edit'), (req, res) => {
     try {
         // 取得所有人才庫成員
         const talents = req.tenantDB.prepare(`
@@ -1600,7 +1668,7 @@ router.post('/retag-all', (req, res) => {
  * GET /api/talent-pool/:id/job-matches
  * 取得人才的所有職缺媒合度
  */
-router.get('/:id/job-matches', (req, res) => {
+router.get('/:id/job-matches', requireFeaturePerm('L1.talent-pool', 'view'), (req, res) => {
     try {
         const { id } = req.params;
         
@@ -1652,7 +1720,7 @@ router.get('/:id/job-matches', (req, res) => {
  * POST /api/talent-pool/:id/analyze-jobs
  * AI 分析人才與所有職缺的媒合度（使用技能匹配）
  */
-router.post('/:id/analyze-jobs', async (req, res) => {
+router.post('/:id/analyze-jobs', requireFeaturePerm('L1.talent-pool', 'edit'), async (req, res) => {
     try {
         const { id } = req.params;
         
@@ -1833,7 +1901,7 @@ router.post('/:id/analyze-jobs', async (req, res) => {
  * POST /api/talent-pool/:id/apply-to-job
  * 將人才加入職缺候選人並可選發送面試邀請
  */
-router.post('/:id/apply-to-job', (req, res) => {
+router.post('/:id/apply-to-job', requireFeaturePerm('L1.talent-pool', 'edit'), (req, res) => {
     try {
         const { id } = req.params;
         const { jobId, sendInvitation = false, message, proposedSlots } = req.body;

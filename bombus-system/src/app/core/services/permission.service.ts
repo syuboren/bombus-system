@@ -2,12 +2,15 @@ import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of, map, catchError } from 'rxjs';
 import { AuthService } from '../../features/auth/services/auth.service';
-import { UserScope } from '../../features/auth/models/auth.model';
+import { UserScope, UserFeaturePerm } from '../../features/auth/models/auth.model';
 
 export interface PermissionInfo {
   resource: string;
   action: string;
 }
+
+/** @deprecated 使用 UserFeaturePerm（from auth.model.ts）替代 */
+export type FeaturePerm = UserFeaturePerm;
 
 @Injectable({ providedIn: 'root' })
 export class PermissionService {
@@ -18,10 +21,12 @@ export class PermissionService {
   private permissionsSignal = signal<string[]>([]);
   private rolesSignal = signal<string[]>([]);
   private scopeSignal = signal<UserScope | null>(null);
+  private featurePermsSignal = signal<Map<string, FeaturePerm>>(new Map());
 
   readonly permissions = this.permissionsSignal.asReadonly();
   readonly roles = this.rolesSignal.asReadonly();
   readonly scope = this.scopeSignal.asReadonly();
+  readonly featurePerms = this.featurePermsSignal.asReadonly();
 
   readonly isSuperAdmin = computed(() =>
     this.rolesSignal().includes('super_admin')
@@ -100,11 +105,44 @@ export class PermissionService {
   }
 
   /**
+   * 從 AuthService 同步 feature 權限（不再重複呼叫 API）
+   */
+  loadFeaturePerms(): Observable<Map<string, FeaturePerm>> {
+    const perms = this.authService.featurePerms();
+    this.featurePermsSignal.set(perms);
+    return of(perms);
+  }
+
+  /**
+   * 檢查使用者是否有功能權限
+   */
+  hasFeaturePerm(featureId: string, requiredLevel: 'view' | 'edit'): boolean {
+    if (this.isSuperAdmin()) return true;
+
+    const perm = this.featurePermsSignal().get(featureId);
+    if (!perm) return false;
+
+    const levelRank: Record<string, number> = { none: 0, view: 1, edit: 2 };
+    return levelRank[perm.action_level] >= levelRank[requiredLevel];
+  }
+
+  /**
+   * 取得特定功能的權限詳情
+   */
+  getFeaturePerm(featureId: string): FeaturePerm | null {
+    if (this.isSuperAdmin()) {
+      return { action_level: 'edit', edit_scope: 'company', view_scope: 'company' };
+    }
+    return this.featurePermsSignal().get(featureId) ?? null;
+  }
+
+  /**
    * 清除權限快取（登出時呼叫）
    */
   clearPermissions(): void {
     this.permissionsSignal.set([]);
     this.rolesSignal.set([]);
     this.scopeSignal.set(null);
+    this.featurePermsSignal.set(new Map());
   }
 }

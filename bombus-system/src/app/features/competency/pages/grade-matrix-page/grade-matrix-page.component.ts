@@ -25,6 +25,7 @@ import { PositionEditModalComponent } from '../../components/position-edit-modal
 import { PromotionCriteriaEditModalComponent } from '../../components/promotion-criteria-edit-modal/promotion-criteria-edit-modal.component';
 import { TrackDetailEditPanelComponent } from '../../components/track-detail-edit-panel/track-detail-edit-panel.component';
 import { OrgUnitService } from '../../../../core/services/org-unit.service';
+import { FeatureGateService } from '../../../../core/services/feature-gate.service';
 import * as echarts from 'echarts';
 
 // Employee interface for AI assistant
@@ -107,6 +108,11 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
   private radarChart: echarts.ECharts | null = null;
   private competencyService = inject(CompetencyService);
   private orgUnitService = inject(OrgUnitService);
+  private featureGateService = inject(FeatureGateService);
+
+  // Permission check
+  readonly canEdit = computed(() => this.featureGateService.canEdit('L2.grade-matrix'));
+  readonly viewScope = computed(() => this.featureGateService.getFeaturePerm('L2.grade-matrix')?.view_scope || 'company');
 
   // Page Info
   readonly pageTitle = '職等職級管理';
@@ -131,8 +137,9 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
   selectedDepartmentFilter = signal<string>('');
 
   // 子公司→部門級聯篩選（Tab B/C 軌道明細表用）
-  selectedSubsidiaryId = signal<string>('');
-  subsidiaries = this.orgUnitService.subsidiaries;
+  selectedSubsidiaryId = signal<string>(this.orgUnitService.lockedSubsidiaryId() || '');
+  subsidiaries = this.orgUnitService.visibleSubsidiaries;
+  isSubsidiaryLocked = this.orgUnitService.isSubsidiaryLocked;
   filteredDepartments = computed(() => this.orgUnitService.filterDepartments(this.selectedSubsidiaryId()));
 
   // Tab A 整體對照表獨立子公司篩選（W1 修正：與 Tab B/C 分離）

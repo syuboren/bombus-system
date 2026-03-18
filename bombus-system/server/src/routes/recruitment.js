@@ -3,6 +3,7 @@ const router = express.Router();
 // tenantDB is accessed via req.tenantDB (injected by middleware)
 const { v4: uuidv4 } = require('uuid');
 const QRCode = require('qrcode');
+const { requireFeaturePerm, buildScopeFilter } = require('../middleware/permission');
 
 /**
  * ------------------------------------------------------------------
@@ -339,7 +340,7 @@ function importToTalentPool(req, candidateId, declineStage, declineReason = null
 
 // 9. 儲存面試評分 (完整) - 新版面試官評分表
 // POST /api/recruitment/candidates/:candidateId/evaluation
-router.post('/candidates/:candidateId/evaluation', (req, res) => {
+router.post('/candidates/:candidateId/evaluation', requireFeaturePerm('L1.recruitment', 'edit'), (req, res) => {
     try {
         const { candidateId } = req.params;
         const {
@@ -464,7 +465,7 @@ router.post('/candidates/:candidateId/evaluation', (req, res) => {
 
 // 10. 取得候選人面試評分
 // GET /api/recruitment/candidates/:candidateId/evaluation
-router.get('/candidates/:candidateId/evaluation', (req, res) => {
+router.get('/candidates/:candidateId/evaluation', requireFeaturePerm('L1.recruitment', 'view'), (req, res) => {
     try {
         const { candidateId } = req.params;
 
@@ -498,7 +499,7 @@ router.get('/candidates/:candidateId/evaluation', (req, res) => {
 
 // 11. 更新面試評分
 // PATCH /api/recruitment/candidates/:candidateId/evaluation
-router.patch('/candidates/:candidateId/evaluation', (req, res) => {
+router.patch('/candidates/:candidateId/evaluation', requireFeaturePerm('L1.recruitment', 'edit'), (req, res) => {
     try {
         const { candidateId } = req.params;
         const {
@@ -599,9 +600,12 @@ router.patch('/candidates/:candidateId/evaluation', (req, res) => {
 
 // 0. Get All Candidates (List)
 // GET /api/recruitment/candidates
-router.get('/candidates', (req, res) => {
+router.get('/candidates', requireFeaturePerm('L1.recruitment', 'view'), (req, res) => {
     try {
         const { org_unit_id } = req.query;
+
+        // Build scope filter
+        const scopeFilter = buildScopeFilter(req, { tableAlias: 'j', orgUnitColumn: 'org_unit_id' });
 
         let query = `
             SELECT c.*, j.title as job_title,
@@ -611,6 +615,12 @@ router.get('/candidates', (req, res) => {
             WHERE EXISTS (SELECT 1 FROM interviews WHERE candidate_id = c.id)
         `;
         const params = [];
+
+        // Add scope filtering
+        if (scopeFilter.clause) {
+            query += ` AND ${scopeFilter.clause}`;
+            params.push(...scopeFilter.params);
+        }
 
         if (org_unit_id) {
             query += ` AND j.org_unit_id = ?`;
@@ -629,7 +639,7 @@ router.get('/candidates', (req, res) => {
 
 // 1. Send Interview Invitation
 // POST /api/recruitment/candidates/:candidateId/invitations
-router.post('/candidates/:candidateId/invitations', (req, res) => {
+router.post('/candidates/:candidateId/invitations', requireFeaturePerm('L1.recruitment', 'edit'), (req, res) => {
     try {
         const { candidateId } = req.params;
         const { jobId, proposedSlots, message } = req.body;
@@ -679,7 +689,7 @@ router.post('/candidates/:candidateId/invitations', (req, res) => {
 
 // 2. Schedule Interview (Confirm)
 // POST /api/recruitment/interviews
-router.post('/interviews', (req, res) => {
+router.post('/interviews', requireFeaturePerm('L1.recruitment', 'edit'), (req, res) => {
     try {
         const { candidateId, jobId, interviewerId, interviewAt, location, meetingLink, address, round } = req.body;
 
@@ -723,7 +733,7 @@ router.post('/interviews', (req, res) => {
 
 // 3. Submit Interview Evaluation (Score)
 // PATCH /api/recruitment/interviews/:interviewId/evaluation
-router.patch('/interviews/:interviewId/evaluation', (req, res) => {
+router.patch('/interviews/:interviewId/evaluation', requireFeaturePerm('L1.recruitment', 'edit'), (req, res) => {
     try {
         const { interviewId } = req.params;
         const { evaluationJson, result, remark } = req.body;
@@ -766,7 +776,7 @@ router.patch('/interviews/:interviewId/evaluation', (req, res) => {
 
 // 4. Hiring Decision
 // POST /api/recruitment/candidates/:candidateId/decision
-router.post('/candidates/:candidateId/decision', (req, res) => {
+router.post('/candidates/:candidateId/decision', requireFeaturePerm('L1.recruitment', 'edit'), (req, res) => {
     try {
         const { candidateId } = req.params;
         const { decision, decidedBy, reason } = req.body; // Decision: Offered / Rejected
@@ -840,7 +850,7 @@ router.post('/candidates/:candidateId/decision', (req, res) => {
 
 // 5. Get Extended Candidate Details
 // GET /api/recruitment/candidates/:candidateId
-router.get('/candidates/:candidateId', (req, res) => {
+router.get('/candidates/:candidateId', requireFeaturePerm('L1.recruitment', 'view'), (req, res) => {
     try {
         const { candidateId } = req.params;
 
@@ -1272,7 +1282,7 @@ router.post('/interviews/cancel/:token', (req, res) => {
 
 // 12. Get Response Link for HR (Interview)
 // GET /api/recruitment/candidates/:candidateId/response-link
-router.get('/candidates/:candidateId/response-link', (req, res) => {
+router.get('/candidates/:candidateId/response-link', requireFeaturePerm('L1.recruitment', 'view'), (req, res) => {
     try {
         const { candidateId } = req.params;
 
@@ -1305,7 +1315,7 @@ router.get('/candidates/:candidateId/response-link', (req, res) => {
 
 // 11. Get Offer Response Link for HR
 // GET /api/recruitment/candidates/:candidateId/offer-response-link
-router.get('/candidates/:candidateId/offer-response-link', (req, res) => {
+router.get('/candidates/:candidateId/offer-response-link', requireFeaturePerm('L1.recruitment', 'view'), (req, res) => {
     try {
         const { candidateId } = req.params;
 
@@ -1370,7 +1380,7 @@ function isFormExpired(form) {
 // 13. Generate Interview Form Token & QR Code
 // POST /api/recruitment/interviews/:id/generate-form
 // 如果表單已存在且有 token，返回現有的；只有新表單才產生新 token
-router.post('/interviews/:id/generate-form', async (req, res) => {
+router.post('/interviews/:id/generate-form', requireFeaturePerm('L1.recruitment', 'edit'), async (req, res) => {
     try {
         const { id: interviewId } = req.params;
         const { timeLimitMinutes, forceRegenerate } = req.body; // forceRegenerate: 強制重新產生 token
@@ -1470,7 +1480,7 @@ router.post('/interviews/:id/generate-form', async (req, res) => {
 
 // 14. Get Interview Form Status (Internal - for HR/Interviewer)
 // GET /api/recruitment/interviews/:id/form-status
-router.get('/interviews/:id/form-status', (req, res) => {
+router.get('/interviews/:id/form-status', requireFeaturePerm('L1.recruitment', 'view'), (req, res) => {
     try {
         const { id: interviewId } = req.params;
 
@@ -1521,7 +1531,7 @@ router.get('/interviews/:id/form-status', (req, res) => {
 
 // 15. Get Candidate Form Data (Internal - for Interviewer to review)
 // GET /api/recruitment/interviews/:id/form-data
-router.get('/interviews/:id/form-data', (req, res) => {
+router.get('/interviews/:id/form-data', requireFeaturePerm('L1.recruitment', 'view'), (req, res) => {
     try {
         const { id: interviewId } = req.params;
 
@@ -2011,7 +2021,7 @@ router.get('/interview-form/:token/status', (req, res) => {
 
 // 21. Regenerate QR Code (for existing form)
 // POST /api/recruitment/interviews/:id/regenerate-qrcode
-router.post('/interviews/:id/regenerate-qrcode', async (req, res) => {
+router.post('/interviews/:id/regenerate-qrcode', requireFeaturePerm('L1.recruitment', 'edit'), async (req, res) => {
     try {
         const { id: interviewId } = req.params;
 
@@ -2048,7 +2058,7 @@ router.post('/interviews/:id/regenerate-qrcode', async (req, res) => {
 
 // Reset Demo Data
 // POST /api/recruitment/reset-demo
-router.post('/reset-demo', (req, res) => {
+router.post('/reset-demo', requireFeaturePerm('L1.recruitment', 'edit'), (req, res) => {
     try {
         const now = new Date().toISOString();
 

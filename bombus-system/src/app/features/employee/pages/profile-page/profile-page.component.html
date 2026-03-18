@@ -64,17 +64,21 @@
               (input)="searchQuery.set($any($event.target).value)">
           </div>
           <div class="filter-divider"></div>
-          @if (subsidiaries().length > 0) {
+          @if (viewScope() !== 'self' && subsidiaries().length > 0) {
           <div class="filter-item">
             <select class="filter-select" [value]="selectedSubsidiaryId()"
+              [disabled]="isSubsidiaryLocked()"
               (change)="selectedSubsidiaryId.set($any($event.target).value)">
+              @if (!isSubsidiaryLocked()) {
               <option value="">全部子公司</option>
+              }
               @for (sub of subsidiaries(); track sub.id) {
               <option [value]="sub.id">{{ sub.name }}</option>
               }
             </select>
           </div>
           }
+          @if (viewScope() !== 'self') {
           <div class="filter-item">
             <select class="filter-select" [value]="selectedDepartment()"
               (change)="selectedDepartment.set($any($event.target).value)">
@@ -94,10 +98,13 @@
               <option value="resigned">已離職</option>
             </select>
           </div>
+          }
+          @if (canEdit()) {
           <button type="button" class="btn btn-primary">
             <i class="ri-download-line"></i>
             匯出
           </button>
+          }
         </div>
 
         <!-- Employee Table -->
@@ -259,9 +266,11 @@
             </div>
           </div>
           <div class="header-actions">
+            @if (canEdit()) {
             <button type="button" class="btn-action" (click)="exportEmployeeData()">
               <i class="ri-download-line"></i>
             </button>
+            }
             <button type="button" class="btn-close" (click)="closeDetail()">
               <i class="ri-close-line"></i>
             </button>

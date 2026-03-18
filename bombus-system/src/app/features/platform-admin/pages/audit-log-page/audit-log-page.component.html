@@ -108,7 +108,7 @@
               <td class="col-details">
                 @if (log.details) {
                   <span class="details-text" [title]="parseDetails(log.details)">
-                    {{ log.details | slice:0:40 }}{{ log.details.length > 40 ? '...' : '' }}
+                    {{ formatDetails(log.details) | slice:0:40 }}{{ formatDetails(log.details).length > 40 ? '...' : '' }}
                   </span>
                 } @else {
                   <span class="text-muted">-</span>

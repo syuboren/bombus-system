@@ -526,15 +526,18 @@
             </select>
           </div>
           <div class="filter-divider"></div>
+          @if (viewScope() !== 'self' && viewScope() !== 'department') {
           <div class="filter-item">
             <label class="filter-label">子公司</label>
-            <select class="filter-select" [ngModel]="selectedSubsidiaryId()" (ngModelChange)="onSubsidiaryChange($event)">
-              <option value="">所有子公司</option>
+            <select class="filter-select" [ngModel]="selectedSubsidiaryId()" (ngModelChange)="onSubsidiaryChange($event)" [disabled]="isSubsidiaryLocked()">
+              @if (!isSubsidiaryLocked()) {<option value="">所有子公司</option>}
               @for (sub of subsidiaries(); track sub.id) {
                 <option [value]="sub.id">{{ sub.name }}</option>
               }
             </select>
           </div>
+          }
+          @if (viewScope() !== 'self') {
           <div class="filter-item">
             <label class="filter-label">部門</label>
             <select class="filter-select" [ngModel]="selectedDepartment()" (ngModelChange)="onDepartmentChange($event)">
@@ -544,6 +547,7 @@
               }
             </select>
           </div>
+          }
           <div class="filter-item">
             <label class="filter-label">狀態</label>
             <select class="filter-select" [ngModel]="selectedStatus()" (ngModelChange)="onStatusChange($event)">
@@ -553,10 +557,12 @@
             </select>
           </div>
           <div class="filter-spacer"></div>
+          @if (canEdit()) {
           <button class="btn-export" (click)="exportMonthlyChecks()" type="button">
             <i class="ri-download-2-line"></i>
             匯出 Excel
           </button>
+          }
         </div>
 
         @if (loadingMonthly()) {
@@ -688,15 +694,18 @@
             </select>
           </div>
           <div class="filter-divider"></div>
+          @if (viewScope() !== 'self' && viewScope() !== 'department') {
           <div class="filter-item">
             <label class="filter-label">子公司</label>
-            <select class="filter-select" [ngModel]="selectedSubsidiaryId()" (ngModelChange)="onSubsidiaryChange($event)">
-              <option value="">所有子公司</option>
+            <select class="filter-select" [ngModel]="selectedSubsidiaryId()" (ngModelChange)="onSubsidiaryChange($event)" [disabled]="isSubsidiaryLocked()">
+              @if (!isSubsidiaryLocked()) {<option value="">所有子公司</option>}
               @for (sub of subsidiaries(); track sub.id) {
                 <option [value]="sub.id">{{ sub.name }}</option>
               }
             </select>
           </div>
+          }
+          @if (viewScope() !== 'self') {
           <div class="filter-item">
             <label class="filter-label">部門</label>
             <select class="filter-select" [ngModel]="selectedDepartment()" (ngModelChange)="onDepartmentChange($event)">
@@ -706,6 +715,7 @@
               }
             </select>
           </div>
+          }
           <div class="filter-item">
             <label class="filter-label">狀態</label>
             <select class="filter-select" [ngModel]="selectedStatus()" (ngModelChange)="onStatusChange($event)">
@@ -715,9 +725,10 @@
             </select>
           </div>
           <div class="filter-spacer"></div>
+          @if (canEdit()) {
           <button
-            class="btn-initialize" 
-            (click)="initializeQuarterlyReviews()" 
+            class="btn-initialize"
+            (click)="initializeQuarterlyReviews()"
             type="button"
             [disabled]="initializingQuarterly()">
             @if (initializingQuarterly()) {
@@ -731,6 +742,7 @@
             <i class="ri-download-2-line"></i>
             匯出 Excel
           </button>
+          }
         </div>
 
         @if (loadingQuarterly()) {
@@ -800,9 +812,10 @@
                       <div class="empty-state">
                         <i class="ri-file-search-line"></i>
                         <p>沒有符合條件的季度面談記錄</p>
-                        <button 
-                          class="btn-initialize-empty" 
-                          (click)="initializeQuarterlyReviews()" 
+                        @if (canEdit()) {
+                        <button
+                          class="btn-initialize-empty"
+                          (click)="initializeQuarterlyReviews()"
                           type="button"
                           [disabled]="initializingQuarterly()">
                           @if (initializingQuarterly()) {
@@ -812,6 +825,7 @@
                           }
                           初始化 {{ currentYear() }}年 Q{{ currentQuarter() }} 季度面談清單
                         </button>
+                        }
                       </div>
                     </td>
                   </tr>
@@ -901,8 +915,9 @@
             </select>
           </div>
           <div class="filter-actions">
-            <button 
-              class="btn btn--secondary" 
+            @if (canEdit()) {
+            <button
+              class="btn btn--secondary"
               (click)="generateCurrentWeekReports()"
               [disabled]="generatingWeekly()"
               type="button">
@@ -914,6 +929,7 @@
                 生成本週週報
               }
             </button>
+            }
           </div>
         </div>
 

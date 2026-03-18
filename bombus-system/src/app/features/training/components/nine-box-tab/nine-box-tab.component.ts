@@ -41,8 +41,9 @@ export class NineBoxTabComponent implements OnInit, AfterViewInit, OnDestroy {
   };
 
   // Options
-  selectedSubsidiaryId = signal<string>('');
-  subsidiaries = this.orgUnitService.subsidiaries;
+  selectedSubsidiaryId = signal<string>(this.orgUnitService.lockedSubsidiaryId() || '');
+  subsidiaries = this.orgUnitService.visibleSubsidiaries;
+  isSubsidiaryLocked = this.orgUnitService.isSubsidiaryLocked;
   filteredDepartments = computed(() => this.orgUnitService.filterDepartments(this.selectedSubsidiaryId()));
   readonly levelOptions = this.talentMapService.levelOptions;
   readonly categories = this.talentMapService.nineBoxCategories;

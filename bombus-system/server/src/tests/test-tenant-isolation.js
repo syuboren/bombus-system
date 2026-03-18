@@ -37,7 +37,10 @@ async function run() {
   const slugB = `test-iso-b-${ts}`;
   const createB = await req('POST', '/api/platform/tenants', {
     name: 'Isolation Test B',
-    slug: slugB
+    slug: slugB,
+    admin_email: `admin@${slugB}.com`,
+    admin_name: 'Isolation Admin',
+    admin_password: 'Admin123456'
   }, platformToken);
   assert(createB.status === 201, `2.1 建立租戶 B (201) slug=${slugB}`);
   const tenantBId = createB.data?.id;
@@ -104,7 +107,7 @@ async function run() {
   // 平台管理員可查看所有租戶列表
   const allTenants = await req('GET', '/api/platform/tenants', null, platformToken);
   assert(allTenants.status === 200, '7.1 平台管理員可查看所有租戶 (200)');
-  assert(allTenants.data?.pagination?.total >= 2, '7.2 至少有 2 個租戶 (demo + test-iso-b)');
+  assert(allTenants.data?.total >= 2, '7.2 至少有 2 個租戶 (demo + test-iso-b)');
 
   // 平台管理員 token 沒有 tid，存取需要 tenantMiddleware 的業務路由
   // tenantMiddleware 對 isPlatformAdmin 會 next()（跳過），

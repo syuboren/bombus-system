@@ -43,10 +43,11 @@ export class TemplateManagePageComponent implements OnInit {
   copyTarget = signal({ department: '', position: '' });
 
   // 組織單位（子公司→部門級聯篩選）
-  subsidiaries = this.orgUnitService.subsidiaries;
+  subsidiaries = this.orgUnitService.visibleSubsidiaries;
+  isSubsidiaryLocked = this.orgUnitService.isSubsidiaryLocked;
 
   // 篩選列 & 編輯 Modal 用
-  selectedSubsidiaryId = signal<string>('');
+  selectedSubsidiaryId = signal<string>(this.orgUnitService.lockedSubsidiaryId() || '');
   filteredDepartments = computed(() =>
     this.orgUnitService.filterDepartments(this.selectedSubsidiaryId())
   );

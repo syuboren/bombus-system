@@ -29,12 +29,13 @@ export class ProjectListPageComponent implements OnInit {
 
   // Filter State
   searchText = signal('');
-  selectedSubsidiaryId = signal<string>('');
+  selectedSubsidiaryId = signal<string>(this.orgUnitService.lockedSubsidiaryId() || '');
   selectedDepartment = signal('all');
   selectedStatus = signal('all');
 
   // 組織架構篩選
-  subsidiaries = this.orgUnitService.subsidiaries;
+  subsidiaries = this.orgUnitService.visibleSubsidiaries;
+  isSubsidiaryLocked = this.orgUnitService.isSubsidiaryLocked;
   filteredDepartments = computed(() => this.orgUnitService.filterDepartments(this.selectedSubsidiaryId()));
 
   // Create Form State

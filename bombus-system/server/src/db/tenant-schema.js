@@ -6,6 +6,372 @@
  * - L1~L6 業務表（從 db/index.js 提取的 69 張表）
  */
 
+// ─── Feature-based Permission 常數 ───
+
+const FEATURE_TABLES_SQL = `
+  -- 功能定義（靜態表，tenant 初始化時預載）
+  CREATE TABLE IF NOT EXISTS features (
+    id TEXT PRIMARY KEY,
+    module TEXT NOT NULL,
+    name TEXT NOT NULL,
+    sort_order INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+
+  -- 角色功能權限（取代 role_permissions 的新模型，與舊表並存）
+  CREATE TABLE IF NOT EXISTS role_feature_perms (
+    role_id TEXT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+    feature_id TEXT NOT NULL REFERENCES features(id) ON DELETE CASCADE,
+    action_level TEXT NOT NULL DEFAULT 'none'
+      CHECK(action_level IN ('none', 'view', 'edit')),
+    edit_scope TEXT DEFAULT NULL
+      CHECK(edit_scope IN (NULL, 'self', 'department', 'company')),
+    view_scope TEXT DEFAULT NULL
+      CHECK(view_scope IN (NULL, 'self', 'department', 'company')),
+    PRIMARY KEY (role_id, feature_id)
+  );
+`;
+
+const FEATURE_SEED_DATA = [
+  // L1 員工管理
+  { id: 'L1.jobs', module: 'L1', name: '招募職缺管理', sort_order: 100 },
+  { id: 'L1.recruitment', module: 'L1', name: 'AI智能面試', sort_order: 101 },
+  { id: 'L1.talent-pool', module: 'L1', name: '人才庫與再接觸管理', sort_order: 102 },
+  { id: 'L1.profile', module: 'L1', name: '員工檔案與歷程管理', sort_order: 103 },
+  { id: 'L1.meeting', module: 'L1', name: '會議管理', sort_order: 104 },
+  { id: 'L1.onboarding', module: 'L1', name: '入職管理', sort_order: 105 },
+  // L2 職能管理
+  { id: 'L2.grade-matrix', module: 'L2', name: '職等職級管理', sort_order: 200 },
+  { id: 'L2.framework', module: 'L2', name: '職能模型基準', sort_order: 201 },
+  { id: 'L2.job-description', module: 'L2', name: '職務說明書', sort_order: 202 },
+  { id: 'L2.assessment', module: 'L2', name: '職能評估系統', sort_order: 203 },
+  { id: 'L2.gap-analysis', module: 'L2', name: '職能落差分析', sort_order: 204 },
+  // L3 教育訓練
+  { id: 'L3.course-management', module: 'L3', name: '課程與報名管理', sort_order: 300 },
+  { id: 'L3.learning-map', module: 'L3', name: '學習地圖', sort_order: 301 },
+  { id: 'L3.effectiveness', module: 'L3', name: '培訓成效追蹤', sort_order: 302 },
+  { id: 'L3.competency-heatmap', module: 'L3', name: '組織職能熱力圖', sort_order: 303 },
+  { id: 'L3.nine-box', module: 'L3', name: '人才九宮格', sort_order: 304 },
+  { id: 'L3.learning-path', module: 'L3', name: '學習發展路徑圖', sort_order: 305 },
+  { id: 'L3.key-talent', module: 'L3', name: '關鍵人才儀表板', sort_order: 306 },
+  // L4 專案管理
+  { id: 'L4.list', module: 'L4', name: '專案列表', sort_order: 400 },
+  { id: 'L4.profit-prediction', module: 'L4', name: 'AI損益預測', sort_order: 401 },
+  { id: 'L4.forecast', module: 'L4', name: 'Forecast追蹤', sort_order: 402 },
+  { id: 'L4.report', module: 'L4', name: '專案報表', sort_order: 403 },
+  // L5 績效管理
+  { id: 'L5.profit-dashboard', module: 'L5', name: '毛利監控儀表板', sort_order: 500 },
+  { id: 'L5.bonus-distribution', module: 'L5', name: '獎金分配計算', sort_order: 501 },
+  { id: 'L5.goal-task', module: 'L5', name: '目標與任務管理', sort_order: 502 },
+  { id: 'L5.profit-settings', module: 'L5', name: '毛利計算參數設定', sort_order: 503 },
+  { id: 'L5.review', module: 'L5', name: '績效考核', sort_order: 504 },
+  { id: 'L5.360-feedback', module: 'L5', name: '360度回饋', sort_order: 505 },
+  // L6 文化管理
+  { id: 'L6.handbook', module: 'L6', name: '企業文化手冊', sort_order: 600 },
+  { id: 'L6.eap', module: 'L6', name: 'EAP員工協助', sort_order: 601 },
+  { id: 'L6.awards', module: 'L6', name: '獎項資料庫', sort_order: 602 },
+  { id: 'L6.documents', module: 'L6', name: '文件儲存庫', sort_order: 603 },
+  { id: 'L6.ai-assistant', module: 'L6', name: 'AI申請助理', sort_order: 604 },
+  { id: 'L6.analysis', module: 'L6', name: '智慧文件分析', sort_order: 605 },
+  { id: 'L6.impact', module: 'L6', name: '影響力評估', sort_order: 606 },
+  // SYS 系統管理
+  { id: 'SYS.org-structure', module: 'SYS', name: '組織架構管理', sort_order: 900 },
+  { id: 'SYS.user-management', module: 'SYS', name: '使用者管理', sort_order: 901 },
+  { id: 'SYS.role-management', module: 'SYS', name: '角色權限管理', sort_order: 902 },
+  { id: 'SYS.audit', module: 'SYS', name: '審計日誌', sort_order: 903 },
+];
+
+// 預設角色 feature 權限映射（Decision 5）
+// 格式：{ action_level, edit_scope, view_scope }
+const _e = (es, vs) => ({ action_level: 'edit', edit_scope: es, view_scope: vs });
+const _v = (vs) => ({ action_level: 'view', edit_scope: null, view_scope: vs });
+const _n = { action_level: 'none', edit_scope: null, view_scope: null };
+
+const DEFAULT_ROLE_FEATURE_PERMS = {
+  super_admin: {
+    // L1
+    'L1.jobs': _e('company', 'company'),
+    'L1.recruitment': _e('company', 'company'),
+    'L1.talent-pool': _e('company', 'company'),
+    'L1.profile': _e('company', 'company'),
+    'L1.meeting': _e('company', 'company'),
+    'L1.onboarding': _e('company', 'company'),
+    // L2
+    'L2.grade-matrix': _e('company', 'company'),
+    'L2.framework': _e('company', 'company'),
+    'L2.job-description': _e('company', 'company'),
+    'L2.assessment': _e('company', 'company'),
+    'L2.gap-analysis': _e('company', 'company'),
+    // L3
+    'L3.course-management': _e('company', 'company'),
+    'L3.learning-map': _e('company', 'company'),
+    'L3.effectiveness': _e('company', 'company'),
+    'L3.competency-heatmap': _e('company', 'company'),
+    'L3.nine-box': _e('company', 'company'),
+    'L3.learning-path': _e('company', 'company'),
+    'L3.key-talent': _e('company', 'company'),
+    // L4
+    'L4.list': _e('company', 'company'),
+    'L4.profit-prediction': _e('company', 'company'),
+    'L4.forecast': _e('company', 'company'),
+    'L4.report': _e('company', 'company'),
+    // L5
+    'L5.profit-dashboard': _e('company', 'company'),
+    'L5.bonus-distribution': _e('company', 'company'),
+    'L5.goal-task': _e('company', 'company'),
+    'L5.profit-settings': _e('company', 'company'),
+    'L5.review': _e('company', 'company'),
+    'L5.360-feedback': _e('company', 'company'),
+    // L6
+    'L6.handbook': _e('company', 'company'),
+    'L6.eap': _e('company', 'company'),
+    'L6.awards': _e('company', 'company'),
+    'L6.documents': _e('company', 'company'),
+    'L6.ai-assistant': _e('company', 'company'),
+    'L6.analysis': _e('company', 'company'),
+    'L6.impact': _e('company', 'company'),
+    // SYS
+    'SYS.org-structure': _e('company', 'company'),
+    'SYS.user-management': _e('company', 'company'),
+    'SYS.role-management': _e('company', 'company'),
+
+    'SYS.audit': _v('company'),
+  },
+  subsidiary_admin: {
+    // L1
+    'L1.jobs': _e('company', 'company'),
+    'L1.recruitment': _e('company', 'company'),
+    'L1.talent-pool': _e('company', 'company'),
+    'L1.profile': _e('company', 'company'),
+    'L1.meeting': _e('self', 'company'),
+    'L1.onboarding': _e('company', 'company'),
+    // L2
+    'L2.grade-matrix': _e('company', 'company'),
+    'L2.framework': _e('company', 'company'),
+    'L2.job-description': _e('company', 'company'),
+    'L2.assessment': _v('company'),
+    'L2.gap-analysis': _v('company'),
+    // L3
+    'L3.course-management': _e('company', 'company'),
+    'L3.learning-map': _e('company', 'company'),
+    'L3.effectiveness': _e('company', 'company'),
+    'L3.competency-heatmap': _e('company', 'company'),
+    'L3.nine-box': _e('company', 'company'),
+    'L3.learning-path': _e('company', 'company'),
+    'L3.key-talent': _e('company', 'company'),
+    // L4
+    'L4.list': _e('company', 'company'),
+    'L4.profit-prediction': _e('company', 'company'),
+    'L4.forecast': _e('company', 'company'),
+    'L4.report': _e('company', 'company'),
+    // L5
+    'L5.profit-dashboard': _e('company', 'company'),
+    'L5.bonus-distribution': _e('company', 'company'),
+    'L5.goal-task': _e('company', 'company'),
+    'L5.profit-settings': _e('company', 'company'),
+    'L5.review': _e('company', 'company'),
+    'L5.360-feedback': _e('company', 'company'),
+    // L6
+    'L6.handbook': _e('company', 'company'),
+    'L6.eap': _e('company', 'company'),
+    'L6.awards': _e('company', 'company'),
+    'L6.documents': _e('company', 'company'),
+    'L6.ai-assistant': _e('company', 'company'),
+    'L6.analysis': _e('company', 'company'),
+    'L6.impact': _e('company', 'company'),
+    // SYS
+    'SYS.org-structure': _e('company', 'company'),
+    'SYS.user-management': _v('company'),
+    'SYS.role-management': _v('company'),
+
+    'SYS.audit': _v('company'),
+  },
+  hr_manager: {
+    // L1
+    'L1.jobs': _e('company', 'company'),
+    'L1.recruitment': _v('company'),
+    'L1.talent-pool': _e('company', 'company'),
+    'L1.profile': _e('company', 'company'),
+    'L1.meeting': _e('self', 'company'),
+    'L1.onboarding': _e('company', 'company'),
+    // L2
+    'L2.grade-matrix': _e('company', 'company'),
+    'L2.framework': _e('company', 'company'),
+    'L2.job-description': _e('company', 'company'),
+    'L2.assessment': _v('company'),
+    'L2.gap-analysis': _v('company'),
+    // L3
+    'L3.course-management': _e('company', 'company'),
+    'L3.learning-map': _e('company', 'company'),
+    'L3.effectiveness': _e('company', 'company'),
+    'L3.competency-heatmap': _e('company', 'company'),
+    'L3.nine-box': _e('company', 'company'),
+    'L3.learning-path': _e('company', 'company'),
+    'L3.key-talent': _e('company', 'company'),
+    // L4
+    'L4.list': _e('company', 'company'),
+    'L4.profit-prediction': _e('company', 'company'),
+    'L4.forecast': _e('company', 'company'),
+    'L4.report': _e('company', 'company'),
+    // L5
+    'L5.profit-dashboard': _e('company', 'company'),
+    'L5.bonus-distribution': _e('company', 'company'),
+    'L5.goal-task': _e('company', 'company'),
+    'L5.profit-settings': _e('company', 'company'),
+    'L5.review': _e('company', 'company'),
+    'L5.360-feedback': _e('company', 'company'),
+    // L6
+    'L6.handbook': _e('company', 'company'),
+    'L6.eap': _e('company', 'company'),
+    'L6.awards': _e('company', 'company'),
+    'L6.documents': _e('company', 'company'),
+    'L6.ai-assistant': _e('company', 'company'),
+    'L6.analysis': _e('company', 'company'),
+    'L6.impact': _e('company', 'company'),
+    // SYS
+    'SYS.org-structure': _v('company'),
+    'SYS.user-management': _n,
+    'SYS.role-management': _n,
+
+    'SYS.audit': _n,
+  },
+  dept_manager: {
+    // L1
+    'L1.jobs': _n,
+    'L1.recruitment': _e('company', 'company'),
+    'L1.talent-pool': _n,
+    'L1.profile': _e('self', 'department'),
+    'L1.meeting': _e('self', 'company'),
+    'L1.onboarding': _v('department'),
+    // L2
+    'L2.grade-matrix': _v('company'),
+    'L2.framework': _v('company'),
+    'L2.job-description': _v('company'),
+    'L2.assessment': _v('department'),
+    'L2.gap-analysis': _v('department'),
+    // L3
+    'L3.course-management': _v('department'),
+    'L3.learning-map': _v('department'),
+    'L3.effectiveness': _v('department'),
+    'L3.competency-heatmap': _v('department'),
+    'L3.nine-box': _v('department'),
+    'L3.learning-path': _v('department'),
+    'L3.key-talent': _v('department'),
+    // L4
+    'L4.list': _v('department'),
+    'L4.profit-prediction': _v('department'),
+    'L4.forecast': _v('department'),
+    'L4.report': _v('department'),
+    // L5
+    'L5.profit-dashboard': _v('department'),
+    'L5.bonus-distribution': _v('department'),
+    'L5.goal-task': _v('department'),
+    'L5.profit-settings': _v('department'),
+    'L5.review': _v('department'),
+    'L5.360-feedback': _v('department'),
+    // L6
+    'L6.handbook': _v('department'),
+    'L6.eap': _v('department'),
+    'L6.awards': _v('department'),
+    'L6.documents': _v('department'),
+    'L6.ai-assistant': _v('department'),
+    'L6.analysis': _v('department'),
+    'L6.impact': _v('department'),
+    // SYS
+    'SYS.org-structure': _n,
+    'SYS.user-management': _n,
+    'SYS.role-management': _n,
+
+    'SYS.audit': _n,
+  },
+  employee: {
+    // L1
+    'L1.jobs': _n,
+    'L1.recruitment': _n,
+    'L1.talent-pool': _n,
+    'L1.profile': _e('self', 'self'),
+    'L1.meeting': _e('self', 'company'),
+    'L1.onboarding': _v('self'),
+    // L2
+    'L2.grade-matrix': _v('company'),
+    'L2.framework': _v('company'),
+    'L2.job-description': _v('company'),
+    'L2.assessment': _v('self'),
+    'L2.gap-analysis': _v('self'),
+    // L3
+    'L3.course-management': _v('self'),
+    'L3.learning-map': _v('self'),
+    'L3.effectiveness': _v('self'),
+    'L3.competency-heatmap': _v('self'),
+    'L3.nine-box': _v('self'),
+    'L3.learning-path': _v('self'),
+    'L3.key-talent': _v('self'),
+    // L4
+    'L4.list': _v('self'),
+    'L4.profit-prediction': _v('self'),
+    'L4.forecast': _v('self'),
+    'L4.report': _v('self'),
+    // L5
+    'L5.profit-dashboard': _v('self'),
+    'L5.bonus-distribution': _v('self'),
+    'L5.goal-task': _v('self'),
+    'L5.profit-settings': _v('self'),
+    'L5.review': _v('self'),
+    'L5.360-feedback': _v('self'),
+    // L6
+    'L6.handbook': _v('self'),
+    'L6.eap': _v('self'),
+    'L6.awards': _v('self'),
+    'L6.documents': _v('self'),
+    'L6.ai-assistant': _v('self'),
+    'L6.analysis': _v('self'),
+    'L6.impact': _v('self'),
+    // SYS
+    'SYS.org-structure': _n,
+    'SYS.user-management': _n,
+    'SYS.role-management': _n,
+
+    'SYS.audit': _n,
+  },
+};
+
+/**
+ * 插入 feature 種子資料（冪等：INSERT OR IGNORE）
+ * @param {import('sql.js').Database} db - raw sql.js Database
+ */
+function seedFeatureData(db) {
+  for (const f of FEATURE_SEED_DATA) {
+    try {
+      const stmt = db.prepare('INSERT OR IGNORE INTO features (id, module, name, sort_order) VALUES (?, ?, ?, ?)');
+      stmt.bind([f.id, f.module, f.name, f.sort_order]);
+      stmt.step();
+      stmt.free();
+    } catch (e) { /* 資料已存在則忽略 */ }
+  }
+}
+
+/**
+ * 插入預設角色的 feature 權限種子資料（冪等：INSERT OR IGNORE）
+ * @param {import('sql.js').Database} db - raw sql.js Database
+ * @param {Object<string, string>} roleMap - { role_name: role_id }
+ */
+function seedDefaultRoleFeaturePerms(db, roleMap) {
+  for (const [roleName, perms] of Object.entries(DEFAULT_ROLE_FEATURE_PERMS)) {
+    const roleId = roleMap[roleName];
+    if (!roleId) continue;
+    for (const [featureId, perm] of Object.entries(perms)) {
+      try {
+        const stmt = db.prepare(
+          'INSERT OR IGNORE INTO role_feature_perms (role_id, feature_id, action_level, edit_scope, view_scope) VALUES (?, ?, ?, ?, ?)'
+        );
+        stmt.bind([roleId, featureId, perm.action_level, perm.edit_scope, perm.view_scope]);
+        stmt.step();
+        stmt.free();
+      } catch (e) { /* 資料已存在則忽略 */ }
+    }
+  }
+}
+
 // ─── 共用遷移常數（供 tenant-db-manager.js 共用） ───
 
 const EMPLOYEE_MIGRATIONS = [
@@ -1315,6 +1681,12 @@ function initTenantSchema(adapter) {
   // 再建立 RBAC 表
   db.exec(RBAC_TABLES_SQL);
 
+  // 建立 Feature-based Permission 表（新模型，與舊 permissions/role_permissions 並存）
+  db.exec(FEATURE_TABLES_SQL);
+
+  // 插入 feature 種子資料（40 個預定義業務功能，L1-L6 + SYS）
+  seedFeatureData(db);
+
   // departments 表欄位遷移（冪等：try-catch 忽略已存在欄位）
   const deptMigrations = [
     'ALTER TABLE departments ADD COLUMN manager_id TEXT REFERENCES employees(id)',
@@ -1391,4 +1763,10 @@ function initTenantSchema(adapter) {
   adapter.save();
 }
 
-module.exports = { initTenantSchema, RBAC_TABLES_SQL, BUSINESS_TABLES_SQL, EMPLOYEE_MIGRATIONS, USER_MIGRATIONS, INTERVIEW_MIGRATIONS };
+module.exports = {
+  initTenantSchema,
+  RBAC_TABLES_SQL, BUSINESS_TABLES_SQL, FEATURE_TABLES_SQL,
+  EMPLOYEE_MIGRATIONS, USER_MIGRATIONS, INTERVIEW_MIGRATIONS,
+  FEATURE_SEED_DATA, DEFAULT_ROLE_FEATURE_PERMS,
+  seedFeatureData, seedDefaultRoleFeaturePerms
+};

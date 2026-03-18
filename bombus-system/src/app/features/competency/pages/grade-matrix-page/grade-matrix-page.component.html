@@ -49,6 +49,7 @@
         <span class="info-count">共 <strong>{{ gradesNew().length }}</strong> 個職等 (Grade 1-7)</span>
       </div>
       <div class="filter-actions">
+        @if (canEdit()) {
         <button class="btn-edit-mode" [class.active]="editMode()" (click)="toggleEditMode()" type="button">
           <i [class]="editMode() ? 'ri-lock-unlock-line' : 'ri-lock-line'"></i>
           {{ editMode() ? '退出編輯' : '編輯模式' }}
@@ -57,6 +58,7 @@
         <button class="btn-add" (click)="openEditTrack()" type="button">
           <i class="ri-add-line"></i> 新增軌道
         </button>
+        }
         }
       </div>
     </div>
@@ -78,6 +80,7 @@
     <!-- Tab A: 整體職等職級薪資對照表 -->
     @if (matrixSubTab() === 'overview') {
     <div class="overview-filter-bar">
+      @if (viewScope() !== 'self' && viewScope() !== 'department') {
       <select class="filter-select-sm" [ngModel]="overviewSubsidiaryId()"
         (ngModelChange)="onOverviewSubsidiaryChange($event)">
         <option value="">集團預設</option>
@@ -85,7 +88,8 @@
         <option [value]="sub.id">{{ sub.name }}</option>
         }
       </select>
-      @if (editMode()) {
+      }
+      @if (canEdit() && editMode()) {
       <button class="btn-add" (click)="openEditGrade()" type="button">
         <i class="ri-add-line"></i> 新增職等
       </button>
@@ -113,7 +117,7 @@
             [class.editing]="editingGradeNumber() === grade.grade"
             [class.dimmed]="editingGradeNumber() !== null && editingGradeNumber() !== grade.grade"
             [class.has-pending]="editMode() && hasPendingForGrade(grade.grade)">
-            @if (editMode()) {
+            @if (canEdit() && editMode()) {
             <td class="td-action">
               <button class="btn-edit-row" (click)="openEditGrade(grade); $event.stopPropagation()" type="button"
                 title="編輯職等">
@@ -170,12 +174,16 @@
     <div class="track-detail-section">
       <div class="track-filter-bar">
         <div class="track-filter-selects">
+          @if (viewScope() !== 'self' && viewScope() !== 'department') {
           <select class="filter-select-sm" [ngModel]="selectedSubsidiaryId()"
-            (ngModelChange)="selectedSubsidiaryId.set($event); selectedDepartmentFilter.set('')">
+            (ngModelChange)="selectedSubsidiaryId.set($event); selectedDepartmentFilter.set('')"
+            [disabled]="isSubsidiaryLocked()">
             @for (sub of subsidiaries(); track sub.id) {
             <option [value]="sub.id">{{ sub.name }}</option>
             }
           </select>
+          }
+          @if (viewScope() !== 'self') {
           <select class="filter-select-sm" [ngModel]="selectedDepartmentFilter()"
             (ngModelChange)="onDepartmentFilterChange($event)">
             <option value="">全部部門</option>
@@ -183,6 +191,7 @@
             <option [value]="dept.name">{{ dept.name }}</option>
             }
           </select>
+          }
         </div>
       </div>
 
@@ -206,12 +215,12 @@
             <tr class="track-row" [class.row-odd]="i % 2 === 1"
               [class.active]="showTrackDetailPanel() && editingTrackGrade() === grade.grade"
               [class.has-pending]="editMode() && hasPendingForGrade(grade.grade)"
-              (click)="openTrackDetailPanel(grade, trackCode)">
+              (click)="canEdit() ? openTrackDetailPanel(grade, trackCode) : null">
               <td class="td-action" (click)="$event.stopPropagation()">
                 <button class="btn-row-detail"
                   [class.active]="showTrackDetailPanel() && editingTrackGrade() === grade.grade"
                   (click)="openTrackDetailPanel(grade, trackCode)" type="button">
-                  <i [class]="editMode() ? 'ri-pencil-line' : 'ri-file-list-3-line'"></i>
+                  <i [class]="canEdit() && editMode() ? 'ri-pencil-line' : 'ri-file-list-3-line'"></i>
                 </button>
               </td>
               <td class="td-grade">
@@ -762,12 +771,14 @@
           <td>{{ change.changedBy }}</td>
           <td>{{ change.createdAt }}</td>
           <td class="td-actions">
+            @if (canEdit()) {
             <button class="btn-approve" (click)="approveChange(change.id)" type="button" title="核准">
               <i class="ri-check-line"></i> 核准
             </button>
             <button class="btn-reject" (click)="rejectChange(change.id)" type="button" title="駁回">
               <i class="ri-close-line"></i> 駁回
             </button>
+            }
           </td>
         </tr>
         }

@@ -21,8 +21,8 @@
                         <label class="form-label">子公司</label>
                         <select class="form-select" [value]="selectedSubsidiaryId()"
                             (change)="selectedSubsidiaryId.set($any($event.target).value); updateField('department', '')"
-                            [disabled]="saving()">
-                            <option value="">全部子公司</option>
+                            [disabled]="saving() || isSubsidiaryLocked()">
+                            @if (!isSubsidiaryLocked()) {<option value="">全部子公司</option>}
                             @for (sub of subsidiaries(); track sub.id) {
                             <option [value]="sub.id">{{ sub.name }}</option>
                             }

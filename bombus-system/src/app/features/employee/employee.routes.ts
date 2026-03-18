@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { featureGateGuard } from '../../core/guards/feature-gate.guard';
 
 export const EMPLOYEE_ROUTES: Routes = [
   {
@@ -8,6 +9,8 @@ export const EMPLOYEE_ROUTES: Routes = [
   },
   {
     path: 'jobs',
+    data: { requiredFeature: 'L1.jobs' },
+    canActivate: [featureGateGuard],
     loadComponent: () => import('./pages/jobs-page/jobs-page.component')
       .then(m => m.JobsPageComponent)
   },
@@ -29,27 +32,37 @@ export const EMPLOYEE_ROUTES: Routes = [
   },
   {
     path: 'recruitment',
+    data: { requiredFeature: 'L1.recruitment' },
+    canActivate: [featureGateGuard],
     loadComponent: () => import('./pages/recruitment-page/recruitment-page.component')
       .then(m => m.RecruitmentPageComponent)
   },
   {
     path: 'profile',
+    data: { requiredFeature: 'L1.profile' },
+    canActivate: [featureGateGuard],
     loadComponent: () => import('./pages/profile-page/profile-page.component')
       .then(m => m.ProfilePageComponent)
   },
   {
     path: 'talent-pool',
+    data: { requiredFeature: 'L1.talent-pool' },
+    canActivate: [featureGateGuard],
     loadComponent: () => import('./pages/talent-pool-page/talent-pool-page.component')
       .then(m => m.TalentPoolPageComponent)
   },
   {
     path: 'meeting',
+    data: { requiredFeature: 'L1.meeting' },
+    canActivate: [featureGateGuard],
     loadComponent: () => import('./pages/meeting-page/meeting-page.component')
       .then(m => m.MeetingPageComponent)
   },
   // 入職管理（Tab 整合頁面）
   {
     path: 'onboarding',
+    data: { requiredFeature: 'L1.onboarding' },
+    canActivate: [featureGateGuard],
     loadComponent: () => import('./pages/onboarding/onboarding-page/onboarding-page.component')
       .then(m => m.OnboardingPageComponent)
   },

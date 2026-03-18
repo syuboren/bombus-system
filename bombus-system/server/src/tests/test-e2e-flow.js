@@ -74,7 +74,10 @@ async function run() {
   const createTenant = await req('POST', '/api/platform/tenants', {
     name: 'E2E Test Company',
     slug: testSlug,
-    plan_id: planId
+    plan_id: planId,
+    admin_email: `admin@${testSlug}.com`,
+    admin_name: 'E2E Admin',
+    admin_password: 'Admin123456'
   }, platformToken);
   assert(createTenant.status === 201, `A3.1 建立新租戶 (201) slug=${testSlug}`);
   const tenantId = createTenant.data?.id;
@@ -93,7 +96,10 @@ async function run() {
   const dupTenant = await req('POST', '/api/platform/tenants', {
     name: 'Duplicate',
     slug: testSlug,
-    plan_id: planId
+    plan_id: planId,
+    admin_email: `dup-admin@${testSlug}.com`,
+    admin_name: 'Dup Admin',
+    admin_password: 'Admin123456'
   }, platformToken);
   assert(dupTenant.status === 409, 'A5.1 重複 slug 回傳 409');
 
@@ -220,10 +226,10 @@ async function run() {
 
   const userToken = userLogin.data?.access_token;
 
-  // B10: 使用者存取業務 API
+  // B10: 使用者存取業務 API（自訂角色無 feature 權限 → 403）
   console.log('  [B10] 使用者存取業務 API');
   const empList = await req('GET', '/api/employee/list', null, userToken);
-  assert(empList.status === 200, 'B10.1 使用者可存取員工列表 (200)');
+  assert(empList.status === 403, 'B10.1 自訂角色無 feature 權限被拒 (403)');
 
   // B11: 權限隔離 — 普通使用者不能存取 tenant-admin
   console.log('  [B11] 權限隔離');

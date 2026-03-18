@@ -234,6 +234,10 @@ $module-color: $color-brand-main;
   &--lg {
     max-width: 640px;
   }
+
+  &--xl {
+    max-width: 900px;
+  }
 }
 
 .modal-header {
@@ -277,4 +281,241 @@ $module-color: $color-brand-main;
 
 .form-input {
   @include input-base;
+}
+
+// ---------------------------------------------------------------
+// Current Role Item (with expand wrapper)
+// ---------------------------------------------------------------
+.current-role-item-wrapper {
+  border-radius: $radius-md;
+  overflow: hidden;
+
+  & + & {
+    margin-top: $spacing-sm;
+  }
+}
+
+.role-actions {
+  @include flex-start;
+  gap: $spacing-sm;
+  flex-shrink: 0;
+}
+
+.btn-outline {
+  @include button-base;
+  background: transparent;
+  border: 1px solid $color-soft-gray;
+  color: $color-text-secondary;
+  font-size: $font-size-xs;
+
+  &--sm {
+    padding: 4px $spacing-sm;
+  }
+
+  &:hover {
+    background: $color-cloud-gray;
+    color: $color-text-primary;
+  }
+}
+
+// ---------------------------------------------------------------
+// Role Permission Expand (Feature 2)
+// ---------------------------------------------------------------
+.role-perms-expand {
+  padding: $spacing-md;
+  background: white;
+  border-top: 1px solid $color-soft-gray;
+}
+
+.role-perms-loading {
+  @include flex-start;
+  gap: $spacing-sm;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  padding: $spacing-sm 0;
+}
+
+// ---------------------------------------------------------------
+// Feature Permission Table (shared)
+// ---------------------------------------------------------------
+.fpt-module {
+  margin-bottom: $spacing-md;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.fpt-module-label {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+  padding: $spacing-xs 0;
+  margin-bottom: $spacing-xs;
+}
+
+.feature-perm-table {
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-sm;
+  overflow: hidden;
+
+  &--compact {
+    font-size: $font-size-xs;
+  }
+}
+
+.fpt-header {
+  display: grid;
+  grid-template-columns: 1fr 90px 90px 90px;
+  gap: $spacing-xs;
+  padding: $spacing-xs $spacing-sm;
+  background: $color-cloud-gray;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-secondary;
+  border-bottom: 1px solid $color-soft-gray;
+}
+
+.fpt-row {
+  display: grid;
+  grid-template-columns: 1fr 90px 90px 90px;
+  gap: $spacing-xs;
+  padding: $spacing-xs $spacing-sm;
+  align-items: center;
+  border-top: 1px solid rgba($color-soft-gray, 0.5);
+  transition: background $transition-fast;
+
+  &:first-child {
+    border-top: none;
+  }
+
+  &:hover {
+    background: $color-cloud-gray;
+  }
+}
+
+.fpt-col {
+  font-size: $font-size-xs;
+  color: $color-text-primary;
+
+  &--name {
+    font-weight: $font-weight-medium;
+  }
+}
+
+.fp-tag {
+  display: inline-block;
+  font-size: $font-size-xs;
+  padding: 2px $spacing-sm;
+  border-radius: $radius-full;
+  background: $color-cloud-gray;
+  color: $color-text-secondary;
+
+  &.level--none {
+    color: $color-muted-gray;
+  }
+
+  &.level--view {
+    @include status-badge-color($color-info);
+  }
+
+  &.level--edit {
+    @include status-badge-color($color-success);
+  }
+}
+
+.fp-placeholder {
+  font-size: $font-size-xs;
+  color: $color-muted-gray;
+}
+
+// ---------------------------------------------------------------
+// Role Preview (Feature 1)
+// ---------------------------------------------------------------
+.role-preview {
+  margin-top: $spacing-md;
+  padding: $spacing-md;
+  background: rgba($module-color, 0.03);
+  border: 1px solid rgba($module-color, 0.12);
+  border-radius: $radius-md;
+}
+
+.preview-label {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-sm;
+
+  i {
+    margin-right: $spacing-xs;
+  }
+}
+
+.feature-perm-compact {
+  @include flex-column;
+  gap: $spacing-sm;
+}
+
+.fpc-module {
+  @include flex-column;
+  gap: $spacing-xs;
+}
+
+.fpc-module-name {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-dark;
+}
+
+.fpc-features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-xs;
+}
+
+// ---------------------------------------------------------------
+// Effective Permissions (Feature 3)
+// ---------------------------------------------------------------
+.effective-section {
+  padding-top: $spacing-lg;
+  border-top: 1px solid $color-soft-gray;
+  margin-top: $spacing-md;
+}
+
+.effective-toggle {
+  @include button-base;
+  background: transparent;
+  border: none;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $module-color;
+  padding: $spacing-xs 0;
+  cursor: pointer;
+  @include flex-start;
+  gap: $spacing-xs;
+
+  i {
+    font-size: 18px;
+    transition: transform $transition-fast;
+
+    &.collapsed {
+      transform: rotate(-90deg);
+    }
+  }
+
+  &:hover {
+    color: darken($color-brand-main, 10%);
+  }
+}
+
+.effective-perms-content {
+  margin-top: $spacing-md;
+  @include fade-in;
+}
+
+// ---------------------------------------------------------------
+// Utility
+// ---------------------------------------------------------------
+.spin {
+  animation: spin 1s linear infinite;
 }

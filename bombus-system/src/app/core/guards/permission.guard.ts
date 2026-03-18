@@ -24,6 +24,7 @@ export const permissionGuard: CanActivateFn = (route: ActivatedRouteSnapshot) =>
   // 頁面重整時 rolesSignal 可能尚未從 currentUser 初始化，同步載入
   if (permissionService.roles().length === 0) {
     permissionService.loadPermissions().subscribe();
+    permissionService.loadFeaturePerms().subscribe();
   }
 
   // 檢查角色

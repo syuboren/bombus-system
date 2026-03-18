@@ -6,6 +6,7 @@
 const express = require('express');
 const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
+const { requireFeaturePerm } = require('../middleware/permission');
 // tenantDB is accessed via req.tenantDB (injected by middleware)
 
 // =====================================================
@@ -60,7 +61,7 @@ function getKSADetails(req, competencyId) {
  * 取得職能列表
  * category: core | management | professional | ksa
  */
-router.get('/:category', (req, res) => {
+router.get('/:category', requireFeaturePerm('L2.framework', 'view'), (req, res) => {
     try {
         const { category } = req.params;
 
@@ -136,7 +137,7 @@ router.get('/:category', (req, res) => {
  * GET /api/competency-mgmt/:category/:id
  * 取得單項職能詳情
  */
-router.get('/:category/:id', (req, res) => {
+router.get('/:category/:id', requireFeaturePerm('L2.framework', 'view'), (req, res) => {
     try {
         const { category, id } = req.params;
 
@@ -195,7 +196,7 @@ router.get('/:category/:id', (req, res) => {
  * POST /api/competency-mgmt/:category
  * 新增職能
  */
-router.post('/:category', (req, res) => {
+router.post('/:category', requireFeaturePerm('L2.framework', 'edit'), (req, res) => {
     try {
         const { category } = req.params;
         const { code, name, type, description, levels, behaviorIndicators, linkedCourses, org_unit_id } = req.body;
@@ -269,7 +270,7 @@ router.post('/:category', (req, res) => {
  * PUT /api/competency-mgmt/:category/:id
  * 更新職能
  */
-router.put('/:category/:id', (req, res) => {
+router.put('/:category/:id', requireFeaturePerm('L2.framework', 'edit'), (req, res) => {
     try {
         const { category, id } = req.params;
         const { code, name, type, description, levels, behaviorIndicators, linkedCourses, org_unit_id } = req.body;
@@ -361,7 +362,7 @@ router.put('/:category/:id', (req, res) => {
  * DELETE /api/competency-mgmt/:category/:id
  * 刪除職能 (硬刪除，含關聯資料)
  */
-router.delete('/:category/:id', (req, res) => {
+router.delete('/:category/:id', requireFeaturePerm('L2.framework', 'edit'), (req, res) => {
     try {
         const { category, id } = req.params;
 

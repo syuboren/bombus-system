@@ -78,16 +78,19 @@
            L1 image shows search on left (taking space), then filters on right.
            The mixin sets .filter-item--search to flex: 1, which pushes others. -->
 
+      @if (viewScope() !== 'self' && viewScope() !== 'department') {
       <div class="filter-item">
         <label class="filter-label">子公司</label>
-        <select class="filter-select" [ngModel]="selectedSubsidiaryId()" (ngModelChange)="onSubsidiaryChange($event)">
-          <option value="">所有子公司</option>
+        <select class="filter-select" [ngModel]="selectedSubsidiaryId()" (ngModelChange)="onSubsidiaryChange($event)" [disabled]="isSubsidiaryLocked()">
+          @if (!isSubsidiaryLocked()) {<option value="">所有子公司</option>}
           @for (sub of subsidiaries(); track sub.id) {
           <option [value]="sub.id">{{ sub.name }}</option>
           }
         </select>
       </div>
+      }
 
+      @if (viewScope() !== 'self') {
       <div class="filter-item">
         <label class="filter-label">部門篩選</label>
         <select class="filter-select" [ngModel]="selectedDepartment()" (ngModelChange)="onDepartmentChange($event)">
@@ -97,6 +100,7 @@
           }
         </select>
       </div>
+      }
 
       <div class="filter-item">
         <label class="filter-label">狀態</label>
@@ -110,10 +114,12 @@
 
       <div class="filter-actions">
         <app-view-toggle [viewMode]="viewMode()" [moduleColor]="'#D6A28C'" (viewModeChange)="setViewMode($event)" />
+        @if (canEdit()) {
         <button class="btn-primary" type="button" (click)="router.navigate(['/competency/job-description/create'])">
           <i class="ri-add-line"></i>
           新增職務說明書
         </button>
+        }
       </div>
     </div>
   </section>
@@ -211,14 +217,14 @@
             <td>{{ formatDate(jd.updatedAt) }}</td>
             <td class="action-cell">
               <!-- 編輯: 草稿/已退回 -->
-              @if (jd.status === 'draft' || jd.status === 'rejected') {
+              @if (canEdit() && (jd.status === 'draft' || jd.status === 'rejected')) {
               <button class="btn-icon" type="button" (click)="$event.stopPropagation(); editJD(jd)" title="編輯">
                 <i class="ri-edit-line"></i>
               </button>
               }
 
               <!-- 已發佈: 建立新版本、封存 -->
-              @if (jd.status === 'published') {
+              @if (canEdit() && jd.status === 'published') {
               <button class="btn-icon" type="button" (click)="$event.stopPropagation(); createNewVersion(jd)"
                 title="建立新版本">
                 <i class="ri-file-copy-line"></i>
@@ -796,7 +802,7 @@
       </button>
 
       <!-- 草稿狀態：顯示編輯、送出審核 -->
-      @if (jd.status === 'draft') {
+      @if (canEdit() && jd.status === 'draft') {
       <button class="btn-secondary" type="button" (click)="editJD(jd)">
         <i class="ri-edit-line"></i> 編輯
       </button>
@@ -806,7 +812,7 @@
       }
 
       <!-- 審核中狀態：顯示審核通過、退回 -->
-      @if (jd.status === 'pending_review') {
+      @if (canEdit() && jd.status === 'pending_review') {
       <button class="btn-success" type="button" (click)="openApprovalModal('approve')" [disabled]="processingAction()">
         <i class="ri-checkbox-circle-line"></i> 審核通過
       </button>
@@ -816,7 +822,7 @@
       }
 
       <!-- 已退回狀態：顯示編輯、重新送審 -->
-      @if (jd.status === 'rejected') {
+      @if (canEdit() && jd.status === 'rejected') {
       <button class="btn-secondary" type="button" (click)="editJD(jd)">
         <i class="ri-edit-line"></i> 編輯
       </button>
@@ -826,7 +832,7 @@
       }
 
       <!-- 已發佈狀態：顯示建立新版本、封存 -->
-      @if (jd.status === 'published') {
+      @if (canEdit() && jd.status === 'published') {
       <button class="btn-secondary" type="button" (click)="createNewVersion()" [disabled]="processingAction()">
         <i class="ri-file-copy-line"></i> 建立新版本
       </button>

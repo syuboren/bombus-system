@@ -189,6 +189,7 @@
         </li>
         }
       </ul>
+      @if (canEdit()) {
       <div class="recommendations-actions">
         <button class="btn-secondary" type="button">
           <i class="ri-download-line"></i> 匯出報告
@@ -197,6 +198,7 @@
           <i class="ri-calendar-line"></i> 安排培訓計畫
         </button>
       </div>
+      }
     </div>
   </section>
   }

@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { featureGateGuard } from '../../core/guards/feature-gate.guard';
 
 export const TENANT_ADMIN_ROUTES: Routes = [
   {
@@ -13,21 +14,22 @@ export const TENANT_ADMIN_ROUTES: Routes = [
   },
   {
     path: 'roles',
+    data: { requiredFeature: 'SYS.role-management' },
+    canActivate: [featureGateGuard],
     loadComponent: () => import('./pages/role-management-page/role-management-page.component')
       .then(m => m.RoleManagementPageComponent)
   },
   {
     path: 'users',
+    data: { requiredFeature: 'SYS.user-management' },
+    canActivate: [featureGateGuard],
     loadComponent: () => import('./pages/user-management-page/user-management-page.component')
       .then(m => m.UserManagementPageComponent)
   },
   {
-    path: 'permissions',
-    loadComponent: () => import('./pages/permission-visualization-page/permission-visualization-page.component')
-      .then(m => m.PermissionVisualizationPageComponent)
-  },
-  {
     path: 'audit',
+    data: { requiredFeature: 'SYS.audit' },
+    canActivate: [featureGateGuard],
     loadComponent: () => import('./pages/tenant-audit-log-page/tenant-audit-log-page.component')
       .then(m => m.TenantAuditLogPageComponent)
   }

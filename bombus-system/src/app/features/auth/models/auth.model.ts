@@ -70,6 +70,18 @@ export interface User {
   lastLogin?: Date;
   must_change_password?: boolean;
   tenant_slug?: string;
+  subsidiary_id?: string | null;
+}
+
+/**
+ * 使用者功能權限（合併後）
+ * feature_id 在 API 回應中存在，存入 Map 後以 key 取代
+ */
+export interface UserFeaturePerm {
+  feature_id?: string;
+  action_level: 'none' | 'view' | 'edit';
+  edit_scope: 'self' | 'department' | 'company' | null;
+  view_scope: 'self' | 'department' | 'company' | null;
 }
 
 /**

@@ -30,8 +30,4 @@
 
 - [x] 7.1 執行 `npx ng build --configuration=development` 確認 Angular 建置無錯誤
 - [x] 7.2 啟動後端 server，執行遷移腳本，驗證 DB schema 變更正確（修正：排除 grade_salary_levels 在「NULL → root org」遷移迴圈中 + 加入恢復步驟將已被錯誤歸屬到根組織的薪資記錄轉回 NULL）
-- [ ] 7.3 端對端手動驗證：
-  - 整體對照表預設顯示集團薪資
-  - 切換子公司篩選器 → 顯示該子公司薪資（有覆寫時顯示覆寫值，無覆寫時顯示集團預設）
-  - 編輯模式 → 選擇子公司後新增/編輯薪資 → 儲存成功 → 薪資記錄帶有正確的 org_unit_id
-  - 切回「集團預設」→ 顯示 org_unit_id IS NULL 的薪資
+- [x] 7.3 端對端手動驗證：

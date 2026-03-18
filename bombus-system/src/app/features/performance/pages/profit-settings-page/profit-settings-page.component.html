@@ -36,8 +36,8 @@
 
         <div class="filter-bar">
           <div class="filter-group">
-            <select class="form-select" [ngModel]="selectedSubsidiaryId()" (ngModelChange)="selectedSubsidiaryId.set($event); selectedDepartment.set('all')">
-              <option value="">全部子公司</option>
+            <select class="form-select" [ngModel]="selectedSubsidiaryId()" (ngModelChange)="selectedSubsidiaryId.set($event); selectedDepartment.set('all')" [disabled]="isSubsidiaryLocked()">
+              @if (!isSubsidiaryLocked()) {<option value="">全部子公司</option>}
               @for (sub of subsidiaries(); track sub.id) {
                 <option [value]="sub.id">{{ sub.name }}</option>
               }

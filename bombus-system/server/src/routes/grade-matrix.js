@@ -5,6 +5,7 @@
 
 const express = require('express');
 const router = express.Router();
+const { requireFeaturePerm } = require('../middleware/permission');
 // tenantDB is accessed via req.tenantDB (injected by middleware)
 
 // =====================================================
@@ -15,7 +16,7 @@ const router = express.Router();
  * GET /api/grade-matrix
  * 取得完整職等職級矩陣（含薪資）
  */
-router.get('/', (req, res) => {
+router.get('/', requireFeaturePerm('L2.grade-matrix', 'view'), (req, res) => {
   try {
     // 取得所有職等
     const grades = req.tenantDB.prepare(`
@@ -135,7 +136,7 @@ router.get('/', (req, res) => {
  * GET /api/grade-matrix/promotion-criteria
  * 取得所有晉升條件
  */
-router.get('/promotion/criteria', (req, res) => {
+router.get('/promotion/criteria', requireFeaturePerm('L2.grade-matrix', 'view'), (req, res) => {
   try {
     const { fromGrade, toGrade, track, org_unit_id } = req.query;
 
@@ -191,7 +192,7 @@ router.get('/promotion/criteria', (req, res) => {
  * GET /api/grade-matrix/career-paths
  * 取得所有職涯路徑
  */
-router.get('/career/paths', (req, res) => {
+router.get('/career/paths', requireFeaturePerm('L2.grade-matrix', 'view'), (req, res) => {
   try {
     const { type, org_unit_id } = req.query;
 
@@ -233,7 +234,7 @@ router.get('/career/paths', (req, res) => {
  * GET /api/grade-matrix/career-paths/:id
  * 取得單一職涯路徑詳情
  */
-router.get('/career/paths/:id', (req, res) => {
+router.get('/career/paths/:id', requireFeaturePerm('L2.grade-matrix', 'view'), (req, res) => {
   try {
     const { id } = req.params;
 
@@ -267,7 +268,7 @@ router.get('/career/paths/:id', (req, res) => {
  * POST /api/grade-matrix/career/paths
  * 新增職涯路徑（進入審核流程）
  */
-router.post('/career/paths', (req, res) => {
+router.post('/career/paths', requireFeaturePerm('L2.grade-matrix', 'edit'), (req, res) => {
   try {
     const { fromGrade, toGrade, track, requiredExperience, requiredCertifications, changedBy, org_unit_id } = req.body;
 
@@ -291,7 +292,7 @@ router.post('/career/paths', (req, res) => {
  * PUT /api/grade-matrix/career/paths/:id
  * 更新職涯路徑（進入審核流程）
  */
-router.put('/career/paths/:id', (req, res) => {
+router.put('/career/paths/:id', requireFeaturePerm('L2.grade-matrix', 'edit'), (req, res) => {
   try {
     const { id } = req.params;
     const { fromGrade, toGrade, track, requiredExperience, requiredCertifications, changedBy, org_unit_id } = req.body;
@@ -317,7 +318,7 @@ router.put('/career/paths/:id', (req, res) => {
  * DELETE /api/grade-matrix/career/paths/:id
  * 刪除職涯路徑（進入審核流程）
  */
-router.delete('/career/paths/:id', (req, res) => {
+router.delete('/career/paths/:id', requireFeaturePerm('L2.grade-matrix', 'edit'), (req, res) => {
   try {
     const { id } = req.params;
     const { changedBy } = req.body;
@@ -346,7 +347,7 @@ router.delete('/career/paths/:id', (req, res) => {
  * GET /api/grade-matrix/departments
  * 取得所有部門
  */
-router.get('/departments/list', (req, res) => {
+router.get('/departments/list', requireFeaturePerm('L2.grade-matrix', 'view'), (req, res) => {
   try {
     // 統一從 org_units 取部門，LEFT JOIN departments 取 code/sort_order
     const departments = req.tenantDB.prepare(`
@@ -368,7 +369,7 @@ router.get('/departments/list', (req, res) => {
  * GET /api/grade-matrix/positions
  * 取得部門職位對照表
  */
-router.get('/positions/list', (req, res) => {
+router.get('/positions/list', requireFeaturePerm('L2.grade-matrix', 'view'), (req, res) => {
   try {
     const { department, grade, track, org_unit_id } = req.query;
 
@@ -749,7 +750,7 @@ function upsertTrackEntries(db, grade, trackUpdates, orgUnitId) {
  * GET /api/grade-matrix/tracks
  * 取得所有軌道
  */
-router.get('/tracks', (req, res) => {
+router.get('/tracks', requireFeaturePerm('L2.grade-matrix', 'view'), (req, res) => {
   try {
     const tracks = req.tenantDB.prepare(`
       SELECT id, code, name, icon, color, max_grade, sort_order, is_active, created_at
@@ -781,7 +782,7 @@ router.get('/tracks', (req, res) => {
  * POST /api/grade-matrix/tracks
  * 新增軌道（進入審核流程）
  */
-router.post('/tracks', (req, res) => {
+router.post('/tracks', requireFeaturePerm('L2.grade-matrix', 'edit'), (req, res) => {
   try {
     const { code, name, icon, color, maxGrade, sortOrder, changedBy } = req.body;
 
@@ -811,7 +812,7 @@ router.post('/tracks', (req, res) => {
  * PUT /api/grade-matrix/tracks/:id
  * 更新軌道（進入審核流程）
  */
-router.put('/tracks/:id', (req, res) => {
+router.put('/tracks/:id', requireFeaturePerm('L2.grade-matrix', 'edit'), (req, res) => {
   try {
     const { id } = req.params;
     const { code, name, icon, color, maxGrade, sortOrder, isActive, changedBy } = req.body;
@@ -838,7 +839,7 @@ router.put('/tracks/:id', (req, res) => {
  * DELETE /api/grade-matrix/tracks/:id
  * 刪除軌道（含關聯檢查，進入審核流程）
  */
-router.delete('/tracks/:id', (req, res) => {
+router.delete('/tracks/:id', requireFeaturePerm('L2.grade-matrix', 'edit'), (req, res) => {
   try {
     const { id } = req.params;
     const { changedBy } = req.body;
@@ -882,7 +883,7 @@ router.delete('/tracks/:id', (req, res) => {
  * GET /api/grade-matrix/grades/:grade/tracks
  * 取得單一職等的所有軌道項目
  */
-router.get('/grades/:grade/tracks', (req, res) => {
+router.get('/grades/:grade/tracks', requireFeaturePerm('L2.grade-matrix', 'view'), (req, res) => {
   try {
     const gradeNum = parseInt(req.params.grade);
     const { org_unit_id } = req.query;
@@ -912,7 +913,7 @@ router.get('/grades/:grade/tracks', (req, res) => {
  * POST /api/grade-matrix/grades/:grade/tracks
  * 新增軌道項目（進入審核流程）
  */
-router.post('/grades/:grade/tracks', (req, res) => {
+router.post('/grades/:grade/tracks', requireFeaturePerm('L2.grade-matrix', 'edit'), (req, res) => {
   try {
     const gradeNum = parseInt(req.params.grade);
     const { track, title, educationRequirement, responsibilityDescription, requiredSkillsAndTraining, changedBy, org_unit_id } = req.body;
@@ -942,7 +943,7 @@ router.post('/grades/:grade/tracks', (req, res) => {
  * PUT /api/grade-matrix/track-entries/:id
  * 更新軌道項目（進入審核流程）
  */
-router.put('/track-entries/:id', (req, res) => {
+router.put('/track-entries/:id', requireFeaturePerm('L2.grade-matrix', 'edit'), (req, res) => {
   try {
     const { id } = req.params;
     const { title, educationRequirement, responsibilityDescription, requiredSkillsAndTraining, changedBy, org_unit_id } = req.body;
@@ -975,7 +976,7 @@ router.put('/track-entries/:id', (req, res) => {
  * DELETE /api/grade-matrix/track-entries/:id
  * 刪除軌道項目（進入審核流程）
  */
-router.delete('/track-entries/:id', (req, res) => {
+router.delete('/track-entries/:id', requireFeaturePerm('L2.grade-matrix', 'edit'), (req, res) => {
   try {
     const { id } = req.params;
     const { changedBy } = req.body;
@@ -1004,7 +1005,7 @@ router.delete('/track-entries/:id', (req, res) => {
  * POST /api/grade-matrix/grades
  * 新增職等（進入審核流程）
  */
-router.post('/grades', (req, res) => {
+router.post('/grades', requireFeaturePerm('L2.grade-matrix', 'edit'), (req, res) => {
   try {
     const { grade, codeRange, managementTitle, managementEducation, managementResponsibility, professionalTitle, professionalEducation, professionalResponsibility, salaryLevels, orgUnitId, changedBy } = req.body;
 
@@ -1051,7 +1052,7 @@ router.post('/grades', (req, res) => {
  * PUT /api/grade-matrix/grades/:grade
  * 更新職等（進入審核流程）
  */
-router.put('/grades/:grade', (req, res) => {
+router.put('/grades/:grade', requireFeaturePerm('L2.grade-matrix', 'edit'), (req, res) => {
   try {
     const gradeNum = parseInt(req.params.grade);
     const { codeRange, managementTitle, professionalTitle, managementEducation, managementResponsibility, professionalEducation, professionalResponsibility, salaryLevels, orgUnitId, changedBy } = req.body;
@@ -1115,7 +1116,7 @@ router.put('/grades/:grade', (req, res) => {
  * DELETE /api/grade-matrix/grades/:grade
  * 刪除職等（含關聯檢查，進入審核流程）
  */
-router.delete('/grades/:grade', (req, res) => {
+router.delete('/grades/:grade', requireFeaturePerm('L2.grade-matrix', 'edit'), (req, res) => {
   try {
     const gradeNum = parseInt(req.params.grade);
     const { changedBy } = req.body;
@@ -1161,7 +1162,7 @@ router.delete('/grades/:grade', (req, res) => {
  * POST /api/grade-matrix/grades/:grade/salaries
  * 新增職級薪資（進入審核流程）
  */
-router.post('/grades/:grade/salaries', (req, res) => {
+router.post('/grades/:grade/salaries', requireFeaturePerm('L2.grade-matrix', 'edit'), (req, res) => {
   try {
     const gradeNum = parseInt(req.params.grade);
     const { code, salary, sortOrder, changedBy, org_unit_id } = req.body;
@@ -1201,7 +1202,7 @@ router.post('/grades/:grade/salaries', (req, res) => {
  * PUT /api/grade-matrix/salaries/:id
  * 更新職級薪資（進入審核流程）
  */
-router.put('/salaries/:id', (req, res) => {
+router.put('/salaries/:id', requireFeaturePerm('L2.grade-matrix', 'edit'), (req, res) => {
   try {
     const { id } = req.params;
     const { code, salary, sortOrder, changedBy, org_unit_id } = req.body;
@@ -1227,7 +1228,7 @@ router.put('/salaries/:id', (req, res) => {
  * DELETE /api/grade-matrix/salaries/:id
  * 刪除職級薪資（進入審核流程）
  */
-router.delete('/salaries/:id', (req, res) => {
+router.delete('/salaries/:id', requireFeaturePerm('L2.grade-matrix', 'edit'), (req, res) => {
   try {
     const { id } = req.params;
     const { changedBy } = req.body;
@@ -1256,7 +1257,7 @@ router.delete('/salaries/:id', (req, res) => {
  * POST /api/grade-matrix/track-detail-save
  * 將軌道條目、晉升條件、職位新增/刪除合併為單一變更記錄
  */
-router.post('/track-detail-save', (req, res) => {
+router.post('/track-detail-save', requireFeaturePerm('L2.grade-matrix', 'edit'), (req, res) => {
   try {
     const { grade, track, orgUnitId, trackEntry, promotion, positionAdds, positionDeletes, changedBy } = req.body;
 
@@ -1406,7 +1407,7 @@ router.post('/track-detail-save', (req, res) => {
  * POST /api/grade-matrix/positions
  * 新增部門職位（進入審核流程）
  */
-router.post('/positions', (req, res) => {
+router.post('/positions', requireFeaturePerm('L2.grade-matrix', 'edit'), (req, res) => {
   try {
     const { department, grade, title, track, supervisedDepartments, changedBy, org_unit_id } = req.body;
 
@@ -1430,7 +1431,7 @@ router.post('/positions', (req, res) => {
  * PUT /api/grade-matrix/positions/:id
  * 更新部門職位（進入審核流程）
  */
-router.put('/positions/:id', (req, res) => {
+router.put('/positions/:id', requireFeaturePerm('L2.grade-matrix', 'edit'), (req, res) => {
   try {
     const { id } = req.params;
     const { department, grade, title, track, supervisedDepartments, changedBy, org_unit_id } = req.body;
@@ -1456,7 +1457,7 @@ router.put('/positions/:id', (req, res) => {
  * DELETE /api/grade-matrix/positions/:id
  * 刪除部門職位（進入審核流程）
  */
-router.delete('/positions/:id', (req, res) => {
+router.delete('/positions/:id', requireFeaturePerm('L2.grade-matrix', 'edit'), (req, res) => {
   try {
     const { id } = req.params;
     const { changedBy } = req.body;
@@ -1485,7 +1486,7 @@ router.delete('/positions/:id', (req, res) => {
  * POST /api/grade-matrix/promotion/criteria (POST)
  * 新增晉升條件（進入審核流程）
  */
-router.post('/promotion/criteria', (req, res) => {
+router.post('/promotion/criteria', requireFeaturePerm('L2.grade-matrix', 'edit'), (req, res) => {
   try {
     const { fromGrade, toGrade, track, requiredSkills, requiredCourses, performanceThreshold, kpiFocus, additionalCriteria, promotionProcedure, changedBy, org_unit_id } = req.body;
 
@@ -1509,7 +1510,7 @@ router.post('/promotion/criteria', (req, res) => {
  * PUT /api/grade-matrix/promotion/criteria/:id
  * 更新晉升條件（進入審核流程）
  */
-router.put('/promotion/criteria/:id', (req, res) => {
+router.put('/promotion/criteria/:id', requireFeaturePerm('L2.grade-matrix', 'edit'), (req, res) => {
   try {
     const { id } = req.params;
     const { fromGrade, toGrade, track, requiredSkills, requiredCourses, performanceThreshold, kpiFocus, additionalCriteria, promotionProcedure, changedBy, org_unit_id } = req.body;
@@ -1535,7 +1536,7 @@ router.put('/promotion/criteria/:id', (req, res) => {
  * DELETE /api/grade-matrix/promotion/criteria/:id
  * 刪除晉升條件（進入審核流程）
  */
-router.delete('/promotion/criteria/:id', (req, res) => {
+router.delete('/promotion/criteria/:id', requireFeaturePerm('L2.grade-matrix', 'edit'), (req, res) => {
   try {
     const { id } = req.params;
     const { changedBy } = req.body;
@@ -1564,7 +1565,7 @@ router.delete('/promotion/criteria/:id', (req, res) => {
  * GET /api/grade-matrix/changes/pending
  * 取得待審核清單
  */
-router.get('/changes/pending', (req, res) => {
+router.get('/changes/pending', requireFeaturePerm('L2.grade-matrix', 'view'), (req, res) => {
   try {
     const records = req.tenantDB.prepare(`
       SELECT gch.*, ou.name AS org_unit_name
@@ -1599,7 +1600,7 @@ router.get('/changes/pending', (req, res) => {
  * POST /api/grade-matrix/changes/:id/approve
  * 核准變更（套用到原資料表）
  */
-router.post('/changes/:id/approve', (req, res) => {
+router.post('/changes/:id/approve', requireFeaturePerm('L2.grade-matrix', 'edit'), (req, res) => {
   try {
     const { id } = req.params;
     const { approvedBy } = req.body;
@@ -1643,7 +1644,7 @@ router.post('/changes/:id/approve', (req, res) => {
  * POST /api/grade-matrix/changes/:id/reject
  * 駁回變更
  */
-router.post('/changes/:id/reject', (req, res) => {
+router.post('/changes/:id/reject', requireFeaturePerm('L2.grade-matrix', 'edit'), (req, res) => {
   try {
     const { id } = req.params;
     const { rejectReason, approvedBy } = req.body;
@@ -1673,7 +1674,7 @@ router.post('/changes/:id/reject', (req, res) => {
  * GET /api/grade-matrix/changes/history
  * 取得變更歷史（支援篩選）
  */
-router.get('/changes/history', (req, res) => {
+router.get('/changes/history', requireFeaturePerm('L2.grade-matrix', 'view'), (req, res) => {
   try {
     const { entityType, dateFrom, dateTo } = req.query;
 
@@ -1895,7 +1896,7 @@ function applyDelete(req, entityType, entityId) {
  * GET /api/grade-matrix/:grade
  * 取得單一職等詳情（含晉升條件）
  */
-router.get('/:grade', (req, res) => {
+router.get('/:grade', requireFeaturePerm('L2.grade-matrix', 'view'), (req, res) => {
   try {
     const { grade } = req.params;
     const gradeNum = parseInt(grade);

@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   inject,
   signal,
+  computed,
   OnInit,
   AfterViewInit,
   ViewChild,
@@ -13,6 +14,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { CompetencyService } from '../../services/competency.service';
+import { FeatureGateService } from '../../../../core/services/feature-gate.service';
 import {
   GapAnalysisReport,
   CompetencyGap,
@@ -32,6 +34,10 @@ import * as echarts from 'echarts';
 export class GapAnalysisPageComponent implements OnInit, AfterViewInit {
   private competencyService = inject(CompetencyService);
   private cdr = inject(ChangeDetectorRef);
+  private featureGateService = inject(FeatureGateService);
+
+  // Permission check
+  readonly canEdit = computed(() => this.featureGateService.canEdit('L2.gap-analysis'));
 
   @ViewChild('radarChart') radarChartRef!: ElementRef<HTMLDivElement>;
   private radarChartInstance: echarts.ECharts | null = null;

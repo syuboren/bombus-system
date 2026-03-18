@@ -14,8 +14,8 @@
     <div class="filter-item">
       <label class="filter-label" for="nineBoxSubsidiary">子公司:</label>
       <select id="nineBoxSubsidiary" class="filter-select" [value]="selectedSubsidiaryId()"
-        (change)="onSubsidiaryChange($any($event.target).value)">
-        <option value="">所有子公司</option>
+        (change)="onSubsidiaryChange($any($event.target).value)" [disabled]="isSubsidiaryLocked()">
+        @if (!isSubsidiaryLocked()) {<option value="">所有子公司</option>}
         @for (sub of subsidiaries(); track sub.id) {
         <option [value]="sub.id">{{ sub.name }}</option>
         }

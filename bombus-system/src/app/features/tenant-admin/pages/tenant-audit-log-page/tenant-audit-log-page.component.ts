@@ -47,7 +47,7 @@ export class TenantAuditLogPageComponent implements OnInit {
     }).subscribe({
       next: (res) => {
         this.logs.set(res.data || []);
-        this.totalCount.set(res.total || 0);
+        this.totalCount.set(res.pagination?.total || 0);
         this.loading.set(false);
       },
       error: () => {
@@ -98,5 +98,11 @@ export class TenantAuditLogPageComponent implements OnInit {
     if (action.includes('create') || action === 'login_success') return 'action--success';
     if (action.includes('assign')) return 'action--info';
     return 'action--muted';
+  }
+
+  formatDetails(details: Record<string, unknown> | string | null): string {
+    if (!details) return '';
+    if (typeof details === 'object') return JSON.stringify(details);
+    return details;
   }
 }

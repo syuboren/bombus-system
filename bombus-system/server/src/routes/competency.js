@@ -6,6 +6,7 @@
 const express = require('express');
 const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
+const { requireFeaturePerm } = require('../middleware/permission');
 // tenantDB is accessed via req.tenantDB (injected by middleware)
 
 // =====================================================
@@ -56,7 +57,7 @@ function isOverdue(year, month, status, deadlineDay) {
  * GET /api/monthly-checks
  * 取得月度檢核列表
  */
-router.get('/monthly-checks', (req, res) => {
+router.get('/monthly-checks', requireFeaturePerm('L2.assessment', 'view'), (req, res) => {
   try {
     const { year, month, status, departmentId, employeeId, page = 1, pageSize = 20 } = req.query;
     
@@ -151,7 +152,7 @@ router.get('/monthly-checks', (req, res) => {
  * GET /api/monthly-checks/:id
  * 取得單筆月度檢核詳情
  */
-router.get('/monthly-checks/:id', (req, res) => {
+router.get('/monthly-checks/:id', requireFeaturePerm('L2.assessment', 'view'), (req, res) => {
   try {
     const { id } = req.params;
     
@@ -228,7 +229,7 @@ router.get('/monthly-checks/:id', (req, res) => {
  * POST /api/monthly-checks
  * 建立月度檢核表
  */
-router.post('/monthly-checks', (req, res) => {
+router.post('/monthly-checks', requireFeaturePerm('L2.assessment', 'edit'), (req, res) => {
   try {
     const { employeeId, year, month, copyFromPreviousMonth = true } = req.body;
     
@@ -320,7 +321,7 @@ router.post('/monthly-checks', (req, res) => {
  * PATCH /api/monthly-checks/:id/self-assessment
  * 員工自評提交 (需要電子簽名)
  */
-router.patch('/monthly-checks/:id/self-assessment', (req, res) => {
+router.patch('/monthly-checks/:id/self-assessment', requireFeaturePerm('L2.assessment', 'edit'), (req, res) => {
   try {
     const { id } = req.params;
     const { items, signature } = req.body;
@@ -363,7 +364,7 @@ router.patch('/monthly-checks/:id/self-assessment', (req, res) => {
  * PATCH /api/monthly-checks/:id/manager-review
  * 主管審核 (核准時需要電子簽名)
  */
-router.patch('/monthly-checks/:id/manager-review', (req, res) => {
+router.patch('/monthly-checks/:id/manager-review', requireFeaturePerm('L2.assessment', 'edit'), (req, res) => {
   try {
     const { id } = req.params;
     const { action, items, comment, signature } = req.body;
@@ -426,7 +427,7 @@ router.patch('/monthly-checks/:id/manager-review', (req, res) => {
  * PATCH /api/monthly-checks/:id/hr-close
  * HR 結案 (結案時需要電子簽名)
  */
-router.patch('/monthly-checks/:id/hr-close', (req, res) => {
+router.patch('/monthly-checks/:id/hr-close', requireFeaturePerm('L2.assessment', 'edit'), (req, res) => {
   try {
     const { id } = req.params;
     const { action, comment, signature } = req.body;
@@ -482,7 +483,7 @@ router.patch('/monthly-checks/:id/hr-close', (req, res) => {
  * GET /api/competency-stats/overview
  * 取得統計概覽
  */
-router.get('/competency-stats/overview', (req, res) => {
+router.get('/competency-stats/overview', requireFeaturePerm('L2.framework', 'view'), (req, res) => {
   try {
     const { year, month, quarter } = req.query;
     const currentYear = parseInt(year) || new Date().getFullYear();
@@ -548,7 +549,7 @@ router.get('/competency-stats/overview', (req, res) => {
  * GET /api/competency-stats/personal-trend
  * 取得個人績效趨勢
  */
-router.get('/competency-stats/personal-trend', (req, res) => {
+router.get('/competency-stats/personal-trend', requireFeaturePerm('L2.framework', 'view'), (req, res) => {
   try {
     const { year, employeeId } = req.query;
     const currentYear = parseInt(year) || new Date().getFullYear();
@@ -583,7 +584,7 @@ router.get('/competency-stats/personal-trend', (req, res) => {
  * GET /api/competency-stats/department
  * 取得部門平均分數統計
  */
-router.get('/competency-stats/department', (req, res) => {
+router.get('/competency-stats/department', requireFeaturePerm('L2.framework', 'view'), (req, res) => {
   try {
     const { year, month, departmentId } = req.query;
     const currentYear = parseInt(year) || new Date().getFullYear();
@@ -637,7 +638,7 @@ router.get('/competency-stats/department', (req, res) => {
  * GET /api/competency-stats/overdue-list
  * 取得逾期/未完成名單 (HR 專用)
  */
-router.get('/competency-stats/overdue-list', (req, res) => {
+router.get('/competency-stats/overdue-list', requireFeaturePerm('L2.framework', 'view'), (req, res) => {
   try {
     const { year, month, type = 'all' } = req.query;
     const currentYear = parseInt(year) || new Date().getFullYear();
@@ -734,7 +735,7 @@ router.get('/competency-stats/overdue-list', (req, res) => {
  * GET /api/competency-stats/monthly-incomplete
  * 取得月度未完成清單 (HR 儀表板)
  */
-router.get('/competency-stats/monthly-incomplete', (req, res) => {
+router.get('/competency-stats/monthly-incomplete', requireFeaturePerm('L2.framework', 'view'), (req, res) => {
   try {
     const { year, month } = req.query;
     const currentYear = parseInt(year) || new Date().getFullYear();
@@ -778,7 +779,7 @@ router.get('/competency-stats/monthly-incomplete', (req, res) => {
  * GET /api/competency-stats/quarterly-incomplete
  * 取得季度未完成清單 (HR 儀表板)
  */
-router.get('/competency-stats/quarterly-incomplete', (req, res) => {
+router.get('/competency-stats/quarterly-incomplete', requireFeaturePerm('L2.framework', 'view'), (req, res) => {
   try {
     const { year, quarter } = req.query;
     const currentYear = parseInt(year) || new Date().getFullYear();
@@ -819,7 +820,7 @@ router.get('/competency-stats/quarterly-incomplete', (req, res) => {
  * GET /api/competency-stats/department-avg
  * 取得各部門平均分數 (HR 儀表板)
  */
-router.get('/competency-stats/department-avg', (req, res) => {
+router.get('/competency-stats/department-avg', requireFeaturePerm('L2.framework', 'view'), (req, res) => {
   try {
     const { year, month } = req.query;
     const currentYear = parseInt(year) || new Date().getFullYear();
@@ -857,7 +858,7 @@ router.get('/competency-stats/department-avg', (req, res) => {
  * GET /api/competency-stats/personal-history
  * 取得個人歷史績效曲線 (HR 儀表板)
  */
-router.get('/competency-stats/personal-history', (req, res) => {
+router.get('/competency-stats/personal-history', requireFeaturePerm('L2.framework', 'view'), (req, res) => {
   try {
     const { employeeId, year } = req.query;
     
@@ -926,7 +927,7 @@ router.get('/competency-stats/personal-history', (req, res) => {
  * GET /api/employees/list
  * 取得所有員工列表（用於下拉選單）
  */
-router.get('/employees/list', (req, res) => {
+router.get('/employees/list', requireFeaturePerm('L2.framework', 'view'), (req, res) => {
   try {
     const employees = req.tenantDB.prepare(`
       SELECT id, name, department, position
@@ -947,7 +948,7 @@ router.get('/employees/list', (req, res) => {
  * 取得週報未完成清單 (HR 儀表板)
  * 包含 not_started、draft、rejected 狀態
  */
-router.get('/competency-stats/weekly-incomplete', (req, res) => {
+router.get('/competency-stats/weekly-incomplete', requireFeaturePerm('L2.framework', 'view'), (req, res) => {
   try {
     const { year, week } = req.query;
     const currentYear = parseInt(year) || new Date().getFullYear();
@@ -986,7 +987,7 @@ router.get('/competency-stats/weekly-incomplete', (req, res) => {
  * GET /api/competency-stats/department-avg-quarterly
  * 取得各部門季度平均分數 (HR 儀表板)
  */
-router.get('/competency-stats/department-avg-quarterly', (req, res) => {
+router.get('/competency-stats/department-avg-quarterly', requireFeaturePerm('L2.framework', 'view'), (req, res) => {
   try {
     const { year, quarter } = req.query;
     const currentYear = parseInt(year) || new Date().getFullYear();
@@ -1039,7 +1040,7 @@ function getWeekNumber(date) {
  * @query type - 職能類型篩選 (level-based, ksa)
  * @query category - 職能類別篩選 (core, management, professional, ksa)
  */
-router.get('/competencies', (req, res) => {
+router.get('/competencies', requireFeaturePerm('L2.framework', 'view'), (req, res) => {
   try {
     const { type, category, org_unit_id } = req.query;
 
@@ -1124,7 +1125,7 @@ router.get('/competencies', (req, res) => {
  * GET /api/competencies/stats
  * 取得職能統計數據
  */
-router.get('/competencies/stats', (req, res) => {
+router.get('/competencies/stats', requireFeaturePerm('L2.framework', 'view'), (req, res) => {
   try {
     // 計算各類別的職能數量
     const stats = {
@@ -1177,7 +1178,7 @@ router.get('/competencies/stats', (req, res) => {
  * GET /api/competencies/:id
  * 取得單一職能詳細資訊
  */
-router.get('/competencies/:id', (req, res) => {
+router.get('/competencies/:id', requireFeaturePerm('L2.framework', 'view'), (req, res) => {
   try {
     const { id } = req.params;
     

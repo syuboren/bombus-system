@@ -11,6 +11,7 @@ import { Job, JobStats } from '../../models/job.model';
 import { CompetencyService } from '../../../competency/services/competency.service';
 import { JobDescription } from '../../../competency/models/competency.model';
 import { OrgUnitService } from '../../../../core/services/org-unit.service';
+import { FeatureGateService } from '../../../../core/services/feature-gate.service';
 
 // 新增候選人表單介面
 interface NewCandidateForm {
@@ -116,6 +117,11 @@ export class JobsPageComponent implements OnInit {
   private cdr = inject(ChangeDetectorRef);
   private orgUnitService = inject(OrgUnitService);
   private destroyRef = inject(DestroyRef);
+  private featureGateService = inject(FeatureGateService);
+
+  // Permission check
+  readonly canEdit = computed(() => this.featureGateService.canEdit('L1.jobs'));
+  readonly viewScope = computed(() => this.featureGateService.getFeaturePerm('L1.jobs')?.view_scope || 'company');
 
   // Signals
   jobs = signal<Job[]>([]);
@@ -218,8 +224,9 @@ export class JobsPageComponent implements OnInit {
   jobDescriptions = signal<JobDescription[]>([]);
 
   // 子公司/部門篩選（頁面篩選列）
-  selectedSubsidiaryId = signal<string>('');
-  subsidiaries = this.orgUnitService.subsidiaries;
+  selectedSubsidiaryId = signal<string>(this.orgUnitService.lockedSubsidiaryId() || '');
+  subsidiaries = this.orgUnitService.visibleSubsidiaries;
+  isSubsidiaryLocked = this.orgUnitService.isSubsidiaryLocked;
   filteredDepartments = computed(() => this.orgUnitService.filterDepartments(this.selectedSubsidiaryId()));
 
   // Modal 專用子公司篩選（獨立於頁面篩選列）

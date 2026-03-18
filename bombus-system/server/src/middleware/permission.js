@@ -113,4 +113,304 @@ function requireRole(...allowedRoles) {
   };
 }
 
-module.exports = { requirePermission, requireRole };
+// ── Feature-based Permission 合併常數 ──
+const ACTION_LEVEL_RANK = { none: 0, view: 1, edit: 2 };
+const SCOPE_RANK = { self: 1, department: 2, company: 3 };
+
+/**
+ * 合併多角色的 feature 權限（Decision 9: 取最高權限）
+ * @param {Array} rows - role_feature_perms 查詢結果
+ * @returns {Object} { action_level, edit_scope, view_scope }
+ */
+function mergeFeaturePerms(rows) {
+  let actionLevel = 'none';
+  let editScope = null;
+  let viewScope = null;
+
+  for (const row of rows) {
+    // action_level 取最高
+    if (ACTION_LEVEL_RANK[row.action_level] > ACTION_LEVEL_RANK[actionLevel]) {
+      actionLevel = row.action_level;
+    }
+    // edit_scope 取最大
+    if (row.edit_scope && (!editScope || SCOPE_RANK[row.edit_scope] > SCOPE_RANK[editScope])) {
+      editScope = row.edit_scope;
+    }
+    // view_scope 取最大
+    if (row.view_scope && (!viewScope || SCOPE_RANK[row.view_scope] > SCOPE_RANK[viewScope])) {
+      viewScope = row.view_scope;
+    }
+  }
+
+  return { action_level: actionLevel, edit_scope: editScope, view_scope: viewScope };
+}
+
+/**
+ * Feature 權限檢查中介層（新模型）
+ * 查詢使用者所有角色的 feature perms，合併取最高權限，注入 req.featurePerm
+ * @param {string} featureId - feature ID
+ * @param {'view'|'edit'} requiredLevel - 要求的最低操作等級
+ * @returns {Function} Express middleware
+ */
+function requireFeaturePerm(featureId, requiredLevel) {
+  return (req, res, next) => {
+    // 平台管理員跳過權限檢查
+    if (req.user && req.user.isPlatformAdmin) {
+      req.featurePerm = { action_level: 'edit', edit_scope: 'company', view_scope: 'company' };
+      return next();
+    }
+
+    if (!req.user || !req.tenantDB) {
+      return res.status(401).json({
+        error: 'Unauthorized',
+        message: '未認證'
+      });
+    }
+
+    const { userId } = req.user;
+
+    try {
+      // 查詢使用者所有角色對此 feature 的權限
+      const rows = req.tenantDB.query(`
+        SELECT rfp.action_level, rfp.edit_scope, rfp.view_scope
+        FROM user_roles ur
+        JOIN role_feature_perms rfp ON rfp.role_id = ur.role_id
+        WHERE ur.user_id = ? AND rfp.feature_id = ?
+      `, [userId, featureId]);
+
+      // 合併權限
+      const merged = mergeFeaturePerms(rows);
+
+      // 檢查 action_level 是否 >= requiredLevel
+      if (ACTION_LEVEL_RANK[merged.action_level] < ACTION_LEVEL_RANK[requiredLevel]) {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: `缺少功能權限: ${featureId} (需要 ${requiredLevel}，目前 ${merged.action_level})`
+        });
+      }
+
+      // 注入合併後的 feature perm 供路由處理器做 scope 檢查
+      req.featurePerm = merged;
+      next();
+    } catch (err) {
+      console.error('Feature permission check error:', err.message);
+      return res.status(500).json({
+        error: 'InternalError',
+        message: '功能權限檢查失敗'
+      });
+    }
+  };
+}
+
+// ── 子公司判斷 helper ──
+
+/**
+ * 從員工的 org_unit_id 向上走 parent chain，找到所屬子公司或集團
+ * @param {Object} db - tenant DB adapter
+ * @param {string|null} orgUnitId - 員工的 org_unit_id
+ * @returns {string|null} subsidiary/group 的 org_unit_id，找不到回傳 null
+ */
+function findUserSubsidiaryId(db, orgUnitId) {
+  if (!orgUnitId) return null;
+
+  let currentId = orgUnitId;
+  // org_units 樹最多 3 層（group → subsidiary → department），用 while loop 即可
+  const maxDepth = 10;
+  for (let i = 0; i < maxDepth; i++) {
+    const unit = db.queryOne(
+      'SELECT id, type, parent_id FROM org_units WHERE id = ?',
+      [currentId]
+    );
+    if (!unit) return null;
+
+    if (unit.type === 'subsidiary' || unit.type === 'group') {
+      return unit.id;
+    }
+
+    // department → 往上走
+    if (!unit.parent_id) return null;
+    currentId = unit.parent_id;
+  }
+
+  return null;
+}
+
+// ── Scope 過濾共用函式（Decision 6） ──
+
+/**
+ * 遞迴查詢使用者所屬部門及所有子部門的 org_unit_id 列表
+ * @param {Object} db - tenant DB adapter
+ * @param {string} departmentId - 使用者所屬部門 ID
+ * @returns {string[]} org_unit_id 列表（含自身）
+ */
+function getUserDepartmentIds(db, departmentId) {
+  if (!departmentId) return [];
+  const rows = db.query(`
+    WITH RECURSIVE dept_tree AS (
+      SELECT id FROM org_units WHERE id = ?
+      UNION ALL
+      SELECT o.id FROM org_units o JOIN dept_tree d ON o.parent_id = d.id
+    )
+    SELECT id FROM dept_tree
+  `, [departmentId]);
+  return rows.map(r => r.id);
+}
+
+/**
+ * 根據使用者的 view_scope 產生 SQL WHERE clause
+ * @param {Object} req - Express request（需有 req.featurePerm、req.user、req.tenantDB）
+ * @param {Object} [options]
+ * @param {string} [options.tableAlias] - 表別名
+ * @param {string} [options.employeeIdColumn] - employee_id 欄位名（預設 'employee_id'）
+ * @param {string} [options.createdByColumn] - 若指定則 self scope 改用此欄位
+ * @param {string} [options.orgUnitColumn] - org_unit_id 欄位名（預設 'org_unit_id'）
+ * @returns {{ clause: string, params: any[] }}
+ */
+function buildScopeFilter(req, options = {}) {
+  const { tableAlias = '', employeeIdColumn = 'employee_id', createdByColumn = null, orgUnitColumn = 'org_unit_id' } = options;
+  const prefix = tableAlias ? `${tableAlias}.` : '';
+  const perm = req.featurePerm;
+
+  // 無權限 → 空結果
+  if (!perm || perm.action_level === 'none') {
+    return { clause: '1=0', params: [] };
+  }
+
+  // company scope → 子公司過濾
+  if (perm.view_scope === 'company') {
+    // super_admin 不限
+    const roles = req.user.roles || [];
+    if (roles.includes('super_admin')) {
+      return { clause: '1=1', params: [] };
+    }
+    // 有 subsidiaryId → 限制到該子公司下所有 org_unit
+    if (req.user.subsidiaryId) {
+      // 若 subsidiaryId 為 group（最頂層），等同不限
+      const subUnit = req.tenantDB.queryOne(
+        'SELECT type FROM org_units WHERE id = ?',
+        [req.user.subsidiaryId]
+      );
+      if (subUnit?.type === 'group') {
+        return { clause: '1=1', params: [] };
+      }
+      const subIds = getUserDepartmentIds(req.tenantDB, req.user.subsidiaryId);
+      if (subIds.length === 0) {
+        return { clause: '1=1', params: [] };
+      }
+      const placeholders = subIds.map(() => '?').join(',');
+      return { clause: `${prefix}${orgUnitColumn} IN (${placeholders})`, params: subIds };
+    }
+    // 無 subsidiaryId → 優雅降級，不限
+    return { clause: '1=1', params: [] };
+  }
+
+  // self scope → 僅自己
+  if (perm.view_scope === 'self') {
+    if (!req.user.employeeId) {
+      return { clause: '1=0', params: [], reason: 'no_employee_link' };
+    }
+    const col = createdByColumn || `${prefix}${employeeIdColumn}`;
+    return { clause: `${col} = ?`, params: [req.user.employeeId] };
+  }
+
+  // department scope → 使用者部門及子部門
+  if (perm.view_scope === 'department') {
+    if (!req.user.departmentId) {
+      return { clause: '1=0', params: [], reason: 'no_department_link' };
+    }
+    const deptIds = getUserDepartmentIds(req.tenantDB, req.user.departmentId);
+    if (deptIds.length === 0) {
+      return { clause: '1=0', params: [] };
+    }
+    const placeholders = deptIds.map(() => '?').join(',');
+    return { clause: `${prefix}${orgUnitColumn} IN (${placeholders})`, params: deptIds };
+  }
+
+  // 預設不限
+  return { clause: '1=1', params: [] };
+}
+
+/**
+ * 驗證寫入操作的目標記錄是否在 edit_scope 範圍內
+ * @param {Object} req - Express request
+ * @param {Object} targetRecord - 目標記錄（需含 employee_id 或 org_unit_id）
+ * @param {Object} [options]
+ * @param {string} [options.employeeIdField] - 記錄中 employee_id 欄位名
+ * @param {string} [options.orgUnitField] - 記錄中 org_unit_id 欄位名
+ * @returns {{ allowed: boolean, message?: string }}
+ */
+function checkEditScope(req, targetRecord, options = {}) {
+  const { employeeIdField = 'employee_id', orgUnitField = 'org_unit_id' } = options;
+  const perm = req.featurePerm;
+
+  if (!perm || perm.action_level !== 'edit') {
+    return { allowed: false, message: '缺少編輯權限' };
+  }
+
+  // company → 子公司範圍限制
+  if (perm.edit_scope === 'company') {
+    // super_admin 不限
+    const roles = req.user.roles || [];
+    if (roles.includes('super_admin')) {
+      return { allowed: true };
+    }
+    // 有 subsidiaryId → 檢查目標 org_unit_id 是否在子公司範圍內
+    if (req.user.subsidiaryId) {
+      // 若 subsidiaryId 為 group（最頂層），等同不限
+      const subUnit = req.tenantDB.queryOne(
+        'SELECT type FROM org_units WHERE id = ?',
+        [req.user.subsidiaryId]
+      );
+      if (subUnit?.type === 'group') {
+        return { allowed: true };
+      }
+      // 目標記錄無 org_unit_id → 無法驗證歸屬，拒絕
+      if (!targetRecord[orgUnitField]) {
+        return { allowed: false, message: '記錄缺少組織單位資訊，無法驗證編輯範圍' };
+      }
+      const subIds = getUserDepartmentIds(req.tenantDB, req.user.subsidiaryId);
+      if (!subIds.includes(targetRecord[orgUnitField])) {
+        return { allowed: false, message: '僅可編輯所屬子公司的記錄' };
+      }
+    }
+    return { allowed: true };
+  }
+
+  // self → 目標記錄的 employee_id 必須為自己
+  if (perm.edit_scope === 'self') {
+    if (!req.user.employeeId) {
+      return { allowed: false, message: '使用者未關聯員工記錄，無法判斷編輯範圍' };
+    }
+    if (targetRecord[employeeIdField] !== req.user.employeeId) {
+      return { allowed: false, message: '僅可編輯自己的記錄' };
+    }
+    return { allowed: true };
+  }
+
+  // department → 目標記錄的 org_unit_id 必須在使用者部門範圍內
+  if (perm.edit_scope === 'department') {
+    if (!req.user.departmentId) {
+      return { allowed: false, message: '使用者未關聯部門，無法判斷編輯範圍' };
+    }
+    const deptIds = getUserDepartmentIds(req.tenantDB, req.user.departmentId);
+    if (!deptIds.includes(targetRecord[orgUnitField])) {
+      return { allowed: false, message: '僅可編輯所屬部門的記錄' };
+    }
+    return { allowed: true };
+  }
+
+  return { allowed: true };
+}
+
+module.exports = {
+  requirePermission,
+  requireRole,
+  requireFeaturePerm,
+  mergeFeaturePerms,
+  buildScopeFilter,
+  checkEditScope,
+  getUserDepartmentIds,
+  findUserSubsidiaryId,
+  ACTION_LEVEL_RANK,
+  SCOPE_RANK
+};

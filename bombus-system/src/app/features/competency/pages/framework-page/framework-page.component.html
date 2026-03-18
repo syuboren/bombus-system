@@ -67,7 +67,7 @@
         <select class="filter-select" [value]="selectedSubsidiaryId()"
           (change)="onSubsidiaryChange($any($event.target).value)"
           [disabled]="isSubsidiaryLocked()">
-          <option value="">全部子公司</option>
+          @if (!isSubsidiaryLocked()) {<option value="">全部子公司</option>}
           @for (sub of subsidiaries(); track sub.id) {
             <option [value]="sub.id">{{ sub.name }}</option>
           }
@@ -124,10 +124,12 @@
         <p class="section-subtitle">適用全員，涵蓋 5 項核心職能，每項職能分 L1-L6 共六個等級</p>
       </div>
       <div class="section-header__actions">
+        @if (canEdit()) {
         <button class="btn-add" type="button" (click)="openCreateModal('core')">
           <i class="ri-add-line"></i>
           新增核心職能
         </button>
+        }
       </div>
     </div>
 
@@ -154,6 +156,7 @@
             </span>
             }
           </div>
+          @if (canEdit()) {
           <div class="hierarchy-item__actions" (click)="$event.stopPropagation()">
             <button class="btn-action btn-action--edit" title="編輯職能" (click)="openEditModal('core', competency)">
               <i class="ri-edit-line"></i>
@@ -163,6 +166,7 @@
               <i class="ri-delete-bin-line"></i>
             </button>
           </div>
+          }
         </div>
 
         <!-- Level Details (Expanded) -->
@@ -262,6 +266,7 @@
           </span>
           }
         </div>
+        @if (canEdit()) {
         <div class="hierarchy-item__actions" (click)="$event.stopPropagation()">
           <button class="btn-action btn-action--edit" title="編輯職能" (click)="openEditModal('management', competency)">
             <i class="ri-edit-line"></i>
@@ -271,6 +276,7 @@
             <i class="ri-delete-bin-line"></i>
           </button>
         </div>
+        }
       </div>
 
       <!-- Level Details (Expanded) -->
@@ -371,6 +377,7 @@
           </span>
           }
         </div>
+        @if (canEdit()) {
         <div class="hierarchy-item__actions" (click)="$event.stopPropagation()">
           <button class="btn-action btn-action--edit" title="編輯職能" (click)="openEditModal('professional', competency)">
             <i class="ri-edit-line"></i>
@@ -380,6 +387,7 @@
             <i class="ri-delete-bin-line"></i>
           </button>
         </div>
+        }
       </div>
 
       <!-- Level Details (Expanded) -->
@@ -503,6 +511,7 @@
       <p class="competency-card__desc">{{ competency.description }}</p>
       <div class="competency-card__footer">
         <span class="competency-card__type-full">{{ getTypeName(competency.ksaType) }}</span>
+        @if (canEdit()) {
         <div class="competency-card__actions" (click)="$event.stopPropagation()">
           <button class="btn-action btn-action--edit" title="編輯" (click)="openEditKsaModal(competency)">
             <i class="ri-edit-line"></i>
@@ -511,6 +520,7 @@
             <i class="ri-delete-bin-line"></i>
           </button>
         </div>
+        }
       </div>
     </div>
     }
@@ -545,6 +555,7 @@
                 (click)="openDetailModal(competency); $event.stopPropagation()" type="button" title="查看">
                 <i class="ri-eye-line"></i>
               </button>
+              @if (canEdit()) {
               <button class="btn-action btn-action--edit"
                 (click)="openEditKsaModal(competency); $event.stopPropagation()" type="button" title="編輯">
                 <i class="ri-edit-line"></i>
@@ -553,6 +564,7 @@
                 (click)="confirmDeleteKsa(competency); $event.stopPropagation()" type="button" title="刪除">
                 <i class="ri-delete-bin-line"></i>
               </button>
+              }
             </div>
           </td>
         </tr>

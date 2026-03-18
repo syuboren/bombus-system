@@ -50,8 +50,8 @@
       <div class="filter-bar">
         <div class="filter-item">
           <label>子公司</label>
-          <select [ngModel]="selectedSubsidiaryId()" (ngModelChange)="onSubsidiaryChange($event)">
-            <option value="">所有子公司</option>
+          <select [ngModel]="selectedSubsidiaryId()" (ngModelChange)="onSubsidiaryChange($event)" [disabled]="isSubsidiaryLocked()">
+            @if (!isSubsidiaryLocked()) {<option value="">所有子公司</option>}
             @for (sub of subsidiaries(); track sub.id) {
               <option [value]="sub.id">{{ sub.name }}</option>
             }

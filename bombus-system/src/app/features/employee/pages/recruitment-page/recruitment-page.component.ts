@@ -87,6 +87,7 @@ type CandidateStatus =
 
 import { AiScoringOverlayComponent } from '../../components/ai-scoring-overlay/ai-scoring-overlay.component';
 import { JobService } from '../../services/job.service';
+import { FeatureGateService } from '../../../../core/services/feature-gate.service';
 
 @Component({
   selector: 'app-recruitment-page',
@@ -108,10 +109,16 @@ export class RecruitmentPageComponent implements OnInit, OnDestroy {
   private ngZone = inject(NgZone);
   private orgUnitService = inject(OrgUnitService);
   private destroyRef = inject(DestroyRef);
+  private featureGateService = inject(FeatureGateService);
+
+  // Permission check
+  readonly canEdit = computed(() => this.featureGateService.canEdit('L1.recruitment'));
+  readonly viewScope = computed(() => this.featureGateService.getFeaturePerm('L1.recruitment')?.view_scope || 'company');
 
   // 子公司篩選
-  selectedSubsidiaryId = signal<string>('');
-  subsidiaries = this.orgUnitService.subsidiaries;
+  selectedSubsidiaryId = signal<string>(this.orgUnitService.lockedSubsidiaryId() || '');
+  subsidiaries = this.orgUnitService.visibleSubsidiaries;
+  isSubsidiaryLocked = this.orgUnitService.isSubsidiaryLocked;
 
   private radarChart: echarts.ECharts | null = null;
   private resizeHandler = () => this.radarChart?.resize();

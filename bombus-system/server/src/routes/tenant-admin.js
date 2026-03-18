@@ -241,22 +241,14 @@ router.get('/roles', (req, res) => {
 });
 
 router.post('/roles', (req, res) => {
-  const { name, description, scope_type, permission_ids } = req.body;
+  const { name, description, permission_ids } = req.body;
   const ip = getClientIP(req);
   const platformDB = getPlatformDB();
 
-  if (!name || !scope_type) {
+  if (!name) {
     return res.status(400).json({
       error: 'BadRequest',
-      message: '缺少必要欄位：name, scope_type'
-    });
-  }
-
-  const validScopes = ['global', 'subsidiary', 'department'];
-  if (!validScopes.includes(scope_type)) {
-    return res.status(400).json({
-      error: 'BadRequest',
-      message: `無效範圍：${scope_type}（有效值：${validScopes.join(', ')}）`
+      message: '缺少必要欄位：name'
     });
   }
 
@@ -264,7 +256,7 @@ router.post('/roles', (req, res) => {
 
   req.tenantDB.run(
     'INSERT INTO roles (id, name, description, scope_type, is_system) VALUES (?, ?, ?, ?, 0)',
-    [id, name, description || null, scope_type]
+    [id, name, description || null, 'global']
   );
 
   // 批量設定權限
@@ -282,7 +274,7 @@ router.post('/roles', (req, res) => {
     user_id: req.user.userId,
     action: 'role_create',
     resource: 'role',
-    details: { role_id: id, name, scope_type },
+    details: { role_id: id, name, scope_type: 'global' },
     ip
   });
 
@@ -291,7 +283,7 @@ router.post('/roles', (req, res) => {
 });
 
 router.put('/roles/:id', (req, res) => {
-  const { name, description, scope_type, permission_ids } = req.body;
+  const { name, description, permission_ids } = req.body;
   const ip = getClientIP(req);
   const platformDB = getPlatformDB();
 
@@ -318,17 +310,6 @@ router.put('/roles/:id', (req, res) => {
   if (description !== undefined) {
     updates.push('description = ?');
     params.push(description);
-  }
-  if (scope_type) {
-    const validScopes = ['global', 'subsidiary', 'department'];
-    if (!validScopes.includes(scope_type)) {
-      return res.status(400).json({
-        error: 'BadRequest',
-        message: `無效範圍：${scope_type}`
-      });
-    }
-    updates.push('scope_type = ?');
-    params.push(scope_type);
   }
 
   if (updates.length > 0) {
@@ -484,8 +465,9 @@ router.get('/users', (req, res) => {
   // 附加角色資訊
   const result = users.map(user => {
     const roles = req.tenantDB.query(
-      `SELECT r.id, r.name, r.scope_type, ur.org_unit_id,
-              ou.name as org_unit_name
+      `SELECT r.id, r.name as role_name,
+              CASE WHEN ur.org_unit_id IS NULL THEN 'global' ELSE ou.type END as scope_type,
+              ur.org_unit_id as scope_id, ou.name as scope_name
        FROM user_roles ur
        JOIN roles r ON r.id = ur.role_id
        LEFT JOIN org_units ou ON ou.id = ur.org_unit_id
@@ -642,8 +624,12 @@ router.put('/users/:id', async (req, res) => {
 
 router.get('/user-roles/:userId', (req, res) => {
   const roles = req.tenantDB.query(
-    `SELECT ur.*, r.name as role_name, r.scope_type,
-            ou.name as org_unit_name, ou.type as org_unit_type
+    `SELECT (ur.user_id || '-' || ur.role_id || '-' || COALESCE(ur.org_unit_id, '')) as id,
+            ur.user_id, ur.role_id, ur.org_unit_id as scope_id,
+            r.name as role_name,
+            CASE WHEN ur.org_unit_id IS NULL THEN 'global' ELSE ou.type END as scope_type,
+            ou.name as scope_name,
+            ur.created_at
      FROM user_roles ur
      JOIN roles r ON r.id = ur.role_id
      LEFT JOIN org_units ou ON ou.id = ur.org_unit_id
@@ -655,7 +641,9 @@ router.get('/user-roles/:userId', (req, res) => {
 });
 
 router.post('/user-roles', (req, res) => {
-  const { user_id, role_id, org_unit_id } = req.body;
+  const { user_id, role_id } = req.body;
+  const org_unit_id = req.body.org_unit_id || req.body.scope_id || null;
+  const scope_type = req.body.scope_type || 'global';
   const ip = getClientIP(req);
   const platformDB = getPlatformDB();
 
@@ -676,7 +664,7 @@ router.post('/user-roles', (req, res) => {
   }
 
   // 驗證角色存在
-  const role = req.tenantDB.queryOne('SELECT id, name, scope_type FROM roles WHERE id = ?', [role_id]);
+  const role = req.tenantDB.queryOne('SELECT id, name FROM roles WHERE id = ?', [role_id]);
   if (!role) {
     return res.status(400).json({
       error: 'BadRequest',
@@ -684,11 +672,11 @@ router.post('/user-roles', (req, res) => {
     });
   }
 
-  // 非 global 角色需要 org_unit_id
-  if (role.scope_type !== 'global' && !org_unit_id) {
+  // 非 global 範圍需要 org_unit_id
+  if (scope_type !== 'global' && !org_unit_id) {
     return res.status(400).json({
       error: 'BadRequest',
-      message: `${role.scope_type} 範圍的角色需要指定 org_unit_id`
+      message: `${scope_type} 範圍需要指定範圍對象`
     });
   }
 
@@ -742,7 +730,8 @@ router.post('/user-roles', (req, res) => {
 });
 
 router.delete('/user-roles', (req, res) => {
-  const { user_id, role_id, org_unit_id } = req.body;
+  const { user_id, role_id } = req.body;
+  const org_unit_id = req.body.org_unit_id || req.body.scope_id || null;
   const ip = getClientIP(req);
   const platformDB = getPlatformDB();
 
@@ -775,6 +764,239 @@ router.delete('/user-roles', (req, res) => {
   });
 
   res.json({ message: '角色指派已撤銷' });
+});
+
+/**
+ * 查詢租戶訂閱方案的已開通模組
+ * @returns {Set<string>|null} - 已開通模組的 Set，null 表示不過濾（優雅降級）
+ */
+function getEnabledModules(req) {
+  const platformDB = getPlatformDB();
+  const tenant = platformDB.queryOne(
+    'SELECT plan_id FROM tenants WHERE id = ?', [req.tenantId]
+  );
+  if (!tenant?.plan_id) return null;
+  const plan = platformDB.queryOne(
+    'SELECT features FROM subscription_plans WHERE id = ? AND is_active = 1',
+    [tenant.plan_id]
+  );
+  if (!plan?.features) return null;
+  try {
+    const parsed = JSON.parse(plan.features);
+    // 支援兩種格式：
+    // 1. { modules: ['L1', 'L2'] } — 模組名陣列
+    // 2. ['L1.jobs', 'L1.recruitment', ...] — 功能 ID 陣列（從 ID 提取模組前綴）
+    let items = Array.isArray(parsed) ? parsed : parsed?.modules;
+    if (!Array.isArray(items) || items.length === 0) return null;
+    const modules = new Set(items.map(id => {
+      const dotIdx = id.indexOf('.');
+      return dotIdx > 0 ? id.substring(0, dotIdx) : id;
+    }));
+    return modules.size > 0 ? modules : null;
+  } catch (e) { return null; }
+}
+
+// ══════════════════════════════════════════════════════════
+//  Feature 定義查詢
+// ══════════════════════════════════════════════════════════
+
+router.get('/features', (req, res) => {
+  const features = req.tenantDB.query(
+    'SELECT * FROM features ORDER BY sort_order ASC'
+  );
+
+  // 依租戶方案過濾（SYS 始終可見，無方案時不過濾）
+  const enabledModules = getEnabledModules(req);
+  const filtered = enabledModules
+    ? features.filter(f => f.module === 'SYS' || enabledModules.has(f.module))
+    : features;
+
+  const grouped = {};
+  for (const f of filtered) {
+    if (!grouped[f.module]) grouped[f.module] = [];
+    grouped[f.module].push(f);
+  }
+
+  res.json({ features: filtered, grouped });
+});
+
+// ══════════════════════════════════════════════════════════
+//  角色 Feature 權限 CRUD
+// ══════════════════════════════════════════════════════════
+
+router.get('/roles/:id/feature-perms', (req, res) => {
+  const perms = req.tenantDB.query(
+    `SELECT rfp.role_id, rfp.feature_id, rfp.action_level, rfp.edit_scope, rfp.view_scope,
+            f.module, f.name AS feature_name, f.sort_order
+     FROM role_feature_perms rfp
+     JOIN features f ON f.id = rfp.feature_id
+     WHERE rfp.role_id = ?
+     ORDER BY f.sort_order ASC`,
+    [req.params.id]
+  );
+
+  // 依租戶方案過濾
+  const enabledModules = getEnabledModules(req);
+  const filtered = enabledModules
+    ? perms.filter(p => p.module === 'SYS' || enabledModules.has(p.module))
+    : perms;
+
+  res.json({ featurePerms: filtered });
+});
+
+// 取得角色下的使用者列表
+router.get('/roles/:id/users', requireRole('super_admin'), async (req, res) => {
+  try {
+    const db = req.tenantDB;
+
+    const role = db.queryOne('SELECT id FROM roles WHERE id = ?', [req.params.id]);
+    if (!role) {
+      return res.status(404).json({ error: '角色不存在' });
+    }
+
+    const rows = db.query(
+      `SELECT u.id, u.name, u.email, ou.name as scope_name
+       FROM user_roles ur
+       JOIN users u ON u.id = ur.user_id
+       LEFT JOIN org_units ou ON ou.id = ur.org_unit_id
+       WHERE ur.role_id = ?
+       ORDER BY u.name ASC`,
+      [req.params.id]
+    );
+
+    res.json({ users: rows });
+  } catch (err) {
+    console.error('查詢角色使用者失敗:', err);
+    res.status(500).json({ error: '查詢角色使用者失敗' });
+  }
+});
+
+router.put('/roles/:id/feature-perms', (req, res) => {
+  const { perms } = req.body;
+  const roleId = req.params.id;
+
+  // 驗證角色存在
+  const role = req.tenantDB.queryOne(
+    'SELECT * FROM roles WHERE id = ?',
+    [roleId]
+  );
+  if (!role) {
+    return res.status(404).json({
+      error: 'NotFound',
+      message: '角色不存在'
+    });
+  }
+
+  if (!Array.isArray(perms)) {
+    return res.status(400).json({
+      error: 'BadRequest',
+      message: '缺少 perms 陣列'
+    });
+  }
+
+  // 載入所有 feature ID 做驗證
+  const allFeatures = req.tenantDB.query('SELECT id FROM features');
+  const featureIds = new Set(allFeatures.map(f => f.id));
+
+  const SCOPE_RANK = { self: 1, department: 2, company: 3 };
+  const validLevels = ['none', 'view', 'edit'];
+  const validScopes = ['self', 'department', 'company'];
+
+  // 預先驗證所有項目
+  for (const p of perms) {
+    if (!featureIds.has(p.feature_id)) {
+      return res.status(400).json({
+        error: 'BadRequest',
+        message: `無效的 feature_id: ${p.feature_id}`
+      });
+    }
+
+    if (!validLevels.includes(p.action_level)) {
+      return res.status(400).json({
+        error: 'BadRequest',
+        message: `無效的 action_level: ${p.action_level}（feature: ${p.feature_id}）`
+      });
+    }
+
+    // 約束規則驗證
+    if (p.action_level === 'none') {
+      if (p.edit_scope || p.view_scope) {
+        return res.status(400).json({
+          error: 'BadRequest',
+          message: `action_level=none 時 scope 必須為空（feature: ${p.feature_id}）`
+        });
+      }
+    } else if (p.action_level === 'view') {
+      if (p.edit_scope) {
+        return res.status(400).json({
+          error: 'BadRequest',
+          message: `action_level=view 時 edit_scope 必須為空（feature: ${p.feature_id}）`
+        });
+      }
+      if (!p.view_scope || !validScopes.includes(p.view_scope)) {
+        return res.status(400).json({
+          error: 'BadRequest',
+          message: `action_level=view 時 view_scope 必須為 self/department/company（feature: ${p.feature_id}）`
+        });
+      }
+    } else if (p.action_level === 'edit') {
+      if (!p.edit_scope || !validScopes.includes(p.edit_scope)) {
+        return res.status(400).json({
+          error: 'BadRequest',
+          message: `action_level=edit 時 edit_scope 必須為 self/department/company（feature: ${p.feature_id}）`
+        });
+      }
+      if (!p.view_scope || !validScopes.includes(p.view_scope)) {
+        return res.status(400).json({
+          error: 'BadRequest',
+          message: `action_level=edit 時 view_scope 必須為 self/department/company（feature: ${p.feature_id}）`
+        });
+      }
+      // view_scope >= edit_scope
+      if (SCOPE_RANK[p.view_scope] < SCOPE_RANK[p.edit_scope]) {
+        return res.status(400).json({
+          error: 'BadRequest',
+          message: `view_scope(${p.view_scope}) 必須 >= edit_scope(${p.edit_scope})（feature: ${p.feature_id}）`
+        });
+      }
+    }
+  }
+
+  // Transaction: DELETE + INSERT
+  try {
+    req.tenantDB.transaction(() => {
+      req.tenantDB.run(
+        'DELETE FROM role_feature_perms WHERE role_id = ?',
+        [roleId]
+      );
+
+      for (const p of perms) {
+        req.tenantDB.run(
+          'INSERT INTO role_feature_perms (role_id, feature_id, action_level, edit_scope, view_scope) VALUES (?, ?, ?, ?, ?)',
+          [roleId, p.feature_id, p.action_level, p.edit_scope || null, p.view_scope || null]
+        );
+      }
+    });
+
+    // 回傳更新後的資料
+    const updated = req.tenantDB.query(
+      `SELECT rfp.role_id, rfp.feature_id, rfp.action_level, rfp.edit_scope, rfp.view_scope,
+              f.module, f.name, f.sort_order
+       FROM role_feature_perms rfp
+       JOIN features f ON f.id = rfp.feature_id
+       WHERE rfp.role_id = ?
+       ORDER BY f.sort_order ASC`,
+      [roleId]
+    );
+
+    res.json(updated);
+  } catch (err) {
+    console.error('Update role feature perms error:', err.message);
+    return res.status(500).json({
+      error: 'InternalError',
+      message: '更新角色功能權限失敗'
+    });
+  }
 });
 
 module.exports = router;

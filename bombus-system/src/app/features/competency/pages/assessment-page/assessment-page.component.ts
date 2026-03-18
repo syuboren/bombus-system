@@ -10,6 +10,7 @@ import { WeeklyReportModalComponent } from '../../components/weekly-report-modal
 import { QuarterlyReviewModalComponent } from '../../components/quarterly-review-modal/quarterly-review-modal.component';
 import { AssessmentService } from '../../services/assessment.service';
 import { OrgUnitService } from '../../../../core/services/org-unit.service';
+import { FeatureGateService } from '../../../../core/services/feature-gate.service';
 import {
   MonthlyCheck,
   QuarterlyReview,
@@ -56,6 +57,11 @@ type TabType = 'overview' | 'monthly' | 'quarterly' | 'weekly';
 export class AssessmentPageComponent implements OnInit {
   private assessmentService = inject(AssessmentService);
   private orgUnitService = inject(OrgUnitService);
+  private featureGateService = inject(FeatureGateService);
+
+  // Permission check
+  readonly canEdit = computed(() => this.featureGateService.canEdit('L2.assessment'));
+  readonly viewScope = computed(() => this.featureGateService.getFeaturePerm('L2.assessment')?.view_scope || 'company');
 
   // Page Info
   readonly pageTitle = '職能評估';
@@ -105,12 +111,13 @@ export class AssessmentPageComponent implements OnInit {
   currentQuarter = signal(Math.ceil((new Date().getMonth() + 1) / 3));
   currentWeek = signal(this.getWeekNumber(new Date()));
 
-  selectedSubsidiaryId = signal<string>('');
+  selectedSubsidiaryId = signal<string>(this.orgUnitService.lockedSubsidiaryId() || '');
   selectedDepartment = signal('');
   selectedStatus = signal('');
 
   // 組織架構篩選
-  subsidiaries = this.orgUnitService.subsidiaries;
+  subsidiaries = this.orgUnitService.visibleSubsidiaries;
+  isSubsidiaryLocked = this.orgUnitService.isSubsidiaryLocked;
   filteredDepartments = computed(() => this.orgUnitService.filterDepartments(this.selectedSubsidiaryId()));
 
   // Modal control

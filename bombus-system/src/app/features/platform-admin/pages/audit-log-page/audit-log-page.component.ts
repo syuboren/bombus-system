@@ -48,7 +48,7 @@ export class AuditLogPageComponent implements OnInit {
     }).subscribe({
       next: (res) => {
         this.logs.set(res.data || []);
-        this.totalCount.set(res.total || 0);
+        this.totalCount.set(res.pagination?.total || 0);
         this.loading.set(false);
       },
       error: () => {
@@ -116,8 +116,15 @@ export class AuditLogPageComponent implements OnInit {
     return 'action--info';
   }
 
-  parseDetails(details: string): string {
+  formatDetails(details: Record<string, unknown> | string | null): string {
     if (!details) return '';
+    if (typeof details === 'object') return JSON.stringify(details);
+    return details;
+  }
+
+  parseDetails(details: Record<string, unknown> | string | null): string {
+    if (!details) return '';
+    if (typeof details === 'object') return JSON.stringify(details, null, 2);
     try {
       const parsed = JSON.parse(details);
       return typeof parsed === 'object' ? JSON.stringify(parsed, null, 2) : details;

@@ -2,6 +2,7 @@ import { Component, ChangeDetectionStrategy, signal, computed, inject, OnInit } 
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { HeaderComponent } from '../../../../../shared/components/header/header.component';
+import { FeatureGateService } from '../../../../../core/services/feature-gate.service';
 import { OnboardingTemplatesPageComponent } from '../onboarding-templates-page/onboarding-templates-page.component';
 import { OnboardingDocumentsPageComponent } from '../onboarding-documents-page/onboarding-documents-page.component';
 import { OnboardingApprovalPageComponent } from '../onboarding-approval-page/onboarding-approval-page.component';
@@ -28,6 +29,10 @@ import { OnboardingProgressPageComponent } from '../onboarding-progress-page/onb
 })
 export class OnboardingPageComponent implements OnInit {
   private route = inject(ActivatedRoute);
+  private featureGateService = inject(FeatureGateService);
+
+  // Permission check
+  readonly canEdit = computed(() => this.featureGateService.canEdit('L1.onboarding'));
 
   // Tab 定義
   readonly tabs = [

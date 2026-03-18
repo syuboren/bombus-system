@@ -146,11 +146,10 @@ export class SidebarComponent {
           label: '租戶管理',
           icon: 'ri-settings-3-line',
           children: [
-            { label: '組織架構管理', icon: '', route: '/settings/org-structure' },
-            { label: '使用者管理', icon: '', route: '/settings/users' },
-            { label: '角色權限管理', icon: '', route: '/settings/roles' },
-            { label: '權限可視化', icon: '', route: '/settings/permissions' },
-            { label: '審計日誌', icon: '', route: '/settings/audit' }
+            { label: '組織架構管理', icon: '', route: '/settings/org-structure', featureId: 'SYS.org-structure' },
+            { label: '使用者管理', icon: '', route: '/settings/users', featureId: 'SYS.user-management' },
+            { label: '角色權限管理', icon: '', route: '/settings/roles', featureId: 'SYS.role-management' },
+            { label: '審計日誌', icon: '', route: '/settings/audit', featureId: 'SYS.audit' }
           ]
         }
       ]
@@ -206,6 +205,7 @@ export class SidebarComponent {
 
     // 觸發 signal 依賴以便功能變更時自動更新
     this.featureGateService.enabledFeatures();
+    this.authService.featurePerms();
 
     return this.menuSections
       .map(section => ({
@@ -213,14 +213,14 @@ export class SidebarComponent {
         items: section.items
           .map(item => {
             if (!item.children || item.children.length === 0) {
-              if (!item.featureId || this.featureGateService.isFeatureEnabled(item.featureId)) {
+              if (!item.featureId || this.featureGateService.isFeatureAccessible(item.featureId)) {
                 return item;
               }
               return null;
             }
 
             const visibleChildren = item.children.filter(
-              child => !child.featureId || this.featureGateService.isFeatureEnabled(child.featureId)
+              child => !child.featureId || this.featureGateService.isFeatureAccessible(child.featureId)
             );
 
             if (visibleChildren.length === 0) return null;

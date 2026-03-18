@@ -1,13 +1,14 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable, of, tap, map, catchError } from 'rxjs';
+import { Observable, of, tap, map, catchError, switchMap } from 'rxjs';
 import {
   LoginRequest,
   LoginResponse,
   TokenResponse,
   RefreshTokenResponse,
   User,
+  UserFeaturePerm,
   ForgotPasswordRequest,
   ForgotPasswordResponse,
   RememberedCredentials,
@@ -20,6 +21,7 @@ const STORAGE_KEY = 'bombus_remembered_credentials';
 const ACCESS_TOKEN_KEY = 'bombus_access_token';
 const REFRESH_TOKEN_KEY = 'bombus_refresh_token';
 const USER_KEY = 'bombus_user';
+const FEATURE_PERMS_KEY = 'bombus_feature_perms';
 
 /** @deprecated 向後相容 key，6.2 後移除 */
 const LEGACY_TOKEN_KEY = 'bombus_auth_token';
@@ -32,11 +34,13 @@ export class AuthService {
   // Signals for reactive state
   private currentUserSignal = signal<User | null>(null);
   private isLoadingSignal = signal(false);
+  private featurePermsSignal = signal<Map<string, UserFeaturePerm>>(new Map());
 
   // Public computed signals
   readonly currentUser = this.currentUserSignal.asReadonly();
   readonly isLoading = this.isLoadingSignal.asReadonly();
   readonly isLoggedIn = computed(() => !!this.currentUserSignal());
+  readonly featurePerms = this.featurePermsSignal.asReadonly();
 
   constructor() {
     this.checkStoredSession();
@@ -98,6 +102,7 @@ export class AuthService {
       try {
         const user = JSON.parse(userJson) as User;
         this.currentUserSignal.set(user);
+        this.restoreFeaturePerms();
       } catch {
         this.clearSession();
       }
@@ -115,7 +120,7 @@ export class AuthService {
       password: request.password,
       tenant_slug: request.tenant_slug
     }).pipe(
-      map(tokenRes => {
+      switchMap(tokenRes => {
         // 儲存 Token
         localStorage.setItem(ACCESS_TOKEN_KEY, tokenRes.access_token);
         localStorage.setItem(REFRESH_TOKEN_KEY, tokenRes.refresh_token);
@@ -140,12 +145,21 @@ export class AuthService {
           this.clearCredentials();
         }
 
-        return {
+        const loginResponse: LoginResponse = {
           success: true,
           message: '登入成功',
           user,
           token: tokenRes.access_token
-        } as LoginResponse;
+        };
+
+        // Decision 1：登入後載入功能權限（平台管理員跳過）
+        if (!user.isPlatformAdmin) {
+          return this.loadFeaturePerms().pipe(
+            map(() => loginResponse),
+            catchError(() => of(loginResponse))
+          );
+        }
+        return of(loginResponse);
       }),
       catchError(err => {
         const message = err.error?.message || '登入失敗，請稍後再試';
@@ -204,13 +218,17 @@ export class AuthService {
     return this.http.post<RefreshTokenResponse>('/api/auth/refresh', {
       refresh_token: refreshToken
     }).pipe(
-      map(res => {
+      switchMap(res => {
         localStorage.setItem(ACCESS_TOKEN_KEY, res.access_token);
         if (res.user) {
           localStorage.setItem(USER_KEY, JSON.stringify(res.user));
           this.currentUserSignal.set(res.user);
         }
-        return res.access_token;
+        // Token refresh 時重新載入功能權限
+        return this.loadFeaturePerms().pipe(
+          map(() => res.access_token),
+          catchError(() => of(res.access_token))
+        );
       }),
       catchError(() => {
         this.clearSession();
@@ -244,7 +262,9 @@ export class AuthService {
     localStorage.removeItem(REFRESH_TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     localStorage.removeItem(LEGACY_TOKEN_KEY);
+    localStorage.removeItem(FEATURE_PERMS_KEY);
     this.currentUserSignal.set(null);
+    this.featurePermsSignal.set(new Map());
   }
 
   /**
@@ -277,6 +297,44 @@ export class AuthService {
         }
       })
     );
+  }
+
+  /**
+   * 從後端載入合併後的功能權限
+   */
+  private loadFeaturePerms(): Observable<void> {
+    return this.http.get<{ featurePerms: Array<{ feature_id: string; action_level: string; edit_scope: string | null; view_scope: string | null }> }>(
+      '/api/auth/my-feature-perms'
+    ).pipe(
+      tap(res => {
+        const permsMap = new Map<string, UserFeaturePerm>();
+        for (const p of res.featurePerms || []) {
+          permsMap.set(p.feature_id, {
+            action_level: p.action_level as UserFeaturePerm['action_level'],
+            edit_scope: p.edit_scope as UserFeaturePerm['edit_scope'],
+            view_scope: p.view_scope as UserFeaturePerm['view_scope']
+          });
+        }
+        this.featurePermsSignal.set(permsMap);
+        localStorage.setItem(FEATURE_PERMS_KEY, JSON.stringify(Array.from(permsMap.entries())));
+      }),
+      map(() => void 0)
+    );
+  }
+
+  /**
+   * 從 localStorage 還原功能權限
+   */
+  private restoreFeaturePerms(): void {
+    const stored = localStorage.getItem(FEATURE_PERMS_KEY);
+    if (stored) {
+      try {
+        const entries = JSON.parse(stored) as Array<[string, UserFeaturePerm]>;
+        this.featurePermsSignal.set(new Map(entries));
+      } catch {
+        // ignore
+      }
+    }
   }
 
   /**

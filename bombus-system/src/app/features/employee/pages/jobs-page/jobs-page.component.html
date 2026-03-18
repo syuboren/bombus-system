@@ -39,17 +39,21 @@
           (input)="searchQuery.set($any($event.target).value)">
       </div>
       <div class="filter-divider"></div>
-      @if (subsidiaries().length > 0) {
+      @if (viewScope() !== 'self' && viewScope() !== 'department' && subsidiaries().length > 0) {
       <div class="filter-item">
         <select class="filter-select" [value]="selectedSubsidiaryId()"
+          [disabled]="isSubsidiaryLocked()"
           (change)="selectedSubsidiaryId.set($any($event.target).value)">
+          @if (!isSubsidiaryLocked()) {
           <option value="">全部子公司</option>
+          }
           @for (sub of subsidiaries(); track sub.id) {
           <option [value]="sub.id">{{ sub.name }}</option>
           }
         </select>
       </div>
       }
+      @if (viewScope() !== 'self') {
       <div class="filter-item">
         <select class="filter-select" [value]="departmentFilter()"
           (change)="departmentFilter.set($any($event.target).value)">
@@ -59,6 +63,7 @@
           }
         </select>
       </div>
+      }
       <div class="filter-item">
         <select class="filter-select" [value]="statusFilter()" (change)="statusFilter.set($any($event.target).value)">
           <option value="">所有狀態</option>
@@ -68,10 +73,12 @@
           <option value="closed">已關閉</option>
         </select>
       </div>
+      @if (canEdit()) {
       <button class="btn btn-primary" (click)="openModal()" type="button">
         <i class="ri-add-line"></i>
         發布職缺
       </button>
+      }
     </div>
 
     <!-- Job Table -->
@@ -134,6 +141,7 @@
             <td>{{ job.recruiter }}</td>
             <td>
               <div class="action-group">
+                @if (canEdit()) {
                 @if (job.status === 'draft') {
                 <button class="icon-btn icon-btn--success" title="送出審核" (click)="updateJobStatus(job, 'review')"
                   type="button">
@@ -158,9 +166,6 @@
                   <i class="ri-user-add-line"></i>
                 </button>
                 }
-                <button class="icon-btn" title="查看候選人" (click)="viewCandidates(job)" type="button">
-                  <i class="ri-user-search-line"></i>
-                </button>
                 <button class="icon-btn icon-btn--danger" title="關閉職缺" (click)="updateJobStatus(job, 'closed')"
                   type="button">
                   <i class="ri-stop-circle-line"></i>
@@ -186,6 +191,10 @@
                   <i class="ri-delete-bin-line"></i>
                 </button>
                 }
+                }
+                <button class="icon-btn" title="查看候選人" (click)="viewCandidates(job)" type="button">
+                  <i class="ri-user-search-line"></i>
+                </button>
               </div>
             </td>
           </tr>

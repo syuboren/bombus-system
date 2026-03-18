@@ -17,6 +17,7 @@ import { HeaderComponent } from '../../../../shared/components/header/header.com
 import { NotificationService } from '../../../../core/services/notification.service';
 import { OrgUnitService } from '../../../../core/services/org-unit.service';
 import { TalentPoolService } from '../../services/talent-pool.service';
+import { FeatureGateService } from '../../../../core/services/feature-gate.service';
 import {
   TalentCandidate,
   TalentPoolStats,
@@ -41,10 +42,16 @@ export class TalentPoolPageComponent implements OnInit {
   private orgUnitService = inject(OrgUnitService);
   private cdr = inject(ChangeDetectorRef);
   private destroyRef = inject(DestroyRef);
+  private featureGateService = inject(FeatureGateService);
+
+  // Permission check
+  readonly canEdit = computed(() => this.featureGateService.canEdit('L1.talent-pool'));
+  readonly viewScope = computed(() => this.featureGateService.getFeaturePerm('L1.talent-pool')?.view_scope || 'company');
 
   // 子公司篩選
-  selectedSubsidiaryId = signal<string>('');
-  subsidiaries = this.orgUnitService.subsidiaries;
+  selectedSubsidiaryId = signal<string>(this.orgUnitService.lockedSubsidiaryId() || '');
+  subsidiaries = this.orgUnitService.visibleSubsidiaries;
+  isSubsidiaryLocked = this.orgUnitService.isSubsidiaryLocked;
 
   // State
   stats = signal<TalentPoolStats | null>(null);

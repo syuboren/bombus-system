@@ -56,12 +56,15 @@
               <input type="text" placeholder="搜尋姓名、職位、公司、技能…" [value]="searchQuery()"
                 (input)="searchQuery.set($any($event.target).value)">
             </div>
-            @if (subsidiaries().length > 0) {
+            @if (viewScope() !== 'self' && viewScope() !== 'department' && subsidiaries().length > 0) {
               <div class="filter-divider"></div>
               <div class="filter-item">
                 <select class="filter-select" [ngModel]="selectedSubsidiaryId()"
-                  (ngModelChange)="selectedSubsidiaryId.set($event)">
+                  (ngModelChange)="selectedSubsidiaryId.set($event)"
+                  [disabled]="isSubsidiaryLocked()">
+                  @if (!isSubsidiaryLocked()) {
                   <option value="">全部子公司</option>
+                  }
                   @for (sub of subsidiaries(); track sub.id) {
                     <option [value]="sub.id">{{ sub.name }}</option>
                   }
@@ -403,16 +406,19 @@
             <p class="empty-text">尚無聯繫紀錄</p>
             }
           </div>
+          @if (canEdit()) {
           <button type="button" class="btn-add-contact" (click)="openContactModal()">
             <i class="ri-add-line"></i>
             新增聯繫紀錄
           </button>
+          }
           }
 
           @if (activeTab() === 'match') {
           <div class="job-match-section">
             <!-- AI 分析按鈕 -->
             <div class="job-match-header">
+              @if (canEdit()) {
               <button type="button" class="btn-analyze" (click)="analyzeJobMatches()" [disabled]="analyzingJobs()">
                 @if (analyzingJobs()) {
                 <i class="ri-loader-4-line spinning"></i> 分析中...
@@ -420,6 +426,7 @@
                 <i class="ri-robot-line"></i> AI 媒合分析
                 }
               </button>
+              }
               <span class="job-count">共 {{ jobMatches().length }} 個職缺</span>
             </div>
 
@@ -464,6 +471,7 @@
                 </div>
                 }
 
+                @if (canEdit()) {
                 <div class="job-match-actions">
                   <button type="button" class="btn-action btn-add-only" (click)="applyToJob(job, false)">
                     <i class="ri-user-add-line"></i> 加入候選人
@@ -472,6 +480,7 @@
                     <i class="ri-send-plane-line"></i> 加入並邀請面試
                   </button>
                 </div>
+                }
               </div>
               } @empty {
               <div class="empty-job-match">

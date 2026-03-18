@@ -12,7 +12,11 @@ const initSqlJs = require('sql.js');
 const fs = require('fs');
 const path = require('path');
 const { SqliteAdapter } = require('./db-adapter');
-const { EMPLOYEE_MIGRATIONS, USER_MIGRATIONS, INTERVIEW_MIGRATIONS } = require('./tenant-schema');
+const {
+  EMPLOYEE_MIGRATIONS, USER_MIGRATIONS, INTERVIEW_MIGRATIONS,
+  FEATURE_TABLES_SQL, FEATURE_SEED_DATA, DEFAULT_ROLE_FEATURE_PERMS,
+  seedFeatureData, seedDefaultRoleFeaturePerms
+} = require('./tenant-schema');
 
 const TENANTS_DIR = path.join(__dirname, '../../data/tenants');
 const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 分鐘
@@ -358,6 +362,84 @@ class TenantDBManager {
         changed = true;
       }
     } catch (e) { /* org_units 表可能不存在 */ }
+
+    // ── Feature-based Permission 遷移（新舊並存） ──
+
+    // 建立 features / role_feature_perms 表（冪等）
+    try {
+      db.exec(FEATURE_TABLES_SQL);
+      changed = true;
+    } catch (e) { /* 表已存在 */ }
+
+    // ── Feature ID 格式遷移 v2（recruitment_jobs → L1.jobs） ──
+    // 清除所有舊格式 ID（無論新 ID 是否已存在）；seedFeatureData 會重新插入正確資料
+    const OLD_IDS_TO_REMOVE = [
+      'recruitment_jobs', 'ai_interview', 'employee_profile', 'talent_pool',
+      'meeting', 'grade_matrix', 'competency_library', 'job_description',
+      'competency_assessment', 'competency_gap', 'organization',
+      'user_management', 'export', 'audit_log', 'career_path', 'ai_career',
+      'SYS.export'
+    ];
+    for (const oldId of OLD_IDS_TO_REMOVE) {
+      try {
+        db.run('DELETE FROM role_feature_perms WHERE feature_id = ?', [oldId]);
+        db.run('DELETE FROM features WHERE id = ?', [oldId]);
+      } catch (e) { /* 不存在則忽略 */ }
+    }
+    changed = true;
+
+    // 插入 feature 種子資料（40 個預定義業務功能，L1-L6 + SYS）
+    seedFeatureData(db);
+
+    // 更新既有 feature 名稱以對齊側邊欄（INSERT OR IGNORE 不更新已存在記錄）
+    for (const f of FEATURE_SEED_DATA) {
+      try {
+        db.run('UPDATE features SET name = ?, module = ?, sort_order = ? WHERE id = ?',
+          [f.name, f.module, f.sort_order, f.id]);
+      } catch (e) { /* 忽略 */ }
+    }
+
+    // 為系統預設角色插入 feature 權限（冪等：INSERT OR IGNORE）
+    try {
+      const systemRoles = db.exec(
+        "SELECT id, name FROM roles WHERE is_system = 1 AND name IN ('super_admin','subsidiary_admin','hr_manager','dept_manager','employee')"
+      );
+      if (systemRoles.length && systemRoles[0].values.length) {
+        const roleMap = {};
+        for (const row of systemRoles[0].values) {
+          roleMap[row[1]] = row[0]; // name → id
+        }
+        seedDefaultRoleFeaturePerms(db, roleMap);
+        changed = true;
+      }
+    } catch (e) {
+      console.error('⚠️ Feature perm seed failed:', e.message);
+    }
+
+    // 為既有自訂角色（is_system=0）插入預設 feature perms（全部 none）
+    try {
+      const customRoles = db.exec(
+        'SELECT r.id FROM roles r WHERE r.is_system = 0 AND r.id NOT IN (SELECT DISTINCT role_id FROM role_feature_perms)'
+      );
+      if (customRoles.length && customRoles[0].values.length) {
+        for (const row of customRoles[0].values) {
+          const roleId = row[0];
+          for (const f of FEATURE_SEED_DATA) {
+            try {
+              const stmt = db.prepare(
+                'INSERT OR IGNORE INTO role_feature_perms (role_id, feature_id, action_level, edit_scope, view_scope) VALUES (?, ?, ?, ?, ?)'
+              );
+              stmt.bind([roleId, f.id, 'none', null, null]);
+              stmt.step();
+              stmt.free();
+            } catch (e) { /* 已存在則忽略 */ }
+          }
+        }
+        changed = true;
+      }
+    } catch (e) {
+      console.error('⚠️ Custom role feature perm migration failed:', e.message);
+    }
 
     if (changed) {
       adapter.save();

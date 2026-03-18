@@ -7,6 +7,7 @@
 
 const { tenantDBManager } = require('../db/tenant-db-manager');
 const { getPlatformDB } = require('../db/platform-db');
+const { findUserSubsidiaryId } = require('./permission');
 
 /**
  * 租戶上下文中介層
@@ -60,6 +61,18 @@ function tenantMiddleware(req, res, next) {
     const tenantDB = tenantDBManager.getDB(tenantId);
     req.tenantDB = tenantDB;
     req.tenantId = tenantId;
+
+    // Decision 7：注入 employeeId 與 departmentId 供 scope 過濾使用
+    if (req.user && req.user.userId) {
+      const userEmployee = tenantDB.queryOne(
+        'SELECT u.employee_id, e.org_unit_id as department_id FROM users u LEFT JOIN employees e ON e.id = u.employee_id WHERE u.id = ?',
+        [req.user.userId]
+      );
+      req.user.employeeId = userEmployee?.employee_id || null;
+      req.user.departmentId = userEmployee?.department_id || null;
+      req.user.subsidiaryId = findUserSubsidiaryId(tenantDB, req.user.departmentId);
+    }
+
     next();
   } catch (err) {
     console.error('Failed to load tenant DB:', tenantId, err.message);

@@ -27,30 +27,35 @@
                 <span class="system-badge">系統角色</span>
               }
             </div>
-            <span class="scope-badge" [class]="getScopeClass(role.scope_type)">
-              {{ getScopeLabel(role.scope_type) }}
-            </span>
           </div>
 
           @if (role.description) {
             <p class="role-description">{{ role.description }}</p>
           }
 
-          <div class="role-card__meta">
-            <span class="permission-count">
-              <i class="ri-key-line"></i>
-              {{ (role.permissions || []).length }} 個權限
-            </span>
+          <div class="role-card__stats">
+            @if ((role.user_count ?? 0) > 0) {
+              <a class="stat-link" (click)="openRoleUsers(role)">
+                <i class="ri-user-line"></i> 已指派 {{ role.user_count }} 位使用者
+              </a>
+            } @else {
+              <span class="stat-link stat-link--disabled">
+                <i class="ri-user-line"></i> 已指派 0 位使用者
+              </span>
+            }
           </div>
 
           <div class="role-card__actions">
-            <button class="btn-sm btn-outline" type="button" (click)="viewPermissions(role)">
-              <i class="ri-eye-line"></i> 檢視權限
+            <button class="btn-sm btn-outline" type="button" (click)="viewFeaturePermissions(role)">
+              <i class="ri-eye-line"></i> 檢視功能權限
+            </button>
+            <button class="btn-sm btn-outline" type="button" (click)="openFeaturePermEdit(role)">
+              <i class="ri-settings-3-line"></i> 編輯功能權限
+            </button>
+            <button class="btn-sm btn-outline" type="button" (click)="openEditForm(role)">
+              <i class="ri-edit-line"></i> 編輯角色
             </button>
             @if (role.is_system !== 1) {
-              <button class="btn-sm btn-outline" type="button" (click)="openEditForm(role)">
-                <i class="ri-edit-line"></i> 編輯
-              </button>
               <button class="btn-sm btn-outline btn-outline--danger" type="button" (click)="confirmDelete(role)">
                 <i class="ri-delete-bin-line"></i>
               </button>
@@ -61,41 +66,199 @@
     </div>
   }
 
-  <!-- 新增/編輯角色 Modal（含權限矩陣） -->
-  @if (showForm()) {
-    <div class="modal-overlay" (click)="closeForm()">
-      <div class="modal-container modal-container--lg" (click)="$event.stopPropagation()">
+  <!-- ============================================================ -->
+  <!-- 功能權限編輯 Modal（漸進式三欄） -->
+  <!-- ============================================================ -->
+  @if (editingRole() && featurePermStates().size > 0) {
+    <div class="modal-overlay" (click)="closeFeaturePermEdit()">
+      <div class="modal-container modal-container--xl" (click)="$event.stopPropagation()">
         <div class="modal-header">
           <h2 class="modal-title">
-            {{ editingRole() ? '編輯角色' : '新增角色' }}
+            <i class="ri-shield-keyhole-line"></i>
+            {{ editingRole()?.name }} — 功能權限設定
           </h2>
-          <button class="modal-close" (click)="closeForm()">
+          <button class="modal-close" type="button" (click)="closeFeaturePermEdit()">
             <i class="ri-close-line"></i>
           </button>
         </div>
         <div class="modal-body">
-          <!-- Basic Info -->
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">角色名稱</label>
-              <input
-                type="text"
-                class="form-input"
-                placeholder="例：HR 經理"
-                [value]="formName()"
-                (input)="formName.set($any($event.target).value)" />
+          <div class="feature-perm-matrix">
+            <!-- Column headers -->
+            <div class="fp-header-row">
+              <div class="fp-col fp-col--feature">功能名稱</div>
+              <div class="fp-col fp-col--level">操作等級</div>
+              <div class="fp-col fp-col--scope">編輯範圍</div>
+              <div class="fp-col fp-col--scope">查看範圍</div>
             </div>
-            <div class="form-group">
-              <label class="form-label">作用範圍</label>
-              <select
-                class="form-input"
-                [value]="formScopeType()"
-                (change)="formScopeType.set($any($event.target).value)">
-                <option value="global">全域</option>
-                <option value="subsidiary">子公司</option>
-                <option value="department">部門</option>
-              </select>
+
+            @for (module of moduleOrder(); track module) {
+              <div class="fp-module-section">
+                <div class="fp-module-header" (click)="toggleModule(module)">
+                  <i class="ri-arrow-down-s-line" [class.collapsed]="isModuleCollapsed(module)"></i>
+                  <span class="fp-module-label">{{ getModuleLabel(module) }}</span>
+                  <span class="fp-module-count">{{ featuresByModule().get(module)?.length || 0 }} 個功能</span>
+                </div>
+
+                @if (!isModuleCollapsed(module)) {
+                  @for (feature of featuresByModule().get(module) || []; track feature.id) {
+                    <div class="fp-row">
+                      <div class="fp-col fp-col--feature">
+                        <span class="fp-feature-name">{{ feature.name }}</span>
+                      </div>
+                      <div class="fp-col fp-col--level">
+                        <select
+                          class="fp-select"
+                          [class]="getActionLevelClass(getFeaturePermState(feature.id).action_level)"
+                          (change)="onActionLevelChange(feature.id, $any($event.target).value)">
+                          @for (opt of actionLevelOptions; track opt.value) {
+                            <option [value]="opt.value" [selected]="opt.value === getFeaturePermState(feature.id).action_level">{{ opt.label }}</option>
+                          }
+                        </select>
+                      </div>
+                      <div class="fp-col fp-col--scope">
+                        @if (getFeaturePermState(feature.id).action_level === 'edit') {
+                          <select
+                            class="fp-select"
+                            (change)="onEditScopeChange(feature.id, $any($event.target).value)">
+                            @for (opt of scopeOptions; track opt.value) {
+                              <option [value]="opt.value" [selected]="opt.value === getFeaturePermState(feature.id).edit_scope">{{ opt.label }}</option>
+                            }
+                          </select>
+                        } @else {
+                          <span class="fp-placeholder">—</span>
+                        }
+                      </div>
+                      <div class="fp-col fp-col--scope">
+                        @if (getFeaturePermState(feature.id).action_level !== 'none') {
+                          <select
+                            class="fp-select"
+                            (change)="onViewScopeChange(feature.id, $any($event.target).value)">
+                            @for (opt of scopeOptions; track opt.value) {
+                              <option [value]="opt.value" [selected]="opt.value === getFeaturePermState(feature.id).view_scope">{{ opt.label }}</option>
+                            }
+                          </select>
+                        } @else {
+                          <span class="fp-placeholder">—</span>
+                        }
+                      </div>
+                    </div>
+                  }
+                }
+              </div>
+            }
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" type="button" (click)="closeFeaturePermEdit()">取消</button>
+          <button class="btn-primary" type="button" (click)="saveFeaturePerms()" [disabled]="saving()">
+            @if (saving()) {
+              <i class="ri-loader-4-line spin"></i> 儲存中...
+            } @else {
+              <i class="ri-save-line"></i> 儲存功能權限
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ============================================================ -->
+  <!-- 功能權限檢視 Modal（唯讀） -->
+  <!-- ============================================================ -->
+  @if (showFeatureView() && viewRole()) {
+    <div class="modal-overlay" (click)="closeFeatureView()">
+      <div class="modal-container modal-container--xl" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2 class="modal-title">
+            <i class="ri-eye-line"></i>
+            {{ viewRole()?.name }} — 功能權限
+          </h2>
+          <button class="modal-close" type="button" (click)="closeFeatureView()">
+            <i class="ri-close-line"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          @if (viewFeaturePerms().length === 0) {
+            <p class="text-muted">載入中...</p>
+          } @else {
+            <div class="feature-perm-matrix feature-perm-matrix--readonly">
+              <div class="fp-header-row">
+                <div class="fp-col fp-col--feature">功能名稱</div>
+                <div class="fp-col fp-col--level">操作等級</div>
+                <div class="fp-col fp-col--scope">編輯範圍</div>
+                <div class="fp-col fp-col--scope">查看範圍</div>
+              </div>
+
+              @for (module of moduleOrder(); track module) {
+                <div class="fp-module-section">
+                  <div class="fp-module-header" (click)="toggleModule(module)">
+                    <i class="ri-arrow-down-s-line" [class.collapsed]="isModuleCollapsed(module)"></i>
+                    <span class="fp-module-label">{{ getModuleLabel(module) }}</span>
+                  </div>
+
+                  @if (!isModuleCollapsed(module)) {
+                    @for (perm of viewFeaturesByModule().get(module) || []; track perm.feature_id) {
+                      <div class="fp-row">
+                        <div class="fp-col fp-col--feature">
+                          <span class="fp-feature-name">{{ perm.feature_name }}</span>
+                        </div>
+                        <div class="fp-col fp-col--level">
+                          <span class="fp-tag" [class]="getActionLevelClass(perm.action_level)">
+                            {{ getActionLevelLabel(perm.action_level) }}
+                          </span>
+                        </div>
+                        <div class="fp-col fp-col--scope">
+                          @if (perm.edit_scope) {
+                            <span class="fp-tag">{{ getScopeLabel(perm.edit_scope) }}</span>
+                          } @else {
+                            <span class="fp-placeholder">—</span>
+                          }
+                        </div>
+                        <div class="fp-col fp-col--scope">
+                          @if (perm.view_scope) {
+                            <span class="fp-tag">{{ getScopeLabel(perm.view_scope) }}</span>
+                          } @else {
+                            <span class="fp-placeholder">—</span>
+                          }
+                        </div>
+                      </div>
+                    }
+                  }
+                </div>
+              }
             </div>
+          }
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" type="button" (click)="closeFeatureView()">關閉</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ============================================================ -->
+  <!-- 新增/編輯角色 Modal（基本資料） -->
+  <!-- ============================================================ -->
+  @if (showForm()) {
+    <div class="modal-overlay" (click)="closeForm()">
+      <div class="modal-container" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2 class="modal-title">
+            {{ formEditingRole() ? '編輯角色' : '新增角色' }}
+          </h2>
+          <button class="modal-close" type="button" (click)="closeForm()">
+            <i class="ri-close-line"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">角色名稱</label>
+            <input
+              type="text"
+              class="form-input"
+              placeholder="例：HR 經理"
+              [value]="formName()"
+              (input)="formName.set($any($event.target).value)" />
           </div>
 
           <div class="form-group">
@@ -108,93 +271,62 @@
               (input)="formDescription.set($any($event.target).value)" />
           </div>
 
-          <!-- Permission Matrix -->
-          <div class="permission-matrix-section">
-            <h3 class="section-title">權限設定</h3>
-            @if (permissionGroups().length === 0) {
-              <p class="text-muted">載入權限定義中...</p>
-            } @else {
-              <div class="permission-matrix">
-                @for (group of permissionGroups(); track group.resource) {
-                  <div class="perm-group">
-                    <div class="perm-group__header">
-                      <label class="perm-group__label">
-                        <input
-                          type="checkbox"
-                          [checked]="isGroupFullySelected(group)"
-                          (change)="isGroupFullySelected(group) ? deselectAllInGroup(group) : selectAllInGroup(group)" />
-                        {{ getResourceLabel(group.resource) }}
-                      </label>
-                    </div>
-                    <div class="perm-group__actions">
-                      @for (perm of group.permissions; track perm.id) {
-                        <label class="perm-checkbox">
-                          <input
-                            type="checkbox"
-                            [checked]="isPermissionSelected(perm.id)"
-                            (change)="togglePermission(perm.id)" />
-                          <span class="perm-action">{{ getActionLabel(perm.action) }}</span>
-                        </label>
-                      }
-                    </div>
-                  </div>
-                }
-              </div>
-            }
-          </div>
+          <p class="text-muted">功能權限請於角色建立後，透過「編輯功能權限」設定。</p>
         </div>
         <div class="modal-footer">
-          <span class="selected-count">已選 {{ selectedPermissions().size }} 個權限</span>
           <button class="btn-secondary" type="button" (click)="closeForm()">取消</button>
           <button class="btn-primary" type="button" (click)="saveForm()">
-            {{ editingRole() ? '儲存變更' : '建立角色' }}
+            {{ formEditingRole() ? '儲存變更' : '建立角色' }}
           </button>
         </div>
       </div>
     </div>
   }
 
-  <!-- 檢視權限矩陣（唯讀） -->
-  @if (showPermissionMatrix() && matrixRole()) {
-    <div class="modal-overlay" (click)="closePermissionMatrix()">
-      <div class="modal-container modal-container--lg" (click)="$event.stopPropagation()">
+  <!-- ============================================================ -->
+  <!-- 角色使用者清單 Modal -->
+  <!-- ============================================================ -->
+  @if (showRoleUsers() && roleUsersRole()) {
+    <div class="modal-overlay" (click)="closeRoleUsers()">
+      <div class="modal-container" (click)="$event.stopPropagation()">
         <div class="modal-header">
           <h2 class="modal-title">
-            {{ matrixRole()?.name }} — 權限列表
+            <i class="ri-user-line"></i>
+            {{ roleUsersRole()?.name }} — 已指派使用者
           </h2>
-          <button class="modal-close" (click)="closePermissionMatrix()">
+          <button class="modal-close" type="button" (click)="closeRoleUsers()">
             <i class="ri-close-line"></i>
           </button>
         </div>
         <div class="modal-body">
-          @if (permissionGroups().length === 0) {
-            <p class="text-muted">無權限定義</p>
-          } @else {
-            <div class="permission-matrix permission-matrix--readonly">
-              @for (group of permissionGroups(); track group.resource) {
-                <div class="perm-group">
-                  <div class="perm-group__header">
-                    <span class="perm-group__label">{{ getResourceLabel(group.resource) }}</span>
-                  </div>
-                  <div class="perm-group__actions">
-                    @for (perm of group.permissions; track perm.id) {
-                      <span class="perm-tag" [class.perm-tag--active]="isPermissionSelected(perm.id)">
-                        @if (isPermissionSelected(perm.id)) {
-                          <i class="ri-check-line"></i>
-                        } @else {
-                          <i class="ri-close-line"></i>
-                        }
-                        {{ getActionLabel(perm.action) }}
-                      </span>
-                    }
-                  </div>
-                </div>
-              }
+          @if (loadingRoleUsers()) {
+            <div class="loading-state">
+              <div class="spinner"></div>
+              <p>載入中...</p>
             </div>
+          } @else if (roleUsers().length === 0) {
+            <p class="text-muted">尚無使用者指派此角色</p>
+          } @else {
+            <ul class="user-list">
+              @for (user of roleUsers(); track user.id) {
+                <li class="user-list-item">
+                  <div class="user-avatar">
+                    {{ user.name.charAt(0) }}
+                  </div>
+                  <div class="user-detail">
+                    <span class="user-detail__name">{{ user.name }}</span>
+                    <span class="user-detail__email">{{ user.email }}</span>
+                  </div>
+                  @if (user.scope_name) {
+                    <span class="scope-tag">{{ user.scope_name }}</span>
+                  }
+                </li>
+              }
+            </ul>
           }
         </div>
         <div class="modal-footer">
-          <button class="btn-secondary" type="button" (click)="closePermissionMatrix()">關閉</button>
+          <button class="btn-secondary" type="button" (click)="closeRoleUsers()">關閉</button>
         </div>
       </div>
     </div>

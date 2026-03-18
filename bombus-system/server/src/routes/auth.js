@@ -16,8 +16,9 @@ const crypto = require('crypto');
 
 const { getPlatformDB } = require('../db/platform-db');
 const { tenantDBManager } = require('../db/tenant-db-manager');
-const { JWT_SECRET } = require('../middleware/auth');
+const { JWT_SECRET, authMiddleware } = require('../middleware/auth');
 const { logAudit, getClientIP } = require('../utils/audit-logger');
+const { findUserSubsidiaryId } = require('../middleware/permission');
 
 const JWT_ACCESS_EXPIRES = process.env.JWT_ACCESS_EXPIRES || '15m';
 const JWT_REFRESH_EXPIRES = process.env.JWT_REFRESH_EXPIRES || '7d';
@@ -208,6 +209,16 @@ router.post('/login', async (req, res) => {
       }
     }
 
+    // 查詢使用者所屬子公司
+    let subsidiaryId = null;
+    const empRecord = tenantDB.queryOne(
+      'SELECT e.org_unit_id FROM users u JOIN employees e ON e.id = u.employee_id WHERE u.id = ?',
+      [user.id]
+    );
+    if (empRecord) {
+      subsidiaryId = findUserSubsidiaryId(tenantDB, empRecord.org_unit_id);
+    }
+
     res.json({
       access_token: accessToken,
       refresh_token: refreshTokenValue,
@@ -222,7 +233,8 @@ router.post('/login', async (req, res) => {
         scope,
         tenant_id: tenant.id,
         enabled_features: enabledFeatures,
-        must_change_password: !!user.must_change_password
+        must_change_password: !!user.must_change_password,
+        subsidiary_id: subsidiaryId
       }
     });
   } catch (err) {
@@ -416,6 +428,16 @@ router.post('/refresh', (req, res) => {
         }
       }
 
+      // 查詢使用者所屬子公司
+      let subsidiaryId = null;
+      const empRecord = tenantDB.queryOne(
+        'SELECT e.org_unit_id FROM users u JOIN employees e ON e.id = u.employee_id WHERE u.id = ?',
+        [user.id]
+      );
+      if (empRecord) {
+        subsidiaryId = findUserSubsidiaryId(tenantDB, empRecord.org_unit_id);
+      }
+
       return res.json({
         access_token: accessToken,
         token_type: 'Bearer',
@@ -428,7 +450,8 @@ router.post('/refresh', (req, res) => {
           roles,
           scope,
           tenant_id: tenant.id,
-          enabled_features: enabledFeatures
+          enabled_features: enabledFeatures,
+          subsidiary_id: subsidiaryId
         }
       });
     } catch (err) {
@@ -549,6 +572,75 @@ router.post('/platform-login', async (req, res) => {
       isPlatformAdmin: true
     }
   });
+});
+
+// ─── 使用者 Feature 合併權限 ───
+
+const { tenantMiddleware } = require('../middleware/tenant');
+const { ACTION_LEVEL_RANK, SCOPE_RANK } = require('../middleware/permission');
+
+router.get('/my-feature-perms', authMiddleware, tenantMiddleware, (req, res) => {
+  try {
+    // 查詢使用者所有角色的 feature perms，JOIN features 取得 module/name
+    const rows = req.tenantDB.query(`
+      SELECT rfp.feature_id, rfp.action_level, rfp.edit_scope, rfp.view_scope,
+             f.module, f.name, f.sort_order
+      FROM user_roles ur
+      JOIN role_feature_perms rfp ON rfp.role_id = ur.role_id
+      JOIN features f ON f.id = rfp.feature_id
+      WHERE ur.user_id = ?
+      ORDER BY f.sort_order ASC
+    `, [req.user.userId]);
+
+    // 依 feature_id 分組並合併（Decision 9: 取最高權限）
+    const grouped = {};
+    for (const row of rows) {
+      if (!grouped[row.feature_id]) {
+        grouped[row.feature_id] = {
+          feature_id: row.feature_id,
+          module: row.module,
+          name: row.name,
+          rows: []
+        };
+      }
+      grouped[row.feature_id].rows.push(row);
+    }
+
+    const featurePerms = Object.values(grouped).map(g => {
+      let actionLevel = 'none';
+      let editScope = null;
+      let viewScope = null;
+
+      for (const r of g.rows) {
+        if (ACTION_LEVEL_RANK[r.action_level] > ACTION_LEVEL_RANK[actionLevel]) {
+          actionLevel = r.action_level;
+        }
+        if (r.edit_scope && (!editScope || SCOPE_RANK[r.edit_scope] > SCOPE_RANK[editScope])) {
+          editScope = r.edit_scope;
+        }
+        if (r.view_scope && (!viewScope || SCOPE_RANK[r.view_scope] > SCOPE_RANK[viewScope])) {
+          viewScope = r.view_scope;
+        }
+      }
+
+      return {
+        feature_id: g.feature_id,
+        module: g.module,
+        name: g.name,
+        action_level: actionLevel,
+        edit_scope: editScope,
+        view_scope: viewScope
+      };
+    });
+
+    res.json({ featurePerms });
+  } catch (err) {
+    console.error('Get feature perms error:', err.message);
+    return res.status(500).json({
+      error: 'InternalError',
+      message: '取得功能權限失敗'
+    });
+  }
 });
 
 // ─── 工具函數 ───

@@ -28,7 +28,7 @@ const bcrypt = require('bcryptjs');
 const { authMiddleware, platformAdminMiddleware } = require('../middleware/auth');
 const { getPlatformDB } = require('../db/platform-db');
 const { tenantDBManager } = require('../db/tenant-db-manager');
-const { initTenantSchema } = require('../db/tenant-schema');
+const { initTenantSchema, seedDefaultRoleFeaturePerms } = require('../db/tenant-schema');
 const { logAudit, getClientIP } = require('../utils/audit-logger');
 
 // ══════════════════════════════════════════════════════════
@@ -149,12 +149,15 @@ function seedTenantRBAC(tenantAdapter, tenantName, adminEmail, adminName, passwo
     }
   }
 
-  // 5. 管理員帳號
+  // 5. Feature-based 角色權限（新模型）
+  seedDefaultRoleFeaturePerms(db, roleIds);
+
+  // 6. 管理員帳號
   const userId = uuidv4();
   rawExec('INSERT OR IGNORE INTO users (id, email, password_hash, name, status) VALUES (?, ?, ?, ?, ?)',
     [userId, adminEmail, passwordHash, adminName, 'active']);
 
-  // 6. 指派 super_admin
+  // 7. 指派 super_admin
   rawExec('INSERT OR IGNORE INTO user_roles (user_id, role_id, org_unit_id) VALUES (?, ?, ?)',
     [userId, roleIds.super_admin, orgRootId]);
 

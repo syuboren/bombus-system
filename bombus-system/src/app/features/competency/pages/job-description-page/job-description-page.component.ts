@@ -9,6 +9,7 @@ import { HeaderComponent } from '../../../../shared/components/header/header.com
 import { CompetencyService } from '../../services/competency.service';
 import { PdfExportService } from '../../services/pdf-export.service';
 import { OrgUnitService } from '../../../../core/services/org-unit.service';
+import { FeatureGateService } from '../../../../core/services/feature-gate.service';
 import {
   JobDescription,
   CompetencyRequirement,
@@ -37,7 +38,12 @@ export class JobDescriptionPageComponent implements OnInit {
   private orgUnitService = inject(OrgUnitService);
   private cdr = inject(ChangeDetectorRef);
   private destroyRef = inject(DestroyRef);
+  private featureGateService = inject(FeatureGateService);
   router = inject(Router);
+
+  // Permission check
+  readonly canEdit = computed(() => this.featureGateService.canEdit('L2.job-description'));
+  readonly viewScope = computed(() => this.featureGateService.getFeaturePerm('L2.job-description')?.view_scope || 'company');
 
   // PDF Export state
   isExporting = signal(false);
@@ -57,12 +63,13 @@ export class JobDescriptionPageComponent implements OnInit {
 
   // Filter
   searchKeyword = signal('');
-  selectedSubsidiaryId = signal<string>('');
+  selectedSubsidiaryId = signal<string>(this.orgUnitService.lockedSubsidiaryId() || '');
   selectedDepartment = signal<string>('');
   selectedStatus = signal<string>('');
 
   // 組織架構篩選
-  subsidiaries = this.orgUnitService.subsidiaries;
+  subsidiaries = this.orgUnitService.visibleSubsidiaries;
+  isSubsidiaryLocked = this.orgUnitService.isSubsidiaryLocked;
   filteredDepartments = computed(() => this.orgUnitService.filterDepartments(this.selectedSubsidiaryId()));
 
   // 職能需求選擇狀態（用於建立/編輯 JD）

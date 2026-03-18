@@ -7,7 +7,11 @@ import {
   Permission,
   TenantUser,
   UserRole,
-  AssignRoleRequest
+  AssignRoleRequest,
+  Feature,
+  RoleFeaturePerm,
+  FeaturePermPayload,
+  RoleUser
 } from '../models/tenant-admin.model';
 import { AuditLogListResponse } from '../../platform-admin/models/platform.model';
 
@@ -97,6 +101,30 @@ export class TenantAdminService {
 
   revokeRole(data: { user_id: string; role_id: string; scope_type?: string; scope_id?: string }): Observable<{ success: boolean; message: string }> {
     return this.http.delete<{ success: boolean; message: string }>('/api/tenant-admin/user-roles', { body: data });
+  }
+
+  // ============================================================
+  // Feature-Based Permission（功能權限）
+  // ============================================================
+
+  getFeatures(): Observable<{ features: Feature[]; grouped: Record<string, Feature[]> }> {
+    return this.http.get<{ features: Feature[]; grouped: Record<string, Feature[]> }>('/api/tenant-admin/features');
+  }
+
+  getRoleFeaturePerms(roleId: string): Observable<RoleFeaturePerm[]> {
+    return this.http.get<{ featurePerms: RoleFeaturePerm[] }>(`/api/tenant-admin/roles/${roleId}/feature-perms`).pipe(
+      map(res => res.featurePerms)
+    );
+  }
+
+  getRoleUsers(roleId: string): Observable<RoleUser[]> {
+    return this.http.get<{ users: RoleUser[] }>(`/api/tenant-admin/roles/${roleId}/users`).pipe(
+      map(res => res.users)
+    );
+  }
+
+  updateRoleFeaturePerms(roleId: string, perms: FeaturePermPayload[]): Observable<{ success: boolean; message: string }> {
+    return this.http.put<{ success: boolean; message: string }>(`/api/tenant-admin/roles/${roleId}/feature-perms`, { perms });
   }
 
   // ============================================================

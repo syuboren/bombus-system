@@ -127,7 +127,7 @@
   <!-- 角色指派 Modal -->
   @if (showAssignRole() && assigningUser()) {
     <div class="modal-overlay" (click)="closeAssignRole()">
-      <div class="modal-container modal-container--lg" (click)="$event.stopPropagation()">
+      <div class="modal-container modal-container--xl" (click)="$event.stopPropagation()">
         <div class="modal-header">
           <h2 class="modal-title">
             {{ assigningUser()?.name }} — 角色管理
@@ -144,23 +144,88 @@
           } @else {
             <div class="current-roles">
               @for (ur of userRoles(); track ur.id) {
-                <div class="current-role-item">
-                  <div class="role-info">
-                    <span class="role-name">{{ ur.role_name }}</span>
-                    <span class="scope-info">
-                      {{ getScopeLabel(ur.scope_type) }}
-                      @if (ur.scope_name) {
-                        - {{ ur.scope_name }}
-                      }
-                    </span>
+                <div class="current-role-item-wrapper">
+                  <div class="current-role-item">
+                    <div class="role-info">
+                      <span class="role-name">{{ ur.role_name }}</span>
+                      <span class="scope-info">
+                        {{ getScopeLabel(ur.scope_type) }}
+                        @if (ur.scope_name) {
+                          - {{ ur.scope_name }}
+                        }
+                      </span>
+                    </div>
+                    <div class="role-actions">
+                      <button
+                        class="btn-outline btn-outline--sm"
+                        type="button"
+                        (click)="toggleRolePermView(ur.role_id)">
+                        @if (isRoleExpanded(ur.role_id)) {
+                          <i class="ri-eye-off-line"></i> 收起權限
+                        } @else {
+                          <i class="ri-eye-line"></i> 查看權限
+                        }
+                      </button>
+                      <button
+                        class="action-btn action-btn--danger"
+                        title="移除角色"
+                        type="button"
+                        (click)="revokeRole(ur)">
+                        <i class="ri-close-line"></i>
+                      </button>
+                    </div>
                   </div>
-                  <button
-                    class="action-btn action-btn--danger"
-                    title="移除角色"
-                    type="button"
-                    (click)="revokeRole(ur)">
-                    <i class="ri-close-line"></i>
-                  </button>
+
+                  <!-- Expanded role permissions -->
+                  @if (isRoleExpanded(ur.role_id)) {
+                    <div class="role-perms-expand">
+                      @if (isRoleLoading(ur.role_id)) {
+                        <div class="role-perms-loading">
+                          <i class="ri-loader-4-line spin"></i> 載入中...
+                        </div>
+                      } @else if (getRolePerms(ur.role_id).length === 0) {
+                        <p class="text-muted">此角色尚未設定功能權限</p>
+                      } @else {
+                        @for (mod of getModulesForPerms(getRolePerms(ur.role_id)); track mod) {
+                          <div class="fpt-module">
+                            <div class="fpt-module-label">{{ getModuleLabel(mod) }}</div>
+                            <div class="feature-perm-table feature-perm-table--compact">
+                              <div class="fpt-header">
+                                <span class="fpt-col fpt-col--name">功能</span>
+                                <span class="fpt-col">操作等級</span>
+                                <span class="fpt-col">編輯範圍</span>
+                                <span class="fpt-col">查看範圍</span>
+                              </div>
+                              @for (perm of groupPermsByModule(getRolePerms(ur.role_id)).get(mod) || []; track perm.feature_id) {
+                                <div class="fpt-row">
+                                  <span class="fpt-col fpt-col--name">{{ perm.feature_name }}</span>
+                                  <span class="fpt-col">
+                                    <span class="fp-tag" [class]="getActionLevelClass(perm.action_level)">
+                                      {{ getActionLevelLabel(perm.action_level) }}
+                                    </span>
+                                  </span>
+                                  <span class="fpt-col">
+                                    @if (perm.edit_scope) {
+                                      <span class="fp-tag">{{ getPermScopeLabel(perm.edit_scope) }}</span>
+                                    } @else {
+                                      <span class="fp-placeholder">—</span>
+                                    }
+                                  </span>
+                                  <span class="fpt-col">
+                                    @if (perm.view_scope) {
+                                      <span class="fp-tag">{{ getPermScopeLabel(perm.view_scope) }}</span>
+                                    } @else {
+                                      <span class="fp-placeholder">—</span>
+                                    }
+                                  </span>
+                                </div>
+                              }
+                            </div>
+                          </div>
+                        }
+                      }
+                    </div>
+                  }
                 </div>
               }
             </div>
@@ -175,7 +240,7 @@
                 <select
                   class="form-input"
                   [value]="assignRoleId()"
-                  (change)="assignRoleId.set($any($event.target).value)">
+                  (change)="onAssignRoleChange($any($event.target).value)">
                   <option value="">選擇角色</option>
                   @for (role of roles(); track role.id) {
                     <option [value]="role.id">{{ role.name }}</option>
@@ -215,7 +280,99 @@
                 <i class="ri-add-line"></i> 指派
               </button>
             </div>
+
+            <!-- Role permission preview (Feature 1) -->
+            @if (assignRoleId()) {
+              <div class="role-preview">
+                @if (loadingPreview()) {
+                  <div class="preview-label">
+                    <i class="ri-loader-4-line spin"></i> 載入權限預覽...
+                  </div>
+                } @else if (previewRolePerms().length === 0 && assignRoleId()) {
+                  <div class="preview-label">此角色尚未設定功能權限</div>
+                } @else {
+                  <div class="preview-label">功能權限預覽</div>
+                  <div class="feature-perm-compact">
+                    @for (mod of previewModules(); track mod) {
+                      <div class="fpc-module">
+                        <span class="fpc-module-name">{{ getModuleLabel(mod) }}</span>
+                        <div class="fpc-features">
+                          @for (perm of previewByModule().get(mod) || []; track perm.feature_id) {
+                            <span class="fp-tag" [class]="getActionLevelClass(perm.action_level)">
+                              {{ perm.feature_name }}：{{ getActionLevelLabel(perm.action_level) }}
+                            </span>
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
           </div>
+
+          <!-- Effective permissions (Feature 3) -->
+          @if (userRoles().length > 0) {
+            <div class="effective-section">
+              <button
+                class="effective-toggle"
+                type="button"
+                (click)="toggleEffectivePerms()">
+                <i class="ri-arrow-down-s-line" [class.collapsed]="!showEffectivePerms()"></i>
+                有效權限（合併後）
+              </button>
+
+              @if (showEffectivePerms()) {
+                <div class="effective-perms-content">
+                  @if (loadingEffective()) {
+                    <div class="role-perms-loading">
+                      <i class="ri-loader-4-line spin"></i> 計算合併權限中...
+                    </div>
+                  } @else if (effectivePerms().length === 0) {
+                    <p class="text-muted">所有角色均無功能權限設定</p>
+                  } @else {
+                    @for (mod of effectiveModules(); track mod) {
+                      <div class="fpt-module">
+                        <div class="fpt-module-label">{{ getModuleLabel(mod) }}</div>
+                        <div class="feature-perm-table">
+                          <div class="fpt-header">
+                            <span class="fpt-col fpt-col--name">功能</span>
+                            <span class="fpt-col">操作等級</span>
+                            <span class="fpt-col">編輯範圍</span>
+                            <span class="fpt-col">查看範圍</span>
+                          </div>
+                          @for (perm of effectiveByModule().get(mod) || []; track perm.feature_id) {
+                            <div class="fpt-row">
+                              <span class="fpt-col fpt-col--name">{{ perm.feature_name }}</span>
+                              <span class="fpt-col">
+                                <span class="fp-tag" [class]="getActionLevelClass(perm.action_level)">
+                                  {{ getActionLevelLabel(perm.action_level) }}
+                                </span>
+                              </span>
+                              <span class="fpt-col">
+                                @if (perm.edit_scope) {
+                                  <span class="fp-tag">{{ getPermScopeLabel(perm.edit_scope) }}</span>
+                                } @else {
+                                  <span class="fp-placeholder">—</span>
+                                }
+                              </span>
+                              <span class="fpt-col">
+                                @if (perm.view_scope) {
+                                  <span class="fp-tag">{{ getPermScopeLabel(perm.view_scope) }}</span>
+                                } @else {
+                                  <span class="fp-placeholder">—</span>
+                                }
+                              </span>
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    }
+                  }
+                </div>
+              }
+            </div>
+          }
         </div>
         <div class="modal-footer">
           <button class="btn-secondary" type="button" (click)="closeAssignRole()">關閉</button>
