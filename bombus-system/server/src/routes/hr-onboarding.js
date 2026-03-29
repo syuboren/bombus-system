@@ -7,8 +7,8 @@ const express = require('express');
 const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcryptjs');
-const crypto = require('crypto');
 const { requireFeaturePerm } = require('../middleware/permission');
+const { generatePassword } = require('../services/account-creation');
 // tenantDB is accessed via req.tenantDB (injected by middleware)
 
 // ============================================================
@@ -179,7 +179,7 @@ router.post('/convert-candidate', requireFeaturePerm('L1.onboarding', 'edit'), a
     let initialPassword = null;
     let passwordHash = null;
     if (!preCheckUser) {
-      initialPassword = crypto.randomBytes(12).toString('base64url');
+      initialPassword = generatePassword();
       passwordHash = await bcrypt.hash(initialPassword, 10);
     }
 

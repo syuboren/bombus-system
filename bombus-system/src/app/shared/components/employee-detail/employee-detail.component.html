@@ -1,0 +1,721 @@
+@if (loading()) {
+<div class="detail-loading">
+  <div class="spinner"></div>
+  <p>載入中...</p>
+</div>
+}
+
+@if (employee(); as emp) {
+<div class="employee-detail" [style.--module-color]="moduleColor()">
+  <!-- Header -->
+  <div class="detail-header">
+    <div class="employee-profile">
+      <div class="profile-avatar">{{ emp.name.charAt(0) }}</div>
+      <div class="profile-info">
+        <h3>{{ emp.name }}</h3>
+        <p>{{ emp.position }} · {{ emp.department }}</p>
+        <span class="employee-badge">{{ emp.employeeNo }}</span>
+        <span class="status-badge status-{{ emp.status }}">
+          {{ getStatusLabel(emp.status) }}
+        </span>
+      </div>
+    </div>
+    @if (!readonly()) {
+    <div class="header-actions">
+      @if (!editing()) {
+      <button type="button" class="btn-action" (click)="startEdit()" title="編輯">
+        <i class="ri-edit-line"></i>
+      </button>
+      } @else {
+      <button type="button" class="btn-action btn-action--save" (click)="saveEmployee()" [disabled]="saving()" title="儲存">
+        @if (saving()) {
+        <i class="ri-loader-4-line spin"></i>
+        } @else {
+        <i class="ri-check-line"></i>
+        }
+      </button>
+      <button type="button" class="btn-action" (click)="cancelEdit()" title="取消">
+        <i class="ri-close-line"></i>
+      </button>
+      }
+      <button type="button" class="btn-action" (click)="exportEmployeeData()" title="匯出">
+        <i class="ri-download-line"></i>
+      </button>
+    </div>
+    }
+  </div>
+
+  <!-- Tabs -->
+  <div class="detail-tabs">
+    <button type="button" class="tab-btn" [class.active]="activeTab() === 'info'"
+      (click)="setActiveTab('info')">基本資料</button>
+    <button type="button" class="tab-btn" [class.active]="activeTab() === 'history'"
+      (click)="setActiveTab('history')">職務異動</button>
+    <button type="button" class="tab-btn" [class.active]="activeTab() === 'documents'"
+      (click)="setActiveTab('documents')">文件管理</button>
+    <button type="button" class="tab-btn" [class.active]="activeTab() === 'training'"
+      (click)="setActiveTab('training')">培訓記錄</button>
+    <button type="button" class="tab-btn" [class.active]="activeTab() === 'performance'"
+      (click)="setActiveTab('performance')">績效紀錄</button>
+    <button type="button" class="tab-btn" [class.active]="activeTab() === 'roi'"
+      (click)="setActiveTab('roi')">ROI 分析</button>
+  </div>
+
+  <!-- Tab Content -->
+  <div class="detail-content">
+    <!-- ===== Info Tab ===== -->
+    @if (activeTab() === 'info') {
+    <div class="info-section">
+      <h4>基本資訊</h4>
+      @if (editing()) {
+      <!-- 編輯模式 -->
+      <div class="edit-grid">
+        <div class="edit-field">
+          <label>姓名 <span class="required">*</span></label>
+          <input type="text" [value]="editForm()['name']" (input)="updateField('name', $any($event.target).value)">
+        </div>
+        <div class="edit-field">
+          <label>英文姓名</label>
+          <input type="text" [value]="editForm()['english_name']" (input)="updateField('english_name', $any($event.target).value)">
+        </div>
+        <div class="edit-field">
+          <label>Email <span class="required">*</span></label>
+          <input type="email" [value]="editForm()['email']" (input)="updateField('email', $any($event.target).value)">
+        </div>
+        <div class="edit-field">
+          <label>電話</label>
+          <input type="text" [value]="editForm()['phone']" (input)="updateField('phone', $any($event.target).value)">
+        </div>
+        <div class="edit-field">
+          <label>手機</label>
+          <input type="text" [value]="editForm()['mobile']" (input)="updateField('mobile', $any($event.target).value)">
+        </div>
+        @if (employeeSubsidiary()) {
+        <div class="edit-field">
+          <label>所屬子公司</label>
+          <span class="edit-static">{{ employeeSubsidiary() }}</span>
+        </div>
+        }
+        <div class="edit-field">
+          <label>部門 <span class="required">*</span></label>
+          <select [ngModel]="editForm()['department']" (ngModelChange)="onDepartmentEditChange($event)">
+            <option value="">選擇部門...</option>
+            @for (dept of departmentOptions(); track dept.id) {
+            <option [value]="dept.name">{{ dept.name }}</option>
+            }
+          </select>
+        </div>
+        <div class="edit-field">
+          <label>直屬主管</label>
+          <select [ngModel]="editForm()['manager_id']" (ngModelChange)="updateField('manager_id', $event)">
+            <option value="">無</option>
+            @for (mgr of managerOptions(); track mgr.id) {
+            <option [value]="mgr.id">{{ mgr.position }} — {{ mgr.name }}</option>
+            }
+          </select>
+        </div>
+        <div class="edit-field">
+          <label>職等</label>
+          <select [ngModel]="editForm()['grade']?.toString()" (ngModelChange)="onGradeChange($event)">
+            <option value="">選擇職等...</option>
+            @for (g of gradeOptions(); track g.grade) {
+            <option [value]="g.grade.toString()">{{ g.title }}</option>
+            }
+          </select>
+        </div>
+        <div class="edit-field">
+          <label>職級</label>
+          <select [ngModel]="editForm()['level']" (ngModelChange)="updateField('level', $event)">
+            <option value="">選擇職級...</option>
+            @for (lv of levelOptions(); track lv.code) {
+            <option [value]="lv.code">{{ lv.code }}</option>
+            }
+          </select>
+        </div>
+        <div class="edit-field">
+          <label>職位 <span class="required">*</span></label>
+          <select [ngModel]="editForm()['position']" (ngModelChange)="updateField('position', $event)">
+            <option value="">選擇職位...</option>
+            @for (pos of positionOptions(); track pos.title) {
+            <option [value]="pos.title">{{ pos.title }}</option>
+            }
+          </select>
+        </div>
+        <div class="edit-field">
+          <label>合約類型</label>
+          <select [ngModel]="editForm()['contract_type']" (ngModelChange)="updateField('contract_type', $event)">
+            <option value="full-time">正職</option>
+            <option value="part-time">兼職</option>
+            <option value="contract">約聘</option>
+            <option value="intern">實習</option>
+          </select>
+        </div>
+        <div class="edit-field">
+          <label>工作地點</label>
+          <input type="text" [ngModel]="editForm()['work_location']" (ngModelChange)="updateField('work_location', $event)">
+        </div>
+        <div class="edit-field">
+          <label>性別</label>
+          <select [ngModel]="editForm()['gender']" (ngModelChange)="updateField('gender', $event)">
+            <option value="male">男</option>
+            <option value="female">女</option>
+            <option value="other">其他</option>
+          </select>
+        </div>
+        <div class="edit-field">
+          <label>狀態</label>
+          <select [ngModel]="editForm()['status']" (ngModelChange)="updateField('status', $event)">
+            <option value="active">在職</option>
+            <option value="probation">試用期</option>
+            <option value="leave">留職停薪</option>
+            <option value="resigned">已離職</option>
+            <option value="terminated">資遣</option>
+          </select>
+        </div>
+      </div>
+      <!-- 緊急聯絡人（編輯模式） -->
+      <div class="edit-section-divider"></div>
+      <h4 class="edit-section-title">緊急聯絡人</h4>
+      <div class="edit-grid">
+        <div class="edit-field">
+          <label>姓名</label>
+          <input type="text" [value]="editForm()['emergency_contact_name']" (input)="updateField('emergency_contact_name', $any($event.target).value)">
+        </div>
+        <div class="edit-field">
+          <label>關係</label>
+          <input type="text" [value]="editForm()['emergency_contact_relation']" (input)="updateField('emergency_contact_relation', $any($event.target).value)">
+        </div>
+        <div class="edit-field">
+          <label>電話</label>
+          <input type="text" [value]="editForm()['emergency_contact_phone']" (input)="updateField('emergency_contact_phone', $any($event.target).value)">
+        </div>
+      </div>
+      } @else {
+      <!-- 唯讀模式 -->
+      <div class="info-grid">
+        <div class="info-item">
+          <label>Email</label>
+          <span>{{ emp.email }}</span>
+        </div>
+        <div class="info-item">
+          <label>電話</label>
+          <span>{{ emp.phone || '-' }}</span>
+        </div>
+        @if (emp.mobile) {
+        <div class="info-item">
+          <label>手機</label>
+          <span>{{ emp.mobile }}</span>
+        </div>
+        }
+        <div class="info-item">
+          <label>到職日</label>
+          <span>{{ formatDate(emp.hireDate) }}</span>
+        </div>
+        <div class="info-item">
+          <label>合約類型</label>
+          <span>{{ getContractTypeLabel(emp.contractType) }}</span>
+        </div>
+        <div class="info-item">
+          <label>工作地點</label>
+          <span>{{ emp.workLocation || '-' }}</span>
+        </div>
+        @if (emp.positions && emp.positions.length > 0 && emp.positions[0].companyName) {
+        <div class="info-item">
+          <label>所屬子公司</label>
+          <span>{{ emp.positions[0].companyName }}</span>
+        </div>
+        }
+        <div class="info-item">
+          <label>直屬主管</label>
+          <span>{{ emp.manager || '-' }}</span>
+        </div>
+        <div class="info-item">
+          <label>職等</label>
+          <span>{{ getGradeDisplay(emp.grade) }}</span>
+        </div>
+        <div class="info-item">
+          <label>職級</label>
+          <span>{{ emp.level || '-' }}</span>
+        </div>
+      </div>
+      }
+    </div>
+
+    <!-- 跨公司職位 -->
+    @if (emp.positions && emp.positions.length > 0) {
+    <div class="info-section">
+      <h4>職位列表</h4>
+      <div class="position-list">
+        @for (pos of emp.positions; track $index) {
+        <div class="position-item" [class.primary]="pos.isPrimary">
+          <div class="position-company">{{ pos.companyName }}</div>
+          <div class="position-dept">{{ pos.departmentName }}</div>
+          <div class="position-title">{{ pos.positionTitle }}</div>
+          @if (pos.isPrimary) {
+          <span class="primary-badge">主要</span>
+          }
+        </div>
+        }
+      </div>
+    </div>
+    }
+
+    <!-- 來源追溯 -->
+    @if (emp.candidateSource) {
+    <div class="info-section source-section">
+      <h4>
+        <i class="ri-user-received-line"></i>
+        來源追溯
+      </h4>
+      <div class="source-info">
+        <div class="source-badge">
+          <i class="ri-checkbox-circle-fill"></i>
+          從候選人轉入
+        </div>
+        <div class="source-details">
+          <div class="source-item">
+            <label>原應徵職位</label>
+            <span>{{ emp.candidateSource.position || '-' }}</span>
+          </div>
+          <div class="source-item">
+            <label>招聘階段</label>
+            <span>{{ emp.candidateSource.stage || '-' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    }
+
+    <!-- 入職進度 -->
+    @if (emp.onboardingProgress) {
+    <div class="info-section onboarding-section">
+      <h4>
+        <i class="ri-walk-line"></i>
+        入職進度
+      </h4>
+      <div class="onboarding-info">
+        <div class="progress-overview">
+          <div class="progress-circle" [style.--progress]="emp.onboardingProgress.overall + '%'">
+            <span class="progress-value">{{ emp.onboardingProgress.overall }}%</span>
+          </div>
+          <div class="progress-meta">
+            <span class="probation-end">
+              <i class="ri-calendar-todo-line"></i>
+              試用期結束：{{ emp.onboardingProgress.probation_end_date }}
+            </span>
+          </div>
+        </div>
+        <div class="progress-details">
+          <div class="progress-row">
+            <span class="progress-label">
+              <i class="ri-file-edit-line"></i>
+              文件簽署
+            </span>
+            <div class="progress-bar-container">
+              <div class="progress-bar"
+                [style.width.%]="emp.onboardingProgress.templates.total > 0 ? (emp.onboardingProgress.templates.approved / emp.onboardingProgress.templates.total * 100) : 0">
+              </div>
+            </div>
+            <span class="progress-count">
+              {{ emp.onboardingProgress.templates.approved }}/{{ emp.onboardingProgress.templates.total }}
+            </span>
+          </div>
+          <div class="progress-row">
+            <span class="progress-label">
+              <i class="ri-upload-cloud-line"></i>
+              文件上傳
+            </span>
+            <div class="progress-bar-container">
+              <div class="progress-bar"
+                [style.width.%]="emp.onboardingProgress.documents.total > 0 ? (emp.onboardingProgress.documents.uploaded / emp.onboardingProgress.documents.total * 100) : 0">
+              </div>
+            </div>
+            <span class="progress-count">
+              {{ emp.onboardingProgress.documents.uploaded }}/{{ emp.onboardingProgress.documents.total }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    }
+
+    <!-- 緊急聯絡人 -->
+    @if (emp.emergencyContact) {
+    <div class="info-section">
+      <h4>緊急聯絡人</h4>
+      <div class="info-grid">
+        <div class="info-item">
+          <label>姓名</label>
+          <span>{{ emp.emergencyContact.name || '-' }}</span>
+        </div>
+        <div class="info-item">
+          <label>關係</label>
+          <span>{{ emp.emergencyContact.relation || '-' }}</span>
+        </div>
+        <div class="info-item">
+          <label>電話</label>
+          <span>{{ emp.emergencyContact.phone || '-' }}</span>
+        </div>
+      </div>
+    </div>
+    }
+
+    <!-- 學歷 -->
+    <div class="info-section">
+      <h4>學歷</h4>
+      @for (edu of emp.education; track edu.graduationYear) {
+      <div class="education-item">
+        <span class="edu-degree">{{ edu.degree }}</span>
+        <span class="edu-school">{{ edu.school }} - {{ edu.major }}</span>
+        <span class="edu-year">{{ edu.graduationYear }}</span>
+      </div>
+      } @empty {
+      <p class="empty-text">尚無學歷資料</p>
+      }
+    </div>
+
+    <!-- 技能與證照 -->
+    <div class="info-section">
+      <h4>技能與證照</h4>
+      <div class="skill-tags">
+        @for (skill of emp.skills; track skill) {
+        <span class="skill-tag">{{ skill }}</span>
+        }
+      </div>
+      <div class="cert-tags">
+        @for (cert of emp.certifications; track cert) {
+        <span class="cert-tag">
+          <i class="ri-award-line"></i>
+          {{ cert }}
+        </span>
+        }
+      </div>
+    </div>
+
+    <!-- 操作記錄 -->
+    <div class="info-section">
+      <h4>操作記錄</h4>
+      <div class="audit-list">
+        @for (log of auditLogs(); track log.id) {
+        <div class="audit-item">
+          <span class="audit-action audit-{{ log.action }}">
+            {{ getAuditActionLabel(log.action) }}
+          </span>
+          @if (log.field) {
+          <span class="audit-field">{{ log.field }}</span>
+          }
+          <span class="audit-by">{{ log.performedBy }}</span>
+          <span class="audit-time">{{ formatDateTime(log.performedAt) }}</span>
+        </div>
+        }
+      </div>
+    </div>
+    }
+
+    <!-- ===== History Tab ===== -->
+    @if (activeTab() === 'history') {
+    <div class="history-timeline">
+      @for (change of emp.workHistory; track change.id) {
+      <div class="timeline-item" [attr.data-type]="change.changeType">
+        <div class="timeline-marker"></div>
+        <div class="timeline-content">
+          <div class="timeline-header">
+            <span class="change-type">{{ getChangeTypeLabel(change.changeType) }}</span>
+            <span class="change-date">{{ formatDate(change.effectiveDate) }}</span>
+          </div>
+          <div class="change-detail">
+            @if (change.changeType === 'promotion' || change.changeType === 'demotion') {
+            <p>{{ change.fromPosition }} → {{ change.toPosition }}</p>
+            <p class="level-change">{{ change.fromLevel }} → {{ change.toLevel }}</p>
+            }
+            @if (change.changeType === 'transfer') {
+            <p>{{ change.fromDepartment }} → {{ change.toDepartment }}</p>
+            }
+            @if (change.salaryChange) {
+            <p class="salary-change" [class.positive]="change.salaryChange > 0">
+              薪資調整：{{ change.salaryChange > 0 ? '+' : '' }}{{ formatCurrency(change.salaryChange) }}
+            </p>
+            }
+          </div>
+          <p class="change-reason">{{ change.reason }}</p>
+          <span class="change-approved">核准人：{{ change.approvedBy }}</span>
+        </div>
+      </div>
+      } @empty {
+      <p class="empty-text">尚無職務異動紀錄</p>
+      }
+    </div>
+    }
+
+    <!-- ===== Documents Tab ===== -->
+    @if (activeTab() === 'documents') {
+    <div class="documents-sections">
+      <div class="document-section">
+        <h4 class="section-title">
+          <i class="ri-file-list-3-line"></i>
+          入職文件簽署清單
+        </h4>
+        @if (signatureSubmissions().length > 0) {
+        <div class="document-list">
+          @for (submission of signatureSubmissions(); track submission.id) {
+          <div class="document-list-item">
+            <div class="doc-list-icon">
+              <i class="ri-file-text-line"></i>
+            </div>
+            <div class="doc-list-info">
+              <h5>{{ submission.template_name }}</h5>
+              <p class="doc-list-meta">
+                建立時間：{{ formatDateTime(submission.created_at) }}
+                @if (submission.signed_at) {
+                · 簽署時間：{{ formatDateTime(submission.signed_at) }}
+                }
+              </p>
+            </div>
+            <span class="doc-list-status" [class]="getSubmissionStatusClass(submission)">
+              {{ getSubmissionStatusLabel(submission) }}
+            </span>
+            <div class="doc-list-actions">
+              @if (submission.status === 'SIGNED' || submission.status === 'COMPLETED') {
+              <button type="button" class="btn-icon" (click)="viewSignedDocument(submission)" title="查看">
+                <i class="ri-eye-line"></i>
+              </button>
+              <button type="button" class="btn-icon" (click)="downloadSignedDocument(submission)" title="下載">
+                <i class="ri-download-line"></i>
+              </button>
+              }
+            </div>
+          </div>
+          }
+        </div>
+        } @else {
+        <p class="empty-text">尚無簽署文件記錄</p>
+        }
+      </div>
+
+      <div class="document-section">
+        <h4 class="section-title">
+          <i class="ri-folder-upload-line"></i>
+          入職資料上傳清單
+        </h4>
+        @if (uploadedDocuments().length > 0) {
+        <div class="document-list">
+          @for (document of uploadedDocuments(); track document.id) {
+          <div class="document-list-item">
+            <div class="doc-list-icon">
+              @switch (document.type) {
+              @case ('id_card') { <i class="ri-bank-card-line"></i> }
+              @case ('bank_account') { <i class="ri-bank-line"></i> }
+              @case ('health_report') { <i class="ri-heart-pulse-line"></i> }
+              @case ('photo') { <i class="ri-user-smile-line"></i> }
+              @case ('education_cert') { <i class="ri-medal-line"></i> }
+              @default { <i class="ri-file-line"></i> }
+              }
+            </div>
+            <div class="doc-list-info">
+              <h5>{{ getUploadTypeLabel(document.type) }}</h5>
+              <p class="doc-list-meta">
+                檔案名稱：{{ document.fileName || document.label }}
+                @if (document.uploadedAt) {
+                · 上傳時間：{{ formatDateTime(document.uploadedAt) }}
+                }
+              </p>
+            </div>
+            <span class="doc-list-status status-uploaded">已上傳</span>
+            <div class="doc-list-actions">
+              <button type="button" class="btn-icon" (click)="viewUploadedDocument(document)" title="查看">
+                <i class="ri-eye-line"></i>
+              </button>
+              <button type="button" class="btn-icon" (click)="downloadUploadedDocument(document)" title="下載">
+                <i class="ri-download-line"></i>
+              </button>
+            </div>
+          </div>
+          }
+        </div>
+        } @else {
+        <p class="empty-text">尚無上傳文件記錄</p>
+        }
+      </div>
+    </div>
+    }
+
+    <!-- ===== Training Tab ===== -->
+    @if (activeTab() === 'training') {
+    <div class="mock-data-badge">
+      <i class="ri-information-line"></i>
+      此為模擬資料，實際功能開發中
+    </div>
+    <div class="training-section">
+      @if (emp.training && emp.training.length > 0) {
+      <div class="training-grid">
+        @for (training of emp.training; track training.id) {
+        <div class="training-card">
+          <div class="training-header">
+            <h4>{{ training.courseName }}</h4>
+            <span class="training-type" [class]="'type-' + training.courseType">
+              @switch (training.courseType) {
+              @case ('internal') { 內部培訓 }
+              @case ('external') { 外部培訓 }
+              @case ('online') { 線上課程 }
+              }
+            </span>
+          </div>
+          <div class="training-meta">
+            <span><i class="ri-calendar-line"></i> {{ formatDate(training.completionDate) }}</span>
+            <span><i class="ri-time-line"></i> {{ training.hours }} 小時</span>
+            @if (training.cost) {
+            <span><i class="ri-money-dollar-circle-line"></i> NT$ {{ training.cost | number }}</span>
+            }
+          </div>
+          @if (training.score) {
+          <div class="training-score">成績：{{ training.score }} 分</div>
+          }
+          @if (training.certificate) {
+          <div class="training-cert"><i class="ri-medal-line"></i> 已取得證書</div>
+          }
+        </div>
+        }
+      </div>
+      } @else {
+      <div class="empty-state">
+        <i class="ri-book-open-line"></i>
+        <p>尚無培訓記錄</p>
+      </div>
+      }
+    </div>
+    }
+
+    <!-- ===== Performance Tab ===== -->
+    @if (activeTab() === 'performance') {
+    <div class="mock-data-badge">
+      <i class="ri-information-line"></i>
+      此為模擬資料，實際功能開發中
+    </div>
+    <div class="performance-list">
+      @for (perf of emp.performance; track perf.id) {
+      <div class="performance-card" [attr.data-grade]="perf.grade">
+        <div class="perf-header">
+          <div class="perf-period">{{ perf.period }}</div>
+          <div class="perf-score">
+            <span class="score-value">{{ perf.overallScore }}</span>
+            <span class="score-grade grade-{{ perf.grade }}">{{ perf.grade }}</span>
+          </div>
+        </div>
+        <div class="goal-section">
+          <h5>目標達成</h5>
+          @for (goal of perf.goals; track goal.name) {
+          <div class="goal-item">
+            <span class="goal-name">{{ goal.name }}</span>
+            <div class="goal-bar">
+              <div class="goal-fill" [style.width.%]="goal.achievement"></div>
+            </div>
+            <span class="goal-percent">{{ goal.achievement }}%</span>
+          </div>
+          }
+        </div>
+        <div class="feedback-row">
+          <div class="strengths">
+            <h6><i class="ri-thumb-up-line"></i> 優勢</h6>
+            <ul>
+              @for (s of perf.strengths; track s) {
+              <li>{{ s }}</li>
+              }
+            </ul>
+          </div>
+          <div class="improvements">
+            <h6><i class="ri-lightbulb-line"></i> 待改善</h6>
+            <ul>
+              @for (i of perf.improvements; track i) {
+              <li>{{ i }}</li>
+              }
+            </ul>
+          </div>
+        </div>
+        <div class="perf-footer">
+          <span>評核人：{{ perf.reviewedBy }}</span>
+          <span>{{ formatDate(perf.reviewDate) }}</span>
+        </div>
+      </div>
+      } @empty {
+      <p class="empty-text">尚無績效紀錄</p>
+      }
+    </div>
+    }
+
+    <!-- ===== ROI Tab ===== -->
+    @if (activeTab() === 'roi') {
+    <div class="mock-data-badge">
+      <i class="ri-information-line"></i>
+      此為模擬資料，實際功能開發中
+    </div>
+    <div class="roi-dashboard">
+      <div class="roi-summary">
+        <div class="roi-card main">
+          <span class="roi-label">個人 ROI</span>
+          <span class="roi-value-large" [class.positive]="emp.roi.roi > 100">
+            {{ emp.roi.roi }}%
+          </span>
+          <span class="roi-trend trend-{{ emp.roi.trend }}">
+            @if (emp.roi.trend === 'up') { <i class="ri-arrow-up-line"></i> 上升 }
+            @if (emp.roi.trend === 'stable') { <i class="ri-arrow-right-line"></i> 穩定 }
+            @if (emp.roi.trend === 'down') { <i class="ri-arrow-down-line"></i> 下降 }
+          </span>
+        </div>
+        <div class="roi-card">
+          <span class="roi-label">總成本</span>
+          <span class="roi-value">{{ formatCurrency(emp.roi.totalCost) }}</span>
+          <div class="cost-breakdown">
+            <span>薪資：{{ formatCurrency(emp.roi.salaryCost) }}</span>
+            <span>培訓：{{ formatCurrency(emp.roi.trainingCost) }}</span>
+            <span>福利：{{ formatCurrency(emp.roi.benefitsCost) }}</span>
+          </div>
+        </div>
+        <div class="roi-card">
+          <span class="roi-label">貢獻價值</span>
+          <span class="roi-value">{{ formatCurrency(emp.roi.projectValue) }}</span>
+          <span class="roi-note">專案產出價值</span>
+        </div>
+        <div class="roi-card">
+          <span class="roi-label">生產力</span>
+          <span class="roi-value">{{ emp.roi.productivity }}%</span>
+          <span class="roi-note">相對於基準</span>
+        </div>
+      </div>
+
+      <div class="roi-chart-section">
+        <h4>ROI 趨勢比較</h4>
+        <div #roiChart class="chart-container"></div>
+      </div>
+
+      <div class="comparison-section">
+        <h4>比較分析</h4>
+        <div class="comparison-bars">
+          <div class="comparison-item">
+            <span class="comp-label">個人</span>
+            <div class="comp-bar-container">
+              <div class="comp-bar personal" [style.width.%]="emp.roi.roi / 3"></div>
+            </div>
+            <span class="comp-value">{{ emp.roi.roi }}%</span>
+          </div>
+          <div class="comparison-item">
+            <span class="comp-label">部門平均</span>
+            <div class="comp-bar-container">
+              <div class="comp-bar department" [style.width.%]="emp.roi.comparison.departmentAvg / 3"></div>
+            </div>
+            <span class="comp-value">{{ emp.roi.comparison.departmentAvg }}%</span>
+          </div>
+          <div class="comparison-item">
+            <span class="comp-label">公司平均</span>
+            <div class="comp-bar-container">
+              <div class="comp-bar company" [style.width.%]="emp.roi.comparison.companyAvg / 3"></div>
+            </div>
+            <span class="comp-value">{{ emp.roi.comparison.companyAvg }}%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    }
+
+  </div>
+</div>
+}

@@ -1,0 +1,2173 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bombus 功能說明書 - 職務說明書管理、職能模型基準、職等職級管理</title>
+  <style>
+    :root {
+      --color-cloud-gray: #F5F5F7;
+      --color-pure-white: #FCFCFD;
+      --color-soft-gray: #E8E8EA;
+      --color-muted-gray: #C4C4C6;
+      --color-text-secondary: #6B7280;
+      --color-text-primary: #464E56;
+      --color-text-dark: #1F2937;
+      --color-brand-main: #64748B;
+      --color-brand-light: #94A3B8;
+      --color-brand-dark: #475569;
+      --color-module: #D6A28C;
+      --color-module-light: #e4c3b4;
+      --color-module-dark: #B8876E;
+      --color-success: #7FB095;
+      --color-success-light: #E8F5EE;
+      --color-warning: #E3C088;
+      --color-warning-light: #FFF8E7;
+      --color-error: #C77F7F;
+      --color-error-light: #FDEAEA;
+      --color-info: #8DA8BE;
+      --color-info-light: #EDF4F9;
+      --spacing-xs: 0.25rem;
+      --spacing-sm: 0.5rem;
+      --spacing-md: 1rem;
+      --spacing-lg: 1.5rem;
+      --spacing-xl: 2rem;
+      --spacing-2xl: 3rem;
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Microsoft JhengHei', 'PingFang TC', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      color: var(--color-text-primary);
+      background: var(--color-cloud-gray);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: var(--spacing-xl);
+    }
+
+    .doc-header {
+      background: linear-gradient(135deg, var(--color-module) 0%, var(--color-module-dark) 100%);
+      color: white;
+      padding: var(--spacing-2xl) var(--spacing-xl);
+      border-radius: var(--radius-lg);
+      margin-bottom: var(--spacing-xl);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .doc-header h1 {
+      font-size: 1.75rem;
+      font-weight: 600;
+      margin-bottom: var(--spacing-sm);
+      letter-spacing: 0.5px;
+    }
+
+    .doc-header h2 {
+      font-size: 1.25rem;
+      font-weight: 400;
+      opacity: 0.9;
+    }
+
+    .doc-info {
+      background: var(--color-pure-white);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-lg);
+      margin-bottom: var(--spacing-xl);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--color-soft-gray);
+    }
+
+    .doc-info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: var(--spacing-md);
+    }
+
+    .doc-info-item {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+
+    .doc-info-label {
+      font-size: 0.875rem;
+      color: var(--color-text-secondary);
+      min-width: 80px;
+    }
+
+    .doc-info-value {
+      font-weight: 500;
+      color: var(--color-text-dark);
+    }
+
+    .toc {
+      background: var(--color-pure-white);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-lg);
+      margin-bottom: var(--spacing-xl);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--color-soft-gray);
+    }
+
+    .toc-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--color-text-dark);
+      margin-bottom: var(--spacing-md);
+      padding-bottom: var(--spacing-sm);
+      border-bottom: 2px solid var(--color-module);
+    }
+
+    .toc-list {
+      list-style: none;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: var(--spacing-sm);
+    }
+
+    .toc-list li { padding: var(--spacing-xs) 0; }
+
+    .toc-list a {
+      color: var(--color-module-dark);
+      text-decoration: none;
+      font-size: 0.9375rem;
+      transition: color 0.2s ease;
+    }
+
+    .toc-list a:hover {
+      color: var(--color-module);
+      text-decoration: underline;
+    }
+
+    .content {
+      background: var(--color-pure-white);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-xl);
+      margin-bottom: var(--spacing-xl);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--color-soft-gray);
+    }
+
+    .section-title {
+      background: linear-gradient(135deg, var(--color-module) 0%, var(--color-module-dark) 100%);
+      color: white;
+      padding: var(--spacing-md) var(--spacing-lg);
+      border-radius: var(--radius-md);
+      margin: var(--spacing-xl) 0 var(--spacing-lg);
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+
+    .section-title:first-child { margin-top: 0; }
+
+    h3 {
+      color: var(--color-text-dark);
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin: var(--spacing-lg) 0 var(--spacing-md);
+      padding-bottom: var(--spacing-xs);
+      border-bottom: 2px solid var(--color-module-light);
+    }
+
+    h4 {
+      color: var(--color-module-dark);
+      font-size: 1rem;
+      font-weight: 600;
+      margin: var(--spacing-md) 0 var(--spacing-sm);
+    }
+
+    p {
+      margin-bottom: var(--spacing-md);
+      color: var(--color-text-primary);
+    }
+
+    ul, ol {
+      margin-bottom: var(--spacing-md);
+      padding-left: var(--spacing-lg);
+    }
+
+    li { margin-bottom: var(--spacing-xs); }
+
+    .table-wrapper {
+      overflow-x: auto;
+      margin: var(--spacing-md) 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9375rem;
+    }
+
+    th {
+      background: var(--color-module);
+      color: white;
+      padding: var(--spacing-sm) var(--spacing-md);
+      text-align: left;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    td {
+      padding: var(--spacing-sm) var(--spacing-md);
+      border-bottom: 1px solid var(--color-soft-gray);
+      vertical-align: top;
+    }
+
+    tr:nth-child(even) { background: var(--color-cloud-gray); }
+    tr:hover { background: rgba(214, 162, 140, 0.1); }
+
+    .code-block {
+      background: var(--color-text-dark);
+      color: #E5E7EB;
+      padding: var(--spacing-md);
+      border-radius: var(--radius-md);
+      font-family: 'SF Mono', 'Consolas', 'Liberation Mono', monospace;
+      font-size: 0.875rem;
+      overflow-x: auto;
+      margin: var(--spacing-md) 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .flowchart {
+      background: var(--color-cloud-gray);
+      border: 1px solid var(--color-soft-gray);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-lg);
+      margin: var(--spacing-md) 0;
+    }
+
+    .flowchart-title {
+      font-size: 0.875rem;
+      color: var(--color-text-secondary);
+      margin-bottom: var(--spacing-md);
+      text-align: center;
+    }
+
+    .flowchart .code-block {
+      font-size: 0.8rem;
+      line-height: 1.5;
+      text-align: left;
+    }
+
+    .note {
+      background: var(--color-info-light);
+      border-left: 4px solid var(--color-info);
+      padding: var(--spacing-md);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      margin: var(--spacing-md) 0;
+    }
+
+    .note-title {
+      font-weight: 600;
+      color: var(--color-info);
+      margin-bottom: var(--spacing-xs);
+    }
+
+    .tree {
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 0.875rem;
+      background: var(--color-cloud-gray);
+      padding: var(--spacing-md);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-soft-gray);
+      white-space: pre;
+      overflow-x: auto;
+    }
+
+    hr {
+      border: none;
+      height: 1px;
+      background: var(--color-soft-gray);
+      margin: var(--spacing-xl) 0;
+    }
+
+    strong { color: var(--color-text-dark); }
+
+    .doc-footer {
+      text-align: center;
+      padding: var(--spacing-xl);
+      color: var(--color-text-secondary);
+      font-size: 0.875rem;
+    }
+
+    @media (max-width: 768px) {
+      .container { padding: var(--spacing-md); }
+      .doc-header { padding: var(--spacing-lg); }
+      .doc-header h1 { font-size: 1.5rem; }
+      .content { padding: var(--spacing-md); }
+      .section-title { font-size: 1.125rem; padding: var(--spacing-sm) var(--spacing-md); }
+      table { font-size: 0.875rem; }
+      th, td { padding: var(--spacing-xs) var(--spacing-sm); }
+    }
+
+    @media print {
+      body { background: white; }
+      .container { max-width: none; padding: 0; }
+      .doc-header, .content { box-shadow: none; border: 1px solid #ddd; }
+      .toc { page-break-after: always; }
+      .section-title { break-after: avoid; }
+      table { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="doc-header">
+      <h1>Bombus 人力資源管理系統</h1>
+      <h2>功能說明書：職務說明書管理、職能模型基準、職等職級管理</h2>
+    </header>
+
+    <section class="doc-info">
+      <div class="doc-info-grid">
+        <div class="doc-info-item">
+          <span class="doc-info-label">文件名稱</span>
+          <span class="doc-info-value">職務說明書管理、職能模型基準與職等職級管理功能說明書</span>
+        </div>
+        <div class="doc-info-item">
+          <span class="doc-info-label">適用模組</span>
+          <span class="doc-info-value">職能管理（L2）> 職務說明書、職能框架、職等職級</span>
+        </div>
+        <div class="doc-info-item">
+          <span class="doc-info-label">適用對象</span>
+          <span class="doc-info-value">HR 人員、部門主管、訓練發展人員、薪資管理人員</span>
+        </div>
+        <div class="doc-info-item">
+          <span class="doc-info-label">文件版本</span>
+          <span class="doc-info-value">v1.0</span>
+        </div>
+      </div>
+    </section>
+
+    <nav class="toc">
+      <h2 class="toc-title">目錄</h2>
+      <ol class="toc-list">
+        <li><a href="#一文件目的與適用範圍">文件目的與適用範圍</a></li>
+        <li><a href="#二系統導覽與入口說明">系統導覽與入口說明</a></li>
+        <li><a href="#三三大模組總覽與關聯說明">三大模組總覽與關聯說明</a></li>
+        <li><a href="#第一部分職能模型基準">第一部分：職能模型基準</a></li>
+        <li><a href="#第二部分職等職級管理">第二部分：職等職級管理</a></li>
+        <li><a href="#第三部分職務說明書管理">第三部分：職務說明書管理</a></li>
+        <li><a href="#第四部分三大模組協作流程">第四部分：三大模組協作流程</a></li>
+        <li><a href="#第五部分ai-服務功能缺口分析">第五部分：AI 服務功能缺口分析</a></li>
+        <li><a href="#附錄">附錄</a></li>
+      </ol>
+    </nav>
+
+    <main class="content">
+      <h2 id="section-1" class="section-title">一、文件目的與適用範圍</h2>
+<h3 id="section-2">1.1 文件目的</h3>
+<p>本說明書旨在介紹 Bombus 人力資源管理系統中「<strong>職能管理（L2）</strong>」模組的三大核心功能：</p>
+<ul>
+<li><strong>職能模型基準</strong>：定義組織需要哪些「能力」</li>
+<li><strong>職等職級管理</strong>：定義組織的「階層架構」與薪資對應</li>
+<li><strong>職務說明書管理</strong>：將「能力需求」與「階層定位」結合成一份完整的職務規格</li>
+</ul>
+<p>透過本文件，使用者可了解每個功能的操作方式、三者之間如何串聯，以及目前 AI 服務尚未實現的功能。</p>
+<h3 id="section-3">1.2 適用範圍</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>場景</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>建立職能框架</td>
+<td>定義核心職能、管理職能、專業職能及 KSA 職能</td>
+</tr>
+<tr>
+<td>管理職等與薪資</td>
+<td>設定 1-7 職等、雙軌制（管理職/專業職）、薪資對照表</td>
+</tr>
+<tr>
+<td>撰寫職務說明書</td>
+<td>建立 JD、綁定職能需求、審核發布</td>
+</tr>
+<tr>
+<td>職能缺口分析</td>
+<td>比較員工實際能力與 JD 要求的差距</td>
+</tr>
+<tr>
+<td>晉升條件設定</td>
+<td>定義晉升所需技能、課程與績效門檻</td>
+</tr>
+<tr>
+<td>AI 職涯規劃</td>
+<td>分析員工適合的發展路徑（目前為模擬資料）</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="section-4" class="section-title">二、系統導覽與入口說明</h2>
+<h3 id="section-5">2.1 主要功能入口</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>功能模組</th>
+<th>導覽路徑</th>
+<th>路由</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>職能框架</td>
+<td>職能管理 → 職能框架</td>
+<td><code>/competency/framework</code></td>
+<td>管理四大類職能定義</td>
+</tr>
+<tr>
+<td>職等職級</td>
+<td>職能管理 → 職等職級</td>
+<td><code>/competency/grade-matrix</code></td>
+<td>管理職等、薪資、軌道、晉升</td>
+</tr>
+<tr>
+<td>職務說明書</td>
+<td>職能管理 → 職務說明書</td>
+<td><code>/competency/job-description</code></td>
+<td>建立與管理 JD</td>
+</tr>
+<tr>
+<td>新建 JD</td>
+<td>職能管理 → 職務說明書 → 新增</td>
+<td><code>/competency/job-description/create</code></td>
+<td>五步驟建立 JD</td>
+</tr>
+<tr>
+<td>職能缺口分析</td>
+<td>職能管理 → 缺口分析</td>
+<td><code>/competency/gap-analysis</code></td>
+<td>雷達圖分析能力差距</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-6">2.2 頁面功能架構</h3>
+<div class="tree">職能管理 (L2)
+├── 職能框架
+│   ├── 核心職能（全員適用，L1-L6 等級）
+│   ├── 管理職能（管理者適用，L1-L6 等級）
+│   ├── 專業職能（部門專屬，L1-L6 等級）
+│   └── KSA 職能（知識/技能/態度，無等級）
+├── 職等職級
+│   ├── [主頁籤] 職等職級矩陣
+│   │   ├── 職等職級薪資對照表
+│   │   ├── 管理職軌道明細
+│   │   └── 專業職軌道明細
+│   ├── [主頁籤] 職涯發展路徑
+│   ├── [主頁籤] AI 職涯規劃助手
+│   ├── [主頁籤] 待審核（含數量徽章）
+│   └── [主頁籤] 變更歷史
+├── 職務說明書
+│   ├── JD 列表（卡片/列表檢視）
+│   ├── 新建 JD（自行新增/匯入模版/AI 職務撰寫助手）
+│   └── JD 審核與版本管理
+└── 缺口分析
+    ├── 各部門職能落差概覽
+    ├── 員工能力雷達圖
+    ├── 待改善 / 已達標職能
+    └── AI 發展建議</div>
+<hr>
+<h2 id="section-7" class="section-title">三、三大模組總覽與關聯說明</h2>
+<h3 id="section-8">3.1 白話說明：三者的關係</h3>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>用蓋房子來比喻</strong>：
+- <strong>職能模型基準</strong> 就像「建材清單」— 定義你的組織需要哪些「能力磚塊」（溝通力、領導力、專業知識…）
+- <strong>職等職級管理</strong> 就像「樓層設計圖」— 定義你的組織有幾層樓（職等 1-7）、每層樓的規格（薪資、頭銜）、以及上樓的條件（晉升標準）
+- <strong>職務說明書</strong> 就像「房間規格書」— 把「這間房間在幾樓」（職等）和「這間房間需要哪些建材」（職能需求）寫成一份完整的說明</div>
+</div>
+<h3 id="section-9">3.2 模組關聯圖</h3>
+<div class="flowchart">
+<div class="flowchart-title">流程圖</div>
+<div class="code-block">graph TB
+    subgraph 職能模型基準
+        CORE[核心職能&lt;br/&gt;L1-L6 等級]
+        MGMT[管理職能&lt;br/&gt;L1-L6 等級]
+        PROF[專業職能&lt;br/&gt;L1-L6 等級]
+        KSA[KSA 職能&lt;br/&gt;知識/技能/態度]
+    end
+
+    subgraph 職等職級管理
+        GRADE[職等 1-7]
+        SALARY[薪資級別&lt;br/&gt;BS01-BS14]
+        TRACK[雙軌制&lt;br/&gt;管理職/專業職]
+        PROMO[晉升條件]
+    end
+
+    subgraph 職務說明書管理
+        JD[職務說明書 JD]
+        CONTENT[11 大內容區塊]
+        APPROVE[審核流程]
+        VERSION[版本管理]
+    end
+
+    CORE --&gt;|需求等級 L1-L6| JD
+    MGMT --&gt;|需求等級 L1-L6| JD
+    PROF --&gt;|需求等級 L1-L6| JD
+    KSA --&gt;|知識/技能/態度需求| JD
+    GRADE --&gt;|指定職等| JD
+    SALARY --&gt;|薪資代碼| JD
+    TRACK --&gt;|管理職 or 專業職| JD
+
+    CORE --&gt;|必備技能| PROMO
+    MGMT --&gt;|管理能力門檻| PROMO
+    GRADE --&gt;|from → to| PROMO
+
+    JD --&gt;|職能需求基準| GAP[缺口分析]
+    GAP --&gt;|推薦補強方向| TRAIN[教育訓練 L3]
+    PROMO --&gt;|課程需求| TRAIN</div>
+</div>
+<h3 id="section-10">3.3 資料流向摘要</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>來源模組</th>
+<th>→</th>
+<th>目標模組</th>
+<th>流向的資料</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>職能模型基準</td>
+<td>→</td>
+<td>職務說明書</td>
+<td>職能 ID、名稱、需求等級（L1-L6）、權重（%）</td>
+</tr>
+<tr>
+<td>職等職級管理</td>
+<td>→</td>
+<td>職務說明書</td>
+<td>職等（1-7）、薪資代碼（如 BS03）</td>
+</tr>
+<tr>
+<td>職能模型基準</td>
+<td>→</td>
+<td>職等職級（晉升）</td>
+<td>晉升所需的必備技能</td>
+</tr>
+<tr>
+<td>職務說明書</td>
+<td>→</td>
+<td>缺口分析</td>
+<td>職能需求基準（required score）</td>
+</tr>
+<tr>
+<td>職等職級（晉升）</td>
+<td>→</td>
+<td>教育訓練</td>
+<td>晉升所需課程清單</td>
+</tr>
+<tr>
+<td>職等職級（AI）</td>
+<td>→</td>
+<td>員工發展</td>
+<td>職涯路徑推薦、訓練計畫</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="section-11" class="section-title">第一部分：職能模型基準</h2>
+<h3 id="section-12">1.1 功能概述</h3>
+<p>職能模型基準是整個職能管理體系的<strong>基石</strong>。它定義了組織裡每一種「能力」的名稱、定義和等級標準。</p>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>白話說明</strong>：想像你在開一間餐廳。你需要先列出「好廚師需要哪些能力」：刀工（L1 會切菜 → L6 大師級雕花）、調味能力（L1 基本調味 → L6 創新菜系）。這個「能力清單」就是職能模型。</div>
+</div>
+<h3 id="section-13">1.2 四大職能類別</h3>
+<p>系統將職能分為四大類別，每一類有不同的用途和結構：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>類別</th>
+<th>英文</th>
+<th>適用對象</th>
+<th>等級制度</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>核心職能</td>
+<td>Core</td>
+<td><strong>全體員工</strong></td>
+<td>L1-L6</td>
+<td>組織的基本 DNA，每個人都要具備</td>
+</tr>
+<tr>
+<td>管理職能</td>
+<td>Management</td>
+<td><strong>管理者</strong></td>
+<td>L1-L6</td>
+<td>帶領團隊所需的領導能力</td>
+</tr>
+<tr>
+<td>專業職能</td>
+<td>Professional</td>
+<td><strong>特定部門</strong></td>
+<td>L1-L6</td>
+<td>該領域的專業技術能力</td>
+</tr>
+<tr>
+<td>KSA 職能</td>
+<td>KSA</td>
+<td><strong>依職務而定</strong></td>
+<td>無等級</td>
+<td>知識(K)、技能(S)、態度(A) 三維度</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-14">1.3 等級制度說明（L1-L6）</h3>
+<p>核心、管理、專業三類職能都採用 <strong>L1 到 L6 的六級制度</strong>，有一個重要特性：<strong>累積制</strong>。</p>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>白話說明</strong>：像考駕照一樣，拿到 L3 的人不是只會 L3 的東西，而是 L1 + L2 + L3 全部都要會。</div>
+</div>
+<div class="code-block">L1 入門級    → 基礎認知，能在指導下操作
+L2 發展級    → L1 的全部 + 能獨立處理常規工作
+L3 熟練級    → L1+L2 的全部 + 能處理複雜狀況
+L4 進階級    → L1-L3 的全部 + 能指導他人
+L5 專家級    → L1-L4 的全部 + 能制定策略
+L6 大師級    → L1-L5 的全部 + 能引領創新</div>
+<p><strong>每個等級包含的內容</strong>：</p>
+<ul>
+<li><strong>行為指標（Indicators）</strong>：具體描述「做到這個等級需要表現出什麼行為」</li>
+<li>每個等級可定義多條行為指標</li>
+</ul>
+<p><strong>範例</strong>：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>職能名稱</th>
+<th>等級</th>
+<th>行為指標範例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>溝通表達</td>
+<td>L1</td>
+<td>能清楚表達自己的想法；能撰寫基本的工作郵件</td>
+</tr>
+<tr>
+<td>溝通表達</td>
+<td>L3</td>
+<td>能在會議中有效簡報；能根據對象調整表達方式</td>
+</tr>
+<tr>
+<td>溝通表達</td>
+<td>L6</td>
+<td>能代表公司對外溝通重大議題；能建立組織溝通文化</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-15">1.4 KSA 職能的特殊設計</h3>
+<p>KSA 職能不使用 L1-L6 等級，而是以三個維度分類：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>維度</th>
+<th>代碼前綴</th>
+<th>說明</th>
+<th>範例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>知識 Knowledge</td>
+<td>K</td>
+<td>該職務需要「知道」的事</td>
+<td>勞動法規知識、產品知識</td>
+</tr>
+<tr>
+<td>技能 Skill</td>
+<td>S</td>
+<td>該職務需要「做到」的事</td>
+<td>Excel 進階操作、專案管理</td>
+</tr>
+<tr>
+<td>態度 Attitude</td>
+<td>A</td>
+<td>該職務需要「展現」的特質</td>
+<td>主動積極、團隊合作</td>
+</tr>
+</tbody></table></div>
+<p>每個 KSA 項目包含：</p>
+<ul>
+<li><strong>行為指標</strong>：具體描述需要展現的行為</li>
+<li><strong>連結課程</strong>：推薦的培訓課程（可連結到 L3 教育訓練模組）</li>
+</ul>
+<h3 id="section-16">1.5 多租戶支援</h3>
+<p>職能可以分為兩個層級：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>層級</th>
+<th>org_unit_id</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>集團共用</td>
+<td>NULL</td>
+<td>所有子公司共享的標準職能（如核心職能）</td>
+</tr>
+<tr>
+<td>子公司專屬</td>
+<td>子公司 ID</td>
+<td>某子公司自行定義的專業職能</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-17">1.6 操作流程</h3>
+<div class="flowchart">
+<div class="flowchart-title">流程圖</div>
+<div class="code-block">flowchart TD
+    START[開始] --&gt; TAB{選擇職能類別}
+    TAB --&gt;|核心職能| CORE[查看核心職能清單]
+    TAB --&gt;|管理職能| MGMT[查看管理職能清單]
+    TAB --&gt;|專業職能| PROF[查看專業職能清單]
+    TAB --&gt;|KSA 職能| KSA[查看 KSA 清單]
+
+    CORE --&gt; EXPAND[展開查看 L1-L6 行為指標]
+    MGMT --&gt; EXPAND
+    PROF --&gt; EXPAND
+
+    KSA --&gt; KSA_VIEW[查看行為指標 + 連結課程]
+
+    EXPAND --&gt; EDIT{需要修改？}
+    KSA_VIEW --&gt; EDIT
+
+    EDIT --&gt;|新增| CREATE[建立新職能]
+    EDIT --&gt;|編輯| UPDATE[修改名稱/定義/指標]
+    EDIT --&gt;|刪除| DELETE[刪除職能]
+    EDIT --&gt;|不需要| DONE[完成]
+
+    CREATE --&gt; MODAL[開啟編輯視窗]
+    UPDATE --&gt; MODAL
+    MODAL --&gt; FILL[填寫代碼/名稱/定義/等級指標]
+    FILL --&gt; SAVE[儲存]
+    SAVE --&gt; DONE
+    DELETE --&gt; CONFIRM[確認刪除]
+    CONFIRM --&gt; DONE</div>
+</div>
+<h3 id="section-18">1.7 欄位說明</h3>
+<h4 id="section-19">核心/管理/專業職能</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>必填</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>代碼 (Code)</td>
+<td>✅</td>
+<td>唯一識別碼，如 CORE-01、MGMT-02</td>
+</tr>
+<tr>
+<td>名稱 (Name)</td>
+<td>✅</td>
+<td>職能名稱，如「溝通表達」、「團隊領導」</td>
+</tr>
+<tr>
+<td>定義 (Description)</td>
+<td>✅</td>
+<td>職能的文字描述</td>
+</tr>
+<tr>
+<td>L1-L6 行為指標</td>
+<td>✅</td>
+<td>每個等級的具體行為描述（可多條）</td>
+</tr>
+<tr>
+<td>所屬公司</td>
+<td>❌</td>
+<td>留空 = 集團共用，選擇 = 子公司專屬</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-20">KSA 職能</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>必填</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>代碼 (Code)</td>
+<td>✅</td>
+<td>唯一識別碼，如 KSA-K01</td>
+</tr>
+<tr>
+<td>名稱 (Name)</td>
+<td>✅</td>
+<td>職能名稱，如「勞動法規知識」</td>
+</tr>
+<tr>
+<td>KSA 類型</td>
+<td>✅</td>
+<td>Knowledge / Skill / Attitude</td>
+</tr>
+<tr>
+<td>定義 (Description)</td>
+<td>✅</td>
+<td>職能的文字描述</td>
+</tr>
+<tr>
+<td>行為指標</td>
+<td>❌</td>
+<td>具體行為描述</td>
+</tr>
+<tr>
+<td>連結課程</td>
+<td>❌</td>
+<td>推薦的培訓課程名稱</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="section-21" class="section-title">第二部分：職等職級管理</h2>
+<h3 id="section-22">2.1 功能概述</h3>
+<p>職等職級管理定義了組織的<strong>層級結構</strong>，包含職等（1-7）、薪資對照、雙軌制度（管理職/專業職）、晉升條件和部門職位。</p>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>白話說明</strong>：把組織想像成一棟七層樓的大樓。每一層（職等）都有兩條走廊（管理職走廊和專業職走廊），每層樓的租金不同（薪資），而且要從 3 樓搬到 4 樓，你必須先滿足一些條件（晉升標準）。</div>
+</div>
+<h3 id="section-23">2.2 雙軌制設計</h3>
+<p>系統採用<strong>雙軌制</strong>：每個職等自動對應「管理職」和「專業職」兩條發展路徑。</p>
+<div class="code-block">職等 7 ┃ 總經理         ┃ 首席技術官        ┃
+職等 6 ┃ 副總經理       ┃ 資深技術總監      ┃
+職等 5 ┃ 處長/協理      ┃ 技術總監          ┃
+職等 4 ┃ 經理           ┃ 資深專家          ┃
+職等 3 ┃ 副理           ┃ 資深工程師        ┃
+職等 2 ┃ 主任           ┃ 工程師            ┃
+職等 1 ┃ 組長           ┃ 助理工程師        ┃
+       ┗━━━管理職━━━━━━━┻━━━專業職━━━━━━━━━┛</div>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>白話說明</strong>：不是每個優秀的工程師都想當主管。雙軌制讓「技術高手」可以在專業職軌道上升遷加薪，不一定要轉管理職。</div>
+</div>
+<h3 id="section-24">2.3 頁籤結構（主頁籤 + 子頁籤）</h3>
+<p>系統採用<strong>兩層頁籤架構</strong>，避免主頁籤過多：</p>
+<p><strong>主頁籤（第一層）</strong>：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>主頁籤</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>職等職級矩陣</strong></td>
+<td>含子頁籤，展示完整職等職級資料</td>
+</tr>
+<tr>
+<td><strong>職涯發展路徑</strong></td>
+<td>管理職涯路徑定義</td>
+</tr>
+<tr>
+<td><strong>AI 職涯規劃</strong></td>
+<td>選擇員工 → AI 分析職涯路徑（目前為模擬資料）</td>
+</tr>
+<tr>
+<td><strong>待審核</strong></td>
+<td>查看待核准的變更（含待審核數量徽章）</td>
+</tr>
+<tr>
+<td><strong>變更歷史</strong></td>
+<td>已處理的歷史記錄</td>
+</tr>
+</tbody></table></div>
+<p><strong>子頁籤（第二層，位於「職等職級矩陣」內）</strong>：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>子頁籤</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>職等職級薪資對照表</strong></td>
+<td>整體覽表：每個職等的薪資範圍、管理職/專業職頭銜</td>
+</tr>
+<tr>
+<td><strong>管理職軌道明細</strong></td>
+<td>矩陣式佈局：職等 × 部門的管理職職位、晉升條件</td>
+</tr>
+<tr>
+<td><strong>專業職軌道明細</strong></td>
+<td>矩陣式佈局：職等 × 部門的專業職職位、晉升條件</td>
+</tr>
+</tbody></table></div>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>白話說明</strong>：點選「職等職級矩陣」主頁籤後，內部還有「薪資對照表 / 管理職明細 / 專業職明細」三個子頁籤可切換。軌道名稱由系統動態顯示。</div>
+</div>
+<h3 id="section-25">2.4 薪資級別管理</h3>
+<p>每個職等可以有多個薪資級別，用「薪資代碼」區分：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>職等</th>
+<th>薪資代碼</th>
+<th>月薪</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>BS01</td>
+<td>28,000</td>
+<td>職等 1 起薪</td>
+</tr>
+<tr>
+<td>1</td>
+<td>BS02</td>
+<td>30,000</td>
+<td>職等 1 第二級</td>
+</tr>
+<tr>
+<td>2</td>
+<td>BS03</td>
+<td>33,000</td>
+<td>職等 2 起薪</td>
+</tr>
+<tr>
+<td>2</td>
+<td>BS04</td>
+<td>36,000</td>
+<td>職等 2 第二級</td>
+</tr>
+<tr>
+<td>3</td>
+<td>BS05</td>
+<td>40,000</td>
+<td>職等 3 起薪</td>
+</tr>
+<tr>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+</tr>
+</tbody></table></div>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>白話說明</strong>：同樣是職等 2 的員工，做了一年的和做了三年的薪水不一樣。薪資級別讓同一職等的人可以有不同薪資，像是「年資加薪」的概念。</div>
+</div>
+<p><strong>自動編號機制</strong>：</p>
+<ol>
+<li>使用者輸入前綴（如 <code>BS</code>）</li>
+<li>系統自動計算：從前一職等的最大編號 + 1 開始遞增</li>
+<li>例如：職等 2 最大是 BS04，職等 3 自動從 BS05 開始</li>
+</ol>
+<h3 id="section-26">2.5 審核流程（重要！）</h3>
+<p>職等職級管理的所有<strong>新增、修改、刪除</strong>操作都不會直接生效，而是進入審核流程：</p>
+<div class="flowchart">
+<div class="flowchart-title">流程圖</div>
+<div class="code-block">flowchart TD
+    USER[使用者提交變更] --&gt; PENDING[建立待審核記錄&lt;br/&gt;狀態：pending]
+    PENDING --&gt; TAB[顯示在「待審核」頁籤]
+    TAB --&gt; REVIEWER{審核者操作}
+    REVIEWER --&gt;|核准| APPROVE[狀態：approved]
+    REVIEWER --&gt;|駁回| REJECT[狀態：rejected&lt;br/&gt;記錄駁回原因]
+    APPROVE --&gt; APPLY[套用變更到資料庫]
+    APPLY --&gt; DONE[生效]
+    REJECT --&gt; NOTIFY[通知提交者修改]</div>
+</div>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>白話說明</strong>：就像公司的請購流程。你想改一個職等的薪資，不是改了就生效，而是先「送簽」，主管核准後才會正式更新。這樣可以避免誤操作造成的影響。</div>
+</div>
+<p><strong>審核記錄包含</strong>：</p>
+<ul>
+<li>變更類型（新增/修改/刪除）</li>
+<li>舊資料快照 vs 新資料快照</li>
+<li>提交者、核准者</li>
+<li>駁回原因（若被駁回）</li>
+</ul>
+<h3 id="section-27">2.6 晉升條件設定</h3>
+<p>每個「從 A 職等到 B 職等」的晉升路徑可以定義具體條件：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>說明</th>
+<th>範例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>起始職等</td>
+<td>目前在幾等</td>
+<td>3</td>
+</tr>
+<tr>
+<td>目標職等</td>
+<td>要升到幾等</td>
+<td>4</td>
+</tr>
+<tr>
+<td>適用軌道</td>
+<td>管理職 or 專業職</td>
+<td>management</td>
+</tr>
+<tr>
+<td>績效門檻</td>
+<td>最近評核需達到的等級</td>
+<td>A 或 B</td>
+</tr>
+<tr>
+<td>必備技能</td>
+<td>需要具備的技能清單</td>
+<td>專案管理、預算編制</td>
+</tr>
+<tr>
+<td>必修課程</td>
+<td>需完成的訓練課程</td>
+<td>管理學基礎、領導力工作坊</td>
+</tr>
+<tr>
+<td>KPI 重點</td>
+<td>關注的績效指標</td>
+<td>團隊生產力提升 10%</td>
+</tr>
+<tr>
+<td>其他條件</td>
+<td>其他要求</td>
+<td>帶領 5 人以上團隊滿一年</td>
+</tr>
+<tr>
+<td>晉升流程</td>
+<td>流程說明</td>
+<td>自薦 → 部門推薦 → HR 審核 → 總經理核准</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-28">2.7 部門職位對照</h3>
+<p>定義每個部門在各職等、各軌道下的<strong>具體職位名稱</strong>：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>部門</th>
+<th>職等</th>
+<th>軌道</th>
+<th>職位名稱</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>人資部</td>
+<td>3</td>
+<td>管理職</td>
+<td>人資副理</td>
+</tr>
+<tr>
+<td>人資部</td>
+<td>3</td>
+<td>專業職</td>
+<td>資深人資專員</td>
+</tr>
+<tr>
+<td>研發部</td>
+<td>4</td>
+<td>管理職</td>
+<td>研發經理</td>
+</tr>
+<tr>
+<td>研發部</td>
+<td>4</td>
+<td>專業職</td>
+<td>資深軟體架構師</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-29">2.8 子公司覆蓋機制</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>資料</th>
+<th>集團預設</th>
+<th>子公司覆蓋</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>職等定義 (1-7)</td>
+<td>共用</td>
+<td>不可覆蓋（全集團統一）</td>
+</tr>
+<tr>
+<td>薪資級別</td>
+<td>集團標準薪資</td>
+<td>子公司可定義自己的薪資</td>
+</tr>
+<tr>
+<td>軌道條目</td>
+<td>集團標準頭銜</td>
+<td>子公司可定義自己的頭銜</td>
+</tr>
+<tr>
+<td>部門職位</td>
+<td>集團標準職位</td>
+<td>子公司可定義自己的職位</td>
+</tr>
+</tbody></table></div>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>白話說明</strong>：集團規定統一有 7 個職等，但台北分公司和高雄分公司的「職等 3 的薪水」可以不一樣。</div>
+</div>
+<h3 id="section-30">2.9 AI 職涯規劃助手</h3>
+<p>系統提供 AI 職涯規劃功能，可以分析員工的發展路徑：</p>
+<p><strong>分析維度</strong>：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>維度</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>垂直晉升</td>
+<td>現在是職等 3，下一步升到職等 4 需要什麼？</td>
+</tr>
+<tr>
+<td>橫向轉調</td>
+<td>同職等換到不同角色（如從技術轉產品）</td>
+</tr>
+<tr>
+<td>跨部門發展</td>
+<td>跨到其他部門的可能性</td>
+</tr>
+</tbody></table></div>
+<p><strong>輸出內容</strong>：</p>
+<ul>
+<li>當前狀態分析（職等、年資、能力分數）</li>
+<li>三個方向的路徑推薦（含時間估計、風險等級）</li>
+<li>個人化訓練計畫（推薦課程與完成時間）</li>
+<li>晉升準備度百分比</li>
+<li>職涯模擬情景</li>
+</ul>
+<div class="note">
+<div class="note-title">說明</div>
+<div>⚠️ <strong>目前狀態</strong>：AI 職涯規劃目前使用<strong>模擬資料 (Mock)</strong>，尚未接入真實 AI 服務。詳見[第五部分：AI 服務功能缺口分析](#第五部分ai-服務功能缺口分析)。</div>
+</div>
+<hr>
+<h2 id="section-31" class="section-title">第三部分：職務說明書管理</h2>
+<h3 id="section-32">3.1 功能概述</h3>
+<p>職務說明書（JD, Job Description）是將「職能需求」和「職等定位」整合為一份完整文件的功能。每份 JD 描述一個具體職位需要做什麼、需要什麼能力、在組織中的定位。</p>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>白話說明</strong>：如果你要在 104 徵一個「人資經理」，JD 就是你要寫的那份「我們要找什麼樣的人」的詳細說明。差別是在 Bombus 系統裡，JD 不只是一段文字描述，而是一份<strong>結構化</strong>的規格書，自動連結到職能框架和職等。</div>
+</div>
+<h3 id="section-33">3.2 JD 包含的 11 大內容區塊</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>編號</th>
+<th>區塊名稱</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>主要職責 (Responsibilities)</td>
+<td>這個職位要做的事情清單</td>
+</tr>
+<tr>
+<td>2</td>
+<td>職務目的 (Job Purpose)</td>
+<td>為什麼需要這個職位</td>
+</tr>
+<tr>
+<td>3</td>
+<td>職務要求 (Qualifications)</td>
+<td>學歷、經歷、證照等硬性條件</td>
+</tr>
+<tr>
+<td>4</td>
+<td>最終有價值產品 (VFP)</td>
+<td>這個職位的最終產出是什麼</td>
+</tr>
+<tr>
+<td>5</td>
+<td>職能基準 (Competency Standards)</td>
+<td>引用職能框架的需求</td>
+</tr>
+<tr>
+<td>6</td>
+<td>工作描述 (Work Description)</td>
+<td>日常工作內容描述</td>
+</tr>
+<tr>
+<td>7</td>
+<td>檢查清單 (Checklist)</td>
+<td>工作品質檢查項目（含配分）</td>
+</tr>
+<tr>
+<td>8</td>
+<td>職務責任 (Job Duties)</td>
+<td>具體的責任歸屬</td>
+</tr>
+<tr>
+<td>9</td>
+<td>每日工作 (Daily Tasks)</td>
+<td>每天要做的事</td>
+</tr>
+<tr>
+<td>10</td>
+<td>每週工作 (Weekly Tasks)</td>
+<td>每週要做的事</td>
+</tr>
+<tr>
+<td>11</td>
+<td>每月工作 (Monthly Tasks)</td>
+<td>每月要做的事</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-34">3.3 職能需求連結</h3>
+<p>JD 的第 5 區塊「職能基準」直接連結到職能框架，分為四類需求：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>類別</th>
+<th>選擇項目</th>
+<th>設定內容</th>
+<th>範例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>核心職能</td>
+<td>從框架選擇</td>
+<td>需求等級 (L1-L6) + 權重 (%)</td>
+<td>溝通表達 L3 30%</td>
+</tr>
+<tr>
+<td>管理職能</td>
+<td>從框架選擇</td>
+<td>需求等級 (L1-L6) + 權重 (%)</td>
+<td>團隊領導 L4 25%</td>
+</tr>
+<tr>
+<td>專業職能</td>
+<td>從框架選擇</td>
+<td>需求等級 (L1-L6) + 權重 (%)</td>
+<td>系統設計 L4 20%</td>
+</tr>
+<tr>
+<td>KSA 職能</td>
+<td>從框架選擇</td>
+<td>權重 (%)</td>
+<td>Excel 進階 15%</td>
+</tr>
+</tbody></table></div>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>白話說明</strong>：就像食譜上寫「需要高筋麵粉 300g、雞蛋 2 顆、糖 50g」，JD 的職能需求寫的是「需要溝通力 L3（佔 30%）、領導力 L4（佔 25%）」。</div>
+</div>
+<h3 id="section-35">3.4 三種建立方式</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>方式</th>
+<th>說明</th>
+<th>適用情境</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>自行新增</td>
+<td>從零開始填寫所有欄位</td>
+<td>全新職位，沒有參考依據</td>
+</tr>
+<tr>
+<td>匯入模版</td>
+<td>從已有的 JD 複製再修改</td>
+<td>類似職位，微調即可</td>
+</tr>
+<tr>
+<td>AI 職務撰寫助手</td>
+<td>輸入描述 → AI 自動產生（目前為前端 UI 模擬）</td>
+<td>快速起草，再手動微調</td>
+</tr>
+</tbody></table></div>
+<div class="note">
+<div class="note-title">說明</div>
+<div>⚠️ <strong>AI 輔助目前為 UI 展示</strong>：前端有進度動畫模擬 AI 生成過程，但後端尚未接入 LLM 服務。</div>
+</div>
+<h3 id="section-36">3.5 五步驟建立流程</h3>
+<div class="flowchart">
+<div class="flowchart-title">流程圖</div>
+<div class="code-block">flowchart LR
+    S1[步驟 1&lt;br/&gt;選擇模式&lt;br/&gt;手動/範本/AI] --&gt; S2[步驟 2&lt;br/&gt;基本資訊&lt;br/&gt;代碼/名稱/部門/職等]
+    S2 --&gt; S3[步驟 3&lt;br/&gt;職能需求&lt;br/&gt;核心/管理/專業/KSA]
+    S3 --&gt; S4[步驟 4&lt;br/&gt;內容設定&lt;br/&gt;11 大區塊]
+    S4 --&gt; S5[步驟 5&lt;br/&gt;確認送出&lt;br/&gt;預覽並儲存]</div>
+</div>
+<p><strong>步驟 2 關鍵欄位</strong>：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>必填</th>
+<th>說明</th>
+<th>關聯模組</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>職位代碼</td>
+<td>✅</td>
+<td>自動產生，格式 JD-{部門}-{職等}-{序號}</td>
+<td>—</td>
+</tr>
+<tr>
+<td>職位名稱</td>
+<td>✅</td>
+<td>如「人資經理」</td>
+<td>—</td>
+</tr>
+<tr>
+<td>部門</td>
+<td>✅</td>
+<td>下拉選擇</td>
+<td>組織架構</td>
+</tr>
+<tr>
+<td>職等</td>
+<td>✅</td>
+<td>下拉 1-7</td>
+<td><strong>職等職級管理</strong></td>
+</tr>
+<tr>
+<td>職級代碼</td>
+<td>❌</td>
+<td>如 BS03</td>
+<td><strong>職等職級管理</strong></td>
+</tr>
+<tr>
+<td>職位頭銜</td>
+<td>❌</td>
+<td>英文職稱，如 HR Manager</td>
+<td>—</td>
+</tr>
+<tr>
+<td>所屬子公司</td>
+<td>❌</td>
+<td>多租戶隔離</td>
+<td>組織架構</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-37">3.6 審核與版本管理</h3>
+<h4 id="section-38">審核流程</h4>
+<div class="flowchart">
+<div class="flowchart-title">流程圖</div>
+<div class="code-block">stateDiagram-v2
+    [*] --&gt; 草稿: 建立 JD
+    草稿 --&gt; 審核中: 送出審核
+    審核中 --&gt; 已發佈: 核准
+    審核中 --&gt; 已退回: 退回（附理由）
+    已退回 --&gt; 草稿: 修改後重新送出
+    已發佈 --&gt; 已封存: 封存
+    已發佈 --&gt; 草稿: 建立新版本</div>
+</div>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>狀態</th>
+<th>英文</th>
+<th>可執行的動作</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>草稿</td>
+<td>draft</td>
+<td>編輯、送出審核、刪除</td>
+</tr>
+<tr>
+<td>審核中</td>
+<td>pending_review</td>
+<td>核准、退回</td>
+</tr>
+<tr>
+<td>已退回</td>
+<td>rejected</td>
+<td>修改、重新送出</td>
+</tr>
+<tr>
+<td>已發佈</td>
+<td>published</td>
+<td>封存、建立新版本</td>
+</tr>
+<tr>
+<td>已封存</td>
+<td>archived</td>
+<td>僅供查閱</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-39">版本管理</h4>
+<p>當一份已發佈的 JD 需要修改時：</p>
+<ol>
+<li>點選「建立新版本」→ 系統自動建立新的<strong>草稿</strong>版本</li>
+<li>修改後重新送出審核</li>
+<li>新版本核准後取代舊版本</li>
+<li>所有歷史版本都保留完整快照，可隨時回顧</li>
+</ol>
+<h3 id="section-40">3.7 權限控制</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>角色</th>
+<th>查看</th>
+<th>編輯</th>
+<th>審核</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>超級管理員</td>
+<td>✅ 全公司</td>
+<td>✅ 全公司</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>子公司管理員</td>
+<td>✅ 全公司</td>
+<td>✅ 全公司</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>HR 主管</td>
+<td>✅ 全公司</td>
+<td>✅ 全公司</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>部門主管</td>
+<td>✅ 全公司</td>
+<td>❌</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>一般員工</td>
+<td>✅ 全公司</td>
+<td>❌</td>
+<td>❌</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="section-41" class="section-title">第四部分：三大模組協作流程</h2>
+<h3 id="section-42">4.1 端到端完整流程</h3>
+<p>以下展示從「零」到「完整運作」的典型建置流程：</p>
+<div class="flowchart">
+<div class="flowchart-title">流程圖</div>
+<div class="code-block">flowchart TD
+    subgraph Phase1[Phase 1：建立基礎]
+        A1[定義核心職能&lt;br/&gt;如：溝通表達、自我管理] --&gt; A2[定義管理職能&lt;br/&gt;如：團隊領導、決策能力]
+        A2 --&gt; A3[定義專業職能&lt;br/&gt;如：系統設計、財務分析]
+        A3 --&gt; A4[定義 KSA 職能&lt;br/&gt;如：Excel 技能、勞動法知識]
+    end
+
+    subgraph Phase2[Phase 2：設定架構]
+        B1[建立職等 1-7] --&gt; B2[設定各職等薪資級別&lt;br/&gt;BS01-BS14]
+        B2 --&gt; B3[定義管理職 × 專業職頭銜]
+        B3 --&gt; B4[設定各部門的職位名稱]
+        B4 --&gt; B5[定義晉升條件]
+    end
+
+    subgraph Phase3[Phase 3：撰寫 JD]
+        C1[選擇建立模式&lt;br/&gt;手動/範本/AI] --&gt; C2[填寫基本資訊&lt;br/&gt;指定職等 + 部門]
+        C2 --&gt; C3[選擇職能需求&lt;br/&gt;從框架挑選 + 設定等級]
+        C3 --&gt; C4[填寫 11 大區塊]
+        C4 --&gt; C5[送出審核 → 發布]
+    end
+
+    subgraph Phase4[Phase 4：日常運用]
+        D1[缺口分析&lt;br/&gt;比對員工能力 vs JD 需求]
+        D2[晉升評估&lt;br/&gt;檢查是否符合晉升條件]
+        D3[職涯規劃&lt;br/&gt;AI 推薦發展路徑]
+        D4[招募依據&lt;br/&gt;JD 作為面試評分標準]
+    end
+
+    Phase1 --&gt; Phase2
+    Phase2 --&gt; Phase3
+    Phase3 --&gt; Phase4</div>
+</div>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>白話說明</strong>：就像蓋房子一樣，要先有建材（職能）、再有設計圖（職等），最後才能寫出每間房間的規格（JD）。順序不能反過來，因為 JD 需要引用職能和職等。</div>
+</div>
+<h3 id="section-43">4.2 三大模組的互動場景</h3>
+<h4 id="section-44">場景 1：新增一個「資深軟體工程師」職位</h4>
+<div class="code-block">Step 1 [職能框架] 確認已有需要的職能：
+  - 核心：溝通表達、自我管理
+  - 專業：系統設計、程式開發
+  - KSA：Git 版本控制（技能）、敏捷開發知識（知識）
+
+Step 2 [職等職級] 確認職等設定：
+  - 職等 3、專業職軌道
+  - 薪資範圍：BS05 (40,000) ~ BS08 (48,000)
+  - 頭銜：資深工程師
+
+Step 3 [職務說明書] 建立 JD：
+  - 基本資訊：代碼 JD-RD-3-001、部門=研發部、職等=3
+  - 職能需求：
+    - 核心：溝通表達 L2 (20%)、自我管理 L3 (15%)
+    - 專業：系統設計 L3 (30%)、程式開發 L4 (20%)
+    - KSA：Git (10%)、敏捷知識 (5%)
+  - 內容區塊：填寫職責、每日工作等
+  - 送出審核 → 核准 → 發佈</div>
+<h4 id="section-45">場景 2：員工晉升評估</h4>
+<div class="code-block">Step 1 [缺口分析] 查看員工能力 vs JD 需求：
+  - 系統比對：JD 要求系統設計 L3，員工實際 L2 → 缺口 1 級
+  - 雷達圖顯示各項職能的差距
+
+Step 2 [職等職級] 檢查晉升條件：
+  - 從職等 2 升到職等 3 需要：
+    - 績效 ≥ B
+    - 完成「系統架構設計」課程
+    - 在現職等服務滿 2 年
+
+Step 3 [教育訓練] 安排補強：
+  - 推薦「系統架構設計」課程
+  - 追蹤完成進度</div>
+<h4 id="section-46">場景 3：組織改制 — 新增子公司</h4>
+<div class="code-block">Step 1 [職能框架] 決定哪些職能需要子公司專屬化：
+  - 核心職能 → 沿用集團共用版
+  - 專業職能 → 為新子公司建立專屬版本
+
+Step 2 [職等職級] 設定子公司薪資：
+  - 職等結構沿用（1-7 不變）
+  - 子公司可設定自己的薪資級別和頭銜
+
+Step 3 [職務說明書] 建立子公司的 JD：
+  - 可參考集團範本
+  - 職能需求可選用集團共用或子公司專屬職能</div>
+<h3 id="section-47">4.3 資料依賴關係圖</h3>
+<div class="flowchart">
+<div class="flowchart-title">流程圖</div>
+<div class="code-block">graph LR
+    subgraph 基礎資料
+        COMP[職能定義&lt;br/&gt;Core/Mgmt/Prof/KSA]
+        GRADE[職等定義 1-7]
+        SALARY[薪資級別]
+        DEPT[部門/組織架構]
+    end
+
+    subgraph 複合資料
+        TRACK[軌道條目&lt;br/&gt;職等 × 管理/專業]
+        POS[部門職位&lt;br/&gt;部門 × 職等 × 軌道]
+        PROMO[晉升條件&lt;br/&gt;from → to × 軌道]
+    end
+
+    subgraph 應用文件
+        JD[職務說明書]
+    end
+
+    subgraph 分析應用
+        GAP[缺口分析]
+        CAREER[AI 職涯規劃]
+        RECRUIT[招募面試]
+    end
+
+    GRADE --&gt; TRACK
+    GRADE --&gt; SALARY
+    GRADE --&gt; POS
+    DEPT --&gt; POS
+    GRADE --&gt; PROMO
+    COMP --&gt; PROMO
+
+    COMP --&gt; JD
+    GRADE --&gt; JD
+    SALARY --&gt; JD
+
+    JD --&gt; GAP
+    JD --&gt; RECRUIT
+    COMP --&gt; GAP
+    PROMO --&gt; CAREER
+    GRADE --&gt; CAREER</div>
+</div>
+<hr>
+<h2 id="section-48" class="section-title">第五部分：AI 服務功能缺口分析</h2>
+<h3 id="section-49">5.1 現況總覽</h3>
+<p>目前三大模組中，AI 相關功能的實作狀態如下：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>功能</th>
+<th>所屬模組</th>
+<th>狀態</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>AI 職涯規劃</td>
+<td>職等職級</td>
+<td>🟡 前端 Mock</td>
+<td>完整 UI + 模擬資料，無後端 AI API</td>
+</tr>
+<tr>
+<td>AI JD 生成</td>
+<td>職務說明書</td>
+<td>🟡 前端 UI 骨架</td>
+<td>有進度動畫，無實際生成邏輯</td>
+</tr>
+<tr>
+<td>職能缺口分析</td>
+<td>缺口分析</td>
+<td>🟢 基礎實作</td>
+<td>雷達圖 + 差距計算，但數據依賴手動評核</td>
+</tr>
+<tr>
+<td>職能自動建議</td>
+<td>職能框架</td>
+<td>🔴 未實作</td>
+<td>無 AI 輔助建立職能</td>
+</tr>
+<tr>
+<td>職位薪資建議</td>
+<td>職等職級</td>
+<td>🔴 未實作</td>
+<td>無市場薪資比對</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-50">5.2 優勢（已具備的能力）</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>項目</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>完整的資料結構</td>
+<td>職能四分類、L1-L6 等級、JD 11 區塊等結構完整</td>
+</tr>
+<tr>
+<td>審核流程機制</td>
+<td>職等變更的 pending → approved 流程已完善</td>
+</tr>
+<tr>
+<td>多租戶隔離</td>
+<td>org_unit_id 已全面支援，含薪資覆蓋</td>
+</tr>
+<tr>
+<td>JD 版本管理</td>
+<td>完整的版本快照 + 審核歷史記錄</td>
+</tr>
+<tr>
+<td>AI 介面框架</td>
+<td>前端已有 AICareerAnalysis 等完整介面定義</td>
+</tr>
+<tr>
+<td>雙軌制結構</td>
+<td>管理職/專業職的並行軌道設計完整</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-51">5.3 缺失的 AI 功能</h3>
+<h4 id="section-52">缺口 1：AI 職務說明書生成 🔴 P0（最高優先）</h4>
+<p><strong>現況</strong>：前端 <code>create-jd-page</code> 有 AI 模式的 UI 和進度動畫，但點擊後只有動畫效果，沒有實際產生內容。</p>
+<p><strong>期望功能</strong>：</p>
+<ul>
+<li>使用者輸入職位描述（如「我們需要一個管理研發團隊的工程主管」）</li>
+<li>AI 自動解析並產生：<ul>
+<li>11 大區塊的內容（職責、每日工作等）</li>
+<li>推薦的職能需求（核心 L? + 管理 L? + 專業 L? + KSA）</li>
+<li>建議的職等和薪資範圍</li>
+</ul>
+</li>
+<li>使用者可在生成結果上微調</li>
+</ul>
+<p><strong>技術需求</strong>：</p>
+<ul>
+<li>後端整合 LLM API（如 Claude、GPT-4）</li>
+<li>需提供組織的職能框架和職等資料作為 Context</li>
+<li>輸出格式需符合 JD 結構化欄位</li>
+</ul>
+<hr>
+<h4 id="section-53">缺口 2：AI 職涯規劃引擎 🟡 P0（最高優先）</h4>
+<p><strong>現況</strong>：前端有完整的 <code>AICareerAnalysis</code> 介面和 UI，但 <code>generateMockAnalysis()</code> 只回傳硬編碼的模擬資料。</p>
+<p><strong>期望功能</strong>：</p>
+<ul>
+<li>連接真實員工資料（職等、年資、評核紀錄、已完成課程）</li>
+<li>分析職能缺口，對照晉升條件</li>
+<li>產生個人化的三方向推薦（垂直/橫向/跨部門）</li>
+<li>生成具體可執行的訓練計畫</li>
+</ul>
+<p><strong>技術需求</strong>：</p>
+<ul>
+<li>後端 AI 分析 API，整合員工資料 + 職能評核 + 晉升條件</li>
+<li>可先用規則引擎（Rule-based）做基本推薦，再逐步接入 LLM</li>
+</ul>
+<hr>
+<h4 id="section-54">缺口 3：智能職能建議 🔴 P1</h4>
+<p><strong>現況</strong>：建立職能時完全手動，需逐一填寫名稱、定義、各等級行為指標。</p>
+<p><strong>期望功能</strong>：</p>
+<ul>
+<li>根據產業類型和職位角色，AI 建議適合的職能清單</li>
+<li>根據職能名稱，自動產生 L1-L6 的行為指標描述</li>
+<li>根據 JD 內容反向推薦需要新增的職能</li>
+</ul>
+<p><strong>技術需求</strong>：</p>
+<ul>
+<li>LLM 生成行為指標（需要 HR 領域的 Prompt 工程）</li>
+<li>產業標準職能資料庫作為參考基礎</li>
+</ul>
+<hr>
+<h4 id="section-55">缺口 4：市場薪資基準比對 🔴 P1</h4>
+<p><strong>現況</strong>：薪資級別完全手動設定，無外部參考。</p>
+<p><strong>期望功能</strong>：</p>
+<ul>
+<li>接入外部薪資調查資料（如 104 薪資數據）</li>
+<li>比對目前薪資與市場水準的差距</li>
+<li>提供薪資調整建議</li>
+</ul>
+<p><strong>技術需求</strong>：</p>
+<ul>
+<li>外部薪資 API 接入（104 薪資查詢、主計處統計等）</li>
+<li>薪資競爭力分析演算法</li>
+</ul>
+<hr>
+<h4 id="section-56">缺口 5：職能評核自動化 🔴 P2</h4>
+<p><strong>現況</strong>：職能缺口分析的數據來自手動填寫的評核分數。</p>
+<p><strong>期望功能</strong>：</p>
+<ul>
+<li>根據員工的工作成果（專案完成度、培訓紀錄）自動推算能力等級</li>
+<li>AI 輔助評核建議（管理者評核時提供參考分數）</li>
+<li>360 度回饋整合（同儕、下屬、客戶回饋）</li>
+</ul>
+<p><strong>技術需求</strong>：</p>
+<ul>
+<li>工作成果數據收集管道</li>
+<li>能力推算模型（可先用加權公式，再升級為 ML 模型）</li>
+</ul>
+<hr>
+<h4 id="section-57">缺口 6：JD 相似度比對 🔴 P2</h4>
+<p><strong>現況</strong>：無法判斷兩份 JD 之間的相似度或重複性。</p>
+<p><strong>期望功能</strong>：</p>
+<ul>
+<li>新建 JD 時自動比對現有 JD，提示相似職位</li>
+<li>組織改制時分析哪些 JD 可以合併</li>
+<li>職能需求的重疊度分析</li>
+</ul>
+<p><strong>技術需求</strong>：</p>
+<ul>
+<li>文本向量化（Embedding）+ 相似度計算</li>
+<li>職能需求的結構化比對演算法</li>
+</ul>
+<hr>
+<h4 id="section-58">缺口 7：晉升預測模型 🔴 P3</h4>
+<p><strong>現況</strong>：晉升條件是固定規則，沒有預測性分析。</p>
+<p><strong>期望功能</strong>：</p>
+<ul>
+<li>預測員工何時可以達到晉升標準</li>
+<li>識別高潛力人才（綜合績效、學習力、能力成長速度）</li>
+<li>預警：「即將符合但差一步」的員工清單</li>
+</ul>
+<p><strong>技術需求</strong>：</p>
+<ul>
+<li>歷史晉升數據收集與分析</li>
+<li>預測模型（可先用統計分析，再升級為 ML）</li>
+</ul>
+<h3 id="section-59">5.4 優先順序建議</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>優先級</th>
+<th>缺口</th>
+<th>理由</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>P0</strong></td>
+<td>AI JD 生成</td>
+<td>前端 UI 已完成，只差後端串接，ROI 最高</td>
+</tr>
+<tr>
+<td><strong>P0</strong></td>
+<td>AI 職涯規劃</td>
+<td>同上，前端完整，需後端引擎</td>
+</tr>
+<tr>
+<td><strong>P1</strong></td>
+<td>智能職能建議</td>
+<td>大幅減少 HR 手動建立職能的時間</td>
+</tr>
+<tr>
+<td><strong>P1</strong></td>
+<td>市場薪資比對</td>
+<td>薪資競爭力是留才關鍵</td>
+</tr>
+<tr>
+<td><strong>P2</strong></td>
+<td>職能評核自動化</td>
+<td>減少主觀判斷，提升評核品質</td>
+</tr>
+<tr>
+<td><strong>P2</strong></td>
+<td>JD 相似度比對</td>
+<td>避免重複建立，維護效率</td>
+</tr>
+<tr>
+<td><strong>P3</strong></td>
+<td>晉升預測模型</td>
+<td>需要足夠歷史資料，適合後期實作</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-60">5.5 技術整合建議</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>缺口功能</th>
+<th>建議技術方案</th>
+<th>複雜度</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>AI JD 生成</td>
+<td>Claude API / GPT-4 + 組織資料 Context</td>
+<td>中</td>
+</tr>
+<tr>
+<td>AI 職涯規劃</td>
+<td>Rule Engine → Claude API</td>
+<td>低→中</td>
+</tr>
+<tr>
+<td>智能職能建議</td>
+<td>Claude API + HR 領域 Prompt Template</td>
+<td>中</td>
+</tr>
+<tr>
+<td>市場薪資比對</td>
+<td>104 薪資 API + 統計分析</td>
+<td>中</td>
+</tr>
+<tr>
+<td>職能評核自動化</td>
+<td>加權公式 → ML 模型（scikit-learn）</td>
+<td>中→高</td>
+</tr>
+<tr>
+<td>JD 相似度比對</td>
+<td>OpenAI Embedding + Cosine Similarity</td>
+<td>低</td>
+</tr>
+<tr>
+<td>晉升預測模型</td>
+<td>Logistic Regression → XGBoost</td>
+<td>高</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="section-61" class="section-title">附錄</h2>
+<h3 id="section-62">附錄 1：職能類別快速對照表</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>類別</th>
+<th>代碼前綴</th>
+<th>等級制度</th>
+<th>適用對象</th>
+<th>與 JD 的關係</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>核心職能</td>
+<td>CORE-</td>
+<td>L1-L6 累積制</td>
+<td>全體員工</td>
+<td>必選，需設定等級 + 權重</td>
+</tr>
+<tr>
+<td>管理職能</td>
+<td>MGMT-</td>
+<td>L1-L6 累積制</td>
+<td>管理者</td>
+<td>管理職 JD 需選</td>
+</tr>
+<tr>
+<td>專業職能</td>
+<td>PROF-</td>
+<td>L1-L6 累積制</td>
+<td>特定部門</td>
+<td>依部門選擇</td>
+</tr>
+<tr>
+<td>KSA 職能</td>
+<td>KSA-</td>
+<td>無等級</td>
+<td>依職務</td>
+<td>選擇並設定權重</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-63">附錄 2：JD 狀態與操作對照表</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>當前狀態</th>
+<th>可執行操作</th>
+<th>操作後狀態</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>草稿</td>
+<td>編輯、送出審核、刪除</td>
+<td>審核中</td>
+</tr>
+<tr>
+<td>審核中</td>
+<td>核准、退回（附理由）</td>
+<td>已發佈 / 已退回</td>
+</tr>
+<tr>
+<td>已退回</td>
+<td>修改、重新送出</td>
+<td>草稿 → 審核中</td>
+</tr>
+<tr>
+<td>已發佈</td>
+<td>封存、建立新版本</td>
+<td>已封存 / 新草稿</td>
+</tr>
+<tr>
+<td>已封存</td>
+<td>僅供查閱</td>
+<td>—</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-64">附錄 3：API 端點參考</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>模組</th>
+<th>API 前綴</th>
+<th>主要端點</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>職能框架</td>
+<td><code>/api/competency-mgmt</code></td>
+<td><code>GET/POST/PUT/DELETE /:category</code>、<code>GET /:category/:id</code></td>
+</tr>
+<tr>
+<td>職等職級</td>
+<td><code>/api/grade-matrix</code></td>
+<td><code>GET /</code>、<code>GET /:grade</code>、<code>POST/PUT/DELETE /grades</code></td>
+</tr>
+<tr>
+<td>薪資級別</td>
+<td><code>/api/grade-matrix</code></td>
+<td><code>POST /grades/:grade/salaries</code>、<code>PUT/DELETE /salaries/:id</code></td>
+</tr>
+<tr>
+<td>軌道管理</td>
+<td><code>/api/grade-matrix/tracks</code></td>
+<td><code>GET/POST /</code>、<code>PUT/DELETE /:id</code></td>
+</tr>
+<tr>
+<td>軌道條目</td>
+<td><code>/api/grade-matrix</code></td>
+<td><code>GET/POST /grades/:grade/tracks</code>、<code>PUT/DELETE /track-entries/:id</code>、<code>POST /track-detail-save</code></td>
+</tr>
+<tr>
+<td>審核管理</td>
+<td><code>/api/grade-matrix/changes</code></td>
+<td><code>GET /pending</code>、<code>GET /history</code>、<code>POST /:id/approve</code>、<code>POST /:id/reject</code></td>
+</tr>
+<tr>
+<td>職涯路徑</td>
+<td><code>/api/grade-matrix/career</code></td>
+<td><code>GET/POST /paths</code>、<code>GET/PUT/DELETE /paths/:id</code></td>
+</tr>
+<tr>
+<td>部門列表</td>
+<td><code>/api/grade-matrix/departments</code></td>
+<td><code>GET /list</code></td>
+</tr>
+<tr>
+<td>部門職位</td>
+<td><code>/api/grade-matrix/positions</code></td>
+<td><code>GET /list</code>、<code>POST/PUT/DELETE /</code></td>
+</tr>
+<tr>
+<td>晉升條件</td>
+<td><code>/api/grade-matrix/promotion</code></td>
+<td><code>GET/POST/PUT/DELETE /criteria</code></td>
+</tr>
+<tr>
+<td>職務說明書</td>
+<td><code>/api/job-descriptions</code></td>
+<td><code>GET/POST/PUT/DELETE /</code>、<code>GET /generate-code</code></td>
+</tr>
+<tr>
+<td>JD 審核</td>
+<td><code>/api/job-descriptions</code></td>
+<td><code>POST /:id/submit-review</code>、<code>POST /:id/approve</code>、<code>POST /:id/reject</code>、<code>POST /:id/archive</code></td>
+</tr>
+<tr>
+<td>JD 版本</td>
+<td><code>/api/job-descriptions</code></td>
+<td><code>POST /:id/create-new-version</code>、<code>GET /:id/versions</code>、<code>GET /:id/versions/:versionId</code>、<code>GET /:id/approvals</code></td>
+</tr>
+</tbody></table></div>
+<h3 id="section-65">附錄 4：AI 功能缺口對照表</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>功能</th>
+<th>前端 UI</th>
+<th>後端 API</th>
+<th>AI 引擎</th>
+<th>現況</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>AI JD 生成</td>
+<td>✅ 已有</td>
+<td>❌ 缺</td>
+<td>❌ 缺</td>
+<td>前端有動畫模擬</td>
+</tr>
+<tr>
+<td>2</td>
+<td>AI 職涯規劃</td>
+<td>✅ 已有</td>
+<td>❌ 缺</td>
+<td>❌ 缺</td>
+<td>前端用 Mock 資料</td>
+</tr>
+<tr>
+<td>3</td>
+<td>智能職能建議</td>
+<td>❌ 缺</td>
+<td>❌ 缺</td>
+<td>❌ 缺</td>
+<td>完全未實作</td>
+</tr>
+<tr>
+<td>4</td>
+<td>市場薪資比對</td>
+<td>❌ 缺</td>
+<td>❌ 缺</td>
+<td>❌ 缺</td>
+<td>完全未實作</td>
+</tr>
+<tr>
+<td>5</td>
+<td>職能評核自動化</td>
+<td>❌ 缺</td>
+<td>❌ 缺</td>
+<td>❌ 缺</td>
+<td>完全未實作</td>
+</tr>
+<tr>
+<td>6</td>
+<td>JD 相似度比對</td>
+<td>❌ 缺</td>
+<td>❌ 缺</td>
+<td>❌ 缺</td>
+<td>完全未實作</td>
+</tr>
+<tr>
+<td>7</td>
+<td>晉升預測模型</td>
+<td>❌ 缺</td>
+<td>❌ 缺</td>
+<td>❌ 缺</td>
+<td>完全未實作</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-66">附錄 5：資料庫表對照</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>模組</th>
+<th>主要資料表</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>職能框架</td>
+<td><code>competencies</code></td>
+<td>職能定義（四類合一，含 <code>org_unit_id</code> 多租戶隔離）</td>
+</tr>
+<tr>
+<td>職能框架</td>
+<td><code>competency_levels</code></td>
+<td>L1-L6 等級行為指標</td>
+</tr>
+<tr>
+<td>職能框架</td>
+<td><code>competency_ksa_details</code></td>
+<td>KSA 行為指標 + 連結課程</td>
+</tr>
+<tr>
+<td>組織架構</td>
+<td><code>departments</code></td>
+<td>部門主表（名稱、代碼、主管、KPI、職能重點）</td>
+</tr>
+<tr>
+<td>職等職級</td>
+<td><code>grade_levels</code></td>
+<td>職等定義 (1-7)，全集團統一</td>
+</tr>
+<tr>
+<td>職等職級</td>
+<td><code>grade_salary_levels</code></td>
+<td>薪資代碼 + 金額（含 <code>org_unit_id</code> 子公司覆蓋）</td>
+</tr>
+<tr>
+<td>職等職級</td>
+<td><code>grade_tracks</code></td>
+<td>軌道定義（管理職/專業職）</td>
+</tr>
+<tr>
+<td>職等職級</td>
+<td><code>grade_track_entries</code></td>
+<td>職等 × 軌道條目（含 <code>org_unit_id</code> 子公司覆蓋）</td>
+</tr>
+<tr>
+<td>職等職級</td>
+<td><code>promotion_criteria</code></td>
+<td>晉升條件（含 <code>org_unit_id</code> 子公司覆蓋）</td>
+</tr>
+<tr>
+<td>職等職級</td>
+<td><code>department_positions</code></td>
+<td>部門職位對照（含 <code>org_unit_id</code> 子公司覆蓋）</td>
+</tr>
+<tr>
+<td>職等職級</td>
+<td><code>career_paths</code></td>
+<td>職涯路徑（含 <code>org_unit_id</code>）</td>
+</tr>
+<tr>
+<td>職等職級</td>
+<td><code>grade_change_history</code></td>
+<td>審核變更紀錄（pending → approved/rejected）</td>
+</tr>
+<tr>
+<td>職務說明書</td>
+<td><code>job_descriptions</code></td>
+<td>JD 主表（含 11 大區塊欄位 + <code>org_unit_id</code>）</td>
+</tr>
+<tr>
+<td>職務說明書</td>
+<td><code>job_description_versions</code></td>
+<td>JD 版本快照（JSON snapshot）</td>
+</tr>
+<tr>
+<td>職務說明書</td>
+<td><code>job_description_approvals</code></td>
+<td>JD 審核紀錄（核准/退回 + 理由）</td>
+</tr>
+</tbody></table></div>
+
+    </main>
+
+    <footer class="doc-footer">
+      <p>Bombus 人力資源管理系統 — 本文件由系統自動產生</p>
+    </footer>
+  </div>
+</body>
+</html>

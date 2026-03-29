@@ -241,7 +241,7 @@ router.get('/roles', (req, res) => {
 });
 
 router.post('/roles', (req, res) => {
-  const { name, description, permission_ids } = req.body;
+  const { name, description, permission_ids, scope_type } = req.body;
   const ip = getClientIP(req);
   const platformDB = getPlatformDB();
 
@@ -252,11 +252,13 @@ router.post('/roles', (req, res) => {
     });
   }
 
+  const validScopeTypes = ['global', 'subsidiary', 'department'];
+  const effectiveScopeType = validScopeTypes.includes(scope_type) ? scope_type : 'global';
   const id = uuidv4();
 
   req.tenantDB.run(
     'INSERT INTO roles (id, name, description, scope_type, is_system) VALUES (?, ?, ?, ?, 0)',
-    [id, name, description || null, 'global']
+    [id, name, description || null, effectiveScopeType]
   );
 
   // 批量設定權限
@@ -274,7 +276,7 @@ router.post('/roles', (req, res) => {
     user_id: req.user.userId,
     action: 'role_create',
     resource: 'role',
-    details: { role_id: id, name, scope_type: 'global' },
+    details: { role_id: id, name, scope_type: effectiveScopeType },
     ip
   });
 
@@ -283,7 +285,7 @@ router.post('/roles', (req, res) => {
 });
 
 router.put('/roles/:id', (req, res) => {
-  const { name, description, permission_ids } = req.body;
+  const { name, description, permission_ids, scope_type } = req.body;
   const ip = getClientIP(req);
   const platformDB = getPlatformDB();
 
@@ -310,6 +312,10 @@ router.put('/roles/:id', (req, res) => {
   if (description !== undefined) {
     updates.push('description = ?');
     params.push(description);
+  }
+  if (scope_type && ['global', 'subsidiary', 'department'].includes(scope_type)) {
+    updates.push('scope_type = ?');
+    params.push(scope_type);
   }
 
   if (updates.length > 0) {
@@ -403,6 +409,35 @@ router.delete('/roles/:id', (req, res) => {
 //  權限定義查詢
 // ══════════════════════════════════════════════════════════
 
+/**
+ * GET /api/tenant-admin/my-permissions
+ * 取得當前使用者的有效權限列表（依角色聯集）
+ */
+router.get('/my-permissions', (req, res) => {
+  const userId = req.user.userId;
+  const roles = req.user.roles || [];
+
+  // super_admin 擁有所有權限
+  if (roles.includes('super_admin')) {
+    const allPerms = req.tenantDB.query(
+      'SELECT DISTINCT resource || \':\' || action as perm FROM permissions'
+    );
+    return res.json({ permissions: allPerms.map(p => p.perm) });
+  }
+
+  // 查詢使用者所有角色的權限聯集
+  const perms = req.tenantDB.query(
+    `SELECT DISTINCT p.resource || ':' || p.action as perm
+     FROM user_roles ur
+     JOIN role_permissions rp ON rp.role_id = ur.role_id
+     JOIN permissions p ON p.id = rp.permission_id
+     WHERE ur.user_id = ?`,
+    [userId]
+  );
+
+  res.json({ permissions: perms.map(p => p.perm) });
+});
+
 router.get('/permissions', (req, res) => {
   const permissions = req.tenantDB.query(
     'SELECT * FROM permissions ORDER BY resource ASC, action ASC'
@@ -488,7 +523,15 @@ router.get('/users', (req, res) => {
   });
 });
 
+/**
+ * @deprecated 請改用 POST /api/employee 統一員工+帳號建立流程
+ * 此端點保留向後相容，未來版本將移除
+ */
 router.post('/users', async (req, res) => {
+  res.set('Deprecation', 'true');
+  res.set('Sunset', '2026-12-31');
+  res.set('Link', '</api/employee>; rel="successor-version"');
+
   const { email, password, name, employee_id } = req.body;
 
   if (!email || !password || !name) {
@@ -546,6 +589,40 @@ router.post('/users', async (req, res) => {
   );
 
   res.status(201).json(created);
+});
+
+// ── 密碼重設 ──
+router.post('/users/:id/reset-password', async (req, res) => {
+  const { resetUserPassword } = require('../services/account-creation');
+  const ip = getClientIP(req);
+  const platformDB = getPlatformDB();
+
+  try {
+    const result = await resetUserPassword(req.tenantDB, req.params.id);
+
+    logAudit(platformDB, {
+      tenant_id: req.tenantId,
+      user_id: req.user.userId,
+      action: 'user_password_reset',
+      resource: 'user',
+      details: { target_user_id: req.params.id },
+      ip
+    });
+
+    res.json({ newPassword: result.newPassword });
+  } catch (e) {
+    if (e.message.includes('not found')) {
+      return res.status(404).json({
+        error: 'NotFound',
+        message: '使用者不存在'
+      });
+    }
+    console.error('Error resetting password:', e);
+    res.status(500).json({
+      error: 'InternalError',
+      message: '密碼重設失敗'
+    });
+  }
 });
 
 router.put('/users/:id', async (req, res) => {
@@ -629,10 +706,12 @@ router.get('/user-roles/:userId', (req, res) => {
             r.name as role_name,
             CASE WHEN ur.org_unit_id IS NULL THEN 'global' ELSE ou.type END as scope_type,
             ou.name as scope_name,
+            parent.name as parent_name,
             ur.created_at
      FROM user_roles ur
      JOIN roles r ON r.id = ur.role_id
      LEFT JOIN org_units ou ON ou.id = ur.org_unit_id
+     LEFT JOIN org_units parent ON parent.id = ou.parent_id
      WHERE ur.user_id = ?`,
     [req.params.userId]
   );

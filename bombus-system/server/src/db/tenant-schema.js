@@ -381,7 +381,17 @@ const EMPLOYEE_MIGRATIONS = [
   'ALTER TABLE employees ADD COLUMN probation_months INTEGER',
   'ALTER TABLE employees ADD COLUMN onboarding_status TEXT',
   'ALTER TABLE employees ADD COLUMN converted_at TEXT',
-  'ALTER TABLE employees ADD COLUMN org_unit_id TEXT REFERENCES org_units(id)'
+  'ALTER TABLE employees ADD COLUMN org_unit_id TEXT REFERENCES org_units(id)',
+  // ── 統一員工管理新增欄位 ──
+  'ALTER TABLE employees ADD COLUMN english_name TEXT',
+  'ALTER TABLE employees ADD COLUMN mobile TEXT',
+  "ALTER TABLE employees ADD COLUMN gender TEXT DEFAULT 'other'",
+  'ALTER TABLE employees ADD COLUMN birth_date TEXT',
+  'ALTER TABLE employees ADD COLUMN address TEXT',
+  'ALTER TABLE employees ADD COLUMN emergency_contact_name TEXT',
+  'ALTER TABLE employees ADD COLUMN emergency_contact_relation TEXT',
+  'ALTER TABLE employees ADD COLUMN emergency_contact_phone TEXT',
+  'ALTER TABLE employees ADD COLUMN import_job_id TEXT'
 ];
 
 const USER_MIGRATIONS = [
@@ -391,6 +401,35 @@ const USER_MIGRATIONS = [
 const INTERVIEW_MIGRATIONS = [
   'ALTER TABLE interviews ADD COLUMN address TEXT'
 ];
+
+// ─── 批次匯入表 SQL ───
+
+const IMPORT_TABLES_SQL = `
+  CREATE TABLE IF NOT EXISTS import_jobs (
+    id TEXT PRIMARY KEY,
+    status TEXT DEFAULT 'pending',
+    total_rows INTEGER DEFAULT 0,
+    processed_rows INTEGER DEFAULT 0,
+    success_count INTEGER DEFAULT 0,
+    error_count INTEGER DEFAULT 0,
+    file_name TEXT,
+    created_by TEXT REFERENCES users(id),
+    created_at TEXT DEFAULT (datetime('now')),
+    completed_at TEXT
+  );
+
+  CREATE TABLE IF NOT EXISTS import_results (
+    id TEXT PRIMARY KEY,
+    job_id TEXT REFERENCES import_jobs(id),
+    row_number INTEGER,
+    status TEXT,
+    employee_id TEXT,
+    user_id TEXT,
+    initial_password TEXT,
+    error_message TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+`;
 
 // ─── RBAC 表 SQL ───
 
@@ -1760,12 +1799,15 @@ function initTenantSchema(adapter) {
     db.run("CREATE UNIQUE INDEX IF NOT EXISTS idx_gsl_code_org ON grade_salary_levels(code, COALESCE(org_unit_id, '__NULL__'))");
   } catch (e) { /* 索引已存在 */ }
 
+  // 批次匯入表（import_jobs + import_results）
+  db.exec(IMPORT_TABLES_SQL);
+
   adapter.save();
 }
 
 module.exports = {
   initTenantSchema,
-  RBAC_TABLES_SQL, BUSINESS_TABLES_SQL, FEATURE_TABLES_SQL,
+  RBAC_TABLES_SQL, BUSINESS_TABLES_SQL, FEATURE_TABLES_SQL, IMPORT_TABLES_SQL,
   EMPLOYEE_MIGRATIONS, USER_MIGRATIONS, INTERVIEW_MIGRATIONS,
   FEATURE_SEED_DATA, DEFAULT_ROLE_FEATURE_PERMS,
   seedFeatureData, seedDefaultRoleFeaturePerms

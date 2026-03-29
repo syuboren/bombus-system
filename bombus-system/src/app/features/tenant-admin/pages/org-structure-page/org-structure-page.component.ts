@@ -15,6 +15,7 @@ import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { HasPermissionDirective } from '../../../../shared/directives/has-permission.directive';
 import { OrganizationService } from '../../../organization/services/organization.service';
+import { EmployeeService } from '../../../employee/services/employee.service';
 import { TenantAdminService } from '../../services/tenant-admin.service';
 import { OrgUnitService } from '../../../../core/services/org-unit.service';
 import {
@@ -26,9 +27,9 @@ import {
   SimpleCollaborationType,
   AnchorSide,
   DepartmentEmployee,
-  DepartmentPositionInfo,
-  Employee
+  DepartmentPositionInfo
 } from '../../../organization/models/organization.model';
+import { UnifiedEmployee } from '../../../../shared/models/employee.model';
 import { OrgUnit } from '../../models/tenant-admin.model';
 
 type ViewMode = 'canvas' | 'list';
@@ -55,6 +56,7 @@ interface UnifiedTreeNode {
 })
 export class OrgStructurePageComponent implements OnInit, AfterViewInit {
   private orgService = inject(OrganizationService);
+  private employeeService = inject(EmployeeService);
   private tenantAdminService = inject(TenantAdminService);
   private orgUnitService = inject(OrgUnitService);
   private cdr = inject(ChangeDetectorRef);
@@ -70,7 +72,7 @@ export class OrgStructurePageComponent implements OnInit, AfterViewInit {
   // ============================================================
   orgTree = signal<OrgTreeNode[]>([]);
   collaborations = signal<SimpleCollaboration[]>([]);
-  employees = signal<Employee[]>([]);
+  employees = signal<UnifiedEmployee[]>([]);
   loading = signal(true);
 
   // ============================================================
@@ -301,7 +303,7 @@ export class OrgStructurePageComponent implements OnInit, AfterViewInit {
   });
 
   // All employees list (for manager dropdown)
-  allEmployees = signal<Employee[]>([]);
+  allEmployees = signal<UnifiedEmployee[]>([]);
 
   // ============================================================
   // Lifecycle
@@ -335,7 +337,7 @@ export class OrgStructurePageComponent implements OnInit, AfterViewInit {
       this.collaborations.set(data);
     });
 
-    this.orgService.getEmployees().subscribe(data => {
+    this.employeeService.getUnifiedEmployees().subscribe(data => {
       this.allEmployees.set(data);
     });
   }
@@ -1586,14 +1588,12 @@ export class OrgStructurePageComponent implements OnInit, AfterViewInit {
     }
   }
 
-  getDepartmentEmployees(): Employee[] {
+  getDepartmentEmployees(): UnifiedEmployee[] {
     const form = this.departmentForm();
     if (!form.id) return [];
     const dept = this.orgTree().find(n => n.id === form.id);
     if (!dept) return [];
-    return this.allEmployees().filter(emp =>
-      emp.positions.some(p => p.departmentName === dept.name)
-    );
+    return this.allEmployees().filter(emp => emp.department === dept.name);
   }
 
   getStatusLabel(status?: string): string {

@@ -147,23 +147,13 @@ export class SidebarComponent {
           icon: 'ri-settings-3-line',
           children: [
             { label: '組織架構管理', icon: '', route: '/settings/org-structure', featureId: 'SYS.org-structure' },
-            { label: '使用者管理', icon: '', route: '/settings/users', featureId: 'SYS.user-management' },
+            { label: '員工與帳號管理', icon: '', route: '/settings/users', featureId: 'SYS.user-management' },
             { label: '角色權限管理', icon: '', route: '/settings/roles', featureId: 'SYS.role-management' },
             { label: '審計日誌', icon: '', route: '/settings/audit', featureId: 'SYS.audit' }
           ]
         }
       ]
     },
-    {
-      title: '組織管理',
-      items: [
-        {
-          label: '員工管理',
-          icon: 'ri-user-settings-line',
-          route: '/organization/employee-management'
-        }
-      ]
-    }
   ];
 
   readonly platformMenuSections: MenuSection[] = [

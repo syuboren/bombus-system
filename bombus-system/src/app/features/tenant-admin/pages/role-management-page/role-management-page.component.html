@@ -26,6 +26,13 @@
               @if (role.is_system === 1) {
                 <span class="system-badge">系統角色</span>
               }
+              <span class="scope-badge scope-badge--{{ role.scope_type }}">
+                @switch (role.scope_type) {
+                  @case ('global') { 全域 }
+                  @case ('subsidiary') { 子公司 }
+                  @case ('department') { 部門 }
+                }
+              </span>
             </div>
           </div>
 
@@ -69,7 +76,7 @@
   <!-- ============================================================ -->
   <!-- 功能權限編輯 Modal（漸進式三欄） -->
   <!-- ============================================================ -->
-  @if (editingRole() && featurePermStates().size > 0) {
+  @if (editingRole()) {
     <div class="modal-overlay" (click)="closeFeaturePermEdit()">
       <div class="modal-container modal-container--xl" (click)="$event.stopPropagation()">
         <div class="modal-header">
@@ -178,8 +185,10 @@
           </button>
         </div>
         <div class="modal-body">
-          @if (viewFeaturePerms().length === 0) {
+          @if (viewLoading()) {
             <p class="text-muted">載入中...</p>
+          } @else if (viewFeaturePerms().length === 0) {
+            <p class="text-muted">此角色尚未設定任何功能權限，請使用「編輯功能權限」進行設定。</p>
           } @else {
             <div class="feature-perm-matrix feature-perm-matrix--readonly">
               <div class="fp-header-row">
@@ -269,6 +278,19 @@
               placeholder="角色說明（選填）"
               [value]="formDescription()"
               (input)="formDescription.set($any($event.target).value)" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">作用範圍類型</label>
+            <select
+              class="form-input"
+              [value]="formScopeType()"
+              (change)="formScopeType.set($any($event.target).value)">
+              <option value="global">全域 — 可指派為全域、子公司或部門</option>
+              <option value="subsidiary">子公司 — 可指派為子公司或部門</option>
+              <option value="department">部門 — 只能指派到部門</option>
+            </select>
+            <p class="form-hint">定義此角色在指派時允許的最大作用範圍</p>
           </div>
 
           <p class="text-muted">功能權限請於角色建立後，透過「編輯功能權限」設定。</p>

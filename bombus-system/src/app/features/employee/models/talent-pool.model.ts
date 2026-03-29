@@ -144,6 +144,7 @@ export interface TalentPoolStats {
 export type EmployeeStatus = 'active' | 'probation' | 'leave' | 'resigned' | 'terminated';
 export type DocumentStatus = 'valid' | 'expiring' | 'expired' | 'pending';
 
+/** @deprecated 請改用 shared/models/employee.model.ts 的 UnifiedEmployee */
 export interface Employee {
   id: string;
   employeeNo: string;
@@ -166,6 +167,7 @@ export interface Employee {
   certifications: string[];
 }
 
+/** @deprecated 請改用 shared/models/employee.model.ts 的 UnifiedEmployeeDetail */
 export interface EmployeeDetail extends Employee {
   birthDate?: Date;
   address?: string;

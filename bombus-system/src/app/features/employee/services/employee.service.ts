@@ -11,6 +11,15 @@ import {
   AuditLog,
   EmployeeROI
 } from '../models/talent-pool.model';
+import {
+  UnifiedEmployee,
+  UnifiedEmployeeDetail,
+  CreateEmployeeRequest,
+  CreateEmployeeResponse,
+  BatchValidationResult,
+  BatchImportJob,
+  BatchImportResult
+} from '../../../shared/models/employee.model';
 
 @Injectable({
   providedIn: 'root'
@@ -102,6 +111,117 @@ export class EmployeeService {
       })) : [],
       performance: Array.isArray(data.performance) ? data.performance : [],
       roi: data.roi || {},
+      candidateSource: data.candidateSource || undefined,
+      onboardingProgress: data.onboardingProgress || undefined
+    };
+  }
+
+  // ===== Unified Model Transforms =====
+
+  private transformUnifiedEmployee(data: any): UnifiedEmployee {
+    return {
+      id: data.id,
+      employeeNo: data.employee_no,
+      name: data.name,
+      englishName: data.english_name || undefined,
+      email: data.email,
+      phone: data.phone || '',
+      mobile: data.mobile || undefined,
+      avatar: data.avatar || undefined,
+      gender: data.gender || 'other',
+      department: data.department,
+      position: data.position,
+      level: data.level,
+      grade: data.grade,
+      manager: data.managerName || '',
+      managerId: data.manager_id || '',
+      hireDate: data.hire_date ? new Date(data.hire_date) : undefined,
+      status: data.status,
+      contractType: data.contract_type || 'full-time',
+      workLocation: data.work_location || '',
+      positions: Array.isArray(data.positions) ? data.positions.map((p: any) => ({
+        companyId: p.companyId || p.company_id || '',
+        companyName: p.companyName || p.company_name || '',
+        departmentId: p.departmentId || p.department_id || '',
+        departmentName: p.departmentName || p.department_name || '',
+        positionTitle: p.positionTitle || p.position_title || '',
+        positionLevel: p.positionLevel || p.position_level || '',
+        isPrimary: !!p.isPrimary || !!p.is_primary,
+        startDate: p.startDate ? new Date(p.startDate) : undefined,
+        endDate: p.endDate ? new Date(p.endDate) : undefined
+      })) : [],
+      userId: data.userId || data.user_id || null,
+      userStatus: data.userStatus || data.user_status || null,
+      orgUnitId: data.org_unit_id || undefined,
+      skills: Array.isArray(data.skills) ? data.skills : [],
+      certifications: Array.isArray(data.certifications)
+        ? data.certifications.map((c: any) => c.cert_name || c)
+        : []
+    };
+  }
+
+  private transformUnifiedEmployeeDetail(data: any): UnifiedEmployeeDetail {
+    return {
+      ...this.transformUnifiedEmployee(data),
+      birthDate: data.birth_date ? new Date(data.birth_date) : undefined,
+      address: data.address || undefined,
+      emergencyContact: data.emergency_contact_name ? {
+        name: data.emergency_contact_name,
+        relation: data.emergency_contact_relation || '',
+        phone: data.emergency_contact_phone || ''
+      } : undefined,
+      education: Array.isArray(data.education) ? data.education.map((e: any) => ({
+        degree: e.degree,
+        school: e.school,
+        major: e.major,
+        graduationYear: e.graduation_year || e.graduationYear
+      })) : [],
+      workHistory: Array.isArray(data.workHistory) ? data.workHistory.map((w: any) => ({
+        id: w.id,
+        effectiveDate: w.effectiveDate ? new Date(w.effectiveDate) : undefined,
+        changeType: w.changeType,
+        fromPosition: w.fromPosition,
+        toPosition: w.toPosition,
+        fromDepartment: w.fromDepartment,
+        toDepartment: w.toDepartment,
+        fromLevel: w.fromLevel,
+        toLevel: w.toLevel,
+        salaryChange: w.salaryChange,
+        reason: w.reason,
+        approvedBy: w.approvedBy
+      })) : [],
+      documents: Array.isArray(data.documents) ? data.documents.map((d: any) => ({
+        id: d.id,
+        name: d.label || d.fileName || 'Unknown',
+        type: d.type,
+        uploadDate: new Date(d.uploadedAt || d.uploaded_at),
+        expiryDate: d.expiryDate ? new Date(d.expiryDate) : undefined,
+        status: d.status,
+        version: '1.0',
+        filePath: d.fileUrl || d.file_url,
+        uploadedBy: d.uploadedBy || 'System'
+      })) : [],
+      training: Array.isArray(data.training) ? data.training.map((t: any) => ({
+        id: t.id,
+        courseName: t.courseName,
+        courseType: t.courseType,
+        completionDate: t.completionDate ? new Date(t.completionDate) : undefined,
+        score: t.score,
+        certificate: t.certificate,
+        hours: t.hours,
+        cost: t.cost,
+        status: t.status,
+        instructor: t.instructor,
+        notes: t.notes
+      })) : [],
+      performance: Array.isArray(data.performance) ? data.performance : [],
+      roi: data.roi || {} as any,
+      userRoles: Array.isArray(data.userRoles) ? data.userRoles.map((r: any) => ({
+        roleId: r.roleId || r.role_id,
+        roleName: r.roleName || r.role_name,
+        orgUnitId: r.orgUnitId || r.org_unit_id || undefined,
+        orgUnitName: r.orgUnitName || r.org_unit_name || undefined
+      })) : [],
       candidateSource: data.candidateSource || undefined,
       onboardingProgress: data.onboardingProgress || undefined
     };
@@ -210,10 +330,35 @@ export class EmployeeService {
     );
   }
 
+  // ===== Unified Model API Methods =====
+
+  getUnifiedEmployees(orgUnitId?: string): Observable<UnifiedEmployee[]> {
+    let params = new HttpParams();
+    if (orgUnitId) params = params.set('org_unit_id', orgUnitId);
+    return this.http.get<any[]>(`${this.apiUrl}/list`, { params }).pipe(
+      map(data => data.map(e => this.transformUnifiedEmployee(e))),
+      catchError(this.handleError)
+    );
+  }
+
+  getUnifiedEmployeeById(id: string): Observable<UnifiedEmployeeDetail> {
+    return this.http.get<any>(`${this.apiUrl}/${id}`).pipe(
+      map(data => this.transformUnifiedEmployeeDetail(data)),
+      catchError(this.handleError)
+    );
+  }
+
+  createEmployee(data: CreateEmployeeRequest): Observable<CreateEmployeeResponse> {
+    return this.http.post<CreateEmployeeResponse>(this.apiUrl, data).pipe(
+      catchError(this.handleError)
+    );
+  }
+
   // Actions
-  updateEmployee(id: string, data: Partial<Employee>): Observable<boolean> {
-    // 未來實作
-    return throwError(() => new Error('Not implemented'));
+  updateEmployee(id: string, data: Partial<UnifiedEmployee>): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/${id}`, data).pipe(
+      catchError(this.handleError)
+    );
   }
 
   uploadDocument(employeeId: string, document: Partial<EmployeeDocument>): Observable<boolean> {
@@ -224,6 +369,50 @@ export class EmployeeService {
   exportEmployeeData(employeeId: string): Observable<Blob> {
     // 未來實作
     return throwError(() => new Error('Not implemented'));
+  }
+
+  createAccountForEmployee(employeeId: string): Observable<{ userId: string; initialPassword: string }> {
+    return this.http.post<{ userId: string; initialPassword: string }>(
+      `${this.apiUrl}/${employeeId}/create-account`, {}
+    ).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  // ===== Batch Import API Methods =====
+
+  batchImportValidate(rows: any[]): Observable<BatchValidationResult> {
+    return this.http.post<BatchValidationResult>(
+      `${this.apiUrl}/batch-import/validate`,
+      { rows }
+    ).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  batchImportExecute(rows: any[], fileName?: string): Observable<{ jobId: string }> {
+    return this.http.post<{ jobId: string }>(
+      `${this.apiUrl}/batch-import/execute`,
+      { rows, fileName }
+    ).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  batchImportStatus(jobId: string): Observable<BatchImportJob> {
+    return this.http.get<BatchImportJob>(
+      `${this.apiUrl}/batch-import/${jobId}/status`
+    ).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  batchImportReport(jobId: string): Observable<BatchImportResult[]> {
+    return this.http.get<BatchImportResult[]>(
+      `${this.apiUrl}/batch-import/${jobId}/report`
+    ).pipe(
+      catchError(this.handleError)
+    );
   }
 }
 

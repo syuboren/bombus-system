@@ -1070,7 +1070,7 @@
                 <option value="" [selected]="!departmentForm().managerId">未指定</option>
                 @for (emp of getDepartmentEmployees(); track emp.id) {
                   <option [value]="emp.id" [selected]="departmentForm().managerId === emp.id">
-                    {{ emp.name }} — {{ emp.positions[0].positionLevel || '' }} {{ emp.positions[0].positionTitle || '' }}
+                    {{ emp.name }} — {{ emp.level || '' }} {{ emp.position || '' }}
                   </option>
                 }
               </select>

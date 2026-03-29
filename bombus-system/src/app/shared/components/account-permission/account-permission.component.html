@@ -1,0 +1,278 @@
+@if (loading()) {
+<div class="ap-loading">
+  <div class="spinner"></div>
+  <p>載入中...</p>
+</div>
+} @else {
+<div class="account-permission" [style.--module-color]="moduleColor()">
+  <!-- 帳號資訊 -->
+  <section class="ap-section">
+    <h4 class="ap-section-title">
+      <i class="ri-user-settings-line"></i>
+      帳號資訊
+    </h4>
+    <div class="ap-info-grid">
+      <div class="ap-info-item">
+        <label>帳號狀態</label>
+        <span class="status-badge status-{{ userStatus() }}">
+          {{ getUserStatusLabel(userStatus()) }}
+        </span>
+      </div>
+      <div class="ap-info-item">
+        <label>登入 Email</label>
+        <span>{{ employeeEmail() }}</span>
+      </div>
+    </div>
+    <div class="ap-actions">
+      <button type="button" class="btn btn-outline" (click)="resetPassword()">
+        <i class="ri-lock-password-line"></i>
+        重設密碼
+      </button>
+      <button type="button" class="btn"
+        [class.btn-danger]="userStatus() === 'active'"
+        [class.btn-success]="userStatus() !== 'active'"
+        (click)="toggleUserStatus()">
+        <i [class]="userStatus() === 'active' ? 'ri-forbid-line' : 'ri-check-line'"></i>
+        {{ userStatus() === 'active' ? '停用帳號' : '啟用帳號' }}
+      </button>
+    </div>
+    @if (newPassword()) {
+    <div class="ap-password-result">
+      <i class="ri-key-2-line"></i>
+      <span>新密碼：<strong>{{ newPassword() }}</strong></span>
+      <small>請將此密碼交付給員工，首次登入後將要求變更密碼。</small>
+    </div>
+    }
+  </section>
+
+  <!-- 角色管理 -->
+  <section class="ap-section">
+    <h4 class="ap-section-title">
+      <i class="ri-shield-user-line"></i>
+      角色管理
+    </h4>
+
+    <!-- 指派新角色 -->
+    @if (assignableRoles().length > 0) {
+    <div class="ap-assign-form">
+      <div class="ap-assign-row">
+        <div class="ap-field">
+          <label class="ap-field-label">角色</label>
+          <select class="ap-select" [value]="selectedRoleId()"
+            (change)="onRoleSelected($any($event.target).value)">
+            <option value="">選擇角色...</option>
+            @for (role of assignableRoles(); track role.id) {
+            <option [value]="role.id">{{ role.name }}</option>
+            }
+          </select>
+        </div>
+
+        @if (selectedRoleId()) {
+          <div class="ap-field">
+            <label class="ap-field-label">作用範圍</label>
+            @if (availableScopeTypes().length === 1) {
+            <span class="ap-scope-static">{{ availableScopeTypes()[0].label }}</span>
+            } @else {
+            <select class="ap-select" [value]="selectedScopeType()"
+              (change)="onScopeTypeChange($any($event.target).value)">
+              @for (opt of availableScopeTypes(); track opt.value) {
+              <option [value]="opt.value">{{ opt.label }}</option>
+              }
+            </select>
+            }
+          </div>
+
+          @if (selectedScopeType() === 'subsidiary') {
+          <div class="ap-field">
+            <label class="ap-field-label">子公司</label>
+            <select class="ap-select" [value]="selectedScopeId()"
+              (change)="onScopeSubsidiaryChange($any($event.target).value)">
+              <option value="">選擇子公司...</option>
+              @for (sub of subsidiaries(); track sub.id) {
+              <option [value]="sub.id">{{ sub.name }}</option>
+              }
+            </select>
+          </div>
+          }
+
+          @if (selectedScopeType() === 'department') {
+          <div class="ap-field">
+            <label class="ap-field-label">子公司</label>
+            <select class="ap-select" [value]="selectedSubsidiaryForScope()"
+              (change)="onScopeSubsidiaryChange($any($event.target).value)">
+              <option value="">選擇子公司...</option>
+              @for (sub of subsidiaries(); track sub.id) {
+              <option [value]="sub.id">{{ sub.name }}</option>
+              }
+            </select>
+          </div>
+          <div class="ap-field">
+            <label class="ap-field-label">部門</label>
+            <select class="ap-select" [value]="selectedScopeId()"
+              (change)="selectedScopeId.set($any($event.target).value)">
+              <option value="">選擇部門...</option>
+              @for (dept of filteredDepartmentsForScope(); track dept.id) {
+              <option [value]="dept.id">{{ dept.name }}</option>
+              }
+            </select>
+          </div>
+          }
+        }
+      </div>
+
+      <!-- 指派前權限預覽 -->
+      @if (assignPreviewPerms().length > 0) {
+      <div class="ap-preview">
+        <h5 class="ap-preview-title">
+          <i class="ri-eye-line"></i>
+          此角色的功能權限預覽
+        </h5>
+        <div class="ap-table-wrap">
+          <table class="ap-perm-table ap-perm-table--compact">
+            <thead>
+              <tr>
+                <th>模組</th>
+                <th>功能</th>
+                <th>操作層級</th>
+                <th>檢視範圍</th>
+                <th>編輯範圍</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (perm of assignPreviewPerms(); track perm.feature_id) {
+              @if (perm.action_level !== 'none') {
+              <tr>
+                <td><span class="ap-module-tag ap-module-{{ perm.module }}">{{ getModuleLabel(perm.module) }}</span></td>
+                <td>{{ perm.feature_name }}</td>
+                <td><span class="ap-level-badge ap-level-{{ perm.action_level }}">{{ getActionLevelLabel(perm.action_level) }}</span></td>
+                <td>{{ getScopeLabel(perm.view_scope) }}</td>
+                <td>{{ getScopeLabel(perm.edit_scope) }}</td>
+              </tr>
+              }
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+      }
+
+      <button type="button" class="btn btn-primary btn-sm"
+        [disabled]="!canAssign() || assignLoading()"
+        (click)="assignRole()">
+        @if (assignLoading()) {
+        <i class="ri-loader-4-line spin"></i>
+        } @else {
+        <i class="ri-add-line"></i>
+        }
+        指派角色
+      </button>
+    </div>
+    }
+
+    <!-- 已指派角色列表 -->
+    <div class="ap-role-list">
+      @for (role of userRoles(); track role.roleId) {
+      <div class="ap-role-card">
+        <div class="ap-role-header">
+          <div class="ap-role-info">
+            <span class="ap-role-name">{{ role.roleName }}</span>
+            <span class="ap-role-scope">
+              @if (role.orgUnitName) {
+              <i class="ri-building-line"></i> {{ role.orgUnitName }}
+              } @else {
+              <i class="ri-global-line"></i> 全域
+              }
+            </span>
+          </div>
+          <div class="ap-role-actions">
+            <button type="button" class="ap-btn-text" (click)="toggleRolePerms(role.roleId)">
+              @if (isRoleExpanded(role.roleId)) {
+              <i class="ri-arrow-up-s-line"></i> 收起權限
+              } @else {
+              <i class="ri-arrow-down-s-line"></i> 查看權限
+              }
+            </button>
+            <button type="button" class="ap-btn-icon ap-btn-icon--danger" title="移除角色"
+              (click)="revokeRole(role.roleId, role.orgUnitId)">
+              <i class="ri-delete-bin-line"></i>
+            </button>
+          </div>
+        </div>
+        @if (isRoleExpanded(role.roleId)) {
+        <div class="ap-role-perms">
+          @if (getRolePerms(role.roleId).length > 0) {
+          <table class="ap-perm-table ap-perm-table--compact">
+            <thead>
+              <tr>
+                <th>模組</th>
+                <th>功能</th>
+                <th>操作層級</th>
+                <th>檢視範圍</th>
+                <th>編輯範圍</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (perm of getRolePerms(role.roleId); track perm.feature_id) {
+              @if (perm.action_level !== 'none') {
+              <tr>
+                <td><span class="ap-module-tag ap-module-{{ perm.module }}">{{ getModuleLabel(perm.module) }}</span></td>
+                <td>{{ perm.feature_name }}</td>
+                <td><span class="ap-level-badge ap-level-{{ perm.action_level }}">{{ getActionLevelLabel(perm.action_level) }}</span></td>
+                <td>{{ getScopeLabel(perm.view_scope) }}</td>
+                <td>{{ getScopeLabel(perm.edit_scope) }}</td>
+              </tr>
+              }
+              }
+            </tbody>
+          </table>
+          } @else {
+          <p class="ap-empty">載入中...</p>
+          }
+        </div>
+        }
+      </div>
+      } @empty {
+      <p class="ap-empty">尚未指派任何角色</p>
+      }
+    </div>
+  </section>
+
+  <!-- 有效權限總覽（可摺疊） -->
+  @if (mergedPerms().length > 0) {
+  <section class="ap-section">
+    <h4 class="ap-section-title ap-section-title--toggle" (click)="mergedPermsExpanded.set(!mergedPermsExpanded())">
+      <i class="ri-eye-line"></i>
+      有效權限總覽
+      <small class="ap-hint">（所有角色合併後的最大權限）</small>
+      <i [class]="mergedPermsExpanded() ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'" class="ap-toggle-icon"></i>
+    </h4>
+    @if (mergedPermsExpanded()) {
+    <div class="ap-table-wrap">
+      <table class="ap-perm-table">
+        <thead>
+          <tr>
+            <th>模組</th>
+            <th>功能</th>
+            <th>操作層級</th>
+            <th>檢視範圍</th>
+            <th>編輯範圍</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (perm of mergedPerms(); track perm.feature_id) {
+          <tr>
+            <td><span class="ap-module-tag ap-module-{{ perm.module }}">{{ getModuleLabel(perm.module) }}</span></td>
+            <td>{{ perm.feature_name }}</td>
+            <td><span class="ap-level-badge ap-level-{{ perm.action_level }}">{{ getActionLevelLabel(perm.action_level) }}</span></td>
+            <td>{{ getScopeLabel(perm.view_scope) }}</td>
+            <td>{{ getScopeLabel(perm.edit_scope) }}</td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    }
+  </section>
+  }
+</div>
+}

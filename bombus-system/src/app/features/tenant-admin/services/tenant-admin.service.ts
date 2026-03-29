@@ -128,6 +128,14 @@ export class TenantAdminService {
   }
 
   // ============================================================
+  // 密碼重設
+  // ============================================================
+
+  resetUserPassword(userId: string): Observable<{ newPassword: string }> {
+    return this.http.post<{ newPassword: string }>(`/api/tenant-admin/users/${userId}/reset-password`, {});
+  }
+
+  // ============================================================
   // 審計日誌
   // ============================================================
 

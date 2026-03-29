@@ -4,7 +4,6 @@ import { Observable, of, map, catchError } from 'rxjs';
 import {
   Company,
   Department,
-  Employee,
   DepartmentCollaboration,
   OrganizationStats,
   CompanyStats,
@@ -154,47 +153,6 @@ export class OrganizationService {
     competencyFocus?: { name: string; jobs: { name: string; description: string }[] }[];
   }): Observable<any> {
     return this.http.put(`/api/organization/departments/${id}`, updates);
-  }
-
-  // ============================================================
-  // 員工相關 API
-  // ============================================================
-
-  getEmployees(): Observable<Employee[]> {
-    return this.http.get<any[]>('/api/employee/list?all=true').pipe(
-      map(items => items.map(e => this.mapEmployee(e))),
-      catchError(() => of([]))
-    );
-  }
-
-  getEmployeesByCompany(companyId: string): Observable<Employee[]> {
-    // 透過部門關聯篩選（後端無直接 companyId 篩選 API）
-    return this.http.get<any[]>('/api/employee/list?all=true').pipe(
-      map(items => items.map(e => this.mapEmployee(e))),
-      catchError(() => of([]))
-    );
-  }
-
-  getEmployeesByDepartment(departmentId: string): Observable<Employee[]> {
-    return this.http.get<any[]>('/api/employee/list?all=true').pipe(
-      map(items => items
-        .filter(e => e.department_id === departmentId || e.departmentId === departmentId)
-        .map(e => this.mapEmployee(e))
-      ),
-      catchError(() => of([]))
-    );
-  }
-
-  getEmployeeById(id: string): Observable<Employee | undefined> {
-    return this.http.get<any>(`/api/employee/${id}`).pipe(
-      map(e => this.mapEmployee(e)),
-      catchError(() => of(undefined))
-    );
-  }
-
-  getCrossCompanyEmployees(): Observable<Employee[]> {
-    // 後端尚無跨公司查詢 API
-    return of([]);
   }
 
   // ============================================================
@@ -353,27 +311,4 @@ export class OrganizationService {
     };
   }
 
-  private mapEmployee(e: any): Employee {
-    return {
-      id: e.id,
-      employeeNo: e.employee_no || e.employeeNo || '',
-      name: e.name,
-      email: e.email || '',
-      phone: e.phone || '',
-      gender: e.gender || 'other',
-      hireDate: e.hire_date ? new Date(e.hire_date) : new Date(),
-      status: e.status || 'active',
-      positions: [{
-        id: `pos-${e.id}`,
-        companyId: '',
-        companyName: '',
-        departmentId: e.department_id || '',
-        departmentName: e.department || '',
-        positionTitle: e.position || e.job_title || '',
-        positionLevel: e.grade || '',
-        isPrimary: true,
-        startDate: e.hire_date ? new Date(e.hire_date) : new Date()
-      }]
-    };
-  }
 }

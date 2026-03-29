@@ -130,8 +130,9 @@ async function run() {
   const userCount = users.data?.data ? users.data.data.length : (Array.isArray(users.data) ? users.data.length : 0);
   assert(userCount >= 1, `12.2 至少 1 位使用者 (admin) (實際: ${userCount})`);
 
-  // 驗證 admin 使用者
-  const userData = users.data?.data || users.data || [];
+  // 驗證 admin 使用者（使用 search 避免 pagination 截斷）
+  const adminSearch = await req('GET', '/api/tenant-admin/users?search=admin@demo.com', null, token);
+  const userData = adminSearch.data?.data || adminSearch.data || [];
   if (Array.isArray(userData)) {
     const adminUser = userData.find(u => u.email === 'admin@demo.com');
     assert(!!adminUser, '12.3 存在 admin@demo.com 使用者');

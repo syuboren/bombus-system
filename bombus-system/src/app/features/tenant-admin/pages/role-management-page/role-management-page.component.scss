@@ -122,19 +122,19 @@ $module-color: $color-brand-main;
 }
 
 .scope-badge {
-  @include status-badge;
+  font-size: $font-size-xs;
+  padding: 2px 8px;
+  border-radius: $radius-full;
+
+  &--global { @include status-badge-color($color-l3-petrol); }
+  &--subsidiary { @include status-badge-color($color-l2-terracotta); }
+  &--department { @include status-badge-color($color-l4-mauve); }
 }
 
-.scope--global {
-  @include status-badge-color($color-info);
-}
-
-.scope--subsidiary {
-  @include status-badge-color($color-l1-sage);
-}
-
-.scope--department {
-  @include status-badge-color($color-l3-petrol);
+.form-hint {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  margin-top: 4px;
 }
 
 .role-description {

@@ -223,7 +223,7 @@ router.get('/list', requireFeaturePerm('L1.profile', 'view'), (req, res) => {
         let query = `
             SELECT id, employee_no, name, email, phone, department, position,
                    level, grade, manager_id, hire_date, contract_type,
-                   work_location, avatar, status
+                   work_location, avatar, status, org_unit_id
             FROM employees
             WHERE 1=1
         `;
@@ -275,11 +275,94 @@ router.get('/list', requireFeaturePerm('L1.profile', 'view'), (req, res) => {
             managers.forEach(m => managersMap.set(m.id, m.name));
         }
 
-        // 組合資料
-        const result = employees.map(emp => ({
-            ...emp,
-            managerName: managersMap.get(emp.manager_id) || null
-        }));
+        // 批次取得 User 帳號資訊（LEFT JOIN）
+        const empIds = employees.map(e => e.id);
+        const usersMap = new Map();
+        if (empIds.length > 0) {
+            const users = req.tenantDB.prepare(`
+                SELECT id, employee_id, status FROM users
+                WHERE employee_id IN (${empIds.map(() => '?').join(',')})
+            `).all(...empIds);
+            users.forEach(u => usersMap.set(u.employee_id, u));
+        }
+
+        // 預先載入所有 org_units 供查詢
+        const allOrgUnits = new Map();
+        req.tenantDB.prepare('SELECT id, name, type, parent_id FROM org_units').all()
+            .forEach(u => allOrgUnits.set(u.id, u));
+
+        // 往上遍歷找公司（subsidiary 或 group）
+        function findCompany(orgUnitId) {
+            let current = allOrgUnits.get(orgUnitId);
+            while (current) {
+                if (current.type === 'subsidiary' || current.type === 'group') {
+                    return { id: current.id, name: current.name };
+                }
+                current = current.parent_id ? allOrgUnits.get(current.parent_id) : null;
+            }
+            return null;
+        }
+
+        // 建立部門名稱→org_unit 的反查表
+        const deptNameMap = new Map();
+        for (const [, u] of allOrgUnits) {
+            if (u.type === 'department') {
+                // 若同名部門有多個，以 org_unit_id 匹配的為優先（之後會處理）
+                if (!deptNameMap.has(u.name)) deptNameMap.set(u.name, u);
+            }
+        }
+
+        // 組合資料（含 positions[]、userId、userStatus）
+        const result = employees.map(emp => {
+            const user = usersMap.get(emp.id);
+            let companyName = null;
+            let companyId = null;
+            let departmentId = null;
+            let departmentName = null;
+
+            if (emp.org_unit_id) {
+                const orgUnit = allOrgUnits.get(emp.org_unit_id);
+                if (orgUnit) {
+                    if (orgUnit.type === 'department') {
+                        departmentId = orgUnit.id;
+                        departmentName = orgUnit.name;
+                        const company = findCompany(orgUnit.parent_id);
+                        if (company) { companyId = company.id; companyName = company.name; }
+                    } else {
+                        // org_unit_id 指向 group/subsidiary，用 department 文字欄位反查部門
+                        const deptUnit = emp.department ? deptNameMap.get(emp.department) : null;
+                        if (deptUnit) {
+                            departmentId = deptUnit.id;
+                            departmentName = deptUnit.name;
+                            const company = findCompany(deptUnit.parent_id);
+                            if (company) { companyId = company.id; companyName = company.name; }
+                        }
+                        // 若反查不到，至少把 org_unit 本身當公司
+                        if (!companyName) {
+                            companyId = orgUnit.id;
+                            companyName = orgUnit.name;
+                        }
+                    }
+                }
+            }
+
+            return {
+                ...emp,
+                managerName: managersMap.get(emp.manager_id) || null,
+                userId: user ? user.id : null,
+                userStatus: user ? user.status : null,
+                positions: [{
+                    companyId,
+                    companyName,
+                    departmentId,
+                    departmentName: departmentName || emp.department,
+                    positionTitle: emp.position,
+                    positionLevel: emp.level,
+                    isPrimary: true,
+                    startDate: emp.hire_date
+                }]
+            };
+        });
 
         res.json(result);
     } catch (error) {
@@ -1099,6 +1182,55 @@ router.get('/:id', requireFeaturePerm('L1.profile', 'view'), (req, res) => {
             };
         }
 
+        // 取得關聯 User 帳號和角色
+        let userId = null;
+        let userStatus = null;
+        let userRoles = [];
+        const linkedUser = req.tenantDB.prepare(
+            'SELECT id, status FROM users WHERE employee_id = ?'
+        ).get(id);
+        if (linkedUser) {
+            userId = linkedUser.id;
+            userStatus = linkedUser.status;
+            userRoles = req.tenantDB.prepare(`
+                SELECT r.id, r.name, r.description, ur.org_unit_id
+                FROM user_roles ur
+                JOIN roles r ON ur.role_id = r.id
+                WHERE ur.user_id = ?
+            `).all(linkedUser.id);
+        }
+
+        // 建立 positions 陣列
+        let companyName = null, companyId = null, departmentId = null, departmentName = null;
+        if (employee.org_unit_id) {
+            const orgUnit = req.tenantDB.prepare(
+                'SELECT id, name, type, parent_id FROM org_units WHERE id = ?'
+            ).get(employee.org_unit_id);
+            if (orgUnit) {
+                if (orgUnit.type === 'department') {
+                    departmentId = orgUnit.id;
+                    departmentName = orgUnit.name;
+                    if (orgUnit.parent_id) {
+                        const parent = req.tenantDB.prepare(
+                            'SELECT id, name FROM org_units WHERE id = ?'
+                        ).get(orgUnit.parent_id);
+                        if (parent) { companyId = parent.id; companyName = parent.name; }
+                    }
+                } else {
+                    companyId = orgUnit.id;
+                    companyName = orgUnit.name;
+                }
+            }
+        }
+        const positions = [{
+            companyId, companyName,
+            departmentId, departmentName: departmentName || employee.department,
+            positionTitle: employee.position,
+            positionLevel: employee.level,
+            isPrimary: true,
+            startDate: employee.hire_date
+        }];
+
         res.json({
             ...employee,
             education,
@@ -1111,11 +1243,175 @@ router.get('/:id', requireFeaturePerm('L1.profile', 'view'), (req, res) => {
             performance,
             roi,
             candidateSource,
-            onboardingProgress
+            onboardingProgress,
+            userId,
+            userStatus,
+            userRoles,
+            positions
         });
     } catch (error) {
         console.error('Error fetching employee detail:', error);
         res.status(500).json({ error: 'Failed to fetch employee' });
+    }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 3.3 POST /api/employee — 新增員工（含自動建帳號）
+// ═══════════════════════════════════════════════════════════════
+
+const { createEmployeeWithAccount } = require('../services/account-creation');
+
+router.post('/', requireFeaturePerm('L1.profile', 'edit'), async (req, res) => {
+    try {
+        const {
+            name, email, employee_no, department, position,
+            level, grade, hire_date, contract_type, work_location,
+            org_unit_id, english_name, mobile, gender, phone,
+            manager_id, birth_date, address,
+            emergency_contact_name, emergency_contact_relation, emergency_contact_phone,
+            createUser: shouldCreateUser
+        } = req.body;
+
+        if (!name || !email || !employee_no) {
+            return res.status(400).json({ error: '姓名、Email、工號為必填欄位' });
+        }
+
+        const result = await createEmployeeWithAccount(req.tenantDB, {
+            employeeData: {
+                name, email, employee_no, department, position,
+                level, grade, hire_date,
+                contract_type: contract_type || 'full-time',
+                work_location, org_unit_id, english_name, mobile,
+                gender: gender || 'other', phone, manager_id,
+                birth_date, address,
+                emergency_contact_name, emergency_contact_relation, emergency_contact_phone
+            },
+            createUser: shouldCreateUser !== false, // 預設 true
+            defaultRole: 'employee',
+            orgUnitId: org_unit_id
+        });
+
+        res.status(201).json(result);
+    } catch (error) {
+        if (error.message.includes('already exists')) {
+            return res.status(409).json({ error: error.message });
+        }
+        console.error('Error creating employee:', error);
+        res.status(500).json({ error: 'Failed to create employee' });
+    }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 3.4 PUT /api/employee/:id — 更新員工基本資料
+// ═══════════════════════════════════════════════════════════════
+
+router.put('/:id', requireFeaturePerm('L1.profile', 'edit'), (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // 確認員工存在且在 edit scope 範圍
+        const scope = buildScopeFilter(req, { employeeIdColumn: 'id', orgUnitColumn: 'org_unit_id' });
+        const existing = req.tenantDB.prepare(`
+            SELECT id FROM employees WHERE id = ? AND ${scope.clause}
+        `).get(id, ...scope.params);
+
+        if (!existing) {
+            return res.status(404).json({ error: 'Employee not found' });
+        }
+
+        // 可更新欄位白名單
+        const allowedFields = [
+            'name', 'email', 'phone', 'department', 'position',
+            'level', 'grade', 'manager_id', 'contract_type', 'work_location',
+            'status', 'org_unit_id', 'english_name', 'mobile', 'gender',
+            'birth_date', 'address', 'emergency_contact_name',
+            'emergency_contact_relation', 'emergency_contact_phone'
+        ];
+
+        const updates = [];
+        const params = [];
+        for (const field of allowedFields) {
+            if (req.body[field] !== undefined) {
+                updates.push(`${field} = ?`);
+                params.push(req.body[field]);
+            }
+        }
+
+        if (updates.length === 0) {
+            return res.status(400).json({ error: 'No fields to update' });
+        }
+
+        updates.push('updated_at = ?');
+        params.push(new Date().toISOString());
+        params.push(id);
+
+        req.tenantDB.run(
+            `UPDATE employees SET ${updates.join(', ')} WHERE id = ?`,
+            params
+        );
+
+        const updated = req.tenantDB.prepare('SELECT * FROM employees WHERE id = ?').get(id);
+        res.json(updated);
+    } catch (error) {
+        console.error('Error updating employee:', error);
+        res.status(500).json({ error: 'Failed to update employee' });
+    }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// POST /api/employee/:id/create-account — 為既有員工建立帳號
+// ═══════════════════════════════════════════════════════════════
+router.post('/:id/create-account', requireFeaturePerm('L1.profile', 'edit'), async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const employee = req.tenantDB.prepare(
+            'SELECT id, name, email, department, position, level, grade, org_unit_id, hire_date FROM employees WHERE id = ?'
+        ).get(id);
+        if (!employee) {
+            return res.status(404).json({ error: 'Employee not found' });
+        }
+
+        const existingUser = req.tenantDB.prepare(
+            'SELECT id FROM users WHERE employee_id = ?'
+        ).get(id);
+        if (existingUser) {
+            return res.status(409).json({ error: '此員工已有系統帳號' });
+        }
+
+        const { generatePassword } = require('../services/account-creation');
+        const bcrypt = require('bcryptjs');
+        const { v4: uuidv4 } = require('uuid');
+
+        const password = generatePassword();
+        const passwordHash = await bcrypt.hash(password, 10);
+        const userId = uuidv4();
+
+        req.tenantDB.run(
+            `INSERT INTO users (id, email, name, password_hash, status, employee_id, must_change_password, created_at, updated_at)
+             VALUES (?, ?, ?, ?, 'active', ?, 1, datetime('now'), datetime('now'))`,
+            [userId, employee.email, employee.name, passwordHash, id]
+        );
+
+        // 指派預設 employee 角色
+        const defaultRole = req.tenantDB.prepare(
+            "SELECT id FROM roles WHERE name = 'employee' LIMIT 1"
+        ).get();
+        if (defaultRole) {
+            req.tenantDB.run(
+                'INSERT OR IGNORE INTO user_roles (user_id, role_id, org_unit_id) VALUES (?, ?, ?)',
+                [userId, defaultRole.id, employee.org_unit_id || null]
+            );
+        }
+
+        res.status(201).json({
+            userId,
+            initialPassword: password,
+            message: '帳號已建立'
+        });
+    } catch (error) {
+        console.error('Error creating account for employee:', error);
+        res.status(500).json({ error: error.message || 'Failed to create account' });
     }
 });
 

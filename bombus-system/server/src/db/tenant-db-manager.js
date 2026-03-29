@@ -14,7 +14,7 @@ const path = require('path');
 const { SqliteAdapter } = require('./db-adapter');
 const {
   EMPLOYEE_MIGRATIONS, USER_MIGRATIONS, INTERVIEW_MIGRATIONS,
-  FEATURE_TABLES_SQL, FEATURE_SEED_DATA, DEFAULT_ROLE_FEATURE_PERMS,
+  FEATURE_TABLES_SQL, IMPORT_TABLES_SQL, FEATURE_SEED_DATA, DEFAULT_ROLE_FEATURE_PERMS,
   seedFeatureData, seedDefaultRoleFeaturePerms
 } = require('./tenant-schema');
 
@@ -362,6 +362,12 @@ class TenantDBManager {
         changed = true;
       }
     } catch (e) { /* org_units 表可能不存在 */ }
+
+    // ── 批次匯入表遷移（import_jobs + import_results） ──
+    try {
+      db.exec(IMPORT_TABLES_SQL);
+      changed = true;
+    } catch (e) { /* 表已存在 */ }
 
     // ── Feature-based Permission 遷移（新舊並存） ──
 

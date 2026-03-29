@@ -1,0 +1,3260 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bombus 功能說明書 - 職能評估 — 月度檢核、季度面談與工作週報</title>
+  <style>
+    :root {
+      --color-cloud-gray: #F5F5F7;
+      --color-pure-white: #FCFCFD;
+      --color-soft-gray: #E8E8EA;
+      --color-muted-gray: #C4C4C6;
+      --color-text-secondary: #6B7280;
+      --color-text-primary: #464E56;
+      --color-text-dark: #1F2937;
+      --color-brand-main: #64748B;
+      --color-brand-light: #94A3B8;
+      --color-brand-dark: #475569;
+      --color-module: #D6A28C;
+      --color-module-light: #e4c3b4;
+      --color-module-dark: #B8876E;
+      --color-success: #7FB095;
+      --color-success-light: #E8F5EE;
+      --color-warning: #E3C088;
+      --color-warning-light: #FFF8E7;
+      --color-error: #C77F7F;
+      --color-error-light: #FDEAEA;
+      --color-info: #8DA8BE;
+      --color-info-light: #EDF4F9;
+      --spacing-xs: 0.25rem;
+      --spacing-sm: 0.5rem;
+      --spacing-md: 1rem;
+      --spacing-lg: 1.5rem;
+      --spacing-xl: 2rem;
+      --spacing-2xl: 3rem;
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Microsoft JhengHei', 'PingFang TC', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      color: var(--color-text-primary);
+      background: var(--color-cloud-gray);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: var(--spacing-xl);
+    }
+
+    .doc-header {
+      background: linear-gradient(135deg, var(--color-module) 0%, var(--color-module-dark) 100%);
+      color: white;
+      padding: var(--spacing-2xl) var(--spacing-xl);
+      border-radius: var(--radius-lg);
+      margin-bottom: var(--spacing-xl);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .doc-header h1 {
+      font-size: 1.75rem;
+      font-weight: 600;
+      margin-bottom: var(--spacing-sm);
+      letter-spacing: 0.5px;
+    }
+
+    .doc-header h2 {
+      font-size: 1.25rem;
+      font-weight: 400;
+      opacity: 0.9;
+    }
+
+    .doc-info {
+      background: var(--color-pure-white);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-lg);
+      margin-bottom: var(--spacing-xl);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--color-soft-gray);
+    }
+
+    .doc-info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: var(--spacing-md);
+    }
+
+    .doc-info-item {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+
+    .doc-info-label {
+      font-size: 0.875rem;
+      color: var(--color-text-secondary);
+      min-width: 80px;
+    }
+
+    .doc-info-value {
+      font-weight: 500;
+      color: var(--color-text-dark);
+    }
+
+    .toc {
+      background: var(--color-pure-white);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-lg);
+      margin-bottom: var(--spacing-xl);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--color-soft-gray);
+    }
+
+    .toc-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--color-text-dark);
+      margin-bottom: var(--spacing-md);
+      padding-bottom: var(--spacing-sm);
+      border-bottom: 2px solid var(--color-module);
+    }
+
+    .toc-list {
+      list-style: none;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: var(--spacing-sm);
+    }
+
+    .toc-list li { padding: var(--spacing-xs) 0; }
+
+    .toc-list a {
+      color: var(--color-module-dark);
+      text-decoration: none;
+      font-size: 0.9375rem;
+      transition: color 0.2s ease;
+    }
+
+    .toc-list a:hover {
+      color: var(--color-module);
+      text-decoration: underline;
+    }
+
+    .content {
+      background: var(--color-pure-white);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-xl);
+      margin-bottom: var(--spacing-xl);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--color-soft-gray);
+    }
+
+    .section-title {
+      background: linear-gradient(135deg, var(--color-module) 0%, var(--color-module-dark) 100%);
+      color: white;
+      padding: var(--spacing-md) var(--spacing-lg);
+      border-radius: var(--radius-md);
+      margin: var(--spacing-xl) 0 var(--spacing-lg);
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+
+    .section-title:first-child { margin-top: 0; }
+
+    h3 {
+      color: var(--color-text-dark);
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin: var(--spacing-lg) 0 var(--spacing-md);
+      padding-bottom: var(--spacing-xs);
+      border-bottom: 2px solid var(--color-module-light);
+    }
+
+    h4 {
+      color: var(--color-module-dark);
+      font-size: 1rem;
+      font-weight: 600;
+      margin: var(--spacing-md) 0 var(--spacing-sm);
+    }
+
+    p {
+      margin-bottom: var(--spacing-md);
+      color: var(--color-text-primary);
+    }
+
+    ul, ol {
+      margin-bottom: var(--spacing-md);
+      padding-left: var(--spacing-lg);
+    }
+
+    li { margin-bottom: var(--spacing-xs); }
+
+    .table-wrapper {
+      overflow-x: auto;
+      margin: var(--spacing-md) 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9375rem;
+    }
+
+    th {
+      background: var(--color-module);
+      color: white;
+      padding: var(--spacing-sm) var(--spacing-md);
+      text-align: left;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    td {
+      padding: var(--spacing-sm) var(--spacing-md);
+      border-bottom: 1px solid var(--color-soft-gray);
+      vertical-align: top;
+    }
+
+    tr:nth-child(even) { background: var(--color-cloud-gray); }
+    tr:hover { background: rgba(214, 162, 140, 0.1); }
+
+    .code-block {
+      background: var(--color-text-dark);
+      color: #E5E7EB;
+      padding: var(--spacing-md);
+      border-radius: var(--radius-md);
+      font-family: 'SF Mono', 'Consolas', 'Liberation Mono', monospace;
+      font-size: 0.875rem;
+      overflow-x: auto;
+      margin: var(--spacing-md) 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .flowchart {
+      background: var(--color-cloud-gray);
+      border: 1px solid var(--color-soft-gray);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-lg);
+      margin: var(--spacing-md) 0;
+    }
+
+    .flowchart-title {
+      font-size: 0.875rem;
+      color: var(--color-text-secondary);
+      margin-bottom: var(--spacing-md);
+      text-align: center;
+    }
+
+    .flowchart .code-block {
+      font-size: 0.8rem;
+      line-height: 1.5;
+      text-align: left;
+    }
+
+    .note {
+      background: var(--color-info-light);
+      border-left: 4px solid var(--color-info);
+      padding: var(--spacing-md);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      margin: var(--spacing-md) 0;
+    }
+
+    .note-title {
+      font-weight: 600;
+      color: var(--color-info);
+      margin-bottom: var(--spacing-xs);
+    }
+
+    .tree {
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 0.875rem;
+      background: var(--color-cloud-gray);
+      padding: var(--spacing-md);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-soft-gray);
+      white-space: pre;
+      overflow-x: auto;
+    }
+
+    hr {
+      border: none;
+      height: 1px;
+      background: var(--color-soft-gray);
+      margin: var(--spacing-xl) 0;
+    }
+
+    strong { color: var(--color-text-dark); }
+
+    .doc-footer {
+      text-align: center;
+      padding: var(--spacing-xl);
+      color: var(--color-text-secondary);
+      font-size: 0.875rem;
+    }
+
+    @media (max-width: 768px) {
+      .container { padding: var(--spacing-md); }
+      .doc-header { padding: var(--spacing-lg); }
+      .doc-header h1 { font-size: 1.5rem; }
+      .content { padding: var(--spacing-md); }
+      .section-title { font-size: 1.125rem; padding: var(--spacing-sm) var(--spacing-md); }
+      table { font-size: 0.875rem; }
+      th, td { padding: var(--spacing-xs) var(--spacing-sm); }
+    }
+
+    @media print {
+      body { background: white; }
+      .container { max-width: none; padding: 0; }
+      .doc-header, .content { box-shadow: none; border: 1px solid #ddd; }
+      .toc { page-break-after: always; }
+      .section-title { break-after: avoid; }
+      table { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="doc-header">
+      <h1>Bombus 人力資源管理系統</h1>
+      <h2>功能說明書：職能評估 — 月度檢核、季度面談與工作週報</h2>
+    </header>
+
+    <section class="doc-info">
+      <div class="doc-info-grid">
+        <div class="doc-info-item">
+          <span class="doc-info-label">文件名稱</span>
+          <span class="doc-info-value">職能評估 — 月度檢核、季度面談與工作週報功能說明書</span>
+        </div>
+        <div class="doc-info-item">
+          <span class="doc-info-label">適用模組</span>
+          <span class="doc-info-value">職能管理（L2）> 職能評估 > 總覽、月度檢核、季度面談、工作週報</span>
+        </div>
+        <div class="doc-info-item">
+          <span class="doc-info-label">適用對象</span>
+          <span class="doc-info-value">HR 人員、部門主管、一般員工</span>
+        </div>
+        <div class="doc-info-item">
+          <span class="doc-info-label">文件版本</span>
+          <span class="doc-info-value">v1.0</span>
+        </div>
+      </div>
+    </section>
+
+    <nav class="toc">
+      <h2 class="toc-title">目錄</h2>
+      <ol class="toc-list">
+        <li><a href="#一文件目的與適用範圍">文件目的與適用範圍</a></li>
+        <li><a href="#二系統導覽與入口說明">系統導覽與入口說明</a></li>
+        <li><a href="#三角色權責說明">角色權責說明</a></li>
+        <li><a href="#四名詞定義">名詞定義</a></li>
+        <li><a href="#第一部分hr-總覽儀表板">第一部分：HR 總覽儀表板</a></li>
+        <li><a href="#第二部分月度檢核">第二部分：月度檢核</a></li>
+        <li><a href="#第三部分季度面談">第三部分：季度面談</a></li>
+        <li><a href="#第四部分工作週報">第四部分：工作週報</a></li>
+        <li><a href="#第五部分完整職能評估流程總覽">第五部分：完整職能評估流程總覽</a></li>
+        <li><a href="#第六部分ai-服務功能缺口分析">第六部分：AI 服務功能缺口分析</a></li>
+        <li><a href="#附錄">附錄</a></li>
+      </ol>
+    </nav>
+
+    <main class="content">
+      <h2 id="section-1" class="section-title">一、文件目的與適用範圍</h2>
+<h3 id="section-2">1.1 文件目的</h3>
+<p>本說明書旨在介紹 Bombus 人力資源管理系統中「<strong>職能評估</strong>」功能的完整操作指引。職能評估是<strong>職能管理（L2）</strong>模組的核心功能之一，透過三個子系統實現員工績效的持續追蹤與回饋：</p>
+<ul>
+<li><strong>月度檢核</strong>：每月進行的績效評估，含員工自評、主管審核、HR 結案三階段簽核</li>
+<li><strong>季度面談</strong>：每季進行的深度績效面談，含目標檢核、職能評估、滿意度調查</li>
+<li><strong>工作週報</strong>：每週工作回報，追蹤日常任務執行與進度</li>
+</ul>
+<p>透過本文件，使用者可了解：</p>
+<ul>
+<li>各評估流程的操作步驟與簽核機制</li>
+<li>評分邏輯與加權計算方式</li>
+<li>電子簽名的應用場景</li>
+<li>HR 儀表板的監控與統計功能</li>
+<li>各角色在評估流程中的權責劃分</li>
+</ul>
+<h3 id="section-3">1.2 適用範圍</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>場景</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>月度績效評估</td>
+<td>每月對員工進行檢核項目評分（自評＋主管評分）</td>
+</tr>
+<tr>
+<td>季度績效面談</td>
+<td>每季進行正式面談，含目標回顧、職能評估、發展計畫</td>
+</tr>
+<tr>
+<td>週報管理</td>
+<td>每週收集工作進度，追蹤任務完成率</td>
+</tr>
+<tr>
+<td>績效數據分析</td>
+<td>HR 透過儀表板監控完成率、部門平均分數、個人趨勢</td>
+</tr>
+<tr>
+<td>逾期預警</td>
+<td>自動追蹤未完成的檢核、面談、週報項目</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="section-4" class="section-title">二、系統導覽與入口說明</h2>
+<h3 id="section-5">2.1 主要功能入口</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>功能模組</th>
+<th>導覽路徑</th>
+<th>路由</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>職能評估總覽</td>
+<td>職能管理 → 職能評估 → 總覽</td>
+<td><code>/competency/assessment</code></td>
+<td>HR 儀表板，KPI 與數據分析</td>
+</tr>
+<tr>
+<td>月度檢核</td>
+<td>職能管理 → 職能評估 → 月度檢核</td>
+<td><code>/competency/assessment</code></td>
+<td>月度績效評估管理</td>
+</tr>
+<tr>
+<td>季度面談</td>
+<td>職能管理 → 職能評估 → 季度面談</td>
+<td><code>/competency/assessment</code></td>
+<td>季度績效面談管理</td>
+</tr>
+<tr>
+<td>工作週報</td>
+<td>職能管理 → 職能評估 → 工作週報</td>
+<td><code>/competency/assessment</code></td>
+<td>週報提交與審核管理</td>
+</tr>
+</tbody></table></div>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>操作提示</strong>：職能評估頁面以頁籤（Tab）切換四大功能區塊，所有功能共用同一路由，透過「總覽」、「月度檢核」、「季度面談」、「工作週報」四個頁籤進入。</div>
+</div>
+<h3 id="section-6">2.2 頁面功能架構</h3>
+<div class="tree">職能管理 (L2)
+├── 職能框架
+├── 職等職級
+├── 職務說明書
+├── 缺口分析
+├── 模板管理
+└── 職能評估 ← 本說明書範圍
+    ├── 總覽（HR 儀表板）
+    │   ├── KPI 卡片（月度完成率、季度完成率、週報提交率）
+    │   ├── 月度未完成清單
+    │   ├── 季度未完成清單
+    │   ├── 週報未提交清單
+    │   ├── 各部門平均分數圖表
+    │   └── 績效分析儀表板（個人趨勢 / 同期比較 / 部門比較）
+    ├── 月度檢核
+    │   ├── 檢核列表（篩選、分頁、匯出）
+    │   ├── KPI 統計列（評估總人數 / 已完成 / 進行中 / 完成率）
+    │   └── 檢核詳情彈窗（自評 → 主管審核 → HR 結案 + 電子簽名）
+    ├── 季度面談
+    │   ├── 面談列表（篩選、分頁、匯出）
+    │   ├── KPI 統計列（預計面談數 / 已完成 / 完成率）
+    │   ├── 初始化本季面談（批次建立）
+    │   └── 面談詳情彈窗（9 步驟表單 + 多角色簽核）
+    └── 工作週報
+        ├── 週報列表（篩選、分頁）
+        ├── KPI 統計列（週報總數 / 已提交 / 提交率）
+        ├── 生成本週週報（批次建立）
+        └── 週報詳情彈窗（7 區塊填寫 + 電子簽名）</div>
+<hr>
+<h2 id="section-7" class="section-title">三、角色權責說明</h2>
+<h3 id="section-8">3.1 一般員工</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>功能項目</th>
+<th>操作權限</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>月度檢核</td>
+<td>填寫自評分數、簽名提交自評</td>
+</tr>
+<tr>
+<td>季度面談</td>
+<td>填寫員工表單（自我評估、目標檢核、滿意度調查）</td>
+</tr>
+<tr>
+<td>工作週報</td>
+<td>填寫週報、簽名提交</td>
+</tr>
+<tr>
+<td>查看歷史</td>
+<td>僅可查看自己的歷史記錄</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-9">3.2 部門主管</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>功能項目</th>
+<th>操作權限</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>月度檢核</td>
+<td>審核直屬部屬的自評、填寫主管評分、核准或退回、簽名</td>
+</tr>
+<tr>
+<td>季度面談</td>
+<td>填寫主管表單（評核員工、排定面談、填寫發展計畫）</td>
+</tr>
+<tr>
+<td>工作週報</td>
+<td>審核直屬部屬週報、核准或退回</td>
+</tr>
+<tr>
+<td>查看數據</td>
+<td>可查看部門範圍內的評估數據</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-10">3.3 HR 人員</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>功能項目</th>
+<th>操作權限</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>月度檢核</td>
+<td>結案或退回主管、簽名結案、查看全公司數據</td>
+</tr>
+<tr>
+<td>季度面談</td>
+<td>初始化本季面談（批次建立）、結案、查看全公司數據</td>
+</tr>
+<tr>
+<td>工作週報</td>
+<td>批次生成本週週報、監控提交率</td>
+</tr>
+<tr>
+<td>總覽儀表板</td>
+<td>查看 KPI、未完成清單、部門統計、個人趨勢分析</td>
+</tr>
+<tr>
+<td>匯出報表</td>
+<td>匯出月度檢核與季度面談的 Excel 報表</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="section-11" class="section-title">四、名詞定義</h2>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>名詞</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>月度檢核</td>
+<td>每月一次的績效評估，員工自評後由主管評分，最後 HR 結案確認</td>
+</tr>
+<tr>
+<td>季度面談</td>
+<td>每季一次的正式績效面談，涵蓋目標回顧、職能評估、滿意度調查與發展規劃</td>
+</tr>
+<tr>
+<td>工作週報</td>
+<td>每週提交的工作進度報告，記錄日常工作、待辦事項與問題回報</td>
+</tr>
+<tr>
+<td>自評</td>
+<td>員工對自己表現的評分（月度 1-10 分、季度 1-5 分）</td>
+</tr>
+<tr>
+<td>主管評分</td>
+<td>直屬主管對員工表現的評分</td>
+</tr>
+<tr>
+<td>加權分數</td>
+<td>依各檢核項目的權重點數計算的加權後分數</td>
+</tr>
+<tr>
+<td>電子簽名</td>
+<td>使用手寫板元件進行的數位簽名，作為評估簽核的正式記錄</td>
+</tr>
+<tr>
+<td>員工表單</td>
+<td>季度面談中由員工填寫的表單，包含自我評估、目標檢核、滿意度調查等</td>
+</tr>
+<tr>
+<td>主管表單</td>
+<td>季度面談中由主管填寫的表單，包含員工評核、面談安排、發展計畫等</td>
+</tr>
+<tr>
+<td>初始化</td>
+<td>HR 批次建立全體員工的季度面談記錄</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="section-12" class="section-title">第一部分：HR 總覽儀表板</h2>
+<h3 id="section-13">1.1 功能總覽</h3>
+<p>總覽頁面是 HR 的營運監控中心，以 Bento Grid 佈局呈現三大評估系統的即時狀態。HR 可在此頁快速掌握完成率、追蹤逾期項目、分析部門與個人績效趨勢。</p>
+<h3 id="section-14">1.2 KPI 卡片</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>KPI 指標</th>
+<th>說明</th>
+<th>呈現方式</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>月度檢核完成率</td>
+<td>當月已完成 ÷ 評估總人數 × 100%</td>
+<td>大型強調卡片（百分比 + 完成/總數）</td>
+</tr>
+<tr>
+<td>季度面談完成率</td>
+<td>當季已結案 ÷ 預計面談數 × 100%</td>
+<td>標準卡片</td>
+</tr>
+<tr>
+<td>工作週報提交率</td>
+<td>本週已提交 ÷ 週報總數 × 100%</td>
+<td>標準卡片</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-15">1.3 未完成清單</h3>
+<p>三個監控清單即時顯示需關注的逾期或未完成項目：</p>
+<p><strong>月度未完成清單（顯示前 6 筆）</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>員工姓名</td>
+<td>未完成員工名稱</td>
+</tr>
+<tr>
+<td>部門</td>
+<td>所屬部門</td>
+</tr>
+<tr>
+<td>職位</td>
+<td>擔任職位</td>
+</tr>
+<tr>
+<td>狀態</td>
+<td>目前停留的流程階段（自評中 / 主管審核中 / HR 審核中）</td>
+</tr>
+</tbody></table></div>
+<p><strong>季度未完成清單（顯示前 10 筆）</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>員工姓名</td>
+<td>未完成員工名稱</td>
+</tr>
+<tr>
+<td>部門 / 職位</td>
+<td>所屬部門與職位</td>
+</tr>
+<tr>
+<td>狀態</td>
+<td>目前停留的流程階段</td>
+</tr>
+</tbody></table></div>
+<p><strong>週報未提交清單（顯示前 10 筆）</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>員工姓名</td>
+<td>未提交員工名稱</td>
+</tr>
+<tr>
+<td>部門 / 職位</td>
+<td>所屬部門與職位</td>
+</tr>
+<tr>
+<td>狀態</td>
+<td>尚未填寫 / 草稿</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-16">1.4 各部門平均分數圖表</h3>
+<p>以長條圖呈現各部門的平均績效分數，支援切換檢視：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>檢視模式</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>月度平均</td>
+<td>各部門當月月度檢核平均分數</td>
+</tr>
+<tr>
+<td>季度平均</td>
+<td>各部門當季季度面談平均分數</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-17">1.5 績效分析儀表板</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>設定項目</th>
+<th>選項</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>員工選擇</td>
+<td>下拉選單</td>
+<td>選擇要分析的特定員工</td>
+</tr>
+<tr>
+<td>檢視模式</td>
+<td>月度趨勢 / 季度總覽</td>
+<td>切換時間維度</td>
+</tr>
+<tr>
+<td>比較模式</td>
+<td>個人 / 同期比較 / 部門比較</td>
+<td>切換分析角度</td>
+</tr>
+</tbody></table></div>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>白話說明</strong>：績效分析儀表板就像一位員工的「成績單追蹤器」。HR 可以選擇任何一位員工，查看他最近的分數變化趨勢，也可以跟去年同期或部門平均做比較，快速判斷這位員工的表現是進步還是退步。</div>
+</div>
+<h3 id="section-18">1.6 篩選條件</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>篩選項</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>年度</td>
+<td>篩選特定年度資料</td>
+</tr>
+<tr>
+<td>月份</td>
+<td>篩選特定月份（影響月度檢核與週報）</td>
+</tr>
+<tr>
+<td>週別</td>
+<td>篩選特定週別（影響週報）</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="section-19" class="section-title">第二部分：月度檢核</h2>
+<h3 id="section-20">2.1 功能總覽</h3>
+<p>月度檢核是「每月一次」的績效評估機制。每位員工每月會收到一份檢核表，內含多個評估項目（如工作品質、團隊協作、專業技能等），需經三階段簽核完成。</p>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>白話說明</strong>：月度檢核就像「月考」。員工先自己打分數（自評），主管再打一次分數（主管評分），最後 HR 確認無誤後蓋章存檔（結案）。三個關卡都需要電子簽名，確保每個人都正式確認了自己的評估。</div>
+</div>
+<h3 id="section-21">2.2 狀態流程</h3>
+<div class="flowchart">
+<div class="flowchart-title">流程圖</div>
+<div class="code-block">flowchart TD
+    A[建立檢核表] --&gt; B[自評中&lt;br/&gt;員工填寫自評分數]
+    B --&gt; C{員工簽名提交}
+    C --&gt; D[主管審核中&lt;br/&gt;主管填寫評分]
+    D --&gt; E{主管決定}
+    E --&gt;|核准 + 簽名| F[HR 審核中]
+    E --&gt;|退回| B
+    F --&gt; G{HR 決定}
+    G --&gt;|結案 + 簽名| H[已完成&lt;br/&gt;計算總分存檔]
+    G --&gt;|退回主管| D</div>
+</div>
+<h3 id="section-22">2.3 狀態說明</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>狀態代碼</th>
+<th>顯示名稱</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>self_assessment</td>
+<td>自評中</td>
+<td>等待員工填寫自評分數並簽名提交</td>
+</tr>
+<tr>
+<td>manager_review</td>
+<td>主管審核中</td>
+<td>等待主管填寫主管評分，可核准或退回</td>
+</tr>
+<tr>
+<td>hr_review</td>
+<td>HR 審核中</td>
+<td>等待 HR 最終確認，可結案或退回主管</td>
+</tr>
+<tr>
+<td>completed</td>
+<td>已完成</td>
+<td>檢核已完成，總分已計算並存檔</td>
+</tr>
+<tr>
+<td>overdue</td>
+<td>逾期</td>
+<td>超過截止日期仍未完成</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-23">2.4 列表頁面欄位</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>員工</td>
+<td>員工姓名</td>
+</tr>
+<tr>
+<td>部門 / 職位</td>
+<td>所屬部門與擔任職位</td>
+</tr>
+<tr>
+<td>年月</td>
+<td>評估所屬的年份與月份</td>
+</tr>
+<tr>
+<td>自評日期</td>
+<td>員工完成自評的日期</td>
+</tr>
+<tr>
+<td>主管審核日期</td>
+<td>主管完成審核的日期</td>
+</tr>
+<tr>
+<td>狀態</td>
+<td>目前所在的流程階段（顏色標示）</td>
+</tr>
+<tr>
+<td>總分</td>
+<td>HR 結案後的加權總分</td>
+</tr>
+<tr>
+<td>操作</td>
+<td>查看詳情按鈕</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-24">2.5 KPI 統計列</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>指標</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>評估總人數</td>
+<td>當月需進行檢核的員工人數</td>
+</tr>
+<tr>
+<td>已完成</td>
+<td>狀態為「已完成」的數量</td>
+</tr>
+<tr>
+<td>進行中</td>
+<td>狀態為「自評中」、「主管審核中」或「HR 審核中」的數量</td>
+</tr>
+<tr>
+<td>完成率</td>
+<td>已完成 ÷ 評估總人數 × 100%</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-25">2.6 篩選條件</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>篩選項</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>年度</td>
+<td>下拉選單</td>
+<td>篩選特定年度</td>
+</tr>
+<tr>
+<td>月份</td>
+<td>下拉選單</td>
+<td>篩選特定月份</td>
+</tr>
+<tr>
+<td>子公司</td>
+<td>下拉選單</td>
+<td>多組織架構時篩選子公司（視權限顯示）</td>
+</tr>
+<tr>
+<td>部門</td>
+<td>下拉選單</td>
+<td>篩選特定部門</td>
+</tr>
+<tr>
+<td>狀態</td>
+<td>下拉選單</td>
+<td>篩選特定狀態</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-26">2.7 檢核項目評分機制</h3>
+<h4 id="section-27">檢核項目欄位規格</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>指標名稱</td>
+<td>文字</td>
+<td>評估項目名稱（如「工作品質」、「團隊協作」）</td>
+</tr>
+<tr>
+<td>說明</td>
+<td>文字</td>
+<td>該指標的詳細說明</td>
+</tr>
+<tr>
+<td>衡量標準</td>
+<td>文字</td>
+<td>評分的參考基準</td>
+</tr>
+<tr>
+<td>點數</td>
+<td>整數</td>
+<td>該項目的權重點數（用於加權計算）</td>
+</tr>
+<tr>
+<td>自評分數</td>
+<td>整數（1-10）</td>
+<td>員工給自己的評分</td>
+</tr>
+<tr>
+<td>主管分數</td>
+<td>整數（1-10）</td>
+<td>主管給員工的評分</td>
+</tr>
+<tr>
+<td>加權分</td>
+<td>小數</td>
+<td>系統自動計算：主管分數 × (點數 ÷ 總點數)</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-28">總分計算公式</h4>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>加權總分</strong> = Σ（主管分數 × 點數 ÷ 總點數）× 20</div>
+</div>
+<p><strong>計算範例</strong>：假設有三個檢核項目，總點數 = 3 + 4 + 3 = 10</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>項目</th>
+<th>點數</th>
+<th>主管評分</th>
+<th>加權計算</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>工作品質</td>
+<td>3</td>
+<td>8</td>
+<td>8 × (3 ÷ 10) = 2.4</td>
+</tr>
+<tr>
+<td>團隊協作</td>
+<td>4</td>
+<td>9</td>
+<td>9 × (4 ÷ 10) = 3.6</td>
+</tr>
+<tr>
+<td>專業技能</td>
+<td>3</td>
+<td>7</td>
+<td>7 × (3 ÷ 10) = 2.1</td>
+</tr>
+</tbody></table></div>
+<p>加權和 = 2.4 + 3.6 + 2.1 = <strong>8.1</strong>
+總分 = 8.1 × 20 = <strong>162.0 分</strong></p>
+<h3 id="section-29">2.8 檢核詳情彈窗</h3>
+<p>開啟任一檢核記錄後，彈窗分為以下區塊：</p>
+<p><strong>區塊一：員工基本資訊</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>員工姓名</td>
+<td>被評估員工</td>
+</tr>
+<tr>
+<td>部門</td>
+<td>所屬部門</td>
+</tr>
+<tr>
+<td>職位</td>
+<td>擔任職位</td>
+</tr>
+<tr>
+<td>狀態</td>
+<td>當前流程階段</td>
+</tr>
+<tr>
+<td>自評日期</td>
+<td>員工完成自評的日期</td>
+</tr>
+<tr>
+<td>主管審核日期</td>
+<td>主管完成審核的日期</td>
+</tr>
+</tbody></table></div>
+<p><strong>區塊二：檢核項目評分表</strong></p>
+<p>以表格呈現所有檢核項目，包含序號、指標名稱、點數、自評分數、主管分數、加權分。</p>
+<ul>
+<li>員工自評階段：僅「自評分數」欄可編輯</li>
+<li>主管審核階段：僅「主管分數」欄可編輯</li>
+<li>已完成階段：所有欄位唯讀</li>
+</ul>
+<p><strong>區塊三：主管評語</strong></p>
+<p>主管可填寫文字評語，提供綜合回饋。</p>
+<p><strong>區塊四：HR 備註</strong></p>
+<p>HR 可填寫內部備註。</p>
+<p><strong>區塊五：電子簽名記錄</strong></p>
+<p>顯示三階段簽名的影像與日期（員工簽名、主管簽名、HR 簽名）。</p>
+<p><strong>區塊六：電子簽名區（編輯模式）</strong></p>
+<p>在對應的流程階段，顯示手寫板元件供簽名。</p>
+<h3 id="section-30">2.9 操作流程</h3>
+<div class="flowchart">
+<div class="flowchart-title">流程圖</div>
+<div class="code-block">flowchart TD
+    S1[HR 建立月度檢核表&lt;br/&gt;系統複製前月項目或套用模板] --&gt; S2[員工收到檢核通知]
+    S2 --&gt; S3[員工開啟檢核表&lt;br/&gt;點擊「開始自評」]
+    S3 --&gt; S4[員工逐項填寫自評分數&lt;br/&gt;確認已填寫 X / Y 項]
+    S4 --&gt; S5[員工完成電子簽名]
+    S5 --&gt; S6[點擊「簽名並提交自評」]
+    S6 --&gt; S7[主管收到審核通知]
+    S7 --&gt; S8[主管開啟檢核表&lt;br/&gt;點擊「開始審核」]
+    S8 --&gt; S9[主管逐項填寫主管評分&lt;br/&gt;填寫主管評語]
+    S9 --&gt; S10{主管決定}
+    S10 --&gt;|核准| S11[主管完成電子簽名&lt;br/&gt;點擊「簽名並核准」]
+    S10 --&gt;|退回| S12[點擊「退回修改」&lt;br/&gt;退回員工重新自評]
+    S11 --&gt; S13[HR 收到結案通知]
+    S13 --&gt; S14{HR 決定}
+    S14 --&gt;|結案| S15[HR 完成電子簽名&lt;br/&gt;點擊「簽名並結案」&lt;br/&gt;系統計算加權總分]
+    S14 --&gt;|退回| S16[點擊「退回主管」&lt;br/&gt;退回主管重新審核]
+    S12 --&gt; S3
+    S16 --&gt; S8</div>
+</div>
+<h3 id="section-31">2.10 匯出功能</h3>
+<p>HR 可將當前篩選條件下的月度檢核資料匯出為 Excel 報表，包含所有員工的評分明細與總分。</p>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>注意事項</strong>：
+- 每位員工每月只能有一筆檢核記錄（系統以員工＋年月為唯一鍵）
+- 主管退回時會清除員工簽名，員工需重新自評並重新簽名
+- HR 退回時會清除主管簽名，主管需重新審核並重新簽名
+- 總分僅在 HR 結案時才會計算並存檔</div>
+</div>
+<hr>
+<h2 id="section-32" class="section-title">第三部分：季度面談</h2>
+<h3 id="section-33">3.1 功能總覽</h3>
+<p>季度面談是「每季一次」的深度績效面談機制。與月度檢核的「評分導向」不同，季度面談更注重「對話與發展」，透過員工自我回顧、主管評核、正式面談、發展規劃等環節，形成完整的績效發展循環。</p>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>白話說明</strong>：如果月度檢核是「月考成績單」，季度面談就像「學期家長會」。不只是看分數，更要坐下來聊一聊——員工覺得自己哪裡做得好、主管怎麼評價、對公司滿不滿意、下一季要朝哪個方向發展。而且有兩種表單：員工填自己的（員工表單），主管填評核的（主管表單）。</div>
+</div>
+<h3 id="section-34">3.2 雙表單設計</h3>
+<p>季度面談採用<strong>雙表單</strong>架構，員工與主管各自填寫不同的表單：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>表單類型</th>
+<th>填寫者</th>
+<th>主要內容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>員工表單</td>
+<td>員工本人</td>
+<td>自我評估、貢獻與學習、目標檢核、職能自評、滿意度調查</td>
+</tr>
+<tr>
+<td>主管表單</td>
+<td>直屬主管</td>
+<td>員工評核（4 大面向 × 5 項）、面談安排、主管評語、發展計畫</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-35">3.3 狀態流程</h3>
+<div class="flowchart">
+<div class="flowchart-title">流程圖</div>
+<div class="code-block">flowchart TD
+    A[HR 初始化本季面談&lt;br/&gt;批次建立全體員工記錄] --&gt; B[尚未填寫&lt;br/&gt;等待員工開始]
+    B --&gt; C[員工填寫表單&lt;br/&gt;9 步驟引導式填寫]
+    C --&gt; D[員工已提交]
+    D --&gt; E[主管填寫評核表單]
+    E --&gt; F[主管已評核]
+    F --&gt; G[主管預約面談&lt;br/&gt;設定日期與地點]
+    G --&gt; H[已預約面談]
+    H --&gt; I[進行正式面談]
+    I --&gt; J[面談完成&lt;br/&gt;主管確認面談結論]
+    J --&gt; K[HR 結案&lt;br/&gt;確認並歸檔]</div>
+</div>
+<h3 id="section-36">3.4 狀態說明</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>狀態代碼</th>
+<th>顯示名稱</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>pending</td>
+<td>尚未填寫</td>
+<td>記錄已建立，等待員工開始填寫</td>
+</tr>
+<tr>
+<td>employee_submitted</td>
+<td>員工已提交</td>
+<td>員工已完成並提交表單</td>
+</tr>
+<tr>
+<td>manager_reviewed</td>
+<td>主管已評核</td>
+<td>主管已完成評核表單</td>
+</tr>
+<tr>
+<td>interview_scheduled</td>
+<td>已預約面談</td>
+<td>主管已設定面談日期與地點</td>
+</tr>
+<tr>
+<td>interview_completed</td>
+<td>面談完成</td>
+<td>正式面談已進行完畢</td>
+</tr>
+<tr>
+<td>completed</td>
+<td>已結案</td>
+<td>HR 已確認結案</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-37">3.5 列表頁面欄位</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>員工</td>
+<td>員工姓名</td>
+</tr>
+<tr>
+<td>部門 / 職位</td>
+<td>所屬部門與擔任職位</td>
+</tr>
+<tr>
+<td>表單類型</td>
+<td>主管表單 / 員工表單</td>
+</tr>
+<tr>
+<td>年度季度</td>
+<td>評估所屬的年度與季度</td>
+</tr>
+<tr>
+<td>月度均分</td>
+<td>本季月度檢核的平均分數</td>
+</tr>
+<tr>
+<td>面談日期</td>
+<td>預約的面談日期</td>
+</tr>
+<tr>
+<td>狀態</td>
+<td>目前所在的流程階段</td>
+</tr>
+<tr>
+<td>總分</td>
+<td>評核後的總分</td>
+</tr>
+<tr>
+<td>操作</td>
+<td>查看詳情按鈕</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-38">3.6 篩選條件</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>篩選項</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>年度</td>
+<td>下拉選單</td>
+<td>篩選特定年度</td>
+</tr>
+<tr>
+<td>季度</td>
+<td>下拉選單</td>
+<td>篩選特定季度（Q1-Q4）</td>
+</tr>
+<tr>
+<td>子公司</td>
+<td>下拉選單</td>
+<td>多組織架構時篩選子公司</td>
+</tr>
+<tr>
+<td>部門</td>
+<td>下拉選單</td>
+<td>篩選特定部門</td>
+</tr>
+<tr>
+<td>狀態</td>
+<td>下拉選單</td>
+<td>篩選特定狀態</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-39">3.7 初始化本季面談</h3>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>操作說明</strong>：點擊「初始化本季面談」按鈕，系統將為所有在職員工批次建立本季的面談記錄（員工表單 + 主管表單）。操作完成後顯示統計：已建立 X 筆、跳過 Y 筆（已存在的記錄不重複建立）。</div>
+</div>
+<h3 id="section-40">3.8 員工表單：9 步驟填寫內容</h3>
+<h4 id="section-41">步驟一：自我評估</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>階段性績效目標設定確認</td>
+<td>文字區塊</td>
+<td>確認本季績效目標</td>
+</tr>
+<tr>
+<td>自我評估摘要</td>
+<td>長文字</td>
+<td>員工對自己本季整體表現的回顧</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-42">步驟二：貢獻與學習</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>最有貢獻價值的三件事</td>
+<td>長文字</td>
+<td>員工列舉本季最具價值的三項貢獻</td>
+</tr>
+<tr>
+<td>學習成長</td>
+<td>長文字</td>
+<td>員工描述本季的學習與成長</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-43">步驟三：目標檢核</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>必填</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>目標</td>
+<td>文字</td>
+<td>是</td>
+<td>工作目標名稱</td>
+</tr>
+<tr>
+<td>狀態</td>
+<td>選擇</td>
+<td>是</td>
+<td>已達成 / 部分達成 / 未達成</td>
+</tr>
+<tr>
+<td>完成率</td>
+<td>百分比</td>
+<td>否</td>
+<td>目標完成程度（0-100%）</td>
+</tr>
+<tr>
+<td>備註</td>
+<td>文字</td>
+<td>否</td>
+<td>補充說明</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-44">步驟四：JD 與 OKR 季檢核</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>區塊</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>JD 指標季檢核</td>
+<td>檢視職務說明書中的關鍵指標達成情況</td>
+</tr>
+<tr>
+<td>OKR 目標季檢核</td>
+<td>檢視本季 OKR 目標的完成狀態</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-45">步驟五：職能評估</h4>
+<p><strong>核心職能（全員填寫，5 項）</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>職能項目</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>問題解決</td>
+<td>分析問題與提出解決方案的能力</td>
+</tr>
+<tr>
+<td>溝通表達</td>
+<td>清晰表達想法與有效傾聽的能力</td>
+</tr>
+<tr>
+<td>專案思維</td>
+<td>規劃與執行專案的系統性思考能力</td>
+</tr>
+<tr>
+<td>客戶導向</td>
+<td>以客戶需求為導向的服務意識</td>
+</tr>
+<tr>
+<td>成長思維</td>
+<td>持續學習與自我提升的態度</td>
+</tr>
+</tbody></table></div>
+<p><strong>管理職能（僅主管表單，3 項）</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>職能項目</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>人才發展</td>
+<td>培育部屬、發掘人才的能力</td>
+</tr>
+<tr>
+<td>決策能力</td>
+<td>在資訊不完整時做出合理判斷的能力</td>
+</tr>
+<tr>
+<td>團隊領導</td>
+<td>帶領團隊達成目標的領導力</td>
+</tr>
+</tbody></table></div>
+<p>每項職能含行為描述，評分為 1-5 分（員工自評、主管評分）。</p>
+<h4 id="section-46">步驟六：直屬主管評價（僅主管表單）</h4>
+<p>主管從四大面向、每面向 5 個項目進行評核：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>面向</th>
+<th>評核項目範例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>工作成果</td>
+<td>目標達成度、品質、效率、創新、持續改善</td>
+</tr>
+<tr>
+<td>專業能力</td>
+<td>專業知識、問題分析、技術應用、學習能力、知識分享</td>
+</tr>
+<tr>
+<td>團隊貢獻</td>
+<td>協作、溝通、知識傳承、跨部門合作、衝突處理</td>
+</tr>
+<tr>
+<td>工作態度與責任</td>
+<td>主動性、責任感、抗壓、時間管理、職業道德</td>
+</tr>
+</tbody></table></div>
+<p>每項評分 1-5 分。</p>
+<h4 id="section-47">步驟七：滿意度調查（僅員工表單）</h4>
+<p>12 題滿意度問卷，評分 1-5 分：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>題號</th>
+<th>問題內容（範例）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>我清楚了解我的工作期望與目標</td>
+</tr>
+<tr>
+<td>2</td>
+<td>我有足夠的資源與工具完成工作</td>
+</tr>
+<tr>
+<td>3</td>
+<td>我在工作中有成長與發展的機會</td>
+</tr>
+<tr>
+<td>4</td>
+<td>我的努力與貢獻受到適當的認可</td>
+</tr>
+<tr>
+<td>5</td>
+<td>我的直屬主管提供有效的指導與支持</td>
+</tr>
+<tr>
+<td>6</td>
+<td>團隊內的溝通氛圍良好</td>
+</tr>
+<tr>
+<td>7</td>
+<td>公司的政策與制度是公平合理的</td>
+</tr>
+<tr>
+<td>8</td>
+<td>我對目前的工作內容感到滿意</td>
+</tr>
+<tr>
+<td>9</td>
+<td>我願意向他人推薦公司作為工作選擇</td>
+</tr>
+<tr>
+<td>10</td>
+<td>我對公司的未來發展有信心</td>
+</tr>
+<tr>
+<td>11</td>
+<td>工作與生活的平衡是可以接受的</td>
+</tr>
+<tr>
+<td>12</td>
+<td>整體而言，我對在這裡工作感到滿意</td>
+</tr>
+</tbody></table></div>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>為什麼有滿意度調查？</strong>：滿意度調查不計入績效分數，而是讓 HR 了解員工的「心聲」。例如如果多數員工在「資源與工具」這題分數偏低，HR 就知道要加強設備或系統投資。</div>
+</div>
+<h4 id="section-48">步驟八：主管評語（僅主管表單）</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>最佳表現評語</td>
+<td>主管對員工本季最佳表現的肯定</td>
+</tr>
+<tr>
+<td>需改進評語</td>
+<td>主管對員工需改進之處的建議</td>
+</tr>
+<tr>
+<td>補充說明</td>
+<td>其他主管想補充的內容</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-49">步驟九：發展計劃</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>指標</td>
+<td>文字</td>
+<td>改善或發展的目標指標</td>
+</tr>
+<tr>
+<td>措施</td>
+<td>文字</td>
+<td>具體的改善行動方案</td>
+</tr>
+<tr>
+<td>截止日</td>
+<td>日期</td>
+<td>預計完成日期</td>
+</tr>
+<tr>
+<td>所需資源</td>
+<td>文字</td>
+<td>達成目標需要的支援或資源</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-50">3.9 面談安排</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>必填</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>面談日期</td>
+<td>日期</td>
+<td>是</td>
+<td>預約正式面談的日期</td>
+</tr>
+<tr>
+<td>面談地點</td>
+<td>文字</td>
+<td>否</td>
+<td>面談場所</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-51">3.10 操作流程</h3>
+<div class="flowchart">
+<div class="flowchart-title">流程圖</div>
+<div class="code-block">flowchart TD
+    A[HR 點擊「初始化本季面談」&lt;br/&gt;批次建立全體員工記錄] --&gt; B[員工收到通知&lt;br/&gt;開啟員工表單]
+    B --&gt; C[員工依 9 步驟填寫&lt;br/&gt;自我評估→貢獻→目標→JD/OKR→職能→滿意度]
+    C --&gt; D[員工提交表單]
+    D --&gt; E[主管開啟主管表單]
+    E --&gt; F[主管填寫評核&lt;br/&gt;4 面向 × 5 項 + 職能評估 + 評語]
+    F --&gt; G[主管提交評核]
+    G --&gt; H[主管預約面談&lt;br/&gt;設定日期與地點]
+    H --&gt; I[進行正式面談&lt;br/&gt;雙方討論發展計畫]
+    I --&gt; J[面談完成]
+    J --&gt; K[HR 結案]</div>
+</div>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>注意事項</strong>：
+- 初始化操作不會重複建立已存在的記錄
+- 員工表單與主管表單可同步進行，不需等員工提交後主管才能開始
+- 面談日期由主管設定，員工會在面談列表中看到日期
+- 月度均分由系統自動計算（取本季三個月度檢核的平均總分）</div>
+</div>
+<hr>
+<h2 id="section-52" class="section-title">第四部分：工作週報</h2>
+<h3 id="section-53">4.1 功能總覽</h3>
+<p>工作週報是「每週一次」的工作進度回報機制，幫助主管掌握部屬的日常工作狀態、待辦事項、遭遇問題，以及專案進度。</p>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>白話說明</strong>：工作週報就像「每週的工作日記」。員工記錄這一週做了什麼、遇到什麼問題、下週打算做什麼。主管看完後批一個核准或退回。對 HR 來說，可以從提交率知道哪些部門的回報機制比較落實。</div>
+</div>
+<h3 id="section-54">4.2 狀態流程</h3>
+<div class="flowchart">
+<div class="flowchart-title">流程圖</div>
+<div class="code-block">flowchart TD
+    A[HR 生成本週週報&lt;br/&gt;批次建立全體員工記錄] --&gt; B[尚未填寫]
+    B --&gt; C[員工開始填寫&lt;br/&gt;狀態轉為草稿]
+    C --&gt; D[草稿&lt;br/&gt;可隨時儲存]
+    D --&gt; E[員工簽名並提交]
+    E --&gt; F[已提交&lt;br/&gt;等待主管審核]
+    F --&gt; G{主管決定}
+    G --&gt;|核准 + 簽名| H[已通過]
+    G --&gt;|退回| D</div>
+</div>
+<h3 id="section-55">4.3 狀態說明</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>狀態代碼</th>
+<th>顯示名稱</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>not_started</td>
+<td>尚未填寫</td>
+<td>週報記錄已建立，員工尚未開始填寫</td>
+</tr>
+<tr>
+<td>draft</td>
+<td>草稿</td>
+<td>員工正在填寫中，可隨時儲存</td>
+</tr>
+<tr>
+<td>submitted</td>
+<td>已提交</td>
+<td>員工已簽名並提交，等待主管審核</td>
+</tr>
+<tr>
+<td>approved</td>
+<td>已通過</td>
+<td>主管已核准</td>
+</tr>
+<tr>
+<td>rejected</td>
+<td>已退回</td>
+<td>主管退回，員工需修改後重新提交</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-56">4.4 列表頁面欄位</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>員工</td>
+<td>員工姓名</td>
+</tr>
+<tr>
+<td>部門 / 職位</td>
+<td>所屬部門與擔任職位</td>
+</tr>
+<tr>
+<td>週別</td>
+<td>該年度的第幾週</td>
+</tr>
+<tr>
+<td>週期</td>
+<td>該週的起迄日期範圍</td>
+</tr>
+<tr>
+<td>提交日期</td>
+<td>員工提交週報的日期</td>
+</tr>
+<tr>
+<td>狀態</td>
+<td>目前所在的流程階段</td>
+</tr>
+<tr>
+<td>審核人</td>
+<td>審核主管姓名</td>
+</tr>
+<tr>
+<td>操作</td>
+<td>查看詳情按鈕</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-57">4.5 KPI 統計列</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>指標</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>週報總數</td>
+<td>當選定週別的應提交週報數</td>
+</tr>
+<tr>
+<td>已提交</td>
+<td>狀態為「已提交」或「已通過」的數量</td>
+</tr>
+<tr>
+<td>提交率</td>
+<td>已提交 ÷ 週報總數 × 100%</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-58">4.6 篩選條件</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>篩選項</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>年度</td>
+<td>下拉選單</td>
+<td>篩選特定年度</td>
+</tr>
+<tr>
+<td>月份</td>
+<td>下拉選單</td>
+<td>篩選特定月份（可選「全部月份」）</td>
+</tr>
+<tr>
+<td>週別</td>
+<td>下拉選單</td>
+<td>依月份自動帶出可選週別</td>
+</tr>
+<tr>
+<td>狀態</td>
+<td>下拉選單</td>
+<td>篩選特定狀態</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-59">4.7 週報詳情：7 區塊填寫內容</h3>
+<h4 id="section-60">區塊一：例行工作</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>工作內容</td>
+<td>文字</td>
+<td>例行工作項目描述</td>
+</tr>
+<tr>
+<td>預估時間（分鐘）</td>
+<td>數字</td>
+<td>預計花費的時間</td>
+</tr>
+<tr>
+<td>實際時間（分鐘）</td>
+<td>數字</td>
+<td>實際花費的時間</td>
+</tr>
+<tr>
+<td>完成日期</td>
+<td>日期</td>
+<td>實際完成的日期</td>
+</tr>
+</tbody></table></div>
+<p>系統自動計算「例行工作總分鐘數」。</p>
+<h4 id="section-61">區塊二：非例行工作</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>工作內容</td>
+<td>文字</td>
+<td>非例行或專案型工作描述</td>
+</tr>
+<tr>
+<td>預估時間（分鐘）</td>
+<td>數字</td>
+<td>預計花費的時間</td>
+</tr>
+<tr>
+<td>實際時間（分鐘）</td>
+<td>數字</td>
+<td>實際花費的時間</td>
+</tr>
+<tr>
+<td>完成日期</td>
+<td>日期</td>
+<td>實際完成的日期</td>
+</tr>
+</tbody></table></div>
+<p>系統自動計算「非例行工作總分鐘數」。</p>
+<h4 id="section-62">區塊三：待辦事項</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>任務</td>
+<td>文字</td>
+<td>待辦事項描述</td>
+</tr>
+<tr>
+<td>開始日期</td>
+<td>日期</td>
+<td>預計開始日期</td>
+</tr>
+<tr>
+<td>截止日期</td>
+<td>日期</td>
+<td>預計完成日期</td>
+</tr>
+<tr>
+<td>優先級</td>
+<td>選擇</td>
+<td>高 / 中 / 一般</td>
+</tr>
+<tr>
+<td>狀態</td>
+<td>選擇</td>
+<td>進行中 / 已完成 / 待處理</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-63">區塊四：問題與解決方案</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>問題描述</td>
+<td>文字</td>
+<td>本週遭遇的問題</td>
+</tr>
+<tr>
+<td>解決方案</td>
+<td>文字</td>
+<td>已採取或計畫採取的解決方式</td>
+</tr>
+<tr>
+<td>是否已解決</td>
+<td>是/否</td>
+<td>問題是否已解決</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-64">區塊五：教育訓練進度</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>課程名稱</td>
+<td>文字</td>
+<td>正在進行的課程</td>
+</tr>
+<tr>
+<td>狀態</td>
+<td>選擇</td>
+<td>進行中 / 已完成 / 待開始</td>
+</tr>
+<tr>
+<td>總時數</td>
+<td>數字</td>
+<td>課程總時數</td>
+</tr>
+<tr>
+<td>已完成時數</td>
+<td>數字</td>
+<td>目前已完成的時數</td>
+</tr>
+<tr>
+<td>完成率</td>
+<td>百分比</td>
+<td>系統計算（已完成時數 ÷ 總時數）</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-65">區塊六：階段性任務進度</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>任務名稱</td>
+<td>文字</td>
+<td>專案或階段性任務名稱</td>
+</tr>
+<tr>
+<td>進度</td>
+<td>百分比</td>
+<td>目前完成進度（0-100%）</td>
+</tr>
+<tr>
+<td>部門類型</td>
+<td>選擇</td>
+<td>部門內 / 跨部門</td>
+</tr>
+<tr>
+<td>困難與挑戰</td>
+<td>文字</td>
+<td>目前遭遇的困難</td>
+</tr>
+<tr>
+<td>預計完成日</td>
+<td>日期</td>
+<td>原訂完成日期</td>
+</tr>
+<tr>
+<td>實際完成日</td>
+<td>日期</td>
+<td>實際完成日期</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-66">區塊七：本週總結與下週計劃</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>本週工作總結</td>
+<td>長文字</td>
+<td>對本週工作的整體回顧</td>
+</tr>
+<tr>
+<td>下週計劃</td>
+<td>長文字</td>
+<td>下週的工作規劃與重點</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-67">4.8 操作流程</h3>
+<div class="flowchart">
+<div class="flowchart-title">流程圖</div>
+<div class="code-block">flowchart TD
+    A[HR 點擊「生成本週週報」&lt;br/&gt;批次建立全體員工記錄] --&gt; B[員工收到通知]
+    B --&gt; C[員工開啟週報&lt;br/&gt;點擊「開始填寫」]
+    C --&gt; D[填寫 7 大區塊&lt;br/&gt;例行工作→非例行→待辦→問題→訓練→專案→總結]
+    D --&gt; E[可隨時「儲存草稿」]
+    E --&gt; F[員工完成電子簽名]
+    F --&gt; G[點擊「提交週報」]
+    G --&gt; H[主管收到審核通知]
+    H --&gt; I{主管決定}
+    I --&gt;|核准 + 簽名| J[已通過]
+    I --&gt;|退回| K[退回員工修改&lt;br/&gt;回到草稿狀態]
+    K --&gt; C</div>
+</div>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>注意事項</strong>：
+- 每位員工每週只能有一筆週報記錄（系統以員工＋年＋週數為唯一鍵）
+- 系統會顯示提交截止日提醒
+- 退回後員工可修改內容後重新提交
+- 草稿狀態下可隨時儲存，不影響提交</div>
+</div>
+<hr>
+<h2 id="section-68" class="section-title">第五部分：完整職能評估流程總覽</h2>
+<h3 id="section-69">5.1 三大評估的時間節奏</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>評估類型</th>
+<th>頻率</th>
+<th>典型時間軸</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>工作週報</td>
+<td>每週</td>
+<td>週一至週五填寫 → 週五前提交 → 主管下週一審核</td>
+</tr>
+<tr>
+<td>月度檢核</td>
+<td>每月</td>
+<td>每月初由 HR 建立 → 月中前完成自評 → 月底前結案</td>
+</tr>
+<tr>
+<td>季度面談</td>
+<td>每季</td>
+<td>季初 HR 初始化 → 季中員工與主管填寫 → 季末前完成面談並結案</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-70">5.2 三者之間的關聯</h3>
+<div class="flowchart">
+<div class="flowchart-title">流程圖</div>
+<div class="code-block">flowchart LR
+    A[工作週報&lt;br/&gt;每週] --&gt;|累積為| B[月度檢核&lt;br/&gt;每月]
+    B --&gt;|月度均分帶入| C[季度面談&lt;br/&gt;每季]
+    C --&gt;|產出| D[發展計畫&lt;br/&gt;改善措施]
+    D --&gt;|指導| A</div>
+</div>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>白話說明</strong>：三種評估互相串聯，形成一個完整的迴圈。員工每週的工作表現記錄在週報裡，每月彙整成月度檢核的評分，三個月的月度均分又會帶入季度面談作為參考。季度面談產出的發展計畫，會指導員工下一季的工作方向，形成「PDCA」持續改善循環。</div>
+</div>
+<hr>
+<h2 id="section-71" class="section-title">第六部分：AI 服務功能缺口分析</h2>
+<h3 id="section-72">6.1 已實現功能</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>功能</th>
+<th>狀態</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>自動加權計算</td>
+<td>✅ 已實現</td>
+<td>月度檢核的加權總分由系統自動計算</td>
+</tr>
+<tr>
+<td>月度均分自動帶入</td>
+<td>✅ 已實現</td>
+<td>季度面談自動帶入本季的月度檢核平均分數</td>
+</tr>
+<tr>
+<td>批次初始化</td>
+<td>✅ 已實現</td>
+<td>一鍵為全體員工建立季度面談與週報記錄</td>
+</tr>
+<tr>
+<td>績效趨勢分析</td>
+<td>✅ 已實現</td>
+<td>個人月度/季度趨勢圖、同期比較、部門比較</td>
+</tr>
+<tr>
+<td>部門統計</td>
+<td>✅ 已實現</td>
+<td>各部門月度/季度平均分數統計圖表</td>
+</tr>
+<tr>
+<td>未完成追蹤</td>
+<td>✅ 已實現</td>
+<td>HR 儀表板即時顯示未完成項目清單</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-73">6.2 待開發功能</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>功能</th>
+<th>優先級</th>
+<th>預期效益</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>AI 自動草擬評語</td>
+<td>高</td>
+<td>根據評分數據自動生成主管評語建議，減少主管撰寫負擔</td>
+</tr>
+<tr>
+<td>AI 績效預警</td>
+<td>高</td>
+<td>自動偵測分數異常下滑的員工，提前通知主管關注</td>
+</tr>
+<tr>
+<td>AI 發展計劃建議</td>
+<td>中</td>
+<td>根據職能評估結果，自動推薦改善行動方案與訓練課程</td>
+</tr>
+<tr>
+<td>AI 滿意度分析</td>
+<td>中</td>
+<td>自動分析滿意度調查趨勢，歸納組織健康狀態</td>
+</tr>
+<tr>
+<td>AI 週報摘要</td>
+<td>低</td>
+<td>自動彙整全部門週報，產出部門週報摘要供主管快速瀏覽</td>
+</tr>
+<tr>
+<td>AI 逾期提醒</td>
+<td>低</td>
+<td>智能化提醒策略（依據歷史行為調整提醒時機）</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="section-74" class="section-title">附錄</h2>
+<h3 id="section-75">附錄 A：狀態碼對照表</h3>
+<p><strong>月度檢核狀態</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>代碼</th>
+<th>中文</th>
+<th>英文</th>
+<th>顏色</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>self_assessment</td>
+<td>自評中</td>
+<td>Self Assessment</td>
+<td>灰色</td>
+</tr>
+<tr>
+<td>manager_review</td>
+<td>主管審核中</td>
+<td>Manager Review</td>
+<td>橙色</td>
+</tr>
+<tr>
+<td>hr_review</td>
+<td>HR 審核中</td>
+<td>HR Review</td>
+<td>紫色</td>
+</tr>
+<tr>
+<td>completed</td>
+<td>已完成</td>
+<td>Completed</td>
+<td>綠色</td>
+</tr>
+<tr>
+<td>overdue</td>
+<td>逾期</td>
+<td>Overdue</td>
+<td>紅色</td>
+</tr>
+</tbody></table></div>
+<p><strong>季度面談狀態</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>代碼</th>
+<th>中文</th>
+<th>英文</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>pending</td>
+<td>尚未填寫</td>
+<td>Pending</td>
+</tr>
+<tr>
+<td>employee_submitted</td>
+<td>員工已提交</td>
+<td>Employee Submitted</td>
+</tr>
+<tr>
+<td>manager_reviewed</td>
+<td>主管已評核</td>
+<td>Manager Reviewed</td>
+</tr>
+<tr>
+<td>interview_scheduled</td>
+<td>已預約面談</td>
+<td>Interview Scheduled</td>
+</tr>
+<tr>
+<td>interview_completed</td>
+<td>面談完成</td>
+<td>Interview Completed</td>
+</tr>
+<tr>
+<td>completed</td>
+<td>已結案</td>
+<td>Completed</td>
+</tr>
+</tbody></table></div>
+<p><strong>工作週報狀態</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>代碼</th>
+<th>中文</th>
+<th>英文</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>not_started</td>
+<td>尚未填寫</td>
+<td>Not Started</td>
+</tr>
+<tr>
+<td>draft</td>
+<td>草稿</td>
+<td>Draft</td>
+</tr>
+<tr>
+<td>submitted</td>
+<td>已提交</td>
+<td>Submitted</td>
+</tr>
+<tr>
+<td>approved</td>
+<td>已通過</td>
+<td>Approved</td>
+</tr>
+<tr>
+<td>rejected</td>
+<td>已退回</td>
+<td>Rejected</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-76">附錄 B：API 端點一覽</h3>
+<p><strong>月度檢核</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>方法</th>
+<th>端點</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GET</td>
+<td><code>/api/monthly-checks</code></td>
+<td>取得月度檢核列表（支援分頁、篩選）</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/monthly-checks/:id</code></td>
+<td>取得單筆月度檢核詳情</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/monthly-checks</code></td>
+<td>建立月度檢核表</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/monthly-checks/:id/self-assessment</code></td>
+<td>員工提交自評</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/monthly-checks/:id/manager-review</code></td>
+<td>主管審核（核准/退回）</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/monthly-checks/:id/hr-close</code></td>
+<td>HR 結案（結案/退回主管）</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/export/monthly-checks</code></td>
+<td>匯出月度檢核 Excel</td>
+</tr>
+</tbody></table></div>
+<p><strong>季度面談</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>方法</th>
+<th>端點</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GET</td>
+<td><code>/api/quarterly-reviews</code></td>
+<td>取得季度面談列表（支援分頁、篩選）</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/quarterly-reviews/:id</code></td>
+<td>取得單筆季度面談詳情</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/quarterly-reviews</code></td>
+<td>建立季度面談記錄</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/quarterly-reviews/initialize</code></td>
+<td>批次初始化本季面談</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/quarterly-reviews/:id/employee-submit</code></td>
+<td>員工提交表單</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/quarterly-reviews/:id/manager-review</code></td>
+<td>主管提交評核</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/quarterly-reviews/:id/schedule-interview</code></td>
+<td>預約面談日期</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/quarterly-reviews/:id/complete-interview</code></td>
+<td>完成面談</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/quarterly-reviews/:id/hr-close</code></td>
+<td>HR 結案</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/quarterly-reviews/satisfaction-questions</code></td>
+<td>取得滿意度問卷題目</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/export/quarterly-reviews</code></td>
+<td>匯出季度面談 Excel</td>
+</tr>
+</tbody></table></div>
+<p><strong>工作週報</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>方法</th>
+<th>端點</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GET</td>
+<td><code>/api/weekly-reports</code></td>
+<td>取得週報列表（支援分頁、篩選）</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/weekly-reports/:id</code></td>
+<td>取得單筆週報詳情</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/weekly-reports</code></td>
+<td>建立週報記錄</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/weekly-reports/generate</code></td>
+<td>批次生成本週週報</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/weekly-reports/:id</code></td>
+<td>更新週報草稿</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/weekly-reports/:id/submit</code></td>
+<td>員工提交週報</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/weekly-reports/:id/review</code></td>
+<td>主管審核（核准/退回）</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/weekly-reports/current-week</code></td>
+<td>取得當前週資訊</td>
+</tr>
+</tbody></table></div>
+<p><strong>統計與分析</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>方法</th>
+<th>端點</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GET</td>
+<td><code>/api/competency-stats/overview</code></td>
+<td>總覽統計概覽</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/competency-stats/personal-trend</code></td>
+<td>個人績效趨勢</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/competency-stats/monthly-incomplete</code></td>
+<td>月度未完成清單</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/competency-stats/quarterly-incomplete</code></td>
+<td>季度未完成清單</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/competency-stats/weekly-incomplete</code></td>
+<td>週報未提交清單</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/competency-stats/department-avg</code></td>
+<td>各部門月度平均分數</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/competency-stats/department-avg-quarterly</code></td>
+<td>各部門季度平均分數</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/competency-stats/personal-history</code></td>
+<td>個人歷史績效曲線</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/competency-stats/overdue-list</code></td>
+<td>逾期/未完成名單（HR 專用）</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/competency-stats/department</code></td>
+<td>部門平均分數統計</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/employees/list</code></td>
+<td>取得在職員工列表（下拉選單用）</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-77">附錄 C：資料庫結構</h3>
+<p><strong>monthly_checks（月度檢核主表）</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>id</td>
+<td>TEXT (PK)</td>
+<td>主鍵</td>
+</tr>
+<tr>
+<td>employee_id</td>
+<td>TEXT (NOT NULL)</td>
+<td>關聯員工 ID</td>
+</tr>
+<tr>
+<td>manager_id</td>
+<td>TEXT</td>
+<td>直屬主管 ID</td>
+</tr>
+<tr>
+<td>year</td>
+<td>INTEGER (NOT NULL)</td>
+<td>年份</td>
+</tr>
+<tr>
+<td>month</td>
+<td>INTEGER (NOT NULL)</td>
+<td>月份（1-12）</td>
+</tr>
+<tr>
+<td>status</td>
+<td>TEXT</td>
+<td>狀態（預設 self_assessment）</td>
+</tr>
+<tr>
+<td>total_score</td>
+<td>REAL</td>
+<td>加權總分（HR 結案時計算）</td>
+</tr>
+<tr>
+<td>manager_comment</td>
+<td>TEXT</td>
+<td>主管評語</td>
+</tr>
+<tr>
+<td>hr_comment</td>
+<td>TEXT</td>
+<td>HR 備註</td>
+</tr>
+<tr>
+<td>self_assessment_date</td>
+<td>TEXT</td>
+<td>員工自評日期</td>
+</tr>
+<tr>
+<td>manager_review_date</td>
+<td>TEXT</td>
+<td>主管審核日期</td>
+</tr>
+<tr>
+<td>hr_review_date</td>
+<td>TEXT</td>
+<td>HR 結案日期</td>
+</tr>
+<tr>
+<td>employee_signature</td>
+<td>TEXT</td>
+<td>員工電子簽名（Base64 圖片）</td>
+</tr>
+<tr>
+<td>manager_signature</td>
+<td>TEXT</td>
+<td>主管電子簽名（Base64 圖片）</td>
+</tr>
+<tr>
+<td>hr_signature</td>
+<td>TEXT</td>
+<td>HR 電子簽名（Base64 圖片）</td>
+</tr>
+<tr>
+<td>employee_signature_date</td>
+<td>TEXT</td>
+<td>員工簽名日期</td>
+</tr>
+<tr>
+<td>manager_signature_date</td>
+<td>TEXT</td>
+<td>主管簽名日期</td>
+</tr>
+<tr>
+<td>hr_signature_date</td>
+<td>TEXT</td>
+<td>HR 簽名日期</td>
+</tr>
+<tr>
+<td>created_at</td>
+<td>TEXT</td>
+<td>建立時間（預設 datetime(&#39;now&#39;)）</td>
+</tr>
+<tr>
+<td>updated_at</td>
+<td>TEXT</td>
+<td>最後更新時間</td>
+</tr>
+</tbody></table></div>
+<div class="note">
+<div class="note-title">說明</div>
+<div>唯一約束：UNIQUE(employee_id, year, month)</div>
+</div>
+<p><strong>monthly_check_items（月度檢核項目）</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>id</td>
+<td>TEXT (PK)</td>
+<td>主鍵</td>
+</tr>
+<tr>
+<td>monthly_check_id</td>
+<td>TEXT (NOT NULL, FK)</td>
+<td>關聯月度檢核 ID</td>
+</tr>
+<tr>
+<td>template_id</td>
+<td>TEXT</td>
+<td>來源模板 ID</td>
+</tr>
+<tr>
+<td>name</td>
+<td>TEXT (NOT NULL)</td>
+<td>評估項目名稱</td>
+</tr>
+<tr>
+<td>points</td>
+<td>INTEGER</td>
+<td>權重點數（預設 1）</td>
+</tr>
+<tr>
+<td>description</td>
+<td>TEXT</td>
+<td>項目描述</td>
+</tr>
+<tr>
+<td>measurement</td>
+<td>TEXT</td>
+<td>衡量標準</td>
+</tr>
+<tr>
+<td>order_num</td>
+<td>INTEGER</td>
+<td>顯示順序</td>
+</tr>
+<tr>
+<td>self_score</td>
+<td>INTEGER</td>
+<td>員工自評分數</td>
+</tr>
+<tr>
+<td>manager_score</td>
+<td>INTEGER</td>
+<td>主管評分</td>
+</tr>
+<tr>
+<td>weighted_score</td>
+<td>REAL</td>
+<td>加權分數</td>
+</tr>
+</tbody></table></div>
+<p><strong>quarterly_reviews（季度面談主表）</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>id</td>
+<td>TEXT (PK)</td>
+<td>主鍵</td>
+</tr>
+<tr>
+<td>employee_id</td>
+<td>TEXT (NOT NULL)</td>
+<td>關聯員工 ID</td>
+</tr>
+<tr>
+<td>manager_id</td>
+<td>TEXT</td>
+<td>直屬主管 ID</td>
+</tr>
+<tr>
+<td>year</td>
+<td>INTEGER (NOT NULL)</td>
+<td>年份</td>
+</tr>
+<tr>
+<td>quarter</td>
+<td>INTEGER (NOT NULL)</td>
+<td>季度（1-4）</td>
+</tr>
+<tr>
+<td>form_type</td>
+<td>TEXT</td>
+<td>表單類型（employee / manager）</td>
+</tr>
+<tr>
+<td>status</td>
+<td>TEXT</td>
+<td>狀態</td>
+</tr>
+<tr>
+<td>monthly_avg_score</td>
+<td>REAL</td>
+<td>本季月度檢核平均分數</td>
+</tr>
+<tr>
+<td>interview_date</td>
+<td>TEXT</td>
+<td>面談日期</td>
+</tr>
+<tr>
+<td>interview_location</td>
+<td>TEXT</td>
+<td>面談地點</td>
+</tr>
+<tr>
+<td>total_score</td>
+<td>REAL</td>
+<td>季度總分</td>
+</tr>
+<tr>
+<td>manager_comment</td>
+<td>TEXT</td>
+<td>主管評語</td>
+</tr>
+<tr>
+<td>development_plan</td>
+<td>TEXT</td>
+<td>發展計劃</td>
+</tr>
+<tr>
+<td>hr_comment</td>
+<td>TEXT</td>
+<td>HR 備註</td>
+</tr>
+<tr>
+<td>created_at</td>
+<td>TEXT</td>
+<td>建立時間（預設 datetime(&#39;now&#39;)）</td>
+</tr>
+<tr>
+<td>updated_at</td>
+<td>TEXT</td>
+<td>最後更新時間</td>
+</tr>
+</tbody></table></div>
+<div class="note">
+<div class="note-title">說明</div>
+<div>唯一約束：UNIQUE(employee_id, year, quarter, form_type)</div>
+</div>
+<p><strong>quarterly_review_sections（季度面談章節）</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>id</td>
+<td>TEXT (PK)</td>
+<td>主鍵</td>
+</tr>
+<tr>
+<td>review_id</td>
+<td>TEXT (NOT NULL, FK)</td>
+<td>關聯季度面談 ID</td>
+</tr>
+<tr>
+<td>section_type</td>
+<td>TEXT (NOT NULL)</td>
+<td>章節類型（對應 9 步驟）</td>
+</tr>
+<tr>
+<td>content</td>
+<td>TEXT</td>
+<td>章節內容（JSON 格式）</td>
+</tr>
+<tr>
+<td>order_num</td>
+<td>INTEGER</td>
+<td>顯示順序（預設 0）</td>
+</tr>
+<tr>
+<td>created_at</td>
+<td>TEXT</td>
+<td>建立時間</td>
+</tr>
+</tbody></table></div>
+<div class="note">
+<div class="note-title">說明</div>
+<div>外鍵約束：REFERENCES quarterly_reviews(id) ON DELETE CASCADE</div>
+</div>
+<p><strong>satisfaction_surveys（滿意度調查回答）</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>id</td>
+<td>TEXT (PK)</td>
+<td>主鍵</td>
+</tr>
+<tr>
+<td>review_id</td>
+<td>TEXT (NOT NULL, FK)</td>
+<td>關聯季度面談 ID</td>
+</tr>
+<tr>
+<td>question_id</td>
+<td>INTEGER (NOT NULL)</td>
+<td>關聯問題 ID</td>
+</tr>
+<tr>
+<td>score</td>
+<td>INTEGER</td>
+<td>評分（1-5）</td>
+</tr>
+<tr>
+<td>created_at</td>
+<td>TEXT</td>
+<td>建立時間</td>
+</tr>
+</tbody></table></div>
+<div class="note">
+<div class="note-title">說明</div>
+<div>唯一約束：UNIQUE(review_id, question_id)</div>
+</div>
+<p><strong>weekly_reports（工作週報主表）</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>id</td>
+<td>TEXT (PK)</td>
+<td>主鍵</td>
+</tr>
+<tr>
+<td>employee_id</td>
+<td>TEXT (NOT NULL)</td>
+<td>關聯員工 ID</td>
+</tr>
+<tr>
+<td>reviewer_id</td>
+<td>TEXT</td>
+<td>審核主管 ID</td>
+</tr>
+<tr>
+<td>year</td>
+<td>INTEGER (NOT NULL)</td>
+<td>年份</td>
+</tr>
+<tr>
+<td>week</td>
+<td>INTEGER (NOT NULL)</td>
+<td>ISO 週數</td>
+</tr>
+<tr>
+<td>week_start</td>
+<td>TEXT</td>
+<td>週起始日期</td>
+</tr>
+<tr>
+<td>week_end</td>
+<td>TEXT</td>
+<td>週結束日期</td>
+</tr>
+<tr>
+<td>status</td>
+<td>TEXT</td>
+<td>狀態（預設 draft）</td>
+</tr>
+<tr>
+<td>submit_date</td>
+<td>TEXT</td>
+<td>提交日期</td>
+</tr>
+<tr>
+<td>review_date</td>
+<td>TEXT</td>
+<td>審核日期</td>
+</tr>
+<tr>
+<td>reviewer_comment</td>
+<td>TEXT</td>
+<td>審核人評語</td>
+</tr>
+<tr>
+<td>weekly_summary</td>
+<td>TEXT</td>
+<td>本週總結</td>
+</tr>
+<tr>
+<td>next_week_plan</td>
+<td>TEXT</td>
+<td>下週計劃</td>
+</tr>
+<tr>
+<td>routine_total_minutes</td>
+<td>INTEGER</td>
+<td>例行工作總分鐘數</td>
+</tr>
+<tr>
+<td>non_routine_total_minutes</td>
+<td>INTEGER</td>
+<td>非例行工作總分鐘數</td>
+</tr>
+<tr>
+<td>employee_signature</td>
+<td>TEXT</td>
+<td>員工電子簽名</td>
+</tr>
+<tr>
+<td>manager_signature</td>
+<td>TEXT</td>
+<td>主管電子簽名</td>
+</tr>
+<tr>
+<td>employee_signature_date</td>
+<td>TEXT</td>
+<td>員工簽名日期</td>
+</tr>
+<tr>
+<td>manager_signature_date</td>
+<td>TEXT</td>
+<td>主管簽名日期</td>
+</tr>
+<tr>
+<td>created_at</td>
+<td>TEXT</td>
+<td>建立時間（預設 datetime(&#39;now&#39;)）</td>
+</tr>
+<tr>
+<td>updated_at</td>
+<td>TEXT</td>
+<td>最後更新時間</td>
+</tr>
+</tbody></table></div>
+<div class="note">
+<div class="note-title">說明</div>
+<div>唯一約束：UNIQUE(employee_id, year, week)</div>
+</div>
+<p><strong>weekly_report_items（週報工作項目）</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>id</td>
+<td>TEXT (PK)</td>
+<td>主鍵</td>
+</tr>
+<tr>
+<td>report_id</td>
+<td>TEXT (NOT NULL, FK)</td>
+<td>關聯週報 ID</td>
+</tr>
+<tr>
+<td>type</td>
+<td>TEXT (NOT NULL)</td>
+<td>類型（routine / non_routine）</td>
+</tr>
+<tr>
+<td>content</td>
+<td>TEXT</td>
+<td>工作內容</td>
+</tr>
+<tr>
+<td>estimated_minutes</td>
+<td>INTEGER</td>
+<td>預估時間（分鐘）</td>
+</tr>
+<tr>
+<td>actual_minutes</td>
+<td>INTEGER</td>
+<td>實際時間（分鐘）</td>
+</tr>
+<tr>
+<td>completed_date</td>
+<td>TEXT</td>
+<td>完成日期</td>
+</tr>
+<tr>
+<td>order_num</td>
+<td>INTEGER</td>
+<td>顯示順序</td>
+</tr>
+<tr>
+<td>created_at</td>
+<td>TEXT</td>
+<td>建立時間</td>
+</tr>
+</tbody></table></div>
+<p><strong>weekly_todo_items（週報待辦事項）</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>id</td>
+<td>TEXT (PK)</td>
+<td>主鍵</td>
+</tr>
+<tr>
+<td>report_id</td>
+<td>TEXT (NOT NULL, FK)</td>
+<td>關聯週報 ID</td>
+</tr>
+<tr>
+<td>task</td>
+<td>TEXT</td>
+<td>任務描述</td>
+</tr>
+<tr>
+<td>start_date</td>
+<td>TEXT</td>
+<td>開始日期</td>
+</tr>
+<tr>
+<td>due_date</td>
+<td>TEXT</td>
+<td>截止日期</td>
+</tr>
+<tr>
+<td>priority</td>
+<td>TEXT</td>
+<td>優先級（high / medium / normal）</td>
+</tr>
+<tr>
+<td>status</td>
+<td>TEXT</td>
+<td>狀態</td>
+</tr>
+<tr>
+<td>created_at</td>
+<td>TEXT</td>
+<td>建立時間</td>
+</tr>
+</tbody></table></div>
+<p><strong>weekly_problem_items（週報問題記錄）</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>id</td>
+<td>TEXT (PK)</td>
+<td>主鍵</td>
+</tr>
+<tr>
+<td>report_id</td>
+<td>TEXT (NOT NULL, FK)</td>
+<td>關聯週報 ID</td>
+</tr>
+<tr>
+<td>problem</td>
+<td>TEXT</td>
+<td>問題描述</td>
+</tr>
+<tr>
+<td>solution</td>
+<td>TEXT</td>
+<td>解決方案</td>
+</tr>
+<tr>
+<td>is_resolved</td>
+<td>INTEGER</td>
+<td>是否已解決（0/1）</td>
+</tr>
+<tr>
+<td>created_at</td>
+<td>TEXT</td>
+<td>建立時間</td>
+</tr>
+</tbody></table></div>
+<p><strong>weekly_training_items（週報訓練記錄）</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>id</td>
+<td>TEXT (PK)</td>
+<td>主鍵</td>
+</tr>
+<tr>
+<td>report_id</td>
+<td>TEXT (NOT NULL, FK)</td>
+<td>關聯週報 ID</td>
+</tr>
+<tr>
+<td>course_name</td>
+<td>TEXT</td>
+<td>課程名稱</td>
+</tr>
+<tr>
+<td>status</td>
+<td>TEXT</td>
+<td>狀態</td>
+</tr>
+<tr>
+<td>total_hours</td>
+<td>REAL</td>
+<td>總時數</td>
+</tr>
+<tr>
+<td>completed_hours</td>
+<td>REAL</td>
+<td>已完成時數</td>
+</tr>
+<tr>
+<td>completion_rate</td>
+<td>REAL</td>
+<td>完成率</td>
+</tr>
+<tr>
+<td>created_at</td>
+<td>TEXT</td>
+<td>建立時間</td>
+</tr>
+</tbody></table></div>
+<p><strong>weekly_project_items（週報專案進度）</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>id</td>
+<td>TEXT (PK)</td>
+<td>主鍵</td>
+</tr>
+<tr>
+<td>report_id</td>
+<td>TEXT (NOT NULL, FK)</td>
+<td>關聯週報 ID</td>
+</tr>
+<tr>
+<td>task_name</td>
+<td>TEXT</td>
+<td>任務名稱</td>
+</tr>
+<tr>
+<td>progress</td>
+<td>INTEGER</td>
+<td>進度百分比</td>
+</tr>
+<tr>
+<td>dept_type</td>
+<td>TEXT</td>
+<td>部門類型（department / cross_dept）</td>
+</tr>
+<tr>
+<td>challenges</td>
+<td>TEXT</td>
+<td>困難與挑戰</td>
+</tr>
+<tr>
+<td>expected_date</td>
+<td>TEXT</td>
+<td>預計完成日</td>
+</tr>
+<tr>
+<td>actual_date</td>
+<td>TEXT</td>
+<td>實際完成日</td>
+</tr>
+<tr>
+<td>created_at</td>
+<td>TEXT</td>
+<td>建立時間</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-78">附錄 D：權限需求</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>功能</th>
+<th>所需權限</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>查看評估資料</td>
+<td>L2.assessment:view</td>
+<td>可查看自身或權限範圍內的評估資料</td>
+</tr>
+<tr>
+<td>編輯評估資料</td>
+<td>L2.assessment:edit</td>
+<td>可進行自評、審核、結案等操作</td>
+</tr>
+<tr>
+<td>查看統計數據</td>
+<td>L2.framework:view</td>
+<td>可查看總覽儀表板的統計與分析</td>
+</tr>
+<tr>
+<td>匯出報表</td>
+<td>L2.assessment:edit</td>
+<td>可匯出月度檢核與季度面談的 Excel 報表</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-79">附錄 E：功能限制與邊界條件</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>限制項目</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>檢核唯一性</td>
+<td>每位員工每月僅能有一筆月度檢核記錄</td>
+</tr>
+<tr>
+<td>面談唯一性</td>
+<td>每位員工每季每種表單類型僅能有一筆記錄</td>
+</tr>
+<tr>
+<td>週報唯一性</td>
+<td>每位員工每週僅能有一筆週報記錄</td>
+</tr>
+<tr>
+<td>簽名退回清除</td>
+<td>退回操作會清除該階段的電子簽名</td>
+</tr>
+<tr>
+<td>總分計算時機</td>
+<td>月度檢核總分僅在 HR 結案時計算</td>
+</tr>
+<tr>
+<td>除以零防護</td>
+<td>當點數總和為 0 時，加權總分回傳 0</td>
+</tr>
+</tbody></table></div>
+
+    </main>
+
+    <footer class="doc-footer">
+      <p>Bombus 人力資源管理系統 — 本文件由系統自動產生</p>
+    </footer>
+  </div>
+</body>
+</html>

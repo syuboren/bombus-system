@@ -100,7 +100,10 @@ export interface DepartmentNode {
 /** 員工狀態 */
 export type EmployeeStatus = 'active' | 'on_leave' | 'resigned' | 'probation';
 
-/** 員工職位 (支援跨公司/跨部門任職) */
+/**
+ * 員工職位 (支援跨公司/跨部門任職)
+ * @deprecated 請改用 shared/models/employee.model.ts 的 EmployeePosition
+ */
 export interface EmployeePosition {
   id: string;
   companyId: string;
@@ -115,7 +118,10 @@ export interface EmployeePosition {
   responsibilities?: string[];
 }
 
-/** 員工 */
+/**
+ * 員工
+ * @deprecated 請改用 shared/models/employee.model.ts 的 UnifiedEmployee
+ */
 export interface Employee {
   id: string;
   employeeNo: string;

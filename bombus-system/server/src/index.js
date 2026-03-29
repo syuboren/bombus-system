@@ -95,6 +95,11 @@ async function start() {
         app.use('/api/onboarding/templates', authMiddleware, tenantMiddleware, templatesRouter);
         app.use('/api/onboarding/sign', authMiddleware, tenantMiddleware, submissionsRouter);
         app.use('/api/employee', authMiddleware, tenantMiddleware, employeeRouter);
+
+        // Batch Import Routes
+        const batchImportRouter = require('./routes/batch-import');
+        app.use('/api/employee/batch-import', authMiddleware, tenantMiddleware, batchImportRouter);
+
         app.use('/api/manager/approvals', authMiddleware, tenantMiddleware, approvalsRouter);
 
         // Jobs Routes

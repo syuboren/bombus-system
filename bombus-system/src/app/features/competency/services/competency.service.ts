@@ -1862,10 +1862,11 @@ export class CompetencyService {
     );
   }
 
-  getPositions(department?: string, grade?: number): Observable<any[]> {
+  getPositions(department?: string, grade?: number, orgUnitId?: string): Observable<any[]> {
     let params = new HttpParams();
     if (department) params = params.set('department', department);
     if (grade != null) params = params.set('grade', String(grade));
+    if (orgUnitId) params = params.set('org_unit_id', orgUnitId);
 
     return this.http.get<{ success: boolean; data: any[] }>(`${this.apiUrl}/grade-matrix/positions/list`, { params }).pipe(
       map(res => (res.success && res.data ? res.data : [])),

@@ -1,0 +1,4139 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bombus 功能說明書 - 招募職缺管理與 AI 智能面試</title>
+  <style>
+    :root {
+      --color-cloud-gray: #F5F5F7;
+      --color-pure-white: #FCFCFD;
+      --color-soft-gray: #E8E8EA;
+      --color-muted-gray: #C4C4C6;
+      --color-text-secondary: #6B7280;
+      --color-text-primary: #464E56;
+      --color-text-dark: #1F2937;
+      --color-brand-main: #64748B;
+      --color-brand-light: #94A3B8;
+      --color-brand-dark: #475569;
+      --color-module: #8DA399;
+      --color-module-light: #b5c3bd;
+      --color-module-dark: #6B8577;
+      --color-success: #7FB095;
+      --color-success-light: #E8F5EE;
+      --color-warning: #E3C088;
+      --color-warning-light: #FFF8E7;
+      --color-error: #C77F7F;
+      --color-error-light: #FDEAEA;
+      --color-info: #8DA8BE;
+      --color-info-light: #EDF4F9;
+      --spacing-xs: 0.25rem;
+      --spacing-sm: 0.5rem;
+      --spacing-md: 1rem;
+      --spacing-lg: 1.5rem;
+      --spacing-xl: 2rem;
+      --spacing-2xl: 3rem;
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Microsoft JhengHei', 'PingFang TC', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      color: var(--color-text-primary);
+      background: var(--color-cloud-gray);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: var(--spacing-xl);
+    }
+
+    .doc-header {
+      background: linear-gradient(135deg, var(--color-module) 0%, var(--color-module-dark) 100%);
+      color: white;
+      padding: var(--spacing-2xl) var(--spacing-xl);
+      border-radius: var(--radius-lg);
+      margin-bottom: var(--spacing-xl);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .doc-header h1 {
+      font-size: 1.75rem;
+      font-weight: 600;
+      margin-bottom: var(--spacing-sm);
+      letter-spacing: 0.5px;
+    }
+
+    .doc-header h2 {
+      font-size: 1.25rem;
+      font-weight: 400;
+      opacity: 0.9;
+    }
+
+    .doc-info {
+      background: var(--color-pure-white);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-lg);
+      margin-bottom: var(--spacing-xl);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--color-soft-gray);
+    }
+
+    .doc-info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: var(--spacing-md);
+    }
+
+    .doc-info-item {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+
+    .doc-info-label {
+      font-size: 0.875rem;
+      color: var(--color-text-secondary);
+      min-width: 80px;
+    }
+
+    .doc-info-value {
+      font-weight: 500;
+      color: var(--color-text-dark);
+    }
+
+    .toc {
+      background: var(--color-pure-white);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-lg);
+      margin-bottom: var(--spacing-xl);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--color-soft-gray);
+    }
+
+    .toc-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--color-text-dark);
+      margin-bottom: var(--spacing-md);
+      padding-bottom: var(--spacing-sm);
+      border-bottom: 2px solid var(--color-module);
+    }
+
+    .toc-list {
+      list-style: none;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: var(--spacing-sm);
+    }
+
+    .toc-list li { padding: var(--spacing-xs) 0; }
+
+    .toc-list a {
+      color: var(--color-module-dark);
+      text-decoration: none;
+      font-size: 0.9375rem;
+      transition: color 0.2s ease;
+    }
+
+    .toc-list a:hover {
+      color: var(--color-module);
+      text-decoration: underline;
+    }
+
+    .content {
+      background: var(--color-pure-white);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-xl);
+      margin-bottom: var(--spacing-xl);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--color-soft-gray);
+    }
+
+    .section-title {
+      background: linear-gradient(135deg, var(--color-module) 0%, var(--color-module-dark) 100%);
+      color: white;
+      padding: var(--spacing-md) var(--spacing-lg);
+      border-radius: var(--radius-md);
+      margin: var(--spacing-xl) 0 var(--spacing-lg);
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+
+    .section-title:first-child { margin-top: 0; }
+
+    h3 {
+      color: var(--color-text-dark);
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin: var(--spacing-lg) 0 var(--spacing-md);
+      padding-bottom: var(--spacing-xs);
+      border-bottom: 2px solid var(--color-module-light);
+    }
+
+    h4 {
+      color: var(--color-module-dark);
+      font-size: 1rem;
+      font-weight: 600;
+      margin: var(--spacing-md) 0 var(--spacing-sm);
+    }
+
+    p {
+      margin-bottom: var(--spacing-md);
+      color: var(--color-text-primary);
+    }
+
+    ul, ol {
+      margin-bottom: var(--spacing-md);
+      padding-left: var(--spacing-lg);
+    }
+
+    li { margin-bottom: var(--spacing-xs); }
+
+    .table-wrapper {
+      overflow-x: auto;
+      margin: var(--spacing-md) 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9375rem;
+    }
+
+    th {
+      background: var(--color-module);
+      color: white;
+      padding: var(--spacing-sm) var(--spacing-md);
+      text-align: left;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    td {
+      padding: var(--spacing-sm) var(--spacing-md);
+      border-bottom: 1px solid var(--color-soft-gray);
+      vertical-align: top;
+    }
+
+    tr:nth-child(even) { background: var(--color-cloud-gray); }
+    tr:hover { background: rgba(141, 163, 153, 0.1); }
+
+    .code-block {
+      background: var(--color-text-dark);
+      color: #E5E7EB;
+      padding: var(--spacing-md);
+      border-radius: var(--radius-md);
+      font-family: 'SF Mono', 'Consolas', 'Liberation Mono', monospace;
+      font-size: 0.875rem;
+      overflow-x: auto;
+      margin: var(--spacing-md) 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .flowchart {
+      background: var(--color-cloud-gray);
+      border: 1px solid var(--color-soft-gray);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-lg);
+      margin: var(--spacing-md) 0;
+    }
+
+    .flowchart-title {
+      font-size: 0.875rem;
+      color: var(--color-text-secondary);
+      margin-bottom: var(--spacing-md);
+      text-align: center;
+    }
+
+    .flowchart .code-block {
+      font-size: 0.8rem;
+      line-height: 1.5;
+      text-align: left;
+    }
+
+    .note {
+      background: var(--color-info-light);
+      border-left: 4px solid var(--color-info);
+      padding: var(--spacing-md);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      margin: var(--spacing-md) 0;
+    }
+
+    .note-title {
+      font-weight: 600;
+      color: var(--color-info);
+      margin-bottom: var(--spacing-xs);
+    }
+
+    .tree {
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 0.875rem;
+      background: var(--color-cloud-gray);
+      padding: var(--spacing-md);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-soft-gray);
+      white-space: pre;
+      overflow-x: auto;
+    }
+
+    hr {
+      border: none;
+      height: 1px;
+      background: var(--color-soft-gray);
+      margin: var(--spacing-xl) 0;
+    }
+
+    strong { color: var(--color-text-dark); }
+
+    .doc-footer {
+      text-align: center;
+      padding: var(--spacing-xl);
+      color: var(--color-text-secondary);
+      font-size: 0.875rem;
+    }
+
+    @media (max-width: 768px) {
+      .container { padding: var(--spacing-md); }
+      .doc-header { padding: var(--spacing-lg); }
+      .doc-header h1 { font-size: 1.5rem; }
+      .content { padding: var(--spacing-md); }
+      .section-title { font-size: 1.125rem; padding: var(--spacing-sm) var(--spacing-md); }
+      table { font-size: 0.875rem; }
+      th, td { padding: var(--spacing-xs) var(--spacing-sm); }
+    }
+
+    @media print {
+      body { background: white; }
+      .container { max-width: none; padding: 0; }
+      .doc-header, .content { box-shadow: none; border: 1px solid #ddd; }
+      .toc { page-break-after: always; }
+      .section-title { break-after: avoid; }
+      table { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="doc-header">
+      <h1>Bombus 人力資源管理系統</h1>
+      <h2>功能說明書：招募職缺管理與 AI 智能面試</h2>
+    </header>
+
+    <section class="doc-info">
+      <div class="doc-info-grid">
+        <div class="doc-info-item">
+          <span class="doc-info-label">文件名稱</span>
+          <span class="doc-info-value">招募職缺管理、AI 智能面試與入職報到功能說明書</span>
+        </div>
+        <div class="doc-info-item">
+          <span class="doc-info-label">適用模組</span>
+          <span class="doc-info-value">員工管理 > 職缺管理、招募管理、人才庫、入職報到</span>
+        </div>
+        <div class="doc-info-item">
+          <span class="doc-info-label">適用對象</span>
+          <span class="doc-info-value">HR 人員、招募負責人、面試官、部門主管、新進員工</span>
+        </div>
+        <div class="doc-info-item">
+          <span class="doc-info-label">文件版本</span>
+          <span class="doc-info-value">v3.0</span>
+        </div>
+      </div>
+    </section>
+
+    <nav class="toc">
+      <h2 class="toc-title">目錄</h2>
+      <ol class="toc-list">
+        <li><a href="#一文件目的與適用範圍">文件目的與適用範圍</a></li>
+        <li><a href="#二系統導覽與入口說明">系統導覽與入口說明</a></li>
+        <li><a href="#三角色權責說明">角色權責說明</a></li>
+        <li><a href="#四名詞定義">名詞定義</a></li>
+        <li><a href="#第一部分招募職缺管理">第一部分：招募職缺管理</a></li>
+        <li><a href="#第二部分ai-智能面試">第二部分：AI 智能面試</a></li>
+        <li><a href="#第三部分入職報到與帳號建立">第三部分：入職報到與帳號建立</a></li>
+        <li><a href="#第四部分完整招募到入職流程總覽">第四部分：完整招募到入職流程總覽</a></li>
+        <li><a href="#第五部分ai-服務功能缺口分析">第五部分：AI 服務功能缺口分析</a></li>
+        <li><a href="#附錄">附錄</a></li>
+      </ol>
+    </nav>
+
+    <main class="content">
+      <h2 id="section-1" class="section-title">一、文件目的與適用範圍</h2>
+<h3 id="section-2">1.1 文件目的</h3>
+<p>本說明書旨在提供 Bombus 人力資源管理系統使用者完整的操作指引，涵蓋「招募職缺管理」與「AI 智能面試」兩大核心功能模組。透過本文件，使用者可了解：</p>
+<ul>
+<li>各功能模組的操作方式與流程</li>
+<li>系統欄位定義與資料規格</li>
+<li>104 人力銀行整合機制</li>
+<li>AI 分析指標與評分邏輯</li>
+<li><strong>端到端招募流程的完整步驟（含入職報到與帳號建立）</strong></li>
+<li><strong>目前 AI 服務的實際能力與待開發功能</strong></li>
+</ul>
+<h3 id="section-3">1.2 適用範圍</h3>
+<p>本說明書適用於以下業務場景：</p>
+<ul>
+<li>職缺建立、審核與發布作業</li>
+<li>104 人力銀行職缺同步與履歷匯入</li>
+<li>候選人管理與 AI 履歷評分</li>
+<li>面試評核與 AI 量化分析</li>
+<li>錄用決策與 Offer 管理</li>
+<li><strong>入職報到：候選人轉員工、帳號建立、文件簽署、入職進度追蹤</strong></li>
+</ul>
+<hr>
+<h2 id="section-4" class="section-title">二、系統導覽與入口說明</h2>
+<h3 id="section-5">2.1 主要功能入口</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>功能模組</th>
+<th>導覽路徑</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>職缺管理</td>
+<td>員工管理 → 職缺管理</td>
+<td>建立、編輯、發布職缺；管理候選人</td>
+</tr>
+<tr>
+<td>招募管理</td>
+<td>員工管理 → 招募管理</td>
+<td>AI 智能面試評分與分析</td>
+</tr>
+<tr>
+<td>人才庫</td>
+<td>員工管理 → 人才庫</td>
+<td>人才儲備與職缺媒合</td>
+</tr>
+<tr>
+<td>入職報到</td>
+<td>員工管理 → 入職報到</td>
+<td>候選人轉員工、文件簽署、入職進度追蹤</td>
+</tr>
+<tr>
+<td>候選人面試表單</td>
+<td>由系統產生之 Token 連結或 QR Code</td>
+<td>候選人填寫面試前問卷</td>
+</tr>
+<tr>
+<td>入職文件簽署</td>
+<td>由系統產生之 Token 連結</td>
+<td>新進員工簽署入職文件</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-6">2.2 頁面功能對照</h3>
+<div class="tree">員工管理
+├── 職缺管理
+│   ├── 內部職缺列表
+│   ├── 104 職缺列表
+│   ├── 新增職缺
+│   ├── 候選人列表（依職缺）
+│   └── 職缺關鍵字管理
+├── 招募管理（AI 智能面試）
+│   ├── 候選人列表
+│   ├── 面試評分
+│   ├── AI 量化分析
+│   └── 錄用決策
+├── 入職報到
+│   ├── 入職進度（待轉換 + 進行中 + 候選人轉員工）
+│   ├── 入職文件管理（範本管理）
+│   ├── 我的入職文件（員工端文件上傳與簽署）
+│   └── 入職簽核管理（主管審核簽署文件）
+└── 人才庫
+    ├── 人才列表
+    ├── 標籤管理
+    └── 職缺媒合</div>
+<hr>
+<h2 id="section-7" class="section-title">三、角色權責說明</h2>
+<h3 id="section-8">3.1 HR／招募負責人</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>功能項目</th>
+<th>操作權限</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>職缺管理</td>
+<td>新增、編輯、刪除、送審、發布、關閉</td>
+</tr>
+<tr>
+<td>104 整合</td>
+<td>設定同步、匯入履歷、管理排程</td>
+</tr>
+<tr>
+<td>候選人管理</td>
+<td>查看履歷、變更狀態、發送面試邀請</td>
+</tr>
+<tr>
+<td>AI 評分</td>
+<td>啟動履歷評分、查看評分報告</td>
+</tr>
+<tr>
+<td>面試安排</td>
+<td>設定面試時間、產生表單連結</td>
+</tr>
+<tr>
+<td>錄用決策</td>
+<td>發送 Offer、追蹤回覆狀態</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-9">3.2 面試官</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>功能項目</th>
+<th>操作權限</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>候選人資料</td>
+<td>查看履歷、面試表單填寫內容</td>
+</tr>
+<tr>
+<td>面試評分</td>
+<td>填寫 17 題評核、流程檢核、綜合評估</td>
+</tr>
+<tr>
+<td>錄取建議</td>
+<td>提供 Pass / Hold / Reject 建議</td>
+</tr>
+<tr>
+<td>AI 分析</td>
+<td>查看 AI 量化分析結果</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-10">3.3 部門主管／決策者</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>功能項目</th>
+<th>操作權限</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>候選人資料</td>
+<td>查看履歷與評分結果</td>
+</tr>
+<tr>
+<td>AI 分析</td>
+<td>查看三維分析與錄用建議</td>
+</tr>
+<tr>
+<td>錄用決策</td>
+<td>核定錄用或婉拒</td>
+</tr>
+<tr>
+<td>狀態追蹤</td>
+<td>追蹤 Offer 回覆與報到狀態</td>
+</tr>
+<tr>
+<td>入職審核</td>
+<td>審核新進員工的入職文件簽署</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-11">3.4 新進員工</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>功能項目</th>
+<th>操作權限</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>帳號登入</td>
+<td>使用系統產生的初始密碼登入，首次登入須更改密碼</td>
+</tr>
+<tr>
+<td>文件上傳</td>
+<td>上傳身分證件、銀行帳戶、體檢報告、大頭照、學經歷證明</td>
+</tr>
+<tr>
+<td>表單簽署</td>
+<td>透過 Token 連結簽署入職文件（勞動契約、保密協議等）</td>
+</tr>
+<tr>
+<td>進度查看</td>
+<td>查看自己的入職進度</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="section-12" class="section-title">四、名詞定義</h2>
+<h3 id="section-13">4.1 職缺相關名詞</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>名詞</th>
+<th>定義</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>內部職缺</td>
+<td>僅於系統內部使用之職缺，不同步至外部人力銀行，可手動新增候選人</td>
+</tr>
+<tr>
+<td>104 職缺</td>
+<td>已同步至 104 人力銀行之職缺，履歷可透過 API 自動匯入</td>
+</tr>
+<tr>
+<td>職缺狀態</td>
+<td>職缺於招募流程中的階段標記（草稿、審核中、刊登中、已關閉）</td>
+</tr>
+<tr>
+<td>JD（Job Description）</td>
+<td>職務說明書，記載職缺之工作內容、資格條件、職能要求等</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-14">4.2 候選人相關名詞</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>名詞</th>
+<th>定義</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>候選人狀態</td>
+<td>候選人於招募流程中的階段標記，詳見 4.3 節</td>
+</tr>
+<tr>
+<td>AI 履歷評分</td>
+<td>系統依據職缺需求自動分析履歷，產生匹配分數（0-100）</td>
+</tr>
+<tr>
+<td>匹配分數</td>
+<td>AI 評估候選人與職缺需求之吻合程度，分數越高代表越適合</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-15">4.3 候選人狀態定義</h3>
+<h4 id="section-16">招募流程狀態</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>狀態代碼</th>
+<th>狀態名稱</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>new</td>
+<td>新進履歷</td>
+<td>履歷剛匯入或新增，尚未處理</td>
+</tr>
+<tr>
+<td>invited</td>
+<td>已邀請</td>
+<td>已發送面試邀請，等待候選人回覆</td>
+</tr>
+<tr>
+<td><em>(待安排)</em></td>
+<td><em>(邏輯狀態)</em></td>
+<td>程式碼中無獨立的 <code>pending_schedule</code> 候選人狀態。候選人接受邀請時，<strong>invitation 狀態</strong>設為 <code>Confirmed</code>，候選人狀態仍維持 <code>invited</code>。系統以「<code>invited</code> + 存在 <code>Confirmed</code> 邀請」識別待安排面試的候選人</td>
+</tr>
+<tr>
+<td>reschedule</td>
+<td>待改期</td>
+<td>候選人要求更改面試時間</td>
+</tr>
+<tr>
+<td>interview</td>
+<td>已安排面試</td>
+<td>面試時間已確定</td>
+</tr>
+<tr>
+<td>pending_ai</td>
+<td>待 AI 分析</td>
+<td>面試官已提交評分但未帶 AI 分析結果（例外狀況，正常流程會同步提交 AI 結果）</td>
+</tr>
+<tr>
+<td>pending_decision</td>
+<td>待決策</td>
+<td>評分與 AI 分析已同步提交，等待主管決策</td>
+</tr>
+<tr>
+<td>offered</td>
+<td>待回覆 Offer</td>
+<td>已發送錄取通知，等待候選人回覆</td>
+</tr>
+<tr>
+<td>offer_accepted</td>
+<td>已錄取同意</td>
+<td>候選人接受 Offer</td>
+</tr>
+<tr>
+<td>onboarded</td>
+<td>已報到</td>
+<td>候選人已完成報到程序</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-17">終止狀態（公司決定）</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>狀態代碼</th>
+<th>狀態名稱</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>not_invited</td>
+<td>不邀請</td>
+<td>履歷審查後決定不邀請面試</td>
+</tr>
+<tr>
+<td>not_hired</td>
+<td>未錄取</td>
+<td>面試後決定不錄用</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-18">終止狀態（候選人決定）</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>狀態代碼</th>
+<th>狀態名稱</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>invite_declined</td>
+<td>邀請婉拒</td>
+<td>候選人婉拒面試邀請</td>
+</tr>
+<tr>
+<td>interview_declined</td>
+<td>面試婉拒</td>
+<td>候選人取消面試</td>
+</tr>
+<tr>
+<td>offer_declined</td>
+<td>Offer 婉拒</td>
+<td>候選人婉拒錄取通知</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-19">4.4 入職報到相關名詞</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>名詞</th>
+<th>定義</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>候選人轉換</td>
+<td>將已接受 Offer 的候選人正式轉為員工記錄的過程，同時自動建立登入帳號</td>
+</tr>
+<tr>
+<td>入職進度</td>
+<td>追蹤新進員工完成所有入職手續（文件上傳 + 表單簽署）的進度百分比</td>
+</tr>
+<tr>
+<td>試用期</td>
+<td>新進員工的觀察期間，預設 3 個月，期間員工狀態為「試用中（probation）」</td>
+</tr>
+<tr>
+<td>入職文件</td>
+<td>新進員工需上傳的 5 類必要文件（身分證、銀行帳戶、體檢報告、大頭照、學經歷證明）</td>
+</tr>
+<tr>
+<td>表單簽署</td>
+<td>透過系統產生的 Token 連結，新進員工線上填寫並簽署入職相關表單（如勞動契約）</td>
+</tr>
+<tr>
+<td>初始密碼</td>
+<td>系統自動產生的 12 字元隨機密碼，員工首次登入後必須更改</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-20">4.5 AI 分析相關名詞</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>名詞</th>
+<th>定義</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>關鍵字匹配</td>
+<td>分析候選人資料中與職缺需求關鍵字的匹配程度</td>
+</tr>
+<tr>
+<td>語意分析</td>
+<td>分析候選人回答內容的語意特徵，判斷溝通風格與態度</td>
+</tr>
+<tr>
+<td>JD 適配度</td>
+<td>計算候選人技能與職缺需求條件的匹配程度</td>
+</tr>
+<tr>
+<td>錄用建議</td>
+<td>系統依據綜合分數產生之建議等級</td>
+</tr>
+</tbody></table></div>
+<hr>
+<hr>
+<h2 id="section-21" class="section-title" style="font-size:1.5rem; text-align:center; margin: var(--spacing-2xl) 0 var(--spacing-xl);">第一部分：招募職缺管理</h2>
+<h2 id="section-22" class="section-title">一、功能概述</h2>
+<p>招募職缺管理模組提供完整的職缺生命週期管理功能，包含職缺建立、審核、發布、候選人管理，以及與 104 人力銀行的整合功能。本模組為招募流程的起點，負責管理「從職缺建立到候選人進入面試」的前置作業。</p>
+<h3 id="section-23">1.1 主要功能項目</h3>
+<ul>
+<li>職缺 CRUD（新增、查詢、修改、刪除）</li>
+<li>職缺狀態管理與審核流程</li>
+<li>104 人力銀行職缺同步</li>
+<li>104 履歷自動/手動匯入</li>
+<li>候選人列表管理</li>
+<li>AI 履歷評分</li>
+<li>手動新增候選人（內部職缺）</li>
+</ul>
+<hr>
+<h2 id="section-24" class="section-title">二、職缺管理功能</h2>
+<h3 id="section-25">2.1 新增職缺</h3>
+<h4 id="section-26">操作步驟</h4>
+<ol>
+<li>進入「職缺管理」頁面</li>
+<li>點擊「新增職缺」按鈕</li>
+<li>填寫職缺基本資訊</li>
+<li>選擇是否同步至 104（可選）</li>
+<li>若勾選同步 104，填寫 104 專屬欄位</li>
+<li>點擊「儲存草稿」</li>
+</ol>
+<h4 id="section-27">基本資訊欄位</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位名稱</th>
+<th>必填</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>職缺名稱</td>
+<td>是</td>
+<td>職缺顯示名稱</td>
+</tr>
+<tr>
+<td>部門</td>
+<td>是</td>
+<td>所屬部門</td>
+</tr>
+<tr>
+<td>招募負責人</td>
+<td>是</td>
+<td>負責此職缺招募之人員</td>
+</tr>
+<tr>
+<td>職務說明</td>
+<td>否</td>
+<td>職缺工作內容描述</td>
+</tr>
+<tr>
+<td>關聯 JD</td>
+<td>否</td>
+<td>可選擇已建立之職務說明書，自動帶入相關資訊</td>
+</tr>
+<tr>
+<td>同步至 104</td>
+<td>否</td>
+<td>勾選後職缺將於發布時同步至 104 人力銀行</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-28">2.2 編輯職缺</h3>
+<p>已建立之職缺可進行編輯，修改基本資訊或 104 設定。若為已同步之 104 職缺，可使用「從 104 同步」功能取得最新資料。</p>
+<h4 id="section-29">操作限制</h4>
+<ul>
+<li>「刊登中」狀態之職缺修改後將自動同步至 104</li>
+<li>「已關閉」狀態之職缺需先重新開啟才能編輯</li>
+</ul>
+<h3 id="section-30">2.3 刪除職缺</h3>
+<p>僅「草稿」狀態之職缺可執行刪除操作。系統將顯示確認對話框，避免誤刪。</p>
+<h3 id="section-31">2.4 職缺狀態管理</h3>
+<h4 id="section-32">狀態定義</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>狀態</th>
+<th>說明</th>
+<th>可執行操作</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>草稿（draft）</td>
+<td>職缺建立後的初始狀態</td>
+<td>編輯、刪除、送出審核</td>
+</tr>
+<tr>
+<td>審核中（review）</td>
+<td>等待主管或 HR 主管審核</td>
+<td>核准發布、退回草稿（透過 <code>PATCH /api/jobs/:id/status</code> 將狀態改回 <code>draft</code>，無專屬退回端點，不清除任何欄位）</td>
+</tr>
+<tr>
+<td>刊登中（published）</td>
+<td>職缺正式對外刊登</td>
+<td>編輯、關閉職缺</td>
+</tr>
+<tr>
+<td>已關閉（closed）</td>
+<td>職缺已停止招募</td>
+<td>重新開啟</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-33">職缺狀態流程圖</h4>
+<div class="flowchart">
+<div class="flowchart-title">流程圖</div>
+<div class="code-block">flowchart TD
+    draft[草稿] --&gt;|送出審核| review[審核中]
+    review --&gt;|核准發布| published[刊登中]
+    review --&gt;|退回修改| draft
+    published --&gt;|關閉職缺| closed[已關閉]
+    closed --&gt;|重新開啟| draft</div>
+</div>
+<p><strong>流程說明（用白話解釋）：</strong></p>
+<div class="note">
+<div class="note-title">說明</div>
+<div>想像職缺就像一份公告，從寫好草稿 → 交給主管審核 → 審核通過後正式張貼 → 招完人後撤下。
+如果主管覺得內容不夠好，可以退回修改；已經撤下的公告也可以重新張貼。</div>
+</div>
+<h4 id="section-34">狀態變更觸發事件</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>狀態變更</th>
+<th>觸發事件</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>草稿 → 審核中</td>
+<td>無</td>
+</tr>
+<tr>
+<td>審核中 → 刊登中</td>
+<td>若有 104 設定，自動同步至 104 人力銀行</td>
+</tr>
+<tr>
+<td>審核中 → 草稿（退回）</td>
+<td>無特殊清除邏輯，職缺資料完整保留，僅狀態改回 <code>draft</code>（程式碼位於 <code>jobs.js</code> 的 <code>PATCH /api/jobs/:id/status</code>）</td>
+</tr>
+<tr>
+<td>刊登中 → 已關閉</td>
+<td>若已同步 104，自動下架 104 職缺</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-35">2.5 搜尋與篩選</h3>
+<h4 id="section-36">篩選條件</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>篩選項目</th>
+<th>選項</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>資料來源</td>
+<td>內部職缺、104 職缺</td>
+</tr>
+<tr>
+<td>關鍵字搜尋</td>
+<td>職缺名稱、部門</td>
+</tr>
+<tr>
+<td>部門篩選</td>
+<td>依組織架構之部門清單</td>
+</tr>
+<tr>
+<td>狀態篩選</td>
+<td>草稿、審核中、刊登中、已關閉</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="section-37" class="section-title">三、104 人力銀行整合</h2>
+<h3 id="section-38">3.1 同步職缺至 104</h3>
+<h4 id="section-39">啟用方式</h4>
+<p>於新增或編輯職缺時，勾選「同步至 104」選項，並填寫 104 專屬欄位。</p>
+<h4 id="section-40">104 專屬欄位說明</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位名稱</th>
+<th>必填</th>
+<th>說明</th>
+<th>選項/格式</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>職缺類型</td>
+<td>是</td>
+<td>工作性質</td>
+<td>全職(1)、兼職(2)、高階主管(3)</td>
+</tr>
+<tr>
+<td>職務類別</td>
+<td>是</td>
+<td>104 職務分類代碼</td>
+<td>依 104 職務分類表</td>
+</tr>
+<tr>
+<td>薪資類型</td>
+<td>是</td>
+<td>薪資計算方式</td>
+<td>面議(10)、月薪(50)、年薪(60)</td>
+</tr>
+<tr>
+<td>最低薪資</td>
+<td>條件必填</td>
+<td>薪資下限（非面議時必填）</td>
+<td>數字</td>
+</tr>
+<tr>
+<td>最高薪資</td>
+<td>條件必填</td>
+<td>薪資上限（非面議時必填）</td>
+<td>數字</td>
+</tr>
+<tr>
+<td>工作地點</td>
+<td>是</td>
+<td>104 地區代碼</td>
+<td>依 104 地區分類表</td>
+</tr>
+<tr>
+<td>學歷要求</td>
+<td>是</td>
+<td>最低學歷要求</td>
+<td>高中以下(1)、高中職(2)、專科(4)、大學(8)、碩士(16)、博士(32)</td>
+</tr>
+<tr>
+<td>聯絡人</td>
+<td>是</td>
+<td>對外顯示之聯絡人姓名</td>
+<td>文字</td>
+</tr>
+<tr>
+<td>聯絡 Email</td>
+<td>是</td>
+<td>接收應徵通知之信箱</td>
+<td>Email 格式</td>
+</tr>
+<tr>
+<td>上班時段</td>
+<td>否</td>
+<td>工作時間設定</td>
+<td>日班(1)、夜班(2)、大夜班(3)、假日班(4)、中班(5)</td>
+</tr>
+<tr>
+<td>回覆天數</td>
+<td>否</td>
+<td>預計回覆求職者天數</td>
+<td>0(不限)、3、7、14、30</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-41">薪資設定規則</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>職缺類型</th>
+<th>薪資類型限制</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>全職</td>
+<td>可選擇面議、月薪、年薪</td>
+</tr>
+<tr>
+<td>兼職</td>
+<td>可選擇面議、月薪、年薪</td>
+</tr>
+<tr>
+<td>高階主管</td>
+<td>強制使用面議（104 API 規定）</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-42">3.2 從 104 同步資料</h3>
+<p>對於已同步之 104 職缺，可使用「從 104 同步」功能，取得 104 端的最新職缺資料並更新至系統。</p>
+<h4 id="section-43">同步欄位</h4>
+<ul>
+<li>職缺名稱</li>
+<li>職務說明</li>
+<li>薪資設定</li>
+<li>職務類別</li>
+<li>學歷要求</li>
+<li>其他 104 專屬欄位</li>
+</ul>
+<h3 id="section-44">3.3 履歷匯入功能</h3>
+<h4 id="section-45">匯入方式</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>匯入方式</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>手動匯入</td>
+<td>點擊「立即匯入」按鈕，即時從 104 同步最新履歷</td>
+</tr>
+<tr>
+<td>自動匯入</td>
+<td>設定排程，系統於指定時間自動執行匯入</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-46">自動匯入排程設定</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>頻率</th>
+<th>可設定項目</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>每天</td>
+<td>執行時間（00:00 ~ 23:00）</td>
+</tr>
+<tr>
+<td>每週</td>
+<td>星期幾（可複選）+ 執行時間</td>
+</tr>
+<tr>
+<td>每月</td>
+<td>日期（1-31 號，可複選）+ 執行時間</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-47">履歷匯入流程圖</h4>
+<div class="flowchart">
+<div class="flowchart-title">流程圖</div>
+<div class="code-block">flowchart TD
+    start[開始匯入] --&gt; fetchJobs[讀取已發布之 104 職缺]
+    fetchJobs --&gt; loop{逐一處理職缺}
+    loop --&gt; callAPI[呼叫 104 Resume API]
+    callAPI --&gt; createCandidate[建立候選人記錄]
+    createCandidate --&gt; aiScore[觸發 AI 履歷評分]
+    aiScore --&gt; loop
+    loop --&gt;|處理完成| done[匯入完成]
+    done --&gt; stats[顯示匯入統計]</div>
+</div>
+<p><strong>流程說明：</strong></p>
+<div class="note">
+<div class="note-title">說明</div>
+<div>履歷匯入就像去信箱收信：系統會逐一檢查每個已發布的 104 職缺，從 104 網站把新投遞的履歷「收下來」，
+自動建立候選人資料，並且立即啟動 AI 評分，讓 HR 一打開系統就能看到每位候選人的匹配分數。</div>
+</div>
+<h4 id="section-48">匯入進度顯示</h4>
+<p>手動匯入時，系統將顯示即時進度：</p>
+<ul>
+<li>目前處理中的職缺名稱</li>
+<li>各職缺處理狀態（待處理、處理中、已完成、錯誤）</li>
+<li>已匯入履歷數量</li>
+<li>整體進度百分比</li>
+</ul>
+<hr>
+<h2 id="section-49" class="section-title">四、候選人管理</h2>
+<h3 id="section-50">4.1 候選人列表</h3>
+<h4 id="section-51">進入方式</h4>
+<ol>
+<li>於職缺管理頁面，點擊特定職缺的「查看候選人」按鈕</li>
+<li>系統導向該職缺之候選人列表頁面</li>
+</ol>
+<h4 id="section-52">列表顯示資訊</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>姓名</td>
+<td>候選人姓名</td>
+</tr>
+<tr>
+<td>應徵日期</td>
+<td>履歷投遞或匯入日期</td>
+</tr>
+<tr>
+<td>學歷</td>
+<td>最高學歷</td>
+</tr>
+<tr>
+<td>工作經驗</td>
+<td>總工作年資</td>
+</tr>
+<tr>
+<td>技能</td>
+<td>主要技能標籤</td>
+</tr>
+<tr>
+<td>匹配分數</td>
+<td>AI 履歷評分結果（0-100）</td>
+</tr>
+<tr>
+<td>狀態</td>
+<td>候選人目前狀態</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-53">篩選條件</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>篩選項目</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>關鍵字搜尋</td>
+<td>姓名、學歷、技能</td>
+</tr>
+<tr>
+<td>狀態篩選</td>
+<td>依候選人狀態篩選</td>
+</tr>
+<tr>
+<td>分數篩選</td>
+<td>依匹配分數區間篩選</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-54">4.2 AI 履歷評分</h3>
+<h4 id="section-55">評分觸發方式</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>方式</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>自動觸發</td>
+<td>履歷匯入時自動執行</td>
+</tr>
+<tr>
+<td>手動觸發</td>
+<td>點擊候選人列表中的「AI 評分」按鈕</td>
+</tr>
+<tr>
+<td>批量評分</td>
+<td>勾選多位候選人後執行批量評分</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-56">評分指標</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>指標</th>
+<th>權重</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>需求條件匹配</td>
+<td>40%</td>
+<td>候選人條件與職缺需求的匹配程度</td>
+</tr>
+<tr>
+<td>技能關鍵字</td>
+<td>35%</td>
+<td>履歷中技能關鍵字與職缺需求的吻合度</td>
+</tr>
+<tr>
+<td>經歷相關性</td>
+<td>25%</td>
+<td>工作經歷與職缺需求的相關程度</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-57">AI 履歷評分運作原理</h4>
+<p><strong>目前的運作方式：</strong></p>
+<p>系統使用「規則引擎」進行評分（非大型語言模型），流程如下：</p>
+<ol>
+<li><strong>提取職缺關鍵字</strong>：從職缺的 JD（職務說明書）中提取需求條件與技能關鍵字</li>
+<li><strong>掃描候選人資料</strong>：逐一比對候選人的學歷、技能、工作經歷等文字內容</li>
+<li><strong>正則匹配計算</strong>：使用關鍵字比對（正向關鍵字加分、負向關鍵字扣分）</li>
+<li><strong>加權求和</strong>：依照各指標權重計算最終分數</li>
+</ol>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>白話比喻</strong>：就像拿著一張「技能需求清單」逐項檢查候選人的履歷，
+有打勾的加分，沒打勾的不扣分，出現警示詞的才扣分，最後算出一個總成績。</div>
+</div>
+<h4 id="section-58">評分結果</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>分數區間</th>
+<th>等級</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>80-100</td>
+<td>高度匹配</td>
+<td>強烈建議邀請面試</td>
+</tr>
+<tr>
+<td>60-79</td>
+<td>中度匹配</td>
+<td>建議進一步評估</td>
+</tr>
+<tr>
+<td>0-59</td>
+<td>低度匹配</td>
+<td>建議謹慎考慮</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-59">4.3 候選人操作</h3>
+<h4 id="section-60">可執行操作</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>操作</th>
+<th>說明</th>
+<th>前置條件</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>查看履歷</td>
+<td>檢視候選人完整履歷資料</td>
+<td>無</td>
+</tr>
+<tr>
+<td>AI 評分</td>
+<td>執行或重新執行 AI 履歷評分</td>
+<td>無</td>
+</tr>
+<tr>
+<td>發送邀請</td>
+<td>發送面試邀請給候選人</td>
+<td>狀態為 new</td>
+</tr>
+<tr>
+<td>不邀請</td>
+<td>標記為不邀請面試</td>
+<td>狀態為 new</td>
+</tr>
+<tr>
+<td>安排面試</td>
+<td>設定面試時間與方式</td>
+<td>候選人已回覆邀請</td>
+</tr>
+<tr>
+<td>面試評分</td>
+<td>進入面試評分頁面</td>
+<td>狀態為 interview</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-61">4.4 手動新增候選人</h3>
+<h4 id="section-62">適用條件</h4>
+<p>僅「內部職缺」可使用手動新增候選人功能。104 職缺之候選人由系統自動同步，不提供手動新增。</p>
+<h4 id="section-63">表單結構</h4>
+<p>表單分為 4 個頁籤，包含完整的 104 履歷規格欄位：</p>
+<p><strong>頁籤一：基本資料</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>必填</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>姓名</td>
+<td>是</td>
+<td>候選人中文姓名</td>
+</tr>
+<tr>
+<td>英文姓名</td>
+<td>是</td>
+<td>候選人英文姓名</td>
+</tr>
+<tr>
+<td>性別</td>
+<td>是</td>
+<td>男/女</td>
+</tr>
+<tr>
+<td>生日</td>
+<td>是</td>
+<td>出生日期</td>
+</tr>
+<tr>
+<td>Email</td>
+<td>是</td>
+<td>電子郵件</td>
+</tr>
+<tr>
+<td>手機</td>
+<td>是</td>
+<td>行動電話</td>
+</tr>
+<tr>
+<td>市話</td>
+<td>否</td>
+<td>住宅電話</td>
+</tr>
+<tr>
+<td>聯絡方式</td>
+<td>是</td>
+<td>偏好聯絡方式</td>
+</tr>
+<tr>
+<td>聯絡地址</td>
+<td>是</td>
+<td>通訊地址</td>
+</tr>
+<tr>
+<td>國籍</td>
+<td>是</td>
+<td>國籍</td>
+</tr>
+<tr>
+<td>兵役狀況</td>
+<td>否</td>
+<td>役畢/免役/未服役</td>
+</tr>
+<tr>
+<td>駕照</td>
+<td>否</td>
+<td>持有駕照類型</td>
+</tr>
+<tr>
+<td>交通工具</td>
+<td>否</td>
+<td>擁有交通工具</td>
+</tr>
+</tbody></table></div>
+<p><strong>頁籤二：求職條件</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>必填</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>希望性質</td>
+<td>是</td>
+<td>全職/兼職</td>
+</tr>
+<tr>
+<td>上班時段</td>
+<td>是</td>
+<td>日班/夜班/輪班</td>
+</tr>
+<tr>
+<td>輪班制度</td>
+<td>是</td>
+<td>是否接受輪班</td>
+</tr>
+<tr>
+<td>可上班日</td>
+<td>否</td>
+<td>最快可到職日期</td>
+</tr>
+<tr>
+<td>希望待遇</td>
+<td>否</td>
+<td>期望薪資</td>
+</tr>
+<tr>
+<td>希望地點</td>
+<td>否</td>
+<td>期望工作地點</td>
+</tr>
+<tr>
+<td>希望職稱</td>
+<td>否</td>
+<td>期望職務名稱</td>
+</tr>
+<tr>
+<td>希望職類</td>
+<td>否</td>
+<td>期望職務類別</td>
+</tr>
+<tr>
+<td>希望產業</td>
+<td>否</td>
+<td>期望產業類別</td>
+</tr>
+<tr>
+<td>個人簡介</td>
+<td>否</td>
+<td>自我介紹</td>
+</tr>
+<tr>
+<td>格言</td>
+<td>否</td>
+<td>個人座右銘</td>
+</tr>
+<tr>
+<td>個人特色</td>
+<td>否</td>
+<td>特色描述</td>
+</tr>
+<tr>
+<td>證照</td>
+<td>否</td>
+<td>持有證照</td>
+</tr>
+</tbody></table></div>
+<p><strong>頁籤三：學經歷</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>必填</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>學歷列表</td>
+<td>是（至少一筆）</td>
+<td>學校、科系、學位、就學狀態</td>
+</tr>
+<tr>
+<td>工作經歷</td>
+<td>是（至少一筆）</td>
+<td>公司、職稱、產業、任職期間、工作內容</td>
+</tr>
+<tr>
+<td>技能專長</td>
+<td>否</td>
+<td>技能描述</td>
+</tr>
+</tbody></table></div>
+<p><strong>頁籤四：附件與推薦人</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>必填</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>附件上傳</td>
+<td>否</td>
+<td>履歷附件（PDF、Word、圖片）</td>
+</tr>
+<tr>
+<td>推薦人</td>
+<td>否</td>
+<td>姓名、公司、職稱、電話、Email</td>
+</tr>
+</tbody></table></div>
+<hr>
+<hr>
+<h2 id="section-64" class="section-title" style="font-size:1.5rem; text-align:center; margin: var(--spacing-2xl) 0 var(--spacing-xl);">第二部分：AI 智能面試</h2>
+<h2 id="section-65" class="section-title">一、功能概述</h2>
+<p>AI 智能面試模組整合「面試評分」、「候選人表單」與「AI 量化分析」三大功能，協助組織建立標準化的面試流程，降低主觀偏差，提升錄用決策的一致性與品質。</p>
+<h3 id="section-66">1.1 主要功能項目</h3>
+<ul>
+<li>面試官評分系統（17 題倒扣制）</li>
+<li>面試流程檢核</li>
+<li>綜合評估</li>
+<li>候選人面試表單</li>
+<li>AI 三維量化分析</li>
+<li>錄用決策管理</li>
+<li>人才庫管理</li>
+</ul>
+<h3 id="section-67">1.2 AI 智能面試的完整流程</h3>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>白話說明</strong>：AI 智能面試不是讓 AI 直接面試候選人，而是在「人工面試」的基礎上，
+由 AI 輔助分析候選人的回答品質，幫助面試官做出更客觀的決策。</div>
+</div>
+<p>整體流程分為 <strong>四大階段</strong>：</p>
+<div class="flowchart">
+<div class="flowchart-title">流程圖</div>
+<div class="code-block">flowchart LR
+    A[&quot;階段一&lt;br/&gt;面試前準備&quot;] --&gt; B[&quot;階段二&lt;br/&gt;候選人填寫表單&quot;]
+    B --&gt; C[&quot;階段三&lt;br/&gt;面試官評分&quot;]
+    C --&gt; D[&quot;階段四&lt;br/&gt;AI 分析與決策&quot;]</div>
+</div>
+<p><strong>階段一：面試前準備（HR 操作）</strong></p>
+<ol>
+<li>HR 在候選人列表中選擇要面試的候選人</li>
+<li>點擊「發送面試邀請」，系統自動產生邀請連結</li>
+<li>候選人透過連結回覆是否接受面試</li>
+<li>HR 安排面試時間，系統產生面試表單連結與 QR Code</li>
+</ol>
+<p><strong>階段二：候選人填寫表單（候選人操作）</strong></p>
+<ol>
+<li>候選人收到面試表單的 Token 連結或掃描 QR Code</li>
+<li>進入 5 步驟表單頁面，限時 60 分鐘填寫</li>
+<li>系統每秒自動暫存，防止意外遺失</li>
+<li>填寫完成送出，資料進入系統等待面試官查看</li>
+</ol>
+<p><strong>階段三：面試官評分（面試官操作）</strong></p>
+<ol>
+<li>面試當天，面試官開啟候選人的評分頁面</li>
+<li>參考候選人的履歷與表單回答，進行 17 題評核</li>
+<li>勾選 6 項面試流程檢核（確保面試品質一致）</li>
+<li>填寫 10 項綜合評估與優缺點總評</li>
+<li>給出錄取建議：Pass / Hold / Reject</li>
+</ol>
+<p><strong>階段四：AI 分析與決策（系統 + 主管操作）</strong></p>
+<ol>
+<li>面試官提交評分時，前端同步計算 AI 量化分析結果，<strong>隨評分一併送出</strong>（同一個 API 請求）</li>
+<li>AI 從「關鍵字匹配」「語意分析」「JD 適配度」三個維度進行評估</li>
+<li>若 AI 結果一併提交 → 候選人直接進入 <code>pending_decision</code>（待決策）</li>
+<li>若未帶 AI 結果（例外狀況）→ 候選人進入 <code>pending_ai</code>（待 AI 分析）</li>
+<li>主管查看 AI 報告與面試官評分，做出最終決策</li>
+<li>錄用 → 發送 Offer → 候選人回覆 → 報到</li>
+</ol>
+<hr>
+<h2 id="section-68" class="section-title">二、面試評分系統</h2>
+<h3 id="section-69">2.1 評分架構概述</h3>
+<p>面試評分採用「100 分倒扣制」，面試官依據候選人表現，針對各評核項目給予評分等級，系統自動計算扣分後得出總分。</p>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>白話說明</strong>：每位候選人一開始都有 100 分，面試官針對 17 個項目打分，
+表現越差扣越多分。最後加總剩餘的分數就是面試總分。
+這樣的好處是：所有面試官使用相同標準，減少「這個面試官比較嚴格」的問題。</div>
+</div>
+<h4 id="section-70">評分等級定義</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>等級</th>
+<th>扣分</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>優異</td>
+<td>0</td>
+<td>表現超越期望，無需改進</td>
+</tr>
+<tr>
+<td>良好</td>
+<td>-1</td>
+<td>表現符合期望，偶有小缺失</td>
+</tr>
+<tr>
+<td>佳</td>
+<td>-2</td>
+<td>表現尚可，有改進空間</td>
+</tr>
+<tr>
+<td>尚可</td>
+<td>-3</td>
+<td>表現略低於期望，需要培訓</td>
+</tr>
+<tr>
+<td>差</td>
+<td>-4</td>
+<td>表現明顯不足，不符合要求</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-71">總分計算</h4>
+<div class="code-block">總分 = 100 + Σ(各題扣分)
+
+範例：若 17 題中有 10 題為「優異」(0)、5 題為「良好」(-1)、2 題為「佳」(-2)
+總分 = 100 + (10×0) + (5×-1) + (2×-2) = 100 - 5 - 4 = 91 分</div>
+<h3 id="section-72">2.2 17 題評核項目</h3>
+<h4 id="section-73">第一類：個人修養（3 題）</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>編號</th>
+<th>評核項目</th>
+<th>評核重點</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>守時</td>
+<td>是否準時到達面試地點</td>
+</tr>
+<tr>
+<td>2</td>
+<td>禮貌</td>
+<td>言談舉止是否得體有禮</td>
+</tr>
+<tr>
+<td>3</td>
+<td>儀容</td>
+<td>穿著打扮是否整潔適當</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-74">第二類：求職意願（3 題）</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>編號</th>
+<th>評核項目</th>
+<th>評核重點</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>4</td>
+<td>職業目標</td>
+<td>是否有明確的職涯規劃</td>
+</tr>
+<tr>
+<td>5</td>
+<td>職位了解</td>
+<td>是否了解應徵職位的工作內容</td>
+</tr>
+<tr>
+<td>6</td>
+<td>求職態度</td>
+<td>對此職位的積極度與誠意</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-75">第三類：綜合素質（6 題）</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>編號</th>
+<th>評核項目</th>
+<th>評核重點</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>7</td>
+<td>執行力</td>
+<td>完成任務的能力與效率</td>
+</tr>
+<tr>
+<td>8</td>
+<td>責任感</td>
+<td>對工作的負責態度</td>
+</tr>
+<tr>
+<td>9</td>
+<td>反應能力</td>
+<td>面對問題的應變能力</td>
+</tr>
+<tr>
+<td>10</td>
+<td>團隊意識</td>
+<td>團隊合作的意願與能力</td>
+</tr>
+<tr>
+<td>11</td>
+<td>計畫性</td>
+<td>工作規劃與組織能力</td>
+</tr>
+<tr>
+<td>12</td>
+<td>溝通能力</td>
+<td>表達與傾聽的能力</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-76">第四類：性格特質（2 題）</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>編號</th>
+<th>評核項目</th>
+<th>評核重點</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>13</td>
+<td>外向親和</td>
+<td>人際互動的主動性與親和力</td>
+</tr>
+<tr>
+<td>14</td>
+<td>自信心</td>
+<td>對自我能力的信心程度</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-77">第五類：專業技能（3 題）</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>編號</th>
+<th>評核項目</th>
+<th>評核重點</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>15</td>
+<td>專業知識</td>
+<td>職位所需專業知識的掌握程度</td>
+</tr>
+<tr>
+<td>16</td>
+<td>工作經驗</td>
+<td>相關工作經驗的深度與廣度</td>
+</tr>
+<tr>
+<td>17</td>
+<td>解決問題能力</td>
+<td>分析與解決問題的能力</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-78">2.3 面試流程檢核</h3>
+<p>面試官需勾選確認已完成以下面試流程項目：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>編號</th>
+<th>檢核項目</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>公司文化與願景介紹</td>
+<td>說明公司文化、願景與工作環境</td>
+</tr>
+<tr>
+<td>2</td>
+<td>商業模式與品牌簡介</td>
+<td>介紹公司業務、產品與品牌定位</td>
+</tr>
+<tr>
+<td>3</td>
+<td>組織架構與工作環境</td>
+<td>說明部門架構與工作環境</td>
+</tr>
+<tr>
+<td>4</td>
+<td>職務內容與 JD 說明</td>
+<td>詳細說明工作內容與職責</td>
+</tr>
+<tr>
+<td>5</td>
+<td>薪酬制度與福利</td>
+<td>說明薪資結構與員工福利</td>
+</tr>
+<tr>
+<td>6</td>
+<td>管理工具說明</td>
+<td>介紹使用的管理工具（如 OKR、專案報表等）</td>
+</tr>
+</tbody></table></div>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>為什麼需要流程檢核？</strong> 確保每位面試官都完整介紹了公司資訊，
+讓每位候選人獲得一致的面試體驗，避免因面試官不同而造成資訊落差。</div>
+</div>
+<h3 id="section-79">2.4 綜合評估</h3>
+<p>除 17 題評核外，面試官需針對以下 10 個面向進行綜合評估：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>編號</th>
+<th>評估面向</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>整體儀態形象</td>
+<td>外表、氣質、談吐的整體印象</td>
+</tr>
+<tr>
+<td>2</td>
+<td>對公司/職務了解程度</td>
+<td>是否事先了解公司與職位</td>
+</tr>
+<tr>
+<td>3</td>
+<td>對應徵工作之熱誠</td>
+<td>對此工作的熱情與投入意願</td>
+</tr>
+<tr>
+<td>4</td>
+<td>個人期望與公司發展方向</td>
+<td>個人目標是否與公司方向契合</td>
+</tr>
+<tr>
+<td>5</td>
+<td>選擇新工作期望</td>
+<td>換工作的動機與期望</td>
+</tr>
+<tr>
+<td>6</td>
+<td>人格特質與性格</td>
+<td>性格是否適合團隊與工作</td>
+</tr>
+<tr>
+<td>7</td>
+<td>對問題的理解力（EQ）</td>
+<td>情緒智商與問題理解能力</td>
+</tr>
+<tr>
+<td>8</td>
+<td>表達能力</td>
+<td>口語表達的清晰度與邏輯性</td>
+</tr>
+<tr>
+<td>9</td>
+<td>親和度</td>
+<td>與人互動的親切感</td>
+</tr>
+<tr>
+<td>10</td>
+<td>專業技能評價</td>
+<td>專業能力的整體評價</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-80">2.5 面試結果總評</h3>
+<h4 id="section-81">必填項目</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>項目</th>
+<th>必填</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>優點總評</td>
+<td>是</td>
+<td>候選人的主要優點與亮點</td>
+</tr>
+<tr>
+<td>缺點總評</td>
+<td>是</td>
+<td>候選人的不足之處與風險</td>
+</tr>
+<tr>
+<td>錄取建議</td>
+<td>是</td>
+<td>Pass / Hold / Reject</td>
+</tr>
+<tr>
+<td>備註</td>
+<td>否</td>
+<td>其他補充說明</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-82">錄取建議定義</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>建議</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Pass</td>
+<td>建議錄取，符合職位需求</td>
+</tr>
+<tr>
+<td>Hold</td>
+<td>考慮中，可列入人才庫觀察</td>
+</tr>
+<tr>
+<td>Reject</td>
+<td>不予錄取，不符合職位需求</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-83">2.6 分數警示機制</h3>
+<p>當面試總分低於 65 分時，系統將顯示警示提醒，建議面試官審慎評估。</p>
+<hr>
+<h2 id="section-84" class="section-title">三、候選人面試表單</h2>
+<h3 id="section-85">3.1 表單概述</h3>
+<p>候選人面試表單為面試前由候選人填寫之問卷，採 5 步驟分頁設計，共約 50 題。系統提供自動暫存與倒數計時功能，確保填寫過程順暢。</p>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>白話說明</strong>：候選人在面試前會收到一個連結，點開後進入線上問卷。
+問卷分五個步驟（像是填五頁的表格），總共 60 分鐘要填完。
+系統會自動存檔，所以中途不小心關掉也不會遺失已填的內容。
+時間到了就自動鎖定，不能再修改。</div>
+</div>
+<h3 id="section-86">3.2 存取方式</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>方式</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Token 連結</td>
+<td>HR 產生專屬連結，發送給候選人</td>
+</tr>
+<tr>
+<td>QR Code</td>
+<td>HR 產生 QR Code，候選人掃描後進入表單</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-87">3.3 表單結構</h3>
+<p><strong>步驟一：基本資料與工作經歷</strong></p>
+<ul>
+<li>基本個人資訊確認</li>
+<li>工作經歷補充</li>
+</ul>
+<p><strong>步驟二：應徵動機與一般印象（7 題）</strong></p>
+<ul>
+<li>應徵此職位的動機</li>
+<li>對公司的了解程度</li>
+<li>對職位的期望</li>
+<li>相關問題</li>
+</ul>
+<p><strong>步驟三：工作經驗與態度</strong></p>
+<ul>
+<li>經驗與潛能（11 題）</li>
+<li>離職分析與期望（4 題）</li>
+<li>工作態度（7 題）</li>
+</ul>
+<p><strong>步驟四：人際互動與衝突解決</strong></p>
+<ul>
+<li>人際互動（4 題）</li>
+<li>衝突解決（4 題）</li>
+</ul>
+<p><strong>步驟五：職涯規劃與願景</strong></p>
+<ul>
+<li>協作、專業與挑戰（10 題）</li>
+<li>職涯規劃與願景（7 題）</li>
+</ul>
+<h3 id="section-88">3.4 候選人填寫流程圖</h3>
+<div class="flowchart">
+<div class="flowchart-title">流程圖</div>
+<div class="code-block">flowchart TD
+    start[&quot;候選人收到連結&lt;br/&gt;（Token 或 QR Code）&quot;] --&gt; open[&quot;點擊連結進入表單&quot;]
+    open --&gt; verify{&quot;連結是否有效？&quot;}
+    verify --&gt;|無效/過期| error[&quot;顯示錯誤頁面&quot;]
+    verify --&gt;|有效| step1[&quot;步驟一：基本資料與工作經歷&quot;]
+    step1 --&gt; step2[&quot;步驟二：應徵動機（7 題）&quot;]
+    step2 --&gt; step3[&quot;步驟三：工作經驗與態度（22 題）&quot;]
+    step3 --&gt; step4[&quot;步驟四：人際互動與衝突解決（8 題）&quot;]
+    step4 --&gt; step5[&quot;步驟五：職涯規劃與願景（17 題）&quot;]
+    step5 --&gt; submit[&quot;送出表單&quot;]
+    submit --&gt; done[&quot;填寫完成&lt;br/&gt;等待面試&quot;]
+
+    subgraph 系統自動機制
+        autosave[&quot;每秒自動暫存&quot;]
+        timer[&quot;60 分鐘倒數&quot;]
+        lock[&quot;時間到自動鎖定&quot;]
+    end
+
+    timer --&gt;|時間到| lock
+    lock --&gt; done</div>
+</div>
+<h3 id="section-89">3.5 系統功能</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>功能</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>自動暫存</td>
+<td>表單每次變更後 debounce 1 秒自動儲存（已鎖定時不再儲存）</td>
+</tr>
+<tr>
+<td>倒數計時</td>
+<td>顯示剩餘填寫時間，預設 60 分鐘。剩餘 ≤5 分鐘顯示黃色警告，≤1 分鐘顯示紅色脈衝動畫</td>
+</tr>
+<tr>
+<td>時間鎖定</td>
+<td>時間到達後自動鎖定表單：所有輸入欄位 <code>disabled</code>、容器 <code>opacity: 0.7</code> + <code>pointer-events: none</code>。<strong>但「送出」按鈕仍可點擊</strong>，超時送出記錄為 <code>Locked</code> 狀態（非 <code>Submitted</code>）</td>
+</tr>
+<tr>
+<td>進度追蹤</td>
+<td>顯示目前填寫步驟與完成進度</td>
+</tr>
+<tr>
+<td>資料預填</td>
+<td>自動帶入候選人履歷中的基本資料</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="section-90" class="section-title">四、AI 量化分析</h2>
+<h3 id="section-91">4.1 分析架構</h3>
+<p>AI 量化分析採用三維分析模型，分別針對「關鍵字匹配」、「語意分析」與「JD 適配度」進行評估，最終加權計算綜合分數。</p>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>白話說明</strong>：AI 會從三個角度來看候選人：
+1. <strong>關鍵字匹配（40%）</strong>：候選人的回答中有沒有提到我們在意的技能和經驗
+2. <strong>語意分析（30%）</strong>：候選人的回答呈現出什麼樣的溝通風格和態度
+3. <strong>JD 適配度（30%）</strong>：候選人的技能跟這個職缺的需求有多吻合</div>
+</div>
+<h4 id="section-92">分析權重配置</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>分析維度</th>
+<th>權重</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>關鍵字匹配</td>
+<td>40%</td>
+<td>分析候選人資料中的關鍵字匹配情況</td>
+</tr>
+<tr>
+<td>語意分析</td>
+<td>30%</td>
+<td>分析回答內容的語意特徵</td>
+</tr>
+<tr>
+<td>JD 適配度</td>
+<td>30%</td>
+<td>計算技能與職缺需求的匹配程度</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-93">4.2 AI 量化分析流程圖</h3>
+<div class="flowchart">
+<div class="flowchart-title">流程圖</div>
+<div class="code-block">flowchart TD
+    start[&quot;面試官完成評分&lt;br/&gt;前端同步計算 AI 結果&quot;] --&gt; trigger[&quot;隨評分一併提交&lt;br/&gt;（同一 API 請求）&quot;]
+
+    trigger --&gt; kw[&quot;關鍵字匹配分析&lt;br/&gt;（權重 40%）&quot;]
+    trigger --&gt; sem[&quot;語意分析&lt;br/&gt;（權重 30%）&quot;]
+    trigger --&gt; jd[&quot;JD 適配度分析&lt;br/&gt;（權重 30%）&quot;]
+
+    kw --&gt; kwDetail[&quot;掃描候選人回答&lt;br/&gt;↓&lt;br/&gt;比對正向/負向關鍵字&lt;br/&gt;↓&lt;br/&gt;計算各維度分數&quot;]
+    sem --&gt; semDetail[&quot;分析回答語句特徵&lt;br/&gt;↓&lt;br/&gt;識別溝通風格&lt;br/&gt;↓&lt;br/&gt;標記優勢與關注項目&quot;]
+    jd --&gt; jdDetail[&quot;提取職缺需求&lt;br/&gt;↓&lt;br/&gt;比對候選人技能&lt;br/&gt;↓&lt;br/&gt;計算匹配百分比&quot;]
+
+    kwDetail --&gt; merge[&quot;加權計算綜合分數&quot;]
+    semDetail --&gt; merge
+    jdDetail --&gt; merge
+
+    merge --&gt; report[&quot;產出分析報告&quot;]
+    report --&gt; recommend{&quot;綜合分數&quot;}
+    recommend --&gt;|&quot;≥85 分&quot;| strong[&quot;強烈推薦錄用&quot;]
+    recommend --&gt;|&quot;70-84 分&quot;| good[&quot;推薦錄用&quot;]
+    recommend --&gt;|&quot;55-69 分&quot;| hold[&quot;待觀察&quot;]
+    recommend --&gt;|&quot;&lt;55 分&quot;| reject[&quot;不建議錄用&quot;]</div>
+</div>
+<h3 id="section-94">4.3 關鍵字匹配分析（40%）</h3>
+<h4 id="section-95">分析內容</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>項目</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>正向關鍵字統計</td>
+<td>與職缺需求相關的正面關鍵字出現次數</td>
+</tr>
+<tr>
+<td>負向關鍵字統計</td>
+<td>可能的風險或負面關鍵字出現次數</td>
+</tr>
+<tr>
+<td>各維度分數明細</td>
+<td>各評估維度的關鍵字匹配分數</td>
+</tr>
+<tr>
+<td>匹配關鍵字列表</td>
+<td>詳列匹配到的關鍵字、所屬維度、分數、出現次數</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-96">預設關鍵字範例</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>類型</th>
+<th>關鍵字範例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>正向關鍵字</td>
+<td>專案經驗、技術、系統、架構、優化、團隊、合作、主動、學習、成長、達成、完成</td>
+</tr>
+<tr>
+<td>負向關鍵字</td>
+<td>不知道、不確定、沒有經驗、不會、離職、衝突、薪水、休假</td>
+</tr>
+</tbody></table></div>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>備註</strong>：HR 可以在「職缺關鍵字管理」頁面自訂正向/負向關鍵字、設定權重（1-10），
+也可以新增同義詞，讓系統能更精準地辨識不同說法。</div>
+</div>
+<h4 id="section-97">分數計算</h4>
+<div class="code-block">關鍵字分數 = 基礎分(50) + 正向關鍵字加分 - 負向關鍵字扣分</div>
+<h3 id="section-98">4.4 語意分析（30%）</h3>
+<h4 id="section-99">分析內容</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>項目</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>語意洞察</td>
+<td>分析候選人回答的語意特徵</td>
+</tr>
+<tr>
+<td>優勢項目</td>
+<td>從回答中識別的正面特質</td>
+</tr>
+<tr>
+<td>關注項目</td>
+<td>從回答中識別的潛在風險</td>
+</tr>
+<tr>
+<td>溝通風格</td>
+<td>判斷候選人的溝通風格類型</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-100">溝通風格類型</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>類型</th>
+<th>特徵</th>
+<th>辨識依據</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>自信積極型</td>
+<td>表達自信、主動積極</td>
+<td>使用「我擅長」「我負責」「我帶領」等語句</td>
+</tr>
+<tr>
+<td>團隊協作型</td>
+<td>強調合作、重視團隊</td>
+<td>使用「我們團隊」「一起合作」「共同完成」等語句</td>
+</tr>
+<tr>
+<td>學習成長型</td>
+<td>願意學習、追求成長</td>
+<td>使用「我學到」「我想提升」「持續進步」等語句</td>
+</tr>
+<tr>
+<td>中性平穩</td>
+<td>表達平穩、無明顯傾向</td>
+<td>無明顯上述特徵</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-101">分數計算</h4>
+<div class="code-block">語意分數 = 基礎分(60) + 優勢項目加分(每項+10) - 關注項目扣分(每項-10)</div>
+<h3 id="section-102">4.5 JD 適配度分析（30%）</h3>
+<h4 id="section-103">分析內容</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>項目</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>匹配需求</td>
+<td>候選人符合的職缺需求項目</td>
+</tr>
+<tr>
+<td>缺少技能</td>
+<td>候選人未具備的必要技能</td>
+</tr>
+<tr>
+<td>額外技能</td>
+<td>候選人具備的額外加分技能</td>
+</tr>
+<tr>
+<td>匹配百分比</td>
+<td>需求匹配度百分比</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-104">分數計算</h4>
+<div class="code-block">JD 適配分數 = (匹配需求數 / 總需求數) × 100 + 額外技能加分(每項+2，最高+10)</div>
+<h3 id="section-105">4.6 綜合評分與錄用建議</h3>
+<h4 id="section-106">綜合分數計算</h4>
+<div class="code-block">綜合分數 = 關鍵字分數 × 0.4 + 語意分數 × 0.3 + JD 適配分數 × 0.3</div>
+<h4 id="section-107">錄用建議對照表</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>分數區間</th>
+<th>建議等級</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>≥85</td>
+<td>強烈推薦錄用</td>
+<td>候選人高度符合職缺需求，建議優先錄用</td>
+</tr>
+<tr>
+<td>70-84</td>
+<td>推薦錄用</td>
+<td>候選人符合大部分需求，建議錄用</td>
+</tr>
+<tr>
+<td>55-69</td>
+<td>待觀察</td>
+<td>候選人部分符合需求，建議進一步評估或列入人才庫</td>
+</tr>
+<tr>
+<td>&lt;55</td>
+<td>不建議錄用</td>
+<td>候選人與職缺需求差距較大，不建議錄用</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-108">4.7 視覺化呈現</h3>
+<p>系統提供以下視覺化分析結果：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>項目</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>能力雷達圖</td>
+<td>以雷達圖呈現各維度評分</td>
+</tr>
+<tr>
+<td>分數卡片</td>
+<td>以卡片形式呈現三維分數與綜合分數</td>
+</tr>
+<tr>
+<td>錄用建議卡片</td>
+<td>以視覺化方式呈現錄用建議等級</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="section-109" class="section-title">五、錄用決策管理</h2>
+<h3 id="section-110">5.1 決策選項</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>決策</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>錄用（Offered）</td>
+<td>決定錄用候選人，發送 Offer</td>
+</tr>
+<tr>
+<td>婉拒（Rejected）</td>
+<td>決定不錄用候選人</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-111">5.2 決策流程圖</h3>
+<div class="flowchart">
+<div class="flowchart-title">流程圖</div>
+<div class="code-block">flowchart TD
+    interview[面試完成] --&gt; scoring[面試官評分&lt;br/&gt;17 題倒扣制]
+    scoring --&gt; aiAnalysis[AI 量化分析&lt;br/&gt;三維評估]
+    aiAnalysis --&gt; report[&quot;產出分析報告&lt;br/&gt;（含雷達圖、分數卡片、建議）&quot;]
+    report --&gt; review[決策者審查&lt;br/&gt;面試分數 + AI 報告]
+    review --&gt; decision{最終決策}
+    decision --&gt;|錄用| offer[發送 Offer&lt;br/&gt;含回覆連結]
+    decision --&gt;|婉拒| reject[標記未錄取]
+    decision --&gt;|保留| talentPool[轉入人才庫]
+    offer --&gt; response{候選人回覆}
+    response --&gt;|接受| accepted[&quot;錄取確認&lt;br/&gt;（offer_accepted）&quot;]
+    response --&gt;|婉拒| declined[&quot;Offer 婉拒&lt;br/&gt;（offer_declined）&quot;]
+    accepted --&gt; convert[&quot;HR 候選人轉換&quot;]
+    convert --&gt; empAccount[&quot;建立員工記錄&lt;br/&gt;+ 自動開通帳號&quot;]
+    empAccount --&gt; onboarding[&quot;入職報到流程&lt;br/&gt;文件上傳 + 表單簽署&quot;]
+    onboarding --&gt; complete[&quot;入職完成&quot;]
+    reject --&gt; talentPool2[&quot;可選擇轉入人才庫&quot;]</div>
+</div>
+<h3 id="section-112">5.3 Offer 管理</h3>
+<h4 id="section-113">功能項目</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>項目</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>發送 Offer</td>
+<td>系統產生 Offer 回覆連結並發送給候選人</td>
+</tr>
+<tr>
+<td>追蹤狀態</td>
+<td>追蹤候選人的 Offer 回覆狀態</td>
+</tr>
+<tr>
+<td>回覆連結</td>
+<td>候選人透過連結回覆接受或婉拒</td>
+</tr>
+<tr>
+<td>回覆期限</td>
+<td>可設定 Offer 回覆截止日期</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="section-114" class="section-title">六、人才庫管理</h2>
+<h3 id="section-115">6.1 功能概述</h3>
+<p>人才庫用於儲存與管理潛在候選人，包含未錄取但值得保留的人才、主動投遞但暫無適合職缺的候選人等。</p>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>白話說明</strong>：人才庫就像一個「優質候選人通訊錄」。
+即使這次沒有錄用，但覺得不錯的人才可以存起來，等以後有合適的職缺時再聯繫。</div>
+</div>
+<h3 id="section-116">6.2 主要功能</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>功能</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>人才列表</td>
+<td>瀏覽與搜尋人才庫中的候選人</td>
+</tr>
+<tr>
+<td>標籤管理</td>
+<td>為候選人設定分類標籤</td>
+</tr>
+<tr>
+<td>聯繫追蹤</td>
+<td>記錄與候選人的聯繫歷史</td>
+</tr>
+<tr>
+<td>職缺媒合</td>
+<td>AI 自動媒合適合的職缺</td>
+</tr>
+<tr>
+<td>自動標籤</td>
+<td>系統自動依據技能、經驗、學歷等條件標記標籤</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-117">6.3 標籤分類</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>分類</th>
+<th>說明</th>
+<th>範例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>技能</td>
+<td>技術能力標籤</td>
+<td>Python、React、專案管理</td>
+</tr>
+<tr>
+<td>經驗</td>
+<td>工作經驗標籤</td>
+<td>資深、主管級、跨國經驗</td>
+</tr>
+<tr>
+<td>教育</td>
+<td>學歷相關標籤</td>
+<td>碩士、海外學歷</td>
+</tr>
+<tr>
+<td>個性</td>
+<td>性格特質標籤</td>
+<td>積極主動、團隊合作</td>
+</tr>
+<tr>
+<td>自訂</td>
+<td>自定義標籤</td>
+<td>依組織需求自行定義</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-118">6.4 聯繫狀態</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>狀態</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>待聯繫</td>
+<td>尚未聯繫的候選人</td>
+</tr>
+<tr>
+<td>已聯繫</td>
+<td>已進行聯繫的候選人</td>
+</tr>
+<tr>
+<td>無意願</td>
+<td>候選人表示無意願</td>
+</tr>
+</tbody></table></div>
+<hr>
+<hr>
+<h2 id="section-119" class="section-title" style="font-size:1.5rem; text-align:center; margin: var(--spacing-2xl) 0 var(--spacing-xl);">第三部分：入職報到與帳號建立</h2>
+<h2 id="section-120" class="section-title">一、功能概述</h2>
+<p>入職報到模組處理「候選人接受 Offer 之後」到「正式成為可登入系統的員工」之間的所有流程。這是招募流程的最後一哩路，也是員工生命週期的起點。</p>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>白話說明</strong>：候選人說「我要來上班」之後，HR 還需要幫他建檔案、開帳號、收文件。
+這個模組就是把這些瑣碎的入職手續電子化，HR 在系統上操作，新人在線上交文件、簽合約。</div>
+</div>
+<h3 id="section-121">1.1 主要功能項目</h3>
+<ul>
+<li>待轉換候選人清單（已接受 Offer，等待 HR 處理）</li>
+<li>候選人轉換為員工（自動建立員工記錄 + 登入帳號）</li>
+<li>入職文件上傳（5 類必要文件）</li>
+<li>入職表單簽署（線上簽署勞動契約等文件）</li>
+<li>入職進度追蹤（即時百分比 + 各項目狀態）</li>
+<li>主管審核簽署文件</li>
+</ul>
+<h3 id="section-122">1.2 入職報到的完整流程</h3>
+<div class="flowchart">
+<div class="flowchart-title">流程圖</div>
+<div class="code-block">flowchart TD
+    subgraph phase1 [&quot;階段一：候選人接受 Offer&quot;]
+        OFFER[&quot;候選人收到 Offer 連結&quot;] --&gt; ACCEPT[&quot;候選人點擊「接受」&quot;]
+        ACCEPT --&gt; STATUS[&quot;系統更新狀態&lt;br/&gt;候選人 → offer_accepted&quot;]
+    end
+
+    subgraph phase2 [&quot;階段二：HR 執行轉換&quot;]
+        STATUS --&gt; PENDING[&quot;HR 在「待轉換」清單看到此人&quot;]
+        PENDING --&gt; MODAL[&quot;HR 開啟轉換表單&quot;]
+        MODAL --&gt; FILL[&quot;填寫入職資訊&lt;br/&gt;部門、職位、職等、主管&lt;br/&gt;到職日、試用期&quot;]
+        FILL --&gt; SUBMIT[&quot;送出轉換&quot;]
+    end
+
+    subgraph phase3 [&quot;階段三：系統自動處理（一次性交易）&quot;]
+        SUBMIT --&gt; EMP[&quot;建立員工記錄&lt;br/&gt;狀態：試用中&quot;]
+        EMP --&gt; ACCOUNT{&quot;該 Email 是否已有帳號？&quot;}
+        ACCOUNT --&gt;|沒有| CREATE[&quot;建立新帳號&lt;br/&gt;自動產生初始密碼&lt;br/&gt;標記「首次登入須改密碼」&lt;br/&gt;指派 employee 角色&quot;]
+        ACCOUNT --&gt;|已有| LINK[&quot;連結既有帳號&lt;br/&gt;到新員工記錄&quot;]
+        CREATE --&gt; COPY[&quot;複製候選人資料&lt;br/&gt;學歷 → 員工學歷&lt;br/&gt;技能 → 員工技能&quot;]
+        LINK --&gt; COPY
+        COPY --&gt; TEMPLATE[&quot;為每個必填表單&lt;br/&gt;建立簽署任務&lt;br/&gt;產生 Token 連結&quot;]
+        TEMPLATE --&gt; JOB[&quot;記錄職務異動&lt;br/&gt;類型：新進入職&quot;]
+        JOB --&gt; UPDATE[&quot;更新候選人狀態&lt;br/&gt;→ onboarded&quot;]
+    end
+
+    subgraph phase4 [&quot;階段四：新人完成入職手續&quot;]
+        UPDATE --&gt; DOCS[&quot;新人上傳 5 類文件&lt;br/&gt;身分證、銀行帳戶&lt;br/&gt;體檢報告、大頭照&lt;br/&gt;學經歷證明&quot;]
+        UPDATE --&gt; SIGN[&quot;新人簽署入職表單&lt;br/&gt;（透過 Token 連結）&quot;]
+        DOCS --&gt; PROGRESS[&quot;入職進度自動更新&quot;]
+        SIGN --&gt; APPROVE[&quot;主管審核簽署文件&quot;]
+        APPROVE --&gt; PROGRESS
+    end
+
+    subgraph phase5 [&quot;階段五：入職完成&quot;]
+        PROGRESS --&gt; CHECK{所有項目完成？}
+        CHECK --&gt;|是| COMPLETE[&quot;入職狀態 → completed&lt;br/&gt;員工狀態維持 probation&quot;]
+        CHECK --&gt;|否| WAIT[&quot;繼續追蹤未完成項目&quot;]
+        WAIT --&gt; PROGRESS
+        COMPLETE --&gt; PROBATION[&quot;試用期結束後&lt;br/&gt;HR 手動轉為正式員工&quot;]
+    end</div>
+</div>
+<hr>
+<h2 id="section-123" class="section-title">二、待轉換候選人清單</h2>
+<h3 id="section-124">2.1 功能說明</h3>
+<p>當候選人透過 Offer 回覆連結點擊「接受」後，系統自動將其加入「待轉換」清單。HR 可在此清單中查看所有已接受 Offer 但尚未正式入職的候選人。</p>
+<h3 id="section-125">2.2 清單顯示資訊</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>姓名</td>
+<td>候選人姓名</td>
+</tr>
+<tr>
+<td>Email</td>
+<td>候選人電子郵件</td>
+</tr>
+<tr>
+<td>電話</td>
+<td>候選人手機號碼</td>
+</tr>
+<tr>
+<td>應徵職位</td>
+<td>來自職缺的職位名稱</td>
+</tr>
+<tr>
+<td>原始部門</td>
+<td>職缺所屬部門（預填用）</td>
+</tr>
+<tr>
+<td>原始職等</td>
+<td>來自職務說明書的職等（預填用）</td>
+</tr>
+<tr>
+<td>接受 Offer 時間</td>
+<td>候選人回覆接受的時間</td>
+</tr>
+<tr>
+<td>等待天數</td>
+<td>距離接受 Offer 已過幾天（提醒 HR 儘速處理）</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="section-126" class="section-title">三、候選人轉換為員工</h2>
+<h3 id="section-127">3.1 功能說明</h3>
+<p>這是入職流程的核心操作。HR 點擊「轉換」後，系統在<strong>一次原子交易</strong>中完成以下所有動作，確保不會出現「員工建了一半、帳號沒建到」的情況。</p>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>白話說明</strong>：就像搬新家時簽約 — 簽完租約的那一刻，房東同時給你鑰匙（帳號）、
+把水電登記在你名下（員工檔案）、準備好需要你簽的文件。這些事情一次全部辦好，
+不會發生「檔案建了但帳號忘了開」的情況。</div>
+</div>
+<h3 id="section-128">3.2 轉換表單欄位</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>必填</th>
+<th>說明</th>
+<th>預設值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>部門</td>
+<td>✅</td>
+<td>新員工所屬部門</td>
+<td>自動帶入職缺所屬部門</td>
+</tr>
+<tr>
+<td>職位</td>
+<td>✅</td>
+<td>標準職位名稱（如「會計」）</td>
+<td>—</td>
+</tr>
+<tr>
+<td>職務</td>
+<td>❌</td>
+<td>具體工作名稱（如「財務出納」）</td>
+<td>—</td>
+</tr>
+<tr>
+<td>職等</td>
+<td>❌</td>
+<td>1-7 職等</td>
+<td>自動帶入 JD 的職等</td>
+</tr>
+<tr>
+<td>角色</td>
+<td>❌</td>
+<td>管理者 or 一般員工</td>
+<td>一般員工</td>
+</tr>
+<tr>
+<td>直屬主管</td>
+<td>❌</td>
+<td>下拉選擇</td>
+<td>—</td>
+</tr>
+<tr>
+<td>到職日期</td>
+<td>✅</td>
+<td>預計報到日期</td>
+<td>—</td>
+</tr>
+<tr>
+<td>試用期</td>
+<td>❌</td>
+<td>試用月數</td>
+<td>3 個月</td>
+</tr>
+<tr>
+<td>合約類型</td>
+<td>❌</td>
+<td>全職/兼職/約聘</td>
+<td>全職</td>
+</tr>
+<tr>
+<td>工作地點</td>
+<td>❌</td>
+<td>辦公地點</td>
+<td>—</td>
+</tr>
+<tr>
+<td>所屬子公司</td>
+<td>❌</td>
+<td>多租戶隔離用</td>
+<td>—</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-129">3.3 系統自動執行的動作</h3>
+<p>HR 點擊「確認轉換」後，系統在<strong>同一筆交易</strong>中依序執行：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>步驟</th>
+<th>動作</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>驗證前置條件</td>
+<td>確認候選人狀態為 offer_accepted、尚未被轉換過</td>
+</tr>
+<tr>
+<td>2</td>
+<td>產生員工編號</td>
+<td>格式 <code>E{年份}{3位序號}</code>，如 E2026001</td>
+</tr>
+<tr>
+<td>3</td>
+<td>建立員工記錄</td>
+<td>狀態設為「試用中（probation）」、入職狀態設為「pending」</td>
+</tr>
+<tr>
+<td>4</td>
+<td>建立/連結登入帳號</td>
+<td>若 Email 不存在 → 建新帳號；若已存在 → 連結到員工記錄</td>
+</tr>
+<tr>
+<td>5</td>
+<td>指派系統角色</td>
+<td>自動指派「employee」角色</td>
+</tr>
+<tr>
+<td>6</td>
+<td>複製學歷資料</td>
+<td>候選人學歷 → 員工學歷</td>
+</tr>
+<tr>
+<td>7</td>
+<td>複製技能資料</td>
+<td>候選人技能 → 員工技能</td>
+</tr>
+<tr>
+<td>8</td>
+<td>更新候選人狀態</td>
+<td>候選人狀態變更為「onboarded」</td>
+</tr>
+<tr>
+<td>9</td>
+<td>建立簽署任務</td>
+<td>為每個必填的公開表單範本建立簽署任務，產生 Token 連結</td>
+</tr>
+<tr>
+<td>10</td>
+<td>記錄職務異動</td>
+<td>新增一筆「新進入職」的異動記錄</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-130">3.4 帳號建立機制</h3>
+<h4 id="section-131">新帳號建立流程</h4>
+<div class="flowchart">
+<div class="flowchart-title">流程圖</div>
+<div class="code-block">flowchart TD
+    CHECK{&quot;候選人 Email&lt;br/&gt;是否已有帳號？&quot;} --&gt;|沒有| GEN[&quot;產生初始密碼&lt;br/&gt;（12 字元隨機 base64url）&quot;]
+    GEN --&gt; HASH[&quot;bcrypt 加密密碼&quot;]
+    HASH --&gt; INSERT[&quot;建立 users 記錄&lt;br/&gt;must_change_password = true&quot;]
+    INSERT --&gt; ROLE[&quot;指派 employee 系統角色&quot;]
+    ROLE --&gt; RETURN[&quot;回傳初始密碼給 HR&lt;br/&gt;（HR 需告知新人）&quot;]
+
+    CHECK --&gt;|已有| LINK[&quot;將既有帳號&lt;br/&gt;連結到新員工記錄&quot;]
+    LINK --&gt; SKIP[&quot;不產生新密碼&lt;br/&gt;沿用原帳號&quot;]</div>
+</div>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>白話說明</strong>：系統會幫新人自動開好一組帳號密碼。帳號就是候選人的 Email，
+密碼是系統隨機產生的一串亂碼。HR 需要把密碼交給新人，新人第一次登入時系統會強制要求改密碼。
+如果這個 Email 之前就在系統裡有帳號（例如回鍋員工），就直接沿用舊帳號。</div>
+</div>
+<h4 id="section-132">帳號建立回傳資訊</h4>
+<p>轉換完成後，系統回傳以下資訊給 HR：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>員工編號</td>
+<td>自動產生的編號（如 E2026001）</td>
+</tr>
+<tr>
+<td>Email</td>
+<td>登入帳號（= 候選人 Email）</td>
+</tr>
+<tr>
+<td>初始密碼</td>
+<td>僅在新建帳號時回傳，HR 需安全地交付給新人</td>
+</tr>
+<tr>
+<td>首次登入須改密碼</td>
+<td>固定為「是」</td>
+</tr>
+<tr>
+<td>預設角色</td>
+<td>employee</td>
+</tr>
+<tr>
+<td>入職文件連結</td>
+<td>各必填表單的簽署連結清單</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="section-133" class="section-title">四、入職文件管理</h2>
+<h3 id="section-134">4.1 必要文件上傳</h3>
+<p>新進員工需上傳以下 5 類必要文件：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>文件類型</th>
+<th>代碼</th>
+<th>必填</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>身分證件</td>
+<td>id_card</td>
+<td>✅</td>
+<td>身分證正反面影本</td>
+</tr>
+<tr>
+<td>銀行帳戶</td>
+<td>bank_account</td>
+<td>✅</td>
+<td>薪資轉帳用的銀行帳戶資料</td>
+</tr>
+<tr>
+<td>體檢報告</td>
+<td>health_report</td>
+<td>✅</td>
+<td>最近三個月內的體檢報告</td>
+</tr>
+<tr>
+<td>大頭照</td>
+<td>photo</td>
+<td>✅</td>
+<td>員工證件照</td>
+</tr>
+<tr>
+<td>學經歷證明</td>
+<td>education_cert</td>
+<td>✅</td>
+<td>畢業證書或相關證明文件</td>
+</tr>
+<tr>
+<td>其他</td>
+<td>other</td>
+<td>❌</td>
+<td>其他補充文件</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-135">文件狀態</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>狀態</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>pending</td>
+<td>尚未上傳</td>
+</tr>
+<tr>
+<td>uploaded</td>
+<td>已上傳，等待審核</td>
+</tr>
+<tr>
+<td>approved</td>
+<td>已審核通過</td>
+</tr>
+<tr>
+<td>rejected</td>
+<td>被退回，需重新上傳</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-136">4.2 表單簽署</h3>
+<p>系統會根據已設定的「公開、啟用、必填」表單範本，自動為新進員工建立簽署任務。</p>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>白話說明</strong>：HR 事先在系統裡設定好入職要簽的文件（例如勞動契約、保密協議、員工守則確認書），
+新人入職後系統會自動產生這些文件的簽署連結。新人點連結、填表、電子簽名就完成了。</div>
+</div>
+<h4 id="section-137">簽署流程</h4>
+<div class="flowchart">
+<div class="flowchart-title">流程圖</div>
+<div class="code-block">flowchart LR
+    DRAFT[&quot;DRAFT&lt;br/&gt;待填寫&quot;] --&gt;|&quot;新人填寫並簽名&quot;| SIGNED[&quot;SIGNED&lt;br/&gt;已簽署&lt;br/&gt;approval=PENDING&quot;]
+    SIGNED --&gt;|&quot;主管審核通過&quot;| APPROVED[&quot;COMPLETED&lt;br/&gt;approval=APPROVED&quot;]
+    SIGNED --&gt;|&quot;主管退回（須填理由）&quot;| REJECTED[&quot;SIGNED&lt;br/&gt;approval=REJECTED&quot;]
+    REJECTED --&gt;|&quot;新人重新填寫並簽名&quot;| SIGNED</div>
+</div>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>退回機制說明（`approvals.js`）</strong>：
+- 退回時<strong>必須填寫理由</strong>（`approval_note`），否則 API 回傳 400 錯誤
+- 退回<strong>不會清除</strong>簽名資料（`signature_base64` 保留），僅將 `approval_status` 設為 `REJECTED`
+- 已核准（`APPROVED`）的文件<strong>不可再退回</strong>
+- 員工重新簽署時，新簽名<strong>覆蓋</strong>舊簽名，`approval_status` 重設為 `PENDING`，進入新一輪審核
+- 若範本有新版本，重簽時自動更新 `template_version`（`submissions.js` L134）</div>
+</div>
+<h4 id="section-138">簽署方式</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>項目</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>存取方式</td>
+<td>系統產生的 Token 連結（每份文件一個唯一連結）</td>
+</tr>
+<tr>
+<td>填寫內容</td>
+<td>依表單範本的欄位填寫</td>
+</tr>
+<tr>
+<td>簽名方式</td>
+<td>電子簽名（signature_base64）</td>
+</tr>
+<tr>
+<td>審核者</td>
+<td>直屬主管或 HR</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="section-139" class="section-title">五、入職進度追蹤</h2>
+<h3 id="section-140">5.1 進度計算方式</h3>
+<p>系統自動計算每位新進員工的入職完成百分比：</p>
+<div class="code-block">入職進度 = (已核准的表單數 + 已上傳的文件類型數) ÷ (必填表單總數 + 5 類必要文件) × 100%</div>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>白話說明</strong>：假設有 2 份表單要簽、5 類文件要交，總共 7 項。
+如果新人已經簽了 1 份表單（且主管核准了）、交了 3 類文件，那進度就是 4/7 ≈ 57%。</div>
+</div>
+<h3 id="section-141">5.2 入職狀態自動更新</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>入職狀態</th>
+<th>觸發條件</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>pending（待處理）</td>
+<td>剛完成轉換</td>
+<td>新人尚未開始處理任何入職項目</td>
+</tr>
+<tr>
+<td>in_progress（進行中）</td>
+<td>進度 &gt; 0%</td>
+<td>新人已開始上傳文件或簽署表單</td>
+</tr>
+<tr>
+<td>completed（已完成）</td>
+<td>進度 = 100%</td>
+<td>所有必填文件已上傳、所有必填表單已簽署且核准</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-142">5.3 HR 入職進度儀表板</h3>
+<p>HR 可在入職報到頁面查看所有新進員工的入職狀態：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>顯示資訊</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>員工編號</td>
+<td>如 E2026001</td>
+</tr>
+<tr>
+<td>姓名</td>
+<td>新進員工姓名</td>
+</tr>
+<tr>
+<td>部門</td>
+<td>所屬部門</td>
+</tr>
+<tr>
+<td>職位</td>
+<td>職位名稱</td>
+</tr>
+<tr>
+<td>到職日</td>
+<td>預計報到日期</td>
+</tr>
+<tr>
+<td>試用期截止</td>
+<td>到職日 + 試用月數</td>
+</tr>
+<tr>
+<td>入職進度</td>
+<td>百分比 + 進度條</td>
+</tr>
+<tr>
+<td>表單進度</td>
+<td>已簽/總數（如 1/2）</td>
+</tr>
+<tr>
+<td>文件進度</td>
+<td>已傳/總數（如 3/5）</td>
+</tr>
+<tr>
+<td>狀態</td>
+<td>pending / in_progress / completed</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-143">5.4 個別員工入職明細</h3>
+<p>點擊特定員工可查看每一項的詳細狀態：</p>
+<p><strong>表單簽署明細</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>表單名稱</td>
+<td>如「勞動契約」</td>
+</tr>
+<tr>
+<td>是否必填</td>
+<td>是/否</td>
+</tr>
+<tr>
+<td>簽署狀態</td>
+<td>DRAFT / SIGNED / COMPLETED</td>
+</tr>
+<tr>
+<td>審核狀態</td>
+<td>未審核 / APPROVED / REJECTED</td>
+</tr>
+<tr>
+<td>簽署時間</td>
+<td>新人簽署的時間</td>
+</tr>
+<tr>
+<td>審核時間</td>
+<td>主管核准的時間</td>
+</tr>
+<tr>
+<td>連結</td>
+<td>簽署用的 Token 連結</td>
+</tr>
+</tbody></table></div>
+<p><strong>文件上傳明細</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>文件類型</td>
+<td>身分證件、銀行帳戶等</td>
+</tr>
+<tr>
+<td>是否必填</td>
+<td>是/否</td>
+</tr>
+<tr>
+<td>狀態</td>
+<td>pending / uploaded / approved / rejected</td>
+</tr>
+<tr>
+<td>檔案名稱</td>
+<td>上傳的檔案名稱</td>
+</tr>
+<tr>
+<td>上傳時間</td>
+<td>上傳的時間</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="section-144" class="section-title">六、員工狀態生命週期</h2>
+<h3 id="section-145">6.1 從候選人到正式員工</h3>
+<div class="flowchart">
+<div class="flowchart-title">流程圖</div>
+<div class="code-block">stateDiagram-v2
+    [*] --&gt; 候選人: 履歷匯入/手動新增
+    候選人 --&gt; 已接受Offer: 招募流程完成
+    已接受Offer --&gt; 試用中: HR 執行轉換
+
+    state 試用中 {
+        [*] --&gt; 入職待處理
+        入職待處理 --&gt; 入職進行中: 開始上傳文件/簽署表單
+        入職進行中 --&gt; 入職已完成: 所有項目 100%
+    }
+
+    試用中 --&gt; 正式員工: 試用期結束&lt;br/&gt;HR 手動轉正
+    試用中 --&gt; 離職: 試用期未通過
+    正式員工 --&gt; [*]</div>
+</div>
+<h3 id="section-146">6.2 白話說明</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>階段</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>候選人</td>
+<td>還在面試流程中的人，還不是我們的員工</td>
+</tr>
+<tr>
+<td>已接受 Offer</td>
+<td>候選人說「我要來」了，但還沒正式入職</td>
+</tr>
+<tr>
+<td>試用中（probation）</td>
+<td>HR 已經幫他建好員工檔案和帳號，正在辦入職手續</td>
+</tr>
+<tr>
+<td>入職待處理</td>
+<td>帳號開好了，但文件和表單都還沒交</td>
+</tr>
+<tr>
+<td>入職進行中</td>
+<td>正在陸續交文件、簽合約</td>
+</tr>
+<tr>
+<td>入職已完成</td>
+<td>所有該交的文件和該簽的合約都搞定了</td>
+</tr>
+<tr>
+<td>正式員工</td>
+<td>試用期結束，正式成為公司的一份子</td>
+</tr>
+</tbody></table></div>
+<hr>
+<hr>
+<h2 id="section-147" class="section-title" style="font-size:1.5rem; text-align:center; margin: var(--spacing-2xl) 0 var(--spacing-xl);">第四部分：完整招募到入職流程總覽</h2>
+<h2 id="section-148" class="section-title">一、端到端招募流程圖</h2>
+<p>以下流程圖展示從「產生職缺需求」到「員工入職完成」的完整旅程：</p>
+<div class="flowchart">
+<div class="flowchart-title">流程圖</div>
+<div class="code-block">flowchart TD
+    subgraph phase1 [&quot;Phase 1：職缺準備&quot;]
+        need[&quot;產生招募需求&quot;] --&gt; create[&quot;HR 建立職缺草稿&quot;]
+        create --&gt; fillJD[&quot;填寫職缺資訊&lt;br/&gt;關聯 JD、設定 104 欄位&quot;]
+        fillJD --&gt; submit[&quot;送出審核&quot;]
+        submit --&gt; approve{主管審核}
+        approve --&gt;|核准| publish[&quot;發布職缺&quot;]
+        approve --&gt;|退回| create
+        publish --&gt; sync104{同步 104?}
+        sync104 --&gt;|是| pushTo104[&quot;同步至 104 人力銀行&quot;]
+        sync104 --&gt;|否| wait[&quot;等待履歷&quot;]
+        pushTo104 --&gt; wait
+    end
+
+    subgraph phase2 [&quot;Phase 2：履歷收集與篩選&quot;]
+        wait --&gt; source{履歷來源}
+        source --&gt;|&quot;104 自動匯入&quot;| auto104[&quot;排程/手動匯入&lt;br/&gt;104 履歷&quot;]
+        source --&gt;|&quot;手動新增&quot;| manual[&quot;HR 手動建立&lt;br/&gt;候選人資料&quot;]
+        auto104 --&gt; aiResume[&quot;AI 履歷評分&lt;br/&gt;（自動觸發）&quot;]
+        manual --&gt; aiResume
+        aiResume --&gt; candidateList[&quot;候選人列表&lt;br/&gt;含匹配分數排序&quot;]
+        candidateList --&gt; hrScreen{HR 初步篩選}
+        hrScreen --&gt;|邀請面試| invite[&quot;發送面試邀請&quot;]
+        hrScreen --&gt;|不邀請| notInvited[&quot;標記不邀請&lt;br/&gt;可轉入人才庫&quot;]
+    end
+
+    subgraph phase3 [&quot;Phase 3：面試邀請與安排&quot;]
+        invite --&gt; candidateReply{候選人回覆}
+        candidateReply --&gt;|接受| schedule[&quot;HR 安排面試時間&quot;]
+        candidateReply --&gt;|婉拒| declined1[&quot;邀請婉拒&quot;]
+        candidateReply --&gt;|改期| reschedule[&quot;重新協調時間&quot;]
+        reschedule --&gt; candidateReply
+        schedule --&gt; sendForm[&quot;產生面試表單&lt;br/&gt;Token 連結 / QR Code&quot;]
+        sendForm --&gt; fillForm[&quot;候選人填寫表單&lt;br/&gt;（5 步驟、60 分鐘）&quot;]
+    end
+
+    subgraph phase4 [&quot;Phase 4：面試評核&quot;]
+        fillForm --&gt; conductInterview[&quot;進行面試&quot;]
+        conductInterview --&gt; scoring[&quot;面試官評分&lt;br/&gt;17 題倒扣制&quot;]
+        scoring --&gt; checklist[&quot;完成流程檢核&lt;br/&gt;6 項確認&quot;]
+        checklist --&gt; assessment[&quot;綜合評估&lt;br/&gt;10 項 + 優缺點&quot;]
+        assessment --&gt; recommendation[&quot;給出錄取建議&lt;br/&gt;Pass / Hold / Reject&quot;]
+    end
+
+    subgraph phase5 [&quot;Phase 5：AI 分析與決策&quot;]
+        recommendation --&gt; aiTrigger[&quot;啟動 AI 量化分析&quot;]
+        aiTrigger --&gt; aiKw[&quot;關鍵字匹配 40%&quot;]
+        aiTrigger --&gt; aiSem[&quot;語意分析 30%&quot;]
+        aiTrigger --&gt; aiJD[&quot;JD 適配度 30%&quot;]
+        aiKw --&gt; aiReport[&quot;產出 AI 分析報告&lt;br/&gt;綜合分數 + 錄用建議&quot;]
+        aiSem --&gt; aiReport
+        aiJD --&gt; aiReport
+        aiReport --&gt; bossReview[&quot;主管審查&lt;br/&gt;面試分數 + AI 報告&quot;]
+        bossReview --&gt; finalDecision{最終決策}
+        finalDecision --&gt;|錄用| sendOffer[&quot;發送 Offer&quot;]
+        finalDecision --&gt;|婉拒| notHired[&quot;未錄取&quot;]
+        finalDecision --&gt;|保留| toPool[&quot;轉入人才庫&quot;]
+    end
+
+    subgraph phase6 [&quot;Phase 6：Offer 與回覆&quot;]
+        sendOffer --&gt; offerReply{候選人回覆 Offer}
+        offerReply --&gt;|接受| accepted[&quot;錄取確認&lt;br/&gt;offer_accepted&quot;]
+        offerReply --&gt;|婉拒| offerDeclined[&quot;Offer 婉拒&quot;]
+    end
+
+    subgraph phase7 [&quot;Phase 7：入職報到與帳號建立&quot;]
+        accepted --&gt; hrConvert[&quot;HR 執行候選人轉換&quot;]
+        hrConvert --&gt; createEmp[&quot;建立員工記錄&lt;br/&gt;+ 自動建立登入帳號&lt;br/&gt;+ 指派 employee 角色&quot;]
+        createEmp --&gt; copyData[&quot;複製學歷/技能資料&lt;br/&gt;+ 建立簽署任務&quot;]
+        copyData --&gt; newHireDocs[&quot;新人上傳 5 類文件&quot;]
+        copyData --&gt; newHireSign[&quot;新人簽署入職表單&quot;]
+        newHireDocs --&gt; progress[&quot;入職進度追蹤&quot;]
+        newHireSign --&gt; managerApprove[&quot;主管審核簽署&quot;]
+        managerApprove --&gt; progress
+        progress --&gt; onboardComplete{進度 100%?}
+        onboardComplete --&gt;|是| done[&quot;入職完成&lt;br/&gt;員工正式上線&quot;]
+        onboardComplete --&gt;|否| progress
+    end</div>
+</div>
+<h2 id="section-149" class="section-title">二、流程階段說明（白話解釋）</h2>
+<h3 id="section-150">Phase 1：職缺準備 — 「發出需求，刊登職缺」</h3>
+<div class="note">
+<div class="note-title">說明</div>
+<div>就像在報紙上刊登徵人廣告一樣，HR 先把職缺資訊整理好（需要什麼技能、什麼條件），
+交給主管確認沒問題後，就可以正式刊登。如果公司有用 104 人力銀行，系統會自動把資訊同步過去。</div>
+</div>
+<h3 id="section-151">Phase 2：履歷收集與篩選 — 「收履歷，AI 初步打分」</h3>
+<div class="note">
+<div class="note-title">說明</div>
+<div>職缺刊登後，求職者的履歷會從 104 自動匯進來（也可以 HR 自己手動加）。
+每份履歷進來時，系統會自動跑 AI 評分，依照匹配度排序。
+HR 看排名後決定要邀請誰來面試、誰先不邀請。</div>
+</div>
+<h3 id="section-152">Phase 3：面試邀請與安排 — 「發邀請、填問卷」</h3>
+<div class="note">
+<div class="note-title">說明</div>
+<div>HR 發出面試邀請，候選人透過連結回覆是否接受。
+接受後 HR 排定面試時間，系統會產生一個問卷連結，
+候選人在面試前先上線填寫（限時 60 分鐘），讓面試官事先了解候選人的想法。</div>
+</div>
+<h3 id="section-153">Phase 4：面試評核 — 「面試官打分」</h3>
+<div class="note">
+<div class="note-title">說明</div>
+<div>面試當天，面試官一邊面試一邊對 17 個項目打分（從 100 分倒扣），
+面試結束後完成流程檢核、綜合評估，最後給出 Pass（錄取）/ Hold（保留）/ Reject（不錄取）建議。</div>
+</div>
+<h3 id="section-154">Phase 5：AI 分析與決策 — 「AI 出報告，主管拍板」</h3>
+<div class="note">
+<div class="note-title">說明</div>
+<div>面試官打完分後，AI 分析<strong>同步執行</strong>——前端計算完 AI 結果後，隨評分一起提交給後端（同一個 API 請求），
+不是背景排程或異步觸發。AI 從三個角度分析候選人：關鍵字有沒有對上、回答的語氣態度如何、技能跟職缺需不需要。
+AI 算出一個綜合分數並給出建議。主管看完面試官的分數加上 AI 報告後，做最終決定。</div>
+</div>
+<h3 id="section-155">Phase 6：Offer 與回覆 — 「發 Offer、等回覆」</h3>
+<div class="note">
+<div class="note-title">說明</div>
+<div>決定錄用後，系統發出 Offer 連結給候選人。
+候選人透過連結回覆接受或婉拒。</div>
+</div>
+<h3 id="section-156">Phase 7：入職報到與帳號建立 — 「建檔、開帳號、交文件」</h3>
+<div class="note">
+<div class="note-title">說明</div>
+<div>候選人接受 Offer 後，HR 在系統上執行「轉換」操作。
+系統一次搞定所有事：建立員工檔案、自動開好登入帳號（帳號 = Email，密碼隨機產生）、
+把候選人的學歷和技能資料搬過來、產生需要簽署的文件連結。
+新人收到帳號後登入系統，上傳身分證、銀行帳戶等文件，線上簽署勞動契約。
+主管審核通過後，入職進度跑到 100%，入職手續就全部完成了。</div>
+</div>
+<h2 id="section-157" class="section-title">三、候選人 → 員工完整狀態流轉圖</h2>
+<p>以下展示從履歷匯入到入職完成的所有可能狀態變化：</p>
+<div class="flowchart">
+<div class="flowchart-title">流程圖</div>
+<div class="code-block">stateDiagram-v2
+    [*] --&gt; new: 履歷匯入/新增
+
+    new --&gt; invited: HR 發送邀請
+    new --&gt; not_invited: HR 標記不邀請
+
+    invited --&gt; interview: HR 安排面試&lt;br/&gt;（候選人已接受 invitation=Confirmed）
+    invited --&gt; invite_declined: 候選人婉拒
+    invited --&gt; reschedule: 候選人改期
+    reschedule --&gt; interview: 重新安排面試
+
+    interview --&gt; pending_ai: 面試官完成評分
+    interview --&gt; interview_declined: 候選人取消
+
+    pending_ai --&gt; pending_decision: AI 分析完成
+
+    pending_decision --&gt; offered: 決定錄用
+    pending_decision --&gt; not_hired: 決定不錄用
+
+    offered --&gt; offer_accepted: 候選人接受 Offer
+    offered --&gt; offer_declined: 候選人婉拒 Offer
+
+    state &quot;入職報到流程&quot; as onboarding_flow {
+        offer_accepted --&gt; onboarded: HR 執行轉換
+        onboarded --&gt; employee_probation: 自動建立員工+帳號
+
+        state &quot;員工入職進度&quot; as emp_progress {
+            employee_probation --&gt; onboard_pending: 入職待處理
+            onboard_pending --&gt; onboard_inprogress: 開始交文件/簽表單
+            onboard_inprogress --&gt; onboard_completed: 進度 100%
+        }
+
+        onboard_completed --&gt; employee_active: 試用期結束轉正
+    }
+
+    not_invited --&gt; [*]
+    invite_declined --&gt; [*]
+    interview_declined --&gt; [*]
+    not_hired --&gt; [*]
+    offer_declined --&gt; [*]
+    employee_active --&gt; [*]</div>
+</div>
+<hr>
+<hr>
+<h2 id="section-158" class="section-title" style="font-size:1.5rem; text-align:center; margin: var(--spacing-2xl) 0 var(--spacing-xl);">第五部分：AI 服務功能缺口分析</h2>
+<h2 id="section-159" class="section-title">一、概述</h2>
+<p>本節說明目前 Bombus 系統中 AI 相關功能的「實際實作狀況」與「尚未實作的功能」。
+了解這些缺口有助於未來的產品規劃與技術投資決策。</p>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>重要說明</strong>：目前系統的 AI 分析功能主要使用「規則引擎」（基於關鍵字比對與預設規則）來實作，
+尚未整合外部 AI 大型語言模型（如 OpenAI GPT、Google Gemini、Anthropic Claude）。
+這代表現有 AI 功能的分析深度和智慧程度有一定的限制，但基礎架構已經完備，
+未來可以逐步升級為真正的 AI 驅動系統。</div>
+</div>
+<h2 id="section-160" class="section-title">二、現有 AI 功能實作狀況</h2>
+<h3 id="section-161">已完成功能清單</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>功能</th>
+<th>實作方式</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>關鍵字匹配分析</td>
+<td>規則引擎（正則表達式）</td>
+<td>比對正向/負向關鍵字出現次數，支援自訂關鍵字與權重</td>
+</tr>
+<tr>
+<td>語意分析（基礎版）</td>
+<td>規則引擎（短語計數）</td>
+<td>透過預設短語規則辨識溝通風格（如「我擅長」→ 自信型）</td>
+</tr>
+<tr>
+<td>JD 適配度評分</td>
+<td>規則引擎（字串比對）</td>
+<td>比對候選人技能與職缺需求的文字包含關係</td>
+</tr>
+<tr>
+<td>綜合評分與建議</td>
+<td>加權平均公式</td>
+<td>三維分數加權後產出綜合分數與錄用建議等級</td>
+</tr>
+<tr>
+<td>自動標籤（人才庫）</td>
+<td>規則引擎（正則表達式）</td>
+<td>根據技能、經驗等關鍵字自動標記分類標籤</td>
+</tr>
+<tr>
+<td>職缺媒合</td>
+<td>字串比對</td>
+<td>比對人才技能清單與職缺需求清單的交集</td>
+</tr>
+<tr>
+<td>視覺化報告</td>
+<td>前端圖表元件</td>
+<td>雷達圖、分數卡片、錄用建議卡片等 UI 呈現</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-162">現有方式的優缺點</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>面向</th>
+<th>優點</th>
+<th>限制</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>速度</td>
+<td>毫秒級回應，不需等待外部 API</td>
+<td>—</td>
+</tr>
+<tr>
+<td>成本</td>
+<td>無 API 呼叫費用</td>
+<td>—</td>
+</tr>
+<tr>
+<td>穩定性</td>
+<td>不依賴外部服務，不會因 API 故障而中斷</td>
+<td>—</td>
+</tr>
+<tr>
+<td>分析深度</td>
+<td>—</td>
+<td>僅能做表面文字比對，無法理解語意與上下文</td>
+</tr>
+<tr>
+<td>準確度</td>
+<td>—</td>
+<td>容易被同義詞、不同用語方式影響結果</td>
+</tr>
+<tr>
+<td>擴展性</td>
+<td>—</td>
+<td>新增分析維度需要手動編寫規則</td>
+</tr>
+</tbody></table></div>
+<h2 id="section-163" class="section-title">三、缺少的 AI 功能（待開發）</h2>
+<h3 id="section-164">3.1 真實自然語言處理（NLP）引擎</h3>
+<p><strong>現狀</strong>：語意分析僅基於「出現特定短語就給分/扣分」的固定規則。</p>
+<p><strong>缺少的能力</strong>：</p>
+<ul>
+<li>理解完整句子的意思（例：「我在壓力下也能保持冷靜」應被判斷為抗壓性高，但目前無法辨識）</li>
+<li>辨識回答的邏輯連貫性（候選人是否前後矛盾）</li>
+<li>分析回答的深度與具體性（是否言之有物 vs 泛泛而談）</li>
+<li>跨語言理解（中英混雜的回答）</li>
+</ul>
+<p><strong>預期改善效果</strong>：</p>
+<div class="note">
+<div class="note-title">說明</div>
+<div>從「看到『團隊』這個字就加分」升級為「理解候選人是否真的具有團隊合作經驗」。</div>
+</div>
+<h3 id="section-165">3.2 履歷自動解析引擎</h3>
+<p><strong>現狀</strong>：資料庫已預留完整的 AI 分析欄位（<code>candidate_resume_analysis</code> 表），但實際無解析引擎。</p>
+<p><strong>缺少的能力</strong>：</p>
+<ul>
+<li>從 PDF / Word 履歷檔案中自動提取結構化資訊（姓名、技能、經歷）</li>
+<li>自動識別技術技能（硬技能 vs 軟技能分類）</li>
+<li>自動分析工作經歷的成就與貢獻</li>
+<li>自動偵測履歷中的異常（如頻繁跳槽、經歷空窗期）</li>
+</ul>
+<p><strong>預期改善效果</strong>：</p>
+<div class="note">
+<div class="note-title">說明</div>
+<div>HR 不需要手動建檔，上傳一份履歷 PDF 就能自動完成候選人資料建立。</div>
+</div>
+<h3 id="section-166">3.3 語音轉文字（ASR）與面試錄音分析</h3>
+<p><strong>現狀</strong>：面試評分表中有 <code>transcript_text</code>（逐字稿）和 <code>media_url</code>（錄音檔）欄位，但無實際錄音上傳與轉譯功能。</p>
+<p><strong>缺少的能力</strong>：</p>
+<ul>
+<li>面試錄音上傳與儲存</li>
+<li>語音轉文字（Speech-to-Text），將面試錄音轉為逐字稿</li>
+<li>從語音語調分析候選人的情緒狀態（自信、緊張、猶豫）</li>
+<li>自動記錄面試重點摘要</li>
+</ul>
+<p><strong>預期改善效果</strong>：</p>
+<div class="note">
+<div class="note-title">說明</div>
+<div>面試官不需要邊面試邊做筆記，系統自動將對話轉成文字並摘要重點。</div>
+</div>
+<h3 id="section-167">3.4 情緒與行為分析</h3>
+<p><strong>現狀</strong>：前端程式碼中有情緒資料結構（信心度、焦慮、熱情），但僅為空殼，無實際分析引擎。</p>
+<p><strong>缺少的能力</strong>：</p>
+<ul>
+<li>分析文字回答中的情緒傾向（正面、中性、負面）</li>
+<li>分析語音的情緒特徵（語速、音調、停頓頻率）</li>
+<li>偵測候選人的自信程度與焦慮程度</li>
+<li>綜合多模態（文字+語音）的情緒評估</li>
+</ul>
+<p><strong>預期改善效果</strong>：</p>
+<div class="note">
+<div class="note-title">說明</div>
+<div>提供面試官一個「候選人心理狀態雷達圖」，幫助評估軟實力。</div>
+</div>
+<h3 id="section-168">3.5 智能推薦與匹配引擎</h3>
+<p><strong>現狀</strong>：人才庫的職缺媒合使用簡單字串比對（<code>includes()</code> 方法）。</p>
+<p><strong>缺少的能力</strong>：</p>
+<ul>
+<li>基於語意相似度的技能匹配（例：「React 開發」和「前端框架」應被視為相關）</li>
+<li>考量候選人偏好與職缺條件的雙向匹配</li>
+<li>基於歷史錄用資料的推薦模型（哪些特徵的候選人在特定職位表現最好）</li>
+<li>主動推送通知：當新職缺開放時，自動通知匹配度高的人才庫候選人</li>
+</ul>
+<p><strong>預期改善效果</strong>：</p>
+<div class="note">
+<div class="note-title">說明</div>
+<div>從「比對有沒有完全一樣的關鍵字」升級為「理解技能之間的關聯性」。</div>
+</div>
+<h3 id="section-169">3.6 面試問題智能生成</h3>
+<p><strong>現狀</strong>：面試問卷為固定的 50 題標準題目，所有職缺使用相同問卷。</p>
+<p><strong>缺少的能力</strong>：</p>
+<ul>
+<li>根據職缺 JD 自動生成針對性的面試問題</li>
+<li>根據候選人履歷自動生成個人化追問問題</li>
+<li>依據候選人回答動態調整後續問題（自適應問卷）</li>
+<li>提供面試官「建議追問問題」（基於候選人回答的薄弱環節）</li>
+</ul>
+<p><strong>預期改善效果</strong>：</p>
+<div class="note">
+<div class="note-title">說明</div>
+<div>每個候選人的面試體驗更有針對性，面試官不再問千篇一律的問題。</div>
+</div>
+<h3 id="section-170">3.7 招募數據分析與預測</h3>
+<p><strong>現狀</strong>：僅有基礎的統計數據（活躍職缺數、新履歷數、待審核數）。</p>
+<p><strong>缺少的能力</strong>：</p>
+<ul>
+<li>招募漏斗分析（各階段的轉換率與平均停留時間）</li>
+<li>招募效率預測（預估職缺的填補時間）</li>
+<li>候選人流失風險預警（哪些候選人可能放棄面試或拒絕 Offer）</li>
+<li>AI 面試評分準確度回饋（錄用候選人的後續表現 vs AI 預測）</li>
+</ul>
+<p><strong>預期改善效果</strong>：</p>
+<div class="note">
+<div class="note-title">說明</div>
+<div>HR 可以看到「這個職缺平均需要 30 天填補」或「這位候選人有 70% 機率接受 Offer」。</div>
+</div>
+<h2 id="section-171" class="section-title">四、AI 功能缺口優先級建議</h2>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>優先級</th>
+<th>功能</th>
+<th>建議理由</th>
+<th>預估影響範圍</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>P0（最高）</strong></td>
+<td>真實 NLP 引擎整合</td>
+<td>直接提升所有 AI 分析的品質與可信度</td>
+<td>關鍵字分析、語意分析、JD 適配度</td>
+</tr>
+<tr>
+<td><strong>P0（最高）</strong></td>
+<td>履歷自動解析</td>
+<td>大幅降低 HR 手動建檔的工時</td>
+<td>候選人管理、AI 評分</td>
+</tr>
+<tr>
+<td><strong>P1（高）</strong></td>
+<td>語音轉文字（ASR）</td>
+<td>面試錄音是高價值但未被利用的資料</td>
+<td>面試評分、AI 分析</td>
+</tr>
+<tr>
+<td><strong>P1（高）</strong></td>
+<td>智能推薦引擎</td>
+<td>提升人才庫的利用率與招募效率</td>
+<td>人才庫、職缺媒合</td>
+</tr>
+<tr>
+<td><strong>P2（中）</strong></td>
+<td>情緒與行為分析</td>
+<td>增加面試評估的維度，但需要大量標注資料</td>
+<td>面試評分</td>
+</tr>
+<tr>
+<td><strong>P2（中）</strong></td>
+<td>面試問題智能生成</td>
+<td>提升面試品質，但依賴 NLP 引擎先行完成</td>
+<td>面試流程</td>
+</tr>
+<tr>
+<td><strong>P3（低）</strong></td>
+<td>招募數據分析與預測</td>
+<td>需要累積足夠歷史資料後才有效</td>
+<td>管理報表</td>
+</tr>
+</tbody></table></div>
+<h2 id="section-172" class="section-title">五、技術整合建議</h2>
+<p>若決定進行 AI 功能升級，以下為建議的技術路線：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>AI 功能</th>
+<th>建議技術方案</th>
+<th>替代方案</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>NLP 引擎</td>
+<td>OpenAI GPT-4 API / Anthropic Claude API</td>
+<td>Google Gemini Pro</td>
+</tr>
+<tr>
+<td>履歷解析</td>
+<td>OpenAI GPT-4 + Document Parsing</td>
+<td>Azure AI Document Intelligence</td>
+</tr>
+<tr>
+<td>語音轉文字</td>
+<td>OpenAI Whisper API</td>
+<td>Google Speech-to-Text / Azure Speech</td>
+</tr>
+<tr>
+<td>情緒分析</td>
+<td>文字情感：GPT-4 / 語音情緒：Azure Cognitive Services</td>
+<td>Google Natural Language API</td>
+</tr>
+<tr>
+<td>推薦引擎</td>
+<td>向量嵌入（Embedding）+ 相似度搜尋</td>
+<td>自建 ML 模型</td>
+</tr>
+<tr>
+<td>問題生成</td>
+<td>GPT-4 Prompt Engineering</td>
+<td>Claude API</td>
+</tr>
+<tr>
+<td>數據預測</td>
+<td>自建 ML 模型（Python / scikit-learn）</td>
+<td>Google AutoML</td>
+</tr>
+</tbody></table></div>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>備註</strong>：由於現有架構已將 AI 分析邏輯封裝為獨立服務（`ai-analysis.service.ts`），
+升級時只需替換該服務的內部實作，不會影響前端 UI 和後端 API 的業務邏輯。
+這是目前架構的一大優勢，讓 AI 升級的成本和風險都相對可控。</div>
+</div>
+<hr>
+<hr>
+<h2 id="section-173" class="section-title" style="font-size:1.5rem; text-align:center; margin: var(--spacing-2xl) 0 var(--spacing-xl);">附錄</h2>
+<h2 id="section-174" class="section-title">附錄一：完整招募到入職流程圖（簡化版）</h2>
+<div class="flowchart">
+<div class="flowchart-title">流程圖</div>
+<div class="code-block">flowchart TD
+    subgraph job [職缺管理]
+        jobDraft[建立職缺草稿] --&gt; jobReview[送出審核]
+        jobReview --&gt; jobPublished[核准發布]
+        jobPublished --&gt; sync104{同步 104?}
+        sync104 --&gt;|是| syncJob[同步職缺至 104]
+        sync104 --&gt;|否| waitResume[等待履歷]
+        syncJob --&gt; waitResume
+    end
+
+    subgraph resume [履歷管理]
+        waitResume --&gt; importResume[匯入履歷]
+        importResume --&gt; aiResumeScore[AI 履歷評分]
+        aiResumeScore --&gt; candidateList[候選人列表]
+    end
+
+    subgraph interview [面試流程]
+        candidateList --&gt; invite[發送面試邀請]
+        invite --&gt; candidateResponse{候選人回覆}
+        candidateResponse --&gt;|接受| schedule[安排面試]
+        candidateResponse --&gt;|婉拒| endInvite[邀請婉拒]
+        schedule --&gt; sendForm[產生面試表單]
+        sendForm --&gt; fillForm[候選人填寫表單]
+        fillForm --&gt; conductInterview[進行面試]
+        conductInterview --&gt; interviewScore[面試官評分]
+        interviewScore --&gt; aiAnalysis[AI 量化分析]
+    end
+
+    subgraph decision [錄用決策]
+        aiAnalysis --&gt; review[決策者審查]
+        review --&gt; finalDecision{決策}
+        finalDecision --&gt;|錄用| sendOffer[發送 Offer]
+        finalDecision --&gt;|婉拒| notHired[未錄取]
+        sendOffer --&gt; offerResponse{Offer 回覆}
+        offerResponse --&gt;|接受| hired[已錄取]
+        offerResponse --&gt;|婉拒| offerDeclined[Offer 婉拒]
+    end
+
+    subgraph onboard [入職報到]
+        hired --&gt; convert[HR 執行候選人轉換]
+        convert --&gt; createEmp[建立員工 + 開通帳號]
+        createEmp --&gt; docs[新人上傳文件 + 簽署表單]
+        docs --&gt; managerReview[主管審核]
+        managerReview --&gt; onboardDone[入職完成]
+    end</div>
+</div>
+<h2 id="section-175" class="section-title">附錄二：狀態對照快速參考表</h2>
+<h3 id="section-176">職缺狀態</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>狀態</th>
+<th>代碼</th>
+<th>可執行操作</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>草稿</td>
+<td>draft</td>
+<td>編輯、刪除、送審</td>
+</tr>
+<tr>
+<td>審核中</td>
+<td>review</td>
+<td>核准、退回</td>
+</tr>
+<tr>
+<td>刊登中</td>
+<td>published</td>
+<td>編輯、關閉</td>
+</tr>
+<tr>
+<td>已關閉</td>
+<td>closed</td>
+<td>重新開啟</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-177">候選人狀態</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>狀態</th>
+<th>代碼</th>
+<th>下一步操作</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>新進履歷</td>
+<td>new</td>
+<td>邀請面試/不邀請</td>
+</tr>
+<tr>
+<td>已邀請</td>
+<td>invited</td>
+<td>等待回覆</td>
+</tr>
+<tr>
+<td><em>(待安排)</em></td>
+<td><em>(invited + Confirmed 邀請)</em></td>
+<td>安排面試（邏輯狀態，非獨立候選人狀態）</td>
+</tr>
+<tr>
+<td>已安排面試</td>
+<td>interview</td>
+<td>進行面試</td>
+</tr>
+<tr>
+<td>待 AI 分析</td>
+<td>pending_ai</td>
+<td>等待分析</td>
+</tr>
+<tr>
+<td>待決策</td>
+<td>pending_decision</td>
+<td>決策</td>
+</tr>
+<tr>
+<td>待回覆 Offer</td>
+<td>offered</td>
+<td>等待回覆</td>
+</tr>
+<tr>
+<td>已錄取同意</td>
+<td>offer_accepted</td>
+<td>HR 執行候選人轉換</td>
+</tr>
+<tr>
+<td>已報到</td>
+<td>onboarded</td>
+<td>候選人已轉為員工</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-178">員工入職狀態</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>狀態</th>
+<th>代碼</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>入職待處理</td>
+<td>pending</td>
+<td>帳號已建立，文件和表單尚未處理</td>
+</tr>
+<tr>
+<td>入職進行中</td>
+<td>in_progress</td>
+<td>正在上傳文件或簽署表單</td>
+</tr>
+<tr>
+<td>入職已完成</td>
+<td>completed</td>
+<td>所有必填項目都已完成且核准</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-179">員工狀態</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>狀態</th>
+<th>代碼</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>試用中</td>
+<td>probation</td>
+<td>入職後預設狀態，試用期間</td>
+</tr>
+<tr>
+<td>正式</td>
+<td>active</td>
+<td>試用期結束，HR 手動轉正</td>
+</tr>
+</tbody></table></div>
+<h2 id="section-180" class="section-title">附錄三：AI 分數解讀指引</h2>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>分數</th>
+<th>錄用建議</th>
+<th>建議行動</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>85-100</td>
+<td>強烈推薦</td>
+<td>優先安排面試或錄用</td>
+</tr>
+<tr>
+<td>70-84</td>
+<td>推薦</td>
+<td>正常流程評估</td>
+</tr>
+<tr>
+<td>55-69</td>
+<td>待觀察</td>
+<td>深入面試或列入人才庫</td>
+</tr>
+<tr>
+<td>0-54</td>
+<td>不建議</td>
+<td>謹慎評估是否繼續</td>
+</tr>
+</tbody></table></div>
+<h2 id="section-181" class="section-title">附錄四：入職報到 API 端點參考</h2>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>功能</th>
+<th>方法</th>
+<th>端點</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>待轉換清單</td>
+<td>GET</td>
+<td><code>/api/hr/onboarding/pending-conversions</code></td>
+<td>列出所有已接受 Offer 的候選人</td>
+</tr>
+<tr>
+<td>執行轉換</td>
+<td>POST</td>
+<td><code>/api/hr/onboarding/convert-candidate</code></td>
+<td>候選人轉員工（含帳號建立）</td>
+</tr>
+<tr>
+<td>進行中清單</td>
+<td>GET</td>
+<td><code>/api/hr/onboarding/in-progress</code></td>
+<td>列出所有入職進行中的員工</td>
+</tr>
+<tr>
+<td>個別進度</td>
+<td>GET</td>
+<td><code>/api/hr/onboarding/progress/:employeeId</code></td>
+<td>查看特定員工入職進度明細</td>
+</tr>
+<tr>
+<td>上傳文件</td>
+<td>POST</td>
+<td><code>/api/employee/documents</code></td>
+<td>新人上傳入職文件</td>
+</tr>
+<tr>
+<td>文件進度</td>
+<td>GET</td>
+<td><code>/api/employee/documents/progress</code></td>
+<td>查看文件上傳進度</td>
+</tr>
+<tr>
+<td>下載文件</td>
+<td>GET</td>
+<td><code>/api/employee/documents/:id/download</code></td>
+<td>下載已上傳的文件</td>
+</tr>
+<tr>
+<td>表單簽署頁</td>
+<td>GET</td>
+<td><code>/api/onboarding/sign/:token</code></td>
+<td>取得表單內容（Token 存取）</td>
+</tr>
+<tr>
+<td>送出簽署</td>
+<td>POST</td>
+<td><code>/api/onboarding/sign/:token/submit</code></td>
+<td>新人填寫並簽署表單</td>
+</tr>
+<tr>
+<td>待審核清單</td>
+<td>GET</td>
+<td><code>/api/manager/approvals</code></td>
+<td>主管查看待審核的簽署文件</td>
+</tr>
+<tr>
+<td>核准簽署</td>
+<td>POST</td>
+<td><code>/api/manager/approvals/:id/approve</code></td>
+<td>主管核准</td>
+</tr>
+<tr>
+<td>退回簽署</td>
+<td>POST</td>
+<td><code>/api/manager/approvals/:id/reject</code></td>
+<td>主管退回（需填理由）</td>
+</tr>
+<tr>
+<td>單一提交詳情</td>
+<td>GET</td>
+<td><code>/api/manager/approvals/:id</code></td>
+<td>取得待審核提交的完整資訊（用於預覽）</td>
+</tr>
+<tr>
+<td>簽核統計</td>
+<td>GET</td>
+<td><code>/api/manager/approvals/stats/summary</code></td>
+<td>獲取簽核統計摘要（待審核/已核准/已退回數量）</td>
+</tr>
+<tr>
+<td>建立簽署連結</td>
+<td>POST</td>
+<td><code>/api/onboarding/sign/create</code></td>
+<td>HR 建立員工簽署連結（已有連結則返回現有）</td>
+</tr>
+<tr>
+<td>提交記錄清單</td>
+<td>GET</td>
+<td><code>/api/onboarding/sign/submissions/:templateId</code></td>
+<td>取得特定模板的所有提交記錄</td>
+</tr>
+<tr>
+<td>下一個員工編號</td>
+<td>GET</td>
+<td><code>/api/hr/onboarding/next-employee-no</code></td>
+<td>預覽下一個自動生成的員工編號</td>
+</tr>
+<tr>
+<td>部門列表</td>
+<td>GET</td>
+<td><code>/api/hr/onboarding/departments</code></td>
+<td>獲取部門列表（用於下拉選單）</td>
+</tr>
+<tr>
+<td>職等列表</td>
+<td>GET</td>
+<td><code>/api/hr/onboarding/grades</code></td>
+<td>獲取職等列表</td>
+</tr>
+<tr>
+<td>職級薪資</td>
+<td>GET</td>
+<td><code>/api/hr/onboarding/salary-levels</code></td>
+<td>獲取職級薪資列表（支援按組織隔離）</td>
+</tr>
+<tr>
+<td>職位列表</td>
+<td>GET</td>
+<td><code>/api/hr/onboarding/positions</code></td>
+<td>獲取職位列表（可依部門/職等篩選）</td>
+</tr>
+<tr>
+<td>主管列表</td>
+<td>GET</td>
+<td><code>/api/hr/onboarding/managers</code></td>
+<td>獲取可選的主管列表</td>
+</tr>
+</tbody></table></div>
+<h2 id="section-182" class="section-title">附錄五：AI 功能缺口對照表</h2>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>功能項目</th>
+<th>目前狀態</th>
+<th>實作方式</th>
+<th>缺口說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>關鍵字匹配</td>
+<td>已實作</td>
+<td>規則引擎</td>
+<td>無法理解同義詞和語意關聯</td>
+</tr>
+<tr>
+<td>語意分析</td>
+<td>基礎版</td>
+<td>短語規則</td>
+<td>無法理解完整句意和上下文</td>
+</tr>
+<tr>
+<td>JD 適配度</td>
+<td>已實作</td>
+<td>字串比對</td>
+<td>無法識別技能之間的關聯性</td>
+</tr>
+<tr>
+<td>履歷解析</td>
+<td>未實作</td>
+<td>—</td>
+<td>需要整合文件解析 AI 服務</td>
+</tr>
+<tr>
+<td>語音轉文字</td>
+<td>未實作</td>
+<td>—</td>
+<td>需要整合 ASR 服務</td>
+</tr>
+<tr>
+<td>情緒分析</td>
+<td>未實作</td>
+<td>—</td>
+<td>需要整合情緒分析模型</td>
+</tr>
+<tr>
+<td>智能推薦</td>
+<td>基礎版</td>
+<td>字串比對</td>
+<td>需要向量嵌入與相似度計算</td>
+</tr>
+<tr>
+<td>問題生成</td>
+<td>未實作</td>
+<td>—</td>
+<td>需要整合 LLM 服務</td>
+</tr>
+<tr>
+<td>數據預測</td>
+<td>未實作</td>
+<td>—</td>
+<td>需要累積資料並建立 ML 模型</td>
+</tr>
+</tbody></table></div>
+<h2 id="section-183" class="section-title">附錄六：關鍵資料庫結構補充</h2>
+<div class="note">
+<div class="note-title">說明</div>
+<div>以下為驗證後發現原附錄未涵蓋的重要資料結構。完整欄位定義請參照 `tenant-schema.js`。</div>
+</div>
+<p><strong>interviews 表補充欄位</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>address</td>
+<td>TEXT</td>
+<td>面試地點地址（補充 location 欄位）</td>
+</tr>
+<tr>
+<td>cancel_token</td>
+<td>TEXT UNIQUE</td>
+<td>面試取消令牌（供公開取消連結使用）</td>
+</tr>
+<tr>
+<td>cancelled_at</td>
+<td>TEXT</td>
+<td>面試取消時間</td>
+</tr>
+<tr>
+<td>cancel_reason</td>
+<td>TEXT</td>
+<td>取消原因說明</td>
+</tr>
+</tbody></table></div>
+<p><strong>interview_evaluations 表補充欄位</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>scoring_items</td>
+<td>TEXT</td>
+<td>評分項目細節（JSON 格式）</td>
+</tr>
+<tr>
+<td>process_checklist</td>
+<td>TEXT</td>
+<td>流程檢查清單（JSON 格式）</td>
+</tr>
+<tr>
+<td>comprehensive_assessment</td>
+<td>TEXT</td>
+<td>綜合評估意見</td>
+</tr>
+<tr>
+<td>pros_comment</td>
+<td>TEXT</td>
+<td>優點評論</td>
+</tr>
+<tr>
+<td>cons_comment</td>
+<td>TEXT</td>
+<td>缺點評論</td>
+</tr>
+<tr>
+<td>recommendation</td>
+<td>TEXT</td>
+<td>最終建議</td>
+</tr>
+</tbody></table></div>
+<p><strong>talent_pool 表補充欄位</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>contact_reminder_enabled</td>
+<td>INTEGER</td>
+<td>是否啟用聯繫提醒（0/1）</td>
+</tr>
+<tr>
+<td>contact_reminder_date</td>
+<td>TEXT</td>
+<td>下次提醒日期</td>
+</tr>
+</tbody></table></div>
+<p><strong>未記載的關鍵表格</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>表名</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>candidate_resume_analysis</td>
+<td>AI 履歷分析結果（含 overall_match_score、extracted_tech_skills 等 29 欄位）</td>
+</tr>
+<tr>
+<td>candidate_interview_forms</td>
+<td>候選人面試表單（含 form_token、form_data、submitted_at、current_step 等 11 欄位）</td>
+</tr>
+<tr>
+<td>talent_job_matches</td>
+<td>人才庫與職缺匹配度分析（含 match_score、match_details 等 8 欄位）</td>
+</tr>
+<tr>
+<td>jobs</td>
+<td>職缺管理主表（11 欄位，含 title、department、status、org_unit_id 等）</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="section-184" class="section-title">文件結束</h2>
+<p>如有操作問題，請聯繫系統管理員或參閱線上說明。</p>
+
+    </main>
+
+    <footer class="doc-footer">
+      <p>Bombus 人力資源管理系統 — 本文件由系統自動產生</p>
+    </footer>
+  </div>
+</body>
+</html>

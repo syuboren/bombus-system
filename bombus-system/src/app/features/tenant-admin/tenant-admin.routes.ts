@@ -23,8 +23,8 @@ export const TENANT_ADMIN_ROUTES: Routes = [
     path: 'users',
     data: { requiredFeature: 'SYS.user-management' },
     canActivate: [featureGateGuard],
-    loadComponent: () => import('./pages/user-management-page/user-management-page.component')
-      .then(m => m.UserManagementPageComponent)
+    loadComponent: () => import('../../features/organization/pages/employee-management-page/employee-management-page.component')
+      .then(m => m.EmployeeManagementPageComponent)
   },
   {
     path: 'audit',

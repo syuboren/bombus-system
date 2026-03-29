@@ -74,6 +74,7 @@ export class RoleManagementPageComponent implements OnInit {
   formEditingRole = signal<Role | null>(null);
   formName = signal('');
   formDescription = signal('');
+  formScopeType = signal('global');
 
   // Feature permission editing
   editingRole = signal<Role | null>(null);
@@ -84,6 +85,7 @@ export class RoleManagementPageComponent implements OnInit {
   showFeatureView = signal(false);
   viewRole = signal<Role | null>(null);
   viewFeaturePerms = signal<RoleFeaturePerm[]>([]);
+  viewLoading = signal(false);
 
   // Module collapse
   collapsedModules = signal<Set<string>>(new Set());
@@ -163,6 +165,7 @@ export class RoleManagementPageComponent implements OnInit {
     this.formEditingRole.set(null);
     this.formName.set('');
     this.formDescription.set('');
+    this.formScopeType.set('global');
     this.showForm.set(true);
   }
 
@@ -170,6 +173,7 @@ export class RoleManagementPageComponent implements OnInit {
     this.formEditingRole.set(role);
     this.formName.set(role.name);
     this.formDescription.set(role.description || '');
+    this.formScopeType.set(role.scope_type || 'global');
     this.showForm.set(true);
   }
 
@@ -182,7 +186,8 @@ export class RoleManagementPageComponent implements OnInit {
     const editing = this.formEditingRole();
     const data: Partial<Role> = {
       name: this.formName(),
-      description: this.formDescription()
+      description: this.formDescription(),
+      scope_type: this.formScopeType() as any
     };
 
     if (editing) {
@@ -262,21 +267,35 @@ export class RoleManagementPageComponent implements OnInit {
   openFeaturePermEdit(role: Role): void {
     this.editingRole.set(role);
     this.collapsedModules.set(new Set());
-    this.featurePermStates.set(new Map());
     this.saving.set(false);
 
+    // 先用所有 features 初始化為 none
+    const states = new Map<string, FeaturePermState>();
+    for (const f of this.features()) {
+      states.set(f.id, {
+        feature_id: f.id,
+        action_level: 'none',
+        edit_scope: null,
+        view_scope: null
+      });
+    }
+    this.featurePermStates.set(states);
+
+    // 再用 API 回傳的值覆蓋
     this.tenantAdminService.getRoleFeaturePerms(role.id).subscribe({
       next: (perms) => {
-        const states = new Map<string, FeaturePermState>();
-        for (const p of perms) {
-          states.set(p.feature_id, {
-            feature_id: p.feature_id,
-            action_level: p.action_level,
-            edit_scope: p.edit_scope,
-            view_scope: p.view_scope
-          });
-        }
-        this.featurePermStates.set(states);
+        this.featurePermStates.update(map => {
+          const next = new Map(map);
+          for (const p of perms) {
+            next.set(p.feature_id, {
+              feature_id: p.feature_id,
+              action_level: p.action_level,
+              edit_scope: p.edit_scope,
+              view_scope: p.view_scope
+            });
+          }
+          return next;
+        });
       }
     });
   }
@@ -395,11 +414,16 @@ export class RoleManagementPageComponent implements OnInit {
   viewFeaturePermissions(role: Role): void {
     this.viewRole.set(role);
     this.viewFeaturePerms.set([]);
+    this.viewLoading.set(true);
     this.collapsedModules.set(new Set());
     this.showFeatureView.set(true);
 
     this.tenantAdminService.getRoleFeaturePerms(role.id).subscribe({
-      next: (perms) => this.viewFeaturePerms.set(perms)
+      next: (perms) => {
+        this.viewFeaturePerms.set(perms);
+        this.viewLoading.set(false);
+      },
+      error: () => this.viewLoading.set(false)
     });
   }
 

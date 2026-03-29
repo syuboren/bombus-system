@@ -1,0 +1,4799 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bombus 功能說明書 - 組織架構管理、使用者帳號管理、角色權限管理與平台管理</title>
+  <style>
+    :root {
+      --color-cloud-gray: #F5F5F7;
+      --color-pure-white: #FCFCFD;
+      --color-soft-gray: #E8E8EA;
+      --color-muted-gray: #C4C4C6;
+      --color-text-secondary: #6B7280;
+      --color-text-primary: #464E56;
+      --color-text-dark: #1F2937;
+      --color-brand-main: #64748B;
+      --color-brand-light: #94A3B8;
+      --color-brand-dark: #475569;
+      --color-module: #64748B;
+      --color-module-light: #9aa5b4;
+      --color-module-dark: #475569;
+      --color-success: #7FB095;
+      --color-success-light: #E8F5EE;
+      --color-warning: #E3C088;
+      --color-warning-light: #FFF8E7;
+      --color-error: #C77F7F;
+      --color-error-light: #FDEAEA;
+      --color-info: #8DA8BE;
+      --color-info-light: #EDF4F9;
+      --spacing-xs: 0.25rem;
+      --spacing-sm: 0.5rem;
+      --spacing-md: 1rem;
+      --spacing-lg: 1.5rem;
+      --spacing-xl: 2rem;
+      --spacing-2xl: 3rem;
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Microsoft JhengHei', 'PingFang TC', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      color: var(--color-text-primary);
+      background: var(--color-cloud-gray);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: var(--spacing-xl);
+    }
+
+    .doc-header {
+      background: linear-gradient(135deg, var(--color-module) 0%, var(--color-module-dark) 100%);
+      color: white;
+      padding: var(--spacing-2xl) var(--spacing-xl);
+      border-radius: var(--radius-lg);
+      margin-bottom: var(--spacing-xl);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .doc-header h1 {
+      font-size: 1.75rem;
+      font-weight: 600;
+      margin-bottom: var(--spacing-sm);
+      letter-spacing: 0.5px;
+    }
+
+    .doc-header h2 {
+      font-size: 1.25rem;
+      font-weight: 400;
+      opacity: 0.9;
+    }
+
+    .doc-info {
+      background: var(--color-pure-white);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-lg);
+      margin-bottom: var(--spacing-xl);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--color-soft-gray);
+    }
+
+    .doc-info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: var(--spacing-md);
+    }
+
+    .doc-info-item {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+
+    .doc-info-label {
+      font-size: 0.875rem;
+      color: var(--color-text-secondary);
+      min-width: 80px;
+    }
+
+    .doc-info-value {
+      font-weight: 500;
+      color: var(--color-text-dark);
+    }
+
+    .toc {
+      background: var(--color-pure-white);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-lg);
+      margin-bottom: var(--spacing-xl);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--color-soft-gray);
+    }
+
+    .toc-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--color-text-dark);
+      margin-bottom: var(--spacing-md);
+      padding-bottom: var(--spacing-sm);
+      border-bottom: 2px solid var(--color-module);
+    }
+
+    .toc-list {
+      list-style: none;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: var(--spacing-sm);
+    }
+
+    .toc-list li { padding: var(--spacing-xs) 0; }
+
+    .toc-list a {
+      color: var(--color-module-dark);
+      text-decoration: none;
+      font-size: 0.9375rem;
+      transition: color 0.2s ease;
+    }
+
+    .toc-list a:hover {
+      color: var(--color-module);
+      text-decoration: underline;
+    }
+
+    .content {
+      background: var(--color-pure-white);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-xl);
+      margin-bottom: var(--spacing-xl);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--color-soft-gray);
+    }
+
+    .section-title {
+      background: linear-gradient(135deg, var(--color-module) 0%, var(--color-module-dark) 100%);
+      color: white;
+      padding: var(--spacing-md) var(--spacing-lg);
+      border-radius: var(--radius-md);
+      margin: var(--spacing-xl) 0 var(--spacing-lg);
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+
+    .section-title:first-child { margin-top: 0; }
+
+    h3 {
+      color: var(--color-text-dark);
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin: var(--spacing-lg) 0 var(--spacing-md);
+      padding-bottom: var(--spacing-xs);
+      border-bottom: 2px solid var(--color-module-light);
+    }
+
+    h4 {
+      color: var(--color-module-dark);
+      font-size: 1rem;
+      font-weight: 600;
+      margin: var(--spacing-md) 0 var(--spacing-sm);
+    }
+
+    p {
+      margin-bottom: var(--spacing-md);
+      color: var(--color-text-primary);
+    }
+
+    ul, ol {
+      margin-bottom: var(--spacing-md);
+      padding-left: var(--spacing-lg);
+    }
+
+    li { margin-bottom: var(--spacing-xs); }
+
+    .table-wrapper {
+      overflow-x: auto;
+      margin: var(--spacing-md) 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9375rem;
+    }
+
+    th {
+      background: var(--color-module);
+      color: white;
+      padding: var(--spacing-sm) var(--spacing-md);
+      text-align: left;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    td {
+      padding: var(--spacing-sm) var(--spacing-md);
+      border-bottom: 1px solid var(--color-soft-gray);
+      vertical-align: top;
+    }
+
+    tr:nth-child(even) { background: var(--color-cloud-gray); }
+    tr:hover { background: rgba(100, 116, 139, 0.1); }
+
+    .code-block {
+      background: var(--color-text-dark);
+      color: #E5E7EB;
+      padding: var(--spacing-md);
+      border-radius: var(--radius-md);
+      font-family: 'SF Mono', 'Consolas', 'Liberation Mono', monospace;
+      font-size: 0.875rem;
+      overflow-x: auto;
+      margin: var(--spacing-md) 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .flowchart {
+      background: var(--color-cloud-gray);
+      border: 1px solid var(--color-soft-gray);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-lg);
+      margin: var(--spacing-md) 0;
+    }
+
+    .flowchart-title {
+      font-size: 0.875rem;
+      color: var(--color-text-secondary);
+      margin-bottom: var(--spacing-md);
+      text-align: center;
+    }
+
+    .flowchart .code-block {
+      font-size: 0.8rem;
+      line-height: 1.5;
+      text-align: left;
+    }
+
+    .note {
+      background: var(--color-info-light);
+      border-left: 4px solid var(--color-info);
+      padding: var(--spacing-md);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      margin: var(--spacing-md) 0;
+    }
+
+    .note-title {
+      font-weight: 600;
+      color: var(--color-info);
+      margin-bottom: var(--spacing-xs);
+    }
+
+    .tree {
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 0.875rem;
+      background: var(--color-cloud-gray);
+      padding: var(--spacing-md);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-soft-gray);
+      white-space: pre;
+      overflow-x: auto;
+    }
+
+    hr {
+      border: none;
+      height: 1px;
+      background: var(--color-soft-gray);
+      margin: var(--spacing-xl) 0;
+    }
+
+    strong { color: var(--color-text-dark); }
+
+    .doc-footer {
+      text-align: center;
+      padding: var(--spacing-xl);
+      color: var(--color-text-secondary);
+      font-size: 0.875rem;
+    }
+
+    @media (max-width: 768px) {
+      .container { padding: var(--spacing-md); }
+      .doc-header { padding: var(--spacing-lg); }
+      .doc-header h1 { font-size: 1.5rem; }
+      .content { padding: var(--spacing-md); }
+      .section-title { font-size: 1.125rem; padding: var(--spacing-sm) var(--spacing-md); }
+      table { font-size: 0.875rem; }
+      th, td { padding: var(--spacing-xs) var(--spacing-sm); }
+    }
+
+    @media print {
+      body { background: white; }
+      .container { max-width: none; padding: 0; }
+      .doc-header, .content { box-shadow: none; border: 1px solid #ddd; }
+      .toc { page-break-after: always; }
+      .section-title { break-after: avoid; }
+      table { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="doc-header">
+      <h1>Bombus 人力資源管理系統</h1>
+      <h2>功能說明書：組織架構管理、使用者帳號管理、角色權限管理與平台管理</h2>
+    </header>
+
+    <section class="doc-info">
+      <div class="doc-info-grid">
+        <div class="doc-info-item">
+          <span class="doc-info-label">文件名稱</span>
+          <span class="doc-info-value">功能說明書：組織架構管理、使用者帳號管理、角色權限管理與平台管理</span>
+        </div>
+        <div class="doc-info-item">
+          <span class="doc-info-label">適用模組</span>
+          <span class="doc-info-value">系統設定（SYS）+ 平台管理（Platform）：組織架構、使用者、角色權限、審計日誌、租戶管理、方案管理</span>
+        </div>
+        <div class="doc-info-item">
+          <span class="doc-info-label">適用對象</span>
+          <span class="doc-info-value">平台管理員（Platform Admin）、系統管理員（super_admin）、子公司管理員（subsidiary_admin）</span>
+        </div>
+        <div class="doc-info-item">
+          <span class="doc-info-label">文件版本</span>
+          <span class="doc-info-value">v1.0</span>
+        </div>
+      </div>
+    </section>
+
+    <nav class="toc">
+      <h2 class="toc-title">目錄</h2>
+      <ol class="toc-list">
+        <li><a href="#一文件目的與適用範圍">文件目的與適用範圍</a></li>
+        <li><a href="#二系統導覽與入口說明">系統導覽與入口說明</a></li>
+        <li><a href="#三角色權責說明">角色權責說明</a></li>
+        <li><a href="#第一部分組織架構管理">第一部分：組織架構管理</a></li>
+        <li><a href="#第二部分使用者帳號管理">第二部分：使用者帳號管理</a></li>
+        <li><a href="#第三部分角色權限管理">第三部分：角色權限管理</a></li>
+        <li><a href="#第四部分審計日誌">第四部分：審計日誌</a></li>
+        <li><a href="#第五部分認證與安全機制">第五部分：認證與安全機制</a></li>
+        <li><a href="#第六部分ai-服務功能缺口分析">第六部分：AI 服務功能缺口分析</a></li>
+        <li><a href="#第七部分平台管理">第七部分：平台管理</a></li>
+        <li><a href="#附錄">附錄</a></li>
+      </ol>
+    </nav>
+
+    <main class="content">
+      <h2 id="section-1" class="section-title">一、文件目的與適用範圍</h2>
+<h3 id="section-2">1.1 文件目的</h3>
+<p>本說明書詳細描述 Bombus 人力資源管理系統中<strong>系統設定模組</strong>與<strong>平台管理模組</strong>的功能：</p>
+<p><strong>系統設定（租戶內管理）</strong></p>
+<ol>
+<li><strong>組織架構管理</strong>：建立與維護企業的集團 → 子公司 → 部門三級組織樹，支援視覺化畫布與列表雙模式</li>
+<li><strong>使用者帳號管理</strong>：管理系統登入帳號的建立、狀態控制與員工關聯</li>
+<li><strong>角色權限管理</strong>：定義角色、設定功能權限矩陣，並將角色指派給使用者</li>
+<li><strong>審計日誌</strong>：追蹤系統中所有安全相關操作的歷史記錄</li>
+</ol>
+<p><strong>平台管理（跨租戶管理）</strong></p>
+<ol start="5">
+<li><strong>租戶管理</strong>：建立、暫停、恢復、刪除租戶，管理租戶管理員帳號</li>
+<li><strong>訂閱方案管理</strong>：定義訂閱方案的功能模組、使用者上限與費用</li>
+<li><strong>平台審計日誌</strong>：追蹤跨租戶的平台級操作記錄</li>
+</ol>
+<h3 id="section-3">1.2 適用範圍</h3>
+<ul>
+<li><strong>適用角色</strong>：具有 <code>super_admin</code> 或 <code>subsidiary_admin</code> 角色的管理人員</li>
+<li><strong>適用情境</strong>：企業初始建置、組織異動（合併/拆分）、人員帳號管理、權限調整、安全稽核</li>
+<li><strong>多租戶架構</strong>：本系統採用 Database-per-Tenant 架構，每個租戶擁有獨立資料庫，組織架構與權限設定完全隔離</li>
+</ul>
+<hr>
+<h2 id="section-4" class="section-title">二、系統導覽與入口說明</h2>
+<h3 id="section-5">2.1 主要功能入口</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>功能模組</th>
+<th>導覽路徑</th>
+<th>路由</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>組織架構管理</td>
+<td>系統設定 → 租戶管理 → 組織架構管理</td>
+<td><code>/settings/org-structure</code></td>
+<td>管理集團、子公司、部門的層級關係</td>
+</tr>
+<tr>
+<td>使用者管理</td>
+<td>系統設定 → 租戶管理 → 使用者管理</td>
+<td><code>/settings/users</code></td>
+<td>管理系統帳號、指派角色</td>
+</tr>
+<tr>
+<td>角色權限管理</td>
+<td>系統設定 → 租戶管理 → 角色管理</td>
+<td><code>/settings/roles</code></td>
+<td>定義角色、設定功能權限</td>
+</tr>
+<tr>
+<td>審計日誌</td>
+<td>系統設定 → 租戶管理 → 審計日誌</td>
+<td><code>/settings/audit</code></td>
+<td>查看系統操作歷史</td>
+</tr>
+<tr>
+<td>租戶管理</td>
+<td>平台管理 → 租戶管理</td>
+<td><code>/platform/tenants</code></td>
+<td>建立與管理租戶（僅平台管理員）</td>
+</tr>
+<tr>
+<td>方案管理</td>
+<td>平台管理 → 方案管理</td>
+<td><code>/platform/plans</code></td>
+<td>定義訂閱方案與功能授權（僅平台管理員）</td>
+</tr>
+<tr>
+<td>平台審計日誌</td>
+<td>平台管理 → 審計日誌</td>
+<td><code>/platform/audit</code></td>
+<td>查看跨租戶操作記錄（僅平台管理員）</td>
+</tr>
+</tbody></table></div>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>白話說明</strong>：前四個功能在側邊欄的「系統設定」區域下，只有租戶管理員能看到，就像公司的 IT 管理後台。後三個功能在「平台管理」區域下，只有平台管理員（SaaS 營運者）能看到，就像管理所有公司帳戶的「總控台」。</div>
+</div>
+<h3 id="section-6">2.2 頁面功能架構</h3>
+<div class="tree">系統設定（SYS）— 租戶管理員可見
+├── 組織架構管理
+│   ├── [畫布模式] 視覺化組織圖
+│   │   ├── 統計卡片（公司數/部門數/員工數/協作關係數）
+│   │   ├── 編輯模式（拖曳/對齊/撤銷重做）
+│   │   ├── 協作關係線（平行協作/下游流程）
+│   │   └── 匯出 PNG
+│   ├── [列表模式] 階層樹狀表格
+│   │   ├── 節點 CRUD 操作
+│   │   └── 協作關係表
+│   ├── 公司管理（新增/編輯/刪除）
+│   │   └── 基本資訊 + 聯絡資訊 + 詳細資訊
+│   └── 部門管理（新增/編輯/刪除）
+│       └── 基本資訊 + 負責任務 + KPI + 職能框架 + 職務配置 + 協作關係
+├── 使用者管理
+│   ├── 使用者清單（姓名/郵件/狀態/角色/建立時間）
+│   ├── 新增使用者（姓名/郵件/密碼/關聯員工）
+│   └── 角色管理（指派/撤銷角色 + 功能權限預覽）
+├── 角色權限管理
+│   ├── 角色清單（卡片式，含使用者計數）
+│   ├── 新增/編輯角色
+│   ├── 功能權限矩陣（操作等級 × 資料範圍）
+│   └── 角色使用者列表
+└── 審計日誌
+    ├── 篩選（動作類型/日期區間）
+    └── 日誌清單（時間/動作/資源/使用者/IP/詳情）
+
+平台管理（Platform）— 僅平台管理員可見
+├── 平台總覽 → 租戶管理
+├── 租戶管理
+│   ├── 統計卡片（總租戶數/啟用中/已暫停）
+│   ├── 狀態篩選（全部/啟用中/已暫停/已刪除）+ 搜尋
+│   ├── 租戶清單（名稱/代碼/產業別/方案/狀態/建立時間/操作）
+│   ├── 新增租戶（名稱/代碼/Logo/產業別/方案/管理員帳號）
+│   ├── 編輯租戶（基本資訊 + 管理員帳號管理）
+│   └── 狀態操作（暫停/恢復/軟刪除/永久刪除）
+├── 方案管理
+│   ├── 方案卡片（名稱/狀態/月年費/上限/功能模組）
+│   ├── 新增方案（名稱/月年費/使用者上限/儲存空間/啟用狀態）
+│   └── 功能模組勾選（L1~L6 模組 × 子功能，三態 checkbox）
+└── 審計日誌
+    ├── 篩選（動作類型/租戶 ID/日期區間）
+    └── 日誌清單（時間/動作/資源/租戶/使用者/IP/詳情）</div>
+<hr>
+<h2 id="section-7" class="section-title">三、角色權責說明</h2>
+<h3 id="section-8">3.1 管理層級</h3>
+<p>本系統的權限管理分為<strong>三個層級</strong>：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>層級</th>
+<th>角色</th>
+<th>可管理範圍</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>平台層</td>
+<td>平台管理員</td>
+<td>所有租戶</td>
+<td>獨立於租戶體系之外，管理租戶的建立與訂閱</td>
+</tr>
+<tr>
+<td>全域層</td>
+<td>super_admin</td>
+<td>整個租戶</td>
+<td>租戶內的最高管理者，可管理所有功能與帳號</td>
+</tr>
+<tr>
+<td>子公司層</td>
+<td>subsidiary_admin</td>
+<td>特定子公司</td>
+<td>管理該子公司及其下部門的使用者與設定</td>
+</tr>
+</tbody></table></div>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>白話說明</strong>：就像連鎖企業的管理結構——總公司有個「平台管理員」管理所有分公司帳戶；每個分公司內有個「超級管理員」管理公司內部一切；各地區經理（子公司管理員）只管自己那一塊。</div>
+</div>
+<h3 id="section-9">3.2 系統預設角色</h3>
+<p>系統初始化時自動建立 5 個<strong>系統角色</strong>（標記為「系統角色」，不可刪除）：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>角色名稱</th>
+<th>中文說明</th>
+<th>作用範圍</th>
+<th>核心權限</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>super_admin</td>
+<td>超級管理員</td>
+<td>全域（global）</td>
+<td>全部功能的編輯權限 + 全公司資料範圍</td>
+</tr>
+<tr>
+<td>subsidiary_admin</td>
+<td>子公司管理員</td>
+<td>子公司（subsidiary）</td>
+<td>大部分功能的編輯權限（排除使用者/角色管理的寫入）</td>
+</tr>
+<tr>
+<td>hr_manager</td>
+<td>人資管理員</td>
+<td>全域（global）</td>
+<td>HR 相關功能全部權限 + 組織管理</td>
+</tr>
+<tr>
+<td>dept_manager</td>
+<td>部門主管</td>
+<td>部門（department）</td>
+<td>部門級管理權限（員工、評核、週報等）</td>
+</tr>
+<tr>
+<td>employee</td>
+<td>一般員工</td>
+<td>部門（department）</td>
+<td>唯讀權限 + 自身週報/提交</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="section-10" class="section-title">第一部分：組織架構管理</h2>
+<h3 id="section-11">1.1 功能總覽</h3>
+<p>組織架構管理提供<strong>雙模式展示</strong>，讓管理者以最直覺的方式建立與維護企業組織樹：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>模式</th>
+<th>特點</th>
+<th>適用場景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>畫布模式</td>
+<td>視覺化拖曳、自動佈局、協作線繪製</td>
+<td>簡報展示、調整佈局、理解全貌</td>
+</tr>
+<tr>
+<td>列表模式</td>
+<td>階層樹狀表格、快速 CRUD</td>
+<td>批量管理、快速查看資料</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-12">1.2 組織節點類型</h3>
+<p>系統支援三種組織節點，形成三級架構：</p>
+<div class="flowchart">
+<div class="flowchart-title">流程圖</div>
+<div class="code-block">graph TD
+    A[集團 Group&lt;br/&gt;L0 最頂層] --&gt; B[子公司 Subsidiary&lt;br/&gt;L1 法人實體]
+    A --&gt; C[子公司 Subsidiary&lt;br/&gt;L1 法人實體]
+    B --&gt; D[部門 Department&lt;br/&gt;L2+ 業務單位]
+    B --&gt; E[部門 Department&lt;br/&gt;L2+ 業務單位]
+    C --&gt; F[部門 Department&lt;br/&gt;L2+ 業務單位]
+    D --&gt; G[子部門 Department&lt;br/&gt;L3 巢狀部門]</div>
+</div>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>節點類型</th>
+<th>說明</th>
+<th>畫布尺寸</th>
+<th>可包含</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>集團（Group）</td>
+<td>企業最頂層組織</td>
+<td>240×160px</td>
+<td>子公司</td>
+</tr>
+<tr>
+<td>子公司（Subsidiary）</td>
+<td>具法人地位的子公司</td>
+<td>240×120px</td>
+<td>部門</td>
+</tr>
+<tr>
+<td>部門（Department）</td>
+<td>業務執行單位</td>
+<td>200×90px</td>
+<td>子部門</td>
+</tr>
+</tbody></table></div>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>白話說明</strong>：組織架構就像一棵倒過來的樹——最上面是集團（樹根），往下分出各子公司（粗枝），再分出各部門（細枝）。部門底下還可以再分子部門。</div>
+</div>
+<h3 id="section-13">1.3 畫布模式功能</h3>
+<h4 id="section-14">統計卡片</h4>
+<p>頁面頂部顯示 4 張即時統計卡片：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>卡片</th>
+<th>圖示</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>公司數</td>
+<td>ri-building-4-line</td>
+<td>集團 + 子公司數量合計</td>
+</tr>
+<tr>
+<td>部門數</td>
+<td>ri-organization-chart</td>
+<td>所有部門（含子部門）數量</td>
+</tr>
+<tr>
+<td>員工總數</td>
+<td>ri-team-line</td>
+<td>全組織在職員工合計</td>
+</tr>
+<tr>
+<td>協作關係</td>
+<td>ri-links-line</td>
+<td>部門間協作關係數量</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-15">工具列功能</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>功能</th>
+<th>操作</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>視圖切換</td>
+<td>畫布 / 列表</td>
+<td>切換兩種顯示模式</td>
+</tr>
+<tr>
+<td>編輯模式</td>
+<td>編輯佈局 / 完成編輯</td>
+<td>開啟拖曳、對齊等佈局功能</td>
+</tr>
+<tr>
+<td>協作線顯示</td>
+<td>開/關</td>
+<td>顯示或隱藏部門間的協作關係虛線</td>
+</tr>
+<tr>
+<td>網格吸附</td>
+<td>開/關</td>
+<td>拖曳節點時自動對齊網格</td>
+</tr>
+<tr>
+<td>縮放控制</td>
+<td>縮小 / 放大 / 重置</td>
+<td>範圍 30%～200%</td>
+</tr>
+<tr>
+<td>匯出 PNG</td>
+<td>按鈕</td>
+<td>將目前畫布匯出為 PNG 圖片</td>
+</tr>
+<tr>
+<td>新增節點</td>
+<td>按鈕</td>
+<td>開啟新增公司表單</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-16">編輯模式工具</h4>
+<p>進入編輯模式後，上方出現專用工具列：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>分類</th>
+<th>功能</th>
+<th>快捷鍵</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>選取</td>
+<td>全選 / 取消選取</td>
+<td>Ctrl/Cmd + 點擊多選</td>
+</tr>
+<tr>
+<td>對齊</td>
+<td>靠左 / 水平置中 / 靠右 / 靠上 / 垂直置中 / 靠下</td>
+<td>—</td>
+</tr>
+<tr>
+<td>分布</td>
+<td>水平等距 / 垂直等距</td>
+<td>—</td>
+</tr>
+<tr>
+<td>歷史</td>
+<td>還原 / 重做</td>
+<td>Ctrl+Z / Ctrl+Y</td>
+</tr>
+<tr>
+<td>佈局</td>
+<td>自動整理</td>
+<td>—</td>
+</tr>
+</tbody></table></div>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>白話說明</strong>：編輯模式就像 PowerPoint 裡排版——可以拖曳方塊、多選後對齊、做完不滿意還能 Ctrl+Z 撤銷。</div>
+</div>
+<h4 id="section-17">協作關係</h4>
+<p>部門之間除了隸屬（上下級）關係外，還可以定義兩種<strong>協作關係</strong>：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>關係類型</th>
+<th>線型</th>
+<th>色彩</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>平行協作（parallel）</td>
+<td>虛線</td>
+<td>藍色系</td>
+<td>同級或跨級別的雙向協作</td>
+</tr>
+<tr>
+<td>下游流程（downstream）</td>
+<td>虛線</td>
+<td>橘色系</td>
+<td>單向的下游依賴流程</td>
+</tr>
+</tbody></table></div>
+<p>協作線支援<strong>錨點調整</strong>：點擊協作線後，可拖曳起止點到卡片的上/下/左/右四個邊緣。</p>
+<h3 id="section-18">1.4 列表模式功能</h3>
+<h4 id="section-19">組織樹狀表格</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>名稱</td>
+<td>縮進樹狀結構，支援展開/收合</td>
+</tr>
+<tr>
+<td>類型</td>
+<td>節點類型徽章（集團/子公司/部門）</td>
+</tr>
+<tr>
+<td>狀態</td>
+<td>營運狀態（僅公司節點：營運中/已停止）</td>
+</tr>
+<tr>
+<td>主管</td>
+<td>部門主管名稱</td>
+</tr>
+<tr>
+<td>員工數</td>
+<td>該節點下的員工人數</td>
+</tr>
+<tr>
+<td>部門數</td>
+<td>該節點下的部門數（僅公司節點）</td>
+</tr>
+<tr>
+<td>操作</td>
+<td>檢視 / 編輯 / 新增子項 / 刪除</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-20">1.5 公司管理</h3>
+<h4 id="section-21">新增/編輯公司欄位規格</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>區段</th>
+<th>欄位</th>
+<th>類型</th>
+<th>必填</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>基本資訊</td>
+<td>公司名稱</td>
+<td>文字</td>
+<td>✓</td>
+<td>公司全名</td>
+</tr>
+<tr>
+<td>基本資訊</td>
+<td>公司代碼</td>
+<td>文字</td>
+<td>—</td>
+<td>內部識別碼</td>
+</tr>
+<tr>
+<td>基本資訊</td>
+<td>類型</td>
+<td>下拉選單</td>
+<td>✓</td>
+<td>集團 / 子公司</td>
+</tr>
+<tr>
+<td>基本資訊</td>
+<td>上級單位</td>
+<td>下拉選單</td>
+<td>—</td>
+<td>選擇隸屬的上級組織</td>
+</tr>
+<tr>
+<td>聯絡資訊</td>
+<td>地址</td>
+<td>文字</td>
+<td>—</td>
+<td>公司地址</td>
+</tr>
+<tr>
+<td>聯絡資訊</td>
+<td>電話</td>
+<td>文字</td>
+<td>—</td>
+<td>公司電話</td>
+</tr>
+<tr>
+<td>聯絡資訊</td>
+<td>Email</td>
+<td>文字</td>
+<td>—</td>
+<td>公司聯絡信箱</td>
+</tr>
+<tr>
+<td>詳細資訊</td>
+<td>統一編號</td>
+<td>文字</td>
+<td>—</td>
+<td>稅務識別號碼</td>
+</tr>
+<tr>
+<td>詳細資訊</td>
+<td>成立日期</td>
+<td>日期</td>
+<td>—</td>
+<td>公司成立日期</td>
+</tr>
+<tr>
+<td>詳細資訊</td>
+<td>營運狀態</td>
+<td>下拉選單</td>
+<td>—</td>
+<td>營運中 / 已停止</td>
+</tr>
+<tr>
+<td>詳細資訊</td>
+<td>公司簡介</td>
+<td>多行文字</td>
+<td>—</td>
+<td>公司描述</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-22">刪除公司檢查</h4>
+<div class="flowchart">
+<div class="flowchart-title">流程圖</div>
+<div class="code-block">flowchart TD
+    A[管理員點擊刪除] --&gt; B{有子公司？}
+    B -- 是 --&gt; C[❌ 拒絕：此公司下有子公司]
+    B -- 否 --&gt; D{有部門？}
+    D -- 是 --&gt; E[❌ 拒絕：此公司下有部門]
+    D -- 否 --&gt; F[確認刪除對話框]
+    F --&gt; G[刪除組織單位]</div>
+</div>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>白話說明</strong>：要刪除一家子公司前，必須先把底下的部門和子公司全部搬走或刪除，就像拆房子前要先搬家具。</div>
+</div>
+<h3 id="section-23">1.6 部門管理</h3>
+<h4 id="section-24">新增/編輯部門欄位規格</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>區段</th>
+<th>欄位</th>
+<th>類型</th>
+<th>必填</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>基本資訊</td>
+<td>部門名稱</td>
+<td>文字</td>
+<td>✓</td>
+<td>部門全名</td>
+</tr>
+<tr>
+<td>基本資訊</td>
+<td>部門代碼</td>
+<td>文字</td>
+<td>—</td>
+<td>內部識別碼</td>
+</tr>
+<tr>
+<td>基本資訊</td>
+<td>部門主管</td>
+<td>下拉選單</td>
+<td>—</td>
+<td>選擇員工作為主管</td>
+</tr>
+<tr>
+<td>基本資訊</td>
+<td>上級單位</td>
+<td>下拉選單</td>
+<td>—</td>
+<td>隸屬的上級組織</td>
+</tr>
+<tr>
+<td>負責任務</td>
+<td>任務清單</td>
+<td>動態列表</td>
+<td>—</td>
+<td>可新增/刪除多筆任務描述</td>
+</tr>
+<tr>
+<td>KPI 事項</td>
+<td>KPI 清單</td>
+<td>動態列表</td>
+<td>—</td>
+<td>可新增/刪除多筆 KPI 指標</td>
+</tr>
+<tr>
+<td>職能框架分類</td>
+<td>分類與職務</td>
+<td>巢狀結構</td>
+<td>—</td>
+<td>分類名稱 + 多筆職務（名稱/說明）</td>
+</tr>
+<tr>
+<td>職務配置</td>
+<td>對照表</td>
+<td>唯讀表格</td>
+<td>—</td>
+<td>顯示職等矩陣中的部門職位配置</td>
+</tr>
+<tr>
+<td>協作關係</td>
+<td>關係清單</td>
+<td>表格</td>
+<td>—</td>
+<td>顯示與其他部門的協作關係</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-25">刪除部門檢查</h4>
+<div class="flowchart">
+<div class="flowchart-title">流程圖</div>
+<div class="code-block">flowchart TD
+    A[管理員點擊刪除] --&gt; B{有子部門？}
+    B -- 是 --&gt; C[❌ 拒絕：此部門下有 N 個子部門]
+    B -- 否 --&gt; D{有員工？}
+    D -- 是 --&gt; E[❌ 拒絕：此部門仍有 N 名員工]
+    D -- 否 --&gt; F[確認刪除對話框]
+    F --&gt; G[刪除部門]</div>
+</div>
+<h3 id="section-26">1.7 協作關係管理</h3>
+<h4 id="section-27">新增/編輯協作關係欄位</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>必填</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>來源部門</td>
+<td>下拉選單</td>
+<td>✓</td>
+<td>協作的發起方</td>
+</tr>
+<tr>
+<td>目標部門</td>
+<td>下拉選單</td>
+<td>✓</td>
+<td>協作的接收方</td>
+</tr>
+<tr>
+<td>關係類型</td>
+<td>下拉選單</td>
+<td>✓</td>
+<td>平行協作 / 下游流程</td>
+</tr>
+<tr>
+<td>說明</td>
+<td>多行文字</td>
+<td>—</td>
+<td>協作內容描述</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="section-28" class="section-title">第二部分：使用者帳號管理</h2>
+<h3 id="section-29">2.1 功能總覽</h3>
+<p>使用者帳號管理讓管理員建立系統登入帳號，並將帳號與角色、員工檔案關聯起來。</p>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>白話說明</strong>：員工檔案（在 L1 員工管理中建立）和登入帳號是兩回事——不是每個員工都需要系統帳號。這個頁面管理的是「誰可以登入系統」以及「登入後能做什麼」。</div>
+</div>
+<h3 id="section-30">2.2 使用者清單</h3>
+<p>主頁面以表格形式展示所有使用者：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>表格欄位</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>使用者</td>
+<td>頭像（首字） + 姓名</td>
+</tr>
+<tr>
+<td>電子郵件</td>
+<td>帳號登入信箱</td>
+</tr>
+<tr>
+<td>狀態</td>
+<td>啟用（active）/ 停用（inactive）/ 鎖定（locked）</td>
+</tr>
+<tr>
+<td>角色</td>
+<td>已指派的角色標籤，多個以逗號分隔；無角色顯示「無角色」</td>
+</tr>
+<tr>
+<td>建立時間</td>
+<td>帳號建立日期</td>
+</tr>
+<tr>
+<td>操作</td>
+<td>「角色管理」按鈕</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-31">2.3 使用者狀態</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>狀態</th>
+<th>顯示文字</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>active</td>
+<td>啟用</td>
+<td>正常使用中的帳號</td>
+</tr>
+<tr>
+<td>inactive</td>
+<td>停用</td>
+<td>已停用，無法登入</td>
+</tr>
+<tr>
+<td>locked</td>
+<td>鎖定</td>
+<td>帳號被鎖定，需管理員解鎖</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-32">2.4 新增使用者</h3>
+<h4 id="section-33">操作流程</h4>
+<div class="flowchart">
+<div class="flowchart-title">流程圖</div>
+<div class="code-block">flowchart TD
+    A[管理員點擊新增使用者] --&gt; B[填寫表單]
+    B --&gt; C{資料驗證}
+    C -- Email 重複 --&gt; D[❌ 409 衝突：信箱已存在]
+    C -- 密碼太短 --&gt; E[❌ 密碼至少 8 字元]
+    C -- 通過 --&gt; F[bcrypt 加密密碼]
+    F --&gt; G[建立帳號&lt;br/&gt;狀態預設 active]
+    G --&gt; H[✅ 回傳使用者資訊]</div>
+</div>
+<h4 id="section-34">表單欄位</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>必填</th>
+<th>範例/提示</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>姓名</td>
+<td>文字</td>
+<td>✓</td>
+<td>例：王大明</td>
+</tr>
+<tr>
+<td>電子郵件</td>
+<td>文字</td>
+<td>✓</td>
+<td>例：<a href="mailto:user@company.com">user@company.com</a></td>
+</tr>
+<tr>
+<td>初始密碼</td>
+<td>密碼</td>
+<td>✓</td>
+<td>至少 6 個字元</td>
+</tr>
+<tr>
+<td>關聯員工 ID</td>
+<td>文字</td>
+<td>—</td>
+<td>若從員工建立帳號，可輸入員工 ID</td>
+</tr>
+</tbody></table></div>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>白話說明</strong>：建立帳號時可以選擇關聯到一位已建檔的員工。這樣登入後系統就知道「這個帳號背後是哪位員工」，可以顯示對應的個人資料。</div>
+</div>
+<h3 id="section-35">2.5 角色管理（指派與撤銷）</h3>
+<p>點擊使用者列表的「角色管理」按鈕，開啟角色管理模態對話框：</p>
+<h4 id="section-36">目前角色區段</h4>
+<p>顯示該使用者已指派的所有角色，每個角色可：</p>
+<ul>
+<li><strong>查看權限 / 收起權限</strong>：展開該角色的功能權限明細表</li>
+<li><strong>移除角色</strong>：撤銷該角色的指派</li>
+</ul>
+<h4 id="section-37">指派新角色區段</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>必填</th>
+<th>選項</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>角色</td>
+<td>下拉選單</td>
+<td>✓</td>
+<td>系統角色 + 自訂角色</td>
+</tr>
+<tr>
+<td>作用範圍</td>
+<td>下拉選單</td>
+<td>✓</td>
+<td>全域 / 子公司 / 部門</td>
+</tr>
+<tr>
+<td>範圍對象</td>
+<td>下拉選單</td>
+<td>條件</td>
+<td>當作用範圍不是「全域」時，選擇具體的子公司或部門</td>
+</tr>
+</tbody></table></div>
+<p>選擇角色後，下方自動顯示<strong>功能權限預覽</strong>，讓管理員在指派前預覽該角色的權限。</p>
+<h4 id="section-38">有效權限（合併後）</h4>
+<p>頁面底部有<strong>可摺疊的「有效權限（合併後）」區段</strong>，展示該使用者所有角色合併計算後的最終權限。</p>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>白話說明</strong>：一個使用者可以有多個角色（例如同時是「部門主管」和「HR 助理」），系統會自動取各角色中最高的權限作為最終結果。</div>
+</div>
+<hr>
+<h2 id="section-39" class="section-title">第三部分：角色權限管理</h2>
+<h3 id="section-40">3.1 功能總覽</h3>
+<h4 id="section-41">什麼是權限管理？</h4>
+<p>想像公司是一棟大樓：</p>
+<ul>
+<li><strong>大門鑰匙</strong>（登入帳號）讓你進入大樓</li>
+<li><strong>樓層門禁卡</strong>（權限）決定你能去哪些樓層、進哪些房間</li>
+<li><strong>權限等級</strong>決定你到了那個房間之後，只能「看」還是能「動手改」</li>
+</ul>
+<p><strong>權限管理</strong>就是幫公司每位同仁配發正確的門禁卡，確保：</p>
+<ul>
+<li><strong>看得到該看的</strong> — HR 主管能查閱全公司員工資料</li>
+<li><strong>改得到該改的</strong> — 部門經理只能編輯自己部門的資料</li>
+<li><strong>碰不到不該碰的</strong> — 一般員工看不到薪資矩陣的編輯功能</li>
+</ul>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>一句話總結</strong>：權限管理 = 「誰」可以對「哪些功能」做「什麼程度的操作」，看到「多大範圍的資料」。</div>
+</div>
+<h4 id="section-42">三層架構一次搞懂</h4>
+<p>Bombus 的權限系統由三層組成，就像疊積木一樣：</p>
+<div class="tree">┌──────────────────────────────────────────┐
+│  第一層：角色 (Role)                       │
+│  → 組織裡的「職務模板」                      │
+│  → 例如：HR 經理、部門主管、一般員工           │
+├──────────────────────────────────────────┤
+│  第二層：功能權限 (Feature Permission)       │
+│  → 每個角色可以操作哪些功能、到什麼程度         │
+│  → 例如：員工檔案「可編輯」，招募職缺「僅查看」   │
+├──────────────────────────────────────────┤
+│  第三層：使用者指派 (User Assignment)        │
+│  → 把角色分配給真實的人                       │
+│  → 例如：王小明 → HR 經理                    │
+└──────────────────────────────────────────┘</div>
+<p><strong>操作順序建議</strong>：</p>
+<div class="code-block">步驟 1：建立角色       →  步驟 2：設定功能權限  →  步驟 3：指派給使用者
+（建立職務模板）          （配置門禁卡）           （發卡給員工）</div>
+<h4 id="section-43">技術架構</h4>
+<p>角色權限管理採用<strong>功能權限矩陣（Feature-Based Permission）</strong>模型：</p>
+<div class="flowchart">
+<div class="flowchart-title">流程圖</div>
+<div class="code-block">graph TD
+    A[角色 Role] --&gt; B[功能權限 Feature Perms]
+    B --&gt; C[操作等級&lt;br/&gt;none / view / edit]
+    B --&gt; D[編輯範圍&lt;br/&gt;self / department / company]
+    B --&gt; E[查看範圍&lt;br/&gt;self / department / company]
+    F[使用者 User] --&gt; G[user_roles]
+    G --&gt; A
+    G --&gt; H[作用範圍&lt;br/&gt;global / subsidiary / department]</div>
+</div>
+<h3 id="section-44">3.2 角色清單</h3>
+<p>角色以<strong>卡片式佈局</strong>展示，每張卡片包含：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>項目</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>角色名稱</td>
+<td>角色標題</td>
+</tr>
+<tr>
+<td>角色說明</td>
+<td>描述文字</td>
+</tr>
+<tr>
+<td>系統角色標籤</td>
+<td>系統角色顯示「系統角色」徽章，不可刪除</td>
+</tr>
+<tr>
+<td>已指派使用者數</td>
+<td>「已指派 N 位使用者」（可點擊查看名單）</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-45">角色操作按鈕</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>按鈕</th>
+<th>說明</th>
+<th>限制</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>檢視功能權限</td>
+<td>唯讀查看該角色的權限矩陣</td>
+<td>—</td>
+</tr>
+<tr>
+<td>編輯功能權限</td>
+<td>開啟權限矩陣編輯介面</td>
+<td>—</td>
+</tr>
+<tr>
+<td>編輯角色</td>
+<td>修改角色名稱與說明</td>
+<td>—</td>
+</tr>
+<tr>
+<td>刪除</td>
+<td>刪除自訂角色</td>
+<td>僅限非系統角色且無使用者指派</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-46">3.3 新增/編輯角色</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>必填</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>角色名稱</td>
+<td>文字</td>
+<td>✓</td>
+<td>例：HR 經理</td>
+</tr>
+<tr>
+<td>說明</td>
+<td>文字</td>
+<td>—</td>
+<td>角色說明（選填）</td>
+</tr>
+</tbody></table></div>
+<div class="note">
+<div class="note-title">說明</div>
+<div>功能權限請於角色建立後，透過「編輯功能權限」設定。</div>
+</div>
+<h3 id="section-47">3.4 功能權限矩陣</h3>
+<p>這是角色權限管理的核心介面。以表格形式呈現，按模組分組，每個功能需設定<strong>兩個維度</strong>：</p>
+<h4 id="section-48">維度一：操作等級 — 能做什麼？</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>等級</th>
+<th>圖示</th>
+<th>說明</th>
+<th>類比</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>無權限（none）</td>
+<td>🚫</td>
+<td>完全看不到這個功能</td>
+<td>這層樓你進不去</td>
+</tr>
+<tr>
+<td>僅查看（view）</td>
+<td>👁️</td>
+<td>只能看，不能新增/修改/刪除</td>
+<td>可以透過玻璃看，但門鎖著</td>
+</tr>
+<tr>
+<td>可編輯（edit）</td>
+<td>✏️</td>
+<td>完整的讀寫權限</td>
+<td>有鑰匙可以自由進出</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-49">維度二：資料範圍 — 能看/改多大範圍？</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>範圍</th>
+<th>說明</th>
+<th>類比</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>個人（self）</td>
+<td>只能存取自己的資料</td>
+<td>只能進自己的辦公室</td>
+</tr>
+<tr>
+<td>部門（department）</td>
+<td>可存取所屬部門的所有資料</td>
+<td>能進整個部門區域</td>
+</tr>
+<tr>
+<td>全公司（company）</td>
+<td>可存取整個租戶的所有資料</td>
+<td>能進大樓所有房間</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-50">重要規則：查看範圍 ≥ 編輯範圍</h4>
+<p>系統會自動確保「你能看到的範圍」不小於「你能編輯的範圍」。</p>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>為什麼？</strong> 想像一位部門主管可以編輯部門內的員工資料，那他至少也要能看到這些資料吧！如果他的查看範圍只有「個人」，那他連要編輯誰都不知道。</div>
+</div>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>設定</th>
+<th>是否合理？</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>編輯：部門、查看：全公司</td>
+<td>✅ 合理</td>
+<td>能看全公司，但只能改自己部門</td>
+</tr>
+<tr>
+<td>編輯：個人、查看：部門</td>
+<td>✅ 合理</td>
+<td>能看部門資料，但只能改自己的</td>
+</tr>
+<tr>
+<td>編輯：全公司、查看：部門</td>
+<td>❌ 不允許</td>
+<td>能改全公司但只看得到部門？矛盾！</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-51">操作技巧</h4>
+<ul>
+<li>選擇「<strong>無權限</strong>」時，編輯範圍和查看範圍會自動隱藏（顯示 —）</li>
+<li>選擇「<strong>僅查看</strong>」時，只需設定「查看範圍」，編輯範圍會自動隱藏</li>
+<li>選擇「<strong>可編輯</strong>」時，需要設定「編輯範圍」和「查看範圍」兩項</li>
+<li>當你調整編輯範圍時，如果查看範圍小於編輯範圍，系統會<strong>自動擴大查看範圍</strong></li>
+</ul>
+<h4 id="section-52">情境：如何設定角色的功能權限？</h4>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>場景</strong>：剛建立的「訓練專員」角色，需要設定他能使用哪些功能。</div>
+</div>
+<p><strong>操作步驟</strong>：</p>
+<ol>
+<li>在角色卡片上點擊「<strong>編輯功能權限</strong>」</li>
+<li>系統會展開一個權限矩陣表，包含所有功能模組：</li>
+</ol>
+<div class="tree">┌─────────────────────────────────────────────────────┐
+│ 功能名稱          │ 操作等級  │ 編輯範圍  │ 查看範圍  │
+├─────────────────────────────────────────────────────┤
+│ ▼ L1 員工管理                                        │
+│   招募職缺管理      │ 僅查看 ▼  │    —     │ 全公司 ▼  │
+│   員工檔案管理      │ 僅查看 ▼  │    —     │ 部門   ▼  │
+│   人才庫管理        │ 無權限 ▼  │    —     │    —     │
+│   ...                                                │
+├─────────────────────────────────────────────────────┤
+│ ▼ L2 職能管理                                        │
+│   職等職級矩陣      │ 僅查看 ▼  │    —     │ 全公司 ▼  │
+│   ...                                                │
+├─────────────────────────────────────────────────────┤
+│ ▼ 系統管理                                           │
+│   組織架構管理      │ 無權限 ▼  │    —     │    —     │
+│   ...                                                │
+└─────────────────────────────────────────────────────┘</div>
+<ol start="3">
+<li>逐一調整每個功能的操作等級與範圍</li>
+<li>點擊「<strong>儲存功能權限</strong>」</li>
+</ol>
+<h4 id="section-53">功能清單（35 個功能，依模組分組）</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>模組</th>
+<th>功能 ID</th>
+<th>功能名稱</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>L1 員工管理</td>
+<td>L1.jobs</td>
+<td>招募職缺管理</td>
+</tr>
+<tr>
+<td>L1 員工管理</td>
+<td>L1.recruitment</td>
+<td>AI 智能面試</td>
+</tr>
+<tr>
+<td>L1 員工管理</td>
+<td>L1.talent-pool</td>
+<td>人才庫</td>
+</tr>
+<tr>
+<td>L1 員工管理</td>
+<td>L1.profile</td>
+<td>員工檔案管理</td>
+</tr>
+<tr>
+<td>L1 員工管理</td>
+<td>L1.meetings</td>
+<td>會議管理</td>
+</tr>
+<tr>
+<td>L1 員工管理</td>
+<td>L1.onboarding</td>
+<td>入職管理</td>
+</tr>
+<tr>
+<td>L2 職能管理</td>
+<td>L2.grade-matrix</td>
+<td>職等職級</td>
+</tr>
+<tr>
+<td>L2 職能管理</td>
+<td>L2.framework</td>
+<td>職能模型</td>
+</tr>
+<tr>
+<td>L2 職能管理</td>
+<td>L2.job-description</td>
+<td>職務說明書</td>
+</tr>
+<tr>
+<td>L2 職能管理</td>
+<td>L2.assessment</td>
+<td>職能評估</td>
+</tr>
+<tr>
+<td>L2 職能管理</td>
+<td>L2.gap-analysis</td>
+<td>落差分析</td>
+</tr>
+<tr>
+<td>L3 教育訓練</td>
+<td>L3.course-management</td>
+<td>課程管理</td>
+</tr>
+<tr>
+<td>L3 教育訓練</td>
+<td>L3.learning-map</td>
+<td>學習地圖</td>
+</tr>
+<tr>
+<td>L3 教育訓練</td>
+<td>L3.effectiveness</td>
+<td>成效追蹤</td>
+</tr>
+<tr>
+<td>L3 教育訓練</td>
+<td>L3.heatmap</td>
+<td>職能熱力圖</td>
+</tr>
+<tr>
+<td>L3 教育訓練</td>
+<td>L3.nine-box</td>
+<td>九宮格</td>
+</tr>
+<tr>
+<td>L3 教育訓練</td>
+<td>L3.learning-path</td>
+<td>學習路徑</td>
+</tr>
+<tr>
+<td>L3 教育訓練</td>
+<td>L3.talent-dashboard</td>
+<td>人才儀表板</td>
+</tr>
+<tr>
+<td>L4 專案管理</td>
+<td>L4.list</td>
+<td>專案列表</td>
+</tr>
+<tr>
+<td>L4 專案管理</td>
+<td>L4.project-pnl</td>
+<td>損益預測</td>
+</tr>
+<tr>
+<td>L4 專案管理</td>
+<td>L4.forecast</td>
+<td>Forecast</td>
+</tr>
+<tr>
+<td>L4 專案管理</td>
+<td>L4.reports</td>
+<td>報表</td>
+</tr>
+<tr>
+<td>L5 績效管理</td>
+<td>L5.profit-dashboard</td>
+<td>毛利儀表板</td>
+</tr>
+<tr>
+<td>L5 績效管理</td>
+<td>L5.bonus-distribution</td>
+<td>獎金分配</td>
+</tr>
+<tr>
+<td>L5 績效管理</td>
+<td>L5.goal-task</td>
+<td>目標與任務</td>
+</tr>
+<tr>
+<td>L5 績效管理</td>
+<td>L5.profit-settings</td>
+<td>毛利參數設定</td>
+</tr>
+<tr>
+<td>L5 績效管理</td>
+<td>L5.review</td>
+<td>績效考核</td>
+</tr>
+<tr>
+<td>L5 績效管理</td>
+<td>L5.360-feedback</td>
+<td>360 度回饋</td>
+</tr>
+<tr>
+<td>L6 文化管理</td>
+<td>L6.handbook</td>
+<td>企業文化手冊</td>
+</tr>
+<tr>
+<td>L6 文化管理</td>
+<td>L6.eap</td>
+<td>EAP 員工協助</td>
+</tr>
+<tr>
+<td>L6 文化管理</td>
+<td>L6.awards</td>
+<td>獎項資料庫</td>
+</tr>
+<tr>
+<td>L6 文化管理</td>
+<td>L6.documents</td>
+<td>文件儲存庫</td>
+</tr>
+<tr>
+<td>L6 文化管理</td>
+<td>L6.ai-assistant</td>
+<td>AI 申請助理</td>
+</tr>
+<tr>
+<td>L6 文化管理</td>
+<td>L6.analysis</td>
+<td>智慧文件分析</td>
+</tr>
+<tr>
+<td>L6 文化管理</td>
+<td>L6.impact</td>
+<td>影響力評估</td>
+</tr>
+<tr>
+<td>SYS 系統管理</td>
+<td>SYS.org-structure</td>
+<td>組織架構管理</td>
+</tr>
+<tr>
+<td>SYS 系統管理</td>
+<td>SYS.user-management</td>
+<td>使用者管理</td>
+</tr>
+<tr>
+<td>SYS 系統管理</td>
+<td>SYS.role-management</td>
+<td>角色管理</td>
+</tr>
+<tr>
+<td>SYS 系統管理</td>
+<td>SYS.audit</td>
+<td>審計日誌</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-54">3.5 權限合併策略</h3>
+<p>當使用者擁有多個角色時，系統自動合併所有角色的權限，採用<strong>寬鬆合併（取最高權限）</strong>策略：</p>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>類比</strong>：你同時拿著兩張門禁卡，系統會把兩張卡能進的房間都打開給你。</div>
+</div>
+<p><strong>等級排序（由低到高）</strong>：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>項目</th>
+<th>排序</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>操作等級</td>
+<td>無權限 &lt; 僅查看 &lt; 可編輯</td>
+</tr>
+<tr>
+<td>資料範圍</td>
+<td>個人 &lt; 部門 &lt; 全公司</td>
+</tr>
+</tbody></table></div>
+<div class="flowchart">
+<div class="flowchart-title">流程圖</div>
+<div class="code-block">flowchart LR
+    A[角色 A&lt;br/&gt;L1.profile: view / self] --&gt; C[合併引擎]
+    B[角色 B&lt;br/&gt;L1.profile: edit / department] --&gt; C
+    C --&gt; D[最終權限&lt;br/&gt;L1.profile: edit / department]</div>
+</div>
+<h4 id="section-55">合併範例一</h4>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>場景</strong>：陳經理同時擁有「部門主管」和「HR 經理」兩個角色。</div>
+</div>
+<p><strong>部門主管</strong>對「員工檔案管理」的權限：</p>
+<ul>
+<li>操作等級：可編輯</li>
+<li>編輯範圍：個人（只能改自己的檔案）</li>
+<li>查看範圍：部門（能看部門內所有人）</li>
+</ul>
+<p><strong>HR 經理</strong>對「員工檔案管理」的權限：</p>
+<ul>
+<li>操作等級：可編輯</li>
+<li>編輯範圍：全公司</li>
+<li>查看範圍：全公司</li>
+</ul>
+<p><strong>合併後的有效權限</strong>：</p>
+<ul>
+<li>操作等級：<strong>可編輯</strong>（兩個都是可編輯，取最高）</li>
+<li>編輯範圍：<strong>全公司</strong>（全公司 &gt; 個人，取最廣）</li>
+<li>查看範圍：<strong>全公司</strong>（全公司 &gt; 部門，取最廣）</li>
+</ul>
+<h4 id="section-56">合併範例二</h4>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>場景</strong>：李專員有「一般員工」和「訓練專員」兩個角色。</div>
+</div>
+<p><strong>一般員工</strong>對「會議管理」的權限：</p>
+<ul>
+<li>操作等級：可編輯（編輯：個人、查看：全公司）</li>
+</ul>
+<p><strong>訓練專員</strong>對「會議管理」的權限：</p>
+<ul>
+<li>操作等級：僅查看（查看：部門）</li>
+</ul>
+<p><strong>合併結果</strong>：</p>
+<ul>
+<li>操作等級：<strong>可編輯</strong>（可編輯 &gt; 僅查看）</li>
+<li>編輯範圍：<strong>個人</strong>（只有一個角色有編輯權限，取該值）</li>
+<li>查看範圍：<strong>全公司</strong>（全公司 &gt; 部門）</li>
+</ul>
+<h4 id="section-57">合併邏輯圖解</h4>
+<div class="tree">角色 A 的權限          角色 B 的權限          合併後（有效權限）
+─────────────        ─────────────        ─────────────────
+操作等級：僅查看    +  操作等級：可編輯   =   操作等級：可編輯
+編輯範圍：—            編輯範圍：部門          編輯範圍：部門
+查看範圍：全公司        查看範圍：部門          查看範圍：全公司
+                                              ↑ 取兩者最廣</div>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>白話說明</strong>：每個角色的「最好」部分都算數——可以理解為系統幫你把所有門禁卡合成一張「超級卡」。</div>
+</div>
+<h3 id="section-58">3.6 刪除角色</h3>
+<div class="flowchart">
+<div class="flowchart-title">流程圖</div>
+<div class="code-block">flowchart TD
+    A[管理員點擊刪除] --&gt; B{是系統角色？}
+    B -- 是 --&gt; C[❌ 禁止：系統角色不可刪除]
+    B -- 否 --&gt; D{有使用者指派？}
+    D -- 是 --&gt; E[⚠️ 警告：已指派此角色的使用者將失去對應權限]
+    D -- 否 --&gt; F[確認刪除對話框]
+    E --&gt; F
+    F --&gt; G[刪除角色 + 關聯的權限記錄]</div>
+</div>
+<h3 id="section-59">3.7 系統預設角色詳細權限</h3>
+<p>系統初始化時自動建立 5 個預設角色，涵蓋最常見的企業職務分工：</p>
+<h4 id="section-60">超級管理員 (super_admin)</h4>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>定位</strong>：系統的最高管理者，通常是 IT 或人資主管。</div>
+</div>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>功能模組</th>
+<th>操作等級</th>
+<th>編輯範圍</th>
+<th>查看範圍</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>L1 員工管理（全部功能）</td>
+<td>可編輯</td>
+<td>全公司</td>
+<td>全公司</td>
+</tr>
+<tr>
+<td>L2 職能管理（全部功能）</td>
+<td>可編輯</td>
+<td>全公司</td>
+<td>全公司</td>
+</tr>
+<tr>
+<td>組織架構管理</td>
+<td>可編輯</td>
+<td>全公司</td>
+<td>全公司</td>
+</tr>
+<tr>
+<td>使用者管理</td>
+<td>可編輯</td>
+<td>全公司</td>
+<td>全公司</td>
+</tr>
+<tr>
+<td>匯出功能</td>
+<td>可編輯</td>
+<td>全公司</td>
+<td>全公司</td>
+</tr>
+<tr>
+<td>審計日誌</td>
+<td>僅查看</td>
+<td>—</td>
+<td>全公司</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-61">子公司管理員 (subsidiary_admin)</h4>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>定位</strong>：集團中各子公司的管理者，管理範圍限定在子公司內。</div>
+</div>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>功能模組</th>
+<th>操作等級</th>
+<th>編輯範圍</th>
+<th>查看範圍</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>L1 招募/員工/人才庫</td>
+<td>可編輯</td>
+<td>全公司</td>
+<td>全公司</td>
+</tr>
+<tr>
+<td>L1 會議管理</td>
+<td>可編輯</td>
+<td>個人</td>
+<td>全公司</td>
+</tr>
+<tr>
+<td>L2 職等/職涯/職務說明</td>
+<td>可編輯</td>
+<td>全公司</td>
+<td>全公司</td>
+</tr>
+<tr>
+<td>L2 職能評估/落差分析</td>
+<td>僅查看</td>
+<td>—</td>
+<td>全公司</td>
+</tr>
+<tr>
+<td>使用者管理/匯出/審計</td>
+<td>僅查看</td>
+<td>—</td>
+<td>全公司</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-62">HR 經理 (hr_manager)</h4>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>定位</strong>：人力資源部門主管，專注於招募與人員管理。</div>
+</div>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>功能模組</th>
+<th>操作等級</th>
+<th>編輯範圍</th>
+<th>查看範圍</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>招募職缺/員工檔案/人才庫</td>
+<td>可編輯</td>
+<td>全公司</td>
+<td>全公司</td>
+</tr>
+<tr>
+<td>AI 面試</td>
+<td>僅查看</td>
+<td>—</td>
+<td>全公司</td>
+</tr>
+<tr>
+<td>會議管理</td>
+<td>可編輯</td>
+<td>全公司</td>
+<td>全公司</td>
+</tr>
+<tr>
+<td>職等/職涯/職務/職能庫</td>
+<td>可編輯</td>
+<td>全公司</td>
+<td>全公司</td>
+</tr>
+<tr>
+<td>職能評估/落差分析</td>
+<td>僅查看</td>
+<td>—</td>
+<td>全公司</td>
+</tr>
+<tr>
+<td>匯出功能</td>
+<td>僅查看</td>
+<td>—</td>
+<td>全公司</td>
+</tr>
+<tr>
+<td>組織/使用者/審計</td>
+<td>無權限</td>
+<td>—</td>
+<td>—</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-63">部門主管 (dept_manager)</h4>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>定位</strong>：各部門經理，管理部門內的日常事務。</div>
+</div>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>功能模組</th>
+<th>操作等級</th>
+<th>編輯範圍</th>
+<th>查看範圍</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>員工檔案</td>
+<td>可編輯</td>
+<td>個人</td>
+<td>部門</td>
+</tr>
+<tr>
+<td>會議管理</td>
+<td>可編輯</td>
+<td>全公司</td>
+<td>全公司</td>
+</tr>
+<tr>
+<td>AI 面試</td>
+<td>可編輯</td>
+<td>全公司</td>
+<td>全公司</td>
+</tr>
+<tr>
+<td>職等/職涯/職務/職能庫</td>
+<td>僅查看</td>
+<td>—</td>
+<td>全公司</td>
+</tr>
+<tr>
+<td>人才庫</td>
+<td>僅查看</td>
+<td>—</td>
+<td>部門</td>
+</tr>
+<tr>
+<td>招募職缺/匯出</td>
+<td>無權限</td>
+<td>—</td>
+<td>—</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-64">一般員工 (employee)</h4>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>定位</strong>：普通員工，主要查看個人資料。</div>
+</div>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>功能模組</th>
+<th>操作等級</th>
+<th>編輯範圍</th>
+<th>查看範圍</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>員工檔案</td>
+<td>可編輯</td>
+<td>個人</td>
+<td>個人</td>
+</tr>
+<tr>
+<td>會議管理</td>
+<td>可編輯</td>
+<td>個人</td>
+<td>全公司</td>
+</tr>
+<tr>
+<td>職等/職涯/職務/職能庫</td>
+<td>僅查看</td>
+<td>—</td>
+<td>全公司</td>
+</tr>
+<tr>
+<td>職能評估/落差分析</td>
+<td>僅查看</td>
+<td>—</td>
+<td>全公司</td>
+</tr>
+<tr>
+<td>招募/AI 面試/人才庫</td>
+<td>無權限</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>系統管理（全部）</td>
+<td>無權限</td>
+<td>—</td>
+<td>—</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-65">3.8 常見情境操作指南</h3>
+<h4 id="section-66">情境 A：新員工入職</h4>
+<div class="note">
+<div class="note-title">說明</div>
+<div>小美剛加入行銷部，需要基本的系統使用權限。</div>
+</div>
+<ol>
+<li><strong>使用者管理</strong> → 確認小美的帳號已建立</li>
+<li><strong>角色管理</strong> → 點擊小美的「角色管理」</li>
+<li><strong>指派角色</strong> → 選擇「一般員工」，作用範圍「全域」</li>
+<li><strong>點擊指派</strong> → 完成</li>
+</ol>
+<p><strong>結果</strong>：小美可以查看自己的員工檔案、參加會議、查看職能資料。</p>
+<h4 id="section-67">情境 B：員工升任部門主管</h4>
+<div class="note">
+<div class="note-title">說明</div>
+<div>小明原本是一般員工，現在升任為行銷部主管。</div>
+</div>
+<ol>
+<li><strong>使用者管理</strong> → 找到小明，點擊「角色管理」</li>
+<li>保留原有的「一般員工」角色（不需移除）</li>
+<li><strong>新增指派</strong> → 選擇「部門主管」，作用範圍「部門」→「行銷部」</li>
+<li><strong>點擊指派</strong></li>
+</ol>
+<p><strong>結果</strong>：小明的權限自動合併——除了原本的個人功能外，現在還能查看行銷部所有員工資料、管理部門會議。</p>
+<h4 id="section-68">情境 C：建立全新的自訂角色</h4>
+<div class="note">
+<div class="note-title">說明</div>
+<div>公司需要一個「招募專員」角色，只負責招募相關功能。</div>
+</div>
+<ol>
+<li><strong>角色管理</strong> → 點擊「新增角色」</li>
+<li>名稱填入「招募專員」，說明填入「負責招募流程管理」</li>
+<li><strong>建立角色</strong> → 新角色出現在列表中</li>
+<li>點擊「<strong>編輯功能權限</strong>」</li>
+<li>設定權限：<ul>
+<li>招募職缺管理：可編輯（編輯：全公司、查看：全公司）</li>
+<li>AI 智能面試：可編輯（編輯：全公司、查看：全公司）</li>
+<li>人才庫管理：可編輯（編輯：全公司、查看：全公司）</li>
+<li>員工檔案管理：僅查看（查看：全公司）</li>
+<li>其他功能：無權限</li>
+</ul>
+</li>
+<li><strong>儲存功能權限</strong></li>
+<li>到<strong>使用者管理</strong>，將此角色指派給相關人員</li>
+</ol>
+<h4 id="section-69">情境 D：確認使用者的實際權限</h4>
+<div class="note">
+<div class="note-title">說明</div>
+<div>主管想確認「李小華」目前到底有哪些權限。</div>
+</div>
+<ol>
+<li><strong>使用者管理</strong> → 找到李小華，點擊「角色管理」</li>
+<li>查看「目前角色」區塊，列出所有已指派角色</li>
+<li>點擊各角色的「<strong>查看權限</strong>」展開細節</li>
+<li>點擊底部「<strong>有效權限（合併後）</strong>」查看最終合併結果</li>
+</ol>
+<h4 id="section-70">情境 E：暫時撤銷權限</h4>
+<div class="note">
+<div class="note-title">說明</div>
+<div>員工請長假，需要暫時關閉系統存取。</div>
+</div>
+<p><strong>方式一：停用帳號</strong>（推薦）</p>
+<ul>
+<li>使用者管理 → 編輯使用者 → 將狀態改為「停用」</li>
+<li>使用者完全無法登入，所有權限暫停</li>
+<li>回來上班時改回「啟用」即可恢復</li>
+</ul>
+<p><strong>方式二：移除角色</strong></p>
+<ul>
+<li>使用者管理 → 角色管理 → 移除所有角色</li>
+<li>使用者可以登入，但沒有任何功能權限</li>
+<li>需要手動重新指派角色</li>
+</ul>
+<h4 id="section-71">情境 F：查看某個角色被哪些人使用</h4>
+<div class="note">
+<div class="note-title">說明</div>
+<div>想知道「HR 經理」這個角色目前指派給了誰。</div>
+</div>
+<ol>
+<li><strong>角色管理</strong> → 找到「HR 經理」角色卡片</li>
+<li>卡片上顯示「<strong>已指派 N 位使用者</strong>」</li>
+<li>點擊該連結，會彈出使用者清單，顯示姓名、Email 和作用範圍</li>
+</ol>
+<h3 id="section-72">3.9 常見問題 FAQ</h3>
+<h4 id="section-73">Q1：修改角色的功能權限後，已指派的使用者會立即生效嗎？</h4>
+<p><strong>是的</strong>。權限是即時生效的。當你修改了「HR 經理」的功能權限，所有擁有「HR 經理」角色的使用者在下次操作時就會套用新權限（無需登出再登入）。</p>
+<h4 id="section-74">Q2：一個使用者可以有幾個角色？</h4>
+<p><strong>沒有上限</strong>。你可以根據實際需求指派多個角色。系統會自動合併所有角色的權限，取最高等級和最廣範圍。</p>
+<h4 id="section-75">Q3：刪除角色後，已指派的使用者會怎樣？</h4>
+<p>使用者會<strong>立即失去</strong>該角色提供的所有權限。如果使用者只有這一個角色，他將失去所有功能存取權（但仍可登入系統）。</p>
+<h4 id="section-76">Q4：「作用範圍」和「資料範圍」有什麼不同？</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>概念</th>
+<th>設定位置</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>資料範圍</strong>（個人/部門/全公司）</td>
+<td>角色的功能權限設定</td>
+<td>決定在功能內能看到/編輯多大範圍的資料</td>
+</tr>
+<tr>
+<td><strong>作用範圍</strong>（全域/子公司/部門）</td>
+<td>使用者的角色指派</td>
+<td>決定這個角色在哪個組織範圍內生效</td>
+</tr>
+</tbody></table></div>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>舉例</strong>：指派「部門主管」角色給小明，作用範圍選「部門 → 行銷部」。這表示小明在行銷部內擁有部門主管的所有權限。</div>
+</div>
+<h4 id="section-77">Q5：系統角色和自訂角色有什麼差別？</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>項目</th>
+<th>系統角色</th>
+<th>自訂角色</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>來源</td>
+<td>系統初始化自動建立</td>
+<td>管理員手動建立</td>
+</tr>
+<tr>
+<td>能否刪除</td>
+<td>不能</td>
+<td>可以</td>
+</tr>
+<tr>
+<td>能否修改名稱</td>
+<td>可以</td>
+<td>可以</td>
+</tr>
+<tr>
+<td>能否修改權限</td>
+<td>可以</td>
+<td>可以</td>
+</tr>
+<tr>
+<td>標示</td>
+<td>有「系統角色」標籤</td>
+<td>無標籤</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-78">Q6：如果所有管理員都被移除角色，系統會怎樣？</h4>
+<p>平台管理員（Platform Admin）始終擁有最高權限，不受角色設定影響。如果發生權限設定錯誤，平台管理員可以登入並修復。</p>
+<h4 id="section-79">Q7：可以讓同一個角色在不同部門有不同的權限嗎？</h4>
+<p><strong>不行</strong>。角色的功能權限是全域統一的。但你可以：</p>
+<ul>
+<li>建立多個角色（如「行銷部主管」、「研發部主管」），各自設定不同權限</li>
+<li>或使用同一個「部門主管」角色，但在指派時指定不同的部門</li>
+</ul>
+<hr>
+<h2 id="section-80" class="section-title">第四部分：審計日誌</h2>
+<h3 id="section-81">4.1 功能總覽</h3>
+<p>審計日誌自動記錄系統中所有安全相關操作，供管理員進行安全監控與合規稽核。</p>
+<h3 id="section-82">4.2 篩選條件</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>篩選項</th>
+<th>類型</th>
+<th>選項</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>動作類型</td>
+<td>下拉選單</td>
+<td>全部動作、登入成功、登入失敗、建立角色、更新角色、刪除角色、指派角色、移除角色</td>
+</tr>
+<tr>
+<td>開始日期</td>
+<td>日期選擇器</td>
+<td>—</td>
+</tr>
+<tr>
+<td>結束日期</td>
+<td>日期選擇器</td>
+<td>—</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-83">4.3 日誌清單</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>時間</td>
+<td>操作發生時間（yyyy-MM-dd HH:mm:ss）</td>
+</tr>
+<tr>
+<td>動作</td>
+<td>操作類型（帶有色彩標記）</td>
+</tr>
+<tr>
+<td>資源</td>
+<td>被操作的資源類型（如 auth、user、role）</td>
+</tr>
+<tr>
+<td>使用者</td>
+<td>執行操作的使用者 ID</td>
+</tr>
+<tr>
+<td>IP</td>
+<td>操作來源 IP 位址</td>
+</tr>
+<tr>
+<td>詳情</td>
+<td>操作詳細描述（超過 40 字自動截斷）</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-84">支援的動作類型</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>動作代碼</th>
+<th>說明</th>
+<th>資源類型</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>login_success</td>
+<td>登入成功</td>
+<td>auth</td>
+</tr>
+<tr>
+<td>login_failed</td>
+<td>登入失敗</td>
+<td>auth</td>
+</tr>
+<tr>
+<td>role_create</td>
+<td>建立角色</td>
+<td>role</td>
+</tr>
+<tr>
+<td>role_update</td>
+<td>更新角色</td>
+<td>role</td>
+</tr>
+<tr>
+<td>role_delete</td>
+<td>刪除角色</td>
+<td>role</td>
+</tr>
+<tr>
+<td>user_role_assign</td>
+<td>指派角色</td>
+<td>user</td>
+</tr>
+<tr>
+<td>user_role_revoke</td>
+<td>撤銷角色</td>
+<td>user</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-85">4.4 分頁</h3>
+<ul>
+<li>支援分頁瀏覽，顯示「共 N 筆記錄」</li>
+<li>上一頁 / 下一頁按鈕，頁碼顯示「第 X / Y 頁」</li>
+</ul>
+<hr>
+<h2 id="section-86" class="section-title">第五部分：認證與安全機制</h2>
+<h3 id="section-87">5.1 登入流程</h3>
+<p>系統支援兩種登入模式，透過頁面頂部的頁籤切換：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>模式</th>
+<th>說明</th>
+<th>需填欄位</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>租戶登入</td>
+<td>一般使用者登入</td>
+<td>組織代碼 + 電子郵件 + 密碼</td>
+</tr>
+<tr>
+<td>平台管理</td>
+<td>平台管理員登入</td>
+<td>電子郵件 + 密碼</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-88">租戶登入流程</h4>
+<div class="flowchart">
+<div class="flowchart-title">流程圖</div>
+<div class="code-block">flowchart TD
+    A[輸入組織代碼 + Email + 密碼] --&gt; B{租戶存在且 active？}
+    B -- 否 --&gt; C[❌ 租戶不存在或已停用]
+    B -- 是 --&gt; D{Email 帳號存在？}
+    D -- 否 --&gt; E[❌ 帳號或密碼錯誤]
+    D -- 是 --&gt; F{帳號狀態？}
+    F -- locked/inactive --&gt; G[❌ 帳號已鎖定或停用]
+    F -- active --&gt; H{密碼正確？}
+    H -- 否 --&gt; I[❌ 帳號或密碼錯誤]
+    H -- 是 --&gt; J[產生 JWT Access Token&lt;br/&gt;15 分鐘有效]
+    J --&gt; K[產生 Refresh Token&lt;br/&gt;7 天有效]
+    K --&gt; L[記錄審計日誌：login_success]
+    L --&gt; M[✅ 回傳 Token + 使用者資訊]</div>
+</div>
+<h3 id="section-89">5.2 登入頁面</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>必填</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>組織代碼</td>
+<td>文字</td>
+<td>✓（租戶模式）</td>
+<td>租戶識別碼（如 demo）</td>
+</tr>
+<tr>
+<td>電子郵件</td>
+<td>文字</td>
+<td>✓</td>
+<td>登入帳號</td>
+</tr>
+<tr>
+<td>密碼</td>
+<td>密碼</td>
+<td>✓</td>
+<td>支援顯示/隱藏切換</td>
+</tr>
+<tr>
+<td>記住登入資訊</td>
+<td>勾選框</td>
+<td>—</td>
+<td>下次自動填充帳號</td>
+</tr>
+</tbody></table></div>
+<p><strong>輔助功能</strong>：</p>
+<ul>
+<li>忘記密碼連結（開啟重設密碼對話框，目前為模擬功能）</li>
+<li>測試帳號提示區（僅開發環境顯示）</li>
+</ul>
+<h3 id="section-90">5.3 Token 機制</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>Token 類型</th>
+<th>有效期</th>
+<th>儲存方式</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>JWT Access Token</td>
+<td>15 分鐘</td>
+<td>localStorage <code>bombus_access_token</code></td>
+<td>API 請求認證（Authorization: Bearer）</td>
+</tr>
+<tr>
+<td>Refresh Token</td>
+<td>7 天</td>
+<td>localStorage <code>bombus_refresh_token</code></td>
+<td>Access Token 過期後自動刷新</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-91">自動刷新流程</h4>
+<div class="flowchart">
+<div class="flowchart-title">流程圖</div>
+<div class="code-block">flowchart TD
+    A[API 請求] --&gt; B{Access Token 有效？}
+    B -- 是 --&gt; C[正常回應]
+    B -- 否 --&gt; D[收到 401 Unauthorized]
+    D --&gt; E[AuthInterceptor 攔截]
+    E --&gt; F{有 Refresh Token？}
+    F -- 否 --&gt; G[導向登入頁]
+    F -- 是 --&gt; H[POST /api/auth/refresh]
+    H --&gt; I{Refresh Token 有效？}
+    I -- 否 --&gt; G
+    I -- 是 --&gt; J[取得新 Access Token]
+    J --&gt; K[重送原始請求]</div>
+</div>
+<h3 id="section-92">5.4 密碼安全</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>項目</th>
+<th>規格</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>加密演算法</td>
+<td>bcryptjs（salt rounds: 10）</td>
+</tr>
+<tr>
+<td>最小長度</td>
+<td>8 字元</td>
+</tr>
+<tr>
+<td>變更密碼後</td>
+<td>撤銷所有 Refresh Token（強制重新登入所有裝置）</td>
+</tr>
+<tr>
+<td>首次登入</td>
+<td>可設定 <code>must_change_password</code> 強制修改密碼</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-93">5.5 變更密碼</h3>
+<p>路由：<code>/change-password</code></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>必填</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>目前密碼</td>
+<td>密碼</td>
+<td>✓</td>
+<td>驗證身分</td>
+</tr>
+<tr>
+<td>新密碼</td>
+<td>密碼</td>
+<td>✓</td>
+<td>至少 8 字元</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="section-94" class="section-title">第六部分：AI 服務功能缺口分析</h2>
+<h3 id="section-95">6.1 已實現功能</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>功能</th>
+<th>狀態</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>組織架構視覺化</td>
+<td>✅ 已實現</td>
+<td>完整的畫布模式 + 列表模式</td>
+</tr>
+<tr>
+<td>RBAC 權限系統</td>
+<td>✅ 已實現</td>
+<td>功能權限矩陣 + 多角色合併</td>
+</tr>
+<tr>
+<td>審計日誌</td>
+<td>✅ 已實現</td>
+<td>自動記錄安全操作</td>
+</tr>
+<tr>
+<td>JWT 認證</td>
+<td>✅ 已實現</td>
+<td>Access + Refresh Token 雙 Token</td>
+</tr>
+<tr>
+<td>多租戶隔離</td>
+<td>✅ 已實現</td>
+<td>Database-per-Tenant 架構</td>
+</tr>
+<tr>
+<td>平台租戶管理</td>
+<td>✅ 已實現</td>
+<td>建立/暫停/恢復/刪除 + 管理員管理</td>
+</tr>
+<tr>
+<td>訂閱方案管理</td>
+<td>✅ 已實現</td>
+<td>功能模組授權 + 費用設定</td>
+</tr>
+<tr>
+<td>平台審計日誌</td>
+<td>✅ 已實現</td>
+<td>跨租戶操作記錄 + 12 種動作類型</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-96">6.2 待開發功能</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>功能</th>
+<th>前端 UI</th>
+<th>後端 API</th>
+<th>AI 引擎</th>
+<th>優先級</th>
+<th>預期效益</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>忘記密碼</td>
+<td>✅ 已有 UI</td>
+<td>❌ 缺</td>
+<td>—</td>
+<td>高</td>
+<td>減少管理員手動重設密碼的負擔</td>
+</tr>
+<tr>
+<td>2</td>
+<td>組織架構 AI 建議</td>
+<td>❌ 缺</td>
+<td>❌ 缺</td>
+<td>❌ 缺</td>
+<td>低</td>
+<td>根據企業規模推薦組織結構</td>
+</tr>
+<tr>
+<td>3</td>
+<td>異常登入偵測</td>
+<td>❌ 缺</td>
+<td>❌ 缺</td>
+<td>❌ 缺</td>
+<td>中</td>
+<td>偵測不尋常的登入行為（地點、時間）</td>
+</tr>
+<tr>
+<td>4</td>
+<td>權限使用分析</td>
+<td>❌ 缺</td>
+<td>❌ 缺</td>
+<td>❌ 缺</td>
+<td>中</td>
+<td>分析角色實際使用率，建議精簡權限</td>
+</tr>
+<tr>
+<td>5</td>
+<td>雙因素認證（2FA）</td>
+<td>❌ 缺</td>
+<td>❌ 缺</td>
+<td>—</td>
+<td>高</td>
+<td>強化帳號安全</td>
+</tr>
+<tr>
+<td>6</td>
+<td>批量使用者匯入</td>
+<td>❌ 缺</td>
+<td>❌ 缺</td>
+<td>—</td>
+<td>中</td>
+<td>支援 Excel 批量建立帳號</td>
+</tr>
+<tr>
+<td>7</td>
+<td>密碼強度檢查</td>
+<td>❌ 缺</td>
+<td>❌ 缺</td>
+<td>—</td>
+<td>中</td>
+<td>強制複雜密碼策略</td>
+</tr>
+</tbody></table></div>
+<div class="note">
+<div class="note-title">說明</div>
+<div>⚠️ <strong>忘記密碼目前為 UI 展示</strong>：前端有重設密碼的對話框和成功動畫，但後端尚未實作發送重設郵件的功能。</div>
+</div>
+<hr>
+<h2 id="section-97" class="section-title">第七部分：平台管理</h2>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>白話說明</strong>：如果把整個 Bombus 系統比喻成一棟辦公大樓，前面介紹的「系統設定」是每層樓（租戶）的內部管理，而「平台管理」就是大樓物業管理——負責租出樓層、設定租金方案、管理公共區域的監控記錄。只有物業管理員（平台管理員）能進入這個後台。</div>
+</div>
+<h3 id="section-98">7.1 功能總覽</h3>
+<p>平台管理提供 SaaS 營運者管理所有租戶的統一後台，涵蓋三大功能：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>功能</th>
+<th>說明</th>
+<th>核心操作</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>租戶管理</td>
+<td>管理所有企業租戶的生命週期</td>
+<td>建立、暫停、恢復、刪除租戶</td>
+</tr>
+<tr>
+<td>訂閱方案管理</td>
+<td>定義與維護訂閱方案</td>
+<td>設定功能模組、使用者上限、費用</td>
+</tr>
+<tr>
+<td>平台審計日誌</td>
+<td>追蹤跨租戶的平台級操作</td>
+<td>查詢、篩選、匯出審計記錄</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-99">7.2 平台管理員認證</h3>
+<p>平台管理員的認證流程獨立於租戶使用者，使用專用的登入端點：</p>
+<div class="flowchart">
+<div class="flowchart-title">流程圖</div>
+<div class="code-block">flowchart TD
+    A[平台管理員&lt;br/&gt;輸入 Email + 密碼] --&gt; B[POST /api/auth/platform-login]
+    B --&gt; C{查詢 platform_admins 表}
+    C --&gt;|帳號存在| D{bcrypt 驗證密碼}
+    C --&gt;|帳號不存在| E[401 登入失敗]
+    D --&gt;|密碼正確| F[簽發 JWT&lt;br/&gt;isPlatformAdmin: true]
+    D --&gt;|密碼錯誤| E
+    F --&gt; G[進入平台管理後台]</div>
+</div>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>項目</th>
+<th>平台管理員</th>
+<th>租戶使用者</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>登入端點</td>
+<td><code>POST /api/auth/platform-login</code></td>
+<td><code>POST /api/auth/login</code></td>
+</tr>
+<tr>
+<td>帳號來源</td>
+<td>platform.db → <code>platform_admins</code> 表</td>
+<td>tenant_*.db → <code>users</code> 表</td>
+</tr>
+<tr>
+<td>JWT 內容</td>
+<td><code>{ sub, isPlatformAdmin: true, name }</code></td>
+<td><code>{ sub, tid, roles, scope }</code></td>
+</tr>
+<tr>
+<td>權限模型</td>
+<td>固定最高權限</td>
+<td>RBAC 角色權限矩陣</td>
+</tr>
+<tr>
+<td>可存取範圍</td>
+<td>所有租戶（管理視角）</td>
+<td>僅自己所屬租戶（業務視角）</td>
+</tr>
+<tr>
+<td>Refresh Token</td>
+<td>無</td>
+<td>有（7 天有效期）</td>
+</tr>
+</tbody></table></div>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>白話說明</strong>：平台管理員就像大樓物業經理，用特別的門禁卡進入管理室；而租戶管理員則像每家公司的行政主管，用公司門禁卡進入自己的辦公樓層。兩者是完全不同的身份系統。</div>
+</div>
+<h3 id="section-100">7.3 租戶管理</h3>
+<h4 id="section-101">7.3.1 租戶清單</h4>
+<p>頁面頂部顯示三張統計卡片：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>卡片</th>
+<th>數值</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>總租戶數</td>
+<td><code>stats.total</code></td>
+<td>API 回傳全域統計</td>
+</tr>
+<tr>
+<td>啟用中</td>
+<td><code>stats.active</code>（綠色）</td>
+<td>前端從當前頁面資料計算</td>
+</tr>
+<tr>
+<td>已暫停</td>
+<td><code>stats.suspended</code>（琥珀色）</td>
+<td>前端從當前頁面資料計算</td>
+</tr>
+</tbody></table></div>
+<p><strong>狀態篩選頁籤</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>頁籤</th>
+<th>對應 status 值</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>全部</td>
+<td>（空）</td>
+<td>顯示全部租戶</td>
+</tr>
+<tr>
+<td>啟用中</td>
+<td><code>active</code></td>
+<td>僅顯示啟用的租戶</td>
+</tr>
+<tr>
+<td>已暫停</td>
+<td><code>suspended</code></td>
+<td>僅顯示暫停的租戶</td>
+</tr>
+<tr>
+<td>已刪除</td>
+<td><code>deleted</code></td>
+<td>僅顯示軟刪除的租戶</td>
+</tr>
+</tbody></table></div>
+<p><strong>表格欄位</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>說明</th>
+<th>備註</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>租戶</td>
+<td>Logo + 租戶名稱</td>
+<td>Logo 顯示縮圖或預設圖示</td>
+</tr>
+<tr>
+<td>代碼</td>
+<td>租戶 slug</td>
+<td>URL 識別碼（如 <code>acme-corp</code>）</td>
+</tr>
+<tr>
+<td>產業別</td>
+<td>對應 15 類產業</td>
+<td>科技業、製造業、金融保險業等</td>
+</tr>
+<tr>
+<td>方案</td>
+<td>訂閱方案名稱</td>
+<td>停用方案顯示「已停用」徽章</td>
+</tr>
+<tr>
+<td>狀態</td>
+<td>啟用中 / 已暫停 / 已刪除</td>
+<td>以不同色彩徽章標示</td>
+</tr>
+<tr>
+<td>建立時間</td>
+<td>yyyy-MM-dd 格式</td>
+<td>—</td>
+</tr>
+<tr>
+<td>操作</td>
+<td>依狀態顯示不同按鈕</td>
+<td>見下方狀態操作</td>
+</tr>
+</tbody></table></div>
+<p><strong>各狀態下的操作按鈕</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>租戶狀態</th>
+<th>可用操作</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>啟用中（active）</td>
+<td>編輯、暫停</td>
+</tr>
+<tr>
+<td>已暫停（suspended）</td>
+<td>編輯、恢復、軟刪除</td>
+</tr>
+<tr>
+<td>已刪除（deleted）</td>
+<td>恢復、永久刪除</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-102">7.3.2 新增租戶</h4>
+<div class="flowchart">
+<div class="flowchart-title">流程圖</div>
+<div class="code-block">flowchart TD
+    A[填寫新增租戶表單] --&gt; B{驗證 slug 格式}
+    B --&gt;|格式錯誤| C[提示：僅小寫英文與連字號]
+    B --&gt;|格式正確| D{檢查 slug 唯一性}
+    D --&gt;|已存在| E[提示：代碼已被使用]
+    D --&gt;|可用| F[POST /api/platform/tenants]
+    F --&gt; G[platform.db 建立租戶記錄]
+    G --&gt; H[建立租戶 DB 檔案&lt;br/&gt;tenant_{id}.db]
+    H --&gt; I[初始化 Schema&lt;br/&gt;69 業務表 + 7 RBAC 表]
+    I --&gt; J[RBAC 種子資料&lt;br/&gt;5 角色 + 權限 + 管理員帳號]
+    J --&gt; K[記錄審計日誌]
+    K --&gt; L[租戶建立完成 ✓]</div>
+</div>
+<p><strong>表單欄位</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>必填</th>
+<th>驗證規則</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>租戶名稱</td>
+<td>文字</td>
+<td>✅</td>
+<td>—</td>
+</tr>
+<tr>
+<td>代碼（slug）</td>
+<td>文字</td>
+<td>✅</td>
+<td>僅小寫英文、數字、連字號；最少 3 字元</td>
+</tr>
+<tr>
+<td>公司 Logo</td>
+<td>檔案上傳</td>
+<td>—</td>
+<td>檔案 ≤ 2MB；格式限 JPEG / PNG / WebP</td>
+</tr>
+<tr>
+<td>產業別</td>
+<td>下拉選單</td>
+<td>—</td>
+<td>15 個選項（科技業、製造業、金融保險業…等）</td>
+</tr>
+<tr>
+<td>訂閱方案</td>
+<td>下拉選單</td>
+<td>✅</td>
+<td>僅顯示啟用中的方案</td>
+</tr>
+<tr>
+<td>管理員名稱</td>
+<td>文字</td>
+<td>✅</td>
+<td>—</td>
+</tr>
+<tr>
+<td>管理員信箱</td>
+<td>Email</td>
+<td>✅</td>
+<td>有效 Email 格式</td>
+</tr>
+<tr>
+<td>初始密碼</td>
+<td>密碼</td>
+<td>✅</td>
+<td>至少 6 字元</td>
+</tr>
+</tbody></table></div>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>白話說明</strong>：建立租戶就像在大樓中租出一整層給新公司——系統會自動幫這家公司準備好獨立的「辦公空間」（獨立資料庫）、「門禁系統」（RBAC 角色權限）、以及第一位「行政主管」帳號（管理員）。</div>
+</div>
+<h4 id="section-103">7.3.3 RBAC 種子資料（自動建立）</h4>
+<p>新租戶建立時，系統自動在其獨立資料庫中建立以下預設資料：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>步驟</th>
+<th>建立內容</th>
+<th>數量</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>根組織單位（type=&#39;group&#39;）</td>
+<td>1</td>
+</tr>
+<tr>
+<td>2</td>
+<td>系統角色（super_admin / subsidiary_admin / hr_manager / dept_manager / employee）</td>
+<td>5</td>
+</tr>
+<tr>
+<td>3</td>
+<td>權限定義（20 資源 × 多種操作）</td>
+<td>80</td>
+</tr>
+<tr>
+<td>4</td>
+<td>角色-權限對應</td>
+<td>依角色配置</td>
+</tr>
+<tr>
+<td>5</td>
+<td>功能權限矩陣（Feature-based）</td>
+<td>39 功能 × 5 角色</td>
+</tr>
+<tr>
+<td>6</td>
+<td>管理員帳號（password bcrypt 加密）</td>
+<td>1</td>
+</tr>
+<tr>
+<td>7</td>
+<td>管理員角色指派（super_admin）</td>
+<td>1</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-104">7.3.4 租戶狀態流轉</h4>
+<div class="flowchart">
+<div class="flowchart-title">流程圖</div>
+<div class="code-block">flowchart LR
+    N[建立] --&gt;|POST /tenants| A[active&lt;br/&gt;啟用中]
+    A --&gt;|PUT status=suspended| B[suspended&lt;br/&gt;已暫停]
+    B --&gt;|PUT status=active| A
+    B --&gt;|DELETE /tenants/:id| C[deleted&lt;br/&gt;已刪除]
+    C --&gt;|PUT status=active| A
+    C --&gt;|DELETE /tenants/:id/purge&lt;br/&gt;需輸入 CONFIRM| D[永久刪除&lt;br/&gt;DB 檔案移除]</div>
+</div>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>狀態</th>
+<th>使用者登入</th>
+<th>API 存取</th>
+<th>資料保留</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>active</td>
+<td>✅ 正常</td>
+<td>✅ 正常</td>
+<td>✅ 保留</td>
+</tr>
+<tr>
+<td>suspended</td>
+<td>❌ 403 TenantSuspended</td>
+<td>❌ 403 TenantSuspended</td>
+<td>✅ 保留</td>
+</tr>
+<tr>
+<td>deleted</td>
+<td>❌ 403 TenantDeleted</td>
+<td>❌ 403 TenantDeleted</td>
+<td>✅ 保留（可恢復）</td>
+</tr>
+<tr>
+<td>永久刪除</td>
+<td>—</td>
+<td>—</td>
+<td>❌ DB 檔案已移除，不可恢復</td>
+</tr>
+</tbody></table></div>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>白話說明</strong>：暫停就像大樓管理處暫時關掉某層的門禁——東西都還在，只是暫時不讓人進去。軟刪除像是標記該樓層為「待清退」，但還可以反悔恢復。永久刪除則是真的把整層清空——物品全部移除，不可恢復。</div>
+</div>
+<h4 id="section-105">7.3.5 編輯租戶與管理員管理</h4>
+<p><strong>編輯模式</strong>下可修改租戶基本資訊，並管理該租戶的管理員帳號：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>可編輯項目</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>租戶名稱</td>
+<td>可修改公司名稱</td>
+</tr>
+<tr>
+<td>公司 Logo</td>
+<td>重新上傳或移除</td>
+</tr>
+<tr>
+<td>產業別</td>
+<td>變更產業分類</td>
+</tr>
+<tr>
+<td>訂閱方案</td>
+<td>升級或降級方案</td>
+</tr>
+<tr>
+<td>管理員帳號（列表）</td>
+<td>修改名稱、信箱、重設密碼</td>
+</tr>
+</tbody></table></div>
+<div class="note">
+<div class="note-title">說明</div>
+<div>每位管理員卡片顯示其<strong>角色徽章</strong>（如 super_admin）和<strong>帳號狀態</strong>（active / inactive），可直接編輯姓名、信箱或重設密碼。</div>
+</div>
+<h4 id="section-106">7.3.6 永久刪除確認</h4>
+<p>永久刪除租戶需要<strong>二次確認</strong>，以防止誤操作：</p>
+<ol>
+<li>顯示警告：「此操作將永久刪除租戶 <strong>[名稱]</strong> 及其所有資料，且無法復原。」</li>
+<li>使用者必須在輸入框中鍵入 <code>CONFIRM</code> 才能啟用「永久刪除」按鈕</li>
+<li>後端同時驗證 <code>confirm=true</code> 參數</li>
+<li>執行：卸載租戶 DB → 刪除 DB 檔案 → 移除 platform.db 記錄 → 記錄審計日誌</li>
+</ol>
+<h3 id="section-107">7.4 訂閱方案管理</h3>
+<h4 id="section-108">7.4.1 方案卡片</h4>
+<p>方案以卡片網格形式展示，每張卡片包含：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>區塊</th>
+<th>內容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>標題列</td>
+<td>方案名稱 + 狀態徽章（啟用 / 停用）</td>
+</tr>
+<tr>
+<td>費用資訊</td>
+<td>月費 + 年費（NT$ 格式）</td>
+</tr>
+<tr>
+<td>使用限制</td>
+<td>最大使用者數 + 儲存空間（GB）</td>
+</tr>
+<tr>
+<td>功能清單</td>
+<td>已啟用的功能模組列表</td>
+</tr>
+<tr>
+<td>操作</td>
+<td>編輯按鈕</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-109">7.4.2 新增 / 編輯方案</h4>
+<p><strong>表單欄位</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>預設值</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>方案名稱</td>
+<td>文字</td>
+<td>—</td>
+<td>如 Starter、Pro、Enterprise</td>
+</tr>
+<tr>
+<td>月費（NT$）</td>
+<td>數字</td>
+<td>0</td>
+<td>月繳費用</td>
+</tr>
+<tr>
+<td>年費（NT$）</td>
+<td>數字</td>
+<td>0</td>
+<td>年繳費用</td>
+</tr>
+<tr>
+<td>最大使用者數</td>
+<td>數字</td>
+<td>10</td>
+<td>方案內含使用者上限</td>
+</tr>
+<tr>
+<td>儲存空間（GB）</td>
+<td>數字</td>
+<td>5</td>
+<td>可用儲存空間</td>
+</tr>
+<tr>
+<td>啟用狀態</td>
+<td>下拉</td>
+<td>啟用</td>
+<td>啟用 / 停用</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-110">7.4.3 功能模組勾選</h4>
+<p>方案編輯時可精細控制各功能模組的授權，使用<strong>三態 checkbox</strong> 機制：</p>
+<div class="tree">┌─ L1 員工管理（6 項）[■ 全選 / □ 半選 / ☐ 未選]
+│  ├─ ☑ L1.jobs — 招募職缺管理
+│  ├─ ☑ L1.recruitment — AI 智能面試
+│  ├─ ☑ L1.talent-pool — 人才庫與再接觸管理
+│  ├─ ☑ L1.profile — 員工檔案與歷程管理
+│  ├─ ☑ L1.meeting — 會議管理
+│  └─ ☑ L1.onboarding — 入職管理
+├─ L2 職能管理（5 項）
+│  ├─ ☑ L2.grade-matrix / L2.framework / L2.job-description
+│  ├─ ☑ L2.assessment / L2.gap-analysis
+├─ L3 教育訓練（7 項）
+├─ L4 專案管理（4 項）
+├─ L5 績效管理（6 項）
+└─ L6 文化管理（7 項）</div>
+<ul>
+<li><strong>群組 checkbox</strong>：點擊模組名稱 checkbox 可一次全選/取消該模組下所有功能</li>
+<li><strong>半選狀態</strong>：部分勾選時，群組 checkbox 顯示為 indeterminate（半填充）</li>
+<li><strong>計數顯示</strong>：每個模組標題旁顯示「已選/總數」（如 3/6）</li>
+</ul>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>白話說明</strong>：就像手機的訂閱方案——「基本版」只開放部分功能，「專業版」開放更多，「企業版」全部開放。平台管理員可以自由組合每個方案包含哪些功能。</div>
+</div>
+<h4 id="section-111">7.4.4 預設方案範例</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>方案</th>
+<th>使用者上限</th>
+<th>子公司上限</th>
+<th>功能模組</th>
+<th>匯出</th>
+<th>API</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Starter</td>
+<td>10</td>
+<td>1</td>
+<td>L1</td>
+<td>❌</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>Pro</td>
+<td>50</td>
+<td>3</td>
+<td>L1、L2、L3</td>
+<td>✅</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>Enterprise</td>
+<td>500</td>
+<td>20</td>
+<td>L1~L6 全部</td>
+<td>✅</td>
+<td>✅</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-112">7.4.5 方案與租戶的關聯</h4>
+<div class="flowchart">
+<div class="flowchart-title">流程圖</div>
+<div class="code-block">flowchart LR
+    A[平台管理員&lt;br/&gt;建立/編輯方案] --&gt; B[subscription_plans 表]
+    B --&gt; C[租戶建立時&lt;br/&gt;指定 plan_id]
+    C --&gt; D[使用者登入時&lt;br/&gt;查詢方案 features]
+    D --&gt; E[回傳 enabled_features&lt;br/&gt;給前端]
+    E --&gt; F[側邊欄動態顯示&lt;br/&gt;授權的功能模組]</div>
+</div>
+<div class="note">
+<div class="note-title">說明</div>
+<div>方案的 `features` 欄位為 JSON 格式，如 `{"modules":["L1","L2","L3"],"export":true,"api":false}`。使用者登入時，系統從方案中解析已授權模組清單，前端據此過濾側邊欄選單項目。</div>
+</div>
+<h3 id="section-113">7.5 平台審計日誌</h3>
+<p>平台審計日誌記錄所有跨租戶的管理操作，與租戶內的審計日誌（第四部分）獨立存儲。</p>
+<h4 id="section-114">7.5.1 篩選條件</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>篩選欄位</th>
+<th>類型</th>
+<th>選項</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>動作類型</td>
+<td>下拉選單</td>
+<td>18 種動作（見下表）</td>
+</tr>
+<tr>
+<td>租戶 ID</td>
+<td>文字輸入</td>
+<td>自由輸入租戶 ID</td>
+</tr>
+<tr>
+<td>開始日期</td>
+<td>日期選擇</td>
+<td>date picker</td>
+</tr>
+<tr>
+<td>結束日期</td>
+<td>日期選擇</td>
+<td>date picker</td>
+</tr>
+</tbody></table></div>
+<p><strong>動作類型清單（18 種）</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>動作碼</th>
+<th>中文標籤</th>
+<th>徽章色彩</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>login_success</td>
+<td>租戶使用者登入成功</td>
+<td>綠色（success）</td>
+</tr>
+<tr>
+<td>login_failed</td>
+<td>租戶使用者登入失敗</td>
+<td>紅色（danger）</td>
+</tr>
+<tr>
+<td>platform_login_success</td>
+<td>平台管理員登入成功</td>
+<td>綠色（success）</td>
+</tr>
+<tr>
+<td>platform_login_failed</td>
+<td>平台管理員登入失敗</td>
+<td>紅色（danger）</td>
+</tr>
+<tr>
+<td>tenant_create</td>
+<td>建立租戶</td>
+<td>綠色（success）</td>
+</tr>
+<tr>
+<td>tenant_update</td>
+<td>更新租戶資訊</td>
+<td>藍色（info）</td>
+</tr>
+<tr>
+<td>tenant_suspend</td>
+<td>暫停租戶</td>
+<td>黃色（warning）</td>
+</tr>
+<tr>
+<td>tenant_reactivate</td>
+<td>恢復租戶（從暫停）</td>
+<td>綠色（success）</td>
+</tr>
+<tr>
+<td>tenant_restore</td>
+<td>恢復租戶（從刪除）</td>
+<td>綠色（success）</td>
+</tr>
+<tr>
+<td>tenant_soft_delete</td>
+<td>軟刪除租戶</td>
+<td>紅色（danger）</td>
+</tr>
+<tr>
+<td>tenant_purge</td>
+<td>永久刪除租戶</td>
+<td>紅色（danger）</td>
+</tr>
+<tr>
+<td>plan_create</td>
+<td>建立訂閱方案</td>
+<td>綠色（success）</td>
+</tr>
+<tr>
+<td>plan_update</td>
+<td>更新訂閱方案</td>
+<td>藍色（info）</td>
+</tr>
+<tr>
+<td>data_migration</td>
+<td>資料遷移</td>
+<td>藍色（info）</td>
+</tr>
+<tr>
+<td>role_create</td>
+<td>建立角色</td>
+<td>綠色（success）</td>
+</tr>
+<tr>
+<td>role_update</td>
+<td>更新角色</td>
+<td>藍色（info）</td>
+</tr>
+<tr>
+<td>role_delete</td>
+<td>刪除角色</td>
+<td>紅色（danger）</td>
+</tr>
+<tr>
+<td>user_role_assign</td>
+<td>指派角色</td>
+<td>藍色（info）</td>
+</tr>
+<tr>
+<td>user_role_revoke</td>
+<td>移除角色</td>
+<td>紅色（danger）</td>
+</tr>
+</tbody></table></div>
+<h4 id="section-115">7.5.2 日誌表格</h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>說明</th>
+<th>備註</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>時間</td>
+<td>yyyy-MM-dd HH:mm:ss</td>
+<td>等寬字體顯示</td>
+</tr>
+<tr>
+<td>動作</td>
+<td>動作碼 + 色彩徽章</td>
+<td>依上表色彩標示</td>
+</tr>
+<tr>
+<td>資源</td>
+<td>操作的資源類型</td>
+<td>tenant / subscription_plan / auth 等</td>
+</tr>
+<tr>
+<td>租戶</td>
+<td>租戶名稱或 ID</td>
+<td>若為平台級操作則顯示「—」</td>
+</tr>
+<tr>
+<td>使用者</td>
+<td>操作者 ID</td>
+<td>—</td>
+</tr>
+<tr>
+<td>IP</td>
+<td>來源 IP 位址</td>
+<td>—</td>
+</tr>
+<tr>
+<td>詳情</td>
+<td>JSON 格式操作細節</td>
+<td>顯示前 40 字，Hover 展開完整內容</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="section-116" class="section-title">附錄</h2>
+<h3 id="section-117">附錄 A：狀態碼對照表</h3>
+<p><strong>使用者帳號狀態</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>狀態碼</th>
+<th>顯示文字</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>active</td>
+<td>啟用</td>
+<td>正常使用中</td>
+</tr>
+<tr>
+<td>inactive</td>
+<td>停用</td>
+<td>已停用，無法登入</td>
+</tr>
+<tr>
+<td>locked</td>
+<td>鎖定</td>
+<td>帳號被鎖定</td>
+</tr>
+</tbody></table></div>
+<p><strong>公司營運狀態</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>狀態碼</th>
+<th>顯示文字</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>active</td>
+<td>營運中</td>
+<td>正常營運</td>
+</tr>
+<tr>
+<td>inactive</td>
+<td>已停止</td>
+<td>停止營運</td>
+</tr>
+</tbody></table></div>
+<p><strong>租戶狀態</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>狀態碼</th>
+<th>顯示文字</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>active</td>
+<td>啟用中</td>
+<td>正常使用中，租戶可登入與存取 API</td>
+</tr>
+<tr>
+<td>suspended</td>
+<td>已暫停</td>
+<td>暫停服務，租戶無法登入（資料保留）</td>
+</tr>
+<tr>
+<td>deleted</td>
+<td>已刪除</td>
+<td>軟刪除，可恢復或永久刪除</td>
+</tr>
+</tbody></table></div>
+<p><strong>方案啟用狀態</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>值</th>
+<th>顯示文字</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>啟用</td>
+<td>可指派給租戶</td>
+</tr>
+<tr>
+<td>0</td>
+<td>停用</td>
+<td>不顯示於新增租戶的選單中</td>
+</tr>
+</tbody></table></div>
+<p><strong>角色作用範圍</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>範圍碼</th>
+<th>顯示文字</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>global</td>
+<td>全域</td>
+<td>作用於整個租戶</td>
+</tr>
+<tr>
+<td>subsidiary</td>
+<td>子公司</td>
+<td>作用於特定子公司及其下屬</td>
+</tr>
+<tr>
+<td>department</td>
+<td>部門</td>
+<td>作用於特定部門</td>
+</tr>
+</tbody></table></div>
+<p><strong>操作等級</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>等級碼</th>
+<th>顯示文字</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>none</td>
+<td>無權限</td>
+<td>不可存取</td>
+</tr>
+<tr>
+<td>view</td>
+<td>僅查看</td>
+<td>唯讀</td>
+</tr>
+<tr>
+<td>edit</td>
+<td>可編輯</td>
+<td>讀寫</td>
+</tr>
+</tbody></table></div>
+<p><strong>資料範圍</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>範圍碼</th>
+<th>顯示文字</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>self</td>
+<td>個人</td>
+<td>僅自己的資料</td>
+</tr>
+<tr>
+<td>department</td>
+<td>部門</td>
+<td>部門內所有資料</td>
+</tr>
+<tr>
+<td>company</td>
+<td>全公司</td>
+<td>租戶內所有資料</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-118">附錄 B：API 端點一覽</h3>
+<p><strong>組織架構管理</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>方法</th>
+<th>端點</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GET</td>
+<td><code>/api/organization/tree</code></td>
+<td>取得統一組織樹（扁平結構，含完整欄位）</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/organization/stats</code></td>
+<td>取得組織統計（公司數、部門數、員工數）</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/organization/org-units</code></td>
+<td>取得組織單位列表（用於下拉選單）</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/organization/companies</code></td>
+<td>取得公司列表（含員工/部門計數）</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/organization/companies/headquarters</code></td>
+<td>取得總公司</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/organization/companies/:id</code></td>
+<td>取得公司詳情（含子公司/部門列表）</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/organization/companies/:id/subsidiaries</code></td>
+<td>取得子公司列表</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/organization/companies</code></td>
+<td>新增公司</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><code>/api/organization/companies/:id</code></td>
+<td>更新公司資訊</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/organization/companies/:id</code></td>
+<td>刪除公司（需先移除子公司/部門）</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/organization/departments</code></td>
+<td>取得部門列表（可篩選 companyId）</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/organization/departments/:id</code></td>
+<td>取得部門詳情</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/organization/departments/:id/employees</code></td>
+<td>取得部門員工列表</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/organization/departments/:id/positions</code></td>
+<td>取得部門職務配置</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/organization/departments</code></td>
+<td>新增部門</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><code>/api/organization/departments/:id</code></td>
+<td>更新部門（含擴充欄位）</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/organization/departments/:id</code></td>
+<td>刪除部門（需先移除員工/子部門）</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/organization/collaborations</code></td>
+<td>取得協作關係列表</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/organization/collaborations</code></td>
+<td>新增協作關係</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><code>/api/organization/collaborations/:id</code></td>
+<td>更新協作關係</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/organization/collaborations/:id</code></td>
+<td>刪除協作關係</td>
+</tr>
+</tbody></table></div>
+<p><strong>租戶管理（使用者/角色/權限）</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>方法</th>
+<th>端點</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GET</td>
+<td><code>/api/tenant-admin/org-units</code></td>
+<td>取得組織架構列表（樹狀）</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/tenant-admin/org-units</code></td>
+<td>新增組織單位</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><code>/api/tenant-admin/org-units/:id</code></td>
+<td>更新組織單位</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/tenant-admin/org-units/:id</code></td>
+<td>刪除組織單位</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/tenant-admin/roles</code></td>
+<td>取得角色列表（含權限/使用者計數）</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/tenant-admin/roles</code></td>
+<td>建立新角色</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><code>/api/tenant-admin/roles/:id</code></td>
+<td>更新角色基本資訊（名稱、說明）</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/tenant-admin/roles/:id</code></td>
+<td>刪除角色</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/tenant-admin/permissions</code></td>
+<td>取得全部權限定義（分組）</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/tenant-admin/features</code></td>
+<td>取得功能定義列表（依租戶方案篩選）</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/tenant-admin/roles/:id/feature-perms</code></td>
+<td>取得角色的功能權限矩陣</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><code>/api/tenant-admin/roles/:id/feature-perms</code></td>
+<td>批量更新角色功能權限</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/tenant-admin/roles/:id/users</code></td>
+<td>取得角色下的使用者列表</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/tenant-admin/users</code></td>
+<td>取得使用者列表（支援分頁/搜尋/篩選）</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/tenant-admin/users</code></td>
+<td>建立新使用者</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><code>/api/tenant-admin/users/:id</code></td>
+<td>更新使用者（名稱/狀態/密碼）</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/tenant-admin/user-roles/:userId</code></td>
+<td>取得使用者的角色列表</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/tenant-admin/user-roles</code></td>
+<td>指派角色給使用者</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/tenant-admin/user-roles</code></td>
+<td>撤銷使用者角色</td>
+</tr>
+</tbody></table></div>
+<p><strong>認證相關</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>方法</th>
+<th>端點</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>POST</td>
+<td><code>/api/auth/login</code></td>
+<td>租戶使用者登入</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/auth/platform-login</code></td>
+<td>平台管理員登入</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/auth/refresh</code></td>
+<td>Token 刷新</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/auth/logout</code></td>
+<td>登出</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/auth/change-password</code></td>
+<td>變更密碼</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/auth/my-feature-perms</code></td>
+<td>取得目前使用者的合併功能權限</td>
+</tr>
+</tbody></table></div>
+<p><strong>審計日誌</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>方法</th>
+<th>端點</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GET</td>
+<td><code>/api/audit/logs</code></td>
+<td>取得審計日誌（支援分頁、動作/日期篩選）</td>
+</tr>
+</tbody></table></div>
+<p><strong>平台管理（僅平台管理員）</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>方法</th>
+<th>端點</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GET</td>
+<td><code>/api/platform/tenants</code></td>
+<td>租戶列表（分頁 + 搜尋 + 狀態篩選）</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/platform/tenants</code></td>
+<td>建立新租戶（含初始化 DB + RBAC 種子資料）</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/platform/tenants/:id</code></td>
+<td>租戶詳情（含使用者數/員工數統計）</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><code>/api/platform/tenants/:id</code></td>
+<td>更新租戶（名稱/狀態/方案/Logo/產業）</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/platform/tenants/:id</code></td>
+<td>軟刪除租戶（標記為 deleted）</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/platform/tenants/:id/purge</code></td>
+<td>硬刪除租戶（需 confirm=true，移除 DB 檔案）</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/platform/tenants/:id/admins</code></td>
+<td>取得租戶管理員列表</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><code>/api/platform/tenants/:id/admins/:userId</code></td>
+<td>更新租戶管理員（名稱/信箱/密碼）</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/platform/plans</code></td>
+<td>方案列表（含使用中租戶計數）</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/platform/plans</code></td>
+<td>建立方案</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><code>/api/platform/plans/:id</code></td>
+<td>更新方案</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/platform/upload-logo</code></td>
+<td>上傳租戶 Logo（≤ 2MB，JPEG/PNG/WebP）</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-119">附錄 C：資料庫結構</h3>
+<p><strong>org_units（組織單位）</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>id</td>
+<td>TEXT (PK)</td>
+<td>主鍵</td>
+</tr>
+<tr>
+<td>name</td>
+<td>TEXT (NOT NULL)</td>
+<td>組織名稱</td>
+</tr>
+<tr>
+<td>type</td>
+<td>TEXT (CHECK)</td>
+<td>類型：group / subsidiary / department</td>
+</tr>
+<tr>
+<td>parent_id</td>
+<td>TEXT (FK)</td>
+<td>上級組織 ID（自我參照 org_units）</td>
+</tr>
+<tr>
+<td>level</td>
+<td>INTEGER</td>
+<td>層級深度（0=頂層）</td>
+</tr>
+<tr>
+<td>code</td>
+<td>TEXT</td>
+<td>組織代碼</td>
+</tr>
+<tr>
+<td>address</td>
+<td>TEXT</td>
+<td>地址</td>
+</tr>
+<tr>
+<td>phone</td>
+<td>TEXT</td>
+<td>電話</td>
+</tr>
+<tr>
+<td>email</td>
+<td>TEXT</td>
+<td>電子郵件</td>
+</tr>
+<tr>
+<td>description</td>
+<td>TEXT</td>
+<td>描述/簡介</td>
+</tr>
+<tr>
+<td>tax_id</td>
+<td>TEXT</td>
+<td>統一編號</td>
+</tr>
+<tr>
+<td>status</td>
+<td>TEXT</td>
+<td>營運狀態（預設 active）</td>
+</tr>
+<tr>
+<td>established_date</td>
+<td>TEXT</td>
+<td>成立日期</td>
+</tr>
+<tr>
+<td>created_at</td>
+<td>TEXT</td>
+<td>建立時間（預設 datetime(&#39;now&#39;)）</td>
+</tr>
+</tbody></table></div>
+<p><strong>departments（部門）</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>id</td>
+<td>TEXT (PK)</td>
+<td>主鍵</td>
+</tr>
+<tr>
+<td>name</td>
+<td>TEXT (UNIQUE, NOT NULL)</td>
+<td>部門名稱</td>
+</tr>
+<tr>
+<td>code</td>
+<td>TEXT</td>
+<td>部門代碼</td>
+</tr>
+<tr>
+<td>sort_order</td>
+<td>INTEGER</td>
+<td>排序權重（預設 0）</td>
+</tr>
+<tr>
+<td>manager_id</td>
+<td>TEXT (FK)</td>
+<td>部門主管（關聯 employees）</td>
+</tr>
+<tr>
+<td>head_count</td>
+<td>INTEGER</td>
+<td>編制人數（預設 0）</td>
+</tr>
+<tr>
+<td>responsibilities</td>
+<td>TEXT</td>
+<td>負責任務（JSON 陣列）</td>
+</tr>
+<tr>
+<td>kpi_items</td>
+<td>TEXT</td>
+<td>KPI 事項（JSON 陣列）</td>
+</tr>
+<tr>
+<td>competency_focus</td>
+<td>TEXT</td>
+<td>職能框架分類（JSON 陣列）</td>
+</tr>
+<tr>
+<td>created_at</td>
+<td>TEXT</td>
+<td>建立時間（預設 datetime(&#39;now&#39;)）</td>
+</tr>
+</tbody></table></div>
+<p><strong>department_collaborations（部門協作關係）</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>id</td>
+<td>TEXT (PK)</td>
+<td>主鍵</td>
+</tr>
+<tr>
+<td>source_dept_id</td>
+<td>TEXT (NOT NULL)</td>
+<td>來源部門 ID</td>
+</tr>
+<tr>
+<td>target_dept_id</td>
+<td>TEXT (NOT NULL)</td>
+<td>目標部門 ID</td>
+</tr>
+<tr>
+<td>relation_type</td>
+<td>TEXT (CHECK)</td>
+<td>關係類型：parallel / downstream</td>
+</tr>
+<tr>
+<td>description</td>
+<td>TEXT</td>
+<td>協作說明</td>
+</tr>
+<tr>
+<td>source_anchor</td>
+<td>TEXT</td>
+<td>來源錨點位置（top/bottom/left/right）</td>
+</tr>
+<tr>
+<td>target_anchor</td>
+<td>TEXT</td>
+<td>目標錨點位置</td>
+</tr>
+<tr>
+<td>created_at</td>
+<td>TEXT</td>
+<td>建立時間（預設 datetime(&#39;now&#39;)）</td>
+</tr>
+</tbody></table></div>
+<p><strong>users（使用者帳號）</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>id</td>
+<td>TEXT (PK)</td>
+<td>主鍵</td>
+</tr>
+<tr>
+<td>email</td>
+<td>TEXT (UNIQUE, NOT NULL)</td>
+<td>電子郵件（登入帳號）</td>
+</tr>
+<tr>
+<td>password_hash</td>
+<td>TEXT (NOT NULL)</td>
+<td>bcrypt 加密密碼</td>
+</tr>
+<tr>
+<td>name</td>
+<td>TEXT (NOT NULL)</td>
+<td>使用者姓名</td>
+</tr>
+<tr>
+<td>employee_id</td>
+<td>TEXT (FK)</td>
+<td>關聯員工 ID（可空）</td>
+</tr>
+<tr>
+<td>avatar</td>
+<td>TEXT</td>
+<td>頭像 URL</td>
+</tr>
+<tr>
+<td>status</td>
+<td>TEXT (CHECK)</td>
+<td>帳號狀態：active / inactive / locked</td>
+</tr>
+<tr>
+<td>last_login</td>
+<td>TEXT</td>
+<td>最後登入時間</td>
+</tr>
+<tr>
+<td>must_change_password</td>
+<td>INTEGER</td>
+<td>是否需強制改密（0/1）</td>
+</tr>
+<tr>
+<td>created_at</td>
+<td>TEXT</td>
+<td>建立時間（預設 datetime(&#39;now&#39;)）</td>
+</tr>
+<tr>
+<td>updated_at</td>
+<td>TEXT</td>
+<td>最後更新時間</td>
+</tr>
+</tbody></table></div>
+<p><strong>roles（角色定義）</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>id</td>
+<td>TEXT (PK)</td>
+<td>主鍵</td>
+</tr>
+<tr>
+<td>name</td>
+<td>TEXT (NOT NULL)</td>
+<td>角色名稱</td>
+</tr>
+<tr>
+<td>description</td>
+<td>TEXT</td>
+<td>角色說明</td>
+</tr>
+<tr>
+<td>scope_type</td>
+<td>TEXT (CHECK)</td>
+<td>作用範圍類型：global / subsidiary / department</td>
+</tr>
+<tr>
+<td>is_system</td>
+<td>INTEGER</td>
+<td>是否為系統角色（0/1，系統角色不可刪除）</td>
+</tr>
+<tr>
+<td>created_at</td>
+<td>TEXT</td>
+<td>建立時間（預設 datetime(&#39;now&#39;)）</td>
+</tr>
+</tbody></table></div>
+<p><strong>user_roles（使用者角色對應）</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>user_id</td>
+<td>TEXT (NOT NULL, FK)</td>
+<td>使用者 ID（CASCADE DELETE）</td>
+</tr>
+<tr>
+<td>role_id</td>
+<td>TEXT (NOT NULL, FK)</td>
+<td>角色 ID（CASCADE DELETE）</td>
+</tr>
+<tr>
+<td>org_unit_id</td>
+<td>TEXT (FK)</td>
+<td>作用範圍的組織單位（NULL = 全域）</td>
+</tr>
+<tr>
+<td>created_at</td>
+<td>TEXT</td>
+<td>建立時間</td>
+</tr>
+</tbody></table></div>
+<div class="note">
+<div class="note-title">說明</div>
+<div>主鍵約束：PRIMARY KEY (user_id, role_id, org_unit_id)</div>
+</div>
+<p><strong>permissions（權限定義）</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>id</td>
+<td>TEXT (PK)</td>
+<td>主鍵</td>
+</tr>
+<tr>
+<td>resource</td>
+<td>TEXT (NOT NULL)</td>
+<td>資源類型（如 employee、role、user）</td>
+</tr>
+<tr>
+<td>action</td>
+<td>TEXT (NOT NULL)</td>
+<td>操作類型（如 read、create、update、delete）</td>
+</tr>
+<tr>
+<td>description</td>
+<td>TEXT</td>
+<td>權限說明</td>
+</tr>
+</tbody></table></div>
+<div class="note">
+<div class="note-title">說明</div>
+<div>唯一約束：UNIQUE(resource, action)</div>
+</div>
+<p><strong>role_permissions（角色權限對應）</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>role_id</td>
+<td>TEXT (NOT NULL, FK)</td>
+<td>角色 ID（CASCADE DELETE）</td>
+</tr>
+<tr>
+<td>permission_id</td>
+<td>TEXT (NOT NULL, FK)</td>
+<td>權限 ID（CASCADE DELETE）</td>
+</tr>
+</tbody></table></div>
+<div class="note">
+<div class="note-title">說明</div>
+<div>主鍵約束：PRIMARY KEY (role_id, permission_id)</div>
+</div>
+<p><strong>features（功能定義）</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>id</td>
+<td>TEXT (PK)</td>
+<td>功能 ID（如 L1.jobs、SYS.user-management）</td>
+</tr>
+<tr>
+<td>module</td>
+<td>TEXT (NOT NULL)</td>
+<td>所屬模組（L1/L2/.../L6/SYS）</td>
+</tr>
+<tr>
+<td>name</td>
+<td>TEXT (NOT NULL)</td>
+<td>功能中文名稱</td>
+</tr>
+<tr>
+<td>sort_order</td>
+<td>INTEGER</td>
+<td>排序權重（預設 0）</td>
+</tr>
+<tr>
+<td>created_at</td>
+<td>TEXT</td>
+<td>建立時間</td>
+</tr>
+</tbody></table></div>
+<p><strong>role_feature_perms（角色功能權限矩陣）</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>role_id</td>
+<td>TEXT (NOT NULL, FK)</td>
+<td>角色 ID（CASCADE DELETE）</td>
+</tr>
+<tr>
+<td>feature_id</td>
+<td>TEXT (NOT NULL, FK)</td>
+<td>功能 ID（CASCADE DELETE）</td>
+</tr>
+<tr>
+<td>action_level</td>
+<td>TEXT (CHECK)</td>
+<td>操作等級：none / view / edit</td>
+</tr>
+<tr>
+<td>edit_scope</td>
+<td>TEXT (CHECK)</td>
+<td>編輯範圍：NULL / self / department / company</td>
+</tr>
+<tr>
+<td>view_scope</td>
+<td>TEXT (CHECK)</td>
+<td>查看範圍：NULL / self / department / company</td>
+</tr>
+</tbody></table></div>
+<div class="note">
+<div class="note-title">說明</div>
+<div>主鍵約束：PRIMARY KEY (role_id, feature_id)</div>
+</div>
+<p><strong>refresh_tokens（登入 Token）</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>id</td>
+<td>TEXT (PK)</td>
+<td>主鍵</td>
+</tr>
+<tr>
+<td>user_id</td>
+<td>TEXT (NOT NULL, FK)</td>
+<td>使用者 ID（CASCADE DELETE）</td>
+</tr>
+<tr>
+<td>token_hash</td>
+<td>TEXT (NOT NULL)</td>
+<td>SHA256 加密的 Refresh Token</td>
+</tr>
+<tr>
+<td>expires_at</td>
+<td>TEXT (NOT NULL)</td>
+<td>過期時間</td>
+</tr>
+<tr>
+<td>created_at</td>
+<td>TEXT</td>
+<td>建立時間</td>
+</tr>
+</tbody></table></div>
+<p><strong>audit_logs（審計日誌，位於平台資料庫）</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>id</td>
+<td>TEXT (PK)</td>
+<td>主鍵</td>
+</tr>
+<tr>
+<td>tenant_id</td>
+<td>TEXT</td>
+<td>租戶 ID</td>
+</tr>
+<tr>
+<td>user_id</td>
+<td>TEXT</td>
+<td>操作使用者 ID</td>
+</tr>
+<tr>
+<td>action</td>
+<td>TEXT (NOT NULL)</td>
+<td>動作類型（login_success、role_create 等）</td>
+</tr>
+<tr>
+<td>resource</td>
+<td>TEXT</td>
+<td>資源類型（auth、user、role 等）</td>
+</tr>
+<tr>
+<td>details</td>
+<td>TEXT</td>
+<td>操作詳情（JSON）</td>
+</tr>
+<tr>
+<td>ip</td>
+<td>TEXT</td>
+<td>來源 IP 位址</td>
+</tr>
+<tr>
+<td>created_at</td>
+<td>TEXT</td>
+<td>記錄時間（預設 datetime(&#39;now&#39;)）</td>
+</tr>
+</tbody></table></div>
+<p><strong>tenants（租戶，位於平台資料庫）</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>id</td>
+<td>TEXT (PK)</td>
+<td>主鍵</td>
+</tr>
+<tr>
+<td>name</td>
+<td>TEXT (NOT NULL)</td>
+<td>租戶名稱</td>
+</tr>
+<tr>
+<td>slug</td>
+<td>TEXT (UNIQUE, NOT NULL)</td>
+<td>URL 識別碼（如 demo、acme-corp）</td>
+</tr>
+<tr>
+<td>status</td>
+<td>TEXT (CHECK)</td>
+<td>狀態：active / suspended / deleted（預設 active）</td>
+</tr>
+<tr>
+<td>plan_id</td>
+<td>TEXT (FK)</td>
+<td>訂閱方案 ID（關聯 subscription_plans）</td>
+</tr>
+<tr>
+<td>db_file</td>
+<td>TEXT (NOT NULL)</td>
+<td>DB 檔案名稱（如 tenant_uuid.db）</td>
+</tr>
+<tr>
+<td>logo_url</td>
+<td>TEXT</td>
+<td>Logo 圖片 URL</td>
+</tr>
+<tr>
+<td>industry</td>
+<td>TEXT</td>
+<td>產業分類</td>
+</tr>
+<tr>
+<td>created_at</td>
+<td>TEXT</td>
+<td>建立時間（預設 datetime(&#39;now&#39;)）</td>
+</tr>
+<tr>
+<td>updated_at</td>
+<td>TEXT</td>
+<td>最後更新時間</td>
+</tr>
+</tbody></table></div>
+<p><strong>subscription_plans（訂閱方案，位於平台資料庫）</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>id</td>
+<td>TEXT (PK)</td>
+<td>主鍵</td>
+</tr>
+<tr>
+<td>name</td>
+<td>TEXT (NOT NULL)</td>
+<td>方案名稱（如 Starter、Pro、Enterprise）</td>
+</tr>
+<tr>
+<td>max_users</td>
+<td>INTEGER</td>
+<td>最大使用者數（預設 50）</td>
+</tr>
+<tr>
+<td>max_subsidiaries</td>
+<td>INTEGER</td>
+<td>最大子公司數（預設 5）</td>
+</tr>
+<tr>
+<td>max_storage_gb</td>
+<td>INTEGER</td>
+<td>儲存空間 GB（預設 5）</td>
+</tr>
+<tr>
+<td>features</td>
+<td>TEXT</td>
+<td>啟用功能（JSON，如 {&quot;modules&quot;:[&quot;L1&quot;,&quot;L2&quot;],&quot;export&quot;:true}）</td>
+</tr>
+<tr>
+<td>price_monthly</td>
+<td>REAL</td>
+<td>月費（預設 0）</td>
+</tr>
+<tr>
+<td>price_yearly</td>
+<td>REAL</td>
+<td>年費（預設 0）</td>
+</tr>
+<tr>
+<td>is_active</td>
+<td>INTEGER</td>
+<td>方案是否啟用（0/1，預設 1）</td>
+</tr>
+<tr>
+<td>created_at</td>
+<td>TEXT</td>
+<td>建立時間</td>
+</tr>
+</tbody></table></div>
+<p><strong>platform_admins（平台管理員，位於平台資料庫）</strong></p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>類型</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>id</td>
+<td>TEXT (PK)</td>
+<td>主鍵</td>
+</tr>
+<tr>
+<td>email</td>
+<td>TEXT (UNIQUE, NOT NULL)</td>
+<td>管理員信箱</td>
+</tr>
+<tr>
+<td>password_hash</td>
+<td>TEXT (NOT NULL)</td>
+<td>bcrypt 加密密碼</td>
+</tr>
+<tr>
+<td>name</td>
+<td>TEXT (NOT NULL)</td>
+<td>管理員名稱</td>
+</tr>
+<tr>
+<td>created_at</td>
+<td>TEXT</td>
+<td>建立時間</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-120">附錄 D：權限需求</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>功能</th>
+<th>所需角色</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>組織架構管理</td>
+<td>super_admin / subsidiary_admin</td>
+<td>管理組織樹結構</td>
+</tr>
+<tr>
+<td>使用者管理</td>
+<td>super_admin / subsidiary_admin</td>
+<td>管理系統帳號</td>
+</tr>
+<tr>
+<td>角色管理</td>
+<td>super_admin / subsidiary_admin</td>
+<td>定義角色與權限</td>
+</tr>
+<tr>
+<td>審計日誌</td>
+<td>super_admin / subsidiary_admin</td>
+<td>查看操作歷史</td>
+</tr>
+<tr>
+<td>變更密碼</td>
+<td>所有已登入使用者</td>
+<td>自行修改密碼</td>
+</tr>
+<tr>
+<td>租戶管理</td>
+<td>平台管理員（Platform Admin）</td>
+<td>建立/暫停/刪除租戶</td>
+</tr>
+<tr>
+<td>方案管理</td>
+<td>平台管理員（Platform Admin）</td>
+<td>建立/編輯訂閱方案</td>
+</tr>
+<tr>
+<td>平台審計日誌</td>
+<td>平台管理員（Platform Admin）</td>
+<td>查看跨租戶操作記錄</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-121">附錄 E：預設角色權限資源矩陣</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>資源</th>
+<th>操作</th>
+<th align="center">super_admin</th>
+<th align="center">subsidiary_admin</th>
+<th align="center">hr_manager</th>
+<th align="center">dept_manager</th>
+<th align="center">employee</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>employee</td>
+<td>CRUD</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="center">R</td>
+</tr>
+<tr>
+<td>recruitment</td>
+<td>CRUD+M</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="center">—</td>
+<td align="center">—</td>
+</tr>
+<tr>
+<td>talent_pool</td>
+<td>CRUD+M</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="center">—</td>
+<td align="center">—</td>
+</tr>
+<tr>
+<td>meeting</td>
+<td>CRUD+M</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="center">R</td>
+</tr>
+<tr>
+<td>competency</td>
+<td>CRUD</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="center">—</td>
+<td align="center">R</td>
+</tr>
+<tr>
+<td>monthly_check</td>
+<td>CRUD</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="center">R</td>
+</tr>
+<tr>
+<td>weekly_report</td>
+<td>CRUD</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="center">R+CU</td>
+</tr>
+<tr>
+<td>quarterly_review</td>
+<td>CRUD</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="center">R</td>
+</tr>
+<tr>
+<td>template</td>
+<td>CRUD+M</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="center">—</td>
+<td align="center">—</td>
+</tr>
+<tr>
+<td>submission</td>
+<td>RCU</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="center">R+CU</td>
+</tr>
+<tr>
+<td>approval</td>
+<td>R+A+J</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="center">—</td>
+</tr>
+<tr>
+<td>organization</td>
+<td>CRUD+M</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="center">—</td>
+<td align="center">R</td>
+</tr>
+<tr>
+<td>user</td>
+<td>CRUD+M</td>
+<td align="center">✅</td>
+<td align="center">R</td>
+<td align="center">—</td>
+<td align="center">—</td>
+<td align="center">—</td>
+</tr>
+<tr>
+<td>role</td>
+<td>CRUD+M</td>
+<td align="center">✅</td>
+<td align="center">R</td>
+<td align="center">—</td>
+<td align="center">—</td>
+<td align="center">—</td>
+</tr>
+<tr>
+<td>audit</td>
+<td>R</td>
+<td align="center">✅</td>
+<td align="center">R</td>
+<td align="center">—</td>
+<td align="center">—</td>
+<td align="center">—</td>
+</tr>
+<tr>
+<td>export</td>
+<td>R</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="center">R</td>
+</tr>
+</tbody></table></div>
+<div class="note">
+<div class="note-title">說明</div>
+<div>R=Read, C=Create, U=Update, D=Delete, M=Manage, A=Approve, J=Reject</div>
+</div>
+
+    </main>
+
+    <footer class="doc-footer">
+      <p>Bombus 人力資源管理系統 — 本文件由系統自動產生</p>
+    </footer>
+  </div>
+</body>
+</html>
