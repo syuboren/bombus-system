@@ -86,12 +86,22 @@ const MODULE_REGISTRY: ModuleGroup[] = [
       { id: 'L6.analysis', label: '智慧文件分析' },
       { id: 'L6.impact', label: '影響力評估' }
     ]
+  },
+  {
+    id: 'SYS', label: '系統管理', icon: 'ri-settings-3-line',
+    children: [
+      { id: 'SYS.org-structure', label: '組織架構管理' },
+      { id: 'SYS.user-management', label: '員工與帳號管理' },
+      { id: 'SYS.role-management', label: '角色權限管理' },
+      { id: 'SYS.audit', label: '審計日誌' }
+    ]
   }
 ];
 
-// 建立 ID → 名稱的快速查找表
+// 建立 ID → 名稱的快速查找表（含模組級別）
 const FEATURE_LABEL_MAP = new Map<string, string>();
 for (const mod of MODULE_REGISTRY) {
+  FEATURE_LABEL_MAP.set(mod.id, mod.label);
   for (const child of mod.children) {
     FEATURE_LABEL_MAP.set(child.id, child.label);
   }
@@ -228,7 +238,18 @@ export class PlanManagementPageComponent implements OnInit {
       price_yearly: plan.price_yearly,
       is_active: plan.is_active
     });
-    this.selectedFeatures.set(new Set(this.parseFeatureIds(plan.features)));
+    // 將模組級別 ID 展開為子功能 ID
+    const rawIds = this.parseFeatureIds(plan.features);
+    const expandedIds = new Set<string>();
+    for (const id of rawIds) {
+      const mod = MODULE_REGISTRY.find(m => m.id === id);
+      if (mod) {
+        for (const child of mod.children) expandedIds.add(child.id);
+      } else {
+        expandedIds.add(id);
+      }
+    }
+    this.selectedFeatures.set(expandedIds);
     this.showForm.set(true);
   }
 
@@ -279,7 +300,24 @@ export class PlanManagementPageComponent implements OnInit {
 
   formatFeatures(features: string): string[] {
     const ids = this.parseFeatureIds(features);
-    return ids.map(id => FEATURE_LABEL_MAP.get(id) || id);
+    const result: string[] = [];
+    const seen = new Set<string>();
+    for (const id of ids) {
+      // 模組級別 ID → 展開為子功能名稱
+      const mod = MODULE_REGISTRY.find(m => m.id === id);
+      if (mod) {
+        for (const child of mod.children) {
+          if (!seen.has(child.id)) {
+            seen.add(child.id);
+            result.push(child.label);
+          }
+        }
+      } else if (!seen.has(id)) {
+        seen.add(id);
+        result.push(FEATURE_LABEL_MAP.get(id) || id);
+      }
+    }
+    return result;
   }
 
   private parseFeatureIds(features: string): string[] {

@@ -163,6 +163,14 @@
           </select>
         </div>
         <div class="edit-field">
+          <label>出生日期</label>
+          <input type="date" [ngModel]="editForm()['birth_date']" (ngModelChange)="updateField('birth_date', $event)">
+        </div>
+        <div class="edit-field">
+          <label>地址</label>
+          <input type="text" [ngModel]="editForm()['address']" (ngModelChange)="updateField('address', $event)">
+        </div>
+        <div class="edit-field">
           <label>狀態</label>
           <select [ngModel]="editForm()['status']" (ngModelChange)="updateField('status', $event)">
             <option value="active">在職</option>
@@ -191,8 +199,9 @@
         </div>
       </div>
       } @else {
-      <!-- 唯讀模式 -->
+      <!-- 唯讀模式（欄位順序與編輯模式一致） -->
       <div class="info-grid">
+        <!-- Row 1: Email / 電話 / 手機 -->
         <div class="info-item">
           <label>Email</label>
           <span>{{ emp.email }}</span>
@@ -201,16 +210,37 @@
           <label>電話</label>
           <span>{{ emp.phone || '-' }}</span>
         </div>
-        @if (emp.mobile) {
         <div class="info-item">
           <label>手機</label>
-          <span>{{ emp.mobile }}</span>
+          <span>{{ emp.mobile || '-' }}</span>
         </div>
-        }
+        <!-- Row 2: 所屬子公司 / 部門 / 直屬主管 -->
         <div class="info-item">
-          <label>到職日</label>
-          <span>{{ formatDate(emp.hireDate) }}</span>
+          <label>所屬子公司</label>
+          <span>{{ (emp.positions && emp.positions.length > 0 && emp.positions[0].companyName) ? emp.positions[0].companyName : '-' }}</span>
         </div>
+        <div class="info-item">
+          <label>部門</label>
+          <span>{{ emp.department || '-' }}</span>
+        </div>
+        <div class="info-item">
+          <label>直屬主管</label>
+          <span>{{ emp.manager || '-' }}</span>
+        </div>
+        <!-- Row 3: 職等 / 職級 / 職位 -->
+        <div class="info-item">
+          <label>職等</label>
+          <span>{{ getGradeDisplay(emp.grade) }}</span>
+        </div>
+        <div class="info-item">
+          <label>職級</label>
+          <span>{{ emp.level || '-' }}</span>
+        </div>
+        <div class="info-item">
+          <label>職位</label>
+          <span>{{ emp.position || '-' }}</span>
+        </div>
+        <!-- Row 4: 合約類型 / 工作地點 / 到職日 -->
         <div class="info-item">
           <label>合約類型</label>
           <span>{{ getContractTypeLabel(emp.contractType) }}</span>
@@ -219,23 +249,22 @@
           <label>工作地點</label>
           <span>{{ emp.workLocation || '-' }}</span>
         </div>
-        @if (emp.positions && emp.positions.length > 0 && emp.positions[0].companyName) {
         <div class="info-item">
-          <label>所屬子公司</label>
-          <span>{{ emp.positions[0].companyName }}</span>
+          <label>到職日</label>
+          <span>{{ formatDate(emp.hireDate) }}</span>
         </div>
-        }
+        <!-- Row 5: 性別 / 出生日期 / 地址 -->
         <div class="info-item">
-          <label>直屬主管</label>
-          <span>{{ emp.manager || '-' }}</span>
-        </div>
-        <div class="info-item">
-          <label>職等</label>
-          <span>{{ getGradeDisplay(emp.grade) }}</span>
+          <label>性別</label>
+          <span>{{ getGenderLabel(emp.gender) }}</span>
         </div>
         <div class="info-item">
-          <label>職級</label>
-          <span>{{ emp.level || '-' }}</span>
+          <label>出生日期</label>
+          <span>{{ emp.birthDate ? formatDate(emp.birthDate) : '-' }}</span>
+        </div>
+        <div class="info-item">
+          <label>地址</label>
+          <span>{{ emp.address || '-' }}</span>
         </div>
       </div>
       }
@@ -340,25 +369,23 @@
     }
 
     <!-- 緊急聯絡人 -->
-    @if (emp.emergencyContact) {
     <div class="info-section">
       <h4>緊急聯絡人</h4>
       <div class="info-grid">
         <div class="info-item">
           <label>姓名</label>
-          <span>{{ emp.emergencyContact.name || '-' }}</span>
+          <span>{{ emp.emergencyContact?.name || '-' }}</span>
         </div>
         <div class="info-item">
           <label>關係</label>
-          <span>{{ emp.emergencyContact.relation || '-' }}</span>
+          <span>{{ emp.emergencyContact?.relation || '-' }}</span>
         </div>
         <div class="info-item">
           <label>電話</label>
-          <span>{{ emp.emergencyContact.phone || '-' }}</span>
+          <span>{{ emp.emergencyContact?.phone || '-' }}</span>
         </div>
       </div>
     </div>
-    }
 
     <!-- 學歷 -->
     <div class="info-section">

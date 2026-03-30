@@ -189,25 +189,9 @@ router.post('/login', async (req, res) => {
       ip
     });
 
-    // 查詢租戶訂閱方案的啟用功能
-    let enabledFeatures = [];
-    if (tenant.plan_id) {
-      const plan = platformDB.queryOne(
-        'SELECT features FROM subscription_plans WHERE id = ? AND is_active = 1',
-        [tenant.plan_id]
-      );
-      if (plan && plan.features) {
-        try {
-          const parsed = JSON.parse(plan.features);
-          if (Array.isArray(parsed)) {
-            enabledFeatures = parsed;
-          } else if (parsed && typeof parsed === 'object' && Array.isArray(parsed.modules)) {
-            // 支援物件格式 { modules: ['L1', 'L2', ...] }
-            enabledFeatures = parsed.modules;
-          }
-        } catch (e) { /* ignore invalid JSON */ }
-      }
-    }
+    // 查詢租戶啟用功能（租戶覆寫優先，否則走方案）
+    const { getTenantEnabledFeatures } = require('../middleware/permission');
+    const enabledFeatures = getTenantEnabledFeatures(tenant.id);
 
     // 查詢使用者所屬子公司
     let subsidiaryId = null;
@@ -409,24 +393,8 @@ router.post('/refresh', (req, res) => {
         { expiresIn: JWT_ACCESS_EXPIRES }
       );
 
-      // 查詢租戶訂閱方案的啟用功能
-      let enabledFeatures = [];
-      if (tenant.plan_id) {
-        const plan = platformDB.queryOne(
-          'SELECT features FROM subscription_plans WHERE id = ? AND is_active = 1',
-          [tenant.plan_id]
-        );
-        if (plan && plan.features) {
-          try {
-            const parsed = JSON.parse(plan.features);
-            if (Array.isArray(parsed)) {
-              enabledFeatures = parsed;
-            } else if (parsed && typeof parsed === 'object' && Array.isArray(parsed.modules)) {
-              enabledFeatures = parsed.modules;
-            }
-          } catch (e) { /* ignore */ }
-        }
-      }
+      // 查詢租戶啟用功能（租戶覆寫優先，否則走方案）
+      const enabledFeatures = getTenantEnabledFeatures(tenant.id);
 
       // 查詢使用者所屬子公司
       let subsidiaryId = null;

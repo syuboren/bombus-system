@@ -1727,6 +1727,32 @@ $module-color-dark: $color-l2-terracotta-dark;
   @include custom-scrollbar;
 }
 
+.subtab-group {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.subtab-action {
+  @include button-icon;
+  width: 24px;
+  height: 24px;
+  font-size: 12px;
+  color: $color-text-secondary;
+  margin-left: -4px;
+  opacity: 0;
+  transition: opacity 150ms ease;
+
+  &:hover {
+    color: $module-color;
+    background: rgba($module-color, 0.1);
+  }
+
+  .subtab-group:hover & {
+    opacity: 1;
+  }
+}
+
 .subtab-btn {
   @include button-base;
   padding: $spacing-sm $spacing-lg;
@@ -1802,6 +1828,63 @@ $module-color-dark: $color-l2-terracotta-dark;
 }
 
 // Tab A: 整體對照表
+.grade-empty-state {
+  @include card;
+  @include flex-center;
+  flex-direction: column;
+  gap: $spacing-md;
+  padding: 48px $spacing-xl;
+  text-align: center;
+
+  > i {
+    font-size: 48px;
+    color: $color-muted-gray;
+  }
+
+  .empty-title {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+    color: $color-text-dark;
+    margin: 0;
+  }
+
+  .empty-hint {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    margin: 0;
+  }
+}
+
+.btn-import-template {
+  @include button-base;
+  @include button-module($module-color);
+  gap: $spacing-xs;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.btn-import-template-sm {
+  @include button-base;
+  background: transparent;
+  color: $module-color;
+  border: 1px solid $module-color;
+  font-size: $font-size-xs;
+  padding: 4px $spacing-sm;
+  gap: 4px;
+
+  &:hover:not(:disabled) {
+    background: rgba($module-color, 0.08);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
 .overview-table-wrapper {
   overflow-x: auto;
   @include custom-scrollbar;

@@ -39,7 +39,7 @@
                     <div class="form-group">
                         <label class="form-label required">最高職等</label>
                         <input type="number" class="form-input" [value]="formData().maxGrade"
-                            (input)="updateField('maxGrade', +$any($event.target).value)" min="1" max="20"
+                            (input)="updateField('maxGrade', +$any($event.target).value)" min="1" [max]="maxGradeLimit()"
                             [disabled]="saving()" />
                     </div>
                     <div class="form-group">

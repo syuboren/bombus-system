@@ -205,11 +205,170 @@ class TenantDBManager {
       'ALTER TABLE departments ADD COLUMN head_count INTEGER DEFAULT 0',
       "ALTER TABLE departments ADD COLUMN responsibilities TEXT DEFAULT '[]'",
       "ALTER TABLE departments ADD COLUMN kpi_items TEXT DEFAULT '[]'",
-      "ALTER TABLE departments ADD COLUMN competency_focus TEXT DEFAULT '[]'"
+      "ALTER TABLE departments ADD COLUMN competency_focus TEXT DEFAULT '[]'",
+      'ALTER TABLE departments ADD COLUMN org_unit_id TEXT REFERENCES org_units(id)'
     ];
     for (const sql of deptMigrations) {
       try { db.run(sql); changed = true; } catch (e) { /* 欄位已存在則忽略 */ }
     }
+
+    // departments.org_unit_id 回填：遞迴向上找到 subsidiary/group 祖先
+    try {
+      const nullDepts = db.exec("SELECT ROWID, name FROM departments WHERE org_unit_id IS NULL");
+      if (nullDepts.length && nullDepts[0].values.length) {
+        for (const [rowid, deptName] of nullDepts[0].values) {
+          // 找到同名 org_unit (type=department)
+          const ouResult = db.exec(
+            "SELECT parent_id FROM org_units WHERE name = ? AND type = 'department' LIMIT 1",
+            [deptName]
+          );
+          let companyId = null;
+          if (ouResult.length && ouResult[0].values.length) {
+            // 遞迴向上找 subsidiary/group
+            let currentId = ouResult[0].values[0][0];
+            for (let i = 0; i < 10; i++) {
+              if (!currentId) break;
+              const unit = db.exec("SELECT id, type, parent_id FROM org_units WHERE id = ?", [currentId]);
+              if (!unit.length || !unit[0].values.length) break;
+              const [uid, utype, parentId] = unit[0].values[0];
+              if (utype === 'subsidiary' || utype === 'group') { companyId = uid; break; }
+              currentId = parentId;
+            }
+          }
+          if (!companyId) {
+            // 孤兒部門：歸入集團
+            const groupResult = db.exec("SELECT id FROM org_units WHERE type = 'group' LIMIT 1");
+            companyId = groupResult.length && groupResult[0].values.length ? groupResult[0].values[0][0] : null;
+            if (companyId) console.warn(`  ⚠️ departments「${deptName}」無對應 org_unit，歸入集團`);
+          }
+          if (companyId) {
+            db.run("UPDATE departments SET org_unit_id = ? WHERE ROWID = ?", [companyId, rowid]);
+          }
+        }
+        changed = true;
+      }
+    } catch (e) { /* departments 表可能尚未建立 */ }
+
+    // 暫時關閉 FK 以允許表重建
+    try { db.run('PRAGMA foreign_keys = OFF'); } catch (e) { /* ignore */ }
+
+    // departments 表重建：移除 name UNIQUE，改為 UNIQUE(name, org_unit_id)
+    try {
+      const deptTableInfo = db.exec("SELECT sql FROM sqlite_master WHERE type='table' AND name='departments'");
+      if (deptTableInfo.length && deptTableInfo[0].values.length) {
+        const createSql = deptTableInfo[0].values[0][0];
+        if (createSql && /name\s+TEXT\s+UNIQUE/i.test(createSql)) {
+          console.log('🔄 Rebuilding departments: removing name UNIQUE, adding UNIQUE(name, org_unit_id)...');
+          const oldCount = db.exec('SELECT COUNT(*) FROM departments')[0].values[0][0];
+          try { db.run('DROP TABLE IF EXISTS departments_new'); } catch (e) { /* ignore */ }
+          db.run(`CREATE TABLE departments_new (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            code TEXT,
+            sort_order INTEGER DEFAULT 0,
+            manager_id TEXT REFERENCES employees(id),
+            head_count INTEGER DEFAULT 0,
+            responsibilities TEXT DEFAULT '[]',
+            kpi_items TEXT DEFAULT '[]',
+            competency_focus TEXT DEFAULT '[]',
+            org_unit_id TEXT REFERENCES org_units(id),
+            created_at TEXT DEFAULT (datetime('now')),
+            UNIQUE(name, org_unit_id)
+          )`);
+          db.run('INSERT INTO departments_new SELECT id, name, code, sort_order, manager_id, head_count, responsibilities, kpi_items, competency_focus, org_unit_id, created_at FROM departments');
+          const newCount = db.exec('SELECT COUNT(*) FROM departments_new')[0].values[0][0];
+          if (newCount !== oldCount) {
+            db.run('DROP TABLE departments_new');
+            throw new Error(`Row count mismatch: old=${oldCount}, new=${newCount}`);
+          }
+          db.run('DROP TABLE departments');
+          db.run('ALTER TABLE departments_new RENAME TO departments');
+          console.log(`✅ departments rebuilt: ${newCount} rows, UNIQUE(name, org_unit_id)`);
+          changed = true;
+        }
+      }
+    } catch (e) {
+      console.error('⚠️ departments rebuild failed:', e.message);
+    }
+
+    // department_positions 表重建：移除 FOREIGN KEY (department) REFERENCES departments(name)
+    try {
+      const dpTableInfo = db.exec("SELECT sql FROM sqlite_master WHERE type='table' AND name='department_positions'");
+      if (dpTableInfo.length && dpTableInfo[0].values.length) {
+        const dpSql = dpTableInfo[0].values[0][0];
+        if (dpSql && /REFERENCES departments\(name\)/i.test(dpSql)) {
+          console.log('🔄 Rebuilding department_positions: removing departments(name) FK...');
+          const oldCount = db.exec('SELECT COUNT(*) FROM department_positions')[0].values[0][0];
+          try { db.run('DROP TABLE IF EXISTS department_positions_new'); } catch (e) { /* ignore */ }
+          db.run(`CREATE TABLE department_positions_new (
+            id TEXT PRIMARY KEY,
+            department TEXT NOT NULL,
+            grade INTEGER NOT NULL,
+            title TEXT NOT NULL,
+            track TEXT NOT NULL,
+            supervised_departments TEXT DEFAULT NULL,
+            org_unit_id TEXT REFERENCES org_units(id),
+            created_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (grade) REFERENCES grade_levels(grade)
+          )`);
+          db.run('INSERT INTO department_positions_new SELECT id, department, grade, title, track, supervised_departments, org_unit_id, created_at FROM department_positions');
+          const newCount = db.exec('SELECT COUNT(*) FROM department_positions_new')[0].values[0][0];
+          if (newCount !== oldCount) {
+            db.run('DROP TABLE department_positions_new');
+            throw new Error(`Row count mismatch: old=${oldCount}, new=${newCount}`);
+          }
+          db.run('DROP TABLE department_positions');
+          db.run('ALTER TABLE department_positions_new RENAME TO department_positions');
+          db.run('CREATE INDEX IF NOT EXISTS idx_dp_org_unit ON department_positions(org_unit_id)');
+          console.log(`✅ department_positions rebuilt: ${newCount} rows`);
+          changed = true;
+        }
+      }
+    } catch (e) {
+      console.error('⚠️ department_positions rebuild failed:', e.message);
+    }
+
+    // job_descriptions 表：移除 FOREIGN KEY (department) REFERENCES departments(name)
+    try {
+      const jdTableInfo = db.exec("SELECT sql FROM sqlite_master WHERE type='table' AND name='job_descriptions'");
+      if (jdTableInfo.length && jdTableInfo[0].values.length) {
+        const jdSql = jdTableInfo[0].values[0][0];
+        if (jdSql && /REFERENCES departments\(name\)/i.test(jdSql)) {
+          console.log('🔄 Rebuilding job_descriptions: removing departments(name) FK...');
+          const colInfo = db.exec("PRAGMA table_info(job_descriptions)")[0].values;
+          const cols = colInfo.map(r => r[1]).join(', ');
+          const oldCount = db.exec('SELECT COUNT(*) FROM job_descriptions')[0].values[0][0];
+          try { db.run('DROP TABLE IF EXISTS job_descriptions_new'); } catch (e) { /* ignore */ }
+          // 從原始 SQL 逐行過濾掉包含 departments(name) FK 的行
+          const lines = jdSql.split('\n');
+          const filtered = [];
+          for (const line of lines) {
+            if (/FOREIGN\s+KEY\s*\(department\)/i.test(line) && /departments\s*\(name\)/i.test(line)) continue;
+            filtered.push(line);
+          }
+          // 修正尾隨逗號：找到最後一個 ) 前的逗號
+          let joined = filtered.join('\n');
+          joined = joined.replace(/,\s*(\n\s*\))/g, '$1');
+          const newCreateSql = joined.replace(/CREATE TABLE[^(]*job_descriptions/i, 'CREATE TABLE job_descriptions_new');
+          db.run(newCreateSql);
+          db.run(`INSERT INTO job_descriptions_new SELECT ${cols} FROM job_descriptions`);
+          const newCount = db.exec('SELECT COUNT(*) FROM job_descriptions_new')[0].values[0][0];
+          if (newCount !== oldCount) {
+            db.run('DROP TABLE job_descriptions_new');
+            throw new Error(`Row count mismatch: old=${oldCount}, new=${newCount}`);
+          }
+          db.run('DROP TABLE job_descriptions');
+          db.run('ALTER TABLE job_descriptions_new RENAME TO job_descriptions');
+          console.log(`✅ job_descriptions rebuilt: ${newCount} rows`);
+          changed = true;
+        }
+      }
+    } catch (e) {
+      console.error('⚠️ job_descriptions rebuild failed:', e.message);
+    }
+
+    // 重新啟用 FK
+    try { db.run('PRAGMA foreign_keys = ON'); } catch (e) { /* ignore */ }
 
     // department_collaborations 新表
     try {
@@ -327,7 +486,64 @@ class TenantDBManager {
 
     // 建立複合唯一索引（冪等）
     try {
-      db.run("CREATE UNIQUE INDEX IF NOT EXISTS idx_gsl_code_org ON grade_salary_levels(code, COALESCE(org_unit_id, '__NULL__'))");
+      // 移除舊索引，修復重複代碼後建立 UNIQUE(code, org_unit_id)
+      try { db.run('DROP INDEX IF EXISTS idx_gsl_code_org'); } catch (e) { /* 不存在 */ }
+
+      // 修復同一 org 內跨職等重複代碼（遞延較高職等代碼）
+      try {
+        const dupeResult = db.exec("SELECT code, org_unit_id FROM grade_salary_levels WHERE org_unit_id IS NOT NULL GROUP BY code, org_unit_id HAVING COUNT(*) > 1");
+        if (dupeResult.length > 0 && dupeResult[0].values.length > 0) {
+          const orgIds = [...new Set(dupeResult[0].values.map(r => r[1]))];
+          for (const orgId of orgIds) {
+            const gradesResult = db.exec(`SELECT DISTINCT grade FROM grade_salary_levels WHERE org_unit_id = ? ORDER BY grade`, [orgId]);
+            if (gradesResult.length === 0) continue;
+            const grades = gradesResult[0].values.map(r => r[0]);
+            let prevMaxNum = 0;
+            for (const grade of grades) {
+              const stmt = db.prepare('SELECT id, code, salary, sort_order FROM grade_salary_levels WHERE grade = ? AND org_unit_id = ? ORDER BY sort_order');
+              stmt.bind([grade, orgId]);
+              const salaries = [];
+              while (stmt.step()) salaries.push(stmt.getAsObject());
+              stmt.free();
+              let minNum = Infinity, maxNum = 0;
+              for (const s of salaries) {
+                const match = s.code.match(/^([A-Za-z]+)(\d+)$/);
+                if (match) { const n = parseInt(match[2]); minNum = Math.min(minNum, n); maxNum = Math.max(maxNum, n); }
+              }
+              if (prevMaxNum > 0 && minNum <= prevMaxNum) {
+                const shift = prevMaxNum - minNum + 1;
+                db.run('DELETE FROM grade_salary_levels WHERE grade = ? AND org_unit_id = ?', [grade, orgId]);
+                let newMax = 0;
+                for (const s of salaries) {
+                  const match = s.code.match(/^([A-Za-z]+)(\d+)$/);
+                  if (match) {
+                    const newNum = parseInt(match[2]) + shift;
+                    const newCode = match[1] + String(newNum).padStart(match[2].length, '0');
+                    const newId = `sal-${grade}-${s.sort_order}-${Date.now().toString(36)}${Math.random().toString(36).substring(2, 6)}`;
+                    db.run('INSERT INTO grade_salary_levels (id, grade, code, salary, sort_order, org_unit_id) VALUES (?, ?, ?, ?, ?, ?)', [newId, grade, newCode, s.salary, s.sort_order, orgId]);
+                    newMax = Math.max(newMax, newNum);
+                  }
+                }
+                prevMaxNum = newMax;
+              } else {
+                prevMaxNum = maxNum;
+              }
+            }
+          }
+          console.log('🔄 Fixed duplicate salary codes across grades');
+        }
+      } catch (e) { console.warn('⚠️ Salary code dedup:', e.message); }
+
+      db.run('CREATE UNIQUE INDEX IF NOT EXISTS idx_gsl_code_org ON grade_salary_levels(code, org_unit_id)');
+
+      // 禁止 org_unit_id = NULL（SQLite UNIQUE 不擋 NULL，用 trigger 強制）
+      const nullGuardTables = ['grade_salary_levels', 'grade_track_entries', 'promotion_criteria', 'department_positions'];
+      for (const tbl of nullGuardTables) {
+        try {
+          db.run(`CREATE TRIGGER IF NOT EXISTS trg_${tbl}_no_null_org BEFORE INSERT ON ${tbl} WHEN NEW.org_unit_id IS NULL BEGIN SELECT RAISE(ABORT, '${tbl}: org_unit_id cannot be NULL'); END`);
+          db.run(`CREATE TRIGGER IF NOT EXISTS trg_${tbl}_no_null_org_upd BEFORE UPDATE ON ${tbl} WHEN NEW.org_unit_id IS NULL BEGIN SELECT RAISE(ABORT, '${tbl}: org_unit_id cannot be NULL'); END`);
+        } catch (e) { /* trigger 已存在 */ }
+      }
     } catch (e) { /* 索引已存在或 org_unit_id 尚未加入 */ }
 
     // 將 org_unit_id 為 NULL 的既有資料歸屬到根組織（type=group 的頂層節點）
@@ -446,6 +662,33 @@ class TenantDBManager {
     } catch (e) {
       console.error('⚠️ Custom role feature perm migration failed:', e.message);
     }
+
+    // ── 職等薪資資料歸屬遷移：消滅所有 org_unit_id = NULL ──
+    // 每個組織單位（集團/子公司）各自擁有獨立的職等薪資資料
+    try {
+      const rootOrg2 = db.exec("SELECT id FROM org_units WHERE type = 'group' AND (parent_id IS NULL OR parent_id = '') LIMIT 1");
+      if (rootOrg2.length && rootOrg2[0].values.length) {
+        const groupId = rootOrg2[0].values[0][0];
+        const gradeTables = ['grade_salary_levels', 'grade_track_entries', 'promotion_criteria', 'department_positions'];
+        for (const table of gradeTables) {
+          try {
+            const countResult = db.exec(`SELECT COUNT(*) FROM ${table} WHERE org_unit_id IS NULL`);
+            const nullCount = countResult.length ? countResult[0].values[0][0] : 0;
+            if (nullCount > 0) {
+              // 先嘗試 UPDATE；如因 UNIQUE constraint 失敗（目標已有同 key 資料），改為 DELETE 重複的 NULL 記錄
+              try {
+                db.run(`UPDATE ${table} SET org_unit_id = ? WHERE org_unit_id IS NULL`, [groupId]);
+                console.log(`  ✅ ${table}: ${nullCount} 筆 NULL → ${groupId}`);
+              } catch (updateErr) {
+                db.run(`DELETE FROM ${table} WHERE org_unit_id IS NULL`);
+                console.log(`  ✅ ${table}: ${nullCount} 筆 NULL 記錄已刪除（集團已有覆寫資料）`);
+              }
+              changed = true;
+            }
+          } catch (e) { /* 表可能不存在 */ }
+        }
+      }
+    } catch (e) { /* org_units 表可能不存在 */ }
 
     if (changed) {
       adapter.save();

@@ -13,7 +13,7 @@ tdd: true
 audit: true
 parallel_tasks: true
 
-# Claude slash commands (set false to use skills only)
+# Claude slash commands (set true to also generate /spectra:X commands)
 claude_slash_commands: true
 
 # Enable git worktree support for isolated change branches
@@ -23,8 +23,15 @@ claude_slash_commands: true
 # worktrees_dir: .spectra/worktrees
 
 # Claude Code skill effort levels (low/medium/high/max)
-# claude_effort:
-#   apply: high
+claude_effort:
+  apply: high
+  archive: low
+  ask: low
+  audit: high
+  debug: high
+  discuss: medium
+  ingest: high
+  propose: high
 
 # AI tools to generate instruction files for
 # tools:

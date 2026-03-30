@@ -259,6 +259,10 @@ export interface BatchImportRow {
   birth_date?: string;
   contract_type?: string;
   work_location?: string;
+  address?: string;
+  emergency_contact_name?: string;
+  emergency_contact_relation?: string;
+  emergency_contact_phone?: string;
   manager_no?: string;
 }
 

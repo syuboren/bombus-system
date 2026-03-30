@@ -12,6 +12,8 @@ export interface Tenant {
   plan_name?: string;
   logo_url?: string;
   industry?: string;
+  feature_overrides?: string;
+  feature_overrides_note?: string;
   status: TenantStatus;
   created_at: string;
   updated_at: string;

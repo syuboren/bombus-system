@@ -645,7 +645,7 @@ router.get('/departments', requireFeaturePerm('L1.onboarding', 'view'), (req, re
     let sql = `
       SELECT ou.id, ou.name, d.code, d.sort_order
       FROM org_units ou
-      LEFT JOIN departments d ON TRIM(d.name) = TRIM(ou.name) COLLATE NOCASE
+      LEFT JOIN departments d ON TRIM(d.name) = TRIM(ou.name) COLLATE NOCASE AND d.org_unit_id = ou.parent_id
       WHERE ou.type = 'department'
     `;
     const params = [];
@@ -735,17 +735,7 @@ router.get('/salary-levels', requireFeaturePerm('L1.onboarding', 'view'), (req, 
           ORDER BY gsl.sort_order
         `).all(g, org_unit_id);
 
-        // 若該組織無資料，退回集團預設 (org_unit_id IS NULL)
-        if (levels.length === 0) {
-          levels = req.tenantDB.prepare(`
-            SELECT gsl.id, gsl.grade, gsl.code, gsl.salary, gsl.sort_order,
-                   gl.title_management, gl.title_professional, gsl.org_unit_id
-            FROM grade_salary_levels gsl
-            JOIN grade_levels gl ON gsl.grade = gl.grade
-            WHERE gsl.grade = ? AND gsl.org_unit_id IS NULL
-            ORDER BY gsl.sort_order
-          `).all(g);
-        }
+        // 每個組織獨立維護薪資資料，不 fallback
         results.push(...levels);
       }
       return res.json(results);
@@ -814,7 +804,7 @@ router.get('/positions', requireFeaturePerm('L1.onboarding', 'view'), (req, res)
     }
 
     if (org_unit_id) {
-      query += ` AND (dp.org_unit_id = ? OR dp.org_unit_id IS NULL)`;
+      query += ` AND dp.org_unit_id = ?`;
       params.push(org_unit_id);
     }
 

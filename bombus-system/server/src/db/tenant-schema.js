@@ -1514,10 +1514,12 @@ const BUSINESS_TABLES_SQL = `
   -- =====================================================
   CREATE TABLE IF NOT EXISTS departments (
     id TEXT PRIMARY KEY,
-    name TEXT UNIQUE NOT NULL,
+    name TEXT NOT NULL,
     code TEXT,
     sort_order INTEGER DEFAULT 0,
-    created_at TEXT DEFAULT (datetime('now'))
+    org_unit_id TEXT REFERENCES org_units(id),
+    created_at TEXT DEFAULT (datetime('now')),
+    UNIQUE(name, org_unit_id)
   );
 
   CREATE TABLE IF NOT EXISTS grade_levels (
@@ -1564,7 +1566,6 @@ const BUSINESS_TABLES_SQL = `
     track TEXT NOT NULL,
     supervised_departments TEXT DEFAULT NULL,
     created_at TEXT DEFAULT (datetime('now')),
-    FOREIGN KEY (department) REFERENCES departments(name),
     FOREIGN KEY (grade) REFERENCES grade_levels(grade)
   );
 
@@ -1657,7 +1658,6 @@ const BUSINESS_TABLES_SQL = `
     created_by TEXT DEFAULT 'system',
     created_at TEXT DEFAULT (datetime('now')),
     updated_at TEXT DEFAULT (datetime('now')),
-    FOREIGN KEY (department) REFERENCES departments(name),
     FOREIGN KEY (grade) REFERENCES grade_levels(grade)
   );
 
@@ -1793,10 +1793,9 @@ function initTenantSchema(adapter) {
   // meetings 表加 department 欄位
   try { db.run('ALTER TABLE meetings ADD COLUMN department TEXT'); } catch (e) { /* 欄位已存在 */ }
 
-  // grade_salary_levels 複合唯一索引：同一 (code, org_unit_id) 組合不可重複
-  // COALESCE 處理 NULL（SQLite 中每個 NULL 在 UNIQUE 中被視為不同值）
+  // grade_salary_levels 複合唯一索引：同一 (code, org_unit_id) 組合不可重複（代碼跨職等自動遞延）
   try {
-    db.run("CREATE UNIQUE INDEX IF NOT EXISTS idx_gsl_code_org ON grade_salary_levels(code, COALESCE(org_unit_id, '__NULL__'))");
+    db.run("CREATE UNIQUE INDEX IF NOT EXISTS idx_gsl_code_org ON grade_salary_levels(code, org_unit_id)");
   } catch (e) { /* 索引已存在 */ }
 
   // 批次匯入表（import_jobs + import_results）

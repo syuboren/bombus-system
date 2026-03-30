@@ -850,29 +850,14 @@ router.delete('/user-roles', (req, res) => {
  * @returns {Set<string>|null} - 已開通模組的 Set，null 表示不過濾（優雅降級）
  */
 function getEnabledModules(req) {
-  const platformDB = getPlatformDB();
-  const tenant = platformDB.queryOne(
-    'SELECT plan_id FROM tenants WHERE id = ?', [req.tenantId]
-  );
-  if (!tenant?.plan_id) return null;
-  const plan = platformDB.queryOne(
-    'SELECT features FROM subscription_plans WHERE id = ? AND is_active = 1',
-    [tenant.plan_id]
-  );
-  if (!plan?.features) return null;
-  try {
-    const parsed = JSON.parse(plan.features);
-    // 支援兩種格式：
-    // 1. { modules: ['L1', 'L2'] } — 模組名陣列
-    // 2. ['L1.jobs', 'L1.recruitment', ...] — 功能 ID 陣列（從 ID 提取模組前綴）
-    let items = Array.isArray(parsed) ? parsed : parsed?.modules;
-    if (!Array.isArray(items) || items.length === 0) return null;
-    const modules = new Set(items.map(id => {
-      const dotIdx = id.indexOf('.');
-      return dotIdx > 0 ? id.substring(0, dotIdx) : id;
-    }));
-    return modules.size > 0 ? modules : null;
-  } catch (e) { return null; }
+  const { getTenantEnabledFeatures } = require('../middleware/permission');
+  const features = getTenantEnabledFeatures(req.tenantId);
+  if (features.length === 0) return null;
+  const modules = new Set(features.map(id => {
+    const dotIdx = id.indexOf('.');
+    return dotIdx > 0 ? id.substring(0, dotIdx) : id;
+  }));
+  return modules.size > 0 ? modules : null;
 }
 
 // ══════════════════════════════════════════════════════════

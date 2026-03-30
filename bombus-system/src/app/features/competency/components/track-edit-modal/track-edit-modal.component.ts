@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, input, output, signal, inject, effect } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, signal, inject, effect, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { GradeTrackEntity } from '../../models/competency.model';
@@ -22,6 +22,7 @@ export class TrackEditModalComponent {
     // --- Input / Output ---
     visible = input<boolean>(false);
     trackData = input<GradeTrackEntity | null>(null);
+    maxGradeLimit = input<number>(7);
     closed = output<void>();
     saved = output<void>();
 
@@ -79,11 +80,11 @@ export class TrackEditModalComponent {
                     maxGrade: data.maxGrade || 7,
                     sortOrder: data.sortOrder || 0
                 });
-                this._initialSnapshot = this._captureSnapshot();
+                untracked(() => { this._initialSnapshot = this._captureSnapshot(); });
             } else if (isVisible && !data) {
                 this.isEditMode.set(false);
                 this.resetForm();
-                this._initialSnapshot = this._captureSnapshot();
+                untracked(() => { this._initialSnapshot = this._captureSnapshot(); });
             }
             this.error.set(null);
         }, { allowSignalWrites: true });
@@ -144,8 +145,9 @@ export class TrackEditModalComponent {
             this.error.set('軌道名稱為必填');
             return false;
         }
-        if (!data.maxGrade || data.maxGrade < 1 || data.maxGrade > 20) {
-            this.error.set('最高職等必須在 1-20 之間');
+        const limit = this.maxGradeLimit();
+        if (!data.maxGrade || data.maxGrade < 1 || data.maxGrade > limit) {
+            this.error.set(`最高職等必須在 1-${limit} 之間`);
             return false;
         }
         return true;
@@ -167,6 +169,7 @@ export class TrackEditModalComponent {
         observable.subscribe({
             next: () => {
                 this.saving.set(false);
+                this._initialSnapshot = '';
                 this.saved.emit();
                 this.onClose();
             },

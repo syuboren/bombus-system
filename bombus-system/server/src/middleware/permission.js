@@ -6,6 +6,66 @@
  * 多角色時取聯集（union）判定
  */
 
+const { getPlatformDB } = require('../db/platform-db');
+
+/**
+ * 解析 features JSON 字串為陣列
+ * @param {string} featuresStr - JSON 字串
+ * @returns {string[]} feature ID 陣列
+ */
+function parseFeaturesJson(featuresStr) {
+  if (!featuresStr) return [];
+  try {
+    const parsed = JSON.parse(featuresStr);
+    if (Array.isArray(parsed)) return parsed;
+    if (parsed && typeof parsed === 'object' && Array.isArray(parsed.modules)) return parsed.modules;
+  } catch (e) { /* ignore */ }
+  return [];
+}
+
+/**
+ * 取得租戶的有效啟用功能（租戶覆寫優先，否則走方案）
+ * @param {string} tenantId - 租戶 ID
+ * @returns {string[]} 啟用的 feature ID 陣列（空陣列 = 全部開放）
+ */
+function getTenantEnabledFeatures(tenantId) {
+  const platformDB = getPlatformDB();
+  const tenant = platformDB.queryOne(
+    'SELECT plan_id, feature_overrides FROM tenants WHERE id = ?',
+    [tenantId]
+  );
+  if (!tenant) return [];
+
+  // 租戶覆寫優先
+  if (tenant.feature_overrides) {
+    const overrides = parseFeaturesJson(tenant.feature_overrides);
+    if (overrides.length > 0) return overrides;
+  }
+
+  // 否則走方案
+  if (!tenant.plan_id) return [];
+  const plan = platformDB.queryOne(
+    'SELECT features FROM subscription_plans WHERE id = ? AND is_active = 1',
+    [tenant.plan_id]
+  );
+  return parseFeaturesJson(plan?.features);
+}
+
+/**
+ * 檢查租戶是否啟用指定模組（Layer 1）
+ * 優先檢查租戶級覆寫，再檢查方案級功能
+ * @param {string} tenantId - 租戶 ID
+ * @param {string} featureId - feature ID（例如 'L1.jobs'）
+ * @returns {boolean} 是否啟用
+ */
+function isModuleEnabledByPlan(tenantId, featureId) {
+  const enabledFeatures = getTenantEnabledFeatures(tenantId);
+  if (enabledFeatures.length === 0) return true; // 無設定 → 優雅降級
+
+  const modulePrefix = featureId.split('.')[0];
+  return enabledFeatures.includes(featureId) || enabledFeatures.includes(modulePrefix);
+}
+
 /**
  * 權限檢查中介層工廠函數
  * @param {string} requiredPermission - 格式 'resource:action'，例如 'employee:read'
@@ -147,7 +207,8 @@ function mergeFeaturePerms(rows) {
 
 /**
  * Feature 權限檢查中介層（新模型）
- * 查詢使用者所有角色的 feature perms，合併取最高權限，注入 req.featurePerm
+ * Layer 1：檢查租戶訂閱方案是否啟用該模組
+ * Layer 2：查詢使用者所有角色的 feature perms，合併取最高權限，注入 req.featurePerm
  * @param {string} featureId - feature ID
  * @param {'view'|'edit'} requiredLevel - 要求的最低操作等級
  * @returns {Function} Express middleware
@@ -164,6 +225,14 @@ function requireFeaturePerm(featureId, requiredLevel) {
       return res.status(401).json({
         error: 'Unauthorized',
         message: '未認證'
+      });
+    }
+
+    // Layer 1：訂閱方案模組檢查（super_admin 也受限）
+    if (req.user.tenantId && !isModuleEnabledByPlan(req.user.tenantId, featureId)) {
+      return res.status(403).json({
+        error: 'ModuleNotEnabled',
+        message: '此功能未包含在您的訂閱方案中'
       });
     }
 
@@ -405,6 +474,8 @@ function checkEditScope(req, targetRecord, options = {}) {
 module.exports = {
   requirePermission,
   requireRole,
+  isModuleEnabledByPlan,
+  getTenantEnabledFeatures,
   requireFeaturePerm,
   mergeFeaturePerms,
   buildScopeFilter,

@@ -26,6 +26,7 @@ import { PromotionCriteriaEditModalComponent } from '../../components/promotion-
 import { TrackDetailEditPanelComponent } from '../../components/track-detail-edit-panel/track-detail-edit-panel.component';
 import { OrgUnitService } from '../../../../core/services/org-unit.service';
 import { FeatureGateService } from '../../../../core/services/feature-gate.service';
+import { NotificationService } from '../../../../core/services/notification.service';
 import * as echarts from 'echarts';
 
 // Employee interface for AI assistant
@@ -108,6 +109,7 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
   private radarChart: echarts.ECharts | null = null;
   private competencyService = inject(CompetencyService);
   private orgUnitService = inject(OrgUnitService);
+  private notificationService = inject(NotificationService);
   private featureGateService = inject(FeatureGateService);
 
   // Permission check
@@ -142,8 +144,13 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
   isSubsidiaryLocked = this.orgUnitService.isSubsidiaryLocked;
   filteredDepartments = computed(() => this.orgUnitService.filterDepartments(this.selectedSubsidiaryId()));
 
-  // Tab A 整體對照表獨立子公司篩選（W1 修正：與 Tab B/C 分離）
+  // Tab A 整體對照表獨立子公司篩選
   overviewSubsidiaryId = signal<string>('');
+  importingTemplate = signal(false);
+  hasNoSalaryData = computed(() =>
+    this.overviewSubsidiaryId() !== '' && this.gradesNew().every(g => g.salaryLevels.length === 0)
+  );
+  parentHasNoData = signal(false);
 
   // Active tab（擴展含 pending / history）
   activeTab = signal<'matrix' | 'career' | 'ai-assistant' | 'pending' | 'history'>('matrix');
@@ -270,8 +277,12 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
 
   ngOnInit(): void {
     this.orgUnitService.loadOrgUnits().subscribe(() => {
-      // Tab B/C 預設選取第一間子公司
       const subs = this.subsidiaries();
+      // Tab A 預設選取第一個可見組織
+      if (subs.length > 0 && !this.overviewSubsidiaryId()) {
+        this.overviewSubsidiaryId.set(subs[0].id);
+      }
+      // Tab B/C 預設選取第一間子公司
       if (subs.length > 0 && !this.selectedSubsidiaryId()) {
         this.selectedSubsidiaryId.set(subs[0].id);
       }
@@ -300,13 +311,24 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
     });
   }
 
-  // 載入新版資料 (從 API)（根據 activeOrgUnitId 載入對應子公司資料）
+  // 載入新版資料 (從 API)（根據 activeOrgUnitId 載入對應組織資料）
   loadDataNew(): void {
-    const orgUnitId = this.activeOrgUnitId() || undefined;
+    const orgUnitId = this.activeOrgUnitId();
+    if (!orgUnitId) return; // 尚未選擇組織，不查詢
 
     this.competencyService.getGradeMatrixFromAPI(orgUnitId).subscribe(data => {
       this.gradesNew.set(data);
     });
+
+    // 檢查母公司是否有資料（用於禁用帶入按鈕）
+    const group = this.subsidiaries().find(s => s.type === 'group');
+    if (group && group.id !== orgUnitId) {
+      this.competencyService.getGradeMatrixFromAPI(group.id).subscribe(data => {
+        this.parentHasNoData.set(data.every(g => g.salaryLevels.length === 0));
+      });
+    } else {
+      this.parentHasNoData.set(false);
+    }
 
     this.competencyService.getCareerPathsFromAPI(undefined, orgUnitId).subscribe(data => {
       this.careerPathsNew.set(data);
@@ -329,6 +351,68 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
   // Tab A 子公司篩選變更
   onOverviewSubsidiaryChange(id: string): void {
     this.overviewSubsidiaryId.set(id);
+  }
+
+  // 從母公司帶入範本
+  onImportTemplate(): void {
+    const targetId = this.overviewSubsidiaryId();
+    if (!targetId) return;
+    // 找到集團（group）作為來源
+    const group = this.subsidiaries().find(s => s.type === 'group');
+    if (!group) {
+      this.notificationService.error('找不到母公司資料');
+      return;
+    }
+    this.importingTemplate.set(true);
+    this.competencyService.importGradeTemplate(group.id, targetId).subscribe({
+      next: (result) => {
+        this.importingTemplate.set(false);
+        this.notificationService.success(
+          `已帶入 ${result.salary_levels} 筆薪資級距、${result.track_entries} 筆軌道資料`
+        );
+        this.loadDataNew();
+      },
+      error: (err) => {
+        this.importingTemplate.set(false);
+        const msg = err.error?.error?.message || '帶入失敗，請稍後再試';
+        this.notificationService.error(msg);
+      }
+    });
+  }
+
+  // 從母公司帶入範本（含覆蓋確認）
+  onImportTemplateWithConfirm(): void {
+    const targetId = this.overviewSubsidiaryId();
+    if (!targetId) return;
+
+    const hasSalaryData = this.gradesNew().some(g => g.salaryLevels.length > 0);
+    if (hasSalaryData) {
+      if (!confirm('此公司已有職等薪資資料，帶入範本將覆蓋現有資料。確定要繼續嗎？')) {
+        return;
+      }
+    }
+
+    const group = this.subsidiaries().find(s => s.type === 'group');
+    if (!group) {
+      this.notificationService.error('找不到母公司資料');
+      return;
+    }
+    this.importingTemplate.set(true);
+    this.competencyService.importGradeTemplate(group.id, targetId, hasSalaryData).subscribe({
+      next: (result) => {
+        this.importingTemplate.set(false);
+        const total = result.change_ids?.length || 0;
+        this.notificationService.success(
+          `已建立 ${total} 筆待審核變更，請至「待審核」頁籤進行審核`
+        );
+        this.loadPendingChanges();
+      },
+      error: (err) => {
+        this.importingTemplate.set(false);
+        const msg = err.error?.error?.message || '帶入失敗，請稍後再試';
+        this.notificationService.error(msg);
+      }
+    });
   }
 
   // 部門篩選變更

@@ -1,0 +1,1667 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bombus HRM — 系統操作指引：從零開始的完整建置流程</title>
+<style>
+  :root {
+    --bg-base: #F5F5F7;
+    --bg-card: #FCFCFD;
+    --text-primary: #464E56;
+    --text-secondary: #6B7280;
+    --text-dark: #1F2937;
+    --border: #E2E4E8;
+    --soft-gray: #E8E8EA;
+    --brand-main: #64748B;
+    --brand-light: #94A3B8;
+    --brand-dark: #475569;
+    --l1-sage: #8DA399;
+    --l1-sage-light: #A8BAB0;
+    --l1-sage-dark: #6B8577;
+    --success: #7FB095;
+    --warning: #E3C088;
+    --danger: #C77F7F;
+    --info: #8DA8BE;
+    --l2-terracotta: #D6A28C;
+    --l2-terracotta-dark: #8a5e42;
+    --l4-mauve: #9A8C98;
+    --l3-petrol: #7F9CA0;
+    --radius: 12px;
+    --shadow: 0 4px 20px rgba(0,0,0,0.05);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", sans-serif;
+    background: var(--bg-base);
+    color: var(--text-primary);
+    line-height: 1.6;
+    overflow: hidden;
+  }
+
+  /* Deck & Slides */
+  .deck { width: 100vw; height: 100vh; position: relative; }
+  .slide {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    padding: 48px 72px 64px;
+    opacity: 0; visibility: hidden;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    transform: translateX(36px);
+    overflow-y: auto;
+  }
+  .slide.active { opacity: 1; visibility: visible; transform: translateX(0); }
+
+  /* Typography */
+  h1 { font-size: 2rem; font-weight: 600; color: var(--text-dark); margin-bottom: 6px; letter-spacing: -0.02em; }
+  h2 { font-size: 1.3rem; font-weight: 600; color: var(--brand-dark); margin-bottom: 18px; }
+  h3 { font-size: 1rem; font-weight: 600; color: var(--text-dark); margin-bottom: 8px; }
+  p, li { font-size: 0.9rem; color: var(--text-primary); line-height: 1.7; }
+  .subtitle { font-size: 1.05rem; color: var(--text-secondary); margin-bottom: 24px; }
+  .section-label {
+    display: inline-block; font-size: 0.72rem; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--brand-main); border: 1.5px solid var(--brand-light);
+    border-radius: 6px; padding: 2px 10px; margin-bottom: 12px;
+  }
+  .section-label-terra {
+    display: inline-block; font-size: 0.72rem; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--l2-terracotta-dark); border: 1.5px solid var(--l2-terracotta);
+    border-radius: 6px; padding: 2px 10px; margin-bottom: 12px;
+  }
+  .section-label-sage {
+    display: inline-block; font-size: 0.72rem; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--l1-sage-dark); border: 1.5px solid var(--l1-sage);
+    border-radius: 6px; padding: 2px 10px; margin-bottom: 12px;
+  }
+
+  /* Layout */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; }
+  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; }
+  .flex-col { display: flex; flex-direction: column; }
+  .gap-6 { gap: 6px; } .gap-8 { gap: 8px; } .gap-10 { gap: 10px; } .gap-12 { gap: 12px; }
+  .gap-16 { gap: 16px; } .gap-20 { gap: 20px; } .gap-24 { gap: 24px; }
+  .mt-4 { margin-top: 4px; } .mt-8 { margin-top: 8px; } .mt-12 { margin-top: 12px; }
+  .mt-16 { margin-top: 16px; } .mt-20 { margin-top: 20px; }
+  .mt-auto { margin-top: auto; }
+  .mb-4 { margin-bottom: 4px; } .mb-8 { margin-bottom: 8px; } .mb-12 { margin-bottom: 12px; }
+
+  /* Cards */
+  .card {
+    background: var(--bg-card); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 22px;
+  }
+  .card-sm {
+    background: var(--bg-card); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 16px 18px;
+  }
+  .card-tint-sage { background: rgba(141,163,153,0.07); }
+  .card-tint-info { background: rgba(141,168,190,0.07); }
+  .card-tint-brand { background: rgba(100,116,139,0.06); }
+  .card-tint-warning { background: rgba(227,192,136,0.08); }
+  .card-tint-danger { background: rgba(199,127,127,0.07); }
+  .card-tint-success { background: rgba(127,176,149,0.07); }
+  .card-tint-terra { background: rgba(214,162,140,0.08); }
+  .card-tint-petrol { background: rgba(127,156,160,0.08); }
+
+  /* Badges */
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 0.78rem; font-weight: 500; padding: 3px 10px; border-radius: 16px;
+  }
+  .badge-sage { background: rgba(141,163,153,0.15); color: var(--l1-sage-dark); }
+  .badge-brand { background: rgba(100,116,139,0.12); color: var(--brand-dark); }
+  .badge-info { background: rgba(141,168,190,0.15); color: #5e7f96; }
+  .badge-success { background: rgba(127,176,149,0.15); color: #4f7a63; }
+  .badge-warning { background: rgba(227,192,136,0.18); color: #8b7034; }
+  .badge-danger { background: rgba(199,127,127,0.15); color: #8b4545; }
+  .badge-terra { background: rgba(214,162,140,0.15); color: #8a5e42; }
+  .badge-petrol { background: rgba(127,156,160,0.15); color: #4d6e72; }
+  .badge-mauve { background: rgba(154,140,152,0.15); color: #5e5060; }
+  .badge-neutral { background: var(--soft-gray); color: var(--text-secondary); }
+
+  .num-circle {
+    width: 28px; height: 28px; min-width: 28px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 0.78rem; font-weight: 600; flex-shrink: 0;
+  }
+  .num-circle-sm {
+    width: 22px; height: 22px; min-width: 22px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 0.68rem; font-weight: 600; flex-shrink: 0;
+  }
+
+  /* Flow horizontal */
+  .flow-h { display: flex; align-items: stretch; gap: 0; }
+  .flow-step { flex: 1; text-align: center; padding: 14px 8px; position: relative; }
+  .flow-step::after {
+    content: ''; position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+    width: 0; height: 0; border-top: 7px solid transparent;
+    border-bottom: 7px solid transparent; border-left: 7px solid var(--border);
+  }
+  .flow-step:last-child::after { display: none; }
+  .flow-num {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 0.75rem; font-weight: 600; color: #fff; margin-bottom: 6px;
+  }
+  .flow-title { font-size: 0.78rem; font-weight: 600; color: var(--text-dark); margin-bottom: 3px; }
+  .flow-desc { font-size: 0.68rem; color: var(--text-secondary); line-height: 1.35; }
+
+  /* State flow */
+  .state-flow {
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    font-size: 0.82rem;
+  }
+  .state-arrow { color: var(--brand-light); font-size: 0.9rem; }
+
+  /* Meter */
+  .meter { height: 7px; background: var(--soft-gray); border-radius: 4px; overflow: hidden; }
+  .meter-fill { height: 100%; border-radius: 4px; }
+
+  /* Lists */
+  ul.clean { list-style: none; padding-left: 0; }
+  ul.clean li { position: relative; padding-left: 18px; margin-bottom: 6px; font-size: 0.88rem; }
+  ul.clean li::before {
+    content: ''; position: absolute; left: 0; top: 10px;
+    width: 5px; height: 5px; border-radius: 2px; background: var(--brand-light);
+  }
+
+  .highlight-box {
+    background: rgba(100,116,139,0.05); border-radius: var(--radius);
+    padding: 16px 20px; border: 1px solid var(--border);
+  }
+
+  /* Navigation path */
+  .nav-path {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 14px;
+    background: var(--bg-base); padding: 4px 12px; border-radius: 6px;
+  }
+  .nav-path-arrow { color: var(--brand-light); }
+
+  /* Mono box */
+  .mono-box {
+    background: var(--bg-base); border-radius: 8px; padding: 14px 16px;
+    font-size: 0.85rem; font-family: "SF Mono", "Menlo", monospace; line-height: 1.8;
+  }
+
+  /* Navigation */
+  .nav-bar {
+    position: fixed; bottom: 0; left: 0; right: 0; height: 50px;
+    background: var(--bg-card); border-top: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 28px; z-index: 100; box-shadow: 0 -2px 10px rgba(0,0,0,0.03);
+  }
+  .nav-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 7px 18px; border: 1.5px solid var(--border); border-radius: 8px;
+    background: var(--bg-card); color: var(--text-primary);
+    font-size: 0.82rem; font-weight: 500; cursor: pointer;
+    transition: all 0.2s; font-family: inherit;
+  }
+  .nav-btn:hover { background: var(--bg-base); border-color: var(--brand-light); }
+  .nav-btn:disabled { opacity: 0.3; cursor: default; }
+  .nav-btn:disabled:hover { background: var(--bg-card); border-color: var(--border); }
+  .page-indicator { display: flex; gap: 5px; align-items: center; }
+  .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--soft-gray); transition: all 0.3s; cursor: pointer;
+  }
+  .dot.active { background: var(--brand-main); width: 20px; border-radius: 4px; }
+  .page-num { font-size: 0.78rem; color: var(--text-secondary); margin-left: 10px; font-variant-numeric: tabular-nums; }
+  .key-hint {
+    position: fixed; bottom: 58px; right: 28px;
+    font-size: 0.7rem; color: var(--text-secondary); opacity: 0.5; z-index: 101;
+  }
+
+  /* Cover */
+  .cover { justify-content: center; padding: 72px 88px; }
+  .cover-logo { font-size: 0.82rem; font-weight: 600; color: var(--brand-main); letter-spacing: 0.12em; margin-bottom: 28px; }
+  .cover h1 { font-size: 2.4rem; line-height: 1.3; margin-bottom: 10px; max-width: 680px; }
+  .cover .subtitle { font-size: 1.1rem; max-width: 580px; margin-bottom: 40px; }
+  .cover-meta { display: flex; gap: 28px; font-size: 0.82rem; color: var(--text-secondary); flex-wrap: wrap; }
+  .cover-accent {
+    position: absolute; right: 0; top: 0; bottom: 0; width: 240px;
+    background: linear-gradient(180deg, rgba(100,116,139,0.05) 0%, rgba(141,163,153,0.07) 100%);
+    display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 14px; padding: 40px;
+  }
+  .accent-icon {
+    width: 52px; height: 52px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .slide { padding: 28px 24px 60px; }
+    .cover { padding: 40px 28px; }
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    .cover h1 { font-size: 1.6rem; }
+    .cover-accent { display: none; }
+    .flow-h { flex-direction: column; }
+    .flow-step::after { display: none; }
+  }
+  @media print {
+    body { overflow: visible; }
+    .nav-bar, .key-hint { display: none; }
+    .slide { position: relative; opacity: 1; visibility: visible; transform: none; page-break-after: always; min-height: 100vh; }
+  }
+</style>
+</head>
+<body>
+
+<div class="deck" id="deck">
+
+<!-- ======================== SLIDE 0: COVER ======================== -->
+<section class="slide cover active" data-slide="0">
+  <div class="cover-logo">BOMBUS HRM</div>
+  <h1>系統操作指引<br>從零開始的完整建置流程</h1>
+  <p class="subtitle">新租戶 9 步驟建置 — 從組織架構到績效評估的端到端指引</p>
+  <div class="cover-meta">
+    <span>適用對象：HR / PM / 部門主管（不需技術背景）</span>
+    <span>前提：已取得管理員帳號</span>
+  </div>
+  <div class="cover-accent">
+    <div class="accent-icon" style="background:rgba(100,116,139,0.1)">
+      <svg width="26" height="26" fill="none" stroke="#475569" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9v.01"/><path d="M9 12v.01"/><path d="M9 15v.01"/></svg>
+    </div>
+    <div class="accent-icon" style="background:rgba(141,168,190,0.15)">
+      <svg width="26" height="26" fill="none" stroke="#5e7f96" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+    </div>
+    <div class="accent-icon" style="background:rgba(141,163,153,0.15)">
+      <svg width="26" height="26" fill="none" stroke="#6B8577" stroke-width="1.8" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4-4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 1: WHY THIS GUIDE ======================== -->
+<section class="slide" data-slide="1">
+  <span class="section-label">Overview</span>
+  <h2>為什麼需要這份指引？</h2>
+
+  <div class="grid-2 gap-24">
+    <div class="card card-tint-brand">
+      <h3 style="margin-bottom:10px;color:var(--brand-dark)">前提說明</h3>
+      <p style="font-size:0.88rem;margin-bottom:12px">您的租戶剛開通完成，系統中<strong>尚無任何業務資料</strong>。所有組織架構、職等職級、職能模型、員工資料都需要從零建置。</p>
+      <p style="font-size:0.85rem;color:var(--text-secondary)">本指引按照嚴格的依賴順序，引導您完成 9 個關鍵步驟，確保系統從基礎架構到日常營運的完整設定。</p>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom:10px">步驟依賴關係</h3>
+      <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:12px">每個步驟都依賴前面步驟產生的資料：</p>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:14px">
+        <div class="num-circle" style="background:var(--brand-dark);color:#fff">1</div>
+        <span class="state-arrow">&#8594;</span>
+        <div class="num-circle" style="background:var(--l2-terracotta);color:#fff">2</div>
+        <span style="font-size:0.68rem;color:var(--text-secondary)">(依賴部門)</span>
+        <span class="state-arrow">&#8594;</span>
+        <div class="num-circle" style="background:var(--l2-terracotta);color:#fff">3</div>
+        <span style="font-size:0.68rem;color:var(--text-secondary)">(獨立)</span>
+        <span class="state-arrow">&#8594;</span>
+        <div class="num-circle" style="background:var(--l2-terracotta);color:#fff">4</div>
+        <span style="font-size:0.68rem;color:var(--text-secondary)">(依賴2+3)</span>
+        <span class="state-arrow">&#8594;</span>
+        <div class="num-circle" style="background:var(--l1-sage);color:#fff">5</div>
+        <span class="state-arrow">&#8594;</span>
+        <div class="num-circle" style="background:var(--l1-sage);color:#fff">6</div>
+        <span class="state-arrow">&#8594;</span>
+        <div class="num-circle" style="background:var(--l1-sage);color:#fff">7</div>
+        <span class="state-arrow">&#8594;</span>
+        <div class="num-circle" style="background:var(--l1-sage);color:#fff">8</div>
+        <span class="state-arrow">&#8594;</span>
+        <div class="num-circle" style="background:var(--l2-terracotta);color:#fff">9</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="highlight-box mt-16">
+    <div style="font-weight:600;color:var(--brand-dark);margin-bottom:4px">可平行作業提示</div>
+    <p style="font-size:0.88rem">步驟 2（職等職級）與步驟 3（職能模型）可以<strong>平行進行</strong>，但兩者都必須在步驟 4（職務說明書）之前完成，因為 JD 需要引用職等與職能資料。</p>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 2: 9 STEPS OVERVIEW ======================== -->
+<section class="slide" data-slide="2">
+  <span class="section-label">9 Steps</span>
+  <h2>9 步驟總覽流程圖</h2>
+  <p class="subtitle" style="margin-bottom:14px">從組織架構到績效評估的端到端建置流程</p>
+
+  <div class="grid-3 gap-16">
+    <!-- Row 1 -->
+    <div class="card-sm" style="display:flex;align-items:flex-start;gap:12px">
+      <div class="num-circle" style="background:var(--brand-dark);color:#fff">1</div>
+      <div>
+        <span class="badge badge-brand" style="font-size:0.68rem;margin-bottom:4px">租戶管理</span>
+        <div style="font-weight:600;font-size:0.88rem;margin-top:2px">建立組織架構</div>
+        <div style="font-size:0.75rem;color:var(--text-secondary)">集團、子公司、部門</div>
+      </div>
+    </div>
+    <div class="card-sm" style="display:flex;align-items:flex-start;gap:12px">
+      <div class="num-circle" style="background:var(--l2-terracotta);color:#fff">2</div>
+      <div>
+        <span class="badge badge-terra" style="font-size:0.68rem;margin-bottom:4px">職能管理</span>
+        <div style="font-weight:600;font-size:0.88rem;margin-top:2px">職等職級管理</div>
+        <div style="font-size:0.75rem;color:var(--text-secondary)">職等、薪資、軌道職稱</div>
+      </div>
+    </div>
+    <div class="card-sm" style="display:flex;align-items:flex-start;gap:12px">
+      <div class="num-circle" style="background:var(--l2-terracotta);color:#fff">3</div>
+      <div>
+        <span class="badge badge-terra" style="font-size:0.68rem;margin-bottom:4px">職能管理</span>
+        <div style="font-weight:600;font-size:0.88rem;margin-top:2px">職能模型基準</div>
+        <div style="font-size:0.75rem;color:var(--text-secondary)">核心、管理、專業、KSA</div>
+      </div>
+    </div>
+    <!-- Row 2 -->
+    <div class="card-sm" style="display:flex;align-items:flex-start;gap:12px">
+      <div class="num-circle" style="background:var(--l2-terracotta);color:#fff">4</div>
+      <div>
+        <span class="badge badge-terra" style="font-size:0.68rem;margin-bottom:4px">職能管理</span>
+        <div style="font-weight:600;font-size:0.88rem;margin-top:2px">職務說明書</div>
+        <div style="font-size:0.75rem;color:var(--text-secondary)">JD 建立、審核、版本</div>
+      </div>
+    </div>
+    <div class="card-sm" style="display:flex;align-items:flex-start;gap:12px">
+      <div class="num-circle" style="background:var(--l1-sage);color:#fff">5</div>
+      <div>
+        <span class="badge badge-sage" style="font-size:0.68rem;margin-bottom:4px">員工管理</span>
+        <div style="font-weight:600;font-size:0.88rem;margin-top:2px">發佈招募職缺</div>
+        <div style="font-size:0.75rem;color:var(--text-secondary)">建立職缺、匯入履歷</div>
+      </div>
+    </div>
+    <div class="card-sm" style="display:flex;align-items:flex-start;gap:12px">
+      <div class="num-circle" style="background:var(--l1-sage);color:#fff">6</div>
+      <div>
+        <span class="badge badge-sage" style="font-size:0.68rem;margin-bottom:4px">員工管理</span>
+        <div style="font-weight:600;font-size:0.88rem;margin-top:2px">AI 智能面試</div>
+        <div style="font-size:0.75rem;color:var(--text-secondary)">邀請、評核、分析</div>
+      </div>
+    </div>
+    <!-- Row 3 -->
+    <div class="card-sm" style="display:flex;align-items:flex-start;gap:12px">
+      <div class="num-circle" style="background:var(--l1-sage);color:#fff">7</div>
+      <div>
+        <span class="badge badge-sage" style="font-size:0.68rem;margin-bottom:4px">員工管理</span>
+        <div style="font-weight:600;font-size:0.88rem;margin-top:2px">人才庫管理</div>
+        <div style="font-size:0.75rem;color:var(--text-secondary)">標籤、聯繫、職缺媒合</div>
+      </div>
+    </div>
+    <div class="card-sm" style="display:flex;align-items:flex-start;gap:12px">
+      <div class="num-circle" style="background:var(--l1-sage);color:#fff">8</div>
+      <div>
+        <span class="badge badge-sage" style="font-size:0.68rem;margin-bottom:4px">員工管理</span>
+        <div style="font-weight:600;font-size:0.88rem;margin-top:2px">入職管理</div>
+        <div style="font-size:0.75rem;color:var(--text-secondary)">轉換、建檔、文件簽署</div>
+      </div>
+    </div>
+    <div class="card-sm" style="display:flex;align-items:flex-start;gap:12px">
+      <div class="num-circle" style="background:var(--l2-terracotta);color:#fff">9</div>
+      <div>
+        <span class="badge badge-terra" style="font-size:0.68rem;margin-bottom:4px">職能管理</span>
+        <div style="font-weight:600;font-size:0.88rem;margin-top:2px">職能評估</div>
+        <div style="font-size:0.75rem;color:var(--text-secondary)">週報、月度、季度面談</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:16px;margin-top:16px;justify-content:center">
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 16px;background:rgba(100,116,139,0.06);border-radius:8px">
+      <div style="width:10px;height:10px;border-radius:3px;background:var(--brand-dark)"></div>
+      <span style="font-size:0.82rem;font-weight:500;color:var(--brand-dark)">初始建置（步驟 1-4）</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 16px;background:rgba(141,163,153,0.08);border-radius:8px">
+      <div style="width:10px;height:10px;border-radius:3px;background:var(--l1-sage)"></div>
+      <span style="font-size:0.82rem;font-weight:500;color:var(--l1-sage-dark)">日常營運（步驟 5-9）</span>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 3: STEP 1 — ORG ======================== -->
+<section class="slide" data-slide="3">
+  <span class="section-label">步驟 1 — 租戶管理</span>
+  <h2>建立組織架構</h2>
+  <div class="nav-path">系統設定 <span class="nav-path-arrow">&#8250;</span> 租戶管理 <span class="nav-path-arrow">&#8250;</span> 組織架構管理</div>
+
+  <div class="grid-2 gap-24">
+    <div class="card">
+      <h3 style="margin-bottom:12px">建立公司</h3>
+      <div class="flex-col gap-8">
+        <div style="display:flex;align-items:flex-start;gap:10px;font-size:0.88rem">
+          <div class="num-circle" style="background:var(--brand-dark);color:#fff">1</div>
+          <div>點擊<strong>新增節點</strong>按鈕</div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:10px;font-size:0.88rem">
+          <div class="num-circle" style="background:var(--brand-dark);color:#fff">2</div>
+          <div>選擇類型：<span class="badge badge-brand">集團</span> <span class="badge badge-brand">子公司</span></div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:10px;font-size:0.88rem">
+          <div class="num-circle" style="background:var(--brand-dark);color:#fff">3</div>
+          <div>填寫公司資訊</div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:10px;font-size:0.88rem">
+          <div class="num-circle" style="background:var(--brand-dark);color:#fff">4</div>
+          <div>點擊<strong>建立公司</strong></div>
+        </div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:14px">
+        <span class="badge badge-success">公司名稱（必填）</span>
+        <span class="badge badge-success">類型（必填）</span>
+        <span class="badge badge-neutral">公司代碼</span>
+        <span class="badge badge-neutral">上級單位</span>
+        <span class="badge badge-neutral">地址</span>
+        <span class="badge badge-neutral">電話</span>
+        <span class="badge badge-neutral">Email</span>
+        <span class="badge badge-neutral">統一編號</span>
+        <span class="badge badge-neutral">成立日期</span>
+        <span class="badge badge-neutral">營運狀態</span>
+      </div>
+    </div>
+
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:12px">建立部門</h3>
+        <div class="flex-col gap-8">
+          <div style="display:flex;align-items:flex-start;gap:10px;font-size:0.88rem">
+            <div class="num-circle" style="background:var(--brand-dark);color:#fff">1</div>
+            <div>點擊目標<strong>公司節點</strong></div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:10px;font-size:0.88rem">
+            <div class="num-circle" style="background:var(--brand-dark);color:#fff">2</div>
+            <div>選擇<strong>新增部門</strong></div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:10px;font-size:0.88rem">
+            <div class="num-circle" style="background:var(--brand-dark);color:#fff">3</div>
+            <div>填寫欄位：<span class="badge badge-success" style="font-size:0.72rem">部門名稱（必填）</span> <span class="badge badge-neutral" style="font-size:0.72rem">代碼</span> <span class="badge badge-neutral" style="font-size:0.72rem">主管</span> <span class="badge badge-neutral" style="font-size:0.72rem">上級</span></div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:10px;font-size:0.88rem">
+            <div class="num-circle" style="background:var(--brand-dark);color:#fff">4</div>
+            <div>點擊<strong>建立部門</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="highlight-box">
+        <div style="font-weight:600;color:var(--brand-dark);margin-bottom:4px">建置提醒</div>
+        <p style="font-size:0.85rem">部門主管欄位先留空，等<strong>步驟 8 員工入職</strong>後再回來補填。此時系統中尚無員工資料可選。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 4: STEP 1 CONT ======================== -->
+<section class="slide" data-slide="4">
+  <span class="section-label">步驟 1（續）</span>
+  <h2>確認組織架構</h2>
+
+  <div class="grid-2 gap-24">
+    <div class="flex-col gap-16">
+      <div class="card card-tint-brand">
+        <h3 style="margin-bottom:10px">畫布模式</h3>
+        <p style="font-size:0.85rem;margin-bottom:8px">以視覺化拖曳方式排列組織節點，適合直覺式調整層級關係。</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <span class="badge badge-brand">拖曳排列</span>
+          <span class="badge badge-brand">匯出 PNG</span>
+          <span class="badge badge-brand">縮放檢視</span>
+        </div>
+      </div>
+      <div class="card card-tint-info">
+        <h3 style="margin-bottom:10px">列表模式</h3>
+        <p style="font-size:0.85rem;margin-bottom:8px">樹狀結構展開與收合，適合精確檢視各層級細節。</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <span class="badge badge-info">樹狀展開</span>
+          <span class="badge badge-info">快速收合</span>
+          <span class="badge badge-info">搜尋篩選</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex-col gap-16">
+      <div class="grid-2 gap-12">
+        <div class="card-sm" style="text-align:center">
+          <div style="font-size:1.6rem;font-weight:700;color:var(--brand-dark)">--</div>
+          <div style="font-size:0.78rem;color:var(--text-secondary)">公司數</div>
+        </div>
+        <div class="card-sm" style="text-align:center">
+          <div style="font-size:1.6rem;font-weight:700;color:var(--info)">--</div>
+          <div style="font-size:0.78rem;color:var(--text-secondary)">部門數</div>
+        </div>
+        <div class="card-sm" style="text-align:center">
+          <div style="font-size:1.6rem;font-weight:700;color:var(--l1-sage-dark)">0</div>
+          <div style="font-size:0.78rem;color:var(--text-secondary)">員工總數（初始）</div>
+        </div>
+        <div class="card-sm" style="text-align:center">
+          <div style="font-size:1.6rem;font-weight:700;color:var(--l2-terracotta-dark)">--</div>
+          <div style="font-size:0.78rem;color:var(--text-secondary)">協作關係</div>
+        </div>
+      </div>
+
+      <div class="highlight-box">
+        <div style="font-weight:600;color:var(--brand-dark);margin-bottom:4px">資料結構說明</div>
+        <p style="font-size:0.85rem"><code style="background:var(--soft-gray);padding:1px 6px;border-radius:4px;font-size:0.82rem">org_units</code> 表中 <code style="background:var(--soft-gray);padding:1px 6px;border-radius:4px;font-size:0.82rem">type</code> 欄位區分 group / subsidiary / department，<code style="background:var(--soft-gray);padding:1px 6px;border-radius:4px;font-size:0.82rem">parent_id</code> 建立層級關係。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 5: STEP 2 — GRADE MATRIX ======================== -->
+<section class="slide" data-slide="5">
+  <span class="section-label-terra">步驟 2 — 職能管理</span>
+  <h2>職等職級管理</h2>
+  <div class="nav-path">職能管理 <span class="nav-path-arrow">&#8250;</span> 職等職級管理</div>
+
+  <div class="grid-2 gap-24">
+    <div class="flex-col gap-16">
+      <div class="card card-tint-terra">
+        <h3 style="margin-bottom:10px;color:var(--l2-terracotta-dark)">進入編輯模式</h3>
+        <p style="font-size:0.85rem;margin-bottom:10px">點擊<strong>編輯模式</strong>按鈕（鎖頭圖示切換為解鎖），所有新增與修改操作需在編輯模式下執行。</p>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-bottom:12px">建立職等</h3>
+        <div class="flex-col gap-8">
+          <div style="display:flex;align-items:flex-start;gap:10px;font-size:0.85rem">
+            <div class="num-circle" style="background:var(--l2-terracotta);color:#fff;font-size:0.72rem">1</div>
+            <div>點擊<strong>新增職等</strong></div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:10px;font-size:0.85rem">
+            <div class="num-circle" style="background:var(--l2-terracotta);color:#fff;font-size:0.72rem">2</div>
+            <div>填寫資訊（職等自動分配，職級代碼前綴 BS）</div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:10px;font-size:0.85rem">
+            <div class="num-circle" style="background:var(--l2-terracotta);color:#fff;font-size:0.72rem">3</div>
+            <div>新增薪資級別（代碼自動編號 + 月薪金額）</div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:10px;font-size:0.85rem">
+            <div class="num-circle" style="background:var(--l2-terracotta);color:#fff;font-size:0.72rem">4</div>
+            <div>點擊<strong>儲存</strong></div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:10px;font-size:0.85rem">
+            <div class="num-circle" style="background:var(--l2-terracotta);color:#fff;font-size:0.72rem">5</div>
+            <div>重複建立職等 1 至 7</div>
+          </div>
+        </div>
+        <p style="font-size:0.8rem;color:var(--text-secondary);margin-top:10px">薪資自動編號：從前一職等最大代碼 +1 開始。</p>
+      </div>
+    </div>
+
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:10px">設定軌道職稱</h3>
+        <p style="font-size:0.85rem;margin-bottom:10px">分別在<strong>管理職</strong>與<strong>專業職</strong>子頁籤中，為每個職等設定對應職稱。</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <span class="badge badge-terra">管理職頁籤</span>
+          <span class="badge badge-terra">專業職頁籤</span>
+          <span class="badge badge-neutral">新增軌道（如需）</span>
+        </div>
+      </div>
+
+      <div class="card card-tint-brand">
+        <h3 style="margin-bottom:10px">建立部門職位</h3>
+        <p style="font-size:0.85rem;margin-bottom:10px">為各部門設定可用職位：</p>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          <span class="badge badge-brand">子公司</span>
+          <span class="badge badge-brand">部門</span>
+          <span class="badge badge-brand">職等</span>
+          <span class="badge badge-brand">職位名稱</span>
+          <span class="badge badge-brand">軌道</span>
+        </div>
+        <p style="font-size:0.82rem;color:var(--text-secondary);margin-top:8px">軌道選項：管理職 / 專業職 / 雙軌</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 6: STEP 2 CONT — REVIEW ======================== -->
+<section class="slide" data-slide="6">
+  <span class="section-label-terra">步驟 2（續）</span>
+  <h2>審核機制與頁籤功能</h2>
+
+  <div class="card" style="margin-bottom:18px">
+    <h3 style="margin-bottom:12px">變更審核流程</h3>
+    <div class="state-flow" style="margin-bottom:14px">
+      <span class="badge badge-terra">提交變更</span>
+      <span class="state-arrow">&#8594;</span>
+      <span class="badge badge-warning">pending 待審核</span>
+      <span class="state-arrow">&#8594;</span>
+      <span class="badge badge-success">approved 已核准</span>
+      <span style="font-size:0.78rem;color:var(--text-secondary);margin:0 4px">/</span>
+      <span class="badge badge-danger">rejected 已駁回</span>
+    </div>
+    <div class="flex-col gap-8">
+      <div style="display:flex;align-items:center;gap:10px;font-size:0.85rem">
+        <div class="num-circle" style="background:var(--l2-terracotta);color:#fff;font-size:0.72rem">1</div>
+        <div>完成修改後，點擊<strong>提交變更</strong></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;font-size:0.85rem">
+        <div class="num-circle" style="background:var(--l2-terracotta);color:#fff;font-size:0.72rem">2</div>
+        <div>切換至<strong>待審核頁籤</strong>，檢視待處理項目</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;font-size:0.85rem">
+        <div class="num-circle" style="background:var(--l2-terracotta);color:#fff;font-size:0.72rem">3</div>
+        <div>審核者<strong>核准</strong>或<strong>駁回</strong>，核准後變更即時生效</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="highlight-box mb-12">
+    <div style="font-weight:600;color:var(--brand-dark);margin-bottom:4px">建置建議</div>
+    <p style="font-size:0.85rem">初始建置時建議一人提交、另一人審核，確保資料正確性。</p>
+  </div>
+
+  <div style="display:flex;gap:10px;flex-wrap:wrap">
+    <span class="badge badge-terra" style="padding:6px 14px;font-size:0.82rem">職等職級矩陣</span>
+    <span class="badge badge-terra" style="padding:6px 14px;font-size:0.82rem">職涯發展路徑</span>
+    <span class="badge badge-terra" style="padding:6px 14px;font-size:0.82rem">AI 職涯規劃</span>
+    <span class="badge badge-warning" style="padding:6px 14px;font-size:0.82rem">待審核</span>
+    <span class="badge badge-neutral" style="padding:6px 14px;font-size:0.82rem">變更歷史</span>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 7: STEP 3 — COMPETENCY ======================== -->
+<section class="slide" data-slide="7">
+  <span class="section-label-terra">步驟 3 — 職能管理</span>
+  <h2>職能模型基準</h2>
+  <div class="nav-path">職能管理 <span class="nav-path-arrow">&#8250;</span> 職能模型基準</div>
+
+  <div class="grid-2 gap-24">
+    <div class="flex-col gap-10">
+      <div class="card-sm card-tint-brand">
+        <div style="font-weight:600;font-size:0.88rem;color:var(--brand-dark);margin-bottom:4px">核心職能 CORE-</div>
+        <p style="font-size:0.82rem;color:var(--text-secondary)">全員適用，L1-L6 等級，如：團隊合作、溝通能力</p>
+      </div>
+      <div class="card-sm card-tint-info">
+        <div style="font-weight:600;font-size:0.88rem;color:#5e7f96;margin-bottom:4px">管理職能 MGMT-</div>
+        <p style="font-size:0.82rem;color:var(--text-secondary)">管理者適用，L1-L6 等級，如：領導力、決策力</p>
+      </div>
+      <div class="card-sm card-tint-terra">
+        <div style="font-weight:600;font-size:0.88rem;color:var(--l2-terracotta-dark);margin-bottom:4px">專業職能 PROF-</div>
+        <p style="font-size:0.82rem;color:var(--text-secondary)">特定部門適用，L1-L6 等級，如：程式開發、財務分析</p>
+      </div>
+      <div class="card-sm card-tint-sage">
+        <div style="font-weight:600;font-size:0.88rem;color:var(--l1-sage-dark);margin-bottom:4px">KSA 職能 KSA-</div>
+        <p style="font-size:0.82rem;color:var(--text-secondary)">依職務定義，無等級但有行為指標。類型：Knowledge / Skill / Attitude</p>
+      </div>
+    </div>
+
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:12px">建立職能流程</h3>
+        <div class="flex-col gap-8">
+          <div style="display:flex;align-items:flex-start;gap:10px;font-size:0.85rem">
+            <div class="num-circle" style="background:var(--l2-terracotta);color:#fff;font-size:0.72rem">1</div>
+            <div>選擇對應<strong>頁籤</strong>（核心/管理/專業/KSA）</div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:10px;font-size:0.85rem">
+            <div class="num-circle" style="background:var(--l2-terracotta);color:#fff;font-size:0.72rem">2</div>
+            <div>點擊<strong>新增</strong>按鈕</div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:10px;font-size:0.85rem">
+            <div class="num-circle" style="background:var(--l2-terracotta);color:#fff;font-size:0.72rem">3</div>
+            <div>填寫代碼、名稱、定義</div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:10px;font-size:0.85rem">
+            <div class="num-circle" style="background:var(--l2-terracotta);color:#fff;font-size:0.72rem">4</div>
+            <div>展開 L1-L6 填寫<strong>行為指標</strong></div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:10px;font-size:0.85rem">
+            <div class="num-circle" style="background:var(--l2-terracotta);color:#fff;font-size:0.72rem">5</div>
+            <div>點擊<strong>儲存</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="highlight-box">
+        <div style="font-weight:600;color:var(--brand-dark);margin-bottom:4px">設計原則</div>
+        <p style="font-size:0.85rem"><strong>等級累積制</strong>：L3 的能力包含 L1 + L2 + L3。多租戶架構下，子公司專屬留空欄位代表沿用集團共用定義。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 8: STEP 4 — JD ======================== -->
+<section class="slide" data-slide="8">
+  <span class="section-label-terra">步驟 4 — 職能管理</span>
+  <h2>職務說明書（JD）</h2>
+  <div class="nav-path">職能管理 <span class="nav-path-arrow">&#8250;</span> 職務說明書</div>
+
+  <div class="flow-h" style="background:var(--bg-card);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 6px;margin-bottom:18px">
+    <div class="flow-step">
+      <div class="flow-num" style="background:var(--l2-terracotta)">1</div>
+      <div class="flow-title">選擇模式</div>
+      <div class="flow-desc">自行新增<br>匯入模版<br>AI 助手</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num" style="background:var(--l2-terracotta)">2</div>
+      <div class="flow-title">基本資訊</div>
+      <div class="flow-desc">職位代碼<br>名稱、部門</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num" style="background:var(--l2-terracotta)">3</div>
+      <div class="flow-title">職能需求</div>
+      <div class="flow-desc">4 類職能<br>等級與權重</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num" style="background:var(--l2-terracotta)">4</div>
+      <div class="flow-title">內容設定</div>
+      <div class="flow-desc">12 區塊<br>詳細內容</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num" style="background:var(--l2-terracotta)">5</div>
+      <div class="flow-title">檢視確認</div>
+      <div class="flow-desc">預覽 JD<br>送出審核</div>
+    </div>
+  </div>
+
+  <div class="grid-2 gap-24">
+    <div class="flex-col gap-14">
+      <div class="card-sm">
+        <h3 style="margin-bottom:8px;font-size:0.9rem">Step 1 — 建立模式</h3>
+        <div class="flex-col gap-6">
+          <div class="card-sm card-tint-brand" style="padding:10px 14px"><strong style="font-size:0.85rem">自行新增</strong><span style="font-size:0.78rem;color:var(--text-secondary);margin-left:6px">手動填寫所有欄位</span></div>
+          <div class="card-sm card-tint-info" style="padding:10px 14px"><strong style="font-size:0.85rem">匯入模版</strong><span style="font-size:0.78rem;color:var(--text-secondary);margin-left:6px">從範本快速產生</span></div>
+          <div class="card-sm card-tint-sage" style="padding:10px 14px"><strong style="font-size:0.85rem">AI 助手</strong><span style="font-size:0.78rem;color:var(--text-secondary);margin-left:6px">（尚待開發）</span></div>
+        </div>
+      </div>
+      <div class="card-sm">
+        <h3 style="margin-bottom:8px;font-size:0.9rem">Step 2 — 基本資訊</h3>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          <span class="badge badge-neutral">職位代碼（自動）</span>
+          <span class="badge badge-success">職位名稱（必填）</span>
+          <span class="badge badge-neutral">子公司</span>
+          <span class="badge badge-success">部門（必填）</span>
+          <span class="badge badge-success">職等（必填）</span>
+          <span class="badge badge-success">職位（必填）</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex-col gap-14">
+      <div class="card-sm">
+        <h3 style="margin-bottom:8px;font-size:0.9rem">Step 3 — 職能需求</h3>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+          <span class="badge badge-brand">核心職能 + 等級 + 權重</span>
+          <span class="badge badge-info">管理職能 + 等級 + 權重</span>
+          <span class="badge badge-terra">專業職能 + 等級 + 權重</span>
+          <span class="badge badge-sage">KSA + 等級 + 權重</span>
+        </div>
+        <p style="font-size:0.8rem;color:var(--warning)">權重總和必須等於 100%</p>
+      </div>
+      <div class="card-sm">
+        <h3 style="margin-bottom:8px;font-size:0.9rem">Step 4 — 12 項內容區塊</h3>
+        <div style="display:flex;flex-wrap:wrap;gap:4px">
+          <span class="badge badge-neutral" style="font-size:0.72rem">1. 工作摘要</span>
+          <span class="badge badge-neutral" style="font-size:0.72rem">2. 主要職責</span>
+          <span class="badge badge-neutral" style="font-size:0.72rem">3. 學歷要求</span>
+          <span class="badge badge-neutral" style="font-size:0.72rem">4. 經歷要求</span>
+          <span class="badge badge-neutral" style="font-size:0.72rem">5. 證照資格</span>
+          <span class="badge badge-neutral" style="font-size:0.72rem">6. 語言能力</span>
+          <span class="badge badge-neutral" style="font-size:0.72rem">7. 電腦技能</span>
+          <span class="badge badge-neutral" style="font-size:0.72rem">8. 工作條件</span>
+          <span class="badge badge-neutral" style="font-size:0.72rem">9. 體能需求</span>
+          <span class="badge badge-neutral" style="font-size:0.72rem">10. 關鍵績效</span>
+          <span class="badge badge-neutral" style="font-size:0.72rem">11. 職涯發展</span>
+          <span class="badge badge-neutral" style="font-size:0.72rem">12. 補充說明</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 9: STEP 4 CONT — JD REVIEW ======================== -->
+<section class="slide" data-slide="9">
+  <span class="section-label-terra">步驟 4（續）</span>
+  <h2>審核與版本管理</h2>
+
+  <div class="card" style="margin-bottom:18px;padding:20px 24px">
+    <h3 style="margin-bottom:10px">JD 狀態流轉</h3>
+    <div class="state-flow" style="margin-bottom:6px">
+      <span class="badge badge-brand">draft 草稿</span>
+      <span class="state-arrow">&#8594;</span>
+      <span class="badge badge-warning">pending_review 審核中</span>
+      <span class="state-arrow">&#8594;</span>
+      <span class="badge badge-success">published 已發佈</span>
+      <span class="state-arrow">&#8594;</span>
+      <span class="badge badge-neutral">archived 已封存</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;margin-top:8px;font-size:0.82rem;color:var(--text-secondary)">
+      <span class="badge badge-danger" style="font-size:0.72rem">rejected 駁回</span>
+      <span>&#8592; 審核中階段可能被退回至草稿</span>
+    </div>
+  </div>
+
+  <div class="grid-2 gap-24">
+    <div class="card">
+      <h3 style="margin-bottom:12px">審核步驟</h3>
+      <div class="flex-col gap-8">
+        <div style="display:flex;align-items:center;gap:10px;font-size:0.85rem">
+          <div class="num-circle" style="background:var(--l2-terracotta);color:#fff;font-size:0.72rem">1</div>
+          在列表中找到目標 JD
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;font-size:0.85rem">
+          <div class="num-circle" style="background:var(--l2-terracotta);color:#fff;font-size:0.72rem">2</div>
+          點擊<strong>送出審核</strong>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;font-size:0.85rem">
+          <div class="num-circle" style="background:var(--l2-terracotta);color:#fff;font-size:0.72rem">3</div>
+          審核者<strong>核准</strong>後狀態變為已發佈
+        </div>
+      </div>
+      <div style="margin-top:14px">
+        <h3 style="margin-bottom:8px;font-size:0.9rem">版本管理</h3>
+        <div class="state-flow">
+          <span class="badge badge-success">已發佈</span>
+          <span class="state-arrow">&#8594;</span>
+          <span class="badge badge-brand">建立新版本</span>
+          <span class="state-arrow">&#8594;</span>
+          <span class="badge badge-brand">新草稿</span>
+          <span class="state-arrow">&#8594;</span>
+          <span class="badge badge-warning">重新審核</span>
+          <span class="state-arrow">&#8594;</span>
+          <span class="badge badge-success">取代舊版</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card card-tint-brand">
+      <h3 style="margin-bottom:12px">權限對照</h3>
+      <div class="flex-col gap-8">
+        <div style="display:flex;align-items:center;gap:10px;font-size:0.85rem">
+          <span class="badge badge-success" style="min-width:90px;justify-content:center">可編輯+審核</span>
+          <span>超級管理員、子公司管理員、HR 主管</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;font-size:0.85rem">
+          <span class="badge badge-neutral" style="min-width:90px;justify-content:center">僅檢視</span>
+          <span>部門主管、一般員工</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 10: STEP 5 — RECRUITMENT ======================== -->
+<section class="slide" data-slide="10">
+  <span class="section-label-sage">步驟 5 — 員工管理</span>
+  <h2>發佈招募職缺</h2>
+  <div class="nav-path">員工管理 <span class="nav-path-arrow">&#8250;</span> 招募職缺管理</div>
+
+  <div class="grid-2 gap-24">
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:12px">新增職缺</h3>
+        <div class="flex-col gap-8">
+          <div style="display:flex;align-items:flex-start;gap:10px;font-size:0.85rem">
+            <div class="num-circle" style="background:var(--l1-sage);color:#fff;font-size:0.72rem">1</div>
+            <div>點擊<strong>新增職缺</strong></div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:10px;font-size:0.85rem">
+            <div class="num-circle" style="background:var(--l1-sage);color:#fff;font-size:0.72rem">2</div>
+            <div>填寫名稱、部門、負責人、關聯 JD、同步 104</div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:10px;font-size:0.85rem">
+            <div class="num-circle" style="background:var(--l1-sage);color:#fff;font-size:0.72rem">3</div>
+            <div>儲存為<strong>草稿</strong></div>
+          </div>
+        </div>
+        <div class="state-flow mt-12">
+          <span class="badge badge-brand">draft 草稿</span>
+          <span class="state-arrow">&#8594;</span>
+          <span class="badge badge-warning">review 審核中</span>
+          <span class="state-arrow">&#8594;</span>
+          <span class="badge badge-success">published 刊登中</span>
+          <span class="state-arrow">&#8594;</span>
+          <span class="badge badge-neutral">closed 已關閉</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:12px">匯入履歷</h3>
+        <div class="flex-col gap-8">
+          <div class="card-sm card-tint-sage">
+            <strong style="font-size:0.85rem;color:var(--l1-sage-dark)">104 自動匯入</strong>
+            <p style="font-size:0.8rem;color:var(--text-secondary);margin-top:4px">支援排程（每天/每週/每月）自動從 104 同步最新履歷</p>
+          </div>
+          <div class="card-sm card-tint-info">
+            <strong style="font-size:0.85rem;color:#5e7f96">手動匯入</strong>
+            <p style="font-size:0.8rem;color:var(--text-secondary);margin-top:4px">點擊「立即匯入」即時從 104 同步</p>
+          </div>
+          <div class="card-sm card-tint-brand">
+            <strong style="font-size:0.85rem;color:var(--brand-dark)">手動新增</strong>
+            <p style="font-size:0.8rem;color:var(--text-secondary);margin-top:4px">適用於內部職缺，手動輸入候選人資料</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-tint-success">
+        <h3 style="margin-bottom:8px;font-size:0.9rem">AI 履歷評分</h3>
+        <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:10px">匹配分數 0-100，三級分類：</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <span class="badge badge-success">80-100 高度匹配</span>
+          <span class="badge badge-info">60-79 中度匹配</span>
+          <span class="badge badge-warning">0-59 低度匹配</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 11: STEP 6 — AI INTERVIEW (1) ======================== -->
+<section class="slide" data-slide="11">
+  <span class="section-label-sage">步驟 6 — 員工管理</span>
+  <h2>AI 智能面試（前半）</h2>
+  <div class="nav-path">員工管理 <span class="nav-path-arrow">&#8250;</span> AI 智能面試</div>
+
+  <div class="grid-2 gap-24">
+    <div class="card">
+      <h3 style="margin-bottom:12px">面試前置流程</h3>
+      <div class="flex-col gap-8">
+        <div style="display:flex;align-items:flex-start;gap:10px;font-size:0.85rem">
+          <div class="num-circle" style="background:var(--l1-sage);color:#fff;font-size:0.72rem">1</div>
+          <div><strong>發送邀請</strong> — 系統自動產生專屬邀請連結</div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:10px;font-size:0.85rem">
+          <div class="num-circle" style="background:var(--l1-sage);color:#fff;font-size:0.72rem">2</div>
+          <div><strong>候選人回覆</strong> — 接受 / 婉拒 / 要求改期</div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:10px;font-size:0.85rem">
+          <div class="num-circle" style="background:var(--l1-sage);color:#fff;font-size:0.72rem">3</div>
+          <div><strong>安排面試</strong> — 設定面試時間，產生 Token 連結 / QR Code</div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:10px;font-size:0.85rem">
+          <div class="num-circle" style="background:var(--l1-sage);color:#fff;font-size:0.72rem">4</div>
+          <div><strong>候選人填問卷</strong> — 限時 60 分鐘，5 步驟，約 50 題</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:10px">17 題評分（100 分倒扣制）</h3>
+        <div class="flex-col gap-6">
+          <div class="card-sm card-tint-brand" style="padding:8px 14px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <strong style="font-size:0.82rem">個人修養</strong>
+              <span class="badge badge-brand" style="font-size:0.68rem">3 題</span>
+            </div>
+          </div>
+          <div class="card-sm card-tint-info" style="padding:8px 14px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <strong style="font-size:0.82rem">求職意願</strong>
+              <span class="badge badge-info" style="font-size:0.68rem">3 題</span>
+            </div>
+          </div>
+          <div class="card-sm card-tint-terra" style="padding:8px 14px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <strong style="font-size:0.82rem">綜合素質</strong>
+              <span class="badge badge-terra" style="font-size:0.68rem">6 題</span>
+            </div>
+          </div>
+          <div class="card-sm card-tint-sage" style="padding:8px 14px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <strong style="font-size:0.82rem">性格特質</strong>
+              <span class="badge badge-sage" style="font-size:0.68rem">2 題</span>
+            </div>
+          </div>
+          <div class="card-sm card-tint-warning" style="padding:8px 14px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <strong style="font-size:0.82rem">專業技能</strong>
+              <span class="badge badge-warning" style="font-size:0.68rem">3 題</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <span class="badge badge-brand">6 項流程檢核</span>
+        <span class="badge badge-info">10 項綜合評估</span>
+        <span class="badge badge-success">Pass</span>
+        <span class="badge badge-warning">Hold</span>
+        <span class="badge badge-danger">Reject</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 12: STEP 6 — AI INTERVIEW (2) ======================== -->
+<section class="slide" data-slide="12">
+  <span class="section-label-sage">步驟 6（續）</span>
+  <h2>AI 分析與主管決策</h2>
+
+  <div class="grid-2 gap-24">
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:12px">AI 三維分析</h3>
+        <div class="flex-col gap-8">
+          <div class="card-sm card-tint-info" style="display:flex;justify-content:space-between;align-items:center">
+            <strong style="font-size:0.85rem;color:#5e7f96">關鍵字匹配</strong>
+            <span class="badge badge-info">40%</span>
+          </div>
+          <div class="card-sm card-tint-sage" style="display:flex;justify-content:space-between;align-items:center">
+            <strong style="font-size:0.85rem;color:var(--l1-sage-dark)">語意分析</strong>
+            <span class="badge badge-sage">30%</span>
+          </div>
+          <div class="card-sm card-tint-brand" style="display:flex;justify-content:space-between;align-items:center">
+            <strong style="font-size:0.85rem;color:var(--brand-dark)">JD 適配度</strong>
+            <span class="badge badge-brand">30%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-tint-success">
+        <h3 style="margin-bottom:10px;font-size:0.9rem">AI 推薦等級</h3>
+        <div class="flex-col gap-6">
+          <div style="display:flex;align-items:center;gap:10px;padding:6px 12px;background:rgba(127,176,149,0.1);border-radius:8px;font-size:0.85rem">
+            <span class="badge badge-success" style="min-width:48px;justify-content:center">85+</span>
+            強烈推薦
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:6px 12px;background:rgba(141,168,190,0.08);border-radius:8px;font-size:0.85rem">
+            <span class="badge badge-info" style="min-width:48px;justify-content:center">70+</span>
+            推薦
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:6px 12px;background:rgba(227,192,136,0.08);border-radius:8px;font-size:0.85rem">
+            <span class="badge badge-warning" style="min-width:48px;justify-content:center">55+</span>
+            待觀察
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:6px 12px;background:rgba(199,127,127,0.08);border-radius:8px;font-size:0.85rem">
+            <span class="badge badge-danger" style="min-width:48px;justify-content:center">&lt;55</span>
+            不建議錄用
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:12px">主管決策 — 三種分支</h3>
+        <div class="flex-col gap-8">
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(127,176,149,0.08);border-radius:8px;font-size:0.85rem">
+            <span class="badge badge-success" style="min-width:56px;justify-content:center">錄用</span>
+            發送 Offer &#8594; 候選人回覆 &#8594; 接受（步驟 8）/ 婉拒（人才庫）
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(199,127,127,0.08);border-radius:8px;font-size:0.85rem">
+            <span class="badge badge-danger" style="min-width:56px;justify-content:center">婉拒</span>
+            標記未錄取，可選擇轉入人才庫
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(227,192,136,0.08);border-radius:8px;font-size:0.85rem">
+            <span class="badge badge-warning" style="min-width:56px;justify-content:center">保留</span>
+            直接轉入人才庫儲備
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-tint-info">
+        <h3 style="margin-bottom:10px;font-size:0.9rem">Offer 發送流程</h3>
+        <div class="state-flow">
+          <span class="badge badge-info">發送 Offer</span>
+          <span class="state-arrow">&#8594;</span>
+          <span class="badge badge-warning">候選人回覆</span>
+          <span class="state-arrow">&#8594;</span>
+          <span class="badge badge-success">接受（步驟 8）</span>
+        </div>
+        <div class="state-flow mt-8">
+          <span style="width:82px"></span>
+          <span style="width:20px"></span>
+          <span class="badge badge-warning">候選人回覆</span>
+          <span class="state-arrow">&#8594;</span>
+          <span class="badge badge-danger">婉拒（人才庫）</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 13: STEP 7 — TALENT POOL ======================== -->
+<section class="slide" data-slide="13">
+  <span class="section-label-sage">步驟 7 — 員工管理</span>
+  <h2>人才庫管理</h2>
+  <div class="nav-path">員工管理 <span class="nav-path-arrow">&#8250;</span> 人才庫與再接觸管理</div>
+
+  <div class="grid-2 gap-24">
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:12px">何時使用人才庫？</h3>
+        <div class="flex-col gap-8">
+          <div class="card-sm card-tint-sage">
+            <strong style="font-size:0.85rem;color:var(--l1-sage-dark)">面試不錄用但人才不錯</strong>
+            <p style="font-size:0.8rem;color:var(--text-secondary);margin-top:4px">目前職缺不合適，但未來可能有機會</p>
+          </div>
+          <div class="card-sm card-tint-warning">
+            <strong style="font-size:0.85rem;color:#8b7034">候選人婉拒 Offer</strong>
+            <p style="font-size:0.8rem;color:var(--text-secondary);margin-top:4px">雙方條件暫時不符，保留聯繫管道</p>
+          </div>
+          <div class="card-sm card-tint-info">
+            <strong style="font-size:0.85rem;color:#5e7f96">收到履歷無合適職缺</strong>
+            <p style="font-size:0.8rem;color:var(--text-secondary);margin-top:4px">主動投遞但暫無對應職缺開放</p>
+          </div>
+        </div>
+      </div>
+      <div class="card card-tint-brand">
+        <h3 style="margin-bottom:8px;font-size:0.9rem">轉入操作</h3>
+        <div class="flex-col gap-6">
+          <div style="display:flex;align-items:center;gap:10px;font-size:0.85rem">
+            <div class="num-circle" style="background:var(--brand-dark);color:#fff;font-size:0.72rem">1</div>
+            點擊<strong>轉入人才庫</strong>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:0.85rem">
+            <div class="num-circle" style="background:var(--brand-dark);color:#fff;font-size:0.72rem">2</div>
+            系統自動標籤（技能/經歷/學歷）
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:12px">四大功能</h3>
+        <div class="flex-col gap-8">
+          <div style="display:flex;align-items:center;gap:10px;font-size:0.85rem">
+            <span class="badge badge-sage" style="min-width:72px;justify-content:center">人才列表</span>
+            瀏覽、搜尋人才庫候選人
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:0.85rem">
+            <span class="badge badge-terra" style="min-width:72px;justify-content:center">標籤管理</span>
+            技能 / 經驗 / 教育 / 個性
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:0.85rem">
+            <span class="badge badge-info" style="min-width:72px;justify-content:center">聯繫追蹤</span>
+            待聯繫 / 已聯繫 / 無意願
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:0.85rem">
+            <span class="badge badge-brand" style="min-width:72px;justify-content:center">職缺媒合</span>
+            AI 自動推薦合適職缺
+          </div>
+        </div>
+      </div>
+
+      <div class="highlight-box">
+        <div style="font-weight:600;color:var(--brand-dark);margin-bottom:4px">快速啟動</div>
+        <p style="font-size:0.85rem">日後可直接從人才庫<strong>發起面試邀請</strong>，無需重新建立候選人資料。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 14: STEP 8 — ONBOARDING ======================== -->
+<section class="slide" data-slide="14">
+  <span class="section-label-sage">步驟 8 — 員工管理</span>
+  <h2>入職管理</h2>
+  <div class="nav-path">員工管理 <span class="nav-path-arrow">&#8250;</span> 入職管理</div>
+
+  <div class="grid-2 gap-24">
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:10px">查看待轉換候選人</h3>
+        <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:12px">入職進度頁籤顯示已接受 Offer 的候選人（姓名、Email、職位、等待天數）。</p>
+        <h3 style="margin-bottom:10px;font-size:0.9rem">啟動入職</h3>
+        <div class="flex-col gap-6">
+          <div style="display:flex;align-items:center;gap:10px;font-size:0.85rem">
+            <div class="num-circle" style="background:var(--l1-sage);color:#fff;font-size:0.72rem">1</div>
+            點擊<strong>啟動入職</strong>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:0.85rem">
+            <div class="num-circle" style="background:var(--l1-sage);color:#fff;font-size:0.72rem">2</div>
+            填寫入職資訊
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:0.85rem">
+            <div class="num-circle" style="background:var(--l1-sage);color:#fff;font-size:0.72rem">3</div>
+            點擊<strong>確認轉換</strong>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        <span class="badge badge-neutral">員工編號（自動）</span>
+        <span class="badge badge-neutral">子公司（自動）</span>
+        <span class="badge badge-success">部門（必/自動）</span>
+        <span class="badge badge-success">職等（必/自動）</span>
+        <span class="badge badge-neutral">職級</span>
+        <span class="badge badge-success">職位（必填）</span>
+        <span class="badge badge-neutral">職務</span>
+        <span class="badge badge-neutral">角色（自動）</span>
+        <span class="badge badge-neutral">主管</span>
+        <span class="badge badge-success">到職日（必填）</span>
+        <span class="badge badge-neutral">試用期（預設 3 月）</span>
+        <span class="badge badge-neutral">合約（預設全職）</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom:12px">系統自動執行 7 步</h3>
+      <div class="flex-col gap-6">
+        <div style="display:flex;align-items:center;gap:8px;padding:7px 12px;background:var(--bg-base);border-radius:8px;font-size:0.85rem">
+          <div class="num-circle-sm" style="background:var(--l1-sage);color:#fff">1</div>
+          建立員工記錄（狀態：試用中）
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding:7px 12px;background:var(--bg-base);border-radius:8px;font-size:0.85rem">
+          <div class="num-circle-sm" style="background:var(--l1-sage);color:#fff">2</div>
+          配發登入帳號（= Email）
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding:7px 12px;background:var(--bg-base);border-radius:8px;font-size:0.85rem">
+          <div class="num-circle-sm" style="background:var(--l1-sage);color:#fff">3</div>
+          產生初始密碼（12 字元隨機）
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding:7px 12px;background:var(--bg-base);border-radius:8px;font-size:0.85rem">
+          <div class="num-circle-sm" style="background:var(--l1-sage);color:#fff">4</div>
+          指派 employee 角色
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding:7px 12px;background:var(--bg-base);border-radius:8px;font-size:0.85rem">
+          <div class="num-circle-sm" style="background:var(--l1-sage);color:#fff">5</div>
+          複製學歷與技能資料
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding:7px 12px;background:var(--bg-base);border-radius:8px;font-size:0.85rem">
+          <div class="num-circle-sm" style="background:var(--l1-sage);color:#fff">6</div>
+          建立簽署任務
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding:7px 12px;background:var(--bg-base);border-radius:8px;font-size:0.85rem">
+          <div class="num-circle-sm" style="background:var(--l1-sage);color:#fff">7</div>
+          記錄職務異動（新進入職）
+        </div>
+      </div>
+      <div class="highlight-box mt-12" style="padding:12px 16px">
+        <p style="font-size:0.82rem;color:var(--danger)"><strong>重要：</strong>HR 必須安全交付初始密碼，新人首次登入將強制變更密碼。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 15: STEP 8 CONT — DOCS & PROGRESS ======================== -->
+<section class="slide" data-slide="15">
+  <span class="section-label-sage">步驟 8（續）</span>
+  <h2>入職手續與進度追蹤</h2>
+
+  <div class="grid-2 gap-24">
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:10px">5 類必要文件</h3>
+        <div class="flex-col gap-6">
+          <div style="display:flex;align-items:center;gap:10px;font-size:0.85rem">
+            <span class="badge badge-brand" style="min-width:80px;justify-content:center">身分證件</span>
+            <span style="color:var(--text-secondary)">身分證正反面 / 護照</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:0.85rem">
+            <span class="badge badge-info" style="min-width:80px;justify-content:center">銀行帳戶</span>
+            <span style="color:var(--text-secondary)">薪資轉帳帳戶</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:0.85rem">
+            <span class="badge badge-sage" style="min-width:80px;justify-content:center">體檢報告</span>
+            <span style="color:var(--text-secondary)">三個月內有效</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:0.85rem">
+            <span class="badge badge-terra" style="min-width:80px;justify-content:center">大頭照</span>
+            <span style="color:var(--text-secondary)">證件用照片</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:0.85rem">
+            <span class="badge badge-mauve" style="min-width:80px;justify-content:center">學經歷證明</span>
+            <span style="color:var(--text-secondary)">畢業證書 / 工作證明</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-tint-brand">
+        <h3 style="margin-bottom:8px;font-size:0.9rem">表單簽署流程</h3>
+        <div class="state-flow">
+          <span class="badge badge-brand">Token 連結</span>
+          <span class="state-arrow">&#8594;</span>
+          <span class="badge badge-info">填寫表單</span>
+          <span class="state-arrow">&#8594;</span>
+          <span class="badge badge-terra">電子簽名</span>
+          <span class="state-arrow">&#8594;</span>
+          <span class="badge badge-warning">主管審核</span>
+          <span class="state-arrow">&#8594;</span>
+          <span class="badge badge-success">完成</span>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <span class="badge badge-neutral">DRAFT</span>
+          <span class="state-arrow">&#8594;</span>
+          <span class="badge badge-info">SIGNED</span>
+          <span class="state-arrow">&#8594;</span>
+          <span class="badge badge-success">APPROVED</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:12px">入職進度追蹤</h3>
+        <div class="flex-col gap-10">
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:0.85rem;margin-bottom:4px">
+              <span>王小明 — 軟體工程師</span><strong style="color:var(--success)">85%</strong>
+            </div>
+            <div class="meter"><div class="meter-fill" style="width:85%;background:var(--success)"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:0.85rem;margin-bottom:4px">
+              <span>李美玲 — UI 設計師</span><strong style="color:var(--info)">60%</strong>
+            </div>
+            <div class="meter"><div class="meter-fill" style="width:60%;background:var(--info)"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:0.85rem;margin-bottom:4px">
+              <span>張志豪 — 專案經理</span><strong style="color:var(--warning)">30%</strong>
+            </div>
+            <div class="meter"><div class="meter-fill" style="width:30%;background:var(--warning)"></div></div>
+          </div>
+        </div>
+        <div class="mono-box mt-12" style="font-size:0.78rem">
+          進度 = 已完成項目數 / 總項目數 x 100%
+        </div>
+      </div>
+
+      <div class="card card-tint-sage">
+        <h3 style="margin-bottom:8px;font-size:0.9rem">入職狀態流程</h3>
+        <div class="state-flow">
+          <span class="badge badge-brand">pending 待處理</span>
+          <span class="state-arrow">&#8594;</span>
+          <span class="badge badge-warning">in_progress 進行中</span>
+          <span class="state-arrow">&#8594;</span>
+          <span class="badge badge-success">completed 已完成</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 16: STEP 9 — COMPETENCY EVALUATION ======================== -->
+<section class="slide" data-slide="16">
+  <span class="section-label-terra">步驟 9 — 職能管理</span>
+  <h2>職能評估系統</h2>
+  <div class="nav-path">職能管理 <span class="nav-path-arrow">&#8250;</span> 職能評估系統</div>
+
+  <div class="flow-h" style="background:var(--bg-card);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 6px;margin-bottom:18px">
+    <div class="flow-step">
+      <div class="flow-num" style="background:var(--l2-terracotta)">W</div>
+      <div class="flow-title">工作週報</div>
+      <div class="flow-desc">每週填寫<br>HR 批次生成</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num" style="background:var(--brand-dark)">&#8594;</div>
+      <div class="flow-title">累積</div>
+      <div class="flow-desc">週報資料<br>彙總統計</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num" style="background:var(--info)">M</div>
+      <div class="flow-title">月度檢核</div>
+      <div class="flow-desc">每月評核<br>月均分帶入</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num" style="background:var(--brand-dark)">&#8594;</div>
+      <div class="flow-title">帶入</div>
+      <div class="flow-desc">月度均分<br>作為基礎</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num" style="background:var(--l1-sage)">Q</div>
+      <div class="flow-title">季度面談</div>
+      <div class="flow-desc">每季評估<br>發展計畫</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num" style="background:var(--brand-dark)">&#8594;</div>
+      <div class="flow-title">循環</div>
+      <div class="flow-desc">指導回饋<br>持續改進</div>
+    </div>
+  </div>
+
+  <div class="grid-3 gap-18">
+    <div class="card card-tint-terra">
+      <h3 style="margin-bottom:8px;color:var(--l2-terracotta-dark)">工作週報</h3>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+        <span class="badge badge-terra">每週</span>
+        <span class="badge badge-neutral">7 區塊</span>
+      </div>
+      <ul class="clean" style="font-size:0.82rem">
+        <li>HR 批次生成週報</li>
+        <li>員工填寫 + 簽名</li>
+        <li>主管審核回饋</li>
+      </ul>
+    </div>
+    <div class="card card-tint-info">
+      <h3 style="margin-bottom:8px;color:#5e7f96">月度檢核</h3>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+        <span class="badge badge-info">每月</span>
+        <span class="badge badge-neutral">1-10 分</span>
+      </div>
+      <ul class="clean" style="font-size:0.82rem">
+        <li>員工自評 1-10 分</li>
+        <li>主管評分 1-10 分</li>
+        <li>HR 結案，三階段簽核</li>
+      </ul>
+    </div>
+    <div class="card card-tint-sage">
+      <h3 style="margin-bottom:8px;color:var(--l1-sage-dark)">季度面談</h3>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+        <span class="badge badge-sage">每季</span>
+        <span class="badge badge-neutral">多步驟</span>
+      </div>
+      <ul class="clean" style="font-size:0.82rem">
+        <li>HR 初始化評估</li>
+        <li>員工 9 步驟自評</li>
+        <li>主管 4 面向評核 + 面談</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 17: STEP 9 CONT — MONTHLY & QUARTERLY ======================== -->
+<section class="slide" data-slide="17">
+  <span class="section-label-terra">步驟 9（續）</span>
+  <h2>月度計分與季度面談</h2>
+
+  <div class="grid-2 gap-24">
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:10px">月度加權計分</h3>
+        <div class="mono-box mb-8">
+          加權總分 = &Sigma;(主管分數 x 點數 / 總點數) x 20
+        </div>
+        <div class="card-sm card-tint-brand" style="margin-bottom:10px">
+          <div style="font-size:0.82rem;font-weight:600;margin-bottom:4px">計算範例</div>
+          <div style="font-size:0.8rem;color:var(--text-secondary);line-height:1.7">
+            項目 A：主管 8 分 x 3 點 / 10 總點 x 20 = 48<br>
+            項目 B：主管 7 分 x 4 點 / 10 總點 x 20 = 56<br>
+            項目 C：主管 9 分 x 3 點 / 10 總點 x 20 = 54<br>
+            <strong style="color:var(--brand-dark)">加權總分 = 48 + 56 + 54 = 158 分</strong>
+          </div>
+        </div>
+        <h3 style="margin-bottom:8px;font-size:0.9rem">三階段簽核</h3>
+        <div class="state-flow">
+          <span class="badge badge-brand">自評中</span>
+          <span class="state-arrow">&#8594;</span>
+          <span class="badge badge-info">主管審核</span>
+          <span class="state-arrow">&#8594;</span>
+          <span class="badge badge-terra">HR 審核</span>
+          <span class="state-arrow">&#8594;</span>
+          <span class="badge badge-success">完成</span>
+        </div>
+        <p style="font-size:0.8rem;color:var(--text-secondary);margin-top:8px">退回機制：主管退回清除員工簽名，HR 退回清除主管簽名。</p>
+      </div>
+    </div>
+
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:10px">季度雙表單</h3>
+        <div class="grid-2 gap-12">
+          <div class="card-sm card-tint-sage">
+            <div style="font-weight:600;font-size:0.85rem;color:var(--l1-sage-dark);margin-bottom:6px">員工表單（9 步）</div>
+            <div style="font-size:0.78rem;color:var(--text-secondary);line-height:1.6">
+              自評總結<br>
+              貢獻回顧<br>
+              目標檢視<br>
+              JD-OKR 對照<br>
+              職能自評<br>
+              滿意度調查<br>
+              發展需求
+            </div>
+          </div>
+          <div class="card-sm card-tint-terra">
+            <div style="font-weight:600;font-size:0.85rem;color:var(--l2-terracotta-dark);margin-bottom:6px">主管表單</div>
+            <div style="font-size:0.78rem;color:var(--text-secondary);line-height:1.6">
+              4 面向 x 5 項評核<br>
+              管理職能 3 項<br>
+              綜合評語<br>
+              面談紀錄<br>
+              發展計畫
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-tint-info">
+        <h3 style="margin-bottom:8px;font-size:0.9rem">季度評估 6 階段</h3>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          <span class="badge badge-brand">HR 初始化</span>
+          <span class="badge badge-info">員工自評</span>
+          <span class="badge badge-terra">主管評核</span>
+          <span class="badge badge-sage">面談進行</span>
+          <span class="badge badge-warning">簽核中</span>
+          <span class="badge badge-success">已完成</span>
+        </div>
+      </div>
+
+      <div class="highlight-box">
+        <div style="font-weight:600;color:var(--brand-dark);margin-bottom:4px">並行提示</div>
+        <p style="font-size:0.85rem">員工表單與主管表單可<strong>同步進行</strong>，不需等待任一方完成。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 18: FAQ & SUMMARY ======================== -->
+<section class="slide" data-slide="18">
+  <span class="section-label">Summary</span>
+  <h2>常見問題與總結</h2>
+
+  <div class="grid-2 gap-24">
+    <div class="flex-col gap-10">
+      <div class="card-sm card-tint-brand">
+        <div style="font-weight:600;font-size:0.88rem;color:var(--brand-dark);margin-bottom:4px">Q1：可以跳過某些步驟嗎？</div>
+        <p style="font-size:0.82rem;color:var(--text-secondary)">不建議。步驟之間存在資料依賴關係，跳步可能導致後續功能無法正常使用。</p>
+      </div>
+      <div class="card-sm card-tint-info">
+        <div style="font-weight:600;font-size:0.88rem;color:#5e7f96;margin-bottom:4px">Q2：整個建置需要多久？</div>
+        <p style="font-size:0.82rem;color:var(--text-secondary)">步驟 1-4（初始建置）約需 1-2 個工作日，視組織複雜度而定。</p>
+      </div>
+      <div class="card-sm card-tint-sage">
+        <div style="font-weight:600;font-size:0.88rem;color:var(--l1-sage-dark);margin-bottom:4px">Q3：如果公司已有員工資料？</div>
+        <p style="font-size:0.82rem;color:var(--text-secondary)">可透過員工帳號管理新增或批次匯入員工，然後直接跳到步驟 9 進行職能評估。</p>
+      </div>
+      <div class="card-sm card-tint-terra">
+        <div style="font-weight:600;font-size:0.88rem;color:var(--l2-terracotta-dark);margin-bottom:4px">Q4：多子公司如何處理？</div>
+        <p style="font-size:0.82rem;color:var(--text-secondary)">職等架構統一管理，薪資可依子公司覆蓋，職能模型可共用或設定專屬。</p>
+      </div>
+      <div class="card-sm card-tint-warning">
+        <div style="font-weight:600;font-size:0.88rem;color:#8b7034;margin-bottom:4px">Q5：哪些步驟可以平行執行？</div>
+        <p style="font-size:0.82rem;color:var(--text-secondary)">步驟 2 與步驟 3 可同時進行，但兩者都必須在步驟 4 之前完成。</p>
+      </div>
+    </div>
+
+    <div class="flex-col gap-16">
+      <div class="card" style="text-align:center;padding:22px">
+        <div style="width:44px;height:44px;border-radius:12px;background:rgba(100,116,139,0.1);display:inline-flex;align-items:center;justify-content:center;margin-bottom:10px">
+          <svg width="22" height="22" fill="none" stroke="var(--brand-dark)" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>
+        </div>
+        <h3 style="margin-bottom:6px;color:var(--brand-dark)">流程標準化</h3>
+        <p style="font-size:0.85rem">9 步驟建置指引消除遺漏，確保每個環節都有明確操作方向。</p>
+      </div>
+      <div class="card" style="text-align:center;padding:22px">
+        <div style="width:44px;height:44px;border-radius:12px;background:rgba(141,168,190,0.12);display:inline-flex;align-items:center;justify-content:center;margin-bottom:10px">
+          <svg width="22" height="22" fill="none" stroke="#5e7f96" stroke-width="1.8" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        </div>
+        <h3 style="margin-bottom:6px;color:#5e7f96">資料串聯化</h3>
+        <p style="font-size:0.85rem">組織 &#8594; 職等 &#8594; 職能 &#8594; JD &#8594; 招募 &#8594; 入職 &#8594; 評估，一條龍串接。</p>
+      </div>
+      <div class="card" style="text-align:center;padding:22px">
+        <div style="width:44px;height:44px;border-radius:12px;background:rgba(141,163,153,0.12);display:inline-flex;align-items:center;justify-content:center;margin-bottom:10px">
+          <svg width="22" height="22" fill="none" stroke="var(--l1-sage-dark)" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+        </div>
+        <h3 style="margin-bottom:6px;color:var(--l1-sage-dark)">管理數位化</h3>
+        <p style="font-size:0.85rem">紙本作業全面系統化，即時追蹤進度與狀態。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-16" style="text-align:center">
+    <div class="highlight-box" style="display:inline-block;max-width:560px">
+      <h3 style="font-size:1.05rem;color:var(--brand-dark);margin-bottom:6px">Q & A</h3>
+      <p style="font-size:0.88rem;color:var(--text-secondary)">感謝聆聽，歡迎提出任何問題與建議。</p>
+    </div>
+  </div>
+
+  <div class="mt-auto" style="padding-top:16px">
+    <div style="display:flex;gap:24px;justify-content:center;font-size:0.78rem;color:var(--text-secondary)">
+      <span>Bombus HRM v1.0</span>
+      <span>跨模組系統操作指引</span>
+    </div>
+  </div>
+</section>
+
+</div><!-- end deck -->
+
+<!-- Navigation -->
+<div class="nav-bar">
+  <button class="nav-btn" id="prevBtn" disabled onclick="navigate(-1)">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+    上一頁
+  </button>
+  <div class="page-indicator" id="dots"></div>
+  <button class="nav-btn" id="nextBtn" onclick="navigate(1)">
+    下一頁
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+  </button>
+</div>
+<div class="key-hint">&#8592; &#8594; 鍵切換頁面</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  let current = 0;
+
+  const dotsEl = document.getElementById('dots');
+  for (let i = 0; i < total; i++) {
+    const d = document.createElement('span');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.onclick = () => goTo(i);
+    dotsEl.appendChild(d);
+  }
+  const numEl = document.createElement('span');
+  numEl.className = 'page-num';
+  numEl.textContent = '1 / ' + total;
+  dotsEl.appendChild(numEl);
+
+  function goTo(n) {
+    if (n < 0 || n >= total || n === current) return;
+    const prev = current;
+    current = n;
+    slides[prev].classList.remove('active');
+    slides[current].classList.add('active');
+    slides[current].scrollTop = 0;
+    updateUI();
+  }
+  function navigate(dir) { goTo(current + dir); }
+  function updateUI() {
+    document.getElementById('prevBtn').disabled = current === 0;
+    document.getElementById('nextBtn').disabled = current === total - 1;
+    document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === current));
+    numEl.textContent = (current + 1) + ' / ' + total;
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); navigate(1); }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); navigate(-1); }
+    if (e.key === 'Home') { e.preventDefault(); goTo(0); }
+    if (e.key === 'End') { e.preventDefault(); goTo(total - 1); }
+  });
+
+  let ts = 0;
+  document.addEventListener('touchstart', e => { ts = e.touches[0].clientX; });
+  document.addEventListener('touchend', e => {
+    const d = ts - e.changedTouches[0].clientX;
+    if (Math.abs(d) > 50) navigate(d > 0 ? 1 : -1);
+  });
+</script>
+
+</body>
+</html>

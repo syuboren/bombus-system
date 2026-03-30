@@ -57,17 +57,28 @@ async function start() {
         await tenantDBManager.init();
         console.log('🏢 Multi-tenant infrastructure initialized');
 
-        // 確保 Demo 租戶存在（自動修復 platform.db 資料遺失）
+        // 確保 Demo 租戶與平台管理員存在（自動修復 platform.db 資料遺失）
         const { getPlatformDB } = require('./db/platform-db');
         const platformDB = getPlatformDB();
         const demoTenant = platformDB.queryOne(
             "SELECT id FROM tenants WHERE slug = 'demo'"
         );
         if (!demoTenant) {
-            console.log('⚠️  Demo 租戶不存在，自動執行遷移...');
+            console.log('⚠️  Demo 租戶不存在，自動執行完整遷移...');
             const { migrateDemoData } = require('./db/migrate-demo');
             await migrateDemoData();
             console.log('✅ Demo 租戶自動遷移完成');
+        } else {
+            // 租戶存在但平台管理員可能遺失
+            const platformAdmin = platformDB.queryOne(
+                'SELECT id FROM platform_admins LIMIT 1'
+            );
+            if (!platformAdmin) {
+                console.log('⚠️  平台管理員不存在，自動修復...');
+                const { seedPlatformData } = require('./db/migrate-demo');
+                await seedPlatformData(platformDB);
+                console.log('✅ 平台管理員已重建');
+            }
         }
 
         // Auth Routes（公開，不需認證）

@@ -12,31 +12,42 @@ const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
 const { createEmployeeWithAccount } = require('../services/account-creation');
 
-// Email 格式驗證（簡化版 RFC 5322）
+// 格式驗證正規表達式
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-// 日期格式：YYYY-MM-DD 或 YYYY/MM/DD
-const DATE_REGEX = /^\d{4}[-/]\d{2}[-/]\d{2}$/;
+const DATE_REGEX = /^\d{4}[-/]\d{1,2}[-/]\d{1,2}$/;
+const PHONE_REGEX = /^[0-9+\-()\s]+$/;
+const FULLWIDTH_DIGIT_REGEX = /[\uFF10-\uFF19]/;
 
-// CSV 中英文欄位名對應
-const FIELD_MAP = {
+// CSV 中英文欄位名對應（自動處理 (*) 必填標記）
+const FIELD_MAP_BASE = {
   '姓名': 'name', 'name': 'name',
-  'Email': 'email', 'email': 'email',
+  'Email': 'email', 'email': 'email', '電子郵件': 'email',
   '工號': 'employee_no', 'employee_no': 'employee_no',
-  '英文名': 'english_name', 'english_name': 'english_name',
+  '英文名': 'english_name', '英文姓名': 'english_name', 'english_name': 'english_name',
   '電話': 'phone', 'phone': 'phone',
   '手機': 'mobile', 'mobile': 'mobile',
   '性別': 'gender', 'gender': 'gender',
-  '生日': 'birth_date', 'birth_date': 'birth_date',
+  '生日': 'birth_date', '出生日期': 'birth_date', 'birth_date': 'birth_date',
   '子公司': 'subsidiary', 'subsidiary': 'subsidiary',
   '部門': 'department', 'department': 'department',
   '職稱': 'position', 'position': 'position',
-  '職等': 'level', 'level': 'level',
-  '職級': 'grade', 'grade': 'grade',
+  '職等': 'grade', 'grade': 'grade',
+  '職級': 'level', 'level': 'level',
   '到職日期': 'hire_date', 'hire_date': 'hire_date',
   '合約類型': 'contract_type', 'contract_type': 'contract_type',
   '工作地點': 'work_location', 'work_location': 'work_location',
+  '地址': 'address', 'address': 'address',
+  '緊急聯絡人': 'emergency_contact_name', 'emergency_contact_name': 'emergency_contact_name',
+  '緊急聯絡人姓名': 'emergency_contact_name',
+  '緊急聯絡人關係': 'emergency_contact_relation', 'emergency_contact_relation': 'emergency_contact_relation',
+  '緊急聯絡人電話': 'emergency_contact_phone', 'emergency_contact_phone': 'emergency_contact_phone',
   '主管工號': 'manager_no', 'manager_no': 'manager_no'
 };
+
+function resolveFieldName(header) {
+  const clean = header.replace(/\(\*\)$/, '').trim();
+  return FIELD_MAP_BASE[clean] || FIELD_MAP_BASE[header] || null;
+}
 
 const REQUIRED_FIELDS = ['name', 'email', 'employee_no', 'subsidiary', 'department', 'hire_date', 'level', 'grade', 'position'];
 
@@ -46,6 +57,14 @@ const REQUIRED_FIELDS = ['name', 'email', 'employee_no', 'subsidiary', 'departme
 function validateRow(row, rowIndex, allRows, db) {
   const errors = [];
   const warnings = [];
+
+  // 手機號碼前導零修復（Excel/CSV 會將 0912345678 存為 912345678）
+  if (row.mobile && /^\d{9}$/.test(row.mobile)) {
+    row.mobile = '0' + row.mobile;
+  }
+  if (row.phone && /^\d{9}$/.test(row.phone)) {
+    row.phone = '0' + row.phone;
+  }
 
   // 必填欄位檢查
   for (const field of REQUIRED_FIELDS) {
@@ -90,31 +109,125 @@ function validateRow(row, rowIndex, allRows, db) {
     if (existingNo) errors.push('工號已存在於系統中');
   }
 
-  // 子公司驗證
+  // 子公司/集團驗證（支援 subsidiary 和 group 兩種類型）
+  let orgUnitId = null;
   if (row.subsidiary) {
     const sub = db.prepare(
-      "SELECT id, name FROM org_units WHERE (name = ? OR code = ?) AND type = 'subsidiary'"
+      "SELECT id, name FROM org_units WHERE (name = ? OR code = ?) AND type IN ('subsidiary', 'group')"
     ).get(row.subsidiary, row.subsidiary);
     if (!sub) {
       errors.push(`子公司「${row.subsidiary}」不存在於組織架構中`);
     } else {
+      orgUnitId = sub.id;
       row._org_unit_id = sub.id;
 
-      // 部門驗證（在子公司下）
+      // 部門驗證：先查 departments 表（含 org_unit_id），再查 org_units
       if (row.department) {
         const dept = db.prepare(
-          "SELECT id, name FROM org_units WHERE name = ? AND type = 'department' AND parent_id = ?"
+          "SELECT name FROM departments WHERE name = ? AND org_unit_id = ?"
         ).get(row.department, sub.id);
         if (!dept) {
-          errors.push(`部門「${row.department}」不存在於子公司「${row.subsidiary}」下`);
+          const deptOrg = db.prepare(
+            "SELECT id FROM org_units WHERE name = ? AND type = 'department' AND parent_id = ?"
+          ).get(row.department, sub.id);
+          if (!deptOrg) {
+            errors.push(`部門「${row.department}」不存在於「${row.subsidiary}」下`);
+          }
         }
       }
+    }
+  }
+
+  // 職等驗證（grade = 數字，如 1, 2, 3）
+  let gradeNum = null;
+  if (row.grade) {
+    gradeNum = parseInt(row.grade);
+    if (isNaN(gradeNum)) {
+      errors.push(`職等「${row.grade}」格式不正確，請填寫數字（如 2 代表 Grade 2）`);
+    } else {
+      const gradeExists = db.prepare('SELECT grade FROM grade_levels WHERE grade = ?').get(gradeNum);
+      if (!gradeExists) {
+        errors.push(`職等「${row.grade}」不存在於系統中`);
+      }
+    }
+  }
+
+  // 職級驗證（level = 薪資代碼如 BS02，需在該職等 + 該子公司內）
+  if (orgUnitId && row.level && gradeNum !== null) {
+    const salary = db.prepare(
+      "SELECT code FROM grade_salary_levels WHERE code = ? AND grade = ? AND org_unit_id = ?"
+    ).get(row.level, gradeNum, orgUnitId);
+    if (!salary) {
+      errors.push(`職級「${row.level}」不存在於「${row.subsidiary}」的職等 ${gradeNum} 中`);
+    }
+  } else if (orgUnitId && row.level) {
+    const salaryAny = db.prepare(
+      "SELECT code FROM grade_salary_levels WHERE code = ? AND org_unit_id = ?"
+    ).get(row.level, orgUnitId);
+    if (!salaryAny) {
+      errors.push(`職級「${row.level}」不存在於「${row.subsidiary}」的薪資設定中`);
+    }
+  }
+
+  // 職稱驗證（檢查 department_positions 或 grade_track_entries）
+  if (orgUnitId && row.position) {
+    const pos = db.prepare(
+      "SELECT title FROM department_positions WHERE title = ? AND org_unit_id = ?"
+    ).get(row.position, orgUnitId);
+    if (!pos) {
+      const trackEntry = db.prepare(
+        "SELECT title FROM grade_track_entries WHERE title = ? AND org_unit_id = ?"
+      ).get(row.position, orgUnitId);
+      if (!trackEntry) {
+        warnings.push(`職稱「${row.position}」未在「${row.subsidiary}」的職位設定中找到，將直接使用`);
+      }
+    }
+  }
+
+  // 性別驗證（支援中英文，自動轉為英文儲存）
+  const GENDER_MAP = { 'male': 'male', 'female': 'female', 'other': 'other', '男': 'male', '女': 'female', '其他': 'other' };
+  if (row.gender) {
+    const mapped = GENDER_MAP[row.gender.trim()];
+    if (!mapped) {
+      errors.push(`性別「${row.gender}」不正確，請填寫：男、女、其他`);
+    } else {
+      row.gender = mapped;
+    }
+  }
+
+  // 合約類型驗證（支援中英文，自動轉為英文儲存）
+  const CONTRACT_MAP = {
+    'full-time': 'full-time', 'part-time': 'part-time', 'contract': 'contract', 'intern': 'intern',
+    '全職': 'full-time', '兼職': 'part-time', '約聘': 'contract', '實習': 'intern'
+  };
+  if (row.contract_type) {
+    const mapped = CONTRACT_MAP[row.contract_type.trim()];
+    if (!mapped) {
+      errors.push(`合約類型「${row.contract_type}」不正確，請填寫：全職、兼職、約聘、實習`);
+    } else {
+      row.contract_type = mapped;
     }
   }
 
   // 日期格式
   if (row.hire_date && !DATE_REGEX.test(row.hire_date)) {
     errors.push('到職日期格式不正確，請使用 YYYY-MM-DD 或 YYYY/MM/DD');
+  }
+
+  if (row.birth_date && row.birth_date.trim() && !DATE_REGEX.test(row.birth_date)) {
+    errors.push('出生日期格式不正確，請使用 YYYY-MM-DD 或 YYYY/MM/DD');
+  }
+
+  // 電話格式驗證（不可含中文或英文字母）
+  for (const [field, label] of [['phone', '電話'], ['mobile', '手機'], ['emergency_contact_phone', '緊急聯絡人電話']]) {
+    if (row[field] && row[field].trim() && !PHONE_REGEX.test(row[field])) {
+      errors.push(`${label}「${row[field]}」格式不正確，不可包含中文或英文字母`);
+    }
+  }
+
+  // 地址格式驗證（不可含全形數字）
+  if (row.address && FULLWIDTH_DIGIT_REGEX.test(row.address)) {
+    errors.push('地址包含全形數字，請改為半形數字');
   }
 
   // 主管（非阻塞）
@@ -224,6 +337,8 @@ router.post('/execute', async (req, res) => {
           // 日期格式統一
           const hireDate = row.hire_date ? row.hire_date.replace(/\//g, '-') : null;
 
+          const birthDate = row.birth_date ? row.birth_date.replace(/\//g, '-') : null;
+
           const result = await createEmployeeWithAccount(tenantDB, {
             employeeData: {
               name: row.name,
@@ -241,6 +356,11 @@ router.post('/execute', async (req, res) => {
               mobile: row.mobile || null,
               gender: row.gender || 'other',
               phone: row.phone || null,
+              birth_date: birthDate,
+              address: row.address || null,
+              emergency_contact_name: row.emergency_contact_name || null,
+              emergency_contact_relation: row.emergency_contact_relation || null,
+              emergency_contact_phone: row.emergency_contact_phone || null,
               import_job_id: jobId
             },
             createUser: true,

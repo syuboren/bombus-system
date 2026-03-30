@@ -1002,3 +1002,299 @@ $module-color-dark: $color-l1-sage-dark;
   display: flex;
   gap: $spacing-md;
 }
+
+// ============================================================
+// Batch Import Modal
+// ============================================================
+
+.batch-modal {
+  max-width: 95vw;
+  width: 1200px;
+}
+
+.col-errors {
+  min-width: 200px;
+  white-space: normal;
+}
+
+.batch-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-lg;
+  padding: $spacing-xl 0;
+}
+
+.drop-zone {
+  width: 100%;
+  border: 2px dashed rgba($module-color, 0.4);
+  border-radius: $radius-lg;
+  padding: $spacing-2xl $spacing-xl;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+
+  &:hover {
+    border-color: $module-color;
+    background: rgba($module-color, 0.04);
+  }
+
+  &__icon {
+    font-size: 48px;
+    color: rgba($module-color, 0.5);
+    display: block;
+    margin-bottom: $spacing-md;
+
+    &--selected {
+      color: $module-color;
+    }
+  }
+
+  &__text {
+    font-size: 16px;
+    color: $color-text-dark;
+    margin-bottom: $spacing-xs;
+  }
+
+  &__filename {
+    font-size: 16px;
+    font-weight: 600;
+    color: $module-color;
+    margin-bottom: $spacing-xs;
+  }
+
+  &__hint {
+    font-size: 13px;
+    color: $color-text-secondary;
+  }
+}
+
+.batch-upload__actions {
+  display: flex;
+  gap: $spacing-lg;
+  align-items: center;
+}
+
+.batch-file-btn {
+  cursor: pointer;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: $module-color;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.batch-error {
+  color: $color-error;
+  font-size: 13px;
+  margin: 0;
+}
+
+.batch-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-2xl 0;
+  gap: $spacing-md;
+
+  &__text {
+    font-size: 16px;
+    color: $color-text-dark;
+    font-weight: 500;
+  }
+
+  &__hint {
+    font-size: 13px;
+    color: $color-text-secondary;
+  }
+}
+
+.batch-spinner {
+  font-size: 40px;
+  color: $module-color;
+}
+
+.batch-preview {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
+
+.batch-stats {
+  display: flex;
+  gap: $spacing-lg;
+  flex-wrap: wrap;
+}
+
+.batch-stat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 500;
+
+  &--success {
+    color: $color-success;
+  }
+  &--error {
+    color: $color-error;
+  }
+  &--total {
+    color: $color-text-secondary;
+  }
+}
+
+.batch-table-wrapper {
+  max-height: 360px;
+  overflow-y: auto;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+}
+
+.batch-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+
+  th, td {
+    padding: $spacing-sm $spacing-md;
+    text-align: left;
+    border-bottom: 1px solid $color-soft-gray;
+    white-space: nowrap;
+  }
+
+  th {
+    background: $color-cloud-gray;
+    font-weight: 600;
+    color: $color-text-dark;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
+  td {
+    color: $color-text-primary;
+  }
+}
+
+.row-error {
+  background: rgba($color-error, 0.06);
+}
+
+.status-icon {
+  font-size: 18px;
+
+  &--ok {
+    color: $color-success;
+  }
+  &--fail {
+    color: $color-error;
+  }
+}
+
+.error-msg {
+  display: block;
+  color: $color-error;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.warn-msg {
+  display: block;
+  color: $color-warning;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.ok-msg {
+  color: $color-success;
+  font-size: 12px;
+}
+
+.batch-progress {
+  width: 100%;
+  max-width: 400px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 12px;
+  background: $color-cloud-gray;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: $spacing-md;
+
+  &__fill {
+    height: 100%;
+    background: $module-color;
+    border-radius: 6px;
+    transition: width 0.3s ease;
+  }
+}
+
+.batch-complete {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
+
+.batch-result-stats {
+  display: flex;
+  gap: $spacing-lg;
+  justify-content: center;
+}
+
+.result-card {
+  @include card;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: $spacing-lg $spacing-xl;
+  min-width: 120px;
+
+  i {
+    font-size: 28px;
+    margin-bottom: $spacing-sm;
+  }
+
+  &__value {
+    font-size: 28px;
+    font-weight: 700;
+  }
+
+  &__label {
+    font-size: 13px;
+    color: $color-text-secondary;
+    margin-top: 2px;
+  }
+
+  &--success {
+    i, .result-card__value { color: $color-success; }
+  }
+  &--error {
+    i, .result-card__value { color: $color-error; }
+  }
+  &--total {
+    i, .result-card__value { color: $color-text-secondary; }
+  }
+}
+
+.password-code {
+  background: $color-cloud-gray;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 12px;
+  color: $color-text-dark;
+}

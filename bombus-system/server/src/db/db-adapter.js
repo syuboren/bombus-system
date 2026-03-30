@@ -6,6 +6,7 @@
  */
 
 const fs = require('fs');
+const path = require('path');
 
 // ─── 抽象基底類別 ───
 
@@ -193,7 +194,22 @@ class SqliteAdapter extends DBAdapter {
     if (this._filePath) {
       try {
         const data = this._db.export();
-        fs.writeFileSync(this._filePath, Buffer.from(data));
+        const buf = Buffer.from(data);
+
+        // 防護：若匯出結果明顯小於既有檔案（>50% 縮小），保留備份並警告
+        if (fs.existsSync(this._filePath)) {
+          const existingSize = fs.statSync(this._filePath).size;
+          if (existingSize > 1024 && buf.length < existingSize * 0.5) {
+            const bakPath = this._filePath + '.bak';
+            fs.copyFileSync(this._filePath, bakPath);
+            console.warn(`⚠️ DB save: ${path.basename(this._filePath)} 大幅縮小 (${existingSize} → ${buf.length})，已備份至 .bak`);
+          }
+        }
+
+        // 寫入暫存檔再 rename（原子寫入）
+        const tmpPath = this._filePath + '.tmp';
+        fs.writeFileSync(tmpPath, buf);
+        fs.renameSync(tmpPath, this._filePath);
       } catch (e) {
         console.error('DB save error:', e.message);
       }

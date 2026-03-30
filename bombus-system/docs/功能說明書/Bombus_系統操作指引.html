@@ -1,0 +1,1709 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bombus 功能說明書 - 系統操作指引：從零開始的完整建置流程</title>
+  <style>
+    :root {
+      --color-cloud-gray: #F5F5F7;
+      --color-pure-white: #FCFCFD;
+      --color-soft-gray: #E8E8EA;
+      --color-muted-gray: #C4C4C6;
+      --color-text-secondary: #6B7280;
+      --color-text-primary: #464E56;
+      --color-text-dark: #1F2937;
+      --color-brand-main: #64748B;
+      --color-brand-light: #94A3B8;
+      --color-brand-dark: #475569;
+      --color-module: #8DA399;
+      --color-module-light: #b5c3bd;
+      --color-module-dark: #6B8577;
+      --color-success: #7FB095;
+      --color-success-light: #E8F5EE;
+      --color-warning: #E3C088;
+      --color-warning-light: #FFF8E7;
+      --color-error: #C77F7F;
+      --color-error-light: #FDEAEA;
+      --color-info: #8DA8BE;
+      --color-info-light: #EDF4F9;
+      --spacing-xs: 0.25rem;
+      --spacing-sm: 0.5rem;
+      --spacing-md: 1rem;
+      --spacing-lg: 1.5rem;
+      --spacing-xl: 2rem;
+      --spacing-2xl: 3rem;
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Microsoft JhengHei', 'PingFang TC', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      color: var(--color-text-primary);
+      background: var(--color-cloud-gray);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: var(--spacing-xl);
+    }
+
+    .doc-header {
+      background: linear-gradient(135deg, var(--color-module) 0%, var(--color-module-dark) 100%);
+      color: white;
+      padding: var(--spacing-2xl) var(--spacing-xl);
+      border-radius: var(--radius-lg);
+      margin-bottom: var(--spacing-xl);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .doc-header h1 {
+      font-size: 1.75rem;
+      font-weight: 600;
+      margin-bottom: var(--spacing-sm);
+      letter-spacing: 0.5px;
+    }
+
+    .doc-header h2 {
+      font-size: 1.25rem;
+      font-weight: 400;
+      opacity: 0.9;
+    }
+
+    .doc-info {
+      background: var(--color-pure-white);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-lg);
+      margin-bottom: var(--spacing-xl);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--color-soft-gray);
+    }
+
+    .doc-info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: var(--spacing-md);
+    }
+
+    .doc-info-item {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+
+    .doc-info-label {
+      font-size: 0.875rem;
+      color: var(--color-text-secondary);
+      min-width: 80px;
+    }
+
+    .doc-info-value {
+      font-weight: 500;
+      color: var(--color-text-dark);
+    }
+
+    .toc {
+      background: var(--color-pure-white);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-lg);
+      margin-bottom: var(--spacing-xl);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--color-soft-gray);
+    }
+
+    .toc-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--color-text-dark);
+      margin-bottom: var(--spacing-md);
+      padding-bottom: var(--spacing-sm);
+      border-bottom: 2px solid var(--color-module);
+    }
+
+    .toc-list {
+      list-style: none;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: var(--spacing-sm);
+    }
+
+    .toc-list li { padding: var(--spacing-xs) 0; }
+
+    .toc-list a {
+      color: var(--color-module-dark);
+      text-decoration: none;
+      font-size: 0.9375rem;
+      transition: color 0.2s ease;
+    }
+
+    .toc-list a:hover {
+      color: var(--color-module);
+      text-decoration: underline;
+    }
+
+    .content {
+      background: var(--color-pure-white);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-xl);
+      margin-bottom: var(--spacing-xl);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--color-soft-gray);
+    }
+
+    .section-title {
+      background: linear-gradient(135deg, var(--color-module) 0%, var(--color-module-dark) 100%);
+      color: white;
+      padding: var(--spacing-md) var(--spacing-lg);
+      border-radius: var(--radius-md);
+      margin: var(--spacing-xl) 0 var(--spacing-lg);
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+
+    .section-title:first-child { margin-top: 0; }
+
+    h3 {
+      color: var(--color-text-dark);
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin: var(--spacing-lg) 0 var(--spacing-md);
+      padding-bottom: var(--spacing-xs);
+      border-bottom: 2px solid var(--color-module-light);
+    }
+
+    h4 {
+      color: var(--color-module-dark);
+      font-size: 1rem;
+      font-weight: 600;
+      margin: var(--spacing-md) 0 var(--spacing-sm);
+    }
+
+    p {
+      margin-bottom: var(--spacing-md);
+      color: var(--color-text-primary);
+    }
+
+    ul, ol {
+      margin-bottom: var(--spacing-md);
+      padding-left: var(--spacing-lg);
+    }
+
+    li { margin-bottom: var(--spacing-xs); }
+
+    .table-wrapper {
+      overflow-x: auto;
+      margin: var(--spacing-md) 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9375rem;
+    }
+
+    th {
+      background: var(--color-module);
+      color: white;
+      padding: var(--spacing-sm) var(--spacing-md);
+      text-align: left;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    td {
+      padding: var(--spacing-sm) var(--spacing-md);
+      border-bottom: 1px solid var(--color-soft-gray);
+      vertical-align: top;
+    }
+
+    tr:nth-child(even) { background: var(--color-cloud-gray); }
+    tr:hover { background: rgba(141, 163, 153, 0.1); }
+
+    .code-block {
+      background: var(--color-text-dark);
+      color: #E5E7EB;
+      padding: var(--spacing-md);
+      border-radius: var(--radius-md);
+      font-family: 'SF Mono', 'Consolas', 'Liberation Mono', monospace;
+      font-size: 0.875rem;
+      overflow-x: auto;
+      margin: var(--spacing-md) 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .flowchart {
+      background: var(--color-cloud-gray);
+      border: 1px solid var(--color-soft-gray);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-lg);
+      margin: var(--spacing-md) 0;
+    }
+
+    .flowchart-title {
+      font-size: 0.875rem;
+      color: var(--color-text-secondary);
+      margin-bottom: var(--spacing-md);
+      text-align: center;
+    }
+
+    .flowchart .code-block {
+      font-size: 0.8rem;
+      line-height: 1.5;
+      text-align: left;
+    }
+
+    .note {
+      background: var(--color-info-light);
+      border-left: 4px solid var(--color-info);
+      padding: var(--spacing-md);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      margin: var(--spacing-md) 0;
+    }
+
+    .note-title {
+      font-weight: 600;
+      color: var(--color-info);
+      margin-bottom: var(--spacing-xs);
+    }
+
+    .tree {
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 0.875rem;
+      background: var(--color-cloud-gray);
+      padding: var(--spacing-md);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-soft-gray);
+      white-space: pre;
+      overflow-x: auto;
+    }
+
+    hr {
+      border: none;
+      height: 1px;
+      background: var(--color-soft-gray);
+      margin: var(--spacing-xl) 0;
+    }
+
+    strong { color: var(--color-text-dark); }
+
+    .doc-footer {
+      text-align: center;
+      padding: var(--spacing-xl);
+      color: var(--color-text-secondary);
+      font-size: 0.875rem;
+    }
+
+    @media (max-width: 768px) {
+      .container { padding: var(--spacing-md); }
+      .doc-header { padding: var(--spacing-lg); }
+      .doc-header h1 { font-size: 1.5rem; }
+      .content { padding: var(--spacing-md); }
+      .section-title { font-size: 1.125rem; padding: var(--spacing-sm) var(--spacing-md); }
+      table { font-size: 0.875rem; }
+      th, td { padding: var(--spacing-xs) var(--spacing-sm); }
+    }
+
+    @media print {
+      body { background: white; }
+      .container { max-width: none; padding: 0; }
+      .doc-header, .content { box-shadow: none; border: 1px solid #ddd; }
+      .toc { page-break-after: always; }
+      .section-title { break-after: avoid; }
+      table { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="doc-header">
+      <h1>Bombus 人力資源管理系統</h1>
+      <h2>系統操作指引：從零開始的完整建置流程</h2>
+    </header>
+
+    <section class="doc-info">
+      <div class="doc-info-grid">
+        <div class="doc-info-item">
+          <span class="doc-info-label">文件名稱</span>
+          <span class="doc-info-value">Bombus HRM 系統操作指引 — 新租戶完整建置流程</span>
+        </div>
+        <div class="doc-info-item">
+          <span class="doc-info-label">適用對象</span>
+          <span class="doc-info-value">HR 人員、部門主管、PM / 決策者（不需技術背景）</span>
+        </div>
+        <div class="doc-info-item">
+          <span class="doc-info-label">前提條件</span>
+          <span class="doc-info-value">已取得租戶帳號（管理員）並成功登入系統</span>
+        </div>
+        <div class="doc-info-item">
+          <span class="doc-info-label">文件版本</span>
+          <span class="doc-info-value">v1.0</span>
+        </div>
+      </div>
+    </section>
+
+    <nav class="toc">
+      <h2 class="toc-title">目錄</h2>
+      <ol class="toc-list">
+
+      </ol>
+    </nav>
+
+    <main class="content">
+      <hr>
+<h2 id="section-1" class="section-title" style="font-size:1.5rem; text-align:center; margin: var(--spacing-2xl) 0 var(--spacing-xl);">Bombus 人力資源管理系統</h2>
+<hr>
+<h2 id="section-2" class="section-title" style="font-size:1.5rem; text-align:center; margin: var(--spacing-2xl) 0 var(--spacing-xl);">系統操作指引：從零開始的完整建置流程</h2>
+<hr>
+<h2 id="section-3" class="section-title">文件資訊</h2>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>項目</th>
+<th>內容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>文件名稱</td>
+<td>Bombus HRM 系統操作指引 — 新租戶完整建置流程</td>
+</tr>
+<tr>
+<td>適用對象</td>
+<td>HR 人員、部門主管、PM / 決策者（不需技術背景）</td>
+</tr>
+<tr>
+<td>前提條件</td>
+<td>已取得租戶帳號（管理員）並成功登入系統</td>
+</tr>
+<tr>
+<td>文件版本</td>
+<td>v1.0</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="section-4" class="section-title">使用說明</h2>
+<p>本指引假設您的租戶剛開通，系統內<strong>尚無任何資料</strong>。請依照以下 9 個步驟的順序操作，每個步驟都依賴前面步驟建立的資料。</p>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>重要提醒</strong>：步驟之間有先後依賴關係，請勿跳步執行。例如：建立職務說明書（步驟 4）前，必須先完成職等職級（步驟 2）與職能模型（步驟 3）的建立。</div>
+</div>
+<hr>
+<h2 id="section-5" class="section-title">建置流程總覽</h2>
+<div class="code-block">步驟 1  租戶管理 — 組織架構          建立公司與部門
+  ↓
+步驟 2  職能管理 — 職等職級管理      建立職等、薪資、軌道
+  ↓
+步驟 3  職能管理 — 職能模型基準      建立四大類職能定義
+  ↓
+步驟 4  職能管理 — 職務說明書管理    撰寫各職位的 JD
+  ↓
+步驟 5  員工管理 — 招募職缺管理      發佈職缺、收集履歷
+  ↓
+步驟 6  員工管理 — AI 智能面試       面試評核與 AI 分析
+  ↓
+步驟 7  員工管理 — 人才庫管理        儲備未錄取的優秀人才
+  ↓
+步驟 8  員工管理 — 入職管理          候選人轉員工、開帳號
+  ↓
+步驟 9  職能管理 — 職能評估          定期績效評估循環</div>
+<hr>
+<hr>
+<h2 id="section-6" class="section-title" style="font-size:1.5rem; text-align:center; margin: var(--spacing-2xl) 0 var(--spacing-xl);">步驟 1：建立組織架構（公司與部門）</h2>
+<h2 id="section-7" class="section-title">為什麼要先做這一步？</h2>
+<p>組織架構是所有後續功能的基礎。部門資料會被用在：職等職級的部門職位對照、職務說明書的部門歸屬、招募職缺的所屬部門、員工入職的部門分配。</p>
+<h2 id="section-8" class="section-title">進入方式</h2>
+<p>側邊欄：<strong>系統設定 → 租戶管理 → 組織架構管理</strong></p>
+<h2 id="section-9" class="section-title">操作步驟</h2>
+<h3 id="section-10">1.1 建立公司（集團 / 子公司）</h3>
+<ol>
+<li>點擊頁面上方的「<strong>新增節點</strong>」按鈕</li>
+<li>在彈窗中選擇類型為「<strong>集團</strong>」（若為第一間母公司）或「<strong>子公司</strong>」</li>
+<li>填寫以下資訊：</li>
+</ol>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>必填</th>
+<th>說明</th>
+<th>範例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>公司名稱</td>
+<td>是</td>
+<td>公司顯示名稱</td>
+<td>台灣總部</td>
+</tr>
+<tr>
+<td>公司代碼</td>
+<td>否</td>
+<td>內部代碼</td>
+<td>HQ-TW</td>
+</tr>
+<tr>
+<td>類型</td>
+<td>是</td>
+<td>集團 或 子公司</td>
+<td>集團</td>
+</tr>
+<tr>
+<td>上級單位</td>
+<td>否</td>
+<td>母公司（根節點選「無」）</td>
+<td>無（根節點）</td>
+</tr>
+<tr>
+<td>地址</td>
+<td>否</td>
+<td>公司地址</td>
+<td>台北市信義區信義路五段7號</td>
+</tr>
+<tr>
+<td>電話</td>
+<td>否</td>
+<td>公司電話</td>
+<td>02-2345-6789</td>
+</tr>
+<tr>
+<td>Email</td>
+<td>否</td>
+<td>公司信箱</td>
+<td><a href="mailto:info@company.com">info@company.com</a></td>
+</tr>
+<tr>
+<td>統一編號</td>
+<td>否</td>
+<td>稅籍編號</td>
+<td>12345678</td>
+</tr>
+<tr>
+<td>成立日期</td>
+<td>否</td>
+<td>公司成立日</td>
+<td>2020-01-01</td>
+</tr>
+<tr>
+<td>營運狀態</td>
+<td>否</td>
+<td>營運中 / 已停止</td>
+<td>營運中</td>
+</tr>
+</tbody></table></div>
+<ol start="4">
+<li>點擊「<strong>建立公司</strong>」</li>
+</ol>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>建議</strong>：先建立一間集團（母公司），再依需要建立子公司。子公司建立時，「上級單位」選擇母公司即可。</div>
+</div>
+<h3 id="section-11">1.2 建立部門</h3>
+<ol>
+<li>在組織架構圖中，點擊已建立的公司節點</li>
+<li>選擇「<strong>新增部門</strong>」</li>
+<li>填寫以下資訊：</li>
+</ol>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>必填</th>
+<th>說明</th>
+<th>範例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>部門名稱</td>
+<td>是</td>
+<td>部門顯示名稱</td>
+<td>研發部</td>
+</tr>
+<tr>
+<td>部門代碼</td>
+<td>否</td>
+<td>內部代碼</td>
+<td>RD-001</td>
+</tr>
+<tr>
+<td>主管</td>
+<td>否</td>
+<td>部門主管（目前無員工可先跳過，後續補填）</td>
+<td>—</td>
+</tr>
+<tr>
+<td>上級單位</td>
+<td>否</td>
+<td>所屬公司或上級部門</td>
+<td>台灣總部</td>
+</tr>
+</tbody></table></div>
+<ol start="4">
+<li>點擊「<strong>建立部門</strong>」</li>
+<li>重複以上步驟，建立所有需要的部門</li>
+</ol>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>提醒</strong>：部門的「主管」欄位目前系統內還沒有員工資料，可以先留空，等步驟 8 員工入職後再回來補填。</div>
+</div>
+<h3 id="section-12">1.3 確認組織架構</h3>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>資料結構說明</strong>：系統將公司（集團/子公司）與部門統一儲存於同一張 `org_units` 表中，透過 `type` 欄位區分（`group` = 集團、`subsidiary` = 子公司、`department` = 部門），並以 `parent_id` 建立上下層級關係。</div>
+</div>
+<p>建立完成後，您可以透過兩種方式檢視：</p>
+<ul>
+<li><strong>畫布模式</strong>：以視覺化的組織架構圖呈現，支援拖曳排列與匯出 PNG</li>
+<li><strong>列表模式</strong>：以樹狀表格呈現，可展開/收合各層級</li>
+</ul>
+<p>頁面頂部的統計卡片會顯示：公司數、部門數、員工總數（此時為 0）。</p>
+<hr>
+<hr>
+<h2 id="section-13" class="section-title" style="font-size:1.5rem; text-align:center; margin: var(--spacing-2xl) 0 var(--spacing-xl);">步驟 2：建立職等職級管理</h2>
+<h2 id="section-14" class="section-title">為什麼要先做這一步？</h2>
+<p>職等職級定義了組織的階層結構（職等 1-7）、每個職等的薪資範圍、雙軌制頭銜（管理職/專業職），以及各部門的具體職位名稱。這些資料會在步驟 4 建立職務說明書時被引用。</p>
+<h2 id="section-15" class="section-title">進入方式</h2>
+<p>側邊欄：<strong>職能管理 → 職等職級管理</strong></p>
+<h2 id="section-16" class="section-title">操作步驟</h2>
+<h3 id="section-17">2.1 進入編輯模式</h3>
+<ol>
+<li>進入「職等職級矩陣」主頁籤（預設顯示）</li>
+<li>點擊右上角「<strong>編輯模式</strong>」按鈕（鎖頭圖示會變為解鎖狀態）</li>
+</ol>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>注意</strong>：所有新增與修改操作都需要在「編輯模式」下才能執行。</div>
+</div>
+<h3 id="section-18">2.2 建立職等與薪資級別</h3>
+<ol>
+<li>點擊「<strong>新增職等</strong>」按鈕</li>
+<li>在右側展開的編輯面板中填寫：</li>
+</ol>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>說明</th>
+<th>範例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>職等</td>
+<td>系統自動分配下一個可用的職等數字</td>
+<td>1</td>
+</tr>
+<tr>
+<td>職級代碼前綴</td>
+<td>薪資代碼的前綴文字</td>
+<td>BS</td>
+</tr>
+</tbody></table></div>
+<ol start="3">
+<li>在「<strong>薪資級距</strong>」區塊，點擊「<strong>新增薪資級別</strong>」：</li>
+</ol>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>說明</th>
+<th>範例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>代碼</td>
+<td>系統自動編號（前綴 + 序號）</td>
+<td>BS01</td>
+</tr>
+<tr>
+<td>月薪</td>
+<td>該級別對應的月薪金額</td>
+<td>28000</td>
+</tr>
+</tbody></table></div>
+<ol start="4">
+<li>依需要新增多個薪資級別（例如 BS01 = 28,000、BS02 = 30,000）</li>
+<li>點擊「<strong>儲存</strong>」</li>
+<li>重複以上步驟，建立職等 1 到 7（或依貴公司實際需要的職等數量）</li>
+</ol>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>自動編號規則</strong>：系統會從前一職等的最大代碼 +1 開始編號。例如職等 1 最大是 BS02，職等 2 會自動從 BS03 開始。</div>
+</div>
+<h3 id="section-19">2.3 設定軌道職稱</h3>
+<p>系統預設已有「管理職」與「專業職」兩條軌道。您需要為每個職等設定對應的職稱：</p>
+<ol>
+<li>切換到「<strong>管理職</strong>」軌道子頁籤（子頁籤名稱會依據系統中定義的軌道名稱動態顯示）</li>
+<li>為每個職等填寫管理職的職稱（如：職等 1 = 組長、職等 3 = 副理、職等 4 = 經理）</li>
+<li>切換到「<strong>專業職</strong>」軌道子頁籤</li>
+<li>為每個職等填寫專業職的職稱（如：職等 1 = 助理工程師、職等 3 = 資深工程師）</li>
+</ol>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>如需新增其他軌道</strong>（如「專家職」）：在編輯模式下點擊「<strong>新增軌道</strong>」，填寫軌道代碼、名稱、最高職等、圖示與顏色。</div>
+</div>
+<h3 id="section-20">2.4 建立部門職位對照</h3>
+<p>為每個部門定義在各職等、各軌道下的具體職位名稱：</p>
+<ol>
+<li>在軌道明細子頁籤中，找到對應的職等行</li>
+<li>點擊「<strong>新增職位</strong>」</li>
+<li>填寫：</li>
+</ol>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>必填</th>
+<th>說明</th>
+<th>範例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>子公司</td>
+<td>否</td>
+<td>所屬子公司</td>
+<td>台灣總部</td>
+</tr>
+<tr>
+<td>部門</td>
+<td>是</td>
+<td>所屬部門（從步驟 1 建立的部門中選擇）</td>
+<td>研發部</td>
+</tr>
+<tr>
+<td>職等</td>
+<td>是</td>
+<td>職等數字</td>
+<td>3</td>
+</tr>
+<tr>
+<td>職位名稱</td>
+<td>是</td>
+<td>該部門在此職等的職位名稱</td>
+<td>資深軟體架構師</td>
+</tr>
+<tr>
+<td>軌道</td>
+<td>是</td>
+<td>管理職 / 專業職 / 雙軌</td>
+<td>專業職</td>
+</tr>
+</tbody></table></div>
+<ol start="4">
+<li>點擊「<strong>儲存</strong>」</li>
+</ol>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>提醒</strong>：部門職位會在步驟 4（職務說明書）和步驟 8（入職轉換）時用到。</div>
+</div>
+<h3 id="section-21">2.5 審核機制</h3>
+<p>職等職級的所有變更（新增、修改、刪除）都會進入「<strong>待審核</strong>」流程：</p>
+<ol>
+<li>提交變更後，記錄會出現在「<strong>待審核</strong>」主頁籤</li>
+<li>具有審核權限的管理者可以「核准」或「駁回」</li>
+<li>核准後變更才會正式生效</li>
+</ol>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>建議</strong>：初始建置時，可安排一人提交、另一人審核，確保資料正確性。</div>
+</div>
+<hr>
+<hr>
+<h2 id="section-22" class="section-title" style="font-size:1.5rem; text-align:center; margin: var(--spacing-2xl) 0 var(--spacing-xl);">步驟 3：建立職能模型基準</h2>
+<h2 id="section-23" class="section-title">為什麼要先做這一步？</h2>
+<p>職能模型定義了組織需要的各種「能力」。這些職能會在步驟 4 建立職務說明書時，作為 JD 的「職能需求」被引用。</p>
+<h2 id="section-24" class="section-title">進入方式</h2>
+<p>側邊欄：<strong>職能管理 → 職能模型基準</strong></p>
+<h2 id="section-25" class="section-title">操作步驟</h2>
+<h3 id="section-26">3.1 建立核心職能</h3>
+<p>核心職能是全體員工都需具備的基礎能力。</p>
+<ol>
+<li>進入「<strong>核心職能</strong>」頁籤</li>
+<li>點擊「<strong>新增核心職能</strong>」按鈕</li>
+<li>在彈窗中填寫：</li>
+</ol>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>必填</th>
+<th>說明</th>
+<th>範例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>職能代碼</td>
+<td>是</td>
+<td>唯一識別碼</td>
+<td>CORE-01</td>
+</tr>
+<tr>
+<td>職能名稱</td>
+<td>是</td>
+<td>職能名稱</td>
+<td>溝通表達</td>
+</tr>
+<tr>
+<td>職能定義</td>
+<td>否</td>
+<td>文字描述</td>
+<td>有效傳達想法並理解他人觀點的能力</td>
+</tr>
+</tbody></table></div>
+<ol start="4">
+<li><p>在「<strong>等級行為指標</strong>」區塊，展開 L1 到 L6 各等級</p>
+</li>
+<li><p>為每個等級新增行為指標描述：</p>
+<ul>
+<li><strong>L1 入門級</strong>：能清楚表達自己的想法；能撰寫基本的工作郵件</li>
+<li><strong>L2 發展級</strong>：能獨立進行工作報告；能有效回應客戶詢問</li>
+<li>（依此類推至 L6）</li>
+</ul>
+</li>
+<li><p>點擊「<strong>新增</strong>」儲存</p>
+</li>
+</ol>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>等級累積制</strong>：L3 代表需具備 L1 + L2 + L3 所有行為指標，不只是 L3 本身。</div>
+</div>
+<h3 id="section-27">3.2 建立管理職能</h3>
+<p>管理職能是管理者（帶領團隊的人）需要具備的領導能力。</p>
+<ol>
+<li>切換到「<strong>管理職能</strong>」頁籤</li>
+<li>點擊「<strong>新增管理職能</strong>」</li>
+<li>填寫方式與核心職能相同（代碼建議用 MGMT- 前綴）</li>
+</ol>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>範例代碼</th>
+<th>範例名稱</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>MGMT-01</td>
+<td>團隊領導</td>
+</tr>
+<tr>
+<td>MGMT-02</td>
+<td>決策能力</td>
+</tr>
+<tr>
+<td>MGMT-03</td>
+<td>人才發展</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-28">3.3 建立專業職能</h3>
+<p>專業職能是特定部門所需的專業技術能力。</p>
+<ol>
+<li>切換到「<strong>專業職能</strong>」頁籤</li>
+<li>點擊「<strong>新增專業職能</strong>」</li>
+<li>填寫方式與核心職能相同（代碼建議用 PROF- 前綴）</li>
+</ol>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>範例代碼</th>
+<th>範例名稱</th>
+<th>適用部門</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>PROF-01</td>
+<td>系統設計</td>
+<td>研發部</td>
+</tr>
+<tr>
+<td>PROF-02</td>
+<td>財務分析</td>
+<td>財務部</td>
+</tr>
+<tr>
+<td>PROF-03</td>
+<td>招募管理</td>
+<td>人資部</td>
+</tr>
+</tbody></table></div>
+<h3 id="section-29">3.4 建立 KSA 職能</h3>
+<p>KSA 職能以知識(K)、技能(S)、態度(A) 三維度分類，沒有 L1-L6 等級。</p>
+<ol>
+<li>切換到「<strong>KSA 職能</strong>」頁籤</li>
+<li>點擊「<strong>新增 KSA 職能</strong>」</li>
+<li>填寫：</li>
+</ol>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>必填</th>
+<th>說明</th>
+<th>範例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>職能代碼</td>
+<td>是</td>
+<td>唯一識別碼</td>
+<td>KSA-K01</td>
+</tr>
+<tr>
+<td>職能名稱</td>
+<td>是</td>
+<td>名稱</td>
+<td>勞動法規知識</td>
+</tr>
+<tr>
+<td>KSA 類型</td>
+<td>是</td>
+<td>Knowledge / Skill / Attitude</td>
+<td>Knowledge</td>
+</tr>
+<tr>
+<td>職能描述</td>
+<td>否</td>
+<td>說明文字</td>
+<td>熟悉相關勞動法規與人事制度</td>
+</tr>
+<tr>
+<td>行為指標</td>
+<td>否</td>
+<td>具體行為描述</td>
+<td>能正確處理加班費計算與休假規定</td>
+</tr>
+</tbody></table></div>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>多租戶支援</strong>：如果有多間子公司，可以選擇「所屬公司」欄位。留空表示集團共用，選擇特定公司則為該子公司專屬的職能。</div>
+</div>
+<hr>
+<hr>
+<h2 id="section-30" class="section-title" style="font-size:1.5rem; text-align:center; margin: var(--spacing-2xl) 0 var(--spacing-xl);">步驟 4：建立職務說明書（JD）</h2>
+<h2 id="section-31" class="section-title">為什麼要先做這一步？</h2>
+<p>職務說明書是將步驟 2（職等）和步驟 3（職能）整合成一份完整的職務規格文件。後續的招募職缺（步驟 5）可以直接關聯 JD，面試評核也會參考 JD 的職能需求。</p>
+<h2 id="section-32" class="section-title">進入方式</h2>
+<p>側邊欄：<strong>職能管理 → 職務說明書</strong></p>
+<h2 id="section-33" class="section-title">操作步驟</h2>
+<h3 id="section-34">4.1 新增職務說明書</h3>
+<ol>
+<li>在職務說明書列表頁面，點擊「<strong>新增 JD</strong>」按鈕</li>
+<li>系統進入五步驟引導精靈</li>
+</ol>
+<h3 id="section-35">4.2 步驟一：選擇建立模式</h3>
+<p>選擇以下三種方式之一：</p>
+<ul>
+<li><strong>自行新增</strong>：從零開始手動填寫（建議初次使用選擇此項）</li>
+<li><strong>匯入模版</strong>：從已建立的 JD 複製並修改</li>
+<li><strong>AI 職務撰寫助手</strong>：輸入描述自動產生（此功能尚待開發）</li>
+</ul>
+<h3 id="section-36">4.3 步驟二：填寫基本資訊</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>必填</th>
+<th>說明</th>
+<th>範例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>職位代碼</td>
+<td>自動</td>
+<td>選擇部門與職等後自動產生</td>
+<td>JD-RD-3-001</td>
+</tr>
+<tr>
+<td>職位名稱</td>
+<td>是</td>
+<td>職位的顯示名稱</td>
+<td>資深軟體工程師</td>
+</tr>
+<tr>
+<td>子公司</td>
+<td>否</td>
+<td>所屬子公司</td>
+<td>台灣總部</td>
+</tr>
+<tr>
+<td>部門</td>
+<td>是</td>
+<td>所屬部門（從步驟 1 建立的部門選擇）</td>
+<td>研發部</td>
+</tr>
+<tr>
+<td>職等</td>
+<td>是</td>
+<td>職等 1-7（從步驟 2 建立的職等選擇）</td>
+<td>3</td>
+</tr>
+<tr>
+<td>職位</td>
+<td>是</td>
+<td>部門職位（從步驟 2 建立的職位選擇）</td>
+<td>資深軟體架構師</td>
+</tr>
+</tbody></table></div>
+<p>點擊「<strong>下一步</strong>」</p>
+<h3 id="section-37">4.4 步驟三：設定職能需求</h3>
+<p>從步驟 3 建立的職能中選擇此職位所需的能力：</p>
+<ol>
+<li><p><strong>核心職能</strong>：勾選需要的項目，設定要求等級（L1-L6）和權重百分比</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>職能名稱</th>
+<th>要求等級</th>
+<th>權重</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>溝通表達</td>
+<td>L2</td>
+<td>20%</td>
+</tr>
+<tr>
+<td>自我管理</td>
+<td>L3</td>
+<td>15%</td>
+</tr>
+</tbody></table></div>
+</li>
+<li><p><strong>管理職能</strong>：若為管理職位則勾選</p>
+</li>
+<li><p><strong>專業職能</strong>：勾選該部門相關的專業職能</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>職能名稱</th>
+<th>要求等級</th>
+<th>權重</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>系統設計</td>
+<td>L3</td>
+<td>30%</td>
+</tr>
+<tr>
+<td>程式開發</td>
+<td>L4</td>
+<td>20%</td>
+</tr>
+</tbody></table></div>
+</li>
+<li><p><strong>KSA 職能</strong>：勾選並設定權重（無需設定等級）</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>職能名稱</th>
+<th>權重</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Git 版本控制</td>
+<td>10%</td>
+</tr>
+<tr>
+<td>敏捷開發知識</td>
+<td>5%</td>
+</tr>
+</tbody></table></div>
+</li>
+</ol>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>權重提醒</strong>：頁面底部會顯示「總權重」。建議調整至 100%，系統會在非 100% 時顯示警告。</div>
+</div>
+<p>點擊「<strong>下一步：內容設定</strong>」</p>
+<h3 id="section-38">4.5 步驟四：填寫 11 大內容區塊</h3>
+<p>依序填寫以下區塊（可跳過選填項目）：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>區塊名稱</th>
+<th>填寫方式</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>基本資訊</td>
+<td>自動帶入</td>
+<td>系統自動顯示步驟二的資訊</td>
+</tr>
+<tr>
+<td>2</td>
+<td>主要職責</td>
+<td>逐條新增</td>
+<td>這個職位要做的事情清單</td>
+</tr>
+<tr>
+<td>3</td>
+<td>職務目的</td>
+<td>逐條新增</td>
+<td>為什麼需要這個職位</td>
+</tr>
+<tr>
+<td>4</td>
+<td>職務要求</td>
+<td>逐條新增</td>
+<td>學歷、經歷、證照等條件</td>
+</tr>
+<tr>
+<td>5</td>
+<td>最終產品 (VFP)</td>
+<td>逐條新增</td>
+<td>這個職位的最終產出</td>
+</tr>
+<tr>
+<td>6</td>
+<td>職能需求</td>
+<td>自動帶入</td>
+<td>系統自動顯示步驟三的設定</td>
+</tr>
+<tr>
+<td>7</td>
+<td>工作描述</td>
+<td>逐條新增</td>
+<td>日常工作內容描述</td>
+</tr>
+<tr>
+<td>8</td>
+<td>檢查清單</td>
+<td>表格新增</td>
+<td>品質檢查項目（含配分）</td>
+</tr>
+<tr>
+<td>9</td>
+<td>職務責任</td>
+<td>逐條新增</td>
+<td>具體的責任歸屬</td>
+</tr>
+<tr>
+<td>10</td>
+<td>每日工作</td>
+<td>逐條新增</td>
+<td>每天要做的事</td>
+</tr>
+<tr>
+<td>11</td>
+<td>每週工作</td>
+<td>逐條新增</td>
+<td>每週要做的事</td>
+</tr>
+<tr>
+<td>12</td>
+<td>每月工作</td>
+<td>逐條新增</td>
+<td>每月要做的事</td>
+</tr>
+</tbody></table></div>
+<p>每個區塊都有「<strong>新增項目</strong>」按鈕，點擊後會新增一列空白文字輸入框。</p>
+<h3 id="section-39">4.6 步驟五：檢視確認</h3>
+<ol>
+<li>系統以唯讀方式展示完整的職務說明書內容</li>
+<li>確認無誤後點擊「<strong>生成職務說明書</strong>」</li>
+<li>JD 會以「<strong>草稿</strong>」狀態儲存</li>
+</ol>
+<h3 id="section-40">4.7 送出審核與發布</h3>
+<ol>
+<li>回到職務說明書列表，找到剛建立的 JD</li>
+<li>點擊「<strong>送出審核</strong>」</li>
+<li>具有審核權限的主管或 HR 主管在審核介面中「<strong>核准</strong>」</li>
+<li>核准後 JD 狀態變為「<strong>已發佈</strong>」</li>
+</ol>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>JD 狀態流程</strong>：草稿（`draft`）→ 審核中（`pending_review`）→ 已發佈（`published`）→ 已封存（`archived`）。審核者退回時須附上理由，JD 進入已退回（`rejected`）狀態，修改後可重新送出。</div>
+</div>
+<hr>
+<hr>
+<h2 id="section-41" class="section-title" style="font-size:1.5rem; text-align:center; margin: var(--spacing-2xl) 0 var(--spacing-xl);">步驟 5：發佈招募職缺</h2>
+<h2 id="section-42" class="section-title">為什麼要先做這一步？</h2>
+<p>職缺是招募流程的起點。建立職缺時可以關聯步驟 4 已發佈的 JD，讓職能需求自動帶入。</p>
+<h2 id="section-43" class="section-title">進入方式</h2>
+<p>側邊欄：<strong>員工管理 → 招募職缺管理</strong></p>
+<h2 id="section-44" class="section-title">操作步驟</h2>
+<h3 id="section-45">5.1 新增職缺</h3>
+<ol>
+<li>進入職缺管理頁面，點擊「<strong>新增職缺</strong>」</li>
+<li>填寫職缺資訊：</li>
+</ol>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>必填</th>
+<th>說明</th>
+<th>範例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>職缺名稱</td>
+<td>是</td>
+<td>職缺顯示名稱</td>
+<td>資深軟體工程師</td>
+</tr>
+<tr>
+<td>部門</td>
+<td>是</td>
+<td>所屬部門</td>
+<td>研發部</td>
+</tr>
+<tr>
+<td>招募負責人</td>
+<td>是</td>
+<td>負責此職缺的 HR</td>
+<td>王小明</td>
+</tr>
+<tr>
+<td>職務說明</td>
+<td>否</td>
+<td>職缺工作內容描述</td>
+<td>—</td>
+</tr>
+<tr>
+<td>關聯 JD</td>
+<td>否</td>
+<td>選擇已發佈的職務說明書</td>
+<td>JD-RD-3-001</td>
+</tr>
+<tr>
+<td>同步至 104</td>
+<td>否</td>
+<td>是否同步到 104 人力銀行</td>
+<td>勾選</td>
+</tr>
+</tbody></table></div>
+<ol start="3">
+<li>若勾選「同步至 104」，需額外填寫 104 專屬欄位（職缺類型、薪資類型、工作地點等）</li>
+<li>點擊「<strong>儲存草稿</strong>」</li>
+</ol>
+<h3 id="section-46">5.2 送審與發布</h3>
+<ol>
+<li>在職缺列表中找到剛建立的職缺</li>
+<li>點擊「<strong>送出審核</strong>」</li>
+<li>主管核准後，職缺狀態變為「<strong>刊登中</strong>」（系統內部狀態值：<code>published</code>）</li>
+<li>若有勾選 104 同步，系統會自動將職缺同步至 104 人力銀行</li>
+</ol>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>職缺狀態流程</strong>：草稿（`draft`）→ 審核中（`review`）→ 刊登中（`published`）→ 已關閉（`closed`）。</div>
+</div>
+<h3 id="section-47">5.3 匯入履歷</h3>
+<p>職缺刊登後，等待候選人應徵：</p>
+<ul>
+<li><strong>104 自動匯入</strong>：可設定排程（每天/每週/每月），系統自動從 104 匯入新投遞的履歷</li>
+<li><strong>手動匯入</strong>：點擊「<strong>立即匯入</strong>」按鈕即時同步</li>
+<li><strong>手動新增</strong>：僅限「內部職缺」，可直接在系統中手動建立候選人資料</li>
+</ul>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>AI 履歷評分</strong>：履歷匯入時，系統會自動計算每份履歷與職缺的匹配分數（0-100 分），HR 可依匹配度排序優先處理。</div>
+</div>
+<hr>
+<hr>
+<h2 id="section-48" class="section-title" style="font-size:1.5rem; text-align:center; margin: var(--spacing-2xl) 0 var(--spacing-xl);">步驟 6：AI 智能面試</h2>
+<h2 id="section-49" class="section-title">為什麼要先做這一步？</h2>
+<p>當候選人應徵進來後，需要透過面試流程評估其是否適合。AI 智能面試提供標準化的評核機制和量化分析。</p>
+<h2 id="section-50" class="section-title">進入方式</h2>
+<p>側邊欄：<strong>員工管理 → AI 智能面試</strong></p>
+<h2 id="section-51" class="section-title">操作步驟</h2>
+<h3 id="section-52">6.1 發送面試邀請</h3>
+<ol>
+<li>在步驟 5 的候選人列表中，對想面試的候選人點擊「<strong>發送邀請</strong>」</li>
+<li>系統自動產生邀請連結發送給候選人</li>
+<li>候選人透過連結回覆「接受」或「婉拒」</li>
+</ol>
+<h3 id="section-53">6.2 安排面試</h3>
+<p>候選人接受邀請後：</p>
+<ol>
+<li>點擊「<strong>安排面試</strong>」設定面試時間</li>
+<li>系統產生面試表單的 Token 連結與 QR Code</li>
+<li>將連結發送給候選人，候選人在面試前填寫線上問卷（限時 60 分鐘，5 步驟約 50 題）</li>
+</ol>
+<h3 id="section-54">6.3 進行面試評分</h3>
+<p>面試當天，面試官進入評分頁面：</p>
+<ol>
+<li><p>參考候選人履歷與問卷回答</p>
+</li>
+<li><p>針對 <strong>17 個評核項目</strong>逐項評分（100 分倒扣制）：</p>
+<ul>
+<li>個人修養 3 題（守時、禮貌、儀容）</li>
+<li>求職意願 3 題（職業目標、職位了解、態度）</li>
+<li>綜合素質 6 題（執行力、責任感、溝通等）</li>
+<li>性格特質 2 題（外向親和、自信心）</li>
+<li>專業技能 3 題（專業知識、經驗、問題解決）</li>
+</ul>
+</li>
+<li><p>勾選 <strong>6 項面試流程檢核</strong>（確認已介紹公司文化、薪酬福利等）</p>
+</li>
+<li><p>填寫 <strong>10 項綜合評估</strong>與優缺點總評</p>
+</li>
+<li><p>給出錄取建議：<strong>Pass</strong>（錄取）/ <strong>Hold</strong>（保留）/ <strong>Reject</strong>（不錄取）</p>
+</li>
+<li><p>提交評分</p>
+</li>
+</ol>
+<h3 id="section-55">6.4 AI 量化分析</h3>
+<p>面試官提交評分時，系統同步產出 AI 分析報告：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>分析維度</th>
+<th>權重</th>
+<th>內容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>關鍵字匹配</td>
+<td>40%</td>
+<td>候選人回答中的技能與經歷關鍵字</td>
+</tr>
+<tr>
+<td>語意分析</td>
+<td>30%</td>
+<td>溝通風格識別（自信積極/團隊協作/學習成長）</td>
+</tr>
+<tr>
+<td>JD 適配度</td>
+<td>30%</td>
+<td>技能與職缺需求的吻合程度</td>
+</tr>
+</tbody></table></div>
+<p>系統根據綜合分數自動產生錄用建議（強烈推薦 / 推薦 / 待觀察 / 不建議）。</p>
+<h3 id="section-56">6.5 主管最終決策</h3>
+<p>部門主管綜合面試官評分與 AI 報告，做出最終決策：</p>
+<ul>
+<li><strong>錄用</strong> → 進入步驟 6.6 發送 Offer</li>
+<li><strong>婉拒</strong> → 標記為未錄取（可轉入人才庫）</li>
+<li><strong>保留</strong> → 直接轉入人才庫</li>
+</ul>
+<h3 id="section-57">6.6 發送 Offer</h3>
+<ol>
+<li>決定錄用後，點擊「<strong>發送 Offer</strong>」</li>
+<li>系統產生 Offer 回覆連結發送給候選人</li>
+<li>追蹤候選人的 Offer 回覆狀態</li>
+<li>候選人回覆「接受」→ 進入步驟 8（入職管理）</li>
+<li>候選人回覆「婉拒」→ 可選擇轉入人才庫</li>
+</ol>
+<hr>
+<hr>
+<h2 id="section-58" class="section-title" style="font-size:1.5rem; text-align:center; margin: var(--spacing-2xl) 0 var(--spacing-xl);">步驟 7：人才庫管理</h2>
+<h2 id="section-59" class="section-title">什麼情況會用到？</h2>
+<ul>
+<li>面試後決定不錄用，但覺得人才不錯，想保留未來聯繫</li>
+<li>候選人婉拒 Offer，但日後可能有機會再接觸</li>
+<li>收到履歷但目前沒有合適職缺</li>
+</ul>
+<h2 id="section-60" class="section-title">進入方式</h2>
+<p>側邊欄：<strong>員工管理 → 人才庫與再接觸管理</strong></p>
+<h2 id="section-61" class="section-title">操作步驟</h2>
+<h3 id="section-62">7.1 轉入人才庫</h3>
+<p>在招募管理的候選人列表中，針對未錄取或婉拒的候選人：</p>
+<ol>
+<li>點擊「<strong>轉入人才庫</strong>」</li>
+<li>系統自動依據候選人的技能、經歷、學歷設定分類標籤</li>
+</ol>
+<h3 id="section-63">7.2 管理人才庫</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>功能</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>人才列表</td>
+<td>瀏覽與搜尋儲備人才</td>
+</tr>
+<tr>
+<td>標籤管理</td>
+<td>為候選人設定技能、經驗、教育、個性等標籤</td>
+</tr>
+<tr>
+<td>聯繫追蹤</td>
+<td>記錄聯繫歷史（待聯繫 / 已聯繫 / 無意願）</td>
+</tr>
+<tr>
+<td>職缺媒合</td>
+<td>未來有新職缺時，系統可自動媒合適合的人才</td>
+</tr>
+</tbody></table></div>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>提醒</strong>：人才庫中的候選人日後如果有合適職缺，可以直接從人才庫發起面試邀請，不需要重新建立候選人資料。</div>
+</div>
+<hr>
+<hr>
+<h2 id="section-64" class="section-title" style="font-size:1.5rem; text-align:center; margin: var(--spacing-2xl) 0 var(--spacing-xl);">步驟 8：入職管理</h2>
+<h2 id="section-65" class="section-title">什麼情況會用到？</h2>
+<p>候選人接受 Offer 後，需要正式將候選人轉換為員工，建立員工檔案與系統帳號。</p>
+<h2 id="section-66" class="section-title">進入方式</h2>
+<p>側邊欄：<strong>員工管理 → 入職管理</strong></p>
+<h2 id="section-67" class="section-title">操作步驟</h2>
+<h3 id="section-68">8.1 查看待轉換清單</h3>
+<ol>
+<li>進入入職管理頁面的「<strong>入職進度</strong>」頁籤</li>
+<li>系統會自動列出所有已接受 Offer 的候選人</li>
+<li>列表顯示：姓名、Email、應徵職位、接受 Offer 時間、等待天數</li>
+</ol>
+<h3 id="section-69">8.2 執行候選人轉換</h3>
+<ol>
+<li>對目標候選人點擊「<strong>啟動入職</strong>」按鈕</li>
+<li>在彈窗中填寫入職資訊：</li>
+</ol>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>必填</th>
+<th>說明</th>
+<th>來源</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>員工編號</td>
+<td>自動</td>
+<td>系統自動產生（如 E2026001）</td>
+<td>系統</td>
+</tr>
+<tr>
+<td>子公司</td>
+<td>否</td>
+<td>所屬子公司</td>
+<td>自動帶入職缺資料</td>
+</tr>
+<tr>
+<td>部門</td>
+<td>是</td>
+<td>所屬部門</td>
+<td>自動帶入職缺部門</td>
+</tr>
+<tr>
+<td>職等</td>
+<td>是</td>
+<td>職等 1-7</td>
+<td>自動帶入 JD 職等</td>
+</tr>
+<tr>
+<td>職級</td>
+<td>否</td>
+<td>薪資代碼（如 BS05）</td>
+<td>依選擇的職等篩選</td>
+</tr>
+<tr>
+<td>職位</td>
+<td>是</td>
+<td>標準職位名稱</td>
+<td>依部門+職等篩選</td>
+</tr>
+<tr>
+<td>職務</td>
+<td>否</td>
+<td>具體工作名稱（如「財務出納」）</td>
+<td>手動填寫</td>
+</tr>
+<tr>
+<td>角色</td>
+<td>否</td>
+<td>管理者 / 一般員工</td>
+<td>依職位自動判斷</td>
+</tr>
+<tr>
+<td>直屬主管</td>
+<td>否</td>
+<td>下拉選擇</td>
+<td>手動選擇</td>
+</tr>
+<tr>
+<td>到職日期</td>
+<td>是</td>
+<td>預計報到日</td>
+<td>手動選擇</td>
+</tr>
+<tr>
+<td>試用期</td>
+<td>否</td>
+<td>試用月數</td>
+<td>預設 3 個月</td>
+</tr>
+<tr>
+<td>合約類型</td>
+<td>否</td>
+<td>全職/兼職/約聘</td>
+<td>預設全職</td>
+</tr>
+</tbody></table></div>
+<ol start="3">
+<li>點擊「<strong>確認轉換</strong>」</li>
+</ol>
+<h3 id="section-70">8.3 系統自動執行</h3>
+<p>「啟動入職」按下後，系統在同一筆交易中自動完成：</p>
+<ol>
+<li>建立員工記錄（狀態：試用中）</li>
+<li>自動配發登入帳號（帳號 = 候選人 Email）</li>
+<li>產生 12 字元隨機初始密碼（需由 HR 交付給新人）</li>
+<li>指派 employee 系統角色</li>
+<li>複製候選人的學歷與技能資料</li>
+<li>建立入職表單簽署任務</li>
+<li>記錄職務異動（新進入職）</li>
+</ol>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>重要</strong>：轉換完成後，系統會顯示新人的初始密碼。HR 必須安全地將密碼交付給新人，新人首次登入時系統會強制要求更改密碼。</div>
+</div>
+<h3 id="section-71">8.4 新人完成入職手續</h3>
+<p>新人收到帳號後，需要完成以下事項：</p>
+<p><strong>上傳 5 類必要文件</strong>：</p>
+<ol>
+<li>身分證件（正反面影本）</li>
+<li>銀行帳戶（薪資轉帳用）</li>
+<li>體檢報告（三個月內）</li>
+<li>大頭照</li>
+<li>學經歷證明</li>
+</ol>
+<p><strong>簽署入職表單</strong>：</p>
+<ul>
+<li>系統會自動產生 Token 連結，新人透過連結填寫並電子簽名</li>
+<li>如：勞動契約、保密協議、員工守則確認書</li>
+<li>主管審核通過後完成簽署</li>
+</ul>
+<h3 id="section-72">8.5 追蹤入職進度</h3>
+<p>HR 在入職進度頁面可即時查看：</p>
+<ul>
+<li>每位新人的入職完成百分比</li>
+<li>表單簽署進度（已簽 / 總數）</li>
+<li>文件上傳進度（已傳 / 5 類）</li>
+<li>入職狀態：待處理 → 進行中 → 已完成</li>
+</ul>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>進度公式</strong>：進度 = (已核准表單 + 已上傳文件) / (必填表單 + 5 類文件) × 100%</div>
+</div>
+<hr>
+<hr>
+<h2 id="section-73" class="section-title" style="font-size:1.5rem; text-align:center; margin: var(--spacing-2xl) 0 var(--spacing-xl);">步驟 9：職能評估（持續進行）</h2>
+<h2 id="section-74" class="section-title">什麼情況會用到？</h2>
+<p>員工入職後，需要定期進行績效評估。系統提供三層評估機制，形成週 → 月 → 季的持續改善循環。</p>
+<h2 id="section-75" class="section-title">進入方式</h2>
+<p>側邊欄：<strong>職能管理 → 職能評估系統</strong></p>
+<p>頁面以四個頁籤切換：總覽、月度檢核、季度面談、工作週報。</p>
+<h2 id="section-76" class="section-title">三種評估的頻率</h2>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>類型</th>
+<th>頻率</th>
+<th>目的</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>工作週報</td>
+<td>每週</td>
+<td>追蹤日常工作進度，發現問題及時處理</td>
+</tr>
+<tr>
+<td>月度檢核</td>
+<td>每月</td>
+<td>量化評估員工表現，三階段簽核確認</td>
+</tr>
+<tr>
+<td>季度面談</td>
+<td>每季</td>
+<td>深度績效面談，規劃下季發展方向</td>
+</tr>
+</tbody></table></div>
+<h2 id="section-77" class="section-title">操作步驟</h2>
+<h3 id="section-78">9.1 工作週報（每週）</h3>
+<p><strong>HR 操作</strong>：</p>
+<ol>
+<li>切換到「<strong>工作週報</strong>」頁籤</li>
+<li>點擊「<strong>生成本週週報</strong>」→ 系統批次為全體員工建立本週的週報記錄</li>
+</ol>
+<p><strong>員工操作</strong>：</p>
+<ol>
+<li>開啟自己的週報，填寫 7 大區塊：<ul>
+<li>例行工作（含預估/實際時間）</li>
+<li>非例行工作</li>
+<li>待辦事項（優先級、狀態）</li>
+<li>問題與解決方案</li>
+<li>教育訓練進度</li>
+<li>階段性任務進度</li>
+<li>本週總結與下週計劃</li>
+</ul>
+</li>
+<li>完成電子簽名</li>
+<li>點擊「<strong>提交週報</strong>」</li>
+</ol>
+<p><strong>主管操作</strong>：</p>
+<ul>
+<li>審核直屬部屬的週報 → 核准或退回</li>
+</ul>
+<h3 id="section-79">9.2 月度檢核（每月）</h3>
+<p><strong>HR 操作</strong>：</p>
+<ol>
+<li>切換到「<strong>月度檢核</strong>」頁籤</li>
+<li>建立當月的檢核表（系統可複製前月項目或套用模板）</li>
+</ol>
+<p><strong>員工操作</strong>：</p>
+<ol>
+<li>開啟自己的檢核表</li>
+<li>逐項填寫自評分數（1-10 分）</li>
+<li>完成電子簽名</li>
+<li>點擊「<strong>簽名並提交自評</strong>」</li>
+</ol>
+<p><strong>主管操作</strong>：</p>
+<ol>
+<li>開啟部屬的檢核表</li>
+<li>逐項填寫主管評分（1-10 分）</li>
+<li>填寫主管評語</li>
+<li>完成電子簽名</li>
+<li>點擊「<strong>簽名並核准</strong>」（或退回員工修改）</li>
+</ol>
+<p><strong>HR 操作</strong>：</p>
+<ol>
+<li>確認評分無誤</li>
+<li>完成電子簽名</li>
+<li>點擊「<strong>簽名並結案</strong>」→ 系統自動計算加權總分</li>
+</ol>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>計分公式</strong>：加權總分 = Σ(主管分數 × 點數 ÷ 總點數) × 20。此總分僅在 HR 結案時才會以<strong>主管評分</strong>進行最終計算並存檔，自評期間的分數不影響總分。</div>
+</div>
+<h3 id="section-80">9.3 季度面談（每季）</h3>
+<p><strong>HR 操作</strong>：</p>
+<ol>
+<li>切換到「<strong>季度面談</strong>」頁籤</li>
+<li>點擊「<strong>初始化本季面談</strong>」→ 系統批次建立全體員工的面談記錄</li>
+</ol>
+<p><strong>員工操作</strong>（填寫員工表單，9 步驟）：</p>
+<ol>
+<li>自我評估摘要</li>
+<li>最有貢獻的三件事 + 學習成長</li>
+<li>目標檢核（已達成/部分達成/未達成）</li>
+<li>JD 與 OKR 季檢核</li>
+<li>職能自評（核心職能 5 項，1-5 分）</li>
+<li>（步驟六由主管填）</li>
+<li>滿意度調查（12 題，1-5 分）</li>
+<li>（步驟八由主管填）</li>
+<li>發展計劃（指標、措施、截止日）</li>
+</ol>
+<p><strong>主管操作</strong>（填寫主管表單）：</p>
+<ol>
+<li>員工評核（4 面向 × 5 項，1-5 分）：工作成果、專業能力、團隊貢獻、工作態度</li>
+<li>管理職能評估（3 項：人才發展、決策能力、團隊領導）</li>
+<li>填寫最佳表現評語、需改進評語</li>
+<li>預約面談日期與地點</li>
+<li>進行正式面談</li>
+<li>填寫發展計劃</li>
+</ol>
+<p><strong>HR 操作</strong>：</p>
+<ul>
+<li>面談完成後點擊「<strong>結案</strong>」歸檔</li>
+</ul>
+<h3 id="section-81">9.4 HR 總覽儀表板</h3>
+<p>切換到「<strong>總覽</strong>」頁籤，HR 可即時監控：</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>監控項目</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>月度完成率</td>
+<td>當月已完成 ÷ 總人數</td>
+</tr>
+<tr>
+<td>季度完成率</td>
+<td>當季已結案 ÷ 預計面談數</td>
+</tr>
+<tr>
+<td>週報提交率</td>
+<td>本週已提交 ÷ 總數</td>
+</tr>
+<tr>
+<td>未完成清單</td>
+<td>各類別的逾期或未完成項目</td>
+</tr>
+<tr>
+<td>部門平均分數</td>
+<td>各部門的月度/季度平均績效</td>
+</tr>
+<tr>
+<td>個人趨勢分析</td>
+<td>選擇特定員工查看歷史趨勢</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="section-82" class="section-title">附錄：常見問題</h2>
+<h3 id="section-83">Q1：可以跳過某些步驟嗎？</h3>
+<p>不建議。每個步驟都依賴前面步驟的資料。例如沒有先建立部門（步驟 1），就無法在職等職級中設定部門職位（步驟 2）。</p>
+<h3 id="section-84">Q2：初始建置大概需要多少時間？</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>步驟</th>
+<th>預估時間</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>步驟 1 組織架構</td>
+<td>30 分鐘</td>
+<td>視公司規模與部門數量</td>
+</tr>
+<tr>
+<td>步驟 2 職等職級</td>
+<td>1-2 小時</td>
+<td>7 個職等 + 薪資 + 部門職位</td>
+</tr>
+<tr>
+<td>步驟 3 職能模型</td>
+<td>2-4 小時</td>
+<td>視職能數量，建議先建核心職能</td>
+</tr>
+<tr>
+<td>步驟 4 職務說明書</td>
+<td>每份 30-60 分鐘</td>
+<td>視職位數量</td>
+</tr>
+<tr>
+<td>步驟 5-9</td>
+<td>持續進行</td>
+<td>日常營運流程</td>
+</tr>
+</tbody></table></div>
+<div class="note">
+<div class="note-title">說明</div>
+<div><strong>建議</strong>：步驟 1-4 可安排專人在 1-2 個工作日內集中完成初始建置。</div>
+</div>
+<h3 id="section-85">Q3：已經有員工資料怎麼辦？</h3>
+<p>如果公司已有在職員工但尚未在系統中建立，可以透過「員工與帳號管理」頁面（系統設定 → 租戶管理 → 員工與帳號管理）進行「<strong>新增員工</strong>」或「<strong>批次匯入</strong>」。匯入後再回到步驟 9 開始進行職能評估。</p>
+<h3 id="section-86">Q4：多間子公司的資料如何隔離？</h3>
+<ul>
+<li>職等結構（1-7）全集團統一</li>
+<li>薪資級別、軌道頭銜、部門職位可由各子公司分別定義</li>
+<li>職能模型可設定為「集團共用」或「子公司專屬」</li>
+<li>篩選器中都有「子公司」選項，可切換檢視不同子公司的資料</li>
+</ul>
+<h3 id="section-87">Q5：步驟順序有沒有可以平行的？</h3>
+<p>步驟 2（職等職級）與步驟 3（職能模型）之間沒有直接依賴，理論上可以同時進行。但兩者都必須在步驟 4（職務說明書）之前完成。</p>
+
+    </main>
+
+    <footer class="doc-footer">
+      <p>Bombus 人力資源管理系統 — 本文件由系統自動產生</p>
+    </footer>
+  </div>
+</body>
+</html>

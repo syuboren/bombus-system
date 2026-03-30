@@ -1,0 +1,1380 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bombus HRM — 組織架構、帳號管理、角色權限與平台管理</title>
+<style>
+  :root {
+    --bg-base: #F5F5F7;
+    --bg-card: #FCFCFD;
+    --text-primary: #464E56;
+    --text-secondary: #6B7280;
+    --text-dark: #1F2937;
+    --border: #E2E4E8;
+    --soft-gray: #E8E8EA;
+    --brand-main: #64748B;
+    --brand-light: #94A3B8;
+    --brand-dark: #475569;
+    --l1-sage: #8DA399;
+    --l1-sage-light: #A8BAB0;
+    --l1-sage-dark: #6B8577;
+    --success: #7FB095;
+    --warning: #E3C088;
+    --danger: #C77F7F;
+    --info: #8DA8BE;
+    --l2-terracotta: #D6A28C;
+    --l4-mauve: #9A8C98;
+    --l3-petrol: #7F9CA0;
+    --radius: 12px;
+    --shadow: 0 4px 20px rgba(0,0,0,0.05);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", sans-serif;
+    background: var(--bg-base);
+    color: var(--text-primary);
+    line-height: 1.6;
+    overflow: hidden;
+  }
+
+  /* Deck & Slides */
+  .deck { width: 100vw; height: 100vh; position: relative; }
+  .slide {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    padding: 48px 72px 64px;
+    opacity: 0; visibility: hidden;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    transform: translateX(36px);
+    overflow-y: auto;
+  }
+  .slide.active { opacity: 1; visibility: visible; transform: translateX(0); }
+
+  /* Typography */
+  h1 { font-size: 2rem; font-weight: 600; color: var(--text-dark); margin-bottom: 6px; letter-spacing: -0.02em; }
+  h2 { font-size: 1.3rem; font-weight: 600; color: var(--brand-dark); margin-bottom: 18px; }
+  h3 { font-size: 1rem; font-weight: 600; color: var(--text-dark); margin-bottom: 8px; }
+  p, li { font-size: 0.9rem; color: var(--text-primary); line-height: 1.7; }
+  .subtitle { font-size: 1.05rem; color: var(--text-secondary); margin-bottom: 24px; }
+  .section-label {
+    display: inline-block; font-size: 0.72rem; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--brand-main); border: 1.5px solid var(--brand-light);
+    border-radius: 6px; padding: 2px 10px; margin-bottom: 12px;
+  }
+
+  /* Layout */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; }
+  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; }
+  .flex-col { display: flex; flex-direction: column; }
+  .gap-6 { gap: 6px; } .gap-8 { gap: 8px; } .gap-10 { gap: 10px; } .gap-12 { gap: 12px; }
+  .gap-16 { gap: 16px; } .gap-20 { gap: 20px; } .gap-24 { gap: 24px; }
+  .mt-8 { margin-top: 8px; } .mt-12 { margin-top: 12px; }
+  .mt-16 { margin-top: 16px; } .mt-20 { margin-top: 20px; }
+  .mt-auto { margin-top: auto; }
+  .mb-4 { margin-bottom: 4px; } .mb-8 { margin-bottom: 8px; }
+
+  /* Cards — NO border-left */
+  .card {
+    background: var(--bg-card); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 22px;
+  }
+  .card-sm {
+    background: var(--bg-card); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 16px 18px;
+  }
+  .card-tint-sage { background: rgba(141,163,153,0.07); }
+  .card-tint-info { background: rgba(141,168,190,0.07); }
+  .card-tint-brand { background: rgba(100,116,139,0.06); }
+  .card-tint-warning { background: rgba(227,192,136,0.08); }
+  .card-tint-danger { background: rgba(199,127,127,0.07); }
+  .card-tint-success { background: rgba(127,176,149,0.07); }
+  .card-tint-terra { background: rgba(214,162,140,0.08); }
+  .card-tint-petrol { background: rgba(127,156,160,0.08); }
+
+  /* Badges */
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 0.78rem; font-weight: 500; padding: 3px 10px; border-radius: 16px;
+  }
+  .badge-sage { background: rgba(141,163,153,0.15); color: var(--l1-sage-dark); }
+  .badge-brand { background: rgba(100,116,139,0.12); color: var(--brand-dark); }
+  .badge-info { background: rgba(141,168,190,0.15); color: #5e7f96; }
+  .badge-success { background: rgba(127,176,149,0.15); color: #4f7a63; }
+  .badge-warning { background: rgba(227,192,136,0.18); color: #8b7034; }
+  .badge-danger { background: rgba(199,127,127,0.15); color: #8b4545; }
+  .badge-terra { background: rgba(214,162,140,0.15); color: #8a5e42; }
+  .badge-petrol { background: rgba(127,156,160,0.15); color: #4d6e72; }
+  .badge-mauve { background: rgba(154,140,152,0.15); color: #5e5060; }
+  .badge-neutral { background: var(--soft-gray); color: var(--text-secondary); }
+
+  .num-circle {
+    width: 28px; height: 28px; min-width: 28px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 0.78rem; font-weight: 600; flex-shrink: 0;
+  }
+
+  /* Flow horizontal */
+  .flow-h { display: flex; align-items: stretch; gap: 0; }
+  .flow-step { flex: 1; text-align: center; padding: 14px 8px; position: relative; }
+  .flow-step::after {
+    content: ''; position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+    width: 0; height: 0; border-top: 7px solid transparent;
+    border-bottom: 7px solid transparent; border-left: 7px solid var(--border);
+  }
+  .flow-step:last-child::after { display: none; }
+  .flow-num {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 0.75rem; font-weight: 600; color: #fff; margin-bottom: 6px;
+  }
+  .flow-title { font-size: 0.78rem; font-weight: 600; color: var(--text-dark); margin-bottom: 3px; }
+  .flow-desc { font-size: 0.68rem; color: var(--text-secondary); line-height: 1.35; }
+
+  /* State flow (horizontal arrows) */
+  .state-flow {
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    font-size: 0.82rem;
+  }
+  .state-arrow { color: var(--brand-light); font-size: 0.9rem; }
+
+  /* Table */
+  .tbl { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  .tbl th {
+    text-align: left; font-weight: 600; padding: 8px 12px;
+    border-bottom: 2px solid var(--brand-main); color: var(--brand-dark);
+    background: rgba(100,116,139,0.05);
+  }
+  .tbl td { padding: 8px 12px; border-bottom: 1px solid var(--soft-gray); }
+  .tbl tr:last-child td { border-bottom: none; }
+
+  /* Lists */
+  ul.clean { list-style: none; padding-left: 0; }
+  ul.clean li { position: relative; padding-left: 18px; margin-bottom: 6px; font-size: 0.88rem; }
+  ul.clean li::before {
+    content: ''; position: absolute; left: 0; top: 10px;
+    width: 5px; height: 5px; border-radius: 2px; background: var(--brand-light);
+  }
+
+  .highlight-box {
+    background: rgba(100,116,139,0.05); border-radius: var(--radius);
+    padding: 16px 20px; border: 1px solid var(--border);
+  }
+
+  /* Nav path breadcrumb */
+  .nav-path {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 14px;
+    background: var(--bg-base); padding: 4px 12px; border-radius: 6px;
+  }
+  .nav-path-sep { color: var(--brand-light); }
+
+  /* Navigation */
+  .nav-bar {
+    position: fixed; bottom: 0; left: 0; right: 0; height: 50px;
+    background: var(--bg-card); border-top: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 28px; z-index: 100; box-shadow: 0 -2px 10px rgba(0,0,0,0.03);
+  }
+  .nav-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 7px 18px; border: 1.5px solid var(--border); border-radius: 8px;
+    background: var(--bg-card); color: var(--text-primary);
+    font-size: 0.82rem; font-weight: 500; cursor: pointer;
+    transition: all 0.2s; font-family: inherit;
+  }
+  .nav-btn:hover { background: var(--bg-base); border-color: var(--brand-light); }
+  .nav-btn:disabled { opacity: 0.3; cursor: default; }
+  .nav-btn:disabled:hover { background: var(--bg-card); border-color: var(--border); }
+  .page-indicator { display: flex; gap: 5px; align-items: center; }
+  .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--soft-gray); transition: all 0.3s; cursor: pointer;
+  }
+  .dot.active { background: var(--brand-main); width: 20px; border-radius: 4px; }
+  .page-num { font-size: 0.78rem; color: var(--text-secondary); margin-left: 10px; font-variant-numeric: tabular-nums; }
+  .key-hint {
+    position: fixed; bottom: 58px; right: 28px;
+    font-size: 0.7rem; color: var(--text-secondary); opacity: 0.5; z-index: 101;
+  }
+
+  /* Cover */
+  .cover { justify-content: center; padding: 72px 88px; }
+  .cover-logo { font-size: 0.82rem; font-weight: 600; color: var(--brand-main); letter-spacing: 0.12em; margin-bottom: 28px; }
+  .cover h1 { font-size: 2.4rem; line-height: 1.3; margin-bottom: 10px; max-width: 680px; }
+  .cover .subtitle { font-size: 1.1rem; max-width: 580px; margin-bottom: 40px; }
+  .cover-meta { display: flex; gap: 28px; font-size: 0.82rem; color: var(--text-secondary); }
+  .cover-accent {
+    position: absolute; right: 0; top: 0; bottom: 0; width: 240px;
+    background: linear-gradient(180deg, rgba(100,116,139,0.05) 0%, rgba(100,116,139,0.08) 100%);
+    display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 14px; padding: 40px;
+  }
+  .accent-icon {
+    width: 52px; height: 52px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .slide { padding: 28px 24px 60px; }
+    .cover { padding: 40px 28px; }
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    .cover h1 { font-size: 1.6rem; }
+    .cover-accent { display: none; }
+    .flow-h { flex-direction: column; }
+    .flow-step::after { display: none; }
+  }
+  @media print {
+    body { overflow: visible; }
+    .nav-bar, .key-hint { display: none; }
+    .slide { position: relative; opacity: 1; visibility: visible; transform: none; page-break-after: always; min-height: 100vh; }
+  }
+</style>
+</head>
+<body>
+
+<div class="deck" id="deck">
+
+<!-- ======================== SLIDE 0: COVER ======================== -->
+<section class="slide cover active" data-slide="0">
+  <div class="cover-logo">BOMBUS HRM</div>
+  <h1>組織架構、帳號管理<br>角色權限與平台管理</h1>
+  <p class="subtitle">系統設定與 SaaS 平台管理的完整功能介紹</p>
+  <div class="cover-meta">
+    <span>適用對象：平台管理員 / 系統管理員 / 子公司管理員</span>
+    <span>模組：系統設定 + 平台管理</span>
+  </div>
+  <div class="cover-accent">
+    <div class="accent-icon" style="background:rgba(100,116,139,0.12)">
+      <svg width="26" height="26" fill="none" stroke="var(--brand-dark)" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9h1"/><path d="M9 13h1"/><path d="M9 17h1"/></svg>
+    </div>
+    <div class="accent-icon" style="background:rgba(141,168,190,0.15)">
+      <svg width="26" height="26" fill="none" stroke="#5e7f96" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/><circle cx="12" cy="16" r="1"/></svg>
+    </div>
+    <div class="accent-icon" style="background:rgba(141,163,153,0.12)">
+      <svg width="26" height="26" fill="none" stroke="var(--l1-sage-dark)" stroke-width="1.8" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4-4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 1: PLATFORM & TENANT ARCHITECTURE ======================== -->
+<section class="slide" data-slide="1">
+  <span class="section-label">架構總覽</span>
+  <h2>平台管理者、租戶與角色的關係</h2>
+  <p style="font-size:0.88rem;color:var(--text-secondary);margin-bottom:16px">Bombus 採用 Database-per-Tenant 多租戶 SaaS 架構，以下定義各層級角色與上下關係。</p>
+
+  <div class="card" style="padding:24px 28px;margin-bottom:20px">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:0">
+      <!-- Platform Layer -->
+      <div style="background:rgba(199,127,127,0.1);border:1.5px solid rgba(199,127,127,0.3);border-radius:var(--radius);padding:14px 32px;text-align:center;max-width:400px;width:100%">
+        <div style="font-weight:600;font-size:0.92rem;color:var(--danger);margin-bottom:4px">平台管理員 (Platform Admin)</div>
+        <div style="font-size:0.78rem;color:var(--text-secondary)">SaaS 營運者 — 管理所有租戶的生命週期</div>
+        <div style="display:flex;gap:6px;justify-content:center;margin-top:8px;flex-wrap:wrap">
+          <span class="badge badge-danger" style="font-size:0.7rem">建立租戶</span>
+          <span class="badge badge-danger" style="font-size:0.7rem">方案管理</span>
+          <span class="badge badge-danger" style="font-size:0.7rem">平台審計</span>
+        </div>
+      </div>
+      <!-- Arrow down -->
+      <div style="font-size:1.2rem;color:var(--brand-light);padding:6px 0">&#9660;</div>
+      <div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:6px">建立並管理多個租戶，每個租戶擁有獨立資料庫</div>
+      <!-- Tenant Layer -->
+      <div style="display:flex;gap:16px;width:100%;justify-content:center;flex-wrap:wrap">
+        <!-- Tenant A -->
+        <div style="border:1.5px solid var(--border);border-radius:var(--radius);padding:14px 18px;flex:1;max-width:320px;min-width:240px">
+          <div style="font-weight:600;font-size:0.85rem;color:var(--brand-dark);margin-bottom:10px;text-align:center">租戶 A（企業 A）</div>
+          <!-- super_admin -->
+          <div style="background:rgba(141,168,190,0.1);border-radius:8px;padding:10px 12px;margin-bottom:8px">
+            <div style="font-weight:600;font-size:0.82rem;color:#5e7f96;margin-bottom:2px">super_admin 超級管理員</div>
+            <div style="font-size:0.72rem;color:var(--text-secondary)">租戶內最高權限，管理全部功能與帳號</div>
+          </div>
+          <!-- subsidiary_admin -->
+          <div style="display:flex;gap:6px;margin-bottom:8px">
+            <div style="background:rgba(141,163,153,0.1);border-radius:8px;padding:8px 10px;flex:1">
+              <div style="font-weight:600;font-size:0.75rem;color:var(--l1-sage-dark)">subsidiary_admin</div>
+              <div style="font-size:0.68rem;color:var(--text-secondary)">子公司 A1</div>
+            </div>
+            <div style="background:rgba(141,163,153,0.1);border-radius:8px;padding:8px 10px;flex:1">
+              <div style="font-weight:600;font-size:0.75rem;color:var(--l1-sage-dark)">subsidiary_admin</div>
+              <div style="font-size:0.68rem;color:var(--text-secondary)">子公司 A2</div>
+            </div>
+          </div>
+          <!-- hr/dept/employee -->
+          <div style="display:flex;gap:4px;flex-wrap:wrap">
+            <span class="badge badge-brand" style="font-size:0.65rem">hr_manager</span>
+            <span class="badge badge-brand" style="font-size:0.65rem">dept_manager</span>
+            <span class="badge badge-neutral" style="font-size:0.65rem">employee</span>
+          </div>
+        </div>
+        <!-- Tenant B -->
+        <div style="border:1.5px solid var(--border);border-radius:var(--radius);padding:14px 18px;flex:1;max-width:320px;min-width:240px">
+          <div style="font-weight:600;font-size:0.85rem;color:var(--brand-dark);margin-bottom:10px;text-align:center">租戶 B（企業 B）</div>
+          <div style="background:rgba(141,168,190,0.1);border-radius:8px;padding:10px 12px;margin-bottom:8px">
+            <div style="font-weight:600;font-size:0.82rem;color:#5e7f96;margin-bottom:2px">super_admin 超級管理員</div>
+            <div style="font-size:0.72rem;color:var(--text-secondary)">租戶內最高權限</div>
+          </div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap">
+            <span class="badge badge-brand" style="font-size:0.65rem">hr_manager</span>
+            <span class="badge badge-brand" style="font-size:0.65rem">dept_manager</span>
+            <span class="badge badge-neutral" style="font-size:0.65rem">employee</span>
+          </div>
+          <div style="font-size:0.7rem;color:var(--text-secondary);margin-top:8px;text-align:center">（完全獨立的資料庫）</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-3 gap-12">
+    <div class="card-sm card-tint-danger">
+      <div style="font-weight:600;font-size:0.85rem;color:#8b4545;margin-bottom:4px">平台層</div>
+      <p style="font-size:0.78rem;color:var(--text-secondary)">獨立於租戶體系之外，使用 platform.db。專用登入端點，固定最高權限，無 Refresh Token。</p>
+    </div>
+    <div class="card-sm card-tint-info">
+      <div style="font-weight:600;font-size:0.85rem;color:#5e7f96;margin-bottom:4px">租戶全域層</div>
+      <p style="font-size:0.78rem;color:var(--text-secondary)">super_admin 為租戶內最高管理者，管理所有功能、帳號與角色。使用 tenant_*.db 獨立資料庫。</p>
+    </div>
+    <div class="card-sm card-tint-sage">
+      <div style="font-weight:600;font-size:0.85rem;color:var(--l1-sage-dark);margin-bottom:4px">子公司 / 部門層</div>
+      <p style="font-size:0.78rem;color:var(--text-secondary)">subsidiary_admin 管理特定子公司，dept_manager 管理部門，employee 為一般使用者。權限由 RBAC 矩陣控制。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 2: OVERVIEW ======================== -->
+<section class="slide" data-slide="2">
+  <span class="section-label">總覽</span>
+  <h2>系統管理總覽</h2>
+
+  <div class="grid-2 gap-24">
+    <div class="card">
+      <h3 style="margin-bottom:14px;color:var(--brand-dark)">系統設定（租戶內管理）</h3>
+      <div class="flex-col gap-10">
+        <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.88rem">
+          <div class="num-circle" style="background:rgba(100,116,139,0.1);color:var(--brand-dark)">1</div>
+          <div><strong>組織架構管理</strong><br><span style="color:var(--text-secondary);font-size:0.82rem">集團 → 子公司 → 部門三級組織樹</span></div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.88rem">
+          <div class="num-circle" style="background:rgba(100,116,139,0.1);color:var(--brand-dark)">2</div>
+          <div><strong>使用者帳號管理</strong><br><span style="color:var(--text-secondary);font-size:0.82rem">建立帳號 + 狀態控制 + 員工關聯</span></div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.88rem">
+          <div class="num-circle" style="background:rgba(100,116,139,0.1);color:var(--brand-dark)">3</div>
+          <div><strong>角色權限管理</strong><br><span style="color:var(--text-secondary);font-size:0.82rem">角色定義 + 功能權限矩陣 + 指派</span></div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.88rem">
+          <div class="num-circle" style="background:rgba(100,116,139,0.1);color:var(--brand-dark)">4</div>
+          <div><strong>審計日誌</strong><br><span style="color:var(--text-secondary);font-size:0.82rem">安全操作歷史記錄</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card card-tint-brand">
+      <h3 style="margin-bottom:14px;color:var(--brand-dark)">平台管理（跨租戶管理）</h3>
+      <div class="flex-col gap-10">
+        <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.88rem">
+          <div class="num-circle" style="background:rgba(100,116,139,0.12);color:var(--brand-dark)">5</div>
+          <div><strong>租戶管理</strong><br><span style="color:var(--text-secondary);font-size:0.82rem">建立 / 暫停 / 恢復 / 刪除租戶</span></div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.88rem">
+          <div class="num-circle" style="background:rgba(100,116,139,0.12);color:var(--brand-dark)">6</div>
+          <div><strong>訂閱方案管理</strong><br><span style="color:var(--text-secondary);font-size:0.82rem">功能模組 + 使用者上限 + 費用</span></div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.88rem">
+          <div class="num-circle" style="background:rgba(100,116,139,0.12);color:var(--brand-dark)">7</div>
+          <div><strong>平台審計日誌</strong><br><span style="color:var(--text-secondary);font-size:0.82rem">跨租戶操作記錄</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="highlight-box mt-16" style="font-size:0.85rem">
+    <strong style="color:var(--brand-dark)">存取權限</strong>：前四功能在「系統設定」下，租戶管理員可見；後三功能在「平台管理」下，僅平台管理員可見。<br>
+    <strong style="color:var(--brand-dark)">Multi-tenant</strong>：Database-per-Tenant 架構，每租戶獨立資料庫。
+  </div>
+</section>
+
+<!-- ======================== SLIDE 3: ARCHITECTURE + ROLES ======================== -->
+<section class="slide" data-slide="3">
+  <span class="section-label">權限架構</span>
+  <h2>三層管理架構 + 預設角色</h2>
+
+  <div class="grid-2 gap-24">
+    <div class="card">
+      <h3 style="margin-bottom:14px">三層管理架構</h3>
+      <div class="flex-col gap-10">
+        <div class="card-sm card-tint-danger">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <strong style="font-size:0.88rem;color:#8b4545">平台層</strong>
+            <span class="badge badge-danger">平台管理員</span>
+          </div>
+          <p style="font-size:0.82rem;color:var(--text-secondary)">管理所有租戶，獨立於租戶體系</p>
+        </div>
+        <div class="card-sm card-tint-info">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <strong style="font-size:0.88rem;color:#5e7f96">全域層</strong>
+            <span class="badge badge-info">super_admin</span>
+          </div>
+          <p style="font-size:0.82rem;color:var(--text-secondary)">整個租戶，租戶內最高管理者</p>
+        </div>
+        <div class="card-sm card-tint-sage">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <strong style="font-size:0.88rem;color:var(--l1-sage-dark)">子公司層</strong>
+            <span class="badge badge-sage">subsidiary_admin</span>
+          </div>
+          <p style="font-size:0.82rem;color:var(--text-secondary)">特定子公司，管理該子公司</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom:14px">5 個系統預設角色</h3>
+      <div class="flex-col gap-8">
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-base);border-radius:8px;font-size:0.85rem">
+          <span class="badge badge-brand" style="min-width:120px;justify-content:center">super_admin</span>
+          <div><strong>超級管理員</strong> <span style="color:var(--text-secondary)">— 全域，全功能編輯 + 全公司</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-base);border-radius:8px;font-size:0.85rem">
+          <span class="badge badge-sage" style="min-width:120px;justify-content:center">subsidiary_admin</span>
+          <div><strong>子公司管理員</strong> <span style="color:var(--text-secondary)">— 子公司，大部分功能編輯</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-base);border-radius:8px;font-size:0.85rem">
+          <span class="badge badge-info" style="min-width:120px;justify-content:center">hr_manager</span>
+          <div><strong>人資管理員</strong> <span style="color:var(--text-secondary)">— 全域，HR 相關全權限 + 組織管理</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-base);border-radius:8px;font-size:0.85rem">
+          <span class="badge badge-terra" style="min-width:120px;justify-content:center">dept_manager</span>
+          <div><strong>部門主管</strong> <span style="color:var(--text-secondary)">— 部門，部門級管理</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-base);border-radius:8px;font-size:0.85rem">
+          <span class="badge badge-neutral" style="min-width:120px;justify-content:center">employee</span>
+          <div><strong>一般員工</strong> <span style="color:var(--text-secondary)">— 部門，唯讀 + 自身週報提交</span></div>
+        </div>
+      </div>
+      <p style="font-size:0.78rem;color:var(--text-secondary);margin-top:10px">系統角色不可刪除，但可修改名稱與權限</p>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 4: ORG STRUCTURE ======================== -->
+<section class="slide" data-slide="4">
+  <span class="section-label">組織架構管理</span>
+  <div class="nav-path">系統設定 <span class="nav-path-sep">&#8250;</span> 租戶管理 <span class="nav-path-sep">&#8250;</span> 組織架構管理</div>
+  <h2>三級節點與雙模式展示</h2>
+
+  <div class="grid-2 gap-24">
+    <div class="card">
+      <h3 style="margin-bottom:14px">三級組織節點</h3>
+      <div class="flex-col gap-10">
+        <div class="card-sm card-tint-brand" style="margin-left:0">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <strong style="font-size:0.88rem">集團 (Group) L0</strong>
+            <span class="badge badge-brand">240 x 160px</span>
+          </div>
+          <p style="font-size:0.82rem;color:var(--text-secondary)">最頂層節點，可包含子公司</p>
+        </div>
+        <div class="card-sm card-tint-info" style="margin-left:24px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <strong style="font-size:0.88rem">子公司 (Subsidiary) L1</strong>
+            <span class="badge badge-info">240 x 120px</span>
+          </div>
+          <p style="font-size:0.82rem;color:var(--text-secondary)">法人實體，可包含部門</p>
+        </div>
+        <div class="card-sm card-tint-sage" style="margin-left:48px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <strong style="font-size:0.88rem">部門 (Department) L2+</strong>
+            <span class="badge badge-sage">200 x 90px</span>
+          </div>
+          <p style="font-size:0.82rem;color:var(--text-secondary)">業務單位，可包含子部門</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:14px">雙模式展示</h3>
+        <div class="flex-col gap-10">
+          <div class="card-sm card-tint-info">
+            <strong style="font-size:0.88rem;color:#5e7f96">畫布模式</strong>
+            <p style="font-size:0.82rem;color:var(--text-secondary);margin-top:4px">視覺化拖曳、自動佈局、協作線繪製</p>
+            <p style="font-size:0.78rem;color:var(--text-secondary)">適合簡報展示與調整佈局</p>
+          </div>
+          <div class="card-sm card-tint-sage">
+            <strong style="font-size:0.88rem;color:var(--l1-sage-dark)">列表模式</strong>
+            <p style="font-size:0.82rem;color:var(--text-secondary);margin-top:4px">階層樹狀表格、快速 CRUD</p>
+            <p style="font-size:0.78rem;color:var(--text-secondary)">適合批量管理與快速查看</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-4 mt-16">
+    <div class="card-sm" style="text-align:center">
+      <div style="font-size:1.6rem;font-weight:700;color:var(--brand-dark)">N</div>
+      <div style="font-size:0.78rem;color:var(--text-secondary)">公司數</div>
+    </div>
+    <div class="card-sm" style="text-align:center">
+      <div style="font-size:1.6rem;font-weight:700;color:#5e7f96">N</div>
+      <div style="font-size:0.78rem;color:var(--text-secondary)">部門數</div>
+    </div>
+    <div class="card-sm" style="text-align:center">
+      <div style="font-size:1.6rem;font-weight:700;color:var(--l1-sage-dark)">N</div>
+      <div style="font-size:0.78rem;color:var(--text-secondary)">員工總數</div>
+    </div>
+    <div class="card-sm" style="text-align:center">
+      <div style="font-size:1.6rem;font-weight:700;color:var(--info)">N</div>
+      <div style="font-size:0.78rem;color:var(--text-secondary)">協作關係</div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 5: ORG CANVAS TOOLS ======================== -->
+<section class="slide" data-slide="5">
+  <span class="section-label">組織架構管理（續）</span>
+  <h2>畫布工具與協作關係</h2>
+
+  <div class="grid-2 gap-24">
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:10px">工具列功能</h3>
+        <div class="flex-col gap-6" style="font-size:0.85rem">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <span class="badge badge-brand">視圖切換（畫布/列表）</span>
+            <span class="badge badge-brand">編輯模式（拖曳+對齊）</span>
+            <span class="badge badge-brand">協作線顯示（開/關）</span>
+            <span class="badge badge-brand">網格吸附（開/關）</span>
+            <span class="badge badge-brand">縮放控制（30%-200%）</span>
+            <span class="badge badge-brand">匯出 PNG</span>
+            <span class="badge badge-brand">新增節點</span>
+          </div>
+        </div>
+      </div>
+      <div class="card card-tint-info">
+        <h3 style="margin-bottom:10px">編輯模式工具</h3>
+        <div class="flex-col gap-6" style="font-size:0.85rem">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <span class="badge badge-info">選取（全選 / Ctrl 多選）</span>
+            <span class="badge badge-info">對齊（靠左/置中/靠右/靠上/置中/靠下）</span>
+            <span class="badge badge-info">分布（水平等距 / 垂直等距）</span>
+            <span class="badge badge-info">歷史（還原 Ctrl+Z / 重做 Ctrl+Y）</span>
+            <span class="badge badge-info">自動整理</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:10px">協作關係</h3>
+        <div class="flex-col gap-10">
+          <div class="card-sm card-tint-info">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+              <span style="width:32px;border-top:2px dashed #5e7f96"></span>
+              <strong style="font-size:0.88rem;color:#5e7f96">平行協作 (parallel)</strong>
+            </div>
+            <p style="font-size:0.82rem;color:var(--text-secondary)">虛線藍色，同級或跨級雙向</p>
+          </div>
+          <div class="card-sm card-tint-warning">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+              <span style="width:32px;border-top:2px dashed #8b7034"></span>
+              <strong style="font-size:0.88rem;color:#8b7034">下游流程 (downstream)</strong>
+            </div>
+            <p style="font-size:0.82rem;color:var(--text-secondary)">虛線橘色，單向下游依賴</p>
+          </div>
+        </div>
+        <p style="font-size:0.82rem;color:var(--text-secondary);margin-top:10px">支援錨點調整（上/下/左/右四邊）</p>
+      </div>
+
+      <div class="highlight-box">
+        <h3 style="font-size:0.88rem;margin-bottom:6px;color:var(--danger)">刪除檢查</h3>
+        <ul class="clean" style="font-size:0.85rem">
+          <li>公司需先移除子公司和部門才能刪除</li>
+          <li>部門需先移除子部門和員工</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 6: COMPANY & DEPT MGMT ======================== -->
+<section class="slide" data-slide="6">
+  <span class="section-label">組織架構管理（續）</span>
+  <h2>公司與部門管理</h2>
+
+  <div class="grid-2 gap-24">
+    <div class="card">
+      <h3 style="margin-bottom:12px">新增 / 編輯公司</h3>
+      <div class="flex-col gap-10">
+        <div>
+          <div style="font-weight:600;font-size:0.85rem;color:var(--brand-dark);margin-bottom:6px">基本資訊</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <span class="badge badge-brand">公司名稱（必）</span>
+            <span class="badge badge-neutral">公司代碼</span>
+            <span class="badge badge-brand">類型（必：集團/子公司）</span>
+            <span class="badge badge-neutral">上級單位</span>
+          </div>
+        </div>
+        <div>
+          <div style="font-weight:600;font-size:0.85rem;color:var(--brand-dark);margin-bottom:6px">聯絡資訊</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <span class="badge badge-neutral">地址</span>
+            <span class="badge badge-neutral">電話</span>
+            <span class="badge badge-neutral">Email</span>
+          </div>
+        </div>
+        <div>
+          <div style="font-weight:600;font-size:0.85rem;color:var(--brand-dark);margin-bottom:6px">詳細資訊</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <span class="badge badge-neutral">統一編號</span>
+            <span class="badge badge-neutral">成立日期</span>
+            <span class="badge badge-neutral">營運狀態（營運中/已停止）</span>
+            <span class="badge badge-neutral">公司簡介</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom:12px">新增 / 編輯部門</h3>
+      <div class="flex-col gap-8" style="font-size:0.85rem">
+        <div style="padding:8px 12px;background:var(--bg-base);border-radius:8px">
+          <strong>基本資訊</strong>：<span style="color:var(--text-secondary)">部門名稱（必）、代碼、主管、上級單位</span>
+        </div>
+        <div style="padding:8px 12px;background:var(--bg-base);border-radius:8px">
+          <strong>負責任務</strong>：<span style="color:var(--text-secondary)">動態新增多筆</span>
+        </div>
+        <div style="padding:8px 12px;background:var(--bg-base);border-radius:8px">
+          <strong>KPI 事項</strong>：<span style="color:var(--text-secondary)">動態新增多筆</span>
+        </div>
+        <div style="padding:8px 12px;background:var(--bg-base);border-radius:8px">
+          <strong>職能框架分類</strong>：<span style="color:var(--text-secondary)">巢狀結構（分類 → 職務）</span>
+        </div>
+        <div style="padding:8px 12px;background:var(--bg-base);border-radius:8px">
+          <strong>職務配置</strong>：<span style="color:var(--text-secondary)">唯讀（顯示職等矩陣的部門職位）</span>
+        </div>
+        <div style="padding:8px 12px;background:var(--bg-base);border-radius:8px">
+          <strong>協作關係</strong>：<span style="color:var(--text-secondary)">與其他部門的關係</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 7: USER MANAGEMENT ======================== -->
+<section class="slide" data-slide="7">
+  <span class="section-label">使用者管理</span>
+  <div class="nav-path">系統設定 <span class="nav-path-sep">&#8250;</span> 租戶管理 <span class="nav-path-sep">&#8250;</span> 使用者管理</div>
+  <h2>使用者帳號管理</h2>
+
+  <div class="grid-2 gap-24">
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:10px">使用者清單</h3>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+          <span class="badge badge-brand">使用者（頭像+姓名）</span>
+          <span class="badge badge-brand">電子郵件</span>
+          <span class="badge badge-brand">狀態</span>
+          <span class="badge badge-brand">角色標籤</span>
+          <span class="badge badge-brand">建立時間</span>
+          <span class="badge badge-brand">操作（角色管理）</span>
+        </div>
+      </div>
+      <div class="card card-tint-brand">
+        <h3 style="margin-bottom:10px">帳號狀態</h3>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <span class="badge badge-success" style="padding:6px 14px">active（啟用）</span>
+          <span class="badge badge-neutral" style="padding:6px 14px">inactive（停用）</span>
+          <span class="badge badge-danger" style="padding:6px 14px">locked（鎖定）</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:10px">新增使用者</h3>
+        <div class="flex-col gap-8">
+          <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.85rem">
+            <div class="num-circle" style="background:rgba(100,116,139,0.1);color:var(--brand-dark)">1</div>
+            <div>點擊新增使用者</div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.85rem">
+            <div class="num-circle" style="background:rgba(100,116,139,0.1);color:var(--brand-dark)">2</div>
+            <div>填寫（<span class="badge badge-brand">姓名（必）</span> <span class="badge badge-brand">Email（必）</span> <span class="badge badge-brand">密碼（必）</span> <span class="badge badge-neutral">關聯員工 ID</span>）</div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.85rem">
+            <div class="num-circle" style="background:rgba(100,116,139,0.1);color:var(--brand-dark)">3</div>
+            <div>bcrypt 加密密碼</div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.85rem">
+            <div class="num-circle" style="background:rgba(100,116,139,0.1);color:var(--brand-dark)">4</div>
+            <div>建立帳號（預設 active）</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-tint-info">
+        <h3 style="margin-bottom:8px">角色指派</h3>
+        <div class="state-flow" style="font-size:0.8rem;margin-bottom:8px">
+          <span class="badge badge-brand">開啟角色管理模態</span>
+          <span class="state-arrow">&#8594;</span>
+          <span class="badge badge-info">查看目前角色</span>
+          <span class="state-arrow">&#8594;</span>
+          <span class="badge badge-sage">指派新角色</span>
+          <span class="state-arrow">&#8594;</span>
+          <span class="badge badge-terra">功能權限預覽</span>
+          <span class="state-arrow">&#8594;</span>
+          <span class="badge badge-success">有效權限（合併後）</span>
+        </div>
+        <p style="font-size:0.82rem;color:var(--text-secondary)">指派時需選擇：角色 + 作用範圍 + 範圍對象</p>
+      </div>
+
+      <div class="highlight-box" style="font-size:0.82rem">
+        使用者帳號與員工檔案是分開的概念，不是每位員工都需要帳號。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 8: PERMISSION MATRIX ======================== -->
+<section class="slide" data-slide="8">
+  <span class="section-label">角色權限管理</span>
+  <div class="nav-path">系統設定 <span class="nav-path-sep">&#8250;</span> 租戶管理 <span class="nav-path-sep">&#8250;</span> 角色管理</div>
+  <h2>功能權限矩陣</h2>
+  <p style="font-size:0.88rem;color:var(--text-secondary);margin-bottom:16px">權限 = 「誰」可以對「哪些功能」做「什麼程度的操作」，看到「多大範圍的資料」</p>
+
+  <div class="grid-2 gap-24">
+    <div class="card">
+      <h3 style="margin-bottom:12px">操作等級 — 能做什麼？</h3>
+      <div class="flex-col gap-10">
+        <div class="card-sm card-tint-danger">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <strong style="font-size:0.88rem;color:#8b4545">none（無權限）</strong>
+          </div>
+          <p style="font-size:0.82rem;color:var(--text-secondary);margin-top:4px">完全看不到功能</p>
+        </div>
+        <div class="card-sm card-tint-info">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <strong style="font-size:0.88rem;color:#5e7f96">view（僅查看）</strong>
+          </div>
+          <p style="font-size:0.82rem;color:var(--text-secondary);margin-top:4px">只能看不能改</p>
+        </div>
+        <div class="card-sm card-tint-success">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <strong style="font-size:0.88rem;color:#4f7a63">edit（可編輯）</strong>
+          </div>
+          <p style="font-size:0.82rem;color:var(--text-secondary);margin-top:4px">完整讀寫權限</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom:12px">資料範圍 — 能看/改多大？</h3>
+      <div class="flex-col gap-10">
+        <div class="card-sm card-tint-warning">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <strong style="font-size:0.88rem;color:#8b7034">self（個人）</strong>
+          </div>
+          <p style="font-size:0.82rem;color:var(--text-secondary);margin-top:4px">只能存取自己的資料</p>
+        </div>
+        <div class="card-sm card-tint-terra">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <strong style="font-size:0.88rem;color:#8a5e42">department（部門）</strong>
+          </div>
+          <p style="font-size:0.82rem;color:var(--text-secondary);margin-top:4px">所屬部門全部資料</p>
+        </div>
+        <div class="card-sm card-tint-brand">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <strong style="font-size:0.88rem;color:var(--brand-dark)">company（全公司）</strong>
+          </div>
+          <p style="font-size:0.82rem;color:var(--text-secondary);margin-top:4px">整個租戶全部資料</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="highlight-box mt-16" style="font-size:0.85rem">
+    <strong style="color:var(--brand-dark)">重要規則</strong>：查看範圍 ≥ 編輯範圍（自動確保），調整編輯範圍時系統自動擴大查看範圍。
+  </div>
+</section>
+
+<!-- ======================== SLIDE 9: MERGE STRATEGY ======================== -->
+<section class="slide" data-slide="9">
+  <span class="section-label">角色權限管理（續）</span>
+  <h2>多角色權限合併：寬鬆策略</h2>
+
+  <div class="grid-2 gap-24">
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:10px">合併規則</h3>
+        <div class="flex-col gap-8" style="font-size:0.85rem">
+          <div style="padding:8px 12px;background:var(--bg-base);border-radius:8px">
+            <strong>等級排序</strong>：<span style="color:var(--text-secondary)">無權限 &lt; 僅查看 &lt; 可編輯</span>
+          </div>
+          <div style="padding:8px 12px;background:var(--bg-base);border-radius:8px">
+            <strong>範圍排序</strong>：<span style="color:var(--text-secondary)">個人 &lt; 部門 &lt; 全公司</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-tint-brand">
+        <h3 style="margin-bottom:10px">合併範例</h3>
+        <div class="flex-col gap-8" style="font-size:0.85rem">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span class="badge badge-info">角色A：L1.profile view/self</span>
+            <span style="color:var(--brand-light);font-weight:600">+</span>
+            <span class="badge badge-sage">角色B：L1.profile edit/department</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+            <span class="state-arrow" style="font-size:1.2rem">&#8595;</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="badge badge-success" style="padding:6px 14px">最終結果：edit / department</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:10px">情境範例</h3>
+        <p style="font-size:0.85rem;margin-bottom:12px"><strong>陳經理</strong> = 部門主管 + HR 經理</p>
+        <div class="flex-col gap-8">
+          <div class="card-sm card-tint-terra">
+            <strong style="font-size:0.85rem;color:#8a5e42">部門主管</strong>
+            <p style="font-size:0.82rem;color:var(--text-secondary);margin-top:2px">員工檔案：edit / 個人（編輯）/ 部門（查看）</p>
+          </div>
+          <div class="card-sm card-tint-info">
+            <strong style="font-size:0.85rem;color:#5e7f96">HR 經理</strong>
+            <p style="font-size:0.82rem;color:var(--text-secondary);margin-top:2px">員工檔案：edit / 全公司 / 全公司</p>
+          </div>
+          <div class="card-sm card-tint-success">
+            <strong style="font-size:0.85rem;color:#4f7a63">合併後</strong>
+            <p style="font-size:0.82rem;color:var(--text-secondary);margin-top:2px">edit / 全公司 / 全公司 — 取最高等級 + 最廣範圍</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="highlight-box" style="font-size:0.85rem">
+        一個使用者可有無限角色，系統自動取各角色最高權限。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 10: PERMISSION SCENARIOS ======================== -->
+<section class="slide" data-slide="10">
+  <span class="section-label">角色權限管理（續）</span>
+  <h2>常見操作情境</h2>
+
+  <div class="grid-2 gap-20">
+    <div class="flex-col gap-14">
+      <div class="card card-tint-sage">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <span class="badge badge-sage">情境 A</span>
+          <strong style="font-size:0.88rem">新員工入職</strong>
+        </div>
+        <p style="font-size:0.82rem;color:var(--text-secondary)">使用者管理 → 確認帳號 → 指派「一般員工」角色（全域）</p>
+      </div>
+      <div class="card card-tint-info">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <span class="badge badge-info">情境 B</span>
+          <strong style="font-size:0.88rem">升任部門主管</strong>
+        </div>
+        <p style="font-size:0.82rem;color:var(--text-secondary)">保留原角色 + 新增「部門主管」（作用範圍：行銷部）→ 權限自動合併</p>
+      </div>
+      <div class="card card-tint-brand">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <span class="badge badge-brand">情境 C</span>
+          <strong style="font-size:0.88rem">建立自訂角色</strong>
+        </div>
+        <p style="font-size:0.82rem;color:var(--text-secondary)">新增角色「招募專員」→ 編輯功能權限（招募+面試+人才庫：edit/全公司）→ 指派</p>
+      </div>
+    </div>
+
+    <div class="flex-col gap-14">
+      <div class="card card-tint-terra">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <span class="badge badge-terra">情境 D</span>
+          <strong style="font-size:0.88rem">確認使用者權限</strong>
+        </div>
+        <p style="font-size:0.82rem;color:var(--text-secondary)">角色管理 → 查看各角色權限 → 查看有效權限（合併後）</p>
+      </div>
+      <div class="card card-tint-warning">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <span class="badge badge-warning">情境 E</span>
+          <strong style="font-size:0.88rem">暫時撤銷權限</strong>
+        </div>
+        <p style="font-size:0.82rem;color:var(--text-secondary)">方式一：停用帳號（推薦）<br>方式二：移除所有角色</p>
+      </div>
+      <div class="card card-tint-danger">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <span class="badge badge-danger">情境 F</span>
+          <strong style="font-size:0.88rem">查看角色使用者</strong>
+        </div>
+        <p style="font-size:0.82rem;color:var(--text-secondary)">角色卡片 →「已指派 N 位」→ 彈出名單</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 11: AUDIT LOG ======================== -->
+<section class="slide" data-slide="11">
+  <span class="section-label">審計日誌</span>
+  <div class="nav-path">系統設定 <span class="nav-path-sep">&#8250;</span> 租戶管理 <span class="nav-path-sep">&#8250;</span> 審計日誌</div>
+  <h2>審計日誌</h2>
+
+  <div class="grid-2 gap-24">
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:10px">篩選條件</h3>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+          <span class="badge badge-brand">動作類型（下拉：全部/登入成功/失敗/建立角色/更新/刪除/指派/移除）</span>
+          <span class="badge badge-brand">開始日期</span>
+          <span class="badge badge-brand">結束日期</span>
+        </div>
+      </div>
+      <div class="card card-tint-brand">
+        <h3 style="margin-bottom:10px">日誌欄位</h3>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <span class="badge badge-brand">時間</span>
+          <span class="badge badge-brand">動作（色彩標記）</span>
+          <span class="badge badge-brand">資源（auth/user/role）</span>
+          <span class="badge badge-brand">使用者</span>
+          <span class="badge badge-brand">IP</span>
+          <span class="badge badge-brand">詳情（40 字截斷）</span>
+        </div>
+      </div>
+      <p style="font-size:0.82rem;color:var(--text-secondary)">支援分頁瀏覽（共 N 筆 / 第 X / Y 頁）</p>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom:12px">7 種動作類型</h3>
+      <div class="flex-col gap-8">
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-base);border-radius:8px;font-size:0.85rem">
+          <span class="badge badge-success" style="min-width:140px;justify-content:center">login_success</span>
+          <span style="color:var(--text-secondary)">登入成功</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-base);border-radius:8px;font-size:0.85rem">
+          <span class="badge badge-danger" style="min-width:140px;justify-content:center">login_failed</span>
+          <span style="color:var(--text-secondary)">登入失敗</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-base);border-radius:8px;font-size:0.85rem">
+          <span class="badge badge-info" style="min-width:140px;justify-content:center">role_create</span>
+          <span style="color:var(--text-secondary)">建立角色</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-base);border-radius:8px;font-size:0.85rem">
+          <span class="badge badge-info" style="min-width:140px;justify-content:center">role_update</span>
+          <span style="color:var(--text-secondary)">更新角色</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-base);border-radius:8px;font-size:0.85rem">
+          <span class="badge badge-danger" style="min-width:140px;justify-content:center">role_delete</span>
+          <span style="color:var(--text-secondary)">刪除角色</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-base);border-radius:8px;font-size:0.85rem">
+          <span class="badge badge-sage" style="min-width:140px;justify-content:center">user_role_assign</span>
+          <span style="color:var(--text-secondary)">指派角色</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-base);border-radius:8px;font-size:0.85rem">
+          <span class="badge badge-warning" style="min-width:140px;justify-content:center">user_role_revoke</span>
+          <span style="color:var(--text-secondary)">移除角色</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 12: AUTH & SECURITY ======================== -->
+<section class="slide" data-slide="12">
+  <span class="section-label">認證與安全</span>
+  <h2>認證與安全機制</h2>
+
+  <div class="grid-2 gap-24">
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:10px">登入方式</h3>
+        <div class="flex-col gap-10">
+          <div class="card-sm card-tint-brand">
+            <strong style="font-size:0.85rem;color:var(--brand-dark)">租戶登入</strong>
+            <p style="font-size:0.82rem;color:var(--text-secondary);margin-top:4px">組織代碼 + Email + 密碼</p>
+            <p style="font-size:0.78rem;color:var(--text-secondary)">POST /api/auth/login</p>
+          </div>
+          <div class="card-sm card-tint-info">
+            <strong style="font-size:0.85rem;color:#5e7f96">平台管理登入</strong>
+            <p style="font-size:0.82rem;color:var(--text-secondary);margin-top:4px">Email + 密碼</p>
+            <p style="font-size:0.78rem;color:var(--text-secondary)">POST /api/auth/platform-login</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-tint-sage">
+        <h3 style="margin-bottom:10px">JWT 雙 Token</h3>
+        <div class="flex-col gap-8">
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(255,255,255,0.6);border-radius:8px;font-size:0.85rem">
+            <span class="badge badge-sage" style="min-width:100px;justify-content:center">Access Token</span>
+            <span style="color:var(--text-secondary)">15 分鐘，localStorage，API 認證</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(255,255,255,0.6);border-radius:8px;font-size:0.85rem">
+            <span class="badge badge-info" style="min-width:100px;justify-content:center">Refresh Token</span>
+            <span style="color:var(--text-secondary)">7 天，localStorage，自動刷新</span>
+          </div>
+        </div>
+        <div class="mt-12">
+          <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:6px">自動刷新流程：</p>
+          <div class="state-flow" style="font-size:0.78rem">
+            <span class="badge badge-brand">API 請求</span>
+            <span class="state-arrow">&#8594;</span>
+            <span class="badge badge-danger">401</span>
+            <span class="state-arrow">&#8594;</span>
+            <span class="badge badge-info">攔截</span>
+            <span class="state-arrow">&#8594;</span>
+            <span class="badge badge-sage">有 Refresh?</span>
+            <span class="state-arrow">&#8594;</span>
+            <span class="badge badge-success">刷新 + 重送</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:10px">密碼安全</h3>
+        <div class="flex-col gap-8" style="font-size:0.85rem">
+          <div style="padding:8px 12px;background:var(--bg-base);border-radius:8px">
+            <strong>加密</strong>：<span style="color:var(--text-secondary)">bcryptjs（salt: 10）</span>
+          </div>
+          <div style="padding:8px 12px;background:var(--bg-base);border-radius:8px">
+            <strong>最小長度</strong>：<span style="color:var(--text-secondary)">8 字元</span>
+          </div>
+          <div style="padding:8px 12px;background:var(--bg-base);border-radius:8px">
+            <strong>變更後</strong>：<span style="color:var(--text-secondary)">撤銷所有 Refresh Token</span>
+          </div>
+          <div style="padding:8px 12px;background:var(--bg-base);border-radius:8px">
+            <strong>首次登入</strong>：<span style="color:var(--text-secondary)">must_change_password 強制修改</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-tint-info">
+        <h3 style="margin-bottom:10px">登入頁面</h3>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+          <span class="badge badge-info">組織代碼</span>
+          <span class="badge badge-info">Email</span>
+          <span class="badge badge-info">密碼</span>
+          <span class="badge badge-neutral">記住登入</span>
+        </div>
+        <p style="font-size:0.82rem;color:var(--text-secondary)">忘記密碼（目前為模擬）</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 13: TENANT MANAGEMENT ======================== -->
+<section class="slide" data-slide="13">
+  <span class="section-label">平台管理</span>
+  <div class="nav-path">平台管理 <span class="nav-path-sep">&#8250;</span> 租戶管理</div>
+  <h2>租戶管理</h2>
+
+  <div class="grid-2 gap-24">
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:10px">租戶生命週期</h3>
+        <div style="display:flex;flex-direction:column;gap:8px;align-items:center;margin-bottom:14px">
+          <div class="state-flow" style="font-size:0.85rem">
+            <span class="badge badge-success" style="padding:6px 14px">active</span>
+            <span class="state-arrow" style="font-size:1.1rem">&#8594;</span>
+            <span class="badge badge-warning" style="padding:6px 14px">suspended</span>
+            <span class="state-arrow" style="font-size:1.1rem">&#8594;</span>
+            <span class="badge badge-danger" style="padding:6px 14px">deleted</span>
+          </div>
+          <div style="font-size:0.78rem;color:var(--text-secondary);display:flex;gap:20px">
+            <span>&#8592; 恢復 &#8594;</span>
+            <span>&#8592; 恢復 &#8594;</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-tint-brand">
+        <h3 style="margin-bottom:10px">各狀態操作</h3>
+        <div class="flex-col gap-6" style="font-size:0.85rem">
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(255,255,255,0.6);border-radius:8px">
+            <span class="badge badge-success" style="min-width:80px;justify-content:center">active</span>
+            <span style="color:var(--text-secondary)">編輯、暫停</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(255,255,255,0.6);border-radius:8px">
+            <span class="badge badge-warning" style="min-width:80px;justify-content:center">suspended</span>
+            <span style="color:var(--text-secondary)">編輯、恢復、軟刪除</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(255,255,255,0.6);border-radius:8px">
+            <span class="badge badge-danger" style="min-width:80px;justify-content:center">deleted</span>
+            <span style="color:var(--text-secondary)">恢復、永久刪除</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-3" style="gap:10px">
+        <div class="card-sm" style="text-align:center">
+          <div style="font-size:1.4rem;font-weight:700;color:var(--brand-dark)">N</div>
+          <div style="font-size:0.75rem;color:var(--text-secondary)">總租戶數</div>
+        </div>
+        <div class="card-sm" style="text-align:center">
+          <div style="font-size:1.4rem;font-weight:700;color:#4f7a63">N</div>
+          <div style="font-size:0.75rem;color:var(--text-secondary)">啟用中</div>
+        </div>
+        <div class="card-sm" style="text-align:center">
+          <div style="font-size:1.4rem;font-weight:700;color:#8b7034">N</div>
+          <div style="font-size:0.75rem;color:var(--text-secondary)">已暫停</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom:12px">新增租戶</h3>
+      <div class="flex-col gap-8">
+        <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.85rem">
+          <div class="num-circle" style="background:rgba(100,116,139,0.1);color:var(--brand-dark)">1</div>
+          <div>填寫表單</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.85rem">
+          <div class="num-circle" style="background:rgba(100,116,139,0.1);color:var(--brand-dark)">2</div>
+          <div>驗證 slug（僅小寫英文 + 連字號）</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.85rem">
+          <div class="num-circle" style="background:rgba(100,116,139,0.1);color:var(--brand-dark)">3</div>
+          <div>建立 tenant record</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.85rem">
+          <div class="num-circle" style="background:rgba(100,116,139,0.1);color:var(--brand-dark)">4</div>
+          <div>建立 tenant DB</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.85rem">
+          <div class="num-circle" style="background:rgba(100,116,139,0.1);color:var(--brand-dark)">5</div>
+          <div>初始化 Schema（69 業務表 + 7 RBAC 表）</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.85rem">
+          <div class="num-circle" style="background:rgba(100,116,139,0.1);color:var(--brand-dark)">6</div>
+          <div>RBAC 種子（5 角色 + 權限 + 管理員）</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.85rem">
+          <div class="num-circle" style="background:rgba(100,116,139,0.1);color:var(--brand-dark)">7</div>
+          <div>記錄審計日誌</div>
+        </div>
+      </div>
+      <div style="margin-top:14px">
+        <div style="font-weight:600;font-size:0.82rem;color:var(--brand-dark);margin-bottom:6px">表單欄位</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <span class="badge badge-brand">租戶名稱（必）</span>
+          <span class="badge badge-brand">代碼 slug（必）</span>
+          <span class="badge badge-neutral">Logo</span>
+          <span class="badge badge-neutral">產業別</span>
+          <span class="badge badge-brand">方案（必）</span>
+          <span class="badge badge-brand">管理員名稱（必）</span>
+          <span class="badge badge-brand">管理員信箱（必）</span>
+          <span class="badge badge-brand">初始密碼（必）</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 14: PLAN MANAGEMENT ======================== -->
+<section class="slide" data-slide="14">
+  <span class="section-label">平台管理（續）</span>
+  <div class="nav-path">平台管理 <span class="nav-path-sep">&#8250;</span> 方案管理</div>
+  <h2>方案管理</h2>
+
+  <div class="grid-2 gap-24">
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:10px">方案卡片展示</h3>
+        <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:10px">每張卡片顯示以下資訊：</p>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
+          <span class="badge badge-brand">名稱</span>
+          <span class="badge badge-brand">狀態（啟用/停用）</span>
+          <span class="badge badge-brand">月費 / 年費</span>
+          <span class="badge badge-brand">使用者上限</span>
+          <span class="badge badge-brand">儲存空間</span>
+          <span class="badge badge-brand">已啟用功能模組</span>
+        </div>
+      </div>
+      <div class="card card-tint-brand">
+        <h3 style="margin-bottom:10px">新增 / 編輯方案</h3>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <span class="badge badge-brand">方案名稱（必）</span>
+          <span class="badge badge-neutral">月費</span>
+          <span class="badge badge-neutral">年費</span>
+          <span class="badge badge-neutral">使用者上限</span>
+          <span class="badge badge-neutral">儲存空間</span>
+          <span class="badge badge-neutral">啟用狀態</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:10px">功能模組授權</h3>
+        <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:10px">三態 checkbox（全選 / 部分 / 無），L1~L6 + SYS 模組與子功能：</p>
+        <div class="flex-col gap-6">
+          <div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg-base);border-radius:6px;font-size:0.82rem">
+            <span class="badge badge-sage" style="min-width:50px;justify-content:center">L1</span>
+            <span>員工管理</span>
+            <span style="color:var(--text-secondary);font-size:0.78rem;margin-left:auto">招募、檔案、入職...</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg-base);border-radius:6px;font-size:0.82rem">
+            <span class="badge badge-terra" style="min-width:50px;justify-content:center">L2</span>
+            <span>職能管理</span>
+            <span style="color:var(--text-secondary);font-size:0.78rem;margin-left:auto">職等、JD、框架...</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg-base);border-radius:6px;font-size:0.82rem">
+            <span class="badge badge-petrol" style="min-width:50px;justify-content:center">L3</span>
+            <span>教育訓練</span>
+            <span style="color:var(--text-secondary);font-size:0.78rem;margin-left:auto">課程、學習地圖...</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg-base);border-radius:6px;font-size:0.82rem">
+            <span class="badge badge-mauve" style="min-width:50px;justify-content:center">L4</span>
+            <span>專案管理</span>
+            <span style="color:var(--text-secondary);font-size:0.78rem;margin-left:auto">專案、損益、報表...</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg-base);border-radius:6px;font-size:0.82rem">
+            <span class="badge badge-danger" style="min-width:50px;justify-content:center">L5</span>
+            <span>績效管理</span>
+            <span style="color:var(--text-secondary);font-size:0.78rem;margin-left:auto">毛利、獎金、評核...</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg-base);border-radius:6px;font-size:0.82rem">
+            <span class="badge badge-warning" style="min-width:50px;justify-content:center">L6</span>
+            <span>文化管理</span>
+            <span style="color:var(--text-secondary);font-size:0.78rem;margin-left:auto">手冊、EAP、獎項...</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg-base);border-radius:6px;font-size:0.82rem">
+            <span class="badge badge-brand" style="min-width:50px;justify-content:center">SYS</span>
+            <span>系統設定</span>
+            <span style="color:var(--text-secondary);font-size:0.78rem;margin-left:auto">組織、帳號、角色...</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-tint-brand">
+        <h3 style="margin-bottom:6px;font-size:0.88rem">平台審計日誌</h3>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
+          <span class="badge badge-brand">篩選：動作類型 + 租戶 ID + 日期</span>
+        </div>
+        <p style="font-size:0.82rem;color:var(--text-secondary)">12 種動作類型，跨租戶記錄</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 15: SUMMARY ======================== -->
+<section class="slide" data-slide="15">
+  <span class="section-label">Summary</span>
+  <h2>系統導入的三大核心效益</h2>
+
+  <div class="grid-3 gap-24 mt-12">
+    <div class="card" style="text-align:center;padding:28px 22px">
+      <div style="width:56px;height:56px;border-radius:14px;background:rgba(100,116,139,0.1);display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px">
+        <svg width="28" height="28" fill="none" stroke="var(--brand-dark)" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9h1"/><path d="M9 13h1"/><path d="M9 17h1"/></svg>
+      </div>
+      <h3 style="margin-bottom:8px;color:var(--brand-dark)">組織視覺化</h3>
+      <p style="font-size:0.85rem">畫布 + 列表雙模式，三級組織樹 + 協作關係，拖曳排列 + 匯出 PNG。</p>
+    </div>
+    <div class="card" style="text-align:center;padding:28px 22px">
+      <div style="width:56px;height:56px;border-radius:14px;background:rgba(141,168,190,0.12);display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px">
+        <svg width="28" height="28" fill="none" stroke="#5e7f96" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <h3 style="margin-bottom:8px;color:#5e7f96">權限精細化</h3>
+      <p style="font-size:0.85rem">功能權限矩陣（操作等級 x 資料範圍），多角色寬鬆合併，5 預設角色 + 自訂。</p>
+    </div>
+    <div class="card" style="text-align:center;padding:28px 22px">
+      <div style="width:56px;height:56px;border-radius:14px;background:rgba(141,163,153,0.12);display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px">
+        <svg width="28" height="28" fill="none" stroke="var(--l1-sage-dark)" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/><circle cx="12" cy="16" r="1"/></svg>
+      </div>
+      <h3 style="margin-bottom:8px;color:var(--l1-sage-dark)">安全合規化</h3>
+      <p style="font-size:0.85rem">JWT 雙 Token 認證，審計日誌全記錄，Database-per-Tenant 租戶隔離。</p>
+    </div>
+  </div>
+
+  <div class="mt-20" style="text-align:center">
+    <div class="highlight-box" style="display:inline-block;max-width:560px">
+      <h3 style="font-size:1.05rem;color:var(--brand-dark);margin-bottom:6px">Q & A</h3>
+      <p style="font-size:0.88rem;color:var(--text-secondary)">感謝聆聽，歡迎提出任何問題與建議。</p>
+    </div>
+  </div>
+
+  <div class="mt-auto" style="padding-top:20px">
+    <div style="display:flex;gap:24px;justify-content:center;font-size:0.78rem;color:var(--text-secondary)">
+      <span>Bombus HRM v1.0</span>
+      <span>系統設定 + 平台管理</span>
+    </div>
+  </div>
+</section>
+
+</div><!-- end deck -->
+
+<!-- Navigation -->
+<div class="nav-bar">
+  <button class="nav-btn" id="prevBtn" disabled onclick="navigate(-1)">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+    上一頁
+  </button>
+  <div class="page-indicator" id="dots"></div>
+  <button class="nav-btn" id="nextBtn" onclick="navigate(1)">
+    下一頁
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+  </button>
+</div>
+<div class="key-hint">&#8592; &#8594; 鍵切換頁面</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  let current = 0;
+
+  const dotsEl = document.getElementById('dots');
+  for (let i = 0; i < total; i++) {
+    const d = document.createElement('span');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.onclick = () => goTo(i);
+    dotsEl.appendChild(d);
+  }
+  const numEl = document.createElement('span');
+  numEl.className = 'page-num';
+  numEl.textContent = '1 / ' + total;
+  dotsEl.appendChild(numEl);
+
+  function goTo(n) {
+    if (n < 0 || n >= total || n === current) return;
+    const prev = current;
+    current = n;
+    slides[prev].classList.remove('active');
+    slides[current].classList.add('active');
+    slides[current].scrollTop = 0;
+    updateUI();
+  }
+  function navigate(dir) { goTo(current + dir); }
+  function updateUI() {
+    document.getElementById('prevBtn').disabled = current === 0;
+    document.getElementById('nextBtn').disabled = current === total - 1;
+    document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === current));
+    numEl.textContent = (current + 1) + ' / ' + total;
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); navigate(1); }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); navigate(-1); }
+    if (e.key === 'Home') { e.preventDefault(); goTo(0); }
+    if (e.key === 'End') { e.preventDefault(); goTo(total - 1); }
+  });
+
+  let ts = 0;
+  document.addEventListener('touchstart', e => { ts = e.touches[0].clientX; });
+  document.addEventListener('touchend', e => {
+    const d = ts - e.changedTouches[0].clientX;
+    if (Math.abs(d) > 50) navigate(d > 0 ? 1 : -1);
+  });
+</script>
+
+</body>
+</html>

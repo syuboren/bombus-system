@@ -84,6 +84,12 @@ function createPlatformTables(adapter) {
   if (!tenantCols.includes('industry')) {
     db.run('ALTER TABLE tenants ADD COLUMN industry TEXT');
   }
+  if (!tenantCols.includes('feature_overrides')) {
+    db.run('ALTER TABLE tenants ADD COLUMN feature_overrides TEXT');
+  }
+  if (!tenantCols.includes('feature_overrides_note')) {
+    db.run('ALTER TABLE tenants ADD COLUMN feature_overrides_note TEXT');
+  }
 
   db.run(`
     CREATE TABLE IF NOT EXISTS subscription_plans (

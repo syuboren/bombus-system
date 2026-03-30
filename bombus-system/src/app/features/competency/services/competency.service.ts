@@ -1103,6 +1103,24 @@ export class CompetencyService {
   }
 
   /**
+   * 從來源組織匯入職等薪資範本到目標組織
+   */
+  importGradeTemplate(sourceOrgUnitId: string, targetOrgUnitId: string, overwrite = false): Observable<{
+    salary_levels: number;
+    track_entries: number;
+    promotion_criteria: number;
+    department_positions: number;
+    change_ids: string[];
+  }> {
+    return this.http.post<{ success: boolean; imported: { salary_levels: number; track_entries: number; promotion_criteria: number; department_positions: number; change_ids: string[] } }>(
+      `${this.apiUrl}/grade-matrix/import-template`,
+      { source_org_unit_id: sourceOrgUnitId, target_org_unit_id: targetOrgUnitId, overwrite }
+    ).pipe(
+      map(res => res.imported)
+    );
+  }
+
+  /**
    * 取得單一職等詳情（含晉升條件）
    */
   getGradeDetail(grade: number): Observable<GradeLevelDetail | null> {

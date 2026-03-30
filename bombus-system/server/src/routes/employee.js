@@ -303,15 +303,6 @@ router.get('/list', requireFeaturePerm('L1.profile', 'view'), (req, res) => {
             return null;
         }
 
-        // 建立部門名稱→org_unit 的反查表
-        const deptNameMap = new Map();
-        for (const [, u] of allOrgUnits) {
-            if (u.type === 'department') {
-                // 若同名部門有多個，以 org_unit_id 匹配的為優先（之後會處理）
-                if (!deptNameMap.has(u.name)) deptNameMap.set(u.name, u);
-            }
-        }
-
         // 組合資料（含 positions[]、userId、userStatus）
         const result = employees.map(emp => {
             const user = usersMap.get(emp.id);
@@ -329,18 +320,20 @@ router.get('/list', requireFeaturePerm('L1.profile', 'view'), (req, res) => {
                         const company = findCompany(orgUnit.parent_id);
                         if (company) { companyId = company.id; companyName = company.name; }
                     } else {
-                        // org_unit_id 指向 group/subsidiary，用 department 文字欄位反查部門
-                        const deptUnit = emp.department ? deptNameMap.get(emp.department) : null;
-                        if (deptUnit) {
-                            departmentId = deptUnit.id;
-                            departmentName = deptUnit.name;
-                            const company = findCompany(deptUnit.parent_id);
-                            if (company) { companyId = company.id; companyName = company.name; }
-                        }
-                        // 若反查不到，至少把 org_unit 本身當公司
-                        if (!companyName) {
-                            companyId = orgUnit.id;
-                            companyName = orgUnit.name;
+                        // org_unit_id 指向 group/subsidiary，直接作為公司
+                        companyId = orgUnit.id;
+                        companyName = orgUnit.name;
+                        // 用 department 文字欄位反查，但限定在此公司下的部門
+                        if (emp.department) {
+                            const depts = allOrgUnits;
+                            for (const [, unit] of depts) {
+                                if (unit.type === 'department' && unit.name === emp.department && unit.parent_id === orgUnit.id) {
+                                    departmentId = unit.id;
+                                    departmentName = unit.name;
+                                    break;
+                                }
+                            }
+                            if (!departmentName) departmentName = emp.department;
                         }
                     }
                 }

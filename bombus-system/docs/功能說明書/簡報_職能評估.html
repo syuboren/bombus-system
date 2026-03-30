@@ -1,0 +1,1330 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bombus HRM — 職能評估：月度檢核、季度面談與工作週報</title>
+<style>
+  :root {
+    --bg-base: #F5F5F7;
+    --bg-card: #FCFCFD;
+    --text-primary: #464E56;
+    --text-secondary: #6B7280;
+    --text-dark: #1F2937;
+    --border: #E2E4E8;
+    --soft-gray: #E8E8EA;
+    --brand-main: #64748B;
+    --brand-light: #94A3B8;
+    --brand-dark: #475569;
+    --l1-sage: #8DA399;
+    --l1-sage-light: #A8BAB0;
+    --l1-sage-dark: #6B8577;
+    --success: #7FB095;
+    --warning: #E3C088;
+    --danger: #C77F7F;
+    --info: #8DA8BE;
+    --l2-terracotta: #D6A28C;
+    --l2-terra-dark: #8a5e42;
+    --l4-mauve: #9A8C98;
+    --l3-petrol: #7F9CA0;
+    --radius: 12px;
+    --shadow: 0 4px 20px rgba(0,0,0,0.05);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", sans-serif;
+    background: var(--bg-base);
+    color: var(--text-primary);
+    line-height: 1.6;
+    overflow: hidden;
+  }
+
+  /* Deck & Slides */
+  .deck { width: 100vw; height: 100vh; position: relative; }
+  .slide {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    padding: 48px 72px 64px;
+    opacity: 0; visibility: hidden;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    transform: translateX(36px);
+    overflow-y: auto;
+  }
+  .slide.active { opacity: 1; visibility: visible; transform: translateX(0); }
+
+  /* Typography */
+  h1 { font-size: 2rem; font-weight: 600; color: var(--text-dark); margin-bottom: 6px; letter-spacing: -0.02em; }
+  h2 { font-size: 1.3rem; font-weight: 600; color: var(--brand-dark); margin-bottom: 18px; }
+  h3 { font-size: 1rem; font-weight: 600; color: var(--text-dark); margin-bottom: 8px; }
+  p, li { font-size: 0.9rem; color: var(--text-primary); line-height: 1.7; }
+  .subtitle { font-size: 1.05rem; color: var(--text-secondary); margin-bottom: 24px; }
+  .section-label {
+    display: inline-block; font-size: 0.72rem; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--l2-terra-dark); border: 1.5px solid var(--l2-terracotta);
+    border-radius: 6px; padding: 2px 10px; margin-bottom: 12px;
+  }
+
+  /* Layout */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; }
+  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; }
+  .flex-col { display: flex; flex-direction: column; }
+  .gap-6 { gap: 6px; } .gap-8 { gap: 8px; } .gap-10 { gap: 10px; } .gap-12 { gap: 12px; }
+  .gap-16 { gap: 16px; } .gap-20 { gap: 20px; } .gap-24 { gap: 24px; }
+  .mt-8 { margin-top: 8px; } .mt-12 { margin-top: 12px; }
+  .mt-16 { margin-top: 16px; } .mt-20 { margin-top: 20px; }
+  .mt-auto { margin-top: auto; }
+  .mb-4 { margin-bottom: 4px; } .mb-8 { margin-bottom: 8px; }
+
+  /* Cards — NO border-left */
+  .card {
+    background: var(--bg-card); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 22px;
+  }
+  .card-sm {
+    background: var(--bg-card); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 16px 18px;
+  }
+  .card-tint-sage { background: rgba(141,163,153,0.07); }
+  .card-tint-info { background: rgba(141,168,190,0.07); }
+  .card-tint-brand { background: rgba(100,116,139,0.06); }
+  .card-tint-warning { background: rgba(227,192,136,0.08); }
+  .card-tint-danger { background: rgba(199,127,127,0.07); }
+  .card-tint-success { background: rgba(127,176,149,0.07); }
+  .card-tint-terra { background: rgba(214,162,140,0.08); }
+  .card-tint-petrol { background: rgba(127,156,160,0.08); }
+
+  /* Badges */
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 0.78rem; font-weight: 500; padding: 3px 10px; border-radius: 16px;
+  }
+  .badge-sage { background: rgba(141,163,153,0.15); color: var(--l1-sage-dark); }
+  .badge-brand { background: rgba(100,116,139,0.12); color: var(--brand-dark); }
+  .badge-info { background: rgba(141,168,190,0.15); color: #5e7f96; }
+  .badge-success { background: rgba(127,176,149,0.15); color: #4f7a63; }
+  .badge-warning { background: rgba(227,192,136,0.18); color: #8b7034; }
+  .badge-danger { background: rgba(199,127,127,0.15); color: #8b4545; }
+  .badge-terra { background: rgba(214,162,140,0.15); color: #8a5e42; }
+  .badge-petrol { background: rgba(127,156,160,0.15); color: #4d6e72; }
+  .badge-mauve { background: rgba(154,140,152,0.15); color: #5e5060; }
+  .badge-neutral { background: var(--soft-gray); color: var(--text-secondary); }
+
+  .num-circle {
+    width: 28px; height: 28px; min-width: 28px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 0.78rem; font-weight: 600; flex-shrink: 0;
+  }
+
+  /* Flow horizontal */
+  .flow-h { display: flex; align-items: stretch; gap: 0; }
+  .flow-step { flex: 1; text-align: center; padding: 14px 8px; position: relative; }
+  .flow-step::after {
+    content: ''; position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+    width: 0; height: 0; border-top: 7px solid transparent;
+    border-bottom: 7px solid transparent; border-left: 7px solid var(--border);
+  }
+  .flow-step:last-child::after { display: none; }
+  .flow-num {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 0.75rem; font-weight: 600; color: #fff; margin-bottom: 6px;
+  }
+  .flow-title { font-size: 0.78rem; font-weight: 600; color: var(--text-dark); margin-bottom: 3px; }
+  .flow-desc { font-size: 0.68rem; color: var(--text-secondary); line-height: 1.35; }
+
+  /* State flow (horizontal arrows) */
+  .state-flow {
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    font-size: 0.82rem;
+  }
+  .state-arrow { color: var(--brand-light); font-size: 0.9rem; }
+
+  /* Table */
+  .tbl { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  .tbl th {
+    text-align: left; font-weight: 600; padding: 8px 12px;
+    border-bottom: 2px solid var(--l2-terracotta); color: var(--l2-terra-dark);
+    background: rgba(214,162,140,0.06);
+  }
+  .tbl td { padding: 8px 12px; border-bottom: 1px solid var(--soft-gray); }
+  .tbl tr:last-child td { border-bottom: none; }
+
+  /* Meter */
+  .meter { height: 7px; background: var(--soft-gray); border-radius: 4px; overflow: hidden; }
+  .meter-fill { height: 100%; border-radius: 4px; }
+
+  /* Lists */
+  ul.clean { list-style: none; padding-left: 0; }
+  ul.clean li { position: relative; padding-left: 18px; margin-bottom: 6px; font-size: 0.88rem; }
+  ul.clean li::before {
+    content: ''; position: absolute; left: 0; top: 10px;
+    width: 5px; height: 5px; border-radius: 2px; background: var(--l2-terracotta);
+  }
+
+  .highlight-box {
+    background: rgba(214,162,140,0.06); border-radius: var(--radius);
+    padding: 16px 20px; border: 1px solid var(--border);
+  }
+
+  /* Navigation */
+  .nav-bar {
+    position: fixed; bottom: 0; left: 0; right: 0; height: 50px;
+    background: var(--bg-card); border-top: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 28px; z-index: 100; box-shadow: 0 -2px 10px rgba(0,0,0,0.03);
+  }
+  .nav-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 7px 18px; border: 1.5px solid var(--border); border-radius: 8px;
+    background: var(--bg-card); color: var(--text-primary);
+    font-size: 0.82rem; font-weight: 500; cursor: pointer;
+    transition: all 0.2s; font-family: inherit;
+  }
+  .nav-btn:hover { background: var(--bg-base); border-color: var(--l2-terracotta); }
+  .nav-btn:disabled { opacity: 0.3; cursor: default; }
+  .nav-btn:disabled:hover { background: var(--bg-card); border-color: var(--border); }
+  .page-indicator { display: flex; gap: 5px; align-items: center; }
+  .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--soft-gray); transition: all 0.3s; cursor: pointer;
+  }
+  .dot.active { background: var(--l2-terracotta); width: 20px; border-radius: 4px; }
+  .page-num { font-size: 0.78rem; color: var(--text-secondary); margin-left: 10px; font-variant-numeric: tabular-nums; }
+  .key-hint {
+    position: fixed; bottom: 58px; right: 28px;
+    font-size: 0.7rem; color: var(--text-secondary); opacity: 0.5; z-index: 101;
+  }
+
+  /* Cover */
+  .cover { justify-content: center; padding: 72px 88px; }
+  .cover-logo { font-size: 0.82rem; font-weight: 600; color: var(--l2-terracotta); letter-spacing: 0.12em; margin-bottom: 28px; }
+  .cover h1 { font-size: 2.4rem; line-height: 1.3; margin-bottom: 10px; max-width: 680px; }
+  .cover .subtitle { font-size: 1.1rem; max-width: 580px; margin-bottom: 40px; }
+  .cover-meta { display: flex; gap: 28px; font-size: 0.82rem; color: var(--text-secondary); }
+  .cover-accent {
+    position: absolute; right: 0; top: 0; bottom: 0; width: 240px;
+    background: linear-gradient(180deg, rgba(214,162,140,0.06) 0%, rgba(214,162,140,0.1) 100%);
+    display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 14px; padding: 40px;
+  }
+  .accent-icon {
+    width: 52px; height: 52px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* Mono code block */
+  .mono-block {
+    background: var(--bg-base); border-radius: 8px; padding: 10px 14px;
+    font-size: 0.82rem; font-family: "SF Mono", "Fira Code", monospace;
+    color: var(--text-primary);
+  }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .slide { padding: 28px 24px 60px; }
+    .cover { padding: 40px 28px; }
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    .cover h1 { font-size: 1.6rem; }
+    .cover-accent { display: none; }
+    .flow-h { flex-direction: column; }
+    .flow-step::after { display: none; }
+  }
+  @media print {
+    body { overflow: visible; }
+    .nav-bar, .key-hint { display: none; }
+    .slide { position: relative; opacity: 1; visibility: visible; transform: none; page-break-after: always; min-height: 100vh; }
+  }
+</style>
+</head>
+<body>
+
+<div class="deck" id="deck">
+
+<!-- ======================== SLIDE 0: COVER ======================== -->
+<section class="slide cover active" data-slide="0">
+  <div class="cover-logo">BOMBUS HRM</div>
+  <h1>職能評估：月度檢核、<br>季度面談與工作週報</h1>
+  <p class="subtitle">建立週 &rarr; 月 &rarr; 季三層持續評估循環，驅動員工績效成長</p>
+  <div class="cover-meta">
+    <span>適用對象：HR / 部門主管 / 一般員工</span>
+    <span>模組：職能管理 L2</span>
+  </div>
+  <div class="cover-accent">
+    <div class="accent-icon" style="background:rgba(214,162,140,0.15)">
+      <svg width="26" height="26" fill="none" stroke="#8a5e42" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>
+    </div>
+    <div class="accent-icon" style="background:rgba(214,162,140,0.12)">
+      <svg width="26" height="26" fill="none" stroke="#8a5e42" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+    </div>
+    <div class="accent-icon" style="background:rgba(214,162,140,0.10)">
+      <svg width="26" height="26" fill="none" stroke="#8a5e42" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 1: WHY 3-LAYER ======================== -->
+<section class="slide" data-slide="1">
+  <span class="section-label">導入背景</span>
+  <h2>為何需要三層評估機制</h2>
+
+  <div class="grid-3 gap-20">
+    <div class="card card-tint-danger">
+      <div style="font-weight:600;font-size:0.9rem;color:var(--danger);margin-bottom:6px">評估頻率斷裂</div>
+      <p style="font-size:0.85rem">只有年度考核 = 發現問題已太遲。績效落差累積一整年才被揭露，錯失即時矯正的黃金時機。</p>
+    </div>
+    <div class="card card-tint-warning">
+      <div style="font-weight:600;font-size:0.9rem;color:#8b7034;margin-bottom:6px">回饋不即時</div>
+      <p style="font-size:0.85rem">問題逐漸堆積，主管與員工缺乏定期溝通機制，小問題演變成大衝突，團隊士氣與信任感下降。</p>
+    </div>
+    <div class="card card-tint-info">
+      <div style="font-weight:600;font-size:0.9rem;color:#5e7f96;margin-bottom:6px">數據分散</div>
+      <p style="font-size:0.85rem">Excel、紙本、口頭各自為政，無法彙整追蹤員工的成長軌跡，HR 難以做出數據驅動的人才決策。</p>
+    </div>
+  </div>
+
+  <div class="grid-2 gap-20 mt-20">
+    <div class="highlight-box">
+      <div style="font-weight:600;color:var(--l2-terra-dark);margin-bottom:6px">PDCA 持續循環願景</div>
+      <p style="font-size:0.85rem">Plan（設定目標）&rarr; Do（日常執行）&rarr; Check（評估檢核）&rarr; Act（改善行動），建立制度化的績效改善循環，而非一年一次的單點評核。</p>
+    </div>
+    <div class="highlight-box">
+      <div style="font-weight:600;color:var(--l2-terra-dark);margin-bottom:6px">三層評估的互補設計</div>
+      <ul class="clean" style="font-size:0.85rem;margin-top:6px">
+        <li><strong>工作週報</strong> = 日常追蹤：記錄每週工作細節與進度</li>
+        <li><strong>月度檢核</strong> = 績效量化：標準化指標評分與加權計算</li>
+        <li><strong>季度面談</strong> = 深度發展：雙向溝通、全面評核與發展計畫</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 2: OVERVIEW ======================== -->
+<section class="slide" data-slide="2">
+  <span class="section-label">總覽</span>
+  <h2>三大評估總覽</h2>
+
+  <div class="flow-h" style="background:var(--bg-card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 6px;">
+    <div class="flow-step">
+      <div class="flow-num" style="background:var(--l2-terracotta)">W</div>
+      <div class="flow-title">工作週報</div>
+      <div class="flow-desc">每週填寫<br>日常追蹤</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num" style="background:var(--l2-terra-dark)">M</div>
+      <div class="flow-title">月度檢核</div>
+      <div class="flow-desc">每月評分<br>績效量化</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num" style="background:var(--brand-dark)">Q</div>
+      <div class="flow-title">季度面談</div>
+      <div class="flow-desc">每季深度<br>發展計畫</div>
+    </div>
+  </div>
+
+  <div class="card mt-16" style="padding:16px 22px">
+    <table class="tbl">
+      <thead><tr><th>比較項目</th><th>工作週報</th><th>月度檢核</th><th>季度面談</th></tr></thead>
+      <tbody>
+        <tr><td>頻率</td><td>每週</td><td>每月</td><td>每季</td></tr>
+        <tr><td>目的</td><td>日常工作記錄與追蹤</td><td>量化績效指標評分</td><td>全面評核與職涯發展</td></tr>
+        <tr><td>評分方式</td><td>無評分（記錄型）</td><td>1-10 分 + 加權計算</td><td>1-5 分（4 面向 &times; 5 項）</td></tr>
+        <tr><td>簽名機制</td><td>員工簽名 &rarr; 主管審核</td><td>員工 &rarr; 主管 &rarr; HR 三階段</td><td>員工 &rarr; 主管 &rarr; HR 三階段</td></tr>
+        <tr><td>參與角色</td><td>員工 + 主管</td><td>員工 + 主管 + HR</td><td>員工 + 主管 + HR</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="grid-4 mt-16">
+    <div class="card-sm" style="text-align:center">
+      <div style="font-size:1.6rem;font-weight:700;color:var(--l2-terra-dark)">3</div>
+      <div style="font-size:0.78rem;color:var(--text-secondary)">參與角色</div>
+    </div>
+    <div class="card-sm" style="text-align:center">
+      <div style="font-size:1.6rem;font-weight:700;color:var(--l2-terracotta)">3</div>
+      <div style="font-size:0.78rem;color:var(--text-secondary)">評估類型</div>
+    </div>
+    <div class="card-sm" style="text-align:center">
+      <div style="font-size:1.6rem;font-weight:700;color:var(--info)">3</div>
+      <div style="font-size:0.78rem;color:var(--text-secondary)">簽核階段</div>
+    </div>
+    <div class="card-sm" style="text-align:center">
+      <div style="font-size:1.6rem;font-weight:700;color:var(--success)">PDCA</div>
+      <div style="font-size:0.78rem;color:var(--text-secondary)">持續循環</div>
+    </div>
+  </div>
+
+  <div class="mt-12" style="display:flex;gap:12px;flex-wrap:wrap">
+    <span class="badge badge-terra">員工（自評 + 填寫）</span>
+    <span class="badge badge-brand">主管（審核 + 評分）</span>
+    <span class="badge badge-info">HR（結案 + 監控）</span>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 3: HR DASHBOARD ======================== -->
+<section class="slide" data-slide="3">
+  <span class="section-label">儀表板</span>
+  <h2>HR 總覽儀表板</h2>
+
+  <div class="grid-2 gap-24">
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:10px">KPI 監控卡片</h3>
+        <div class="flex-col gap-8">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--bg-base);border-radius:8px">
+            <span style="font-size:0.85rem">月度檢核完成率</span>
+            <span style="font-weight:700;color:var(--success)">78%</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--bg-base);border-radius:8px">
+            <span style="font-size:0.85rem">季度面談完成率</span>
+            <span style="font-weight:700;color:var(--warning)">45%</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--bg-base);border-radius:8px">
+            <span style="font-size:0.85rem">週報提交率</span>
+            <span style="font-weight:700;color:var(--info)">92%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-tint-terra">
+        <h3 style="margin-bottom:10px">未完成監控清單</h3>
+        <div class="flex-col gap-8" style="font-size:0.85rem">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="badge badge-danger">月度</span>
+            <span>3 人逾期未自評、2 人主管待審核</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="badge badge-warning">季度</span>
+            <span>5 人員工表單未提交、1 人待面談</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="badge badge-info">週報</span>
+            <span>2 人本週未提交</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:10px">部門平均分數圖表</h3>
+        <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:12px">月度 / 季度切換檢視各部門的平均績效分數趨勢。</p>
+        <div style="display:flex;gap:8px;margin-bottom:14px">
+          <span class="badge badge-terra">月度檢核</span>
+          <span class="badge badge-brand">季度面談</span>
+        </div>
+        <div class="flex-col gap-6">
+          <div style="font-size:0.82rem;display:flex;justify-content:space-between"><span>研發部</span><span style="font-weight:600">156.2</span></div>
+          <div class="meter"><div class="meter-fill" style="width:78%;background:var(--l2-terracotta)"></div></div>
+          <div style="font-size:0.82rem;display:flex;justify-content:space-between"><span>行銷部</span><span style="font-weight:600">148.5</span></div>
+          <div class="meter"><div class="meter-fill" style="width:74%;background:var(--l2-terracotta)"></div></div>
+          <div style="font-size:0.82rem;display:flex;justify-content:space-between"><span>財務部</span><span style="font-weight:600">162.0</span></div>
+          <div class="meter"><div class="meter-fill" style="width:81%;background:var(--l2-terracotta)"></div></div>
+        </div>
+      </div>
+
+      <div class="card card-tint-brand">
+        <h3 style="margin-bottom:8px">績效分析儀表板</h3>
+        <ul class="clean" style="font-size:0.85rem">
+          <li>依員工選擇：檢視個人月度/季度趨勢</li>
+          <li>檢視模式：單人詳細 / 多人比較</li>
+          <li>比較模式：跨員工績效分數對比</li>
+        </ul>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+          <span class="badge badge-neutral">年度篩選</span>
+          <span class="badge badge-neutral">月份篩選</span>
+          <span class="badge badge-neutral">週別篩選</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 4: MONTHLY — FLOW & STATUS ======================== -->
+<section class="slide" data-slide="4">
+  <span class="section-label">月度檢核</span>
+  <h2>月度檢核：流程與狀態</h2>
+
+  <div class="grid-2 gap-24">
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:12px">四步簽核流程</h3>
+        <div class="flex-col gap-10">
+          <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.88rem">
+            <div class="num-circle" style="background:var(--l2-terracotta);color:#fff">1</div>
+            <div><strong>員工自評</strong> &mdash; 員工填寫自評分數與說明</div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.88rem">
+            <div class="num-circle" style="background:var(--l2-terracotta);color:#fff">2</div>
+            <div><strong>簽名提交</strong> &mdash; 員工電子簽名後送出</div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.88rem">
+            <div class="num-circle" style="background:var(--l2-terracotta);color:#fff">3</div>
+            <div><strong>主管審核</strong> &mdash; 主管填寫評分、評語並簽名</div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.88rem">
+            <div class="num-circle" style="background:var(--l2-terracotta);color:#fff">4</div>
+            <div><strong>HR 結案</strong> &mdash; HR 審閱備註、結案歸檔</div>
+          </div>
+        </div>
+
+        <div style="margin-top:16px">
+          <div style="font-weight:600;font-size:0.85rem;margin-bottom:8px;color:var(--text-dark)">狀態流轉</div>
+          <div class="state-flow">
+            <span class="badge badge-terra">self_assessment</span>
+            <span class="state-arrow">&#8594;</span>
+            <span class="badge badge-info">manager_review</span>
+            <span class="state-arrow">&#8594;</span>
+            <span class="badge badge-brand">hr_review</span>
+            <span class="state-arrow">&#8594;</span>
+            <span class="badge badge-success">completed</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-tint-warning">
+        <h3 style="margin-bottom:6px;font-size:0.88rem">退回機制</h3>
+        <ul class="clean" style="font-size:0.82rem">
+          <li>主管可退回員工 &rarr; 狀態回到 self_assessment</li>
+          <li>HR 可退回主管 &rarr; 狀態回到 manager_review</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:10px">五種狀態說明</h3>
+        <table class="tbl">
+          <thead><tr><th>狀態</th><th>說明</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge badge-terra">self_assessment</span></td><td>員工自評中</td></tr>
+            <tr><td><span class="badge badge-info">manager_review</span></td><td>主管審核中</td></tr>
+            <tr><td><span class="badge badge-brand">hr_review</span></td><td>HR 審閱中</td></tr>
+            <tr><td><span class="badge badge-success">completed</span></td><td>已完成結案</td></tr>
+            <tr><td><span class="badge badge-danger">overdue</span></td><td>逾期未完成</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card card-tint-terra">
+        <h3 style="margin-bottom:8px">KPI 統計列</h3>
+        <div class="grid-4 gap-8">
+          <div style="text-align:center;padding:8px;background:var(--bg-base);border-radius:8px">
+            <div style="font-size:1.2rem;font-weight:700;color:var(--text-dark)">48</div>
+            <div style="font-size:0.72rem;color:var(--text-secondary)">評估總人數</div>
+          </div>
+          <div style="text-align:center;padding:8px;background:var(--bg-base);border-radius:8px">
+            <div style="font-size:1.2rem;font-weight:700;color:var(--success)">36</div>
+            <div style="font-size:0.72rem;color:var(--text-secondary)">已完成</div>
+          </div>
+          <div style="text-align:center;padding:8px;background:var(--bg-base);border-radius:8px">
+            <div style="font-size:1.2rem;font-weight:700;color:var(--info)">9</div>
+            <div style="font-size:0.72rem;color:var(--text-secondary)">進行中</div>
+          </div>
+          <div style="text-align:center;padding:8px;background:var(--bg-base);border-radius:8px">
+            <div style="font-size:1.2rem;font-weight:700;color:var(--l2-terracotta)">75%</div>
+            <div style="font-size:0.72rem;color:var(--text-secondary)">完成率</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 5: MONTHLY — SCORING ======================== -->
+<section class="slide" data-slide="5">
+  <span class="section-label">月度檢核</span>
+  <h2>月度檢核：評分機制</h2>
+
+  <div class="grid-2 gap-24">
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:10px">評分欄位結構</h3>
+        <table class="tbl">
+          <thead><tr><th>欄位</th><th>說明</th></tr></thead>
+          <tbody>
+            <tr><td>指標名稱</td><td>檢核項目名稱</td></tr>
+            <tr><td>說明</td><td>項目詳細描述</td></tr>
+            <tr><td>衡量標準</td><td>評分參考依據</td></tr>
+            <tr><td>點數</td><td>該指標權重（數值越大越重要）</td></tr>
+            <tr><td>自評分數</td><td>員工自評 1-10 分</td></tr>
+            <tr><td>主管分數</td><td>主管評分 1-10 分</td></tr>
+            <tr><td>加權分數</td><td>系統自動計算</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card card-tint-terra">
+        <h3 style="margin-bottom:8px">加權總分公式</h3>
+        <div class="mono-block" style="text-align:center;font-size:0.88rem">
+          加權總分 = &Sigma;(主管分數 &times; 點數 &divide; 總點數) &times; 20
+        </div>
+        <p style="font-size:0.82rem;color:var(--text-secondary);margin-top:8px">滿分 200 分。公式確保不同權重的指標按比例影響最終成績。</p>
+      </div>
+    </div>
+
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:10px">計算範例</h3>
+        <table class="tbl">
+          <thead><tr><th>指標</th><th>點數</th><th>主管分數</th></tr></thead>
+          <tbody>
+            <tr><td>工作品質</td><td>3</td><td>8</td></tr>
+            <tr><td>團隊協作</td><td>4</td><td>9</td></tr>
+            <tr><td>專業技能</td><td>3</td><td>7</td></tr>
+          </tbody>
+        </table>
+
+        <div class="mono-block mt-12" style="font-size:0.8rem;line-height:1.8">
+          總點數 = 3 + 4 + 3 = 10<br>
+          加權分 = (8&times;3/10 + 9&times;4/10 + 7&times;3/10) &times; 20<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = (2.4 + 3.6 + 2.1) &times; 20<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = 8.1 &times; 20<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = <strong>162.0 分</strong>
+        </div>
+      </div>
+
+      <div class="card card-tint-danger">
+        <h3 style="margin-bottom:6px;font-size:0.88rem">低分警示</h3>
+        <p style="font-size:0.85rem">當加權總分低於 <strong>65 分</strong> 時，系統自動標記警示，HR 可即時關注並介入輔導。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 6: MONTHLY — DETAIL & SIGNATURE ======================== -->
+<section class="slide" data-slide="6">
+  <span class="section-label">月度檢核</span>
+  <h2>月度檢核：詳情與簽名</h2>
+
+  <div class="grid-2 gap-24">
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:10px">詳情頁面 6 大區塊</h3>
+        <div class="flex-col gap-6" style="font-size:0.85rem">
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-base);border-radius:8px">
+            <div class="num-circle" style="background:rgba(214,162,140,0.15);color:var(--l2-terra-dark);width:24px;height:24px;min-width:24px;font-size:0.7rem">1</div>
+            員工基本資訊（姓名、部門、職位、評核月份）
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-base);border-radius:8px">
+            <div class="num-circle" style="background:rgba(214,162,140,0.15);color:var(--l2-terra-dark);width:24px;height:24px;min-width:24px;font-size:0.7rem">2</div>
+            檢核項目評分表（指標 + 點數 + 分數）
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-base);border-radius:8px">
+            <div class="num-circle" style="background:rgba(214,162,140,0.15);color:var(--l2-terra-dark);width:24px;height:24px;min-width:24px;font-size:0.7rem">3</div>
+            主管評語（文字輸入區）
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-base);border-radius:8px">
+            <div class="num-circle" style="background:rgba(214,162,140,0.15);color:var(--l2-terra-dark);width:24px;height:24px;min-width:24px;font-size:0.7rem">4</div>
+            HR 備註（僅 HR 可見/編輯）
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-base);border-radius:8px">
+            <div class="num-circle" style="background:rgba(214,162,140,0.15);color:var(--l2-terra-dark);width:24px;height:24px;min-width:24px;font-size:0.7rem">5</div>
+            電子簽名記錄（歷史簽名檢視）
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-base);border-radius:8px">
+            <div class="num-circle" style="background:rgba(214,162,140,0.15);color:var(--l2-terra-dark);width:24px;height:24px;min-width:24px;font-size:0.7rem">6</div>
+            電子簽名區（觸控 / 滑鼠簽名）
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:10px">各階段編輯權限</h3>
+        <table class="tbl">
+          <thead><tr><th>階段</th><th>可編輯欄位</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge badge-terra">自評階段</span></td><td>僅可編輯「自評分數」</td></tr>
+            <tr><td><span class="badge badge-info">主管階段</span></td><td>僅可編輯「主管分數」與「評語」</td></tr>
+            <tr><td><span class="badge badge-success">完成階段</span></td><td>全部欄位唯讀</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card card-tint-warning">
+        <h3 style="margin-bottom:8px;font-size:0.88rem">退回機制細節</h3>
+        <ul class="clean" style="font-size:0.82rem">
+          <li>主管退回 &rarr; 清除員工簽名，員工重新自評</li>
+          <li>HR 退回 &rarr; 清除主管簽名，主管重新審核</li>
+          <li>加權總分僅在 HR 結案時最終計算並鎖定</li>
+        </ul>
+      </div>
+
+      <div class="card card-tint-brand">
+        <h3 style="margin-bottom:8px;font-size:0.88rem">篩選條件</h3>
+        <table class="tbl" style="font-size:0.82rem">
+          <tbody>
+            <tr><td>年度</td><td>依年度篩選</td></tr>
+            <tr><td>月份</td><td>依月份篩選</td></tr>
+            <tr><td>子公司</td><td>組織層級篩選</td></tr>
+            <tr><td>部門</td><td>依部門篩選</td></tr>
+            <tr><td>狀態</td><td>依簽核狀態篩選</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 7: QUARTERLY — DUAL FORM & STATUS ======================== -->
+<section class="slide" data-slide="7">
+  <span class="section-label">季度面談</span>
+  <h2>季度面談：雙表單與狀態</h2>
+
+  <div class="grid-2 gap-24">
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:12px">雙表單比較</h3>
+        <div class="grid-2 gap-12">
+          <div class="card-sm card-tint-terra">
+            <div style="font-weight:600;font-size:0.88rem;color:var(--l2-terra-dark);margin-bottom:6px">員工表單</div>
+            <ul class="clean" style="font-size:0.8rem">
+              <li>自我評估</li>
+              <li>貢獻與學習</li>
+              <li>目標檢核</li>
+              <li>JD 與 OKR 季檢核</li>
+              <li>職能自評（5 核心）</li>
+              <li>滿意度調查（12 題）</li>
+            </ul>
+          </div>
+          <div class="card-sm card-tint-info">
+            <div style="font-weight:600;font-size:0.88rem;color:#5e7f96;margin-bottom:6px">主管表單</div>
+            <ul class="clean" style="font-size:0.8rem">
+              <li>評核 4 面向 &times; 5 項</li>
+              <li>管理職能（3 項）</li>
+              <li>主管評語</li>
+              <li>面談安排</li>
+              <li>發展計畫</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="highlight-box">
+        <div style="font-weight:600;font-size:0.85rem;color:var(--l2-terra-dark);margin-bottom:6px">初始化機制</div>
+        <p style="font-size:0.82rem">HR 批次建立季度面談，系統依據員工清單自動產生，不重複建立已存在的記錄。</p>
+      </div>
+    </div>
+
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:10px">六階段狀態流轉</h3>
+        <div class="state-flow" style="margin-bottom:14px">
+          <span class="badge badge-neutral">pending</span>
+          <span class="state-arrow">&#8594;</span>
+          <span class="badge badge-terra">employee_submitted</span>
+          <span class="state-arrow">&#8594;</span>
+          <span class="badge badge-info">manager_reviewed</span>
+        </div>
+        <div class="state-flow" style="margin-bottom:14px">
+          <span class="badge badge-mauve">interview_scheduled</span>
+          <span class="state-arrow">&#8594;</span>
+          <span class="badge badge-brand">interview_completed</span>
+          <span class="state-arrow">&#8594;</span>
+          <span class="badge badge-success">completed</span>
+        </div>
+
+        <table class="tbl" style="margin-top:12px">
+          <thead><tr><th>狀態</th><th>說明</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge badge-neutral">pending</span></td><td>已建立，待填寫</td></tr>
+            <tr><td><span class="badge badge-terra">employee_submitted</span></td><td>員工表單已提交</td></tr>
+            <tr><td><span class="badge badge-info">manager_reviewed</span></td><td>主管評核已完成</td></tr>
+            <tr><td><span class="badge badge-mauve">interview_scheduled</span></td><td>面談已排定</td></tr>
+            <tr><td><span class="badge badge-brand">interview_completed</span></td><td>面談已完成</td></tr>
+            <tr><td><span class="badge badge-success">completed</span></td><td>全部完成結案</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 8: QUARTERLY — EMPLOYEE 9 STEPS ======================== -->
+<section class="slide" data-slide="8">
+  <span class="section-label">季度面談</span>
+  <h2>季度面談：員工表單 9 步驟</h2>
+
+  <div class="flow-h" style="background:var(--bg-card);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px 4px;margin-bottom:18px">
+    <div class="flow-step">
+      <div class="flow-num" style="background:var(--l2-terracotta)">1</div>
+      <div class="flow-desc">自我評估</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num" style="background:var(--l2-terracotta)">2</div>
+      <div class="flow-desc">貢獻學習</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num" style="background:var(--l2-terracotta)">3</div>
+      <div class="flow-desc">目標檢核</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num" style="background:var(--l2-terracotta)">4</div>
+      <div class="flow-desc">JD/OKR</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num" style="background:var(--l2-terracotta)">5</div>
+      <div class="flow-desc">職能評估</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num" style="background:var(--l2-terracotta)">6</div>
+      <div class="flow-desc">滿意度</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num" style="background:var(--brand-light)">7</div>
+      <div class="flow-desc" style="opacity:0.5">主管評核</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num" style="background:var(--brand-light)">8</div>
+      <div class="flow-desc" style="opacity:0.5">面談記錄</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num" style="background:var(--l2-terracotta)">9</div>
+      <div class="flow-desc">發展計劃</div>
+    </div>
+  </div>
+
+  <div class="grid-2 gap-24">
+    <div class="flex-col gap-12">
+      <div class="card card-tint-terra">
+        <h3 style="margin-bottom:8px">步驟 1：自我評估</h3>
+        <p style="font-size:0.82rem">員工撰寫本季度的自我評估，包含工作表現回顧、個人成長反思。</p>
+      </div>
+      <div class="card card-tint-terra">
+        <h3 style="margin-bottom:8px">步驟 2：貢獻與學習</h3>
+        <p style="font-size:0.82rem">記錄本季主要貢獻、學到的新技能、參與的專案或培訓。</p>
+      </div>
+      <div class="card card-tint-terra">
+        <h3 style="margin-bottom:8px">步驟 3：目標檢核</h3>
+        <p style="font-size:0.82rem">逐一檢核上季設定的目標，標記狀態（進行中/已完成/未達成）與完成百分比。</p>
+      </div>
+      <div class="card card-tint-terra">
+        <h3 style="margin-bottom:8px">步驟 4：JD 與 OKR 季檢核</h3>
+        <p style="font-size:0.82rem">對照職務說明書與 OKR，檢視本季職責履行情況與關鍵成果達成度。</p>
+      </div>
+    </div>
+
+    <div class="flex-col gap-12">
+      <div class="card card-tint-terra">
+        <h3 style="margin-bottom:8px">步驟 5：職能評估</h3>
+        <p style="font-size:0.82rem">5 項核心職能自評（1-5 分）：溝通能力、團隊合作、問題解決、專業知識、主動積極。</p>
+      </div>
+      <div class="card card-tint-terra">
+        <h3 style="margin-bottom:8px">步驟 6：滿意度調查</h3>
+        <p style="font-size:0.82rem">12 題滿意度問卷（1-5 分），涵蓋工作期待、資源、成長、認可等面向。</p>
+      </div>
+      <div class="card card-tint-brand" style="opacity:0.6">
+        <h3 style="margin-bottom:6px;font-size:0.88rem">步驟 7-8：主管專屬</h3>
+        <p style="font-size:0.82rem">步驟 7（主管評核）與步驟 8（面談記錄）由主管填寫，員工略過。</p>
+      </div>
+      <div class="card card-tint-terra">
+        <h3 style="margin-bottom:8px">步驟 9：發展計劃</h3>
+        <p style="font-size:0.82rem">員工提出下一季的發展目標、期望的訓練資源與職涯規劃方向。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 9: QUARTERLY — MANAGER REVIEW ======================== -->
+<section class="slide" data-slide="9">
+  <span class="section-label">季度面談</span>
+  <h2>季度面談：主管評核</h2>
+
+  <div class="grid-2 gap-24">
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:10px">4 大評估面向（各 5 項，1-5 分）</h3>
+        <table class="tbl">
+          <thead><tr><th>面向</th><th>評估項目（5 項）</th></tr></thead>
+          <tbody>
+            <tr>
+              <td style="white-space:nowrap;font-weight:600">工作成果</td>
+              <td style="font-size:0.82rem">目標達成度、工作品質、效率、創新貢獻、問題解決</td>
+            </tr>
+            <tr>
+              <td style="white-space:nowrap;font-weight:600">專業能力</td>
+              <td style="font-size:0.82rem">專業知識、技能應用、學習成長、判斷力、適應力</td>
+            </tr>
+            <tr>
+              <td style="white-space:nowrap;font-weight:600">團隊貢獻</td>
+              <td style="font-size:0.82rem">團隊合作、溝通協調、知識分享、支援他人、跨部門協作</td>
+            </tr>
+            <tr>
+              <td style="white-space:nowrap;font-weight:600">工作態度</td>
+              <td style="font-size:0.82rem">責任心、主動積極、紀律遵守、抗壓能力、職業道德</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="flex-col gap-12">
+      <div class="card card-tint-info">
+        <h3 style="margin-bottom:8px">管理職能（僅主管級）</h3>
+        <p style="font-size:0.82rem;margin-bottom:6px">3 項管理職能評估，各 1-5 分：</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <span class="badge badge-info">人才發展</span>
+          <span class="badge badge-info">決策能力</span>
+          <span class="badge badge-info">團隊領導</span>
+        </div>
+      </div>
+
+      <div class="card card-tint-terra">
+        <h3 style="margin-bottom:8px">主管評語</h3>
+        <div class="flex-col gap-6" style="font-size:0.82rem">
+          <div style="padding:6px 10px;background:var(--bg-base);border-radius:6px">最佳表現：本季最突出的工作表現</div>
+          <div style="padding:6px 10px;background:var(--bg-base);border-radius:6px">需改進處：具體可改善的方向</div>
+          <div style="padding:6px 10px;background:var(--bg-base);border-radius:6px">補充說明：其他觀察與建議</div>
+        </div>
+      </div>
+
+      <div class="card card-tint-brand">
+        <h3 style="margin-bottom:8px">發展計劃</h3>
+        <table class="tbl" style="font-size:0.82rem">
+          <tbody>
+            <tr><td style="font-weight:600">發展指標</td><td>需加強的能力項目</td></tr>
+            <tr><td style="font-weight:600">改善措施</td><td>具體行動方案</td></tr>
+            <tr><td style="font-weight:600">截止日期</td><td>預計完成時間</td></tr>
+            <tr><td style="font-weight:600">所需資源</td><td>訓練、指導或其他支援</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card card-tint-sage">
+        <h3 style="margin-bottom:6px;font-size:0.88rem">面談安排</h3>
+        <div style="display:flex;gap:12px;font-size:0.82rem">
+          <span class="badge badge-sage">面談日期</span>
+          <span class="badge badge-sage">面談地點</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 10: QUARTERLY — SATISFACTION ======================== -->
+<section class="slide" data-slide="10">
+  <span class="section-label">季度面談</span>
+  <h2>季度面談：滿意度調查</h2>
+
+  <div class="grid-2 gap-24">
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:10px">12 題滿意度問卷（1-5 分）</h3>
+        <table class="tbl" style="font-size:0.82rem">
+          <thead><tr><th>#</th><th>調查題目主題</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>工作期望清晰度</td></tr>
+            <tr><td>2</td><td>工作所需資源與設備</td></tr>
+            <tr><td>3</td><td>個人成長與發展機會</td></tr>
+            <tr><td>4</td><td>工作認可與肯定</td></tr>
+            <tr><td>5</td><td>主管關懷與支持</td></tr>
+            <tr><td>6</td><td>團隊溝通與協作</td></tr>
+            <tr><td>7</td><td>薪酬與制度公平性</td></tr>
+            <tr><td>8</td><td>整體工作滿意度</td></tr>
+            <tr><td>9</td><td>推薦公司意願度</td></tr>
+            <tr><td>10</td><td>對公司未來的信心</td></tr>
+            <tr><td>11</td><td>工作與生活平衡</td></tr>
+            <tr><td>12</td><td>整體綜合評價</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="flex-col gap-16">
+      <div class="card card-tint-terra">
+        <h3 style="margin-bottom:8px">為何設計滿意度調查</h3>
+        <p style="font-size:0.85rem">滿意度調查的目的並非作為績效評分的依據，而是<strong>傾聽員工心聲</strong>。透過定期蒐集員工對工作環境、管理方式、發展機會的真實感受，幫助組織持續改善職場體驗。</p>
+      </div>
+
+      <div class="card card-tint-info">
+        <h3 style="margin-bottom:8px">月度均分自動帶入</h3>
+        <p style="font-size:0.85rem">季度面談建立時，系統自動計算該季度內各月度檢核的平均分數，作為面談的參考基準數據。</p>
+      </div>
+
+      <div class="highlight-box">
+        <div style="font-weight:600;font-size:0.88rem;color:var(--l2-terra-dark);margin-bottom:6px">員工與主管表單可並行填寫</div>
+        <p style="font-size:0.85rem">員工表單與主管表單互相獨立，可同步進行不需等待。員工提交自評的同時，主管即可開始填寫評核，加速整體面談流程。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 11: WEEKLY — FLOW & STATUS ======================== -->
+<section class="slide" data-slide="11">
+  <span class="section-label">工作週報</span>
+  <h2>工作週報：流程與狀態</h2>
+
+  <div class="grid-2 gap-24">
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:12px">四步流程</h3>
+        <div class="flex-col gap-10">
+          <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.88rem">
+            <div class="num-circle" style="background:var(--l2-terracotta);color:#fff">1</div>
+            <div><strong>HR 批次生成</strong> &mdash; 系統自動依員工清單建立週報</div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.88rem">
+            <div class="num-circle" style="background:var(--l2-terracotta);color:#fff">2</div>
+            <div><strong>員工填寫</strong> &mdash; 記錄本週工作內容與進度</div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.88rem">
+            <div class="num-circle" style="background:var(--l2-terracotta);color:#fff">3</div>
+            <div><strong>簽名提交</strong> &mdash; 電子簽名後送出主管審核</div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.88rem">
+            <div class="num-circle" style="background:var(--l2-terracotta);color:#fff">4</div>
+            <div><strong>主管審核</strong> &mdash; 審核通過或退回修改</div>
+          </div>
+        </div>
+
+        <div style="margin-top:16px">
+          <div style="font-weight:600;font-size:0.85rem;margin-bottom:8px">狀態流轉</div>
+          <div class="state-flow">
+            <span class="badge badge-neutral">not_started</span>
+            <span class="state-arrow">&#8594;</span>
+            <span class="badge badge-terra">draft</span>
+            <span class="state-arrow">&#8594;</span>
+            <span class="badge badge-info">submitted</span>
+            <span class="state-arrow">&#8594;</span>
+            <span class="badge badge-success">approved</span>
+          </div>
+          <div class="state-flow mt-8">
+            <span class="badge badge-info">submitted</span>
+            <span class="state-arrow">&#8594;</span>
+            <span class="badge badge-danger">rejected</span>
+            <span class="state-arrow">&#8594;</span>
+            <span class="badge badge-terra">draft</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:10px">五種狀態說明</h3>
+        <table class="tbl">
+          <thead><tr><th>狀態</th><th>說明</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge badge-neutral">not_started</span></td><td>已建立，尚未填寫</td></tr>
+            <tr><td><span class="badge badge-terra">draft</span></td><td>草稿填寫中</td></tr>
+            <tr><td><span class="badge badge-info">submitted</span></td><td>已簽名提交</td></tr>
+            <tr><td><span class="badge badge-success">approved</span></td><td>主管審核通過</td></tr>
+            <tr><td><span class="badge badge-danger">rejected</span></td><td>主管退回修改</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card card-tint-terra">
+        <h3 style="margin-bottom:8px">KPI 統計列</h3>
+        <div class="grid-3 gap-8">
+          <div style="text-align:center;padding:8px;background:var(--bg-base);border-radius:8px">
+            <div style="font-size:1.2rem;font-weight:700;color:var(--text-dark)">48</div>
+            <div style="font-size:0.72rem;color:var(--text-secondary)">週報總數</div>
+          </div>
+          <div style="text-align:center;padding:8px;background:var(--bg-base);border-radius:8px">
+            <div style="font-size:1.2rem;font-weight:700;color:var(--success)">44</div>
+            <div style="font-size:0.72rem;color:var(--text-secondary)">已提交</div>
+          </div>
+          <div style="text-align:center;padding:8px;background:var(--bg-base);border-radius:8px">
+            <div style="font-size:1.2rem;font-weight:700;color:var(--l2-terracotta)">92%</div>
+            <div style="font-size:0.72rem;color:var(--text-secondary)">提交率</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-tint-brand">
+        <h3 style="margin-bottom:6px;font-size:0.88rem">唯一性約束</h3>
+        <p style="font-size:0.82rem">每位員工 + 年度 + 週數為唯一鍵，避免重複建立。</p>
+      </div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <span class="badge badge-neutral">年度篩選</span>
+        <span class="badge badge-neutral">月份篩選</span>
+        <span class="badge badge-neutral">週別篩選</span>
+        <span class="badge badge-neutral">狀態篩選</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 12: WEEKLY — 7 BLOCKS ======================== -->
+<section class="slide" data-slide="12">
+  <span class="section-label">工作週報</span>
+  <h2>工作週報：7 區塊填寫</h2>
+
+  <div class="grid-2 gap-24">
+    <div class="flex-col gap-12">
+      <div class="card card-tint-terra">
+        <h3 style="margin-bottom:8px">1. 例行工作</h3>
+        <p style="font-size:0.82rem">記錄本週例行性工作項目，含工作內容、預計工時、實際工時，追蹤時間配置效率。</p>
+        <div style="display:flex;gap:6px;margin-top:6px">
+          <span class="badge badge-terra">工時追蹤</span>
+          <span class="badge badge-neutral">多筆記錄</span>
+        </div>
+      </div>
+
+      <div class="card card-tint-terra">
+        <h3 style="margin-bottom:8px">2. 非例行工作</h3>
+        <p style="font-size:0.82rem">臨時性、專案性任務記錄，同樣包含預計與實際工時的追蹤比較。</p>
+        <div style="display:flex;gap:6px;margin-top:6px">
+          <span class="badge badge-terra">工時追蹤</span>
+          <span class="badge badge-neutral">多筆記錄</span>
+        </div>
+      </div>
+
+      <div class="card card-tint-terra">
+        <h3 style="margin-bottom:8px">3. 待辦事項</h3>
+        <p style="font-size:0.82rem">列出待處理事項，標記優先等級（高/中/低）與狀態（待處理/進行中/已完成）。</p>
+        <div style="display:flex;gap:6px;margin-top:6px">
+          <span class="badge badge-danger">高優先</span>
+          <span class="badge badge-warning">中優先</span>
+          <span class="badge badge-info">低優先</span>
+        </div>
+      </div>
+
+      <div class="card card-tint-terra">
+        <h3 style="margin-bottom:8px">4. 問題與解決方案</h3>
+        <p style="font-size:0.82rem">記錄本週遭遇的問題、分析原因、提出的解決方案及執行結果。</p>
+      </div>
+    </div>
+
+    <div class="flex-col gap-12">
+      <div class="card card-tint-terra">
+        <h3 style="margin-bottom:8px">5. 教育訓練進度</h3>
+        <p style="font-size:0.82rem">記錄參與的培訓課程、自學內容及完成進度百分比。</p>
+        <div style="margin-top:8px">
+          <div style="font-size:0.8rem;display:flex;justify-content:space-between"><span>Angular 進階班</span><span>75%</span></div>
+          <div class="meter" style="margin-top:4px"><div class="meter-fill" style="width:75%;background:var(--l2-terracotta)"></div></div>
+        </div>
+      </div>
+
+      <div class="card card-tint-terra">
+        <h3 style="margin-bottom:8px">6. 階段性任務進度</h3>
+        <p style="font-size:0.82rem">跨週的長期任務追蹤，支援標記是否為跨部門協作任務。</p>
+        <div style="display:flex;gap:6px;margin-top:6px">
+          <span class="badge badge-info">跨部門標記</span>
+          <span class="badge badge-neutral">進度追蹤</span>
+        </div>
+      </div>
+
+      <div class="card card-tint-terra">
+        <h3 style="margin-bottom:8px">7. 本週總結與下週計劃</h3>
+        <p style="font-size:0.82rem">彙整本週工作成果、心得反思，並規劃下週的重點工作項目。</p>
+      </div>
+
+      <div class="highlight-box">
+        <div style="font-weight:600;font-size:0.85rem;color:var(--l2-terra-dark);margin-bottom:4px">電子簽名</div>
+        <p style="font-size:0.82rem">完成 7 個區塊的填寫後，員工需電子簽名確認送出。主管審核後亦簽名完成。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 13: CYCLE FLOW ======================== -->
+<section class="slide" data-slide="13">
+  <span class="section-label">完整循環</span>
+  <h2>完整流程：週 &rarr; 月 &rarr; 季的循環</h2>
+
+  <div class="card" style="padding:24px;text-align:center;margin-bottom:18px">
+    <div class="flow-h" style="justify-content:center;background:none;box-shadow:none;padding:0">
+      <div class="flow-step" style="max-width:160px">
+        <div class="flow-num" style="background:var(--l2-terracotta)">W</div>
+        <div class="flow-title">工作週報</div>
+        <div class="flow-desc">每週</div>
+      </div>
+      <div class="flow-step" style="max-width:160px">
+        <div class="flow-num" style="background:var(--l2-terra-dark)">M</div>
+        <div class="flow-title">月度檢核</div>
+        <div class="flow-desc">每月</div>
+      </div>
+      <div class="flow-step" style="max-width:160px">
+        <div class="flow-num" style="background:var(--brand-dark)">Q</div>
+        <div class="flow-title">季度面談</div>
+        <div class="flow-desc">每季</div>
+      </div>
+      <div class="flow-step" style="max-width:160px">
+        <div class="flow-num" style="background:var(--success)">D</div>
+        <div class="flow-title">發展計畫</div>
+        <div class="flow-desc">產出</div>
+      </div>
+      <div class="flow-step" style="max-width:160px">
+        <div class="flow-num" style="background:var(--info)">G</div>
+        <div class="flow-title">指導執行</div>
+        <div class="flow-desc">回到週報</div>
+      </div>
+    </div>
+    <p style="font-size:0.82rem;color:var(--text-secondary);margin-top:12px">週報累積為月度數據 &rarr; 月度均分帶入季度面談 &rarr; 季度產出發展計畫 &rarr; 發展計畫指導每週工作</p>
+  </div>
+
+  <div class="grid-3 gap-18">
+    <div class="card card-tint-terra">
+      <h3 style="margin-bottom:8px;font-size:0.88rem">週報節奏</h3>
+      <ul class="clean" style="font-size:0.82rem">
+        <li>週一至週五：逐日填寫工作內容</li>
+        <li>週五前：完成簽名提交</li>
+        <li>主管：下週一前審核完畢</li>
+      </ul>
+    </div>
+    <div class="card card-tint-terra">
+      <h3 style="margin-bottom:8px;font-size:0.88rem">月度節奏</h3>
+      <ul class="clean" style="font-size:0.82rem">
+        <li>月初：HR 建立本月檢核</li>
+        <li>月中：員工完成自評</li>
+        <li>月底：主管審核 + HR 結案</li>
+      </ul>
+    </div>
+    <div class="card card-tint-terra">
+      <h3 style="margin-bottom:8px;font-size:0.88rem">季度節奏</h3>
+      <ul class="clean" style="font-size:0.82rem">
+        <li>季初：HR 批次初始化面談</li>
+        <li>季中：員工/主管並行填寫</li>
+        <li>季末：面談完成 + 結案歸檔</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="highlight-box mt-16">
+    <div style="font-weight:600;color:var(--l2-terra-dark);margin-bottom:4px">PDCA 持續改善循環</div>
+    <p style="font-size:0.85rem"><strong>Plan</strong>（季度面談設定發展目標）&rarr; <strong>Do</strong>（週報記錄日常執行）&rarr; <strong>Check</strong>（月度檢核量化評估）&rarr; <strong>Act</strong>（季度面談產出改善行動），形成永續的績效成長引擎。</p>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 14: AI ROADMAP ======================== -->
+<section class="slide" data-slide="14">
+  <span class="section-label">Roadmap</span>
+  <h2>尚待開發的 AI 功能</h2>
+  <p style="font-size:0.88rem;color:var(--text-secondary);margin-bottom:18px">以下為目前系統已規劃但尚未完成的 AI 功能，將於後續版本上線。</p>
+
+  <div class="card" style="max-width:780px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <span class="badge badge-terra">職能評估模組</span>
+    </div>
+    <div class="card-sm card-tint-terra">
+      <div style="font-weight:600;font-size:0.95rem;margin-bottom:8px">將個人的評估結果自動連結 AI 職涯規劃助手</div>
+      <p style="font-size:0.85rem;line-height:1.7">整合月度檢核分數趨勢、季度面談評核結果、職能自評與主管評分等數據，自動連結職等職級管理的 AI 職涯規劃助手，為員工產出個人化的職涯發展建議與訓練計畫，實現從「評估發現問題」到「AI 建議解方」的完整閉環。</p>
+    </div>
+    <div class="mt-12" style="display:flex;gap:10px;flex-wrap:wrap;font-size:0.82rem">
+      <span class="badge badge-neutral">月度分數趨勢</span>
+      <span class="badge badge-neutral">季度評核結果</span>
+      <span class="badge badge-neutral">職能自評/主管評分</span>
+      <span class="badge badge-neutral">職等職級 AI 助手</span>
+      <span class="badge badge-neutral">個人化發展建議</span>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 15: SUMMARY & Q&A ======================== -->
+<section class="slide" data-slide="15">
+  <span class="section-label">Summary</span>
+  <h2>總結效益</h2>
+
+  <div class="grid-3 gap-24 mt-12">
+    <div class="card" style="text-align:center;padding:28px 22px">
+      <div style="width:56px;height:56px;border-radius:14px;background:rgba(214,162,140,0.12);display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px">
+        <svg width="28" height="28" fill="none" stroke="#8a5e42" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>
+      </div>
+      <h3 style="margin-bottom:8px;color:var(--l2-terra-dark)">評估制度化</h3>
+      <p style="font-size:0.85rem">週/月/季三層評估 + 電子簽名三階段簽核，建立透明、可追溯的績效管理制度。</p>
+    </div>
+    <div class="card" style="text-align:center;padding:28px 22px">
+      <div style="width:56px;height:56px;border-radius:14px;background:rgba(214,162,140,0.12);display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px">
+        <svg width="28" height="28" fill="none" stroke="#8a5e42" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+      </div>
+      <h3 style="margin-bottom:8px;color:var(--l2-terra-dark)">回饋即時化</h3>
+      <p style="font-size:0.85rem">從週報日常追蹤到月度量化評分，問題不再等到年底才發現，PDCA 持續改善。</p>
+    </div>
+    <div class="card" style="text-align:center;padding:28px 22px">
+      <div style="width:56px;height:56px;border-radius:14px;background:rgba(214,162,140,0.12);display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px">
+        <svg width="28" height="28" fill="none" stroke="#8a5e42" stroke-width="1.8" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4-4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      </div>
+      <h3 style="margin-bottom:8px;color:var(--l2-terra-dark)">決策數據化</h3>
+      <p style="font-size:0.85rem">HR 儀表板即時監控完成率與部門趨勢，績效數據驅動人才發展決策。</p>
+    </div>
+  </div>
+
+  <div class="mt-20" style="text-align:center">
+    <div class="highlight-box" style="display:inline-block;max-width:560px">
+      <h3 style="font-size:1.05rem;color:var(--l2-terra-dark);margin-bottom:6px">Q & A</h3>
+      <p style="font-size:0.88rem;color:var(--text-secondary)">感謝聆聽，歡迎提出任何問題與建議。</p>
+    </div>
+  </div>
+
+  <div class="mt-auto" style="padding-top:20px">
+    <div style="display:flex;gap:24px;justify-content:center;font-size:0.78rem;color:var(--text-secondary)">
+      <span>Bombus HRM v1.0</span>
+      <span>職能管理模組（L2）</span>
+    </div>
+  </div>
+</section>
+
+</div><!-- end deck -->
+
+<!-- Navigation -->
+<div class="nav-bar">
+  <button class="nav-btn" id="prevBtn" disabled onclick="navigate(-1)">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+    上一頁
+  </button>
+  <div class="page-indicator" id="dots"></div>
+  <button class="nav-btn" id="nextBtn" onclick="navigate(1)">
+    下一頁
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+  </button>
+</div>
+<div class="key-hint">&#8592; &#8594; 鍵切換頁面</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  let current = 0;
+
+  const dotsEl = document.getElementById('dots');
+  for (let i = 0; i < total; i++) {
+    const d = document.createElement('span');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.onclick = () => goTo(i);
+    dotsEl.appendChild(d);
+  }
+  const numEl = document.createElement('span');
+  numEl.className = 'page-num';
+  numEl.textContent = '1 / ' + total;
+  dotsEl.appendChild(numEl);
+
+  function goTo(n) {
+    if (n < 0 || n >= total || n === current) return;
+    const prev = current;
+    current = n;
+    slides[prev].classList.remove('active');
+    slides[current].classList.add('active');
+    slides[current].scrollTop = 0;
+    updateUI();
+  }
+  function navigate(dir) { goTo(current + dir); }
+  function updateUI() {
+    document.getElementById('prevBtn').disabled = current === 0;
+    document.getElementById('nextBtn').disabled = current === total - 1;
+    document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === current));
+    numEl.textContent = (current + 1) + ' / ' + total;
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); navigate(1); }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); navigate(-1); }
+    if (e.key === 'Home') { e.preventDefault(); goTo(0); }
+    if (e.key === 'End') { e.preventDefault(); goTo(total - 1); }
+  });
+
+  let ts = 0;
+  document.addEventListener('touchstart', e => { ts = e.touches[0].clientX; });
+  document.addEventListener('touchend', e => {
+    const d = ts - e.changedTouches[0].clientX;
+    if (Math.abs(d) > 50) navigate(d > 0 ? 1 : -1);
+  });
+</script>
+
+</body>
+</html>

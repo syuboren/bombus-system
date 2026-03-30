@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bombus HRM — 職務說明書、職能模型與職等職級管理</title>
+<style>
+  :root {
+    --bg-base: #F5F5F7;
+    --bg-card: #FCFCFD;
+    --text-primary: #464E56;
+    --text-secondary: #6B7280;
+    --text-dark: #1F2937;
+    --border: #E2E4E8;
+    --soft-gray: #E8E8EA;
+    --brand-main: #64748B;
+    --brand-light: #94A3B8;
+    --brand-dark: #475569;
+    --l1-sage: #8DA399;
+    --l1-sage-dark: #6B8577;
+    --l2-terracotta: #D6A28C;
+    --l2-terracotta-light: #E4BBA8;
+    --l2-terracotta-dark: #B8876E;
+    --l3-petrol: #7F9CA0;
+    --l4-mauve: #9A8C98;
+    --success: #7FB095;
+    --warning: #E3C088;
+    --danger: #C77F7F;
+    --info: #8DA8BE;
+    --radius: 12px;
+    --shadow: 0 4px 20px rgba(0,0,0,0.05);
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html{font-size:16px;scroll-behavior:smooth}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft JhengHei",sans-serif;background:var(--bg-base);color:var(--text-primary);line-height:1.6;overflow:hidden}
+  .deck{width:100vw;height:100vh;position:relative}
+  .slide{position:absolute;inset:0;display:flex;flex-direction:column;padding:48px 72px 64px;opacity:0;visibility:hidden;transition:opacity .4s ease,transform .4s ease;transform:translateX(36px);overflow-y:auto}
+  .slide.active{opacity:1;visibility:visible;transform:translateX(0)}
+  h1{font-size:2rem;font-weight:600;color:var(--text-dark);margin-bottom:6px;letter-spacing:-.02em}
+  h2{font-size:1.3rem;font-weight:600;color:var(--brand-dark);margin-bottom:18px}
+  h3{font-size:1rem;font-weight:600;color:var(--text-dark);margin-bottom:8px}
+  p,li{font-size:.9rem;color:var(--text-primary);line-height:1.7}
+  .subtitle{font-size:1.05rem;color:var(--text-secondary);margin-bottom:24px}
+  .section-label{display:inline-block;font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--l2-terracotta-dark);border:1.5px solid var(--l2-terracotta-light);border-radius:6px;padding:2px 10px;margin-bottom:12px}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px}
+  .grid-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px}
+  .flex-col{display:flex;flex-direction:column}
+  .gap-6{gap:6px}.gap-8{gap:8px}.gap-10{gap:10px}.gap-12{gap:12px}.gap-16{gap:16px}.gap-20{gap:20px}.gap-24{gap:24px}
+  .mt-8{margin-top:8px}.mt-12{margin-top:12px}.mt-16{margin-top:16px}.mt-20{margin-top:20px}.mt-auto{margin-top:auto}
+  .mb-4{margin-bottom:4px}.mb-8{margin-bottom:8px}
+  .card{background:var(--bg-card);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px}
+  .card-sm{background:var(--bg-card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px}
+  .card-tint-terra{background:rgba(214,162,140,.08)}
+  .card-tint-sage{background:rgba(141,163,153,.07)}
+  .card-tint-info{background:rgba(141,168,190,.07)}
+  .card-tint-brand{background:rgba(100,116,139,.06)}
+  .card-tint-warning{background:rgba(227,192,136,.08)}
+  .card-tint-danger{background:rgba(199,127,127,.07)}
+  .card-tint-success{background:rgba(127,176,149,.07)}
+  .card-tint-petrol{background:rgba(127,156,160,.08)}
+  .badge{display:inline-flex;align-items:center;gap:5px;font-size:.78rem;font-weight:500;padding:3px 10px;border-radius:16px}
+  .badge-terra{background:rgba(214,162,140,.15);color:#8a5e42}
+  .badge-sage{background:rgba(141,163,153,.15);color:var(--l1-sage-dark)}
+  .badge-brand{background:rgba(100,116,139,.12);color:var(--brand-dark)}
+  .badge-info{background:rgba(141,168,190,.15);color:#5e7f96}
+  .badge-success{background:rgba(127,176,149,.15);color:#4f7a63}
+  .badge-warning{background:rgba(227,192,136,.18);color:#8b7034}
+  .badge-danger{background:rgba(199,127,127,.15);color:#8b4545}
+  .badge-petrol{background:rgba(127,156,160,.15);color:#4d6e72}
+  .badge-mauve{background:rgba(154,140,152,.15);color:#5e5060}
+  .badge-neutral{background:var(--soft-gray);color:var(--text-secondary)}
+  .num-circle{width:28px;height:28px;min-width:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:600;flex-shrink:0}
+  .flow-h{display:flex;align-items:stretch}
+  .flow-step{flex:1;text-align:center;padding:14px 8px;position:relative}
+  .flow-step::after{content:'';position:absolute;right:0;top:50%;transform:translateY(-50%);width:0;height:0;border-top:7px solid transparent;border-bottom:7px solid transparent;border-left:7px solid var(--border)}
+  .flow-step:last-child::after{display:none}
+  .flow-num{width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:600;color:#fff;margin-bottom:6px}
+  .flow-title{font-size:.78rem;font-weight:600;color:var(--text-dark);margin-bottom:3px}
+  .flow-desc{font-size:.68rem;color:var(--text-secondary);line-height:1.35}
+  .state-flow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:.82rem}
+  .state-arrow{color:var(--l2-terracotta-light);font-size:.9rem}
+  .tbl{width:100%;border-collapse:collapse;font-size:.85rem}
+  .tbl th{text-align:left;font-weight:600;padding:8px 12px;border-bottom:2px solid var(--l2-terracotta);color:var(--l2-terracotta-dark);background:rgba(214,162,140,.06)}
+  .tbl td{padding:8px 12px;border-bottom:1px solid var(--soft-gray)}
+  .tbl tr:last-child td{border-bottom:none}
+  .meter{height:7px;background:var(--soft-gray);border-radius:4px;overflow:hidden}
+  .meter-fill{height:100%;border-radius:4px}
+  ul.clean{list-style:none;padding-left:0}
+  ul.clean li{position:relative;padding-left:18px;margin-bottom:6px;font-size:.88rem}
+  ul.clean li::before{content:'';position:absolute;left:0;top:10px;width:5px;height:5px;border-radius:2px;background:var(--l2-terracotta-light)}
+  .highlight-box{background:rgba(214,162,140,.05);border-radius:var(--radius);padding:16px 20px;border:1px solid rgba(214,162,140,.2)}
+  .nav-bar{position:fixed;bottom:0;left:0;right:0;height:50px;background:var(--bg-card);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 28px;z-index:100;box-shadow:0 -2px 10px rgba(0,0,0,.03)}
+  .nav-btn{display:inline-flex;align-items:center;gap:5px;padding:7px 18px;border:1.5px solid var(--border);border-radius:8px;background:var(--bg-card);color:var(--text-primary);font-size:.82rem;font-weight:500;cursor:pointer;transition:all .2s;font-family:inherit}
+  .nav-btn:hover{background:var(--bg-base);border-color:var(--l2-terracotta-light)}
+  .nav-btn:disabled{opacity:.3;cursor:default}
+  .nav-btn:disabled:hover{background:var(--bg-card);border-color:var(--border)}
+  .page-indicator{display:flex;gap:5px;align-items:center}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--soft-gray);transition:all .3s;cursor:pointer}
+  .dot.active{background:var(--l2-terracotta);width:20px;border-radius:4px}
+  .page-num{font-size:.78rem;color:var(--text-secondary);margin-left:10px;font-variant-numeric:tabular-nums}
+  .key-hint{position:fixed;bottom:58px;right:28px;font-size:.7rem;color:var(--text-secondary);opacity:.5;z-index:101}
+  .cover{justify-content:center;padding:72px 88px}
+  .cover-logo{font-size:.82rem;font-weight:600;color:var(--l2-terracotta-dark);letter-spacing:.12em;margin-bottom:28px}
+  .cover h1{font-size:2.4rem;line-height:1.3;margin-bottom:10px;max-width:680px}
+  .cover .subtitle{font-size:1.1rem;max-width:580px;margin-bottom:40px}
+  .cover-meta{display:flex;gap:28px;font-size:.82rem;color:var(--text-secondary)}
+  .cover-accent{position:absolute;right:0;top:0;bottom:0;width:240px;background:linear-gradient(180deg,rgba(214,162,140,.06) 0%,rgba(184,135,110,.08) 100%);display:flex;flex-direction:column;justify-content:center;align-items:center;gap:14px;padding:40px}
+  .accent-icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center}
+  @media(max-width:900px){.slide{padding:28px 24px 60px}.cover{padding:40px 28px}.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}.cover h1{font-size:1.6rem}.cover-accent{display:none}.flow-h{flex-direction:column}.flow-step::after{display:none}}
+  @media print{body{overflow:visible}.nav-bar,.key-hint{display:none}.slide{position:relative;opacity:1;visibility:visible;transform:none;page-break-after:always;min-height:100vh}}
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+<!-- ======================== SLIDE 0: COVER ======================== -->
+<section class="slide cover active" data-slide="0">
+  <div class="cover-logo">BOMBUS HRM</div>
+  <h1>職務說明書、職能模型<br>與職等職級管理</h1>
+  <p class="subtitle">建立組織的能力標準、階層架構與完整職務規格</p>
+  <div class="cover-meta">
+    <span>適用對象：HR / 部門主管 / 訓練發展人員</span>
+    <span>模組：職能管理 L2</span>
+  </div>
+  <div class="cover-accent">
+    <div class="accent-icon" style="background:rgba(214,162,140,.15)">
+      <svg width="26" height="26" fill="none" stroke="#B8876E" stroke-width="1.8" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+    </div>
+    <div class="accent-icon" style="background:rgba(141,168,190,.15)">
+      <svg width="26" height="26" fill="none" stroke="#5e7f96" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
+    </div>
+    <div class="accent-icon" style="background:rgba(100,116,139,.1)">
+      <svg width="26" height="26" fill="none" stroke="#475569" stroke-width="1.8" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4-4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 1: BACKGROUND ======================== -->
+<section class="slide" data-slide="1">
+  <span class="section-label">Part 1</span>
+  <h2>為什麼需要結構化的職能管理？</h2>
+  <div class="grid-3 gap-20">
+    <div class="card card-tint-danger">
+      <div style="font-weight:600;font-size:.9rem;color:var(--danger);margin-bottom:6px">能力定義模糊</div>
+      <p style="font-size:.85rem">各部門對「溝通能力」「專業技能」的定義不一，面試評核與晉升標準缺乏客觀依據。</p>
+    </div>
+    <div class="card card-tint-warning">
+      <div style="font-weight:600;font-size:.9rem;color:#8b7034;margin-bottom:6px">職等薪資不透明</div>
+      <p style="font-size:.85rem">員工不清楚晉升路徑與條件，薪資級距缺乏系統化管理，跨子公司標準不一致。</p>
+    </div>
+    <div class="card card-tint-info">
+      <div style="font-weight:600;font-size:.9rem;color:#5e7f96;margin-bottom:6px">JD 管理分散</div>
+      <p style="font-size:.85rem">職務說明書散落於 Word/Email，版本混亂且無法與職能框架連動，難以作為招募與評核依據。</p>
+    </div>
+  </div>
+  <div class="mt-20 grid-2 gap-20">
+    <div class="highlight-box">
+      <div style="font-weight:600;color:var(--l2-terracotta-dark);margin-bottom:6px">系統願景</div>
+      <p style="font-size:.85rem">透過三大模組的結構化串聯，建立從「能力定義」→「階層架構」→「職務規格」的完整職能管理體系，作為招募、評核、晉升、培訓的共同基準。</p>
+    </div>
+    <div class="highlight-box">
+      <div style="font-weight:600;color:var(--l2-terracotta-dark);margin-bottom:6px">蓋房子的比喻</div>
+      <p style="font-size:.85rem"><strong>職能模型</strong> = 建材清單（需要哪些能力）<br><strong>職等職級</strong> = 樓層設計圖（組織有幾層）<br><strong>職務說明書</strong> = 房間規格書（每個職位的完整說明）</p>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 2: 3-MODULE OVERVIEW ======================== -->
+<section class="slide" data-slide="2">
+  <span class="section-label">Part 2</span>
+  <h2>三大模組總覽與關聯</h2>
+  <div class="grid-3 gap-20">
+    <div class="card card-tint-terra" style="text-align:center;padding:24px 18px">
+      <div style="width:48px;height:48px;border-radius:12px;background:rgba(214,162,140,.15);display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px">
+        <svg width="24" height="24" fill="none" stroke="#B8876E" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+      </div>
+      <h3 style="color:var(--l2-terracotta-dark);margin-bottom:6px">職能模型基準</h3>
+      <p style="font-size:.82rem;color:var(--text-secondary)">定義組織需要的「能力」<br>四大類別 + L1-L6 等級</p>
+      <div style="display:flex;gap:4px;justify-content:center;margin-top:10px;flex-wrap:wrap">
+        <span class="badge badge-terra">核心</span>
+        <span class="badge badge-terra">管理</span>
+        <span class="badge badge-terra">專業</span>
+        <span class="badge badge-terra">KSA</span>
+      </div>
+    </div>
+    <div class="card card-tint-info" style="text-align:center;padding:24px 18px">
+      <div style="width:48px;height:48px;border-radius:12px;background:rgba(141,168,190,.15);display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px">
+        <svg width="24" height="24" fill="none" stroke="#5e7f96" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
+      </div>
+      <h3 style="color:#5e7f96;margin-bottom:6px">職等職級管理</h3>
+      <p style="font-size:.82rem;color:var(--text-secondary)">定義組織的「階層架構」<br>職等 1-7 + 雙軌制 + 薪資</p>
+      <div style="display:flex;gap:4px;justify-content:center;margin-top:10px;flex-wrap:wrap">
+        <span class="badge badge-info">管理職</span>
+        <span class="badge badge-info">專業職</span>
+        <span class="badge badge-info">薪資</span>
+      </div>
+    </div>
+    <div class="card card-tint-brand" style="text-align:center;padding:24px 18px">
+      <div style="width:48px;height:48px;border-radius:12px;background:rgba(100,116,139,.1);display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px">
+        <svg width="24" height="24" fill="none" stroke="#475569" stroke-width="1.8" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+      </div>
+      <h3 style="color:var(--brand-dark);margin-bottom:6px">職務說明書</h3>
+      <p style="font-size:.82rem;color:var(--text-secondary)">整合「能力」與「階層」<br>11 大區塊結構化 JD</p>
+      <div style="display:flex;gap:4px;justify-content:center;margin-top:10px;flex-wrap:wrap">
+        <span class="badge badge-brand">撰寫</span>
+        <span class="badge badge-brand">審核</span>
+        <span class="badge badge-brand">版本</span>
+      </div>
+    </div>
+  </div>
+  <div class="card mt-20" style="padding:18px 22px">
+    <h3 style="margin-bottom:10px;font-size:.9rem">資料流向摘要</h3>
+    <table class="tbl">
+      <thead><tr><th>來源模組</th><th></th><th>目標模組</th><th>傳遞的資料</th></tr></thead>
+      <tbody>
+        <tr><td>職能模型基準</td><td style="color:var(--l2-terracotta)">&#8594;</td><td>職務說明書</td><td>職能 ID、名稱、需求等級 (L1-L6)、權重 (%)</td></tr>
+        <tr><td>職等職級管理</td><td style="color:var(--l2-terracotta)">&#8594;</td><td>職務說明書</td><td>職等 (1-7)、薪資代碼 (BS03)</td></tr>
+        <tr><td>職能模型基準</td><td style="color:var(--l2-terracotta)">&#8594;</td><td>晉升條件</td><td>晉升所需的必備技能</td></tr>
+        <tr><td>職務說明書</td><td style="color:var(--l2-terracotta)">&#8594;</td><td>缺口分析 / 招募</td><td>職能需求基準（required score）</td></tr>
+        <tr><td>晉升條件</td><td style="color:var(--l2-terracotta)">&#8594;</td><td>教育訓練 (L3)</td><td>晉升所需課程清單</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 3: MODULE MAP ======================== -->
+<section class="slide" data-slide="3">
+  <span class="section-label">Part 2（續）</span>
+  <h2>系統導覽與頁面架構</h2>
+  <div class="grid-2 gap-24">
+    <div class="card" style="padding:20px">
+      <h3 style="margin-bottom:10px">功能入口</h3>
+      <table class="tbl">
+        <thead><tr><th>功能</th><th>導覽路徑</th></tr></thead>
+        <tbody>
+          <tr><td>職能框架</td><td>職能管理 → 職能框架</td></tr>
+          <tr><td>職等職級</td><td>職能管理 → 職等職級</td></tr>
+          <tr><td>職務說明書</td><td>職能管理 → 職務說明書</td></tr>
+          <tr><td>新建 JD</td><td>職能管理 → 職務說明書 → 新增</td></tr>
+          <tr><td>缺口分析</td><td>職能管理 → 缺口分析</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card card-tint-terra" style="padding:20px;font-size:.82rem;line-height:1.6">
+      <h3 style="margin-bottom:10px">頁面功能架構</h3>
+      <pre style="font-family:inherit;white-space:pre-wrap;color:var(--text-primary)">職能管理 (L2)
+├── 職能框架
+│   ├── 核心職能（全員，L1-L6）
+│   ├── 管理職能（管理者，L1-L6）
+│   ├── 專業職能（部門專屬，L1-L6）
+│   └── KSA 職能（知識/技能/態度）
+├── 職等職級
+│   ├── 職等職級矩陣
+│   │   ├── 薪資對照表
+│   │   ├── 管理職軌道明細
+│   │   └── 專業職軌道明細
+│   ├── 職涯發展路徑
+│   ├── AI 職涯規劃助手
+│   ├── 待審核（含數量徽章）
+│   └── 變更歷史
+├── 職務說明書
+│   ├── JD 列表（卡片/列表）
+│   ├── 新建 JD（手動/範本/AI）
+│   └── 審核與版本管理
+└── 缺口分析
+    ├── 部門職能落差概覽
+    ├── 員工能力雷達圖
+    └── AI 發展建議</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 4: COMPETENCY 4 TYPES ======================== -->
+<section class="slide" data-slide="4">
+  <span class="section-label">職能模型基準</span>
+  <h2>四大職能類別</h2>
+  <p style="font-size:.88rem;color:var(--text-secondary);margin-bottom:16px">職能模型是整個職能管理體系的基石，定義組織需要的每一種「能力」。</p>
+  <div class="grid-4 gap-16">
+    <div class="card" style="padding:18px;text-align:center">
+      <div style="font-size:1.6rem;font-weight:700;color:var(--l2-terracotta-dark);margin-bottom:4px">核心</div>
+      <div style="font-size:.75rem;color:var(--text-secondary);margin-bottom:10px">Core Competency</div>
+      <div class="badge badge-terra" style="margin-bottom:8px">全體員工</div>
+      <p style="font-size:.8rem">組織的基本 DNA，每個人都須具備。如：溝通表達、自我管理。</p>
+      <div style="margin-top:10px;font-size:.75rem;color:var(--l2-terracotta-dark);font-weight:600">L1 - L6 累積制</div>
+    </div>
+    <div class="card" style="padding:18px;text-align:center">
+      <div style="font-size:1.6rem;font-weight:700;color:#5e7f96;margin-bottom:4px">管理</div>
+      <div style="font-size:.75rem;color:var(--text-secondary);margin-bottom:10px">Management</div>
+      <div class="badge badge-info" style="margin-bottom:8px">管理者</div>
+      <p style="font-size:.8rem">帶領團隊所需的領導能力。如：團隊領導、決策能力。</p>
+      <div style="margin-top:10px;font-size:.75rem;color:#5e7f96;font-weight:600">L1 - L6 累積制</div>
+    </div>
+    <div class="card" style="padding:18px;text-align:center">
+      <div style="font-size:1.6rem;font-weight:700;color:var(--brand-dark);margin-bottom:4px">專業</div>
+      <div style="font-size:.75rem;color:var(--text-secondary);margin-bottom:10px">Professional</div>
+      <div class="badge badge-brand" style="margin-bottom:8px">特定部門</div>
+      <p style="font-size:.8rem">該領域的專業技術能力。如：系統設計、財務分析。</p>
+      <div style="margin-top:10px;font-size:.75rem;color:var(--brand-dark);font-weight:600">L1 - L6 累積制</div>
+    </div>
+    <div class="card" style="padding:18px;text-align:center">
+      <div style="font-size:1.6rem;font-weight:700;color:var(--l1-sage-dark);margin-bottom:4px">KSA</div>
+      <div style="font-size:.75rem;color:var(--text-secondary);margin-bottom:10px">Knowledge / Skill / Attitude</div>
+      <div class="badge badge-sage" style="margin-bottom:8px">依職務而定</div>
+      <p style="font-size:.8rem">知識(K)、技能(S)、態度(A) 三維度分類，無等級制度。</p>
+      <div style="margin-top:10px;font-size:.75rem;color:var(--l1-sage-dark);font-weight:600">無等級</div>
+    </div>
+  </div>
+  <div class="card mt-16" style="padding:16px 20px">
+    <h3 style="font-size:.88rem;margin-bottom:8px">KSA 三維度</h3>
+    <div class="grid-3 gap-12">
+      <div class="card-sm card-tint-sage">
+        <div style="font-weight:600;font-size:.85rem">K — 知識</div>
+        <p style="font-size:.8rem;color:var(--text-secondary);margin-top:2px">該職務需要「知道」的事。如：勞動法規、產品知識。</p>
+      </div>
+      <div class="card-sm card-tint-info">
+        <div style="font-weight:600;font-size:.85rem">S — 技能</div>
+        <p style="font-size:.8rem;color:var(--text-secondary);margin-top:2px">該職務需要「做到」的事。如：Excel 進階、專案管理。</p>
+      </div>
+      <div class="card-sm card-tint-terra">
+        <div style="font-weight:600;font-size:.85rem">A — 態度</div>
+        <p style="font-size:.8rem;color:var(--text-secondary);margin-top:2px">該職務需要「展現」的特質。如：主動積極、團隊合作。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 5: L1-L6 LEVELS ======================== -->
+<section class="slide" data-slide="5">
+  <span class="section-label">職能模型基準（續）</span>
+  <h2>L1-L6 等級制度與行為指標</h2>
+  <div class="grid-2 gap-24">
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:10px">六級累積制</h3>
+        <p style="font-size:.82rem;color:var(--text-secondary);margin-bottom:12px">拿到 L3 的人不只會 L3，而是 L1 + L2 + L3 全部都要會。</p>
+        <div class="flex-col gap-6">
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-base);border-radius:8px;font-size:.85rem">
+            <div class="num-circle" style="background:var(--soft-gray);color:var(--text-secondary)">L1</div>
+            <div><strong>入門級</strong> — 基礎認知，能在指導下操作</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-base);border-radius:8px;font-size:.85rem">
+            <div class="num-circle" style="background:rgba(214,162,140,.12);color:var(--l2-terracotta-dark)">L2</div>
+            <div><strong>發展級</strong> — 能獨立處理常規工作</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-base);border-radius:8px;font-size:.85rem">
+            <div class="num-circle" style="background:rgba(214,162,140,.18);color:var(--l2-terracotta-dark)">L3</div>
+            <div><strong>熟練級</strong> — 能處理複雜狀況</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-base);border-radius:8px;font-size:.85rem">
+            <div class="num-circle" style="background:rgba(214,162,140,.25);color:var(--l2-terracotta-dark)">L4</div>
+            <div><strong>進階級</strong> — 能指導他人</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-base);border-radius:8px;font-size:.85rem">
+            <div class="num-circle" style="background:rgba(214,162,140,.35);color:var(--l2-terracotta-dark)">L5</div>
+            <div><strong>專家級</strong> — 能制定策略</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-base);border-radius:8px;font-size:.85rem">
+            <div class="num-circle" style="background:rgba(214,162,140,.45);color:#fff">L6</div>
+            <div><strong>大師級</strong> — 能引領創新</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="flex-col gap-16">
+      <div class="card card-tint-terra">
+        <h3 style="margin-bottom:10px">行為指標範例：溝通表達</h3>
+        <table class="tbl">
+          <thead><tr><th>等級</th><th>行為指標</th></tr></thead>
+          <tbody>
+            <tr><td>L1</td><td>能清楚表達自己的想法；能撰寫基本工作郵件</td></tr>
+            <tr><td>L3</td><td>能在會議中有效簡報；能根據對象調整表達方式</td></tr>
+            <tr><td>L6</td><td>能代表公司對外溝通重大議題；能建立組織溝通文化</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom:10px">多租戶支援</h3>
+        <table class="tbl">
+          <thead><tr><th>層級</th><th>org_unit_id</th><th>說明</th></tr></thead>
+          <tbody>
+            <tr><td>集團共用</td><td>NULL</td><td>所有子公司共享的標準職能</td></tr>
+            <tr><td>子公司專屬</td><td>子公司 ID</td><td>某子公司自行定義的職能</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card card-tint-brand">
+        <h3 style="margin-bottom:6px;font-size:.88rem">欄位摘要</h3>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;font-size:.82rem">
+          <span class="badge badge-terra">代碼 (CORE-01)</span>
+          <span class="badge badge-terra">名稱</span>
+          <span class="badge badge-terra">定義</span>
+          <span class="badge badge-terra">L1-L6 行為指標</span>
+          <span class="badge badge-neutral">所屬公司 (選填)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 6: DUAL TRACK ======================== -->
+<section class="slide" data-slide="6">
+  <span class="section-label">職等職級管理</span>
+  <h2>雙軌制設計：管理職 vs 專業職</h2>
+  <p style="font-size:.88rem;color:var(--text-secondary);margin-bottom:16px">不是每個優秀的工程師都想當主管。雙軌制讓「技術高手」可以在專業職軌道上升遷加薪。</p>
+  <div class="card" style="padding:20px 24px;overflow-x:auto">
+    <table class="tbl" style="text-align:center">
+      <thead><tr><th style="text-align:center">職等</th><th style="text-align:center">管理職軌道</th><th style="text-align:center">專業職軌道</th></tr></thead>
+      <tbody>
+        <tr><td><strong style="font-size:1.1rem;color:var(--l2-terracotta-dark)">7</strong></td><td>總經理</td><td>首席技術官</td></tr>
+        <tr><td><strong style="font-size:1.1rem;color:var(--l2-terracotta-dark)">6</strong></td><td>副總經理</td><td>資深技術總監</td></tr>
+        <tr><td><strong style="font-size:1.1rem;color:var(--l2-terracotta-dark)">5</strong></td><td>處長 / 協理</td><td>技術總監</td></tr>
+        <tr><td><strong style="font-size:1.1rem;color:var(--l2-terracotta-dark)">4</strong></td><td>經理</td><td>資深專家</td></tr>
+        <tr><td><strong style="font-size:1.1rem;color:var(--l2-terracotta-dark)">3</strong></td><td>副理</td><td>資深工程師</td></tr>
+        <tr><td><strong style="font-size:1.1rem;color:var(--l2-terracotta-dark)">2</strong></td><td>主任</td><td>工程師</td></tr>
+        <tr><td><strong style="font-size:1.1rem;color:var(--l2-terracotta-dark)">1</strong></td><td>組長</td><td>助理工程師</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="grid-2 gap-16 mt-16">
+    <div class="card-sm card-tint-info">
+      <div style="font-weight:600;font-size:.88rem;margin-bottom:4px">部門職位對照</div>
+      <p style="font-size:.82rem;color:var(--text-secondary)">每個部門在各職等、各軌道下定義具體職位名稱。如：人資部 / 職等 3 / 管理職 = 人資副理。</p>
+    </div>
+    <div class="card-sm card-tint-sage">
+      <div style="font-weight:600;font-size:.88rem;margin-bottom:4px">子公司覆蓋</div>
+      <p style="font-size:.82rem;color:var(--text-secondary)">職等結構 (1-7) 全集團統一，但薪資級別、頭銜、部門職位可由子公司自行定義覆蓋。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 7: SALARY & TABS ======================== -->
+<section class="slide" data-slide="7">
+  <span class="section-label">職等職級管理（續）</span>
+  <h2>薪資級別與頁籤結構</h2>
+  <div class="grid-2 gap-24">
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:10px">薪資級別管理</h3>
+        <p style="font-size:.82rem;color:var(--text-secondary);margin-bottom:12px">同一職等可有多個薪資級別，像是「年資加薪」的概念。</p>
+        <table class="tbl">
+          <thead><tr><th>職等</th><th>代碼</th><th>月薪</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>BS01</td><td>28,000</td></tr>
+            <tr><td>1</td><td>BS02</td><td>30,000</td></tr>
+            <tr><td>2</td><td>BS03</td><td>33,000</td></tr>
+            <tr><td>2</td><td>BS04</td><td>36,000</td></tr>
+            <tr><td>3</td><td>BS05</td><td>40,000</td></tr>
+          </tbody>
+        </table>
+        <div class="highlight-box mt-12" style="font-size:.82rem">
+          <strong>自動編號</strong>：輸入前綴（如 BS），系統自動從前一職等最大編號 +1 開始遞增。
+        </div>
+      </div>
+    </div>
+    <div class="flex-col gap-16">
+      <div class="card card-tint-terra">
+        <h3 style="margin-bottom:10px">兩層頁籤架構</h3>
+        <div style="font-weight:600;font-size:.85rem;color:var(--l2-terracotta-dark);margin-bottom:8px">主頁籤（第一層）</div>
+        <div class="flex-col gap-6" style="font-size:.85rem">
+          <div style="padding:6px 12px;background:var(--bg-card);border-radius:8px;box-shadow:var(--shadow)">職等職級矩陣 <span style="font-size:.75rem;color:var(--text-secondary)">（含子頁籤）</span></div>
+          <div style="padding:6px 12px;background:var(--bg-base);border-radius:8px">職涯發展路徑</div>
+          <div style="padding:6px 12px;background:var(--bg-base);border-radius:8px">AI 職涯規劃助手</div>
+          <div style="padding:6px 12px;background:var(--bg-base);border-radius:8px">待審核 <span class="badge badge-danger" style="font-size:.65rem;padding:1px 6px">3</span></div>
+          <div style="padding:6px 12px;background:var(--bg-base);border-radius:8px">變更歷史</div>
+        </div>
+        <div style="font-weight:600;font-size:.85rem;color:var(--l2-terracotta-dark);margin-top:14px;margin-bottom:8px">子頁籤（矩陣內）</div>
+        <div class="flex-col gap-6" style="font-size:.85rem">
+          <div style="padding:6px 12px;background:var(--bg-card);border-radius:8px;box-shadow:var(--shadow)">職等職級薪資對照表</div>
+          <div style="padding:6px 12px;background:var(--bg-base);border-radius:8px">管理職軌道明細</div>
+          <div style="padding:6px 12px;background:var(--bg-base);border-radius:8px">專業職軌道明細</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 8: APPROVAL FLOW ======================== -->
+<section class="slide" data-slide="8">
+  <span class="section-label">職等職級管理（續）</span>
+  <h2>審核流程</h2>
+  <p style="font-size:.88rem;color:var(--text-secondary);margin-bottom:16px">職等職級管理的所有新增、修改、刪除操作都不會直接生效，而是進入審核流程。</p>
+  <div class="grid-2 gap-24">
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:12px">變更審核流程</h3>
+        <div class="flex-col gap-10" style="font-size:.88rem">
+          <div style="display:flex;gap:10px;align-items:flex-start">
+            <div class="num-circle" style="background:var(--l2-terracotta);color:#fff;font-size:.72rem">1</div>
+            <div><strong>使用者提交變更</strong> — 新增/修改/刪除職等相關資料</div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start">
+            <div class="num-circle" style="background:var(--l2-terracotta);color:#fff;font-size:.72rem">2</div>
+            <div><strong>建立待審核記錄</strong> — 狀態設為 pending，顯示於「待審核」頁籤</div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start">
+            <div class="num-circle" style="background:var(--l2-terracotta);color:#fff;font-size:.72rem">3</div>
+            <div><strong>審核者操作</strong> — 核准(approved) 或 駁回(rejected)</div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start">
+            <div class="num-circle" style="background:var(--l2-terracotta);color:#fff;font-size:.72rem">4</div>
+            <div><strong>核准 → 套用變更</strong>：正式更新到資料庫<br><strong>駁回 → 通知修改</strong>：記錄駁回原因</div>
+          </div>
+        </div>
+      </div>
+      <div class="card-sm">
+        <h3 style="font-size:.88rem;margin-bottom:6px">狀態流轉</h3>
+        <div class="state-flow">
+          <span class="badge badge-warning">pending</span>
+          <span class="state-arrow">&#8594;</span>
+          <span class="badge badge-success">approved</span>
+          <span style="color:var(--text-secondary);font-size:.78rem">或</span>
+          <span class="badge badge-danger">rejected</span>
+        </div>
+      </div>
+    </div>
+    <div class="flex-col gap-16">
+      <div class="card card-tint-terra">
+        <h3 style="margin-bottom:10px">審核記錄包含</h3>
+        <ul class="clean">
+          <li>變更類型（新增 / 修改 / 刪除）</li>
+          <li>舊資料快照 vs 新資料快照</li>
+          <li>提交者與提交時間</li>
+          <li>核准者與核准時間</li>
+          <li>駁回原因（若被駁回）</li>
+        </ul>
+      </div>
+      <div class="card card-tint-info">
+        <h3 style="margin-bottom:8px">子公司覆蓋機制</h3>
+        <table class="tbl" style="font-size:.82rem">
+          <thead><tr><th>資料</th><th>集團</th><th>子公司</th></tr></thead>
+          <tbody>
+            <tr><td>職等 (1-7)</td><td>共用</td><td>不可覆蓋</td></tr>
+            <tr><td>薪資級別</td><td>標準</td><td>可覆蓋</td></tr>
+            <tr><td>軌道頭銜</td><td>標準</td><td>可覆蓋</td></tr>
+            <tr><td>部門職位</td><td>標準</td><td>可覆蓋</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 9: PROMOTION ======================== -->
+<section class="slide" data-slide="9">
+  <span class="section-label">職等職級管理（續）</span>
+  <h2>晉升條件設定</h2>
+  <p style="font-size:.88rem;color:var(--text-secondary);margin-bottom:16px">每個「從 A 職等到 B 職等」的晉升路徑可定義具體條件，作為員工發展的明確目標。</p>
+  <div class="grid-2 gap-24">
+    <div class="card" style="padding:20px">
+      <h3 style="margin-bottom:10px">晉升條件欄位</h3>
+      <table class="tbl">
+        <thead><tr><th>欄位</th><th>說明</th><th>範例</th></tr></thead>
+        <tbody>
+          <tr><td>起始職等</td><td>目前在幾等</td><td>3</td></tr>
+          <tr><td>目標職等</td><td>要升到幾等</td><td>4</td></tr>
+          <tr><td>適用軌道</td><td>管理 or 專業</td><td>management</td></tr>
+          <tr><td>績效門檻</td><td>最近評核等級</td><td>A 或 B</td></tr>
+          <tr><td>必備技能</td><td>技能清單</td><td>專案管理、預算編制</td></tr>
+          <tr><td>必修課程</td><td>訓練課程</td><td>管理學基礎</td></tr>
+          <tr><td>KPI 重點</td><td>績效指標</td><td>團隊生產力 +10%</td></tr>
+          <tr><td>其他條件</td><td>附加要求</td><td>帶領 5 人以上滿一年</td></tr>
+          <tr><td>晉升流程</td><td>流程說明</td><td>自薦→推薦→審核→核准</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="flex-col gap-16">
+      <div class="card card-tint-terra">
+        <h3 style="margin-bottom:10px">範例：職等 2 → 職等 3（管理職）</h3>
+        <div class="flex-col gap-8" style="font-size:.85rem">
+          <div style="display:flex;align-items:center;gap:8px;padding:7px 12px;background:var(--bg-base);border-radius:8px">
+            <span class="badge badge-terra" style="min-width:70px;justify-content:center">績效</span>
+            最近年度評核 &#8805; B 等
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:7px 12px;background:var(--bg-base);border-radius:8px">
+            <span class="badge badge-info" style="min-width:70px;justify-content:center">技能</span>
+            溝通表達 L3、團隊管理 L2
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:7px 12px;background:var(--bg-base);border-radius:8px">
+            <span class="badge badge-sage" style="min-width:70px;justify-content:center">課程</span>
+            基礎管理學、簡報技巧
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:7px 12px;background:var(--bg-base);border-radius:8px">
+            <span class="badge badge-brand" style="min-width:70px;justify-content:center">條件</span>
+            在現職等服務滿 2 年
+          </div>
+        </div>
+      </div>
+      <div class="highlight-box">
+        <p style="font-size:.85rem"><strong>與其他模組的連動</strong>：晉升條件中的「必備技能」連結職能模型基準，「必修課程」可連結教育訓練 (L3) 模組，形成從「缺什麼能力」→「上什麼課」→「達成晉升」的完整路徑。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 10: JD 11 BLOCKS ======================== -->
+<section class="slide" data-slide="10">
+  <span class="section-label">職務說明書</span>
+  <h2>JD 的 11 大內容區塊</h2>
+  <p style="font-size:.88rem;color:var(--text-secondary);margin-bottom:14px">職務說明書不只是一段文字描述，而是一份結構化的規格書，自動連結到職能框架和職等。</p>
+  <div class="grid-2 gap-24">
+    <div class="card" style="padding:18px 20px">
+      <table class="tbl">
+        <thead><tr><th>#</th><th>區塊名稱</th><th>說明</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>主要職責</td><td>這個職位要做的事情清單</td></tr>
+          <tr><td>2</td><td>職務目的</td><td>為什麼需要這個職位</td></tr>
+          <tr><td>3</td><td>職務要求</td><td>學歷、經歷、證照</td></tr>
+          <tr><td>4</td><td>最終產品 (VFP)</td><td>職位的最終產出</td></tr>
+          <tr><td>5</td><td>職能基準</td><td>引用職能框架需求</td></tr>
+          <tr><td>6</td><td>工作描述</td><td>日常工作內容</td></tr>
+          <tr><td>7</td><td>檢查清單</td><td>品質檢查項目（含配分）</td></tr>
+          <tr><td>8</td><td>職務責任</td><td>具體責任歸屬</td></tr>
+          <tr><td>9</td><td>每日工作</td><td>每天要做的事</td></tr>
+          <tr><td>10</td><td>每週工作</td><td>每週要做的事</td></tr>
+          <tr><td>11</td><td>每月工作</td><td>每月要做的事</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="flex-col gap-16">
+      <div class="card card-tint-terra">
+        <h3 style="margin-bottom:10px">第 5 區塊：職能需求連結</h3>
+        <p style="font-size:.82rem;color:var(--text-secondary);margin-bottom:10px">直接從職能框架選擇，設定需求等級與權重：</p>
+        <table class="tbl" style="font-size:.82rem">
+          <thead><tr><th>類別</th><th>項目</th><th>等級</th><th>權重</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge badge-terra" style="font-size:.7rem">核心</span></td><td>溝通表達</td><td>L3</td><td>30%</td></tr>
+            <tr><td><span class="badge badge-info" style="font-size:.7rem">管理</span></td><td>團隊領導</td><td>L4</td><td>25%</td></tr>
+            <tr><td><span class="badge badge-brand" style="font-size:.7rem">專業</span></td><td>系統設計</td><td>L4</td><td>20%</td></tr>
+            <tr><td><span class="badge badge-sage" style="font-size:.7rem">KSA</span></td><td>Excel 進階</td><td>—</td><td>15%</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom:8px">三種建立方式</h3>
+        <div class="flex-col gap-8" style="font-size:.85rem">
+          <div class="card-sm card-tint-brand">
+            <strong>自行新增</strong> — 從零開始填寫，適合全新職位
+          </div>
+          <div class="card-sm card-tint-info">
+            <strong>匯入模版</strong> — 從已有 JD 複製再修改
+          </div>
+          <div class="card-sm card-tint-terra">
+            <strong>AI 職務撰寫助手</strong> — 輸入描述自動產生（尚待開發）
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 11: JD 5-STEP ======================== -->
+<section class="slide" data-slide="11">
+  <span class="section-label">職務說明書（續）</span>
+  <h2>五步驟建立流程</h2>
+  <div class="flow-h" style="background:var(--bg-card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 6px;margin-bottom:20px">
+    <div class="flow-step">
+      <div class="flow-num" style="background:var(--l2-terracotta-dark)">1</div>
+      <div class="flow-title">選擇模式</div>
+      <div class="flow-desc">手動 / 範本 / AI</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num" style="background:var(--l2-terracotta)">2</div>
+      <div class="flow-title">基本資訊</div>
+      <div class="flow-desc">代碼/名稱<br>部門/職等</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num" style="background:var(--info)">3</div>
+      <div class="flow-title">職能需求</div>
+      <div class="flow-desc">核心/管理<br>專業/KSA</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num" style="background:var(--brand-main)">4</div>
+      <div class="flow-title">內容設定</div>
+      <div class="flow-desc">11 大區塊</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num" style="background:var(--success)">5</div>
+      <div class="flow-title">確認送出</div>
+      <div class="flow-desc">預覽並儲存</div>
+    </div>
+  </div>
+  <div class="grid-2 gap-24">
+    <div class="card">
+      <h3 style="margin-bottom:10px">步驟 2 關鍵欄位</h3>
+      <table class="tbl">
+        <thead><tr><th>欄位</th><th>必填</th><th>關聯模組</th></tr></thead>
+        <tbody>
+          <tr><td>職位代碼</td><td>自動產生</td><td>JD-{部門}-{職等}-{序號}</td></tr>
+          <tr><td>職位名稱</td><td>是</td><td>—</td></tr>
+          <tr><td>部門</td><td>是</td><td>組織架構</td></tr>
+          <tr><td>職等 (1-7)</td><td>是</td><td>職等職級管理</td></tr>
+          <tr><td>職級代碼</td><td>否</td><td>職等職級管理</td></tr>
+          <tr><td>職位頭銜</td><td>否</td><td>—</td></tr>
+          <tr><td>所屬子公司</td><td>否</td><td>多租戶隔離</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="flex-col gap-16">
+      <div class="card card-tint-terra">
+        <h3 style="margin-bottom:8px">權限控制</h3>
+        <table class="tbl" style="font-size:.82rem">
+          <thead><tr><th>角色</th><th>查看</th><th>編輯</th><th>審核</th></tr></thead>
+          <tbody>
+            <tr><td>超級管理員</td><td style="color:var(--success)">&#10003;</td><td style="color:var(--success)">&#10003;</td><td style="color:var(--success)">&#10003;</td></tr>
+            <tr><td>子公司管理員</td><td style="color:var(--success)">&#10003;</td><td style="color:var(--success)">&#10003;</td><td style="color:var(--success)">&#10003;</td></tr>
+            <tr><td>HR 主管</td><td style="color:var(--success)">&#10003;</td><td style="color:var(--success)">&#10003;</td><td style="color:var(--success)">&#10003;</td></tr>
+            <tr><td>部門主管</td><td style="color:var(--success)">&#10003;</td><td style="color:var(--danger)">&#10007;</td><td style="color:var(--danger)">&#10007;</td></tr>
+            <tr><td>一般員工</td><td style="color:var(--success)">&#10003;</td><td style="color:var(--danger)">&#10007;</td><td style="color:var(--danger)">&#10007;</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 12: JD STATUS & VERSION ======================== -->
+<section class="slide" data-slide="12">
+  <span class="section-label">職務說明書（續）</span>
+  <h2>審核與版本管理</h2>
+  <div class="grid-2 gap-24">
+    <div class="flex-col gap-16">
+      <div class="card">
+        <h3 style="margin-bottom:12px">JD 狀態流轉</h3>
+        <div class="state-flow" style="margin-bottom:14px">
+          <span class="badge badge-brand">草稿</span>
+          <span class="state-arrow">&#8594;</span>
+          <span class="badge badge-warning">審核中</span>
+          <span class="state-arrow">&#8594;</span>
+          <span class="badge badge-success">已發佈</span>
+          <span class="state-arrow">&#8594;</span>
+          <span class="badge badge-neutral">已封存</span>
+        </div>
+        <table class="tbl">
+          <thead><tr><th>狀態</th><th>可執行操作</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge badge-brand" style="font-size:.72rem">draft</span></td><td>編輯、送出審核、刪除</td></tr>
+            <tr><td><span class="badge badge-warning" style="font-size:.72rem">pending_review</span></td><td>核准、退回（附理由）</td></tr>
+            <tr><td><span class="badge badge-danger" style="font-size:.72rem">rejected</span></td><td>修改、重新送出</td></tr>
+            <tr><td><span class="badge badge-success" style="font-size:.72rem">published</span></td><td>封存、建立新版本</td></tr>
+            <tr><td><span class="badge badge-neutral" style="font-size:.72rem">archived</span></td><td>僅供查閱</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="flex-col gap-16">
+      <div class="card card-tint-terra">
+        <h3 style="margin-bottom:10px">版本管理機制</h3>
+        <div class="flex-col gap-8" style="font-size:.88rem">
+          <div style="display:flex;gap:10px;align-items:flex-start">
+            <div class="num-circle" style="background:var(--l2-terracotta);color:#fff;font-size:.72rem">1</div>
+            <div>已發佈的 JD 需修改 → 點選「建立新版本」</div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start">
+            <div class="num-circle" style="background:var(--l2-terracotta);color:#fff;font-size:.72rem">2</div>
+            <div>系統自動建立新的草稿版本</div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start">
+            <div class="num-circle" style="background:var(--l2-terracotta);color:#fff;font-size:.72rem">3</div>
+            <div>修改後重新送出審核</div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start">
+            <div class="num-circle" style="background:var(--l2-terracotta);color:#fff;font-size:.72rem">4</div>
+            <div>新版本核准後取代舊版本</div>
+          </div>
+        </div>
+        <p style="font-size:.82rem;color:var(--text-secondary);margin-top:10px">所有歷史版本保留完整快照，可隨時回顧比較差異。</p>
+      </div>
+      <div class="highlight-box">
+        <p style="font-size:.85rem"><strong>退回機制</strong>：審核者退回時必須附上理由說明，JD 回到「已退回」狀態，撰寫者修改後可重新送出進入下一輪審核。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 13: E2E FLOW ======================== -->
+<section class="slide" data-slide="13">
+  <span class="section-label">協作流程</span>
+  <h2>端到端建置流程：從零到完整運作</h2>
+  <div class="grid-4 gap-16">
+    <div class="card" style="padding:18px;text-align:center">
+      <div style="font-size:1.4rem;font-weight:700;color:var(--l2-terracotta-dark);margin-bottom:4px">Phase 1</div>
+      <div style="font-size:.82rem;font-weight:600;color:var(--text-dark);margin-bottom:8px">建立基礎</div>
+      <div class="flex-col gap-4" style="font-size:.78rem;color:var(--text-secondary);text-align:left">
+        <div>1. 定義核心職能</div>
+        <div>2. 定義管理職能</div>
+        <div>3. 定義專業職能</div>
+        <div>4. 定義 KSA 職能</div>
+      </div>
+    </div>
+    <div class="card" style="padding:18px;text-align:center">
+      <div style="font-size:1.4rem;font-weight:700;color:#5e7f96;margin-bottom:4px">Phase 2</div>
+      <div style="font-size:.82rem;font-weight:600;color:var(--text-dark);margin-bottom:8px">設定架構</div>
+      <div class="flex-col gap-4" style="font-size:.78rem;color:var(--text-secondary);text-align:left">
+        <div>1. 建立職等 1-7</div>
+        <div>2. 設定薪資級別</div>
+        <div>3. 定義雙軌頭銜</div>
+        <div>4. 設定部門職位</div>
+        <div>5. 定義晉升條件</div>
+      </div>
+    </div>
+    <div class="card" style="padding:18px;text-align:center">
+      <div style="font-size:1.4rem;font-weight:700;color:var(--brand-dark);margin-bottom:4px">Phase 3</div>
+      <div style="font-size:.82rem;font-weight:600;color:var(--text-dark);margin-bottom:8px">撰寫 JD</div>
+      <div class="flex-col gap-4" style="font-size:.78rem;color:var(--text-secondary);text-align:left">
+        <div>1. 選擇建立模式</div>
+        <div>2. 填寫基本資訊</div>
+        <div>3. 選擇職能需求</div>
+        <div>4. 填寫 11 大區塊</div>
+        <div>5. 送出審核 → 發布</div>
+      </div>
+    </div>
+    <div class="card" style="padding:18px;text-align:center">
+      <div style="font-size:1.4rem;font-weight:700;color:var(--success);margin-bottom:4px">Phase 4</div>
+      <div style="font-size:.82rem;font-weight:600;color:var(--text-dark);margin-bottom:8px">日常運用</div>
+      <div class="flex-col gap-4" style="font-size:.78rem;color:var(--text-secondary);text-align:left">
+        <div>1. 缺口分析</div>
+        <div>2. 晉升評估</div>
+        <div>3. 職涯規劃</div>
+        <div>4. 招募面試依據</div>
+      </div>
+    </div>
+  </div>
+  <div class="card mt-20" style="padding:18px 22px">
+    <h3 style="margin-bottom:10px;font-size:.9rem">實例：新增「資深軟體工程師」</h3>
+    <div class="grid-3 gap-12">
+      <div class="card-sm card-tint-terra">
+        <div style="font-weight:600;font-size:.82rem;margin-bottom:4px">Step 1 — 職能框架</div>
+        <p style="font-size:.78rem;color:var(--text-secondary)">確認已有核心（溝通表達、自我管理）+ 專業（系統設計、程式開發）+ KSA（Git、敏捷知識）</p>
+      </div>
+      <div class="card-sm card-tint-info">
+        <div style="font-weight:600;font-size:.82rem;margin-bottom:4px">Step 2 — 職等職級</div>
+        <p style="font-size:.78rem;color:var(--text-secondary)">職等 3、專業職軌道<br>薪資 BS05~BS08 (40K-48K)<br>頭銜：資深工程師</p>
+      </div>
+      <div class="card-sm card-tint-brand">
+        <div style="font-weight:600;font-size:.82rem;margin-bottom:4px">Step 3 — 職務說明書</div>
+        <p style="font-size:.78rem;color:var(--text-secondary)">JD-RD-3-001<br>職能：溝通 L2(20%), 系統設計 L3(30%), 程式開發 L4(20%)<br>送出審核 → 發佈</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 14: AI ROADMAP ======================== -->
+<section class="slide" data-slide="14">
+  <span class="section-label">Roadmap</span>
+  <h2>尚待宇創提供 AI 功能</h2>
+  <p style="font-size:.88rem;color:var(--text-secondary);margin-bottom:16px">以下為目前系統已規劃 UI 介面但尚未完成後端 AI 服務的功能項目。</p>
+  <div class="flex-col gap-16">
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <span class="badge badge-info">職等職級管理</span>
+      </div>
+      <div class="grid-2 gap-12">
+        <div class="card-sm card-tint-info">
+          <div style="font-weight:600;font-size:.88rem;margin-bottom:4px">三大職涯發展路徑</div>
+          <p style="font-size:.82rem;color:var(--text-secondary)">分析員工的三個發展方向：垂直晉升（現職等→下一等）、橫向轉調（同職等不同角色）、跨部門發展（跨到其他部門的可能性），含時間估計與風險等級。</p>
+        </div>
+        <div class="card-sm card-tint-info">
+          <div style="font-weight:600;font-size:.88rem;margin-bottom:4px">AI 職涯規劃助手</div>
+          <p style="font-size:.82rem;color:var(--text-secondary)">連接真實員工資料（職等、年資、評核、已完成課程），分析職能缺口對照晉升條件，產生個人化推薦與具體訓練計畫。目前前端 UI 完整，使用模擬資料。</p>
+        </div>
+      </div>
+    </div>
+    <div class="grid-3 gap-16">
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <span class="badge badge-brand">職務說明書</span>
+        </div>
+        <div class="card-sm card-tint-brand">
+          <div style="font-weight:600;font-size:.88rem;margin-bottom:4px">AI 職務撰寫助手</div>
+          <p style="font-size:.82rem;color:var(--text-secondary)">使用者輸入職位描述，AI 自動解析並產生 11 大區塊內容、推薦職能需求（含等級與權重）、建議職等與薪資範圍。前端有進度動畫，無實際生成邏輯。</p>
+        </div>
+      </div>
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <span class="badge badge-terra">職能模型基準</span>
+        </div>
+        <div class="card-sm card-tint-terra">
+          <div style="font-weight:600;font-size:.88rem;margin-bottom:4px">AI 職能生成</div>
+          <p style="font-size:.82rem;color:var(--text-secondary)">根據產業類型與職位角色，AI 建議適合的職能清單。根據職能名稱自動產生 L1-L6 行為指標描述。根據 JD 內容反向推薦需要新增的職能。</p>
+        </div>
+      </div>
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <span class="badge badge-sage">缺口分析</span>
+        </div>
+        <div class="card-sm card-tint-sage">
+          <div style="font-weight:600;font-size:.88rem;margin-bottom:4px">職能落差分析</div>
+          <p style="font-size:.82rem;color:var(--text-secondary)">目前雷達圖與差距計算已實作，但數據依賴手動評核。後續將整合工作成果數據自動推算能力等級，並提供 AI 輔助評核建議與 360 度回饋。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SLIDE 15: SUMMARY ======================== -->
+<section class="slide" data-slide="15">
+  <span class="section-label">Summary</span>
+  <h2>系統導入的三大核心效益</h2>
+  <div class="grid-3 gap-24 mt-12">
+    <div class="card" style="text-align:center;padding:28px 22px">
+      <div style="width:56px;height:56px;border-radius:14px;background:rgba(214,162,140,.12);display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px">
+        <svg width="28" height="28" fill="none" stroke="#B8876E" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+      </div>
+      <h3 style="margin-bottom:8px;color:var(--l2-terracotta-dark)">能力標準化</h3>
+      <p style="font-size:.85rem">四大職能類別 + L1-L6 六級制度，為組織建立統一的能力語言，消除定義模糊造成的溝通落差。</p>
+    </div>
+    <div class="card" style="text-align:center;padding:28px 22px">
+      <div style="width:56px;height:56px;border-radius:14px;background:rgba(141,168,190,.12);display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px">
+        <svg width="28" height="28" fill="none" stroke="#5e7f96" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
+      </div>
+      <h3 style="margin-bottom:8px;color:#5e7f96">發展透明化</h3>
+      <p style="font-size:.85rem">雙軌制晉升路徑 + 明確條件設定 + 審核機制，讓員工清楚看見成長方向，提升組織留才能力。</p>
+    </div>
+    <div class="card" style="text-align:center;padding:28px 22px">
+      <div style="width:56px;height:56px;border-radius:14px;background:rgba(100,116,139,.1);display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px">
+        <svg width="28" height="28" fill="none" stroke="#475569" stroke-width="1.8" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+      </div>
+      <h3 style="margin-bottom:8px;color:var(--brand-dark)">管理結構化</h3>
+      <p style="font-size:.85rem">11 區塊 JD + 版本控管 + 審核流程，將職務規格從散落的文件升級為可追溯、可連動的結構化資產。</p>
+    </div>
+  </div>
+  <div class="mt-20" style="text-align:center">
+    <div class="highlight-box" style="display:inline-block;max-width:560px">
+      <h3 style="font-size:1.05rem;color:var(--l2-terracotta-dark);margin-bottom:6px">Q & A</h3>
+      <p style="font-size:.88rem;color:var(--text-secondary)">感謝聆聽，歡迎提出任何問題與建議。</p>
+    </div>
+  </div>
+  <div class="mt-auto" style="padding-top:20px">
+    <div style="display:flex;gap:24px;justify-content:center;font-size:.78rem;color:var(--text-secondary)">
+      <span>Bombus HRM v1.0</span>
+      <span>職能管理模組（L2）</span>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<div class="nav-bar">
+  <button class="nav-btn" id="prevBtn" disabled onclick="navigate(-1)">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+    上一頁
+  </button>
+  <div class="page-indicator" id="dots"></div>
+  <button class="nav-btn" id="nextBtn" onclick="navigate(1)">
+    下一頁
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+  </button>
+</div>
+<div class="key-hint">&#8592; &#8594; 鍵切換頁面</div>
+
+<script>
+  const slides=document.querySelectorAll('.slide'),total=slides.length;let current=0;
+  const dotsEl=document.getElementById('dots');
+  for(let i=0;i<total;i++){const d=document.createElement('span');d.className='dot'+(i===0?' active':'');d.onclick=()=>goTo(i);dotsEl.appendChild(d)}
+  const numEl=document.createElement('span');numEl.className='page-num';numEl.textContent='1 / '+total;dotsEl.appendChild(numEl);
+  function goTo(n){if(n<0||n>=total||n===current)return;const p=current;current=n;slides[p].classList.remove('active');slides[current].classList.add('active');slides[current].scrollTop=0;updateUI()}
+  function navigate(d){goTo(current+d)}
+  function updateUI(){document.getElementById('prevBtn').disabled=current===0;document.getElementById('nextBtn').disabled=current===total-1;document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('active',i===current));numEl.textContent=(current+1)+' / '+total}
+  document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowDown'||e.key===' '){e.preventDefault();navigate(1)}if(e.key==='ArrowLeft'||e.key==='ArrowUp'){e.preventDefault();navigate(-1)}if(e.key==='Home'){e.preventDefault();goTo(0)}if(e.key==='End'){e.preventDefault();goTo(total-1)}});
+  let ts=0;document.addEventListener('touchstart',e=>{ts=e.touches[0].clientX});document.addEventListener('touchend',e=>{const d=ts-e.changedTouches[0].clientX;if(Math.abs(d)>50)navigate(d>0?1:-1)});
+</script>
+</body>
+</html>

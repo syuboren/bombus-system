@@ -72,12 +72,13 @@ export class FeatureGateService {
 
   /**
    * Decision 2：雙層檢查 — subscription plan + feature perm
-   * 功能可存取 = 模組已啟用 AND action_level 不為 'none'
-   * super_admin 繞過所有 feature gate 檢查
+   * 功能可存取 = 模組已啟用 (Layer 1) AND action_level 不為 'none' (Layer 2)
+   * super_admin 是租戶層級角色，繞過 Layer 2（角色權限）但仍受 Layer 1（訂閱方案）限制
    */
   isFeatureAccessible(featureId: string): boolean {
+    if (!this.isFeatureEnabled(featureId)) return false;
     const user = this.authService.currentUser();
     if (user?.roles?.includes('super_admin')) return true;
-    return this.isFeatureEnabled(featureId) && this.canView(featureId);
+    return this.canView(featureId);
   }
 }

@@ -415,6 +415,11 @@ export class EmployeeDetailComponent implements OnDestroy {
     return labels[action] || action;
   }
 
+  getGenderLabel(val: string | undefined): string {
+    const map: Record<string, string> = { 'male': '男', 'female': '女', 'other': '其他' };
+    return val ? (map[val] || val) : '-';
+  }
+
   getContractTypeLabel(type: string): string {
     const labels: Record<string, string> = {
       'full-time': '正職', 'part-time': '兼職', 'contract': '約聘', 'intern': '實習'

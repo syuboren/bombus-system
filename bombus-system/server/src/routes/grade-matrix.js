@@ -32,56 +32,35 @@ router.get('/', requireFeaturePerm('L2.grade-matrix', 'view'), (req, res) => {
       ORDER BY grade
     `).all();
 
-    // 取得所有職級薪資（支援 org_unit_id 篩選 + per-grade fallback）
+    // 取得指定組織的職級薪資（每個組織獨立，不 fallback）
     const orgUnitId = req.query.org_unit_id;
 
-    // 一律先取得集團預設薪資
-    const defaultSalaryLevels = req.tenantDB.prepare(`
-      SELECT id, grade, code, salary, sort_order, org_unit_id
-      FROM grade_salary_levels
-      WHERE org_unit_id IS NULL
-      ORDER BY grade, sort_order
-    `).all();
+    // 查詢指定 org_unit_id 的薪資
+    const salaryLevels = orgUnitId
+      ? req.tenantDB.prepare(`
+          SELECT id, grade, code, salary, sort_order, org_unit_id
+          FROM grade_salary_levels
+          WHERE org_unit_id = ?
+          ORDER BY grade, sort_order
+        `).all(orgUnitId)
+      : [];
 
-    // 子公司額外取得專屬薪資
-    let orgSalaryLevels = [];
-    if (orgUnitId) {
-      orgSalaryLevels = req.tenantDB.prepare(`
-        SELECT id, grade, code, salary, sort_order, org_unit_id
-        FROM grade_salary_levels
-        WHERE org_unit_id = ?
-        ORDER BY grade, sort_order
-      `).all(orgUnitId);
-    }
+    // 查詢指定 org_unit_id 的軌道條目
+    const trackEntries = orgUnitId
+      ? req.tenantDB.prepare(`
+          SELECT * FROM grade_track_entries
+          WHERE org_unit_id = ?
+          ORDER BY grade, track
+        `).all(orgUnitId)
+      : [];
 
-    // 一律先取得集團預設軌道條目
-    const defaultTrackEntries = req.tenantDB.prepare(`
-      SELECT * FROM grade_track_entries
-      WHERE org_unit_id IS NULL OR org_unit_id = ''
-      ORDER BY grade, track
-    `).all();
-
-    // 子公司額外取得專屬軌道條目
-    let orgTrackEntries = [];
-    if (orgUnitId) {
-      orgTrackEntries = req.tenantDB.prepare(`
-        SELECT * FROM grade_track_entries
-        WHERE org_unit_id = ?
-        ORDER BY grade, track
-      `).all(orgUnitId);
-    }
-
-    // 子公司：薪資和軌道條目都不 fallback（Tab A 顯示子公司自己的資料）
     const result = grades.map(g => {
-      const gradeSalaries = (orgUnitId ? orgSalaryLevels : defaultSalaryLevels)
-        .filter(s => s.grade === g.grade);
+      const gradeSalaries = salaryLevels.filter(s => s.grade === g.grade);
       const salaries = gradeSalaries.map(s => s.salary);
+      const gradeTrackEntries = trackEntries.filter(t => t.grade === g.grade);
 
-      const gradeTrackEntries = (orgUnitId ? orgTrackEntries : defaultTrackEntries)
-        .filter(t => t.grade === g.grade);
-
-      // codeRange：有指定 orgUnitId 時只用該組織薪資碼，無指定才用 grade_levels.code_range
-      let codeRange = orgUnitId ? '' : g.code_range;
+      // codeRange 從實際薪資碼動態計算
+      let codeRange = '';
       if (gradeSalaries.length > 0) {
         const codes = gradeSalaries.map(s => s.code).filter(Boolean);
         if (codes.length === 1) {
@@ -91,7 +70,7 @@ router.get('/', requireFeaturePerm('L2.grade-matrix', 'view'), (req, res) => {
         }
       }
 
-      const gradeObj = {
+      return {
         id: g.id,
         grade: g.grade,
         codeRange,
@@ -104,20 +83,6 @@ router.get('/', requireFeaturePerm('L2.grade-matrix', 'view'), (req, res) => {
         maxSalary: salaries.length > 0 ? Math.max(...salaries) : 0,
         trackEntries: gradeTrackEntries.map(mapTrackEntry)
       };
-
-      // 子公司模式：附帶集團預設值供 Tab B/C fallback
-      if (orgUnitId) {
-        const defTracks = defaultTrackEntries.filter(t => t.grade === g.grade);
-        const mgmt = defTracks.find(t => t.track === 'management');
-        const prof = defTracks.find(t => t.track === 'professional');
-        gradeObj.defaults = {
-          codeRange: g.code_range || '',
-          managementTitle: mgmt ? mgmt.title : '',
-          professionalTitle: prof ? prof.title : ''
-        };
-      }
-
-      return gradeObj;
     });
 
     res.json({ success: true, data: result });
@@ -353,7 +318,7 @@ router.get('/departments/list', requireFeaturePerm('L2.grade-matrix', 'view'), (
     const departments = req.tenantDB.prepare(`
       SELECT ou.id, ou.name, d.code, d.sort_order
       FROM org_units ou
-      LEFT JOIN departments d ON TRIM(d.name) = TRIM(ou.name) COLLATE NOCASE
+      LEFT JOIN departments d ON TRIM(d.name) = TRIM(ou.name) COLLATE NOCASE AND d.org_unit_id = ou.parent_id
       WHERE ou.type = 'department'
       ORDER BY d.sort_order ASC, ou.name ASC
     `).all();
@@ -373,17 +338,6 @@ router.get('/positions/list', requireFeaturePerm('L2.grade-matrix', 'view'), (re
   try {
     const { department, grade, track, org_unit_id } = req.query;
 
-    // 整體 fallback：子公司若完全沒有建立 department_positions，則使用集團預設（org_unit_id IS NULL）
-    let effectiveOrgUnitId = org_unit_id || null;
-    if (org_unit_id) {
-      const orgCount = req.tenantDB.prepare(
-        `SELECT COUNT(*) as count FROM department_positions WHERE org_unit_id = ?`
-      ).get(org_unit_id);
-      if (!orgCount || orgCount.count === 0) {
-        effectiveOrgUnitId = null; // fallback to group defaults
-      }
-    }
-
     let query = `
       SELECT
         dp.id,
@@ -396,16 +350,9 @@ router.get('/positions/list', requireFeaturePerm('L2.grade-matrix', 'view'), (re
         gl.title_professional as gradeTitleProfessional
       FROM department_positions dp
       JOIN grade_levels gl ON dp.grade = gl.grade
-      WHERE 1=1
+      WHERE dp.org_unit_id = ?
     `;
-    const params = [];
-
-    if (effectiveOrgUnitId) {
-      query += ` AND dp.org_unit_id = ?`;
-      params.push(effectiveOrgUnitId);
-    } else {
-      query += ` AND (dp.org_unit_id IS NULL OR dp.org_unit_id = '')`;
-    }
+    const params = [org_unit_id || ''];
     if (department) {
       query += ` AND dp.department = ?`;
       params.push(department);
@@ -518,207 +465,111 @@ function createChangeRecord(req, entityType, entityId, action, oldData, newData,
 }
 
 /**
- * 批量寫入薪資級別（刪除既有 → 重新插入）
+ * 解析薪資代碼為前綴 + 數字（如 "BS17" → { prefix: "BS", num: 17, padLen: 2 }）
+ */
+function parseSalaryCode(code) {
+  if (!code) return null;
+  const match = code.match(/^([A-Za-z]+)(\d+)$/);
+  if (!match) return null;
+  return { prefix: match[1], num: parseInt(match[2]), padLen: match[2].length };
+}
+
+function formatSalaryCode(prefix, num, padLen) {
+  return prefix + String(num).padStart(padLen, '0');
+}
+
+/**
+ * 重新編碼整個 org 的薪資代碼（連續無間隙）
+ * 用於刪除薪資碼後收攏間隙
+ */
+function resequenceAllSalaryCodes(db, orgUnitId) {
+  if (!orgUnitId) return;
+
+  const allSalaries = db.prepare(
+    'SELECT id, grade, code, salary, sort_order FROM grade_salary_levels WHERE org_unit_id = ? ORDER BY grade, sort_order'
+  ).all(orgUnitId);
+
+  if (allSalaries.length === 0) return;
+
+  let prefix = 'BS', padLen = 2;
+  for (const s of allSalaries) {
+    const parsed = parseSalaryCode(s.code);
+    if (parsed) { prefix = parsed.prefix; padLen = parsed.padLen; break; }
+  }
+
+  // 檢查是否需要重新編碼
+  let needsReseq = false;
+  for (let i = 0; i < allSalaries.length; i++) {
+    const expected = formatSalaryCode(prefix, i + 1, padLen);
+    if (allSalaries[i].code !== expected) { needsReseq = true; break; }
+  }
+  if (!needsReseq) return;
+
+  // 刪除全部並以連續碼重新插入
+  db.prepare('DELETE FROM grade_salary_levels WHERE org_unit_id = ?').run(orgUnitId);
+  let seq = 1;
+  for (const s of allSalaries) {
+    const newCode = formatSalaryCode(prefix, seq, padLen);
+    const newId = `sal-${s.grade}-${s.sort_order}-${generateId().substring(0, 8)}`;
+    db.prepare('INSERT INTO grade_salary_levels (id, grade, code, salary, sort_order, org_unit_id) VALUES (?, ?, ?, ?, ?, ?)')
+      .run(newId, s.grade, newCode, s.salary, s.sort_order, orgUnitId);
+    seq++;
+  }
+}
+
+/**
+ * 批量寫入薪資級別（刪除目標+較高職等 → 重新插入 → 自動連續編碼）
+ * 同時處理遞增（新增碼）和遞減（刪除碼）場景
  */
 function upsertSalaryLevels(db, grade, salaryLevels, orgUnitId) {
-  if (!salaryLevels || !Array.isArray(salaryLevels)) return;
-  const org = orgUnitId || null;
-  // 嚴格匹配 org_unit_id：集團預設 (NULL) 與子公司資料分開處理
-  if (org) {
-    db.prepare('DELETE FROM grade_salary_levels WHERE grade = ? AND org_unit_id = ?').run(grade, org);
-  } else {
-    db.prepare('DELETE FROM grade_salary_levels WHERE grade = ? AND (org_unit_id IS NULL OR org_unit_id = \'\')').run(grade);
+  if (!salaryLevels || !Array.isArray(salaryLevels) || !orgUnitId) return;
+
+  // 取得代碼前綴和位數（從低職等或現有資料推導）
+  let prefix = 'BS', padLen = 2;
+  const anyExisting = db.prepare('SELECT code FROM grade_salary_levels WHERE org_unit_id = ? LIMIT 1').get(orgUnitId);
+  if (anyExisting) {
+    const parsed = parseSalaryCode(anyExisting.code);
+    if (parsed) { prefix = parsed.prefix; padLen = parsed.padLen; }
+  } else if (salaryLevels.length > 0) {
+    const parsed = parseSalaryCode(salaryLevels[0].code);
+    if (parsed) { prefix = parsed.prefix; padLen = parsed.padLen; }
   }
+
+  // 暫存較高職等的薪資資料（grade, salary, sort_order）
+  const higherSalaries = db.prepare(
+    'SELECT grade, salary, sort_order FROM grade_salary_levels WHERE org_unit_id = ? AND grade > ? ORDER BY grade, sort_order'
+  ).all(orgUnitId, grade);
+
+  // 刪除目標職等及所有較高職等的薪資碼
+  db.prepare('DELETE FROM grade_salary_levels WHERE org_unit_id = ? AND grade >= ?').run(orgUnitId, grade);
+
+  // 找到低職等的最大代碼數字（作為起始點）
+  const lowerMax = db.prepare(
+    'SELECT code FROM grade_salary_levels WHERE org_unit_id = ? ORDER BY code DESC LIMIT 1'
+  ).get(orgUnitId);
+  let seq = 1;
+  if (lowerMax) {
+    const parsed = parseSalaryCode(lowerMax.code);
+    if (parsed) seq = parsed.num + 1;
+  }
+
+  // 插入目標職等（使用連續編碼）
   for (let i = 0; i < salaryLevels.length; i++) {
     const sl = salaryLevels[i];
+    const newCode = formatSalaryCode(prefix, seq, padLen);
     const slId = `sal-${grade}-${i + 1}-${generateId().substring(0, 8)}`;
-    db.prepare('INSERT INTO grade_salary_levels (id, grade, code, salary, sort_order, org_unit_id) VALUES (?, ?, ?, ?, ?, ?)').run(slId, grade, sl.code, sl.salary, i + 1, org);
-  }
-}
-
-/**
- * 薪資級距代碼遞延：新增/修改薪資級距時，自動將上方職等的衝突代碼往後推移
- * 解決 UNIQUE(code, org_unit_id) 約束衝突
- */
-function cascadeSalaryCodes(db, targetGrade, newSalaryLevels, orgUnitId) {
-  if (!newSalaryLevels || newSalaryLevels.length === 0) return;
-
-  const codes = newSalaryLevels.map(sl => sl.code).filter(Boolean);
-  if (codes.length === 0) return;
-
-  // 擷取代碼前綴（如 'BS'）與最大編號
-  const prefixMatch = codes[0].match(/^([A-Za-z]+)(\d+)$/);
-  if (!prefixMatch) return;
-  const prefix = prefixMatch[1];
-
-  let maxUsedNum = 0;
-  for (const code of codes) {
-    const m = code.match(/(\d+)$/);
-    if (m) maxUsedNum = Math.max(maxUsedNum, parseInt(m[1], 10));
+    db.prepare('INSERT INTO grade_salary_levels (id, grade, code, salary, sort_order, org_unit_id) VALUES (?, ?, ?, ?, ?, ?)')
+      .run(slId, grade, newCode, sl.salary, i + 1, orgUnitId);
+    seq++;
   }
 
-  const org = orgUnitId || null;
-
-  // 取得上方所有職等的薪資級距（同一 org_unit_id 範圍）
-  const allHigherLevels = org
-    ? db.prepare(`
-        SELECT gsl.id, gsl.grade, gsl.code, gsl.salary, gsl.sort_order, gl.id as grade_id
-        FROM grade_salary_levels gsl
-        JOIN grade_levels gl ON gl.grade = gsl.grade
-        WHERE gsl.grade > ? AND gsl.org_unit_id = ?
-        ORDER BY gsl.grade ASC, gsl.sort_order ASC
-      `).all(targetGrade, org)
-    : db.prepare(`
-        SELECT gsl.id, gsl.grade, gsl.code, gsl.salary, gsl.sort_order, gl.id as grade_id
-        FROM grade_salary_levels gsl
-        JOIN grade_levels gl ON gl.grade = gsl.grade
-        WHERE gsl.grade > ? AND (gsl.org_unit_id IS NULL OR gsl.org_unit_id = '')
-        ORDER BY gsl.grade ASC, gsl.sort_order ASC
-      `).all(targetGrade);
-
-  // 按職等分組，計算每個職等的代碼範圍
-  const gradeMap = new Map();
-  for (const level of allHigherLevels) {
-    const m = level.code.match(/^([A-Za-z]+)(\d+)$/);
-    if (!m || m[1] !== prefix) continue;
-    const num = parseInt(m[2], 10);
-    if (!gradeMap.has(level.grade)) {
-      gradeMap.set(level.grade, { gradeId: level.grade_id, levels: [], minNum: Infinity, maxNum: 0, shiftBy: 0 });
-    }
-    const entry = gradeMap.get(level.grade);
-    entry.levels.push({ id: level.id, code: level.code, num });
-    entry.minNum = Math.min(entry.minNum, num);
-    entry.maxNum = Math.max(entry.maxNum, num);
-  }
-
-  // 第一輪（升序）：計算每個職等需要的偏移量
-  let currentMax = maxUsedNum;
-  for (const [, entry] of [...gradeMap.entries()].sort((a, b) => a[0] - b[0])) {
-    if (entry.minNum <= currentMax) {
-      entry.shiftBy = currentMax - entry.minNum + 1;
-      currentMax = entry.maxNum + entry.shiftBy;
-    } else {
-      break; // 不再衝突
-    }
-  }
-
-  // 第二輪（降序）：套用偏移（從最高職等開始，避免 UNIQUE 約束衝突）
-  const sortedGrades = [...gradeMap.entries()]
-    .filter(([, entry]) => entry.shiftBy > 0)
-    .sort((a, b) => b[0] - a[0]);
-
-  for (const [, entry] of sortedGrades) {
-    // 每個職等內也從最大編號開始更新，避免中途衝突
-    const sortedLevels = [...entry.levels].sort((a, b) => b.num - a.num);
-    for (const level of sortedLevels) {
-      const newNum = level.num + entry.shiftBy;
-      const newCode = `${prefix}${String(newNum).padStart(2, '0')}`;
-      db.prepare('UPDATE grade_salary_levels SET code = ? WHERE id = ?').run(newCode, level.id);
-    }
-
-    // 僅集團預設（org=null）才更新 grade_levels.code_range；子公司不動全域表
-    if (!org) {
-      const newMinNum = entry.minNum + entry.shiftBy;
-      const newMaxNum = entry.maxNum + entry.shiftBy;
-      const newCodeRange = entry.levels.length === 1
-        ? `${prefix}${String(newMinNum).padStart(2, '0')}`
-        : `${prefix}${String(newMinNum).padStart(2, '0')}-${prefix}${String(newMaxNum).padStart(2, '0')}`;
-      db.prepare('UPDATE grade_levels SET code_range = ? WHERE id = ?').run(newCodeRange, entry.gradeId);
-    }
-  }
-}
-
-/**
- * 薪資級距代碼遞減：刪除/縮減薪資級距時，自動將上方職等的代碼往前遞補
- * 與 cascadeSalaryCodes（遞延）互為對稱操作
- */
-function cascadeSalaryCodesDown(db, targetGrade, orgUnitId) {
-  const org = orgUnitId || null;
-
-  // 取得同一 org_unit_id 範圍的所有薪資級距
-  const allLevels = org
-    ? db.prepare(`
-        SELECT gsl.id, gsl.grade, gsl.code, gl.id as grade_id
-        FROM grade_salary_levels gsl
-        JOIN grade_levels gl ON gl.grade = gsl.grade
-        WHERE gsl.org_unit_id = ?
-        ORDER BY gsl.grade ASC, gsl.sort_order ASC
-      `).all(org)
-    : db.prepare(`
-        SELECT gsl.id, gsl.grade, gsl.code, gl.id as grade_id
-        FROM grade_salary_levels gsl
-        JOIN grade_levels gl ON gl.grade = gsl.grade
-        WHERE gsl.org_unit_id IS NULL OR gsl.org_unit_id = ''
-        ORDER BY gsl.grade ASC, gsl.sort_order ASC
-      `).all();
-
-  if (allLevels.length === 0) return;
-
-  // 擷取代碼前綴
-  let prefix = null;
-  for (const level of allLevels) {
-    const m = level.code.match(/^([A-Za-z]+)\d+$/);
-    if (m) { prefix = m[1]; break; }
-  }
-  if (!prefix) return;
-
-  // 按職等分組
-  const gradeMap = new Map();
-  for (const level of allLevels) {
-    const m = level.code.match(/^([A-Za-z]+)(\d+)$/);
-    if (!m || m[1] !== prefix) continue;
-    const num = parseInt(m[2], 10);
-    if (!gradeMap.has(level.grade)) {
-      gradeMap.set(level.grade, { gradeId: level.grade_id, levels: [], minNum: Infinity, maxNum: 0, shiftBy: 0 });
-    }
-    const entry = gradeMap.get(level.grade);
-    entry.levels.push({ id: level.id, code: level.code, num });
-    entry.minNum = Math.min(entry.minNum, num);
-    entry.maxNum = Math.max(entry.maxNum, num);
-  }
-
-  const sortedGrades = [...gradeMap.entries()].sort((a, b) => a[0] - b[0]);
-
-  // 找到 targetGrade（含）以下的最大代碼編號
-  let previousMax = 0;
-  for (const [grade, entry] of sortedGrades) {
-    if (grade <= targetGrade) {
-      previousMax = entry.maxNum;
-    }
-  }
-
-  // 計算上方各職等的遞減偏移量
-  for (const [grade, entry] of sortedGrades) {
-    if (grade <= targetGrade) continue;
-    const expectedMin = previousMax + 1;
-    if (entry.minNum > expectedMin) {
-      entry.shiftBy = entry.minNum - expectedMin;
-      previousMax = entry.maxNum - entry.shiftBy;
-    } else {
-      break; // 無間隙，停止
-    }
-  }
-
-  // 套用遞減（升序職等 + 升序代碼，避免 UNIQUE 約束衝突）
-  for (const [grade, entry] of sortedGrades) {
-    if (entry.shiftBy <= 0 || grade <= targetGrade) continue;
-
-    const sortedLevels = [...entry.levels].sort((a, b) => a.num - b.num);
-    for (const level of sortedLevels) {
-      const newNum = level.num - entry.shiftBy;
-      const newCode = `${prefix}${String(newNum).padStart(2, '0')}`;
-      db.prepare('UPDATE grade_salary_levels SET code = ? WHERE id = ?').run(newCode, level.id);
-    }
-
-    // 僅集團預設（org=null）才更新 grade_levels.code_range；子公司不動全域表
-    if (!org) {
-      const newMinNum = entry.minNum - entry.shiftBy;
-      const newMaxNum = entry.maxNum - entry.shiftBy;
-      const newCodeRange = entry.levels.length === 1
-        ? `${prefix}${String(newMinNum).padStart(2, '0')}`
-        : `${prefix}${String(newMinNum).padStart(2, '0')}-${prefix}${String(newMaxNum).padStart(2, '0')}`;
-      db.prepare('UPDATE grade_levels SET code_range = ? WHERE id = ?').run(newCodeRange, entry.gradeId);
-    }
+  // 重新插入較高職等（接續編碼）
+  for (const s of higherSalaries) {
+    const newCode = formatSalaryCode(prefix, seq, padLen);
+    const newId = `sal-${s.grade}-${s.sort_order}-${generateId().substring(0, 8)}`;
+    db.prepare('INSERT INTO grade_salary_levels (id, grade, code, salary, sort_order, org_unit_id) VALUES (?, ?, ?, ?, ?, ?)')
+      .run(newId, s.grade, newCode, s.salary, s.sort_order, orgUnitId);
+    seq++;
   }
 }
 
@@ -726,18 +577,15 @@ function cascadeSalaryCodesDown(db, targetGrade, orgUnitId) {
  * 同步更新軌道條目（upsert by grade + track + org_unit_id）
  */
 function upsertTrackEntries(db, grade, trackUpdates, orgUnitId) {
-  const org = orgUnitId || null;
+  if (!orgUnitId) return;
   for (const tu of trackUpdates) {
     if (tu.title === undefined) continue;
-    // 嚴格匹配 org_unit_id：集團預設 (NULL) 與子公司資料分開處理
-    const existing = org
-      ? db.prepare('SELECT id FROM grade_track_entries WHERE grade = ? AND track = ? AND org_unit_id = ?').get(grade, tu.track, org)
-      : db.prepare('SELECT id FROM grade_track_entries WHERE grade = ? AND track = ? AND (org_unit_id IS NULL OR org_unit_id = \'\')').get(grade, tu.track);
+    const existing = db.prepare('SELECT id FROM grade_track_entries WHERE grade = ? AND track = ? AND org_unit_id = ?').get(grade, tu.track, orgUnitId);
     if (existing) {
       db.prepare("UPDATE grade_track_entries SET title = ?, education_requirement = ?, responsibility_description = ?, updated_at = datetime('now') WHERE id = ?").run(tu.title || '', tu.education || '', tu.responsibility || '', existing.id);
     } else if (tu.title) {
       const teId = `gte-${generateId()}`;
-      db.prepare('INSERT INTO grade_track_entries (id, grade, track, title, education_requirement, responsibility_description, org_unit_id) VALUES (?, ?, ?, ?, ?, ?, ?)').run(teId, grade, tu.track, tu.title, tu.education || '', tu.responsibility || '', org);
+      db.prepare('INSERT INTO grade_track_entries (id, grade, track, title, education_requirement, responsibility_description, org_unit_id) VALUES (?, ?, ?, ?, ?, ?, ?)').run(teId, grade, tu.track, tu.title, tu.education || '', tu.responsibility || '', orgUnitId);
     }
   }
 }
@@ -891,12 +739,8 @@ router.get('/grades/:grade/tracks', requireFeaturePerm('L2.grade-matrix', 'view'
     let query = `SELECT * FROM grade_track_entries WHERE grade = ?`;
     const params = [gradeNum];
 
-    if (org_unit_id) {
-      query += ` AND org_unit_id = ?`;
-      params.push(org_unit_id);
-    } else {
-      query += ` AND (org_unit_id IS NULL OR org_unit_id = '')`;
-    }
+    query += ` AND org_unit_id = ?`;
+    params.push(org_unit_id || '');
 
     query += ` ORDER BY track`;
 
@@ -1066,10 +910,10 @@ router.put('/grades/:grade', requireFeaturePerm('L2.grade-matrix', 'edit'), (req
     const org = orgUnitId || null;
     const oldSalaries = org
       ? req.tenantDB.prepare('SELECT code, salary FROM grade_salary_levels WHERE grade = ? AND org_unit_id = ? ORDER BY sort_order').all(gradeNum, org)
-      : req.tenantDB.prepare('SELECT code, salary FROM grade_salary_levels WHERE grade = ? AND (org_unit_id IS NULL OR org_unit_id = \'\') ORDER BY sort_order').all(gradeNum);
+      : [];
     const oldTracks = org
       ? req.tenantDB.prepare('SELECT track, title, education_requirement, responsibility_description FROM grade_track_entries WHERE grade = ? AND org_unit_id = ?').all(gradeNum, org)
-      : req.tenantDB.prepare('SELECT track, title, education_requirement, responsibility_description FROM grade_track_entries WHERE grade = ? AND (org_unit_id IS NULL OR org_unit_id = \'\')').all(gradeNum);
+      : [];
 
     const oldMgmt = oldTracks.find(t => t.track === 'management');
     const oldProf = oldTracks.find(t => t.track === 'professional');
@@ -1178,10 +1022,10 @@ router.post('/grades/:grade/salaries', requireFeaturePerm('L2.grade-matrix', 'ed
     }
 
     // 檢查 code 唯一性（同一 org_unit_id 內不可重複）
-    const effectiveOrgUnitId = org_unit_id || null;
-    const existingCheck = effectiveOrgUnitId
-      ? req.tenantDB.prepare('SELECT id FROM grade_salary_levels WHERE code = ? AND org_unit_id = ?').get(code, effectiveOrgUnitId)
-      : req.tenantDB.prepare('SELECT id FROM grade_salary_levels WHERE code = ? AND org_unit_id IS NULL').get(code);
+    if (!org_unit_id) {
+      return res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'org_unit_id 為必填' } });
+    }
+    const existingCheck = req.tenantDB.prepare('SELECT id FROM grade_salary_levels WHERE code = ? AND org_unit_id = ?').get(code, org_unit_id);
     if (existingCheck) {
       return res.status(409).json({ success: false, error: { code: 'DUPLICATE', message: `薪資代碼 '${code}' 已存在` } });
     }
@@ -1238,7 +1082,7 @@ router.delete('/salaries/:id', requireFeaturePerm('L2.grade-matrix', 'edit'), (r
       return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: '找不到此薪資記錄' } });
     }
 
-    const oldData = { id: existing.id, grade: existing.grade, code: existing.code, salary: existing.salary, sortOrder: existing.sort_order };
+    const oldData = { id: existing.id, grade: existing.grade, code: existing.code, salary: existing.salary, sortOrder: existing.sort_order, org_unit_id: existing.org_unit_id };
 
     const { changeId, status } = createChangeRecord(req, 'salary', id, 'delete', oldData, null, changedBy || 'system');
 
@@ -1277,10 +1121,8 @@ router.post('/track-detail-save', requireFeaturePerm('L2.grade-matrix', 'edit'),
     if (trackEntry.id) {
       oldTrackEntryRow = req.tenantDB.prepare('SELECT * FROM grade_track_entries WHERE id = ?').get(trackEntry.id);
     }
-    if (!oldTrackEntryRow) {
-      oldTrackEntryRow = org
-        ? req.tenantDB.prepare('SELECT * FROM grade_track_entries WHERE grade = ? AND track = ? AND org_unit_id = ?').get(gradeNum, track, org)
-        : req.tenantDB.prepare('SELECT * FROM grade_track_entries WHERE grade = ? AND track = ? AND (org_unit_id IS NULL OR org_unit_id = \'\')').get(gradeNum, track);
+    if (!oldTrackEntryRow && org) {
+      oldTrackEntryRow = req.tenantDB.prepare('SELECT * FROM grade_track_entries WHERE grade = ? AND track = ? AND org_unit_id = ?').get(gradeNum, track, org);
     }
     const oldTrackEntry = oldTrackEntryRow ? snapshotTrackEntry(oldTrackEntryRow) : null;
 
@@ -1291,10 +1133,8 @@ router.post('/track-detail-save', requireFeaturePerm('L2.grade-matrix', 'edit'),
       if (promotion.id) {
         oldPromoRow = req.tenantDB.prepare('SELECT * FROM promotion_criteria WHERE id = ?').get(promotion.id);
       }
-      if (!oldPromoRow) {
-        oldPromoRow = org
-          ? req.tenantDB.prepare('SELECT * FROM promotion_criteria WHERE from_grade = ? AND track = ? AND org_unit_id = ?').get(gradeNum, track, org)
-          : req.tenantDB.prepare('SELECT * FROM promotion_criteria WHERE from_grade = ? AND track = ? AND (org_unit_id IS NULL OR org_unit_id = \'\')').get(gradeNum, track);
+      if (!oldPromoRow && org) {
+        oldPromoRow = req.tenantDB.prepare('SELECT * FROM promotion_criteria WHERE from_grade = ? AND track = ? AND org_unit_id = ?').get(gradeNum, track, org);
       }
       if (oldPromoRow) {
         oldPromotion = {
@@ -1315,7 +1155,7 @@ router.post('/track-detail-save', requireFeaturePerm('L2.grade-matrix', 'edit'),
     // 現有職位
     const existingPositions = org
       ? req.tenantDB.prepare('SELECT id, department, title FROM department_positions WHERE grade = ? AND track = ? AND org_unit_id = ?').all(gradeNum, track, org)
-      : req.tenantDB.prepare('SELECT id, department, title FROM department_positions WHERE grade = ? AND track = ? AND (org_unit_id IS NULL OR org_unit_id = \'\')').all(gradeNum, track);
+      : [];
 
     const oldData = {
       grade: gradeNum,
@@ -1613,25 +1453,39 @@ router.post('/changes/:id/approve', requireFeaturePerm('L2.grade-matrix', 'edit'
       return res.status(400).json({ success: false, error: { code: 'INVALID_STATUS', message: `此記錄狀態為 ${record.status}，無法審核` } });
     }
 
-    // 套用變更到原資料表（Log-Then-Apply）
+    // 套用變更到原資料表（Log-Then-Apply，在 transaction 中確保原子性）
     const newData = record.new_data ? JSON.parse(record.new_data) : null;
     const entityType = record.entity_type;
     const action = record.action;
 
-    switch (action) {
-      case 'create':
-        applyCreate(req, entityType, newData);
-        break;
-      case 'update':
-        applyUpdate(req, entityType, record.entity_id, newData);
-        break;
-      case 'delete':
-        applyDelete(req, entityType, record.entity_id);
-        break;
-    }
+    req.tenantDB.transaction(() => {
+      // 刪除薪資碼前先記錄 org_unit_id（刪除後就查不到了）
+      let resequenceOrg = null;
+      if (action === 'delete' && entityType === 'salary') {
+        const entity = req.tenantDB.prepare('SELECT org_unit_id FROM grade_salary_levels WHERE id = ?').get(record.entity_id);
+        if (entity) resequenceOrg = entity.org_unit_id;
+      }
 
-    // 更新變更記錄狀態
-    req.tenantDB.prepare(`UPDATE grade_change_history SET status = 'approved', approved_by = ?, approved_at = datetime('now') WHERE id = ?`).run(approvedBy || 'system', id);
+      switch (action) {
+        case 'create':
+          applyCreate(req, entityType, newData);
+          break;
+        case 'update':
+          applyUpdate(req, entityType, record.entity_id, newData);
+          break;
+        case 'delete':
+          applyDelete(req, entityType, record.entity_id);
+          break;
+      }
+
+      // 刪除薪資碼後重新編碼（收攏間隙）
+      if (resequenceOrg) {
+        resequenceAllSalaryCodes(req.tenantDB, resequenceOrg);
+      }
+
+      // 更新變更記錄狀態
+      req.tenantDB.prepare(`UPDATE grade_change_history SET status = 'approved', approved_by = ?, approved_at = datetime('now') WHERE id = ?`).run(approvedBy || 'system', id);
+    });
 
     res.json({ success: true, data: { message: '變更已核准並套用' } });
   } catch (error) {
@@ -1746,11 +1600,9 @@ function applyCreate(req, entityType, data) {
           req.tenantDB.prepare(`INSERT OR IGNORE INTO grade_track_entries (id, grade, track, title, education_requirement, responsibility_description, required_skills_and_training, org_unit_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(te.id, te.grade, te.track, te.title, te.educationRequirement || '', te.responsibilityDescription || '', te.requiredSkillsAndTraining || '', te.org_unit_id || null);
         }
       }
-      // 套用薪資級距（先遞延衝突代碼，再 upsert，最後遞減填補間隙）
+      // 套用薪資級距
       if (data.salaryLevels && data.salaryLevels.length > 0) {
-        cascadeSalaryCodes(req.tenantDB, data.grade, data.salaryLevels, data.orgUnitId || null);
         upsertSalaryLevels(req.tenantDB, data.grade, data.salaryLevels, data.orgUnitId || null);
-        cascadeSalaryCodesDown(req.tenantDB, data.grade, data.orgUnitId || null);
       }
       break;
     case 'track-entry':
@@ -1771,6 +1623,37 @@ function applyCreate(req, entityType, data) {
     case 'track-detail':
       applyTrackDetailChange(req, data);
       break;
+    case 'template-import':
+      applyTemplateImport(req, data);
+      break;
+  }
+}
+
+/**
+ * 套用範本匯入（一次性寫入全部資料）
+ */
+function applyTemplateImport(req, data) {
+  const targetOrg = data.target_org_unit_id;
+
+  // 覆蓋模式：先清除目標既有資料
+  if (data.overwrite) {
+    req.tenantDB.prepare('DELETE FROM grade_salary_levels WHERE org_unit_id = ?').run(targetOrg);
+    req.tenantDB.prepare('DELETE FROM grade_track_entries WHERE org_unit_id = ?').run(targetOrg);
+    req.tenantDB.prepare('DELETE FROM promotion_criteria WHERE org_unit_id = ?').run(targetOrg);
+    req.tenantDB.prepare('DELETE FROM department_positions WHERE org_unit_id = ?').run(targetOrg);
+  }
+
+  for (const s of (data.salary_levels || [])) {
+    req.tenantDB.prepare('INSERT INTO grade_salary_levels (id, grade, code, salary, sort_order, org_unit_id) VALUES (?, ?, ?, ?, ?, ?)').run(s.id, s.grade, s.code, s.salary, s.sortOrder, targetOrg);
+  }
+  for (const t of (data.track_entries || [])) {
+    req.tenantDB.prepare('INSERT INTO grade_track_entries (id, grade, track, title, education_requirement, responsibility_description, required_skills_and_training, org_unit_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(t.id, t.grade, t.track, t.title, t.educationRequirement || '', t.responsibilityDescription || '', t.requiredSkillsAndTraining || '', targetOrg);
+  }
+  for (const p of (data.promotion_criteria || [])) {
+    req.tenantDB.prepare('INSERT INTO promotion_criteria (id, from_grade, to_grade, track, required_skills, required_courses, performance_threshold, kpi_focus, additional_criteria, promotion_procedure, org_unit_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').run(p.id, p.fromGrade, p.toGrade, p.track, JSON.stringify(p.requiredSkills), JSON.stringify(p.requiredCourses), p.performanceThreshold, JSON.stringify(p.kpiFocus), JSON.stringify(p.additionalCriteria), p.promotionProcedure, targetOrg);
+  }
+  for (const d of (data.department_positions || [])) {
+    req.tenantDB.prepare('INSERT INTO department_positions (id, department, grade, title, track, supervised_departments, org_unit_id) VALUES (?, ?, ?, ?, ?, ?, ?)').run(d.id, d.department, d.grade, d.title, d.track, d.supervisedDepartments ? JSON.stringify(d.supervisedDepartments) : null, targetOrg);
   }
 }
 
@@ -1823,18 +1706,16 @@ function applyTrackDetailChange(req, data) {
 function applyUpdate(req, entityType, entityId, data) {
   switch (entityType) {
     case 'track':
-      req.tenantDB.prepare(`UPDATE grade_tracks SET code = ?, name = ?, icon = ?, color = ?, max_grade = ?, sort_order = ?, is_active = ?, org_unit_id = ? WHERE id = ?`).run(data.code, data.name, data.icon, data.color, data.maxGrade, data.sortOrder, data.isActive ? 1 : 0, data.org_unit_id || null, entityId);
+      req.tenantDB.prepare(`UPDATE grade_tracks SET code = ?, name = ?, icon = ?, color = ?, max_grade = ?, sort_order = ?, is_active = ? WHERE id = ?`).run(data.code, data.name, data.icon, data.color, data.maxGrade, data.sortOrder, data.isActive ? 1 : 0, entityId);
       break;
     case 'grade':
       // 僅集團預設（orgUnitId 為空）才更新 grade_levels.code_range
       if (!data.orgUnitId) {
         req.tenantDB.prepare(`UPDATE grade_levels SET code_range = ? WHERE id = ?`).run(data.codeRange, entityId);
       }
-      // 套用薪資級距（先遞延衝突代碼，再 upsert，最後遞減填補間隙）
+      // 套用薪資級距
       if (data.salaryLevels) {
-        cascadeSalaryCodes(req.tenantDB, data.grade, data.salaryLevels, data.orgUnitId || null);
         upsertSalaryLevels(req.tenantDB, data.grade, data.salaryLevels, data.orgUnitId || null);
-        cascadeSalaryCodesDown(req.tenantDB, data.grade, data.orgUnitId || null);
       }
       // 套用軌道資訊
       const gradeTrackUpdates = [];
@@ -1975,6 +1856,142 @@ router.get('/:grade', requireFeaturePerm('L2.grade-matrix', 'view'), (req, res) 
     res.json({ success: true, data: result });
   } catch (error) {
     console.error('Error fetching grade detail:', error);
+    res.status(500).json({ success: false, error: { code: 'INTERNAL_ERROR', message: error.message } });
+  }
+});
+
+// =====================================================
+// 範本匯入 API
+// =====================================================
+
+/**
+ * POST /api/grade-matrix/import-template
+ * 從來源組織複製完整職等薪資資料到目標組織
+ */
+router.post('/import-template', requireFeaturePerm('L2.grade-matrix', 'edit'), (req, res) => {
+  try {
+    const { source_org_unit_id, target_org_unit_id, overwrite } = req.body;
+
+    if (!source_org_unit_id || !target_org_unit_id) {
+      return res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'source_org_unit_id 和 target_org_unit_id 為必填' } });
+    }
+
+    if (source_org_unit_id === target_org_unit_id) {
+      return res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: '來源與目標不能相同' } });
+    }
+
+    // 檢查來源是否有資料
+    const sourceCount = req.tenantDB.prepare(
+      'SELECT COUNT(*) as count FROM grade_salary_levels WHERE org_unit_id = ?'
+    ).get(source_org_unit_id);
+    if (!sourceCount || sourceCount.count === 0) {
+      return res.status(400).json({ success: false, error: { code: 'NO_SOURCE_DATA', message: '來源組織尚未設定職等薪資資料' } });
+    }
+
+    // 檢查目標是否已有資料
+    const targetCount = req.tenantDB.prepare(
+      'SELECT COUNT(*) as count FROM grade_salary_levels WHERE org_unit_id = ?'
+    ).get(target_org_unit_id);
+    if (targetCount && targetCount.count > 0 && !overwrite) {
+      return res.status(400).json({ success: false, error: { code: 'TARGET_HAS_DATA', message: '目標組織已有職等薪資資料，請先清除後再匯入' } });
+    }
+
+    const changedBy = req.user?.userId || 'system';
+
+    // 收集要匯入的完整資料
+    const importData = {
+      overwrite: !!overwrite,
+      source_org_unit_id,
+      target_org_unit_id,
+      salary_levels: [],
+      track_entries: [],
+      promotion_criteria: [],
+      department_positions: []
+    };
+
+    // 1. 薪資級距
+    const salaryRows = req.tenantDB.prepare(
+      'SELECT grade, code, salary, sort_order FROM grade_salary_levels WHERE org_unit_id = ? ORDER BY grade, sort_order'
+    ).all(source_org_unit_id);
+    let salaryIdx = 0;
+    for (const row of salaryRows) {
+      importData.salary_levels.push({
+        id: `sal-${row.grade}-${++salaryIdx}-${generateId().substring(0, 8)}`,
+        grade: row.grade, code: row.code, salary: row.salary, sortOrder: row.sort_order, org_unit_id: target_org_unit_id
+      });
+    }
+
+    // 2. 軌道條目
+    const trackRows = req.tenantDB.prepare(
+      'SELECT grade, track, title, education_requirement, responsibility_description, required_skills_and_training FROM grade_track_entries WHERE org_unit_id = ?'
+    ).all(source_org_unit_id);
+    for (const row of trackRows) {
+      importData.track_entries.push({
+        id: `gte-${generateId()}`,
+        grade: row.grade, track: row.track, title: row.title || '',
+        educationRequirement: row.education_requirement || '',
+        responsibilityDescription: row.responsibility_description || '',
+        requiredSkillsAndTraining: row.required_skills_and_training || '',
+        org_unit_id: target_org_unit_id
+      });
+    }
+
+    // 3. 晉升條件
+    const promoRows = req.tenantDB.prepare(
+      'SELECT from_grade, to_grade, track, required_skills, required_courses, performance_threshold, kpi_focus, additional_criteria, promotion_procedure FROM promotion_criteria WHERE org_unit_id = ?'
+    ).all(source_org_unit_id);
+    for (const row of promoRows) {
+      importData.promotion_criteria.push({
+        id: `promo-${generateId()}`,
+        fromGrade: row.from_grade, toGrade: row.to_grade, track: row.track,
+        requiredSkills: JSON.parse(row.required_skills || '[]'),
+        requiredCourses: JSON.parse(row.required_courses || '[]'),
+        performanceThreshold: row.performance_threshold,
+        kpiFocus: JSON.parse(row.kpi_focus || '[]'),
+        additionalCriteria: JSON.parse(row.additional_criteria || '[]'),
+        promotionProcedure: row.promotion_procedure,
+        org_unit_id: target_org_unit_id
+      });
+    }
+
+    // 4. 部門職位（只帶匹配的部門）
+    const targetDepts = req.tenantDB.prepare(
+      "SELECT name FROM org_units WHERE type = 'department' AND parent_id = ?"
+    ).all(target_org_unit_id);
+    const targetDeptNames = new Set(targetDepts.map(d => d.name));
+    const posRows = req.tenantDB.prepare(
+      'SELECT department, grade, title, track, supervised_departments FROM department_positions WHERE org_unit_id = ?'
+    ).all(source_org_unit_id);
+    for (const row of posRows) {
+      if (!targetDeptNames.has(row.department) && row.department !== '全部門') continue;
+      importData.department_positions.push({
+        id: `dp-${generateId()}`,
+        department: row.department, grade: row.grade, title: row.title, track: row.track,
+        supervisedDepartments: row.supervised_departments ? JSON.parse(row.supervised_departments) : null,
+        org_unit_id: target_org_unit_id
+      });
+    }
+
+    // 建立單筆整合 change record
+    const entityId = `tmpl-import-${generateId().substring(0, 8)}`;
+    const { changeId } = createChangeRecord(req, 'template-import', entityId, 'create', null, importData, changedBy);
+
+    const total = importData.salary_levels.length + importData.track_entries.length + importData.promotion_criteria.length + importData.department_positions.length;
+    res.json({
+      success: true,
+      status: 'pending',
+      change_id: changeId,
+      message: `已建立範本匯入待審核（共 ${total} 筆資料）`,
+      imported: {
+        salary_levels: importData.salary_levels.length,
+        track_entries: importData.track_entries.length,
+        promotion_criteria: importData.promotion_criteria.length,
+        department_positions: importData.department_positions.length,
+        change_ids: [changeId]
+      }
+    });
+  } catch (error) {
+    console.error('Error importing template:', error);
     res.status(500).json({ success: false, error: { code: 'INTERNAL_ERROR', message: error.message } });
   }
 });

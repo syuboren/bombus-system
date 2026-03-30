@@ -406,7 +406,7 @@ router.post('/tenants', async (req, res) => {
 // ─── 更新租戶（狀態/方案/恢復） ───
 
 router.put('/tenants/:id', (req, res) => {
-  const { name, status, plan_id, logo_url, industry } = req.body;
+  const { name, status, plan_id, logo_url, industry, feature_overrides, feature_overrides_note } = req.body;
   const ip = getClientIP(req);
   const platformDB = getPlatformDB();
 
@@ -467,6 +467,22 @@ router.put('/tenants/:id', (req, res) => {
   if (industry !== undefined) {
     updates.push('industry = ?');
     params.push(industry || null);
+  }
+
+  if (feature_overrides !== undefined) {
+    let overridesStr = null;
+    if (feature_overrides !== null) {
+      overridesStr = typeof feature_overrides === 'object'
+        ? JSON.stringify(feature_overrides)
+        : feature_overrides;
+    }
+    updates.push('feature_overrides = ?');
+    params.push(overridesStr);
+  }
+
+  if (feature_overrides_note !== undefined) {
+    updates.push('feature_overrides_note = ?');
+    params.push(feature_overrides_note || null);
   }
 
   if (updates.length === 0) {

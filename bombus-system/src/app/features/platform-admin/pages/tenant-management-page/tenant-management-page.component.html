@@ -100,6 +100,9 @@
                 @if (isPlanInactive(tenant.plan_id)) {
                   <span class="plan-inactive-badge">已停用</span>
                 }
+                @if (tenant.feature_overrides) {
+                  <span class="plan-custom-badge" [title]="tenant.feature_overrides_note || '已自訂功能模組'">客製</span>
+                }
               </td>
               <td>
                 <span class="status-badge" [class]="getStatusClass(tenant.status)">
@@ -251,6 +254,63 @@
               }
             </select>
           </div>
+
+          <!-- 功能模組覆寫（僅編輯模式） -->
+          @if (editingTenant()) {
+            <div class="form-group">
+              <label class="feature-override-toggle">
+                <input
+                  type="checkbox"
+                  [checked]="useFeatureOverrides()"
+                  (change)="toggleUseOverrides()" />
+                <span class="form-label" style="display:inline; margin-bottom:0">自訂功能模組</span>
+                <span class="form-hint">（覆寫訂閱方案預設）</span>
+              </label>
+            </div>
+
+            @if (useFeatureOverrides()) {
+              <div class="form-group">
+                <div class="feature-selector">
+                  @for (mod of moduleRegistry; track mod.id) {
+                    <div class="module-group">
+                      <label class="module-header">
+                        <input
+                          type="checkbox"
+                          class="module-checkbox"
+                          [checked]="isModuleFullySelected(mod.id)"
+                          [indeterminate]="isModulePartiallySelected(mod.id)"
+                          (change)="toggleModule(mod.id)" />
+                        <i [class]="mod.icon"></i>
+                        <span class="module-label">{{ mod.label }}</span>
+                        <span class="module-count">{{ getSelectedCount(mod.id) }}/{{ mod.children.length }}</span>
+                      </label>
+                      <div class="module-children">
+                        @for (child of mod.children; track child.id) {
+                          <label class="child-item">
+                            <input
+                              type="checkbox"
+                              class="child-checkbox"
+                              [checked]="isFeatureSelected(child.id)"
+                              (change)="toggleFeature(child.id)" />
+                            <span>{{ child.label }}</span>
+                          </label>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">客製備註</label>
+                <input
+                  type="text"
+                  class="form-input"
+                  placeholder="例：額外開通 L3 教育訓練模組"
+                  [value]="featureOverridesNote()"
+                  (input)="featureOverridesNote.set($any($event.target).value)" />
+              </div>
+            }
+          }
 
           <div class="form-divider">
             <span>管理員帳號</span>

@@ -70,10 +70,17 @@
         <i class="ri-table-line"></i> 職等職級薪資對照表
       </button>
       @for (track of tracks(); track track.id) {
-      <button class="subtab-btn" [class.active]="matrixSubTab() === 'track:' + track.code"
-        (click)="matrixSubTab.set('track:' + track.code); closeTrackDetailPanel()" type="button">
-        <i [class]="track.icon || 'ri-bookmark-line'"></i> {{ track.name }}
-      </button>
+      <div class="subtab-group">
+        <button class="subtab-btn" [class.active]="matrixSubTab() === 'track:' + track.code"
+          (click)="matrixSubTab.set('track:' + track.code); closeTrackDetailPanel()" type="button">
+          <i [class]="track.icon || 'ri-bookmark-line'"></i> {{ track.name }}
+        </button>
+        @if (editMode()) {
+          <button class="subtab-action" title="編輯軌道" (click)="openEditTrack(track); $event.stopPropagation()" type="button">
+            <i class="ri-pencil-line"></i>
+          </button>
+        }
+      </div>
       }
     </div>
 
@@ -83,7 +90,6 @@
       @if (viewScope() !== 'self' && viewScope() !== 'department') {
       <select class="filter-select-sm" [ngModel]="overviewSubsidiaryId()"
         (ngModelChange)="onOverviewSubsidiaryChange($event)">
-        <option value="">集團預設</option>
         @for (sub of subsidiaries(); track sub.id) {
         <option [value]="sub.id">{{ sub.name }}</option>
         }
@@ -94,7 +100,30 @@
         <i class="ri-add-line"></i> 新增職等
       </button>
       }
+      @if (canEdit() && editMode() && overviewSubsidiaryId()) {
+      <button class="btn-import-template-sm"
+        [disabled]="importingTemplate() || parentHasNoData()"
+        [title]="parentHasNoData() ? '母公司尚未設定職等薪資' : ''"
+        (click)="onImportTemplateWithConfirm()" type="button">
+        <i class="ri-download-line"></i>
+        {{ importingTemplate() ? '帶入中...' : '從母公司帶入範本' }}
+      </button>
+      }
     </div>
+    @if (hasNoSalaryData()) {
+      <div class="grade-empty-state">
+        <i class="ri-file-list-3-line"></i>
+        <p class="empty-title">尚未設定職等薪資對照表</p>
+        <p class="empty-hint">請先為此公司建立職等薪資資料，或從母公司帶入範本</p>
+        <button class="btn-import-template"
+          [disabled]="importingTemplate() || parentHasNoData()"
+          [title]="parentHasNoData() ? '母公司尚未設定職等薪資' : ''"
+          (click)="onImportTemplateWithConfirm()" type="button">
+          <i class="ri-download-line"></i>
+          {{ importingTemplate() ? '帶入中...' : parentHasNoData() ? '母公司尚未設定' : '從母公司帶入範本' }}
+        </button>
+      </div>
+    } @else {
     <div class="overview-table-wrapper">
       <table class="overview-table">
         <thead>
@@ -142,6 +171,7 @@
         </tbody>
       </table>
     </div>
+    }
 
     <!-- 職級薪資對照表 -->
     <div class="salary-reference">
@@ -1103,7 +1133,7 @@
 }
 
 <!-- edit modals / panels -->
-<app-track-edit-modal [visible]="showTrackEditModal()" [trackData]="editingTrack()" (closed)="closeTrackModal()"
+<app-track-edit-modal [visible]="showTrackEditModal()" [trackData]="editingTrack()" [maxGradeLimit]="gradesNew().length || 7" (closed)="closeTrackModal()"
   (saved)="onTrackSaved()" />
 
 <app-grade-edit-panel [visible]="showGradeEditPanel()" [gradeData]="editingGrade()"

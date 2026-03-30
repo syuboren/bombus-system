@@ -5,7 +5,8 @@ import {
   inject,
   signal,
   computed,
-  OnInit
+  OnInit,
+  OnDestroy
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { switchMap, forkJoin } from 'rxjs';
@@ -23,10 +24,33 @@ import { FeatureGateService } from '../../../../core/services/feature-gate.servi
 import {
   UnifiedEmployee,
   EmployeeStats,
-  CreateEmployeeRequest
+  CreateEmployeeRequest,
+  BatchImportRow,
+  BatchValidationResult,
+  BatchImportJob,
+  BatchImportResult
 } from '../../../../shared/models/employee.model';
 
 type ViewMode = 'card' | 'list';
+type BatchStep = 'upload' | 'validating' | 'preview' | 'importing' | 'complete';
+
+// 中文欄位名 → 內部欄位名（自動處理 (*) 必填標記）
+const CSV_HEADER_BASE: Record<string, keyof BatchImportRow> = {
+  '姓名': 'name', '電子郵件': 'email', 'Email': 'email',
+  '工號': 'employee_no', '子公司': 'subsidiary', '部門': 'department',
+  '到職日期': 'hire_date', '職等': 'grade', '職級': 'level', '職稱': 'position',
+  '英文姓名': 'english_name', '電話': 'phone', '手機': 'mobile',
+  '性別': 'gender', '出生日期': 'birth_date',
+  '合約類型': 'contract_type', '工作地點': 'work_location',
+  '地址': 'address', '緊急聯絡人': 'emergency_contact_name',
+  '緊急聯絡人關係': 'emergency_contact_relation', '緊急聯絡人電話': 'emergency_contact_phone',
+  '主管工號': 'manager_no'
+};
+
+function resolveHeader(raw: string): keyof BatchImportRow | undefined {
+  const clean = raw.replace(/\(\*\)$/, '').trim();
+  return CSV_HEADER_BASE[clean] || CSV_HEADER_BASE[raw];
+}
 
 @Component({
   selector: 'app-employee-management-page',
@@ -36,7 +60,7 @@ type ViewMode = 'card' | 'list';
   styleUrl: './employee-management-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class EmployeeManagementPageComponent implements OnInit {
+export class EmployeeManagementPageComponent implements OnInit, OnDestroy {
   private employeeService = inject(EmployeeService);
   private orgUnitService = inject(OrgUnitService);
   private featureGateService = inject(FeatureGateService);
@@ -104,6 +128,15 @@ export class EmployeeManagementPageComponent implements OnInit {
 
   // Batch import
   showBatchModal = signal(false);
+  batchStep = signal<BatchStep>('upload');
+  parsedRows = signal<BatchImportRow[]>([]);
+  validationResult = signal<BatchValidationResult | null>(null);
+  importJobId = signal<string | null>(null);
+  importJob = signal<BatchImportJob | null>(null);
+  importResults = signal<BatchImportResult[]>([]);
+  selectedFile = signal<string>('');
+  batchFileError = signal<string>('');
+  private pollingInterval: ReturnType<typeof setInterval> | null = null;
 
   // Pagination
   currentPage = signal(1);
@@ -341,11 +374,212 @@ export class EmployeeManagementPageComponent implements OnInit {
   // ===== Batch Import =====
 
   openBatchModal(): void {
+    this.batchStep.set('upload');
+    this.parsedRows.set([]);
+    this.validationResult.set(null);
+    this.importJobId.set(null);
+    this.importJob.set(null);
+    this.importResults.set([]);
+    this.selectedFile.set('');
+    this.batchFileError.set('');
     this.showBatchModal.set(true);
   }
 
   closeBatchModal(): void {
+    this.clearPolling();
     this.showBatchModal.set(false);
+  }
+
+  ngOnDestroy(): void {
+    this.clearPolling();
+  }
+
+  private clearPolling(): void {
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+      this.pollingInterval = null;
+    }
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      this.processFile(input.files[0]);
+    }
+  }
+
+  onFileDrop(event: DragEvent): void {
+    event.preventDefault();
+    if (event.dataTransfer?.files?.[0]) {
+      this.processFile(event.dataTransfer.files[0]);
+    }
+  }
+
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+  }
+
+  private processFile(file: File): void {
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      this.batchFileError.set('僅支援 CSV 格式');
+      this.parsedRows.set([]);
+      this.selectedFile.set('');
+      return;
+    }
+    this.batchFileError.set('');
+    this.selectedFile.set(file.name);
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      const rows = this.parseCsv(text);
+      this.parsedRows.set(rows);
+    };
+    reader.readAsText(file, 'UTF-8');
+  }
+
+  private parseCsv(text: string): BatchImportRow[] {
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    if (lines.length < 2) return [];
+
+    const headers = lines[0].split(',').map(h => h.trim().replace(/^\uFEFF/, ''));
+    const fieldNames = headers.map(h => resolveHeader(h) || h as keyof BatchImportRow);
+
+    const rows: BatchImportRow[] = [];
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(v => v.trim());
+      // 跳過說明行（以「必填:」或「選填」開頭的行）
+      if (values[0]?.startsWith('必填') || values[0]?.startsWith('選填')) continue;
+      const row: Record<string, string> = {};
+      fieldNames.forEach((field, idx) => {
+        row[field] = values[idx] || '';
+      });
+      // 手機前導零修復（Excel 會將 0912345678 存為 912345678）
+      if (row['mobile'] && /^\d{9}$/.test(row['mobile'])) row['mobile'] = '0' + row['mobile'];
+      if (row['phone'] && /^\d{9}$/.test(row['phone'])) row['phone'] = '0' + row['phone'];
+      rows.push(row as unknown as BatchImportRow);
+    }
+    return rows;
+  }
+
+  downloadTemplate(): void {
+    const headers = [
+      '姓名(*)', '電子郵件(*)', '工號(*)', '子公司(*)', '部門(*)',
+      '到職日期(*)', '職等(*)', '職級(*)', '職稱(*)',
+      '英文姓名', '電話', '手機', '性別', '出生日期', '合約類型', '工作地點',
+      '地址', '緊急聯絡人', '緊急聯絡人關係', '緊急聯絡人電話', '主管工號'
+    ];
+    const instructions = [
+      '必填:中文全名', '必填:Email格式', '必填:唯一工號', '必填:需與組織架構一致', '必填:需存在於該子公司下',
+      '必填:YYYY-MM-DD或YYYY/MM/DD', '必填:數字如2(Grade 2)', '必填:薪資代碼如BS02(需在該職等內)', '必填:如工程師',
+      '選填', '選填:如02-12345678', '選填:如0912345678', '選填:男/女/其他', '選填:YYYY-MM-DD或YYYY/MM/DD',
+      '選填:全職/兼職/約聘/實習', '選填', '選填:通訊地址', '選填:姓名', '選填:如配偶/父母', '選填:電話', '選填:主管工號'
+    ];
+    const example = [
+      '王小明', 'ming@company.com', 'EMP001', 'Demo集團', '工程部',
+      '2026-01-15', '2', 'BS02', '工程師',
+      'Ming Wang', '02-12345678', '0912345678', '男', '1990-05-20', '全職', '台北',
+      '台北市信義區信義路100號', '王大明', '配偶', '0922333444', ''
+    ];
+    const csv = '\uFEFF' + headers.join(',') + '\n' + instructions.join(',') + '\n' + example.join(',') + '\n';
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '員工批次匯入範本.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  startValidation(): void {
+    this.batchStep.set('validating');
+    this.employeeService.batchImportValidate(this.parsedRows()).pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe({
+      next: (result) => {
+        this.validationResult.set(result);
+        this.batchStep.set('preview');
+      },
+      error: (err) => {
+        this.notificationService.error(err.message || '驗證失敗');
+        this.batchStep.set('upload');
+      }
+    });
+  }
+
+  confirmImport(): void {
+    this.batchStep.set('importing');
+    this.employeeService.batchImportExecute(this.parsedRows(), this.selectedFile()).pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe({
+      next: (result) => {
+        this.importJobId.set(result.jobId);
+        this.startPolling(result.jobId);
+      },
+      error: (err) => {
+        this.notificationService.error(err.message || '匯入啟動失敗');
+        this.batchStep.set('preview');
+      }
+    });
+  }
+
+  private startPolling(jobId: string): void {
+    this.clearPolling();
+    this.pollingInterval = setInterval(() => {
+      this.employeeService.batchImportStatus(jobId).pipe(
+        takeUntilDestroyed(this.destroyRef)
+      ).subscribe({
+        next: (job) => {
+          this.importJob.set(job);
+          if (job.status === 'completed' || job.status === 'failed') {
+            this.clearPolling();
+            this.loadImportReport(jobId);
+          }
+        },
+        error: () => this.clearPolling()
+      });
+    }, 2000);
+  }
+
+  private loadImportReport(jobId: string): void {
+    this.employeeService.batchImportReport(jobId).pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe({
+      next: (results) => {
+        this.importResults.set(results);
+        this.batchStep.set('complete');
+        this.onEmployeeUpdated();
+      },
+      error: () => {
+        this.batchStep.set('complete');
+      }
+    });
+  }
+
+  resetBatchUpload(): void {
+    this.batchStep.set('upload');
+    this.parsedRows.set([]);
+    this.validationResult.set(null);
+    this.selectedFile.set('');
+    this.batchFileError.set('');
+  }
+
+  downloadReport(): void {
+    const results = this.importResults();
+    if (results.length === 0) return;
+
+    const headers = ['行號', '姓名', 'Email', '工號', '狀態', '初始密碼', '錯誤訊息'];
+    const lines = results.map(r =>
+      [r.rowNumber, r.employeeName || '', r.email || '', r.employeeNo || '', r.status === 'success' ? '成功' : '失敗', r.initialPassword || '', r.errorMessage || ''].join(',')
+    );
+    const csv = '\uFEFF' + headers.join(',') + '\n' + lines.join('\n') + '\n';
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `匯入報告_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   // ===== Filters =====
@@ -388,6 +622,16 @@ export class EmployeeManagementPageComponent implements OnInit {
   formatDate(date: Date | string | undefined): string {
     if (!date) return '-';
     return new Date(date).toLocaleDateString('zh-TW');
+  }
+
+  getGenderLabel(val: string | undefined): string {
+    const map: Record<string, string> = { 'male': '男', 'female': '女', 'other': '其他' };
+    return val ? (map[val] || val) : '-';
+  }
+
+  getContractLabel(val: string | undefined): string {
+    const map: Record<string, string> = { 'full-time': '全職', 'part-time': '兼職', 'contract': '約聘', 'intern': '實習' };
+    return val ? (map[val] || val) : '-';
   }
 
   getDocumentStatusLabel(status: string): string {

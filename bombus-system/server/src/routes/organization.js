@@ -37,11 +37,7 @@ router.get('/companies', (req, res) => {
   try {
     const companies = req.tenantDB.query(`
       SELECT ou.id, ou.name, ou.type, ou.parent_id, ou.level, ou.created_at,
-             (SELECT COUNT(*) FROM org_units sub WHERE sub.parent_id = ou.id AND sub.type = 'department') as departmentCount,
-             (SELECT COUNT(*) FROM employees e
-              JOIN departments d ON d.name = e.department
-              JOIN org_units dep ON dep.name = d.name AND dep.type = 'department' AND dep.parent_id = ou.id
-              WHERE 1=0) as _placeholder
+             (SELECT COUNT(*) FROM org_units sub WHERE sub.parent_id = ou.id AND sub.type = 'department') as departmentCount
       FROM org_units ou
       WHERE ou.type IN ('group', 'subsidiary')
       ORDER BY ou.level ASC, ou.name ASC
@@ -371,7 +367,7 @@ router.get('/departments', (req, res) => {
       `SELECT ou.id, ou.name, ou.parent_id as companyId, ou.level, ou.created_at,
               d.manager_id, d.head_count
        FROM org_units ou
-       LEFT JOIN departments d ON TRIM(d.name) = TRIM(ou.name) COLLATE NOCASE
+       LEFT JOIN departments d ON TRIM(d.name) = TRIM(ou.name) COLLATE NOCASE AND d.org_unit_id = ou.parent_id
        ${whereClause}
        ORDER BY ou.name ASC`,
       params
@@ -421,7 +417,7 @@ router.get('/departments/:id', (req, res) => {
     const dept = req.tenantDB.queryOne(
       `SELECT ou.*, d.manager_id, d.head_count
        FROM org_units ou
-       LEFT JOIN departments d ON TRIM(d.name) = TRIM(ou.name) COLLATE NOCASE
+       LEFT JOIN departments d ON TRIM(d.name) = TRIM(ou.name) COLLATE NOCASE AND d.org_unit_id = ou.parent_id
        WHERE ou.id = ? AND ou.type = 'department'`,
       [req.params.id]
     );
@@ -486,15 +482,26 @@ router.post('/departments', (req, res) => {
       [id, name, companyId, level]
     );
 
-    // 同步建立 departments 表記錄（既有業務表）
-    const deptExists = req.tenantDB.queryOne(
-      'SELECT id FROM departments WHERE name = ?',
-      [name]
+    // 找到所屬子公司/集團 ID（向上遞迴）
+    let deptOrgUnitId = null;
+    let walkId = companyId;
+    for (let i = 0; i < 10; i++) {
+      const unit = req.tenantDB.queryOne('SELECT id, type, parent_id FROM org_units WHERE id = ?', [walkId]);
+      if (!unit) break;
+      if (unit.type === 'subsidiary' || unit.type === 'group') { deptOrgUnitId = unit.id; break; }
+      walkId = unit.parent_id;
+      if (!walkId) break;
+    }
+
+    // 同步建立 departments 表記錄（帶 org_unit_id）
+    const existing = req.tenantDB.queryOne(
+      'SELECT id FROM departments WHERE name = ? AND org_unit_id = ?',
+      [name, deptOrgUnitId]
     );
-    if (!deptExists) {
+    if (!existing) {
       req.tenantDB.run(
-        'INSERT INTO departments (id, name) VALUES (?, ?)',
-        [uuidv4(), name]
+        'INSERT INTO departments (id, name, org_unit_id) VALUES (?, ?, ?)',
+        [uuidv4(), name, deptOrgUnitId]
       );
     }
 
@@ -527,46 +534,55 @@ router.put('/departments/:id', (req, res) => {
 
   const currentName = dept.name;
 
+  // 找到所屬子公司/集團 ID
+  let deptOrgUnitId = null;
+  let walkId = dept.parent_id;
+  for (let i = 0; i < 10; i++) {
+    if (!walkId) break;
+    const unit = req.tenantDB.queryOne('SELECT id, type, parent_id FROM org_units WHERE id = ?', [walkId]);
+    if (!unit) break;
+    if (unit.type === 'subsidiary' || unit.type === 'group') { deptOrgUnitId = unit.id; break; }
+    walkId = unit.parent_id;
+  }
+
   if (name) {
     req.tenantDB.run('UPDATE org_units SET name = ? WHERE id = ?', [name, req.params.id]);
-    // 同步更新 departments 表
-    req.tenantDB.run('UPDATE departments SET name = ? WHERE name = ?', [name, currentName]);
+    req.tenantDB.run('UPDATE departments SET name = ? WHERE name = ? AND org_unit_id = ?', [name, currentName, deptOrgUnitId]);
   }
 
   if (code !== undefined) {
     req.tenantDB.run('UPDATE org_units SET code = ? WHERE id = ?', [code || null, req.params.id]);
     const deptNameForCode = name || currentName;
-    req.tenantDB.run('UPDATE departments SET code = ? WHERE name = ?', [code || null, deptNameForCode]);
+    req.tenantDB.run('UPDATE departments SET code = ? WHERE name = ? AND org_unit_id = ?', [code || null, deptNameForCode, deptOrgUnitId]);
   }
 
   const deptName = name || currentName;
 
   if (managerId !== undefined) {
     req.tenantDB.run(
-      'UPDATE departments SET manager_id = ? WHERE name = ?',
-      [managerId || null, deptName]
+      'UPDATE departments SET manager_id = ? WHERE name = ? AND org_unit_id = ?',
+      [managerId || null, deptName, deptOrgUnitId]
     );
   }
 
-  // 擴充欄位更新
   if (responsibilities !== undefined) {
     req.tenantDB.run(
-      'UPDATE departments SET responsibilities = ? WHERE name = ?',
-      [JSON.stringify(responsibilities), deptName]
+      'UPDATE departments SET responsibilities = ? WHERE name = ? AND org_unit_id = ?',
+      [JSON.stringify(responsibilities), deptName, deptOrgUnitId]
     );
   }
 
   if (kpiItems !== undefined) {
     req.tenantDB.run(
-      'UPDATE departments SET kpi_items = ? WHERE name = ?',
-      [JSON.stringify(kpiItems), deptName]
+      'UPDATE departments SET kpi_items = ? WHERE name = ? AND org_unit_id = ?',
+      [JSON.stringify(kpiItems), deptName, deptOrgUnitId]
     );
   }
 
   if (competencyFocus !== undefined) {
     req.tenantDB.run(
-      'UPDATE departments SET competency_focus = ? WHERE name = ?',
-      [JSON.stringify(competencyFocus), deptName]
+      'UPDATE departments SET competency_focus = ? WHERE name = ? AND org_unit_id = ?',
+      [JSON.stringify(competencyFocus), deptName, deptOrgUnitId]
     );
   }
 
@@ -620,8 +636,17 @@ router.delete('/departments/:id', (req, res) => {
   // 刪除 org_units 記錄
   req.tenantDB.run('DELETE FROM org_units WHERE id = ?', [req.params.id]);
 
-  // 同步刪除 departments 表記錄
-  req.tenantDB.run('DELETE FROM departments WHERE name = ?', [dept.name]);
+  // 找到所屬子公司/集團 ID，精確刪除 departments 記錄
+  let delOrgUnitId = null;
+  let delWalkId = dept.parent_id;
+  for (let i = 0; i < 10; i++) {
+    if (!delWalkId) break;
+    const unit = req.tenantDB.queryOne('SELECT id, type, parent_id FROM org_units WHERE id = ?', [delWalkId]);
+    if (!unit) break;
+    if (unit.type === 'subsidiary' || unit.type === 'group') { delOrgUnitId = unit.id; break; }
+    delWalkId = unit.parent_id;
+  }
+  req.tenantDB.run('DELETE FROM departments WHERE name = ? AND org_unit_id = ?', [dept.name, delOrgUnitId]);
 
   res.json({ success: true, message: '部門已刪除' });
 });
@@ -688,7 +713,7 @@ router.get('/tree', (req, res) => {
              ou.tax_id, ou.status, ou.established_date,
              d.manager_id, d.head_count, d.responsibilities, d.kpi_items, d.competency_focus
       FROM org_units ou
-      LEFT JOIN departments d ON TRIM(d.name) = TRIM(ou.name) COLLATE NOCASE AND ou.type = 'department'
+      LEFT JOIN departments d ON TRIM(d.name) = TRIM(ou.name) COLLATE NOCASE AND d.org_unit_id = ou.parent_id AND ou.type = 'department'
       ORDER BY ou.level ASC, ou.name ASC
     `);
 

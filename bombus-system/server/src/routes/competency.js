@@ -586,12 +586,12 @@ router.get('/competency-stats/personal-trend', requireFeaturePerm('L2.framework'
  */
 router.get('/competency-stats/department', requireFeaturePerm('L2.framework', 'view'), (req, res) => {
   try {
-    const { year, month, departmentId } = req.query;
+    const { year, month, departmentId, org_unit_id } = req.query;
     const currentYear = parseInt(year) || new Date().getFullYear();
-    
+
     let conditions = ['mc.year = ?'];
     let params = [currentYear];
-    
+
     if (month) {
       conditions.push('mc.month = ?');
       params.push(parseInt(month));
@@ -599,6 +599,10 @@ router.get('/competency-stats/department', requireFeaturePerm('L2.framework', 'v
     if (departmentId) {
       conditions.push('e.department = ?');
       params.push(departmentId);
+    }
+    if (org_unit_id) {
+      conditions.push('e.org_unit_id = ?');
+      params.push(org_unit_id);
     }
     
     const whereClause = 'WHERE ' + conditions.join(' AND ');

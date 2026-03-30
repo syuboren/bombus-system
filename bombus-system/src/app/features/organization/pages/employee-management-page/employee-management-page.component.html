@@ -506,6 +506,65 @@
                 <option value="other">其他</option>
               </select>
             </div>
+            <div class="form-group">
+              <label class="form-label">出生日期</label>
+              <input class="form-input" type="date"
+                [ngModel]="addForm().birth_date || ''"
+                (ngModelChange)="updateAddForm('birth_date', $event)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">電話</label>
+              <input class="form-input" type="tel" placeholder="02-12345678"
+                [ngModel]="addForm().phone || ''"
+                (ngModelChange)="updateAddForm('phone', $event)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">手機</label>
+              <input class="form-input" type="tel" placeholder="0912345678"
+                [ngModel]="addForm().mobile || ''"
+                (ngModelChange)="updateAddForm('mobile', $event)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">合約類型</label>
+              <select class="form-input"
+                [ngModel]="addForm().contract_type || 'full-time'"
+                (ngModelChange)="updateAddForm('contract_type', $event)">
+                <option value="full-time">全職</option>
+                <option value="part-time">兼職</option>
+                <option value="contract">約聘</option>
+                <option value="intern">實習</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">工作地點</label>
+              <input class="form-input" type="text" placeholder="台北"
+                [ngModel]="addForm().work_location || ''"
+                (ngModelChange)="updateAddForm('work_location', $event)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">地址</label>
+              <input class="form-input" type="text" placeholder="通訊地址"
+                [ngModel]="addForm().address || ''"
+                (ngModelChange)="updateAddForm('address', $event)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">緊急聯絡人</label>
+              <input class="form-input" type="text" placeholder="姓名"
+                [ngModel]="addForm().emergency_contact_name || ''"
+                (ngModelChange)="updateAddForm('emergency_contact_name', $event)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">緊急聯絡人關係</label>
+              <input class="form-input" type="text" placeholder="如：配偶、父母"
+                [ngModel]="addForm().emergency_contact_relation || ''"
+                (ngModelChange)="updateAddForm('emergency_contact_relation', $event)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">緊急聯絡人電話</label>
+              <input class="form-input" type="tel" placeholder="0912345678"
+                [ngModel]="addForm().emergency_contact_phone || ''"
+                (ngModelChange)="updateAddForm('emergency_contact_phone', $event)">
+            </div>
           </div>
         </div>
         <div class="modal-footer">
@@ -519,6 +578,279 @@
           </button>
         </div>
       }
+    </div>
+  </div>
+}
+
+<!-- Batch Import Modal -->
+@if (showBatchModal()) {
+  <div class="modal-overlay" (click)="closeBatchModal()">
+    <div class="modal-container modal-container--lg batch-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">
+          <i class="ri-upload-2-line"></i> 批次匯入員工
+        </h2>
+        <button class="modal-close" (click)="closeBatchModal()" type="button">
+          <i class="ri-close-line"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        @switch (batchStep()) {
+          <!-- Step 1: Upload -->
+          @case ('upload') {
+            <div class="batch-upload">
+              <div class="drop-zone"
+                (dragover)="onDragOver($event)"
+                (drop)="onFileDrop($event)">
+                @if (selectedFile()) {
+                  <i class="ri-file-text-line drop-zone__icon drop-zone__icon--selected"></i>
+                  <p class="drop-zone__filename">{{ selectedFile() }}</p>
+                  <p class="drop-zone__hint">{{ parsedRows().length }} 筆資料已解析</p>
+                } @else {
+                  <i class="ri-upload-cloud-2-line drop-zone__icon"></i>
+                  <p class="drop-zone__text">拖放 CSV 檔案到此處</p>
+                  <p class="drop-zone__hint">或點擊下方按鈕選取檔案</p>
+                }
+              </div>
+              @if (batchFileError()) {
+                <p class="batch-error">{{ batchFileError() }}</p>
+              }
+              <div class="batch-upload__actions">
+                <label class="btn-secondary batch-file-btn">
+                  <i class="ri-folder-open-line"></i> 選取 CSV 檔案
+                  <input type="file" accept=".csv" (change)="onFileSelected($event)" hidden>
+                </label>
+                <button class="btn-link" (click)="downloadTemplate()" type="button">
+                  <i class="ri-download-2-line"></i> 下載 CSV 範本
+                </button>
+              </div>
+            </div>
+          }
+
+          <!-- Step 2: Validating -->
+          @case ('validating') {
+            <div class="batch-loading">
+              <i class="ri-loader-4-line spinner batch-spinner"></i>
+              <p class="batch-loading__text">驗證中...</p>
+              <p class="batch-loading__hint">正在驗證 {{ parsedRows().length }} 筆資料</p>
+            </div>
+          }
+
+          <!-- Step 3: Preview -->
+          @case ('preview') {
+            @if (validationResult(); as vr) {
+              <div class="batch-preview">
+                <div class="batch-stats">
+                  <span class="batch-stat batch-stat--success">
+                    <i class="ri-checkbox-circle-line"></i> {{ vr.validRows }} 筆通過
+                  </span>
+                  <span class="batch-stat batch-stat--error">
+                    <i class="ri-close-circle-line"></i> {{ vr.errorRows }} 筆錯誤
+                  </span>
+                  <span class="batch-stat batch-stat--total">
+                    共 {{ vr.totalRows }} 筆
+                  </span>
+                </div>
+                <div class="batch-table-wrapper">
+                  <table class="batch-table">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>狀態</th>
+                        <th>姓名</th>
+                        <th>英文姓名</th>
+                        <th>Email</th>
+                        <th>工號</th>
+                        <th>電話</th>
+                        <th>手機</th>
+                        <th>子公司</th>
+                        <th>部門</th>
+                        <th>到職日期</th>
+                        <th>職等</th>
+                        <th>職級</th>
+                        <th>職位</th>
+                        <th>性別</th>
+                        <th>出生日期</th>
+                        <th>合約類型</th>
+                        <th>工作地點</th>
+                        <th>地址</th>
+                        <th>緊急聯絡人姓名</th>
+                        <th>緊急聯絡人關係</th>
+                        <th>緊急聯絡人電話</th>
+                        <th>主管工號</th>
+                        <th>說明</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (row of vr.rows; track row.row) {
+                        <tr [class.row-error]="row.status === 'error'">
+                          <td>{{ row.row }}</td>
+                          <td>
+                            @if (row.status === 'valid') {
+                              <span class="status-icon status-icon--ok"><i class="ri-checkbox-circle-fill"></i></span>
+                            } @else {
+                              <span class="status-icon status-icon--fail"><i class="ri-close-circle-fill"></i></span>
+                            }
+                          </td>
+                          <td>{{ row.data.name }}</td>
+                          <td>{{ row.data.english_name || '-' }}</td>
+                          <td>{{ row.data.email }}</td>
+                          <td>{{ row.data.employee_no }}</td>
+                          <td>{{ row.data.phone || '-' }}</td>
+                          <td>{{ row.data.mobile || '-' }}</td>
+                          <td>{{ row.data.subsidiary }}</td>
+                          <td>{{ row.data.department }}</td>
+                          <td>{{ row.data.hire_date }}</td>
+                          <td>{{ row.data.grade }}</td>
+                          <td>{{ row.data.level }}</td>
+                          <td>{{ row.data.position }}</td>
+                          <td>{{ getGenderLabel(row.data.gender) }}</td>
+                          <td>{{ row.data.birth_date || '-' }}</td>
+                          <td>{{ getContractLabel(row.data.contract_type) }}</td>
+                          <td>{{ row.data.work_location || '-' }}</td>
+                          <td>{{ row.data.address || '-' }}</td>
+                          <td>{{ row.data.emergency_contact_name || '-' }}</td>
+                          <td>{{ row.data.emergency_contact_relation || '-' }}</td>
+                          <td>{{ row.data.emergency_contact_phone || '-' }}</td>
+                          <td>{{ row.data.manager_no || '-' }}</td>
+                          <td class="col-errors">
+                            @if (row.errors && row.errors.length > 0) {
+                              @for (err of row.errors; track $index) {
+                                <span class="error-msg">{{ err }}</span>
+                              }
+                            } @else if (row.warnings && row.warnings.length > 0) {
+                              @for (warn of row.warnings; track $index) {
+                                <span class="warn-msg">{{ warn }}</span>
+                              }
+                            } @else {
+                              <span class="ok-msg">通過</span>
+                            }
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            }
+          }
+
+          <!-- Step 4: Importing -->
+          @case ('importing') {
+            <div class="batch-loading">
+              <div class="batch-progress">
+                @if (importJob(); as job) {
+                  <div class="progress-bar">
+                    <div class="progress-bar__fill"
+                      [style.width.%]="job.totalRows > 0 ? (job.processedRows / job.totalRows * 100) : 0">
+                    </div>
+                  </div>
+                  <p class="batch-loading__text">{{ job.processedRows }} / {{ job.totalRows }} 筆處理中...</p>
+                } @else {
+                  <i class="ri-loader-4-line spinner batch-spinner"></i>
+                  <p class="batch-loading__text">匯入啟動中...</p>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Step 5: Complete -->
+          @case ('complete') {
+            <div class="batch-complete">
+              <div class="batch-result-stats">
+                <div class="result-card result-card--success">
+                  <i class="ri-checkbox-circle-line"></i>
+                  <div class="result-card__value">{{ importJob()?.successCount || 0 }}</div>
+                  <div class="result-card__label">成功</div>
+                </div>
+                <div class="result-card result-card--error">
+                  <i class="ri-close-circle-line"></i>
+                  <div class="result-card__value">{{ importJob()?.errorCount || 0 }}</div>
+                  <div class="result-card__label">失敗</div>
+                </div>
+                <div class="result-card result-card--total">
+                  <i class="ri-file-list-3-line"></i>
+                  <div class="result-card__value">{{ importJob()?.totalRows || 0 }}</div>
+                  <div class="result-card__label">總計</div>
+                </div>
+              </div>
+              @if (importResults().length > 0) {
+                <div class="batch-table-wrapper">
+                  <table class="batch-table">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>姓名</th>
+                        <th>Email</th>
+                        <th>工號</th>
+                        <th>狀態</th>
+                        <th>初始密碼</th>
+                        <th>說明</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (r of importResults(); track r.rowNumber) {
+                        <tr [class.row-error]="r.status === 'error'">
+                          <td>{{ r.rowNumber }}</td>
+                          <td>{{ r.employeeName }}</td>
+                          <td>{{ r.email }}</td>
+                          <td>{{ r.employeeNo }}</td>
+                          <td>
+                            @if (r.status === 'success') {
+                              <span class="status-icon status-icon--ok"><i class="ri-checkbox-circle-fill"></i></span>
+                            } @else {
+                              <span class="status-icon status-icon--fail"><i class="ri-close-circle-fill"></i></span>
+                            }
+                          </td>
+                          <td>
+                            @if (r.initialPassword) {
+                              <code class="password-code">{{ r.initialPassword }}</code>
+                            } @else {
+                              -
+                            }
+                          </td>
+                          <td>{{ r.errorMessage || '-' }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+            </div>
+          }
+        }
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="modal-footer">
+        @switch (batchStep()) {
+          @case ('upload') {
+            <button class="btn-secondary" (click)="closeBatchModal()" type="button">取消</button>
+            <button class="btn-primary" (click)="startValidation()"
+              [disabled]="parsedRows().length === 0" type="button">
+              <i class="ri-check-double-line"></i> 開始驗證
+            </button>
+          }
+          @case ('preview') {
+            <button class="btn-secondary" (click)="resetBatchUpload()" type="button">
+              <i class="ri-arrow-left-line"></i> 重新上傳
+            </button>
+            <button class="btn-primary" (click)="confirmImport()"
+              [disabled]="(validationResult()?.errorRows || 0) > 0"
+              [title]="(validationResult()?.errorRows || 0) > 0 ? '請修正錯誤後重新上傳' : ''"
+              type="button">
+              <i class="ri-upload-2-line"></i> 確認匯入
+            </button>
+          }
+          @case ('complete') {
+            <button class="btn-secondary" (click)="downloadReport()" type="button">
+              <i class="ri-download-2-line"></i> 下載報告
+            </button>
+            <button class="btn-primary" (click)="closeBatchModal()" type="button">完成</button>
+          }
+          @default {}
+        }
+      </div>
     </div>
   </div>
 }
