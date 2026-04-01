@@ -236,6 +236,13 @@ function requireFeaturePerm(featureId, requiredLevel) {
       });
     }
 
+    // super_admin 繞過 Layer 2（角色權限），但仍受 Layer 1（訂閱方案）限制
+    const roles = req.user.roles || [];
+    if (roles.includes('super_admin')) {
+      req.featurePerm = { action_level: 'edit', edit_scope: 'company', view_scope: 'company' };
+      return next();
+    }
+
     const { userId } = req.user;
 
     try {
