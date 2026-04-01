@@ -398,6 +398,16 @@ class TenantDBManager {
       try { db.run(sql); changed = true; } catch (e) { /* 欄位已存在則忽略 */ }
     }
 
+    // templates 表新增草稿欄位（has_draft, draft_pdf_base64, draft_mapping_config）
+    const templateMigrations = [
+      'ALTER TABLE templates ADD COLUMN has_draft INTEGER DEFAULT 0',
+      'ALTER TABLE templates ADD COLUMN draft_pdf_base64 TEXT',
+      'ALTER TABLE templates ADD COLUMN draft_mapping_config TEXT'
+    ];
+    for (const sql of templateMigrations) {
+      try { db.run(sql); changed = true; } catch (e) { /* 欄位已存在則忽略 */ }
+    }
+
     // 子公司資料關聯遷移：10 張表加入 org_unit_id，預設歸屬到根組織
     const subsidiaryMigrations = [
       { table: 'job_descriptions', index: 'idx_jd_org_unit' },

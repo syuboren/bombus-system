@@ -113,8 +113,9 @@ export class OnboardingDocumentsPageComponent implements OnInit {
                 // HR 可切換員工，先載入員工列表
                 this.loadEmployeeList();
             } else {
-                // 一般員工使用自己的 ID
-                this.selectedEmployeeId.set(user.id);
+                // 一般員工使用關聯的 employee_id（非 user ID）
+                const empId = user.employee_id || user.id;
+                this.selectedEmployeeId.set(empId);
                 this.loadProgress();
                 this.loadUploadedDocuments();
             }

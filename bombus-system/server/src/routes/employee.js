@@ -92,8 +92,17 @@ router.get('/submissions', requireFeaturePerm('L1.profile', 'view'), (req, res) 
         let params = [];
 
         if (employee_id) {
-            query += ` WHERE s.employee_id = ?`;
-            params.push(employee_id);
+            // 同時匹配 employee_id 和對應的 user_id（歷史資料可能存 user ID）
+            const linkedUser = req.tenantDB.queryOne(
+                'SELECT id FROM users WHERE employee_id = ?', [employee_id]
+            );
+            if (linkedUser) {
+                query += ` WHERE (s.employee_id = ? OR s.employee_id = ?)`;
+                params.push(employee_id, linkedUser.id);
+            } else {
+                query += ` WHERE s.employee_id = ?`;
+                params.push(employee_id);
+            }
         }
 
         query += ` ORDER BY s.created_at DESC`;
@@ -136,13 +145,23 @@ router.get('/progress', requireFeaturePerm('L1.profile', 'view'), (req, res) => 
         `).all();
 
         // 2. 取得該員工所有的提交記錄（包括待簽署、已簽署、已完成）
-        // 為每個模板取得最新的記錄
+        // 同時匹配 employee_id 和對應的 user_id（歷史資料可能存 user ID）
+        const linkedUser = req.tenantDB.queryOne(
+            'SELECT id FROM users WHERE employee_id = ?', [employee_id]
+        );
+        const empIdClause = linkedUser
+            ? '(employee_id = ? OR employee_id = ?)'
+            : 'employee_id = ?';
+        const empIdParams = linkedUser
+            ? [employee_id, linkedUser.id]
+            : [employee_id];
+
         const allSubmissions = req.tenantDB.prepare(`
             SELECT template_id, status, approval_status, token
             FROM submissions
-            WHERE employee_id = ?
+            WHERE ${empIdClause}
             ORDER BY created_at DESC
-        `).all(employee_id);
+        `).all(...empIdParams);
 
         // 建立 map，每個模板只保留最新的記錄
         const submissionMap = new Map();
@@ -187,6 +206,7 @@ router.get('/progress', requireFeaturePerm('L1.profile', 'view'), (req, res) => 
             return {
                 template_id: t.id,
                 template_name: t.name,
+                version: t.version,
                 status,
                 token: submission ? submission.token : null
             };

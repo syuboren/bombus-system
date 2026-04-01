@@ -477,93 +477,150 @@
     <!-- ===== Documents Tab ===== -->
     @if (activeTab() === 'documents') {
     <div class="documents-sections">
+      <!-- 入職文件簽署區塊 -->
       <div class="document-section">
-        <h4 class="section-title">
-          <i class="ri-file-list-3-line"></i>
-          入職文件簽署清單
-        </h4>
-        @if (signatureSubmissions().length > 0) {
+        <div class="section-header">
+          <h4 class="section-title">
+            <i class="ri-file-list-3-line"></i>
+            入職文件簽署清單
+          </h4>
+          <button type="button" class="btn-refresh" (click)="refreshDocuments()" title="重新整理">
+            <i class="ri-refresh-line"></i>
+          </button>
+        </div>
+        @if (onboardingItems().length > 0) {
         <div class="document-list">
-          @for (submission of signatureSubmissions(); track submission.id) {
+          @for (item of onboardingItems(); track item.template_id) {
           <div class="document-list-item">
             <div class="doc-list-icon">
               <i class="ri-file-text-line"></i>
             </div>
             <div class="doc-list-info">
-              <h5>{{ submission.template_name }}</h5>
-              <p class="doc-list-meta">
-                建立時間：{{ formatDateTime(submission.created_at) }}
-                @if (submission.signed_at) {
-                · 簽署時間：{{ formatDateTime(submission.signed_at) }}
-                }
-              </p>
+              <h5>{{ item.template_name }} <span class="version-tag">v{{ item.version }}</span></h5>
+              <p class="doc-list-meta">{{ getProgressStatusHint(item.status) }}</p>
             </div>
-            <span class="doc-list-status" [class]="getSubmissionStatusClass(submission)">
-              {{ getSubmissionStatusLabel(submission) }}
+            <span class="doc-list-status" [class]="getProgressStatusClass(item.status)">
+              {{ getProgressStatusLabel(item.status) }}
             </span>
             <div class="doc-list-actions">
-              @if (submission.status === 'SIGNED' || submission.status === 'COMPLETED') {
-              <button type="button" class="btn-icon" (click)="viewSignedDocument(submission)" title="查看">
+              @if (canSign() && (item.status === 'NOT_STARTED' || item.status === 'DRAFT')) {
+              <button type="button" class="btn-sign" (click)="startOrContinueSign(item)" title="前往簽署">
+                <i class="ri-edit-line"></i> 前往簽署
+              </button>
+              }
+              @if (item.token) {
+              <button type="button" class="btn-icon" (click)="viewDocument(item.token)" title="查看文件">
                 <i class="ri-eye-line"></i>
               </button>
-              <button type="button" class="btn-icon" (click)="downloadSignedDocument(submission)" title="下載">
-                <i class="ri-download-line"></i>
-              </button>
+              }
+              @if (item.status === 'APPROVED') {
+              <span class="approved-check"><i class="ri-checkbox-circle-fill"></i></span>
               }
             </div>
           </div>
           }
         </div>
         } @else {
-        <p class="empty-text">尚無簽署文件記錄</p>
+        <div class="empty-state-box">
+          <i class="ri-file-list-3-line"></i>
+          <p>尚無入職文件</p>
+        </div>
         }
       </div>
 
+      <!-- 入職資料上傳區塊 -->
       <div class="document-section">
         <h4 class="section-title">
           <i class="ri-folder-upload-line"></i>
-          入職資料上傳清單
+          入職資料上傳
         </h4>
-        @if (uploadedDocuments().length > 0) {
-        <div class="document-list">
-          @for (document of uploadedDocuments(); track document.id) {
-          <div class="document-list-item">
+        <div class="upload-type-list">
+          @for (docType of fixedDocTypes; track docType.type) {
+          <div class="upload-type-item">
             <div class="doc-list-icon">
-              @switch (document.type) {
-              @case ('id_card') { <i class="ri-bank-card-line"></i> }
-              @case ('bank_account') { <i class="ri-bank-line"></i> }
-              @case ('health_report') { <i class="ri-heart-pulse-line"></i> }
-              @case ('photo') { <i class="ri-user-smile-line"></i> }
-              @case ('education_cert') { <i class="ri-medal-line"></i> }
-              @default { <i class="ri-file-line"></i> }
-              }
+              <i [class]="docType.icon"></i>
             </div>
             <div class="doc-list-info">
-              <h5>{{ getUploadTypeLabel(document.type) }}</h5>
+              <h5>{{ docType.label }}</h5>
+              @if (getUploadedDoc(docType.type); as doc) {
               <p class="doc-list-meta">
-                檔案名稱：{{ document.fileName || document.label }}
-                @if (document.uploadedAt) {
-                · 上傳時間：{{ formatDateTime(document.uploadedAt) }}
-                }
+                {{ doc.fileName }} · {{ formatDateTime(doc.uploadedAt) }}
               </p>
+              } @else {
+              <p class="doc-list-meta text-muted">尚未上傳</p>
+              }
+            </div>
+            @if (getUploadedDoc(docType.type); as doc) {
+            <span class="doc-list-status status-uploaded">已上傳</span>
+            <div class="doc-list-actions">
+              <button type="button" class="btn-icon" (click)="downloadUploadedDocument(doc)" title="下載">
+                <i class="ri-download-line"></i>
+              </button>
+              @if (canUpload()) {
+              <button type="button" class="btn-icon" (click)="triggerReupload(doc)" title="重新上傳">
+                <i class="ri-upload-2-line"></i>
+              </button>
+              <button type="button" class="btn-icon btn-icon--danger" (click)="confirmDeleteDocument(doc)" title="刪除">
+                <i class="ri-delete-bin-line"></i>
+              </button>
+              }
+            </div>
+            } @else {
+            <span class="doc-list-status status-pending">未上傳</span>
+            @if (canUpload()) {
+            <div class="doc-list-actions">
+              <button type="button" class="btn-upload" (click)="triggerUpload(docType.type)">
+                <i class="ri-upload-line"></i> 上傳
+              </button>
+            </div>
+            }
+            }
+          </div>
+          }
+
+          <!-- 其他文件 -->
+          @for (doc of otherDocuments(); track doc.id) {
+          <div class="upload-type-item">
+            <div class="doc-list-icon">
+              <i class="ri-file-line"></i>
+            </div>
+            <div class="doc-list-info">
+              <h5>{{ doc.customName || doc.label }}</h5>
+              <p class="doc-list-meta">{{ doc.fileName }} · {{ formatDateTime(doc.uploadedAt) }}</p>
             </div>
             <span class="doc-list-status status-uploaded">已上傳</span>
             <div class="doc-list-actions">
-              <button type="button" class="btn-icon" (click)="viewUploadedDocument(document)" title="查看">
-                <i class="ri-eye-line"></i>
-              </button>
-              <button type="button" class="btn-icon" (click)="downloadUploadedDocument(document)" title="下載">
+              <button type="button" class="btn-icon" (click)="downloadUploadedDocument(doc)" title="下載">
                 <i class="ri-download-line"></i>
+              </button>
+              @if (canUpload()) {
+              <button type="button" class="btn-icon btn-icon--danger" (click)="confirmDeleteDocument(doc)" title="刪除">
+                <i class="ri-delete-bin-line"></i>
+              </button>
+              }
+            </div>
+          </div>
+          }
+
+          <!-- 新增其他文件 -->
+          @if (canUpload()) {
+          <div class="add-other-section">
+            <div class="add-other-row">
+              <input type="text" class="other-name-input" placeholder="文件名稱（如：離職證明）"
+                [value]="otherDocName()" (input)="onOtherDocNameInput($event)">
+              <button type="button" class="btn-upload" (click)="triggerUpload('other')" [disabled]="!otherDocName()">
+                <i class="ri-add-line"></i> 新增其他文件
               </button>
             </div>
           </div>
           }
         </div>
-        } @else {
-        <p class="empty-text">尚無上傳文件記錄</p>
-        }
       </div>
     </div>
+
+    <!-- Hidden file input -->
+    <input #fileInput type="file" style="display:none" (change)="onFileSelected($event)"
+      accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
     }
 
     <!-- ===== Training Tab ===== -->

@@ -1798,6 +1798,16 @@ function initTenantSchema(adapter) {
     db.run("CREATE UNIQUE INDEX IF NOT EXISTS idx_gsl_code_org ON grade_salary_levels(code, org_unit_id)");
   } catch (e) { /* 索引已存在 */ }
 
+  // templates 表新增草稿欄位
+  const templateDraftMigrations = [
+    'ALTER TABLE templates ADD COLUMN has_draft INTEGER DEFAULT 0',
+    'ALTER TABLE templates ADD COLUMN draft_pdf_base64 TEXT',
+    'ALTER TABLE templates ADD COLUMN draft_mapping_config TEXT'
+  ];
+  for (const sql of templateDraftMigrations) {
+    try { db.run(sql); } catch (e) { /* 欄位已存在則忽略 */ }
+  }
+
   // 批次匯入表（import_jobs + import_results）
   db.exec(IMPORT_TABLES_SQL);
 

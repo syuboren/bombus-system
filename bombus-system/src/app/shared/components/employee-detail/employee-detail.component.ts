@@ -4,6 +4,7 @@ import {
   DestroyRef,
   inject,
   signal,
+  computed,
   input,
   output,
   effect,
@@ -19,14 +20,24 @@ import { EmployeeService } from '../../../features/employee/services/employee.se
 import { OnboardingService } from '../../../features/employee/services/onboarding.service';
 import { OrgUnitService } from '../../../core/services/org-unit.service';
 import { CompetencyService } from '../../../features/competency/services/competency.service';
+import { AuthService } from '../../../features/auth/services/auth.service';
+import { FeatureGateService } from '../../../core/services/feature-gate.service';
 import {
   UnifiedEmployeeDetail,
   AuditLog
 } from '../../models/employee.model';
-import { Submission, UploadDocument } from '../../../features/employee/models/onboarding.model';
+import { Submission, UploadDocument, UploadDocumentType } from '../../../features/employee/models/onboarding.model';
 import * as echarts from 'echarts';
 
 export type EmployeeDetailTab = 'info' | 'history' | 'documents' | 'training' | 'performance' | 'roi';
+
+export interface OnboardingProgressItem {
+  template_id: string;
+  template_name: string;
+  version: number;
+  status: 'NOT_STARTED' | 'DRAFT' | 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED';
+  token: string | null;
+}
 
 @Component({
   selector: 'app-employee-detail',
@@ -38,6 +49,7 @@ export type EmployeeDetailTab = 'info' | 'history' | 'documents' | 'training' | 
 })
 export class EmployeeDetailComponent implements OnDestroy {
   @ViewChild('roiChart') roiChartRef!: ElementRef<HTMLDivElement>;
+  @ViewChild('fileInput') fileInputRef!: ElementRef<HTMLInputElement>;
 
   // ===== Inputs / Outputs =====
   readonly employeeId = input.required<string>();
@@ -52,12 +64,24 @@ export class EmployeeDetailComponent implements OnDestroy {
   private notificationService = inject(NotificationService);
   private orgUnitService = inject(OrgUnitService);
   private competencyService = inject(CompetencyService);
+  private authService = inject(AuthService);
+  private featureGateService = inject(FeatureGateService);
   private destroyRef = inject(DestroyRef);
+
+  // ===== Identity-based Permission Derivation =====
+  readonly isSelf = computed(() => {
+    const myEmployeeId = this.authService.currentUser()?.employee_id;
+    return !!myEmployeeId && myEmployeeId === this.employeeId();
+  });
+  readonly canSign = this.isSelf;
+  readonly canUpload = computed(() =>
+    this.isSelf() || this.featureGateService.canEdit('L1.profile')
+  );
 
   // ===== State =====
   employee = signal<UnifiedEmployeeDetail | null>(null);
   auditLogs = signal<AuditLog[]>([]);
-  signatureSubmissions = signal<Submission[]>([]);
+  onboardingItems = signal<OnboardingProgressItem[]>([]);
   uploadedDocuments = signal<UploadDocument[]>([]);
   loading = signal<boolean>(false);
   activeTab = signal<EmployeeDetailTab>('info');
@@ -74,6 +98,21 @@ export class EmployeeDetailComponent implements OnDestroy {
   positionOptions = signal<{ title: string }[]>([]);
   managerOptions = signal<{ id: string; name: string; position: string }[]>([]);
   employeeSubsidiary = signal<string>('');
+
+  // ===== Document Upload State =====
+  readonly fixedDocTypes: { type: UploadDocumentType; label: string; icon: string }[] = [
+    { type: 'id_card', label: '身分證件', icon: 'ri-bank-card-line' },
+    { type: 'bank_account', label: '銀行帳戶', icon: 'ri-bank-line' },
+    { type: 'health_report', label: '體檢報告', icon: 'ri-heart-pulse-line' },
+    { type: 'photo', label: '大頭照', icon: 'ri-user-smile-line' },
+    { type: 'education_cert', label: '學經歷證明', icon: 'ri-medal-line' }
+  ];
+  readonly otherDocuments = computed(() =>
+    this.uploadedDocuments().filter(d => d.type === 'other')
+  );
+  otherDocName = signal('');
+  private pendingUploadType: UploadDocumentType | '' = '';
+  private pendingReuploadId = '';
 
   // ROI chart
   private roiChart: echarts.ECharts | null = null;
@@ -112,15 +151,7 @@ export class EmployeeDetailComponent implements OnDestroy {
           this.auditLogs.set(logs);
         });
 
-        this.onboardingService.getEmployeeSubmissions(id).subscribe({
-          next: (submissions) => this.signatureSubmissions.set(submissions),
-          error: () => this.signatureSubmissions.set([])
-        });
-
-        this.onboardingService.getUploadedDocuments(id).subscribe({
-          next: (documents) => this.uploadedDocuments.set(documents),
-          error: () => this.uploadedDocuments.set([])
-        });
+        this.refreshDocuments();
 
         setTimeout(() => this.initROIChart(), 100);
       },
@@ -427,6 +458,33 @@ export class EmployeeDetailComponent implements OnDestroy {
     return labels[type] || type;
   }
 
+  getProgressStatusLabel(status: string): string {
+    const labels: Record<string, string> = {
+      'NOT_STARTED': '待簽署', 'DRAFT': '待簽署',
+      'PENDING_APPROVAL': '審核中', 'APPROVED': '已核准', 'REJECTED': '已退回'
+    };
+    return labels[status] || status;
+  }
+
+  getProgressStatusClass(status: string): string {
+    const classes: Record<string, string> = {
+      'NOT_STARTED': 'status-draft', 'DRAFT': 'status-draft',
+      'PENDING_APPROVAL': 'status-pending', 'APPROVED': 'status-approved', 'REJECTED': 'status-rejected'
+    };
+    return classes[status] || '';
+  }
+
+  getProgressStatusHint(status: string): string {
+    const hints: Record<string, string> = {
+      'NOT_STARTED': '尚未開始簽署',
+      'DRAFT': '已開始但尚未完成',
+      'PENDING_APPROVAL': '已簽署，等待主管審核',
+      'APPROVED': '審核通過',
+      'REJECTED': '已退回，需重新簽署'
+    };
+    return hints[status] || '';
+  }
+
   getSubmissionStatusLabel(submission: Submission): string {
     if (submission.approval_status) {
       const labels: Record<string, string> = {
@@ -478,6 +536,107 @@ export class EmployeeDetailComponent implements OnDestroy {
   }
 
   // ===== Document Actions =====
+
+  viewDocument(token: string): void {
+    window.open(`/employee/onboarding/sign/${token}`, '_blank');
+  }
+
+  startOrContinueSign(item: OnboardingProgressItem): void {
+    if (item.token) {
+      window.open(`/employee/onboarding/sign/${item.token}`, '_blank');
+    } else {
+      // NOT_STARTED：先建立 submission，再跳轉
+      const emp = this.employee();
+      this.onboardingService.createSignLink({
+        template_id: item.template_id,
+        employee_name: emp?.name,
+        employee_email: emp?.email,
+        employee_id: this.employeeId()
+      }).subscribe({
+        next: (res) => window.open(`/employee/onboarding/sign/${res.token}`, '_blank'),
+        error: () => this.notificationService.error('無法建立簽署連結')
+      });
+    }
+  }
+
+  refreshDocuments(): void {
+    const id = this.employeeId();
+    this.onboardingService.getEmployeeProgress(id).subscribe({
+      next: (data) => this.onboardingItems.set(data.items || []),
+      error: () => this.onboardingItems.set([])
+    });
+    this.onboardingService.getUploadedDocuments(id).subscribe({
+      next: (documents) => this.uploadedDocuments.set(documents),
+      error: () => this.uploadedDocuments.set([])
+    });
+  }
+
+  getUploadedDoc(type: string): UploadDocument | undefined {
+    return this.uploadedDocuments().find(d => d.type === type);
+  }
+
+  triggerUpload(type: UploadDocumentType): void {
+    this.pendingUploadType = type;
+    this.pendingReuploadId = '';
+    this.openFilePicker();
+  }
+
+  triggerReupload(doc: UploadDocument): void {
+    this.pendingUploadType = '';
+    this.pendingReuploadId = doc.id;
+    this.openFilePicker();
+  }
+
+  private openFilePicker(): void {
+    this.fileInputRef.nativeElement.value = '';
+    this.fileInputRef.nativeElement.click();
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    const empId = this.employeeId();
+
+    if (this.pendingReuploadId) {
+      this.onboardingService.reuploadDocument(this.pendingReuploadId, file).subscribe({
+        next: () => {
+          this.notificationService.success('文件已重新上傳');
+          this.refreshDocuments();
+        },
+        error: () => this.notificationService.error('上傳失敗')
+      });
+    } else if (this.pendingUploadType !== '') {
+      const uploadType = this.pendingUploadType;
+      const customName = uploadType === 'other' ? this.otherDocName() : undefined;
+      this.onboardingService.uploadDocument(empId, uploadType, file, customName).subscribe({
+        next: () => {
+          this.notificationService.success('文件上傳成功');
+          if (uploadType === 'other') {
+            this.otherDocName.set('');
+          }
+          this.refreshDocuments();
+        },
+        error: () => this.notificationService.error('上傳失敗')
+      });
+    }
+  }
+
+  onOtherDocNameInput(event: Event): void {
+    this.otherDocName.set((event.target as HTMLInputElement).value);
+  }
+
+  confirmDeleteDocument(doc: UploadDocument): void {
+    if (!confirm(`確定要刪除「${doc.label || doc.fileName}」嗎？`)) return;
+    this.onboardingService.deleteUploadedDocument(doc.id).subscribe({
+      next: () => {
+        this.notificationService.success('文件已刪除');
+        this.refreshDocuments();
+      },
+      error: () => this.notificationService.error('刪除失敗')
+    });
+  }
 
   downloadSignedDocument(submission: Submission): void {
     if (submission.status !== 'SIGNED' && submission.status !== 'COMPLETED') {

@@ -176,6 +176,7 @@ function requireRole(...allowedRoles) {
 // ── Feature-based Permission 合併常數 ──
 const ACTION_LEVEL_RANK = { none: 0, view: 1, edit: 2 };
 const SCOPE_RANK = { self: 1, department: 2, company: 3 };
+const FULL_ACCESS_PERM = Object.freeze({ action_level: 'edit', edit_scope: 'company', view_scope: 'company' });
 
 /**
  * 合併多角色的 feature 權限（Decision 9: 取最高權限）
@@ -217,7 +218,7 @@ function requireFeaturePerm(featureId, requiredLevel) {
   return (req, res, next) => {
     // 平台管理員跳過權限檢查
     if (req.user && req.user.isPlatformAdmin) {
-      req.featurePerm = { action_level: 'edit', edit_scope: 'company', view_scope: 'company' };
+      req.featurePerm = FULL_ACCESS_PERM;
       return next();
     }
 
@@ -239,7 +240,7 @@ function requireFeaturePerm(featureId, requiredLevel) {
     // super_admin 繞過 Layer 2（角色權限），但仍受 Layer 1（訂閱方案）限制
     const roles = req.user.roles || [];
     if (roles.includes('super_admin')) {
-      req.featurePerm = { action_level: 'edit', edit_scope: 'company', view_scope: 'company' };
+      req.featurePerm = FULL_ACCESS_PERM;
       return next();
     }
 

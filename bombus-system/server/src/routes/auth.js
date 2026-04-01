@@ -84,7 +84,7 @@ router.post('/login', async (req, res) => {
 
     // 查詢使用者
     const user = tenantDB.queryOne(
-      'SELECT id, email, password_hash, name, avatar, status, must_change_password FROM users WHERE email = ?',
+      'SELECT id, email, password_hash, name, avatar, status, must_change_password, employee_id FROM users WHERE email = ?',
       [email]
     );
 
@@ -218,7 +218,8 @@ router.post('/login', async (req, res) => {
         tenant_id: tenant.id,
         enabled_features: enabledFeatures,
         must_change_password: !!user.must_change_password,
-        subsidiary_id: subsidiaryId
+        subsidiary_id: subsidiaryId,
+        employee_id: user.employee_id || null
       }
     });
   } catch (err) {
@@ -357,7 +358,7 @@ router.post('/refresh', (req, res) => {
 
       // 查詢使用者
       const user = tenantDB.queryOne(
-        'SELECT id, email, name, avatar, status FROM users WHERE id = ?',
+        'SELECT id, email, name, avatar, status, employee_id FROM users WHERE id = ?',
         [tokenRecord.user_id]
       );
 
@@ -419,7 +420,8 @@ router.post('/refresh', (req, res) => {
           scope,
           tenant_id: tenant.id,
           enabled_features: enabledFeatures,
-          subsidiary_id: subsidiaryId
+          subsidiary_id: subsidiaryId,
+          employee_id: user.employee_id || null
         }
       });
     } catch (err) {

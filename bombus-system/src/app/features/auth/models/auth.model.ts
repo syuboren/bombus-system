@@ -71,6 +71,7 @@ export interface User {
   must_change_password?: boolean;
   tenant_slug?: string;
   subsidiary_id?: string | null;
+  employee_id?: string | null;
 }
 
 /**

@@ -406,12 +406,18 @@ router.get('/in-progress', requireFeaturePerm('L1.onboarding', 'view'), (req, re
       ORDER BY e.converted_at DESC
     `).all();
 
+    // 取得所有 required + public 模板數作為簽署 total
+    const requiredTemplateCount = req.tenantDB.prepare(`
+      SELECT COUNT(*) as cnt FROM templates
+      WHERE is_public = 1 AND is_active = 1 AND is_required = 1
+    `).get();
+    const templateTotal = requiredTemplateCount?.cnt || 0;
+
     // 取得每個員工的入職進度
     const result = employees.map(emp => {
-      // 模板簽署進度
+      // 模板簽署進度（以 submissions 比對 required 模板）
       const templateProgress = req.tenantDB.prepare(`
-        SELECT 
-          COUNT(*) as total,
+        SELECT
           SUM(CASE WHEN status = 'SIGNED' OR status = 'COMPLETED' THEN 1 ELSE 0 END) as signed,
           SUM(CASE WHEN approval_status = 'APPROVED' THEN 1 ELSE 0 END) as approved
         FROM submissions
@@ -420,13 +426,12 @@ router.get('/in-progress', requireFeaturePerm('L1.onboarding', 'view'), (req, re
 
       // 文件上傳進度（固定5種必填類型）
       const docProgress = req.tenantDB.prepare(`
-        SELECT 
+        SELECT
           COUNT(DISTINCT type) as uploaded
         FROM employee_documents
         WHERE employee_id = ? AND type != 'other'
       `).get(emp.id);
 
-      const templateTotal = templateProgress?.total || 0;
       const templateSigned = templateProgress?.signed || 0;
       const templateApproved = templateProgress?.approved || 0;
       const docTotal = 5; // 固定5種必填文件
