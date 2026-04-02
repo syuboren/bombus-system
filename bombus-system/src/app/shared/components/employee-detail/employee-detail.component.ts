@@ -74,9 +74,19 @@ export class EmployeeDetailComponent implements OnDestroy {
     return !!myEmployeeId && myEmployeeId === this.employeeId();
   });
   readonly canSign = this.isSelf;
-  readonly canUpload = computed(() =>
-    this.isSelf() || this.featureGateService.canEdit('L1.profile')
-  );
+  readonly canEditThisEmployee = computed(() => {
+    if (this.readonly()) return false;
+    if (this.isSelf()) return true;
+    // edit_scope=self 只能編輯自己，非自己時不允許
+    const perm = this.featureGateService.getFeaturePerm('L1.profile');
+    return !!perm && perm.edit_scope !== 'self';
+  });
+  readonly canUpload = computed(() => {
+    if (this.isSelf()) return true;
+    if (!this.featureGateService.canEdit('L1.profile')) return false;
+    const perm = this.featureGateService.getFeaturePerm('L1.profile');
+    return !!perm && perm.edit_scope !== 'self';
+  });
 
   // ===== State =====
   employee = signal<UnifiedEmployeeDetail | null>(null);

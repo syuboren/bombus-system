@@ -152,6 +152,7 @@ export class EmployeeService {
       })) : [],
       userId: data.userId || data.user_id || null,
       userStatus: data.userStatus || data.user_status || null,
+      userEmail: data.userEmail || data.user_email || null,
       orgUnitId: data.org_unit_id || undefined,
       skills: Array.isArray(data.skills) ? data.skills : [],
       certifications: Array.isArray(data.certifications)

@@ -369,7 +369,7 @@
         <app-account-permission
           [userId]="emp.userId!"
           [employeeName]="emp.name"
-          [employeeEmail]="emp.email"
+          [employeeEmail]="emp.userEmail ?? emp.email"
           [userStatus]="emp.userStatus"
           [moduleColor]="moduleColor"
           (userUpdated)="onEmployeeUpdated()" />

@@ -300,7 +300,7 @@ router.get('/list', requireFeaturePerm('L1.profile', 'view'), (req, res) => {
         const usersMap = new Map();
         if (empIds.length > 0) {
             const users = req.tenantDB.prepare(`
-                SELECT id, employee_id, status FROM users
+                SELECT id, employee_id, status, email FROM users
                 WHERE employee_id IN (${empIds.map(() => '?').join(',')})
             `).all(...empIds);
             users.forEach(u => usersMap.set(u.employee_id, u));
@@ -364,6 +364,7 @@ router.get('/list', requireFeaturePerm('L1.profile', 'view'), (req, res) => {
                 managerName: managersMap.get(emp.manager_id) || null,
                 userId: user ? user.id : null,
                 userStatus: user ? user.status : null,
+                userEmail: user ? user.email : null,
                 positions: [{
                     companyId,
                     companyName,
@@ -511,6 +512,18 @@ router.post('/documents', requireFeaturePerm('L1.profile', 'edit'), upload.singl
             return res.status(400).json({ error: 'employee_id and type are required' });
         }
 
+        // 驗證 edit_scope 權限
+        const targetEmployee = req.tenantDB.prepare(
+            'SELECT id, org_unit_id FROM employees WHERE id = ?'
+        ).get(employee_id);
+        if (!targetEmployee) {
+            return res.status(404).json({ error: 'Employee not found' });
+        }
+        const editCheck = checkEditScope(req, targetEmployee, { employeeIdField: 'id', orgUnitField: 'org_unit_id' });
+        if (!editCheck.allowed) {
+            return res.status(403).json({ error: editCheck.message });
+        }
+
         const id = uuidv4();
         const label = TYPE_LABELS[type] || '其他文件';
         const fileUrl = `/uploads/documents/${req.file.filename}`;
@@ -614,6 +627,17 @@ router.put('/documents/:id', requireFeaturePerm('L1.profile', 'edit'), upload.si
             return res.status(404).json({ error: 'Document not found' });
         }
 
+        // 驗證 edit_scope 權限（查出文件擁有者）
+        const docOwner = req.tenantDB.prepare(
+            'SELECT id, org_unit_id FROM employees WHERE id = ?'
+        ).get(existing.employee_id);
+        if (docOwner) {
+            const editCheck = checkEditScope(req, docOwner, { employeeIdField: 'id', orgUnitField: 'org_unit_id' });
+            if (!editCheck.allowed) {
+                return res.status(403).json({ error: editCheck.message });
+            }
+        }
+
         const fileUrl = `/uploads/documents/${req.file.filename}`;
         
         // 正確處理中文檔名
@@ -671,6 +695,17 @@ router.delete('/documents/:id', requireFeaturePerm('L1.profile', 'edit'), (req, 
 
         if (!existing) {
             return res.status(404).json({ error: 'Document not found' });
+        }
+
+        // 驗證 edit_scope 權限（查出文件擁有者）
+        const docOwner = req.tenantDB.prepare(
+            'SELECT id, org_unit_id FROM employees WHERE id = ?'
+        ).get(existing.employee_id);
+        if (docOwner) {
+            const editCheck = checkEditScope(req, docOwner, { employeeIdField: 'id', orgUnitField: 'org_unit_id' });
+            if (!editCheck.allowed) {
+                return res.status(403).json({ error: editCheck.message });
+            }
         }
 
         // 刪除檔案（可選）
@@ -1289,6 +1324,12 @@ router.post('/', requireFeaturePerm('L1.profile', 'edit'), async (req, res) => {
             return res.status(400).json({ error: '姓名、Email、工號為必填欄位' });
         }
 
+        // 驗證 edit_scope 權限（self scope 不得建立新員工）
+        const editCheck = checkEditScope(req, { id: null, org_unit_id: org_unit_id }, { employeeIdField: 'id', orgUnitField: 'org_unit_id' });
+        if (!editCheck.allowed) {
+            return res.status(403).json({ error: editCheck.message });
+        }
+
         const result = await createEmployeeWithAccount(req.tenantDB, {
             employeeData: {
                 name, email, employee_no, department, position,
@@ -1322,14 +1363,19 @@ router.put('/:id', requireFeaturePerm('L1.profile', 'edit'), (req, res) => {
     try {
         const { id } = req.params;
 
-        // 確認員工存在且在 edit scope 範圍
-        const scope = buildScopeFilter(req, { employeeIdColumn: 'id', orgUnitColumn: 'org_unit_id' });
-        const existing = req.tenantDB.prepare(`
-            SELECT id FROM employees WHERE id = ? AND ${scope.clause}
-        `).get(id, ...scope.params);
+        // 確認員工存在
+        const existing = req.tenantDB.prepare(
+            'SELECT id, org_unit_id FROM employees WHERE id = ?'
+        ).get(id);
 
         if (!existing) {
             return res.status(404).json({ error: 'Employee not found' });
+        }
+
+        // 驗證 edit_scope 權限
+        const editCheck = checkEditScope(req, existing, { employeeIdField: 'id', orgUnitField: 'org_unit_id' });
+        if (!editCheck.allowed) {
+            return res.status(403).json({ error: editCheck.message });
         }
 
         // 可更新欄位白名單
@@ -1358,6 +1404,44 @@ router.put('/:id', requireFeaturePerm('L1.profile', 'edit'), (req, res) => {
         params.push(new Date().toISOString());
         params.push(id);
 
+        const newEmail = req.body.email;
+        const emailChanged = newEmail !== undefined;
+
+        // 若 email 有變更，檢查是否需要同步 users.email
+        if (emailChanged) {
+            // users.employee_id → employees.id（關聯方向是 users 指向 employees）
+            const linkedUser = req.tenantDB.prepare(
+                'SELECT id FROM users WHERE employee_id = ?'
+            ).get(id);
+
+            if (linkedUser) {
+                // 檢查新 email 是否已被其他 user 使用
+                const conflict = req.tenantDB.prepare(
+                    'SELECT id FROM users WHERE email = ? AND id != ?'
+                ).get(newEmail, linkedUser.id);
+
+                if (conflict) {
+                    return res.status(409).json({ error: '此 email 已被其他帳號使用' });
+                }
+
+                // 使用 transaction 原子更新 employees + users
+                req.tenantDB.transaction((db) => {
+                    db.run(
+                        `UPDATE employees SET ${updates.join(', ')} WHERE id = ?`,
+                        params
+                    );
+                    db.run(
+                        'UPDATE users SET email = ? WHERE id = ?',
+                        [newEmail, linkedUser.id]
+                    );
+                });
+
+                const updated = req.tenantDB.prepare('SELECT * FROM employees WHERE id = ?').get(id);
+                return res.json(updated);
+            }
+        }
+
+        // 無 email 變更或員工無帳號：僅更新 employees
         req.tenantDB.run(
             `UPDATE employees SET ${updates.join(', ')} WHERE id = ?`,
             params
@@ -1383,6 +1467,12 @@ router.post('/:id/create-account', requireFeaturePerm('L1.profile', 'edit'), asy
         ).get(id);
         if (!employee) {
             return res.status(404).json({ error: 'Employee not found' });
+        }
+
+        // 驗證 edit_scope 權限
+        const editCheck = checkEditScope(req, employee, { employeeIdField: 'id', orgUnitField: 'org_unit_id' });
+        if (!editCheck.allowed) {
+            return res.status(403).json({ error: editCheck.message });
         }
 
         const existingUser = req.tenantDB.prepare(

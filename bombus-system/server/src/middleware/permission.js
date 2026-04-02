@@ -372,13 +372,13 @@ function buildScopeFilter(req, options = {}) {
       }
       const subIds = getUserDepartmentIds(req.tenantDB, req.user.subsidiaryId);
       if (subIds.length === 0) {
-        return { clause: '1=1', params: [] };
+        return { clause: '1=0', params: [], reason: 'empty_subsidiary_scope' };
       }
       const placeholders = subIds.map(() => '?').join(',');
       return { clause: `${prefix}${orgUnitColumn} IN (${placeholders})`, params: subIds };
     }
-    // 無 subsidiaryId → 優雅降級，不限
-    return { clause: '1=1', params: [] };
+    // 無 subsidiaryId → fail-secure
+    return { clause: '1=0', params: [], reason: 'no_subsidiary_link' };
   }
 
   // self scope → 僅自己
@@ -395,6 +395,15 @@ function buildScopeFilter(req, options = {}) {
     if (!req.user.departmentId) {
       return { clause: '1=0', params: [], reason: 'no_department_link' };
     }
+    // 防護：確認 departmentId 指向 department 類型，避免 group/subsidiary 導致全域存取
+    const orgUnit = req.tenantDB.queryOne(
+      'SELECT type FROM org_units WHERE id = ?',
+      [req.user.departmentId]
+    );
+    if (orgUnit && orgUnit.type !== 'department') {
+      console.warn(`[Scope] department scope but org_unit "${req.user.departmentId}" is type="${orgUnit.type}", denying access`);
+      return { clause: '1=0', params: [], reason: 'org_unit_not_department' };
+    }
     const deptIds = getUserDepartmentIds(req.tenantDB, req.user.departmentId);
     if (deptIds.length === 0) {
       return { clause: '1=0', params: [] };
@@ -403,8 +412,8 @@ function buildScopeFilter(req, options = {}) {
     return { clause: `${prefix}${orgUnitColumn} IN (${placeholders})`, params: deptIds };
   }
 
-  // 預設不限
-  return { clause: '1=1', params: [] };
+  // 預設 fail-secure：未知的 view_scope 值不應授予存取權
+  return { clause: '1=0', params: [], reason: 'unknown_scope' };
 }
 
 /**
@@ -476,7 +485,8 @@ function checkEditScope(req, targetRecord, options = {}) {
     return { allowed: true };
   }
 
-  return { allowed: true };
+  // 預設 fail-secure：未知的 edit_scope 值不應授予編輯權
+  return { allowed: false, message: '未知的編輯範圍設定' };
 }
 
 module.exports = {

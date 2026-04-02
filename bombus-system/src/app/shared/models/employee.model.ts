@@ -62,6 +62,7 @@ export interface UnifiedEmployee {
   // 使用者帳號關聯
   userId: string | null;
   userStatus: string | null;
+  userEmail: string | null;
 
   // 組織歸屬
   orgUnitId?: string;
