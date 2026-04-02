@@ -5,8 +5,8 @@
         "matcher": "Edit|Write",
         "hooks": [
           {
-            "command": "cd /Users/alifrt/Desktop/Bombus/bombus-system && npx tsc --noEmit 2>&1 | head -20",
-            "description": "編輯後進行 TypeScript 型別檢查"
+            "command": "cd /Users/alifrt/Desktop/Bombus/bombus-system && npx tsc --noEmit 2>&1 | grep -E 'error TS|Found [0-9]+ error' | head -10",
+            "description": "編輯後進行 TypeScript 型別檢查（僅顯示錯誤摘要）"
           }
         ]
       }
