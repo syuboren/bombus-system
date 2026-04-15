@@ -142,5 +142,7 @@ cd bombus-system/server && npm run init-db # 初始化 SQLite 資料庫
 | `/spectra:sync` | 同步 delta specs 到主規格 | 變更的 specs 需要合併回 main specs |
 | `/code-simplifier` | 程式碼簡化 | 完成實作後清理程式碼 |
 | `/seed-verify` | 驗證 Demo 資料 | 確認種子資料完整性 |
+| `/meeting-minutes` | 逐字稿 → 會議記錄（MD + HTML） | 收到錄音逐字稿，整理為結構化會議記錄 |
+| `/client-feedback` | 客戶回饋文件 → 比對分析報表 | 收到客戶 .docx 修改建議，自動比對系統現況產出 xlsx |
 
 > **已棄用**：`/opsx-*` 系列已由 `/spectra:*` 取代，舊指令移至 `.claude/commands/_deprecated/`
