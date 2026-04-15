@@ -200,13 +200,14 @@
   }
 
   .brand-text {
+    display: flex;
+    flex-direction: column;
     font-size: $font-size-sm;
     font-weight: $font-weight-semibold;
     color: $color-brand-main;
     transition: opacity $transition-normal, width $transition-normal;
-    white-space: nowrap;
+    line-height: 1.2;
     overflow: hidden;
-    text-overflow: ellipsis;
     max-width: 140px;
   }
 }

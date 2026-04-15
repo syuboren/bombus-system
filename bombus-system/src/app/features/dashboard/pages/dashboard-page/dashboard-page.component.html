@@ -1,5 +1,6 @@
 <!-- Header with View Switcher -->
-<app-header pageTitle="企業管理儀表板" [breadcrumbs]="currentView() === 'ceo' ? ['首頁', 'CEO 經營儀表板'] : currentView() === 'ai-marketing' ? ['首頁', 'AI 行銷決策'] : ['首頁', '營運儀表板']">
+<app-header pageTitle="企業管理儀表板"
+  [breadcrumbs]="currentView() === 'ceo' ? ['首頁', 'CEO 經營儀表板'] : currentView() === 'ai-marketing' ? ['首頁', 'AI 行銷決策'] : ['首頁', '營運儀表板']">
   <div class="view-switcher">
     <button class="view-btn" [class.active]="currentView() === 'ceo'" (click)="switchView('ceo')">
       <i class="ri-eye-line"></i>
@@ -9,7 +10,8 @@
       <i class="ri-settings-3-line"></i>
       營運視角
     </button>
-    <button class="view-btn view-btn--ai-marketing" [class.active]="currentView() === 'ai-marketing'" (click)="switchView('ai-marketing')">
+    <button class="view-btn view-btn--ai-marketing" [class.active]="currentView() === 'ai-marketing'"
+      (click)="switchView('ai-marketing')">
       <i class="ri-sparkling-2-line"></i>
       AI 行銷決策
     </button>
@@ -1809,12 +1811,12 @@
               <span class="kpi-card__label">ROAS</span>
               <div class="kpi-card__value-row">
                 <span class="kpi-card__value">{{ data.ads.roas }}</span>
-                <span class="kpi-card__trend" [class.negative]="data.ads.roasTrend < 0" [class.positive]="data.ads.roasTrend > 0">
+                <span class="kpi-card__trend" [class.negative]="data.ads.roasTrend < 0"
+                  [class.positive]="data.ads.roasTrend > 0">
                   @if (data.ads.roasTrend > 0) {
                   <i class="ri-arrow-up-s-fill"></i>+{{ data.ads.roasTrend }}
-                  } @else if (data.ads.roasTrend < 0) {
-                  <i class="ri-arrow-down-s-fill"></i>{{ data.ads.roasTrend }}
-                  }
+                  } @else if (data.ads.roasTrend < 0) { <i class="ri-arrow-down-s-fill"></i>{{ data.ads.roasTrend }}
+                    }
                 </span>
               </div>
             </div>
@@ -1854,7 +1856,8 @@
                 <span class="insight-card__metric-label">{{ insight.metric.label }}:</span>
                 <span class="insight-card__metric-value">{{ insight.metric.value }}</span>
                 @if (insight.metric.trend) {
-                <span class="insight-card__metric-trend" [class.negative]="insight.metric.trend < 0" [class.positive]="insight.metric.trend > 0">
+                <span class="insight-card__metric-trend" [class.negative]="insight.metric.trend < 0"
+                  [class.positive]="insight.metric.trend > 0">
                   {{ insight.metric.trend > 0 ? '+' : '' }}{{ insight.metric.trend }}%
                 </span>
                 }
@@ -1866,7 +1869,8 @@
                   <i [class]="isInsightExpanded(insight.id) ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'"></i>
                   {{ isInsightExpanded(insight.id) ? '收合' : '為什麼？' }}
                 </button>
-                <div class="insight-card__reason" [class.insight-card__reason--expanded]="isInsightExpanded(insight.id)">
+                <div class="insight-card__reason"
+                  [class.insight-card__reason--expanded]="isInsightExpanded(insight.id)">
                   <p>{{ insight.reason }}</p>
                   @if (insight.impact) {
                   <span class="insight-card__impact">
@@ -1960,7 +1964,8 @@
                 <span class="insight-card__metric-label">{{ insight.metric.label }}:</span>
                 <span class="insight-card__metric-value">{{ insight.metric.value }}</span>
                 @if (insight.metric.trend) {
-                <span class="insight-card__metric-trend" [class.negative]="insight.metric.trend < 0" [class.positive]="insight.metric.trend > 0">
+                <span class="insight-card__metric-trend" [class.negative]="insight.metric.trend < 0"
+                  [class.positive]="insight.metric.trend > 0">
                   {{ insight.metric.trend > 0 ? '+' : '' }}{{ insight.metric.trend }}%
                 </span>
                 }
@@ -1972,7 +1977,8 @@
                   <i [class]="isInsightExpanded(insight.id) ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'"></i>
                   {{ isInsightExpanded(insight.id) ? '收合' : '為什麼？' }}
                 </button>
-                <div class="insight-card__reason" [class.insight-card__reason--expanded]="isInsightExpanded(insight.id)">
+                <div class="insight-card__reason"
+                  [class.insight-card__reason--expanded]="isInsightExpanded(insight.id)">
                   <p>{{ insight.reason }}</p>
                   @if (insight.impact) {
                   <span class="insight-card__impact">
@@ -2030,12 +2036,13 @@
               <div class="kpi-card__value-row">
                 <span class="kpi-card__value">{{ (data.customers.retentionRate * 100).toFixed(0) }}%</span>
                 @if (data.customers.retentionTrend) {
-                <span class="kpi-card__trend" [class.negative]="data.customers.retentionTrend < 0" [class.positive]="data.customers.retentionTrend > 0">
+                <span class="kpi-card__trend" [class.negative]="data.customers.retentionTrend < 0"
+                  [class.positive]="data.customers.retentionTrend > 0">
                   @if (data.customers.retentionTrend > 0) {
                   <i class="ri-arrow-up-s-fill"></i>+{{ (data.customers.retentionTrend * 100).toFixed(0) }}%
-                  } @else if (data.customers.retentionTrend < 0) {
-                  <i class="ri-arrow-down-s-fill"></i>{{ (data.customers.retentionTrend * 100).toFixed(0) }}%
-                  }
+                  } @else if (data.customers.retentionTrend < 0) { <i class="ri-arrow-down-s-fill"></i>{{
+                    (data.customers.retentionTrend * 100).toFixed(0) }}%
+                    }
                 </span>
                 }
               </div>
@@ -2071,9 +2078,9 @@
                   <span class="customer-segment-card__percentage">{{ segment.percentage }}%</span>
                 </div>
                 <div class="customer-segment-card__progress">
-                  <div class="customer-segment-card__progress-bar" 
-                       [class]="'customer-segment-card__progress-bar--' + (segment.color || 'default')"
-                       [style.width.%]="segment.percentage">
+                  <div class="customer-segment-card__progress-bar"
+                    [class]="'customer-segment-card__progress-bar--' + (segment.color || 'default')"
+                    [style.width.%]="segment.percentage">
                   </div>
                 </div>
                 <p class="customer-segment-card__desc">{{ segment.description }}</p>
@@ -2105,7 +2112,8 @@
                 <span class="insight-card__metric-label">{{ insight.metric.label }}:</span>
                 <span class="insight-card__metric-value">{{ insight.metric.value }}</span>
                 @if (insight.metric.trend) {
-                <span class="insight-card__metric-trend" [class.negative]="insight.metric.trend < 0" [class.positive]="insight.metric.trend > 0">
+                <span class="insight-card__metric-trend" [class.negative]="insight.metric.trend < 0"
+                  [class.positive]="insight.metric.trend > 0">
                   {{ insight.metric.trend > 0 ? '+' : '' }}{{ insight.metric.trend }}%
                 </span>
                 }
@@ -2117,7 +2125,8 @@
                   <i [class]="isInsightExpanded(insight.id) ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'"></i>
                   {{ isInsightExpanded(insight.id) ? '收合' : '為什麼？' }}
                 </button>
-                <div class="insight-card__reason" [class.insight-card__reason--expanded]="isInsightExpanded(insight.id)">
+                <div class="insight-card__reason"
+                  [class.insight-card__reason--expanded]="isInsightExpanded(insight.id)">
                   <p>{{ insight.reason }}</p>
                   @if (insight.impact) {
                   <span class="insight-card__impact">
@@ -2303,7 +2312,7 @@
     <footer class="system-footer">
       <div class="system-footer__content">
         <div class="system-footer__left">
-          <span>© 2025 Bombus 企業管理系統</span>
+          <span>© 2026 SENZFOR 企業管理系統</span>
         </div>
         <div class="system-footer__right">
           <a href="#">關於</a>
