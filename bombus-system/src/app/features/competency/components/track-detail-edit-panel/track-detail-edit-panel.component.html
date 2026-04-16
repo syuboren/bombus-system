@@ -79,9 +79,9 @@
           <span class="promotion-direction-label">Grade {{ formPromotion().fromGrade }} → Grade {{ formPromotion().toGrade }}</span>
         </h3>
 
-        <!-- 績效門檻 -->
+        <!-- 績效基準 -->
         <div class="form-group">
-          <label class="form-label">績效等級門檻</label>
+          <label class="form-label">績效等級基準</label>
           @if (editMode()) {
           <select class="form-select" [value]="formPromotion().performanceThreshold"
             (change)="updatePromotionField('performanceThreshold', $any($event.target).value)"

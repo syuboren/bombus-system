@@ -8,6 +8,9 @@ export interface Candidate {
   stage?: 'Collected' | 'Invited' | 'Offered' | 'Rejected';
   scoringStatus?: 'Pending' | 'Scoring' | 'Scored';
 
+  // Avatar
+  avatar?: string;
+
   // Media fields
   audioUrl?: string;
   duration?: string;

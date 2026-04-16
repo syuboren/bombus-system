@@ -72,7 +72,7 @@ export class FrameworkPageComponent implements OnInit {
 
   // Page Info
   readonly pageTitle = '職能模型基準';
-  readonly breadcrumbs = ['首頁', '職能管理', '職能模型基準'];
+  readonly breadcrumbs = ['首頁', '職能管理'];
 
   // Data signals
   stats = signal<CompetencyStats | null>(null);

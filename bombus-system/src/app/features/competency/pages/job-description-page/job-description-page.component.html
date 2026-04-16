@@ -841,11 +841,16 @@
       </button>
       }
 
-      <!-- 已封存狀態：僅供查閱 -->
+      <!-- 已封存狀態：取消封存 -->
       @if (jd.status === 'archived') {
       <span class="archived-notice">
-        <i class="ri-lock-line"></i> 此版本已封存，僅供查閱
+        <i class="ri-lock-line"></i> 此版本已封存
       </span>
+      @if (canEdit()) {
+      <button class="btn-secondary" type="button" (click)="unarchiveJD()" [disabled]="processingAction()">
+        <i class="ri-inbox-unarchive-line"></i> 取消封存
+      </button>
+      }
       }
     </div>
   </div>

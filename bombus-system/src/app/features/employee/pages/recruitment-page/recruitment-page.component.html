@@ -1,4 +1,4 @@
-<app-header pageTitle="AI智能面試" [breadcrumbs]="['員工管理']" />
+<app-header pageTitle="AI智能面試" [breadcrumbs]="['首頁', '員工管理']" />
 
 <main class="main-content">
   <div class="content-container">
@@ -49,7 +49,11 @@
           <button class="candidate-card" [class.active]="selectedCandidate()?.id === candidate.id"
             (click)="selectCandidate(candidate)" type="button">
             <div class="candidate-avatar">
-              {{ candidate.name.charAt(0) }}
+              @if (candidate.avatar) {
+                <img [src]="candidate.avatar" [alt]="candidate.name" class="avatar-img" />
+              } @else {
+                {{ candidate.name.charAt(0) }}
+              }
             </div>
             <div class="candidate-info">
               <div class="candidate-name">{{ candidate.name }}</div>
@@ -108,7 +112,13 @@
         <!-- 面試者基本資料 -->
         <section class="card profile-section">
           <div class="profile-header">
-            <div class="profile-avatar">{{ candidate.name.charAt(0) }}</div>
+            <div class="profile-avatar">
+              @if (candidate.avatar) {
+                <img [src]="candidate.avatar" [alt]="candidate.name" class="avatar-img" />
+              } @else {
+                {{ candidate.name.charAt(0) }}
+              }
+            </div>
             <div class="profile-info">
               <h2 class="profile-name">{{ candidate.name }}</h2>
               <div class="profile-meta">

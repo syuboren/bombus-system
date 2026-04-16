@@ -226,8 +226,9 @@ export class InterviewService {
           return {
             id: c.id,
             name: c.name,
+            avatar: c.avatar?.startsWith('/') || c.avatar?.startsWith('http') ? c.avatar : undefined,
             position: c.job_title || 'Unknown Position',
-            interviewDate: c.apply_date ? c.apply_date.split('T')[0] : '', // 暫時使用申請日期
+            interviewDate: c.apply_date ? c.apply_date.split('T')[0] : '',
             status: statusDisplay,
             stage: c.stage,
             scoringStatus: c.scoring_status
@@ -280,7 +281,8 @@ export class InterviewService {
         return {
           id: data.id,
           name: data.name,
-          position: data.job_title || 'Unknown Position', // Correctly map from joined title
+          avatar: data.avatar?.startsWith('/') || data.avatar?.startsWith('http') ? data.avatar : undefined,
+          position: data.job_title || 'Unknown Position',
           jobId: data.job_id,
           status: data.scoring_status === 'Scored' ? 'pending_decision' : 'interview',
           stage: data.stage,

@@ -166,7 +166,7 @@ export class PromotionCriteriaEditModalComponent {
     validateForm(): boolean {
         const data = this.formData();
         if (data.fromGrade >= data.toGrade) { this.error.set('目標職等必須大於來源職等'); return false; }
-        if (!data.performanceThreshold?.trim()) { this.error.set('績效門檻為必填'); return false; }
+        if (!data.performanceThreshold?.trim()) { this.error.set('績效基準為必填'); return false; }
         return true;
     }
 

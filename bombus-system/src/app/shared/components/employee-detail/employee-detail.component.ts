@@ -529,6 +529,19 @@ export class EmployeeDetailComponent implements OnDestroy {
     return labels[type] || type;
   }
 
+  getTenure(hireDate: Date | string | undefined): string {
+    if (!hireDate) return '—';
+    const start = new Date(hireDate);
+    const now = new Date();
+    const totalMonths = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+    const years = Math.floor(totalMonths / 12);
+    const months = totalMonths % 12;
+    if (years > 0 && months > 0) return `${years} 年 ${months} 個月`;
+    if (years > 0) return `${years} 年`;
+    if (months > 0) return `${months} 個月`;
+    return '不到 1 個月';
+  }
+
   formatDate(date: Date | string | undefined): string {
     if (!date) return '-';
     return new Date(date).toLocaleDateString('zh-TW');

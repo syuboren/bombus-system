@@ -427,6 +427,45 @@ router.post('/:id/archive', (req, res) => {
 });
 
 /**
+ * 取消封存：archived → published
+ */
+router.post('/:id/unarchive', (req, res) => {
+  try {
+    const { actorId, actorName } = req.body;
+    const row = req.tenantDB.prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
+    if (!row) {
+      return res.status(404).json({ success: false, error: { message: '找不到職務說明書' } });
+    }
+    if (row.status !== 'archived') {
+      return res.status(400).json({ success: false, error: { message: '只能取消封存狀態為「已封存」的職務說明書' } });
+    }
+
+    const now = new Date().toISOString();
+    req.tenantDB.prepare(`
+      UPDATE job_descriptions
+      SET status = 'published', updated_at = ?
+      WHERE id = ?
+    `).run(now, req.params.id);
+
+    // 清除版本歷史的 effective_until 和 archived_at
+    req.tenantDB.prepare(`
+      UPDATE job_description_versions
+      SET effective_until = NULL, archived_at = NULL
+      WHERE job_description_id = ? AND version = ? AND archived_at IS NOT NULL
+    `).run(req.params.id, row.version);
+
+    logApprovalAction(req, req.params.id, row.version, 'unarchive', actorId, actorName, 'hr', null);
+    req.tenantDB.save();
+
+    const updated = req.tenantDB.prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
+    res.json({ success: true, data: rowToJobDescription(updated) });
+  } catch (error) {
+    console.error('Unarchive error:', error);
+    res.status(500).json({ success: false, error: { message: error.message } });
+  }
+});
+
+/**
  * 建立新版本：published → 新草稿 (原版本歸檔)
  */
 router.post('/:id/create-new-version', (req, res) => {

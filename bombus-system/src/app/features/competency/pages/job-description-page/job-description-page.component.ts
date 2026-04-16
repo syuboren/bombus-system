@@ -566,8 +566,25 @@ export class JobDescriptionPageComponent implements OnInit {
   archiveJD(jd?: JobDescription): void {
     const targetJD = jd || this.selectedJD();
     if (!targetJD) return;
+    if (!confirm('封存後此職務說明書將無法編輯或發佈，確定要封存嗎？')) return;
     this.processingAction.set(true);
     this.competencyService.archiveJD(targetJD.id).subscribe(result => {
+      this.processingAction.set(false);
+      if (result) {
+        if (this.selectedJD()?.id === targetJD.id) {
+          this.selectedJD.set(result);
+        }
+        this.loadData();
+      }
+    });
+  }
+
+  unarchiveJD(jd?: JobDescription): void {
+    const targetJD = jd || this.selectedJD();
+    if (!targetJD) return;
+    if (!confirm('取消封存後此職務說明書將恢復為「已發佈」狀態，確定要取消封存嗎？')) return;
+    this.processingAction.set(true);
+    this.competencyService.unarchiveJD(targetJD.id).subscribe(result => {
       this.processingAction.set(false);
       if (result) {
         if (this.selectedJD()?.id === targetJD.id) {

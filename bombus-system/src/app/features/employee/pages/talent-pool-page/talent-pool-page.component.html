@@ -1,4 +1,4 @@
-<app-header pageTitle="人才庫與再接觸管理" [breadcrumbs]="['員工管理']" />
+<app-header pageTitle="人才庫與再接觸管理" [breadcrumbs]="['首頁', '員工管理']" />
 
 <main class="main-content">
   <div class="content-container">
@@ -162,7 +162,11 @@
               (keydown.enter)="selectCandidate(candidate)">
               <div class="candidate-header">
                 <div class="candidate-avatar">
-                  {{ candidate.name.charAt(0) }}
+                  @if (candidate.avatar) {
+                    <img [src]="candidate.avatar" [alt]="candidate.name" class="avatar-img" />
+                  } @else {
+                    {{ candidate.name.charAt(0) }}
+                  }
                 </div>
                 <div class="candidate-info">
                   <h4 class="candidate-name">{{ candidate.name }}</h4>
@@ -281,7 +285,13 @@
       <div class="detail-modal" (click)="$event.stopPropagation()">
         <div class="modal-header">
           <div class="candidate-profile">
-            <div class="profile-avatar">{{ candidate.name.charAt(0) }}</div>
+            <div class="profile-avatar">
+              @if (candidate.avatar) {
+                <img [src]="candidate.avatar" [alt]="candidate.name" class="avatar-img" />
+              } @else {
+                {{ candidate.name.charAt(0) }}
+              }
+            </div>
             <div class="profile-info">
               <h3>{{ candidate.name }}</h3>
               <p>{{ candidate.currentPosition }} &#64; {{ candidate.currentCompany }}</p>

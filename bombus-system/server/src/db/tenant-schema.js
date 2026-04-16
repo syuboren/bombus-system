@@ -1576,7 +1576,7 @@ const BUSINESS_TABLES_SQL = `
     track TEXT NOT NULL,
     required_skills TEXT,
     required_courses TEXT,
-    performance_threshold INTEGER,
+    performance_threshold INTEGER, -- 績效基準（晉升所需績效等級）
     kpi_focus TEXT,
     additional_criteria TEXT,
     promotion_procedure TEXT,
