@@ -49,12 +49,12 @@
                 </div>
             </section>
 
-            <!-- 績效門檻 -->
+            <!-- 績效基準 -->
             <section class="form-section">
-                <h3 class="section-title">績效門檻</h3>
+                <h3 class="section-title">績效基準</h3>
                 <div class="form-row">
                     <div class="form-group">
-                        <label class="form-label required">績效等級門檻</label>
+                        <label class="form-label required">績效等級基準</label>
                         <select class="form-select" [value]="formData().performanceThreshold"
                             (change)="updateField('performanceThreshold', $any($event.target).value)"
                             [disabled]="saving()">

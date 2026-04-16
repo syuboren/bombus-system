@@ -10,7 +10,13 @@
   <!-- Header -->
   <div class="detail-header">
     <div class="employee-profile">
-      <div class="profile-avatar">{{ emp.name.charAt(0) }}</div>
+      <div class="profile-avatar">
+        @if (emp.avatar) {
+          <img [src]="emp.avatar" [alt]="emp.name" class="avatar-img" />
+        } @else {
+          {{ emp.name.charAt(0) }}
+        }
+      </div>
       <div class="profile-info">
         <h3>{{ emp.name }}</h3>
         <p>{{ emp.position }} · {{ emp.department }}</p>
@@ -255,7 +261,12 @@
           <label>到職日</label>
           <span>{{ formatDate(emp.hireDate) }}</span>
         </div>
-        <!-- Row 5: 性別 / 出生日期 / 地址 -->
+        <!-- Row 5: 任職年限 / (空) / (空) -->
+        <div class="info-item">
+          <label>任職年限</label>
+          <span>{{ getTenure(emp.hireDate) }}</span>
+        </div>
+        <!-- Row 6: 性別 / 出生日期 / 地址 -->
         <div class="info-item">
           <label>性別</label>
           <span>{{ getGenderLabel(emp.gender) }}</span>

@@ -1,4 +1,4 @@
-<app-header pageTitle="會議管理" [breadcrumbs]="['員工管理', '會議管理']">
+<app-header pageTitle="會議管理" [breadcrumbs]="['首頁', '員工管理']">
 </app-header>
 
 <div class="main-content">
@@ -839,7 +839,13 @@
             @for (attendee of modalFilteredAttendees(); track attendee.id) {
             <label class="attendee-option" [class.selected]="isAttendeeSelected(attendee.id)" [class.is-organizer]="attendee.id === newMeeting().organizer?.id">
               <input type="checkbox" [checked]="isAttendeeSelected(attendee.id)" (change)="toggleAttendee(attendee)" />
-              <span class="attendee-avatar">{{ attendee.avatar }}</span>
+              <span class="attendee-avatar">
+                @if (attendee.avatar?.startsWith('/') || attendee.avatar?.startsWith('http')) {
+                  <img [src]="attendee.avatar" [alt]="attendee.name" class="avatar-img" />
+                } @else {
+                  {{ attendee.avatar || attendee.name.charAt(0) }}
+                }
+              </span>
               <div class="attendee-info">
                 <span class="attendee-name">
                   {{ attendee.name }}
@@ -1138,7 +1144,13 @@
           <div class="attendee-list">
             @for (attendee of selectedMeeting()!.attendees; track attendee.id) {
             <div class="attendee-item" [class.signed-in]="attendee.signedIn">
-              <span class="attendee-avatar" [class.avatar-signed]="attendee.signedIn">{{ attendee.avatar || attendee.name.charAt(0) }}</span>
+              <span class="attendee-avatar" [class.avatar-signed]="attendee.signedIn">
+                @if (attendee.avatar?.startsWith('/') || attendee.avatar?.startsWith('http')) {
+                  <img [src]="attendee.avatar" [alt]="attendee.name" class="avatar-img" />
+                } @else {
+                  {{ attendee.avatar || attendee.name.charAt(0) }}
+                }
+              </span>
               <div class="attendee-info">
                 <span class="attendee-name">
                   {{ attendee.name }}
@@ -1367,7 +1379,13 @@
           <div class="recent-sign-ins">
             @for (attendee of getRecentSignedIn(selectedMeeting()!.attendees); track attendee.id) {
             <div class="recent-sign-in-item">
-              <span class="attendee-avatar avatar-signed">{{ attendee.avatar }}</span>
+              <span class="attendee-avatar avatar-signed">
+                @if (attendee.avatar?.startsWith('/') || attendee.avatar?.startsWith('http')) {
+                  <img [src]="attendee.avatar" [alt]="attendee.name" class="avatar-img" />
+                } @else {
+                  {{ attendee.avatar || attendee.name.charAt(0) }}
+                }
+              </span>
               <span class="attendee-name">{{ attendee.name }}</span>
               <span class="sign-in-time">{{ formatSignInTime(attendee.signedInTime) }}</span>
             </div>

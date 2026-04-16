@@ -164,6 +164,19 @@ export class ProfilePageComponent implements OnInit {
     return new Date(date).toLocaleDateString('zh-TW');
   }
 
+  getTenure(hireDate: Date | string | undefined): string {
+    if (!hireDate) return '—';
+    const start = new Date(hireDate);
+    const now = new Date();
+    const totalMonths = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+    const years = Math.floor(totalMonths / 12);
+    const months = totalMonths % 12;
+    if (years > 0 && months > 0) return `${years}年${months}個月`;
+    if (years > 0) return `${years}年`;
+    if (months > 0) return `${months}個月`;
+    return '不到1個月';
+  }
+
   getDocumentStatusLabel(status: string): string {
     const labels: Record<string, string> = {
       'valid': '有效', 'expiring': '即將到期', 'expired': '已過期', 'pending': '待審核'

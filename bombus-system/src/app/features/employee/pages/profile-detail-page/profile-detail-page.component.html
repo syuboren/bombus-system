@@ -1,6 +1,6 @@
 <app-header
   pageTitle="候選人履歷查看"
-  [breadcrumbs]="['招募職缺管理', candidate()?.name || '履歷檢視']" />
+  [breadcrumbs]="['首頁', '員工管理', '招募職缺管理']" />
 
 <main class="main-content">
   <div class="content-container">
@@ -9,7 +9,11 @@
       <div class="candidate-header">
         <div class="candidate-basic">
           <div class="candidate-avatar" [style.background-color]="c.avatarColor">
-            {{ getInitial(c.name) }}
+            @if (c.avatar) {
+              <img [src]="c.avatar" [alt]="c.name" class="avatar-img" />
+            } @else {
+              {{ getInitial(c.name) }}
+            }
           </div>
           <div class="candidate-info">
             <div class="name-with-status">

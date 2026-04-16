@@ -2019,6 +2019,16 @@ export class CompetencyService {
     );
   }
 
+  unarchiveJD(id: string, actorName?: string): Observable<any> {
+    return this.http.post<{ success: boolean; data: any }>(
+      `${this.apiUrl}/job-descriptions/${id}/unarchive`,
+      { actorName }
+    ).pipe(
+      map(res => (res.success && res.data ? this.mapApiToJobDescription(res.data) : null)),
+      catchError(err => { console.error('Unarchive error:', err); return of(null); })
+    );
+  }
+
   /**
    * 建立新版本：published → 新草稿
    */

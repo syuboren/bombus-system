@@ -1,4 +1,4 @@
-<app-header pageTitle="員工檔案與歷程管理" [breadcrumbs]="['員工管理']" />
+<app-header pageTitle="員工檔案與歷程管理" [breadcrumbs]="['首頁', '員工管理']" />
 
 <main class="main-content">
   <div class="content-container">
@@ -123,7 +123,13 @@
                   (keydown.enter)="selectEmployee(employee)" tabindex="0" role="button">
                   <td>
                     <div class="employee-cell">
-                      <div class="employee-avatar">{{ employee.name.charAt(0) }}</div>
+                      <div class="employee-avatar">
+                        @if (employee.avatar) {
+                          <img [src]="employee.avatar" [alt]="employee.name" class="avatar-img" />
+                        } @else {
+                          {{ employee.name.charAt(0) }}
+                        }
+                      </div>
                       <div class="employee-info">
                         <span class="employee-name">{{ employee.name }}</span>
                         <span class="employee-no">{{ employee.employeeNo }}</span>
@@ -134,7 +140,7 @@
                   <td>{{ getGradeDisplay(employee.grade) }}</td>
                   <td>{{ employee.level }}</td>
                   <td>{{ employee.position }}</td>
-                  <td>{{ formatDate(employee.hireDate) }}</td>
+                  <td>{{ formatDate(employee.hireDate) }}<br><span class="tenure-text">{{ getTenure(employee.hireDate) }}</span></td>
                   <td>
                     <span class="status-badge status-{{ employee.status }}">
                       {{ getStatusLabel(employee.status) }}

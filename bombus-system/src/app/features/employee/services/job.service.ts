@@ -743,6 +743,7 @@ export class JobService {
       nameEn: dbCandidate.name_en || '',
       email: dbCandidate.email || '',
       phone: dbCandidate.phone || '',
+      avatar: dbCandidate.avatar?.startsWith('/') || dbCandidate.avatar?.startsWith('http') ? dbCandidate.avatar : undefined,
       location: '台北市',
       applyDate: dbCandidate.apply_date,
       education: dbCandidate.education || '未填寫',

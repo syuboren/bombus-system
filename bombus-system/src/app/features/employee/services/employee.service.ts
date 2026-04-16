@@ -47,7 +47,7 @@ export class EmployeeService {
       status: data.status,
       contractType: data.contract_type,
       workLocation: data.work_location,
-      avatar: data.avatar,
+      avatar: data.avatar?.startsWith('/') || data.avatar?.startsWith('http') ? data.avatar : undefined,
       skills: Array.isArray(data.skills) ? data.skills : [],
       certifications: Array.isArray(data.certifications) 
         ? data.certifications.map((c: any) => c.cert_name || c) 
@@ -127,7 +127,7 @@ export class EmployeeService {
       email: data.email,
       phone: data.phone || '',
       mobile: data.mobile || undefined,
-      avatar: data.avatar || undefined,
+      avatar: data.avatar?.startsWith('/') || data.avatar?.startsWith('http') ? data.avatar : undefined,
       gender: data.gender || 'other',
       department: data.department,
       position: data.position,

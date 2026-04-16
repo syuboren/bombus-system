@@ -661,7 +661,7 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
         if (data['requiredSkillsAndTraining']) details.push('所需技能與培訓已設定');
         break;
       case 'promotion':
-        if (data['performanceThreshold']) details.push(`績效門檻 ${data['performanceThreshold']}`);
+        if (data['performanceThreshold']) details.push(`績效基準 ${data['performanceThreshold']}`);
         if (data['promotionProcedure']) details.push(`晉升程序「${data['promotionProcedure']}」`);
         if ((data['requiredSkills'] as string[])?.length) details.push(`必備技能 ${(data['requiredSkills'] as string[]).length} 項`);
         if ((data['requiredCourses'] as string[])?.length) details.push(`必修課程 ${(data['requiredCourses'] as string[]).length} 項`);
@@ -708,7 +708,7 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
       if (!opromo) {
         diffs.push('晉升條件已設定');
       } else {
-        if (opromo['performanceThreshold'] !== npromo['performanceThreshold']) diffs.push(`績效門檻 ${opromo['performanceThreshold']} → ${npromo['performanceThreshold']}`);
+        if (opromo['performanceThreshold'] !== npromo['performanceThreshold']) diffs.push(`績效基準 ${opromo['performanceThreshold']} → ${npromo['performanceThreshold']}`);
         if (opromo['promotionProcedure'] !== npromo['promotionProcedure']) diffs.push('晉升程序已變更');
         if (JSON.stringify(opromo['requiredSkills']) !== JSON.stringify(npromo['requiredSkills'])) diffs.push('必備技能已變更');
         if (JSON.stringify(opromo['requiredCourses']) !== JSON.stringify(npromo['requiredCourses'])) diffs.push('必修課程已變更');
@@ -813,7 +813,7 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
         if (o.grade !== n.grade) diffs.push(`職等 ${o.grade} → ${n.grade}`);
         break;
       case 'promotion':
-        if (o.performanceThreshold !== n.performanceThreshold) diffs.push(`績效門檻 ${o.performanceThreshold} → ${n.performanceThreshold}`);
+        if (o.performanceThreshold !== n.performanceThreshold) diffs.push(`績效基準 ${o.performanceThreshold} → ${n.performanceThreshold}`);
         if (o.track !== n.track) diffs.push(`軌道 ${this.getTrackLabel(o.track)} → ${this.getTrackLabel(n.track)}`);
         break;
     }
@@ -1288,7 +1288,7 @@ export class GradeMatrixPageComponent implements OnInit, AfterViewInit {
     return map[type] || 'ri-route-line';
   }
 
-  // 績效門檻顯示
+  // 績效基準顯示
   getPerformanceThresholdClass(threshold: number): string {
     if (threshold >= 110) return 'threshold-high';
     if (threshold >= 100) return 'threshold-medium';

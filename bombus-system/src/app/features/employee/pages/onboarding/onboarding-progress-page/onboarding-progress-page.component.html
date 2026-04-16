@@ -33,9 +33,8 @@
         <div class="table-row">
           <div class="col-name">
             <div class="avatar">
-              @if (candidate.avatar?.startsWith('http')) {
-              <img [src]="candidate.avatar" [alt]="candidate.name" (error)="$any($event.target).style.display='none'">
-              <span class="avatar-text" style="display:none">{{ candidate.name.charAt(0) }}</span>
+              @if (candidate.avatar) {
+              <img [src]="candidate.avatar" [alt]="candidate.name" class="avatar-img" />
               } @else {
               <span class="avatar-text">{{ candidate.name.charAt(0) }}</span>
               }
@@ -93,9 +92,8 @@
         <div class="employee-card" (click)="goToEmployeeProfile(employee.id)">
           <div class="card-header">
             <div class="avatar">
-              @if (employee.avatar?.startsWith('http')) {
-              <img [src]="employee.avatar" [alt]="employee.name" (error)="$any($event.target).style.display='none'">
-              <span class="avatar-text" style="display:none">{{ employee.name.charAt(0) }}</span>
+              @if (employee.avatar) {
+              <img [src]="employee.avatar" [alt]="employee.name" class="avatar-img" />
               } @else {
               <span class="avatar-text">{{ employee.name.charAt(0) }}</span>
               }
@@ -198,7 +196,11 @@
       <!-- 員工資訊 -->
       <div class="employee-info-bar">
         <div class="avatar-circle">
-          {{ selectedEmployeeLinks().employee?.name?.charAt(0) }}
+          @if (selectedEmployeeLinks().employee?.avatar) {
+            <img [src]="selectedEmployeeLinks().employee!.avatar" [alt]="selectedEmployeeLinks().employee!.name" class="avatar-img" />
+          } @else {
+            {{ selectedEmployeeLinks().employee?.name?.charAt(0) }}
+          }
         </div>
         <div class="info">
           <span class="name">{{ selectedEmployeeLinks().employee?.name }}</span>

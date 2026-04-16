@@ -194,6 +194,13 @@ $module-color: $color-l1-sage;
   font-weight: $font-weight-bold;
   flex-shrink: 0;
   transition: transform 0.3s $animation-easing-elastic;
+
+  .avatar-img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+  }
 }
 
 .candidate-details {
