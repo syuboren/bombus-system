@@ -595,6 +595,20 @@ class TenantDBManager {
       changed = true;
     } catch (e) { /* 表已存在 */ }
 
+    // ── job_descriptions 審核流程欄位遷移 ──
+    // 補齊 create-new-version / submit-review / approve / reject / unarchive 需要的欄位
+    const jdApprovalMigrations = [
+      "ALTER TABLE job_descriptions ADD COLUMN current_version TEXT DEFAULT '1.0'",
+      'ALTER TABLE job_descriptions ADD COLUMN rejected_reason TEXT',
+      'ALTER TABLE job_descriptions ADD COLUMN approved_by TEXT',
+      'ALTER TABLE job_descriptions ADD COLUMN approved_at TEXT',
+      'ALTER TABLE job_descriptions ADD COLUMN submitted_by TEXT',
+      'ALTER TABLE job_descriptions ADD COLUMN submitted_at TEXT'
+    ];
+    for (const sql of jdApprovalMigrations) {
+      try { db.run(sql); changed = true; } catch (e) { /* 欄位已存在則忽略 */ }
+    }
+
     // ── 面試決策欄位遷移（0003_add_decision_fields） ──
     // candidates +3 欄（薪資核定）、invitation_decisions +5 欄（簽核）、jobs +1 欄（grade）
     const decisionMigrations = [

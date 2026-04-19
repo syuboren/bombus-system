@@ -1673,6 +1673,12 @@ const BUSINESS_TABLES_SQL = `
     created_by TEXT DEFAULT 'system',
     created_at TEXT DEFAULT (datetime('now')),
     updated_at TEXT DEFAULT (datetime('now')),
+    current_version TEXT DEFAULT '1.0',
+    rejected_reason TEXT,
+    approved_by TEXT,
+    approved_at TEXT,
+    submitted_by TEXT,
+    submitted_at TEXT,
     FOREIGN KEY (grade) REFERENCES grade_levels(grade)
   );
 
