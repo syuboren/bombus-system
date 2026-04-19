@@ -6,10 +6,11 @@
 const express = require('express');
 const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
+const { requireFeaturePerm } = require('../middleware/permission');
 // tenantDB is accessed via req.tenantDB (injected by middleware)
 
 // 將 GET /generate-code 放在 /:id 之前，避免被當成 id
-router.get('/generate-code', (req, res) => {
+router.get('/generate-code', requireFeaturePerm('L2.job-description', 'edit'), (req, res) => {
   try {
     const department = (req.query.department || '').trim().toUpperCase();
     const grade = parseInt(req.query.grade, 10);
@@ -39,7 +40,7 @@ router.get('/generate-code', (req, res) => {
   }
 });
 
-router.get('/', (req, res) => {
+router.get('/', requireFeaturePerm('L2.job-description', 'view'), (req, res) => {
   try {
     const { status, department, org_unit_id } = req.query;
     let sql = 'SELECT * FROM job_descriptions WHERE 1=1';
@@ -66,7 +67,7 @@ router.get('/', (req, res) => {
   }
 });
 
-router.get('/:id', (req, res) => {
+router.get('/:id', requireFeaturePerm('L2.job-description', 'view'), (req, res) => {
   try {
     const row = req.tenantDB.prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
     if (!row) {
@@ -79,7 +80,7 @@ router.get('/:id', (req, res) => {
   }
 });
 
-router.post('/', (req, res) => {
+router.post('/', requireFeaturePerm('L2.job-description', 'edit'), (req, res) => {
   try {
     const body = req.body;
     const id = body.id || uuidv4();
@@ -140,7 +141,7 @@ router.post('/', (req, res) => {
   }
 });
 
-router.put('/:id', (req, res) => {
+router.put('/:id', requireFeaturePerm('L2.job-description', 'edit'), (req, res) => {
   try {
     const existing = req.tenantDB.prepare('SELECT id FROM job_descriptions WHERE id = ?').get(req.params.id);
     if (!existing) {
@@ -197,7 +198,7 @@ router.put('/:id', (req, res) => {
   }
 });
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', requireFeaturePerm('L2.job-description', 'edit'), (req, res) => {
   try {
     const existing = req.tenantDB.prepare('SELECT id FROM job_descriptions WHERE id = ?').get(req.params.id);
     if (!existing) {
@@ -284,7 +285,7 @@ function rowToJobDescription(row) {
 /**
  * 送出審核：draft/rejected → pending_review
  */
-router.post('/:id/submit-review', (req, res) => {
+router.post('/:id/submit-review', requireFeaturePerm('L2.job-description', 'edit'), (req, res) => {
   try {
     const { actorId, actorName } = req.body;
     const row = req.tenantDB.prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
@@ -317,7 +318,7 @@ router.post('/:id/submit-review', (req, res) => {
 /**
  * 審核通過：pending_review → published
  */
-router.post('/:id/approve', (req, res) => {
+router.post('/:id/approve', requireFeaturePerm('L2.job-description', 'edit'), (req, res) => {
   try {
     const { actorId, actorName, comment } = req.body;
     const row = req.tenantDB.prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
@@ -353,7 +354,7 @@ router.post('/:id/approve', (req, res) => {
 /**
  * 退回：pending_review → rejected
  */
-router.post('/:id/reject', (req, res) => {
+router.post('/:id/reject', requireFeaturePerm('L2.job-description', 'edit'), (req, res) => {
   try {
     const { actorId, actorName, reason } = req.body;
     if (!reason) {
@@ -389,7 +390,7 @@ router.post('/:id/reject', (req, res) => {
 /**
  * 封存：published → archived
  */
-router.post('/:id/archive', (req, res) => {
+router.post('/:id/archive', requireFeaturePerm('L2.job-description', 'edit'), (req, res) => {
   try {
     const { actorId, actorName } = req.body;
     const row = req.tenantDB.prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
@@ -429,7 +430,7 @@ router.post('/:id/archive', (req, res) => {
 /**
  * 取消封存：archived → published
  */
-router.post('/:id/unarchive', (req, res) => {
+router.post('/:id/unarchive', requireFeaturePerm('L2.job-description', 'edit'), (req, res) => {
   try {
     const { actorId, actorName } = req.body;
     const row = req.tenantDB.prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
@@ -468,7 +469,7 @@ router.post('/:id/unarchive', (req, res) => {
 /**
  * 建立新版本：published → 新草稿 (原版本歸檔)
  */
-router.post('/:id/create-new-version', (req, res) => {
+router.post('/:id/create-new-version', requireFeaturePerm('L2.job-description', 'edit'), (req, res) => {
   try {
     const { actorId, actorName } = req.body;
     const row = req.tenantDB.prepare('SELECT * FROM job_descriptions WHERE id = ?').get(req.params.id);
@@ -520,7 +521,7 @@ router.post('/:id/create-new-version', (req, res) => {
 /**
  * 取得版本歷史
  */
-router.get('/:id/versions', (req, res) => {
+router.get('/:id/versions', requireFeaturePerm('L2.job-description', 'view'), (req, res) => {
   try {
     const versions = req.tenantDB.prepare(`
       SELECT * FROM job_description_versions 
@@ -550,7 +551,7 @@ router.get('/:id/versions', (req, res) => {
 /**
  * 取得特定版本快照
  */
-router.get('/:id/versions/:versionId', (req, res) => {
+router.get('/:id/versions/:versionId', requireFeaturePerm('L2.job-description', 'view'), (req, res) => {
   try {
     const version = req.tenantDB.prepare(`
       SELECT * FROM job_description_versions WHERE id = ?
@@ -571,7 +572,7 @@ router.get('/:id/versions/:versionId', (req, res) => {
 /**
  * 取得審核記錄
  */
-router.get('/:id/approvals', (req, res) => {
+router.get('/:id/approvals', requireFeaturePerm('L2.job-description', 'view'), (req, res) => {
   try {
     const approvals = req.tenantDB.prepare(`
       SELECT * FROM job_description_approvals 
