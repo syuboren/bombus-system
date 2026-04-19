@@ -199,28 +199,20 @@ export class InterviewService {
             c.ai_analysis_result !== 'null' && 
             c.ai_analysis_result.length > 10; // 有效的 JSON 結果至少會超過 10 字元
 
-          // 優先使用資料庫中的 status 欄位（包含所有明確狀態）
+          // 優先使用資料庫中的 status 欄位（包含所有明確狀態，涵蓋新的決策簽核流程）
           const validDbStatuses = [
-            'interview',           // 已安排面試
-            'offered',             // 待回覆 Offer
-            'offer_accepted',      // 已錄取同意
-            'offer_declined',      // Offer 婉拒
-            'onboarded',           // 已報到
-            'not_invited',         // 不邀請
-            'not_hired',           // 未錄取
-            'invite_declined',     // 邀請婉拒
-            'interview_declined'   // 面試婉拒
+            'interview', 'pending_ai', 'pending_decision', 'pending_approval',
+            'offered', 'offer_accepted', 'offer_declined', 'onboarded',
+            'not_invited', 'not_hired', 'invite_declined', 'interview_declined'
           ];
           if (c.status && validDbStatuses.includes(c.status)) {
-            statusDisplay = c.status; // 使用資料庫的狀態
+            statusDisplay = c.status;
           } else if (c.stage === 'Hired' || c.stage === 'Offered') {
-            statusDisplay = c.stage.toLowerCase(); // 已決策（舊邏輯兼容）
+            statusDisplay = c.stage.toLowerCase(); // 舊流程相容
           } else if (hasValidAiResult) {
-            // 必須有有效的 AI 分析結果才顯示「待決策」
-            statusDisplay = 'pending_decision'; // 待決策
+            statusDisplay = 'pending_decision';
           } else if (c.scoring_status === 'Scored') {
-            // 已評分但沒有 AI 分析結果 → 待 AI 分析
-            statusDisplay = 'pending_ai'; // 待 AI 分析
+            statusDisplay = 'pending_ai';
           }
 
           return {
@@ -228,7 +220,8 @@ export class InterviewService {
             name: c.name,
             avatar: c.avatar?.startsWith('/') || c.avatar?.startsWith('http') ? c.avatar : undefined,
             position: c.job_title || 'Unknown Position',
-            interviewDate: c.apply_date ? c.apply_date.split('T')[0] : '',
+            // 候選人列表日期欄位：優先顯示最新面試時間，退而求其次顯示投遞日
+            interviewDate: c.latest_interview_at || c.apply_date || '',
             status: statusDisplay,
             stage: c.stage,
             scoringStatus: c.scoring_status
@@ -278,13 +271,33 @@ export class InterviewService {
     return this.http.get<any>(`/api/recruitment/candidates/${id}`).pipe(
       map(data => {
         if (!data) return null;
+        // 狀態推導：優先用後端 candidates.status（若為已知值），其次依 scoring_status + ai_analysis_result 推導。
+        // 此邏輯必須與 getCandidates() 的列表推導保持一致，否則切換到右側詳情時狀態會跳動
+        const validDbStatuses = [
+          'interview', 'pending_ai', 'pending_decision', 'pending_approval',
+          'offered', 'offer_accepted', 'offer_declined', 'onboarded',
+          'not_invited', 'not_hired', 'invite_declined', 'interview_declined'
+        ];
+        const evalAiResult = data.evaluation?.ai_analysis_result;
+        const hasValidAiResult = !!evalAiResult && evalAiResult !== 'null' && String(evalAiResult).length > 10;
+        let derivedStatus: string;
+        if (data.status && validDbStatuses.includes(data.status)) {
+          derivedStatus = data.status;
+        } else if (hasValidAiResult) {
+          derivedStatus = 'pending_decision';
+        } else if (data.scoring_status === 'Scored') {
+          derivedStatus = 'pending_ai';
+        } else {
+          derivedStatus = 'interview';
+        }
+
         return {
           id: data.id,
           name: data.name,
           avatar: data.avatar?.startsWith('/') || data.avatar?.startsWith('http') ? data.avatar : undefined,
           position: data.job_title || 'Unknown Position',
           jobId: data.job_id,
-          status: data.scoring_status === 'Scored' ? 'pending_decision' : 'interview',
+          status: derivedStatus,
           stage: data.stage,
           scoringStatus: data.scoring_status,
 
@@ -391,10 +404,10 @@ export class InterviewService {
     prosComment?: string;
     consComment?: string;
     recommendation?: string;
-    // 保留欄位
+    // 保留欄位（全部 optional，後端以 COALESCE 更新 → 可做部分欄位寫入）
     performanceDescription?: string;
     overallComment?: string;
-    totalScore: number;
+    totalScore?: number;
     transcriptText?: string;
     mediaUrl?: string;
     mediaSize?: number;

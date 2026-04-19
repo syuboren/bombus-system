@@ -1,0 +1,913 @@
+@import '../../../../../assets/styles/variables';
+@import '../../../../../assets/styles/mixins';
+
+$module-color: $color-l1-sage;
+
+:host {
+  display: block;
+  min-height: 100vh;
+  background: $color-cloud-gray;
+}
+
+.main-content {
+  padding: $spacing-lg;
+  padding-top: calc(var(--header-height, 70px) + 20px);
+  min-height: calc(100vh - 64px);
+
+  @include media-max-md {
+    padding: $spacing-md;
+    padding-top: calc(var(--header-height, 70px) + 16px);
+  }
+}
+
+.content-container {
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+// ─── 兩欄佈局 ───
+.decision-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: $spacing-lg;
+  min-height: calc(100vh - #{$header-height} - #{$spacing-lg} * 3);
+
+  @include media-max-lg {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ─── Sidebar ───
+.candidate-sidebar {
+  @include card;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: fit-content;
+  max-height: calc(100vh - #{$header-height} - #{$spacing-lg} * 3);
+  position: sticky;
+  top: calc(#{$header-height} + #{$spacing-lg});
+
+  @include media-max-lg {
+    position: static;
+    max-height: 400px;
+  }
+}
+
+.sidebar-header {
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid $color-soft-gray;
+
+  h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: $color-text-dark;
+  }
+
+  .candidate-count {
+    font-size: 0.8rem;
+    color: $color-text-secondary;
+  }
+}
+
+.filter-tabs {
+  display: flex;
+  padding: 12px;
+  gap: 6px;
+  border-bottom: 1px solid $color-soft-gray;
+}
+
+.filter-tab {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: $color-text-secondary;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba($module-color, 0.08);
+    color: $module-color;
+  }
+
+  &.active {
+    background: $module-color;
+    color: white;
+    font-weight: 500;
+  }
+}
+
+.search-box {
+  padding: 12px 16px;
+  position: relative;
+  border-bottom: 1px solid $color-soft-gray;
+
+  i {
+    position: absolute;
+    left: 28px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: $color-text-secondary;
+    pointer-events: none;
+  }
+
+  .search-input {
+    width: 100%;
+    padding: 8px 12px 8px 36px;
+    border: 1px solid $color-soft-gray;
+    border-radius: 8px;
+    font-size: 0.9rem;
+
+    &:focus {
+      outline: none;
+      border-color: $module-color;
+    }
+  }
+}
+
+.candidate-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.candidate-card {
+  width: 100%;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+
+  &:hover { background: rgba($module-color, 0.06); }
+
+  &.active {
+    background: rgba($module-color, 0.12);
+    box-shadow: inset 3px 0 0 $module-color;
+  }
+}
+
+.candidate-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: $module-color;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  flex-shrink: 0;
+
+  img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+}
+
+.candidate-info { flex: 1; min-width: 0; }
+.candidate-name { font-weight: 600; color: $color-text-dark; font-size: 0.9rem; }
+.candidate-position { font-size: 0.8rem; color: $color-text-secondary; }
+.candidate-date {
+  font-size: 0.75rem;
+  color: $color-text-secondary;
+  margin-top: 2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+
+  i { font-size: 12px; }
+}
+
+// ─── 狀態 Badge ───
+.status-badge {
+  @include status-badge;
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  white-space: nowrap;
+
+  &.large { font-size: 0.85rem; padding: 6px 14px; }
+
+  &[data-status='pending_decision'] { background: rgba($module-color, 0.15); color: $module-color; }
+  &[data-status='pending_approval'] { background: rgba(#E8A87C, 0.18); color: #C47A4A; }
+  &[data-status='offered'] { background: rgba(#7FB069, 0.15); color: #4C7C32; }
+  &[data-status='offer_accepted'], &[data-status='onboarded'] { background: rgba(#5E8B7E, 0.15); color: #3F6355; }
+  &[data-status='offer_declined'], &[data-status='not_hired'] { background: rgba(#B87D7B, 0.15); color: #8E4E4C; }
+}
+
+// ─── Main Content ───
+.decision-content { display: flex; flex-direction: column; gap: 16px; }
+
+.card {
+  @include card;
+  padding: 0;
+
+  .card-header {
+    padding: 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid $color-soft-gray;
+
+    h4 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 600;
+      color: $color-text-dark;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      i { color: $module-color; }
+    }
+  }
+
+  .card-body { padding: 20px; }
+
+  &.locked .card-body { opacity: 0.92; }
+}
+
+// ─── 候選人基本資料 ───
+.profile-section .profile-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 24px;
+}
+
+.profile-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: $module-color;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 600;
+  flex-shrink: 0;
+
+  img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+}
+
+.profile-info { flex: 1; }
+.profile-name { margin: 0 0 8px; font-size: 1.3rem; color: $color-text-dark; }
+.profile-meta { display: flex; gap: 20px; flex-wrap: wrap; color: $color-text-secondary; font-size: 0.9rem; }
+.meta-item { display: flex; align-items: center; gap: 6px; }
+
+// ─── 職缺詳情 ───
+.job-details-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+
+  .detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    label { font-size: 0.75rem; color: $color-text-secondary; text-transform: uppercase; letter-spacing: 0.5px; }
+    .detail-value { font-size: 0.95rem; color: $color-text-dark; font-weight: 500; }
+
+    &.detail-item--full { grid-column: 1 / -1; }
+
+    .jd-summary {
+      margin: 0;
+      padding: 12px 14px;
+      background: $color-soft-gray;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: $color-text-dark;
+    }
+  }
+}
+
+// ─── Locked badge ───
+.locked-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: $color-text-secondary;
+  background: $color-soft-gray;
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+// ─── 面試評分/AI ───
+.scoring-summary {
+  display: flex;
+  gap: 24px;
+
+  .summary-item {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+
+    .summary-label { font-size: 0.85rem; color: $color-text-secondary; }
+    .summary-value { font-size: 1.5rem; font-weight: 700; color: $module-color; }
+    .summary-max { font-size: 0.9rem; color: $color-text-secondary; }
+    .summary-badge {
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+    .badge-Pass { background: rgba(#7FB069, 0.2); color: #4C7C32; }
+    .badge-Hold { background: rgba(#E8A87C, 0.2); color: #C47A4A; }
+    .badge-Reject { background: rgba(#B87D7B, 0.2); color: #8E4E4C; }
+    .low-score { color: #B87D7B; }
+  }
+}
+
+.ai-scores {
+  display: flex;
+  gap: 16px;
+
+  .score-card {
+    flex: 1;
+    padding: 16px;
+    border-radius: 10px;
+    background: $color-soft-gray;
+    text-align: center;
+
+    &.primary { background: rgba($module-color, 0.1); }
+
+    .score-label { font-size: 0.8rem; color: $color-text-secondary; margin-bottom: 6px; }
+    .score-value { font-size: 1.4rem; font-weight: 700; color: $color-text-dark; }
+  }
+}
+
+.empty-hint-inline {
+  margin: 0;
+  padding: 16px;
+  color: $color-text-secondary;
+  background: $color-soft-gray;
+  border-radius: 8px;
+  text-align: center;
+}
+
+// ─── 決策表單 ───
+.decision-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.decision-option {
+  padding: 20px;
+  border: 2px solid $color-soft-gray;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+
+  input[type='radio'] { display: none; }
+
+  i { font-size: 2rem; color: $color-text-secondary; }
+  .title { font-size: 1rem; font-weight: 600; color: $color-text-dark; }
+
+  &:hover { border-color: $module-color; }
+
+  &.option-reject.selected {
+    border-color: #B87D7B;
+    background: rgba(#B87D7B, 0.08);
+    i { color: #B87D7B; }
+  }
+
+  &.option-offer.selected {
+    border-color: $module-color;
+    background: rgba($module-color, 0.08);
+    i { color: $module-color; }
+  }
+}
+
+.form-group {
+  margin-bottom: 16px;
+
+  &.form-group--inline { display: flex; flex-direction: column; flex: 1; }
+
+  .form-label { display: block; margin-bottom: 6px; font-size: 0.85rem; color: $color-text-dark; font-weight: 500; }
+  .required { color: #B87D7B; }
+}
+
+.form-textarea, .form-input, .form-select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid $color-soft-gray;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  resize: vertical;
+
+  &:focus {
+    outline: none;
+    border-color: $module-color;
+    box-shadow: 0 0 0 3px rgba($module-color, 0.15);
+  }
+
+  &.warning {
+    border-color: #E8A87C;
+    background: rgba(#E8A87C, 0.05);
+  }
+}
+
+// ─── 薪資核定 ───
+.salary-section {
+  margin-top: 8px;
+  padding: 16px;
+  background: $color-soft-gray;
+  border-radius: 10px;
+
+  h5 { margin: 0 0 12px; font-size: 0.95rem; color: $color-text-dark; display: flex; align-items: center; gap: 6px; }
+}
+
+.salary-inputs { display: flex; gap: 12px; }
+
+.salary-hint { font-size: 0.8rem; color: $color-text-secondary; margin-top: 8px; }
+
+.salary-warning {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: rgba(#E8A87C, 0.12);
+  border-left: 3px solid #E8A87C;
+  border-radius: 6px;
+  color: #8B5A34;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+// ─── 決策按鈕 ───
+.decision-actions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn {
+  @include button-base;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+
+  &.btn-lg { padding: 12px 28px; font-size: 0.95rem; }
+
+  &.btn-primary {
+    @include button-module($module-color);
+  }
+
+  &.btn-secondary {
+    background: white;
+    border: 1px solid $color-soft-gray;
+    color: $color-text-dark;
+
+    &:hover { border-color: $module-color; color: $module-color; }
+  }
+
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+// ─── 簽核相關 ───
+.approval-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+
+  &.pending { background: rgba(#E8A87C, 0.15); color: #C47A4A; }
+  &.approved { background: rgba(#7FB069, 0.15); color: #4C7C32; }
+  &.rejected { background: rgba(#B87D7B, 0.15); color: #8E4E4C; }
+}
+
+.reject-history {
+  padding: 12px 16px;
+  background: rgba(#B87D7B, 0.08);
+  border-left: 3px solid #B87D7B;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  display: flex;
+  gap: 10px;
+
+  i { color: #B87D7B; font-size: 1.2rem; }
+  strong { color: $color-text-dark; font-size: 0.9rem; }
+  p { margin: 4px 0 0; font-size: 0.85rem; color: $color-text-secondary; }
+}
+
+.approval-review { display: flex; flex-direction: column; gap: 16px; }
+
+.review-summary {
+  padding: 16px;
+  background: $color-soft-gray;
+  border-radius: 10px;
+
+  h5 { margin: 0 0 12px; font-size: 0.95rem; color: $color-text-dark; }
+
+  dl { margin: 0; display: grid; grid-template-columns: 120px 1fr; gap: 8px 12px; }
+  dt { font-size: 0.85rem; color: $color-text-secondary; }
+  dd { margin: 0; font-size: 0.9rem; color: $color-text-dark; }
+}
+
+.approval-actions { padding-top: 4px; }
+
+.approval-buttons { display: flex; justify-content: flex-end; gap: 12px; }
+
+.approval-locked {
+  padding: 14px 16px;
+  background: $color-soft-gray;
+  border-radius: 8px;
+  color: $color-text-secondary;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+// ─── 已決策檢視 ───
+.decision-result-view {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  .result-line { display: flex; gap: 8px; font-size: 0.95rem; }
+  .result-label { color: $color-text-secondary; min-width: 100px; }
+  .result-value { color: $color-text-dark; font-weight: 500; }
+  .result-value.offered { color: #4C7C32; }
+  .result-value.rejected { color: #8E4E4C; }
+}
+
+.out-of-range-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  background: rgba(#E8A87C, 0.2);
+  color: #8B5A34;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+// ─── 查看評分詳情按鈕 ───
+.view-detail-btn {
+  margin-top: 12px;
+}
+
+// ─── AI 量化分析完整面板（4 panels grid） ───
+.ai-result-grid-v2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+
+  @media (max-width: 1024px) { grid-template-columns: 1fr; }
+
+  .panel-title {
+    margin: 0 0 12px;
+    font-size: 0.95rem;
+    color: $color-text-dark;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    i { color: $module-color; }
+  }
+
+  .keyword-analysis-panel,
+  .semantic-analysis-panel,
+  .radar-panel,
+  .score-panel-v2 {
+    padding: $spacing-md;
+    background: $color-cloud-gray;
+    border-radius: $radius-md;
+  }
+}
+
+// 關鍵字分析
+.keyword-summary {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+
+  .keyword-stat {
+    flex: 1;
+    padding: 10px;
+    background: white;
+    border-radius: 8px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+
+    .stat-icon i { font-size: 1.2rem; }
+    .stat-value { font-size: 1.2rem; font-weight: 700; color: $color-text-dark; }
+    .stat-label { font-size: 0.75rem; color: $color-text-secondary; }
+
+    &.positive .stat-icon i,
+    &.positive .stat-value { color: #7FB069; }
+    &.negative .stat-icon i,
+    &.negative .stat-value { color: #B87D7B; }
+    &.total .stat-icon i,
+    &.total .stat-value { color: $module-color; }
+  }
+}
+
+.keyword-matches {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 160px;
+  overflow-y: auto;
+
+  .keyword-match-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: white;
+    border-radius: 6px;
+    font-size: 0.75rem;
+
+    .match-keyword { font-weight: 500; color: $color-text-dark; }
+    .match-dimension { flex: 1; color: $color-text-secondary; }
+    .match-score { font-weight: 700; }
+    .match-count { color: $color-text-secondary; }
+
+    &.positive .match-score { color: #7FB069; }
+    &.negative .match-score { color: #B87D7B; }
+  }
+}
+
+// 語意分析
+.insights-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+
+  .insight-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 10px;
+    background: white;
+    border-radius: 6px;
+    font-size: 0.8rem;
+
+    i { font-size: 16px; flex-shrink: 0; }
+
+    &.strength i { color: #7FB069; }
+    &.concern i { color: #E6A23C; }
+
+    .insight-content strong { color: $color-text-dark; }
+  }
+}
+
+.communication-style {
+  padding: 8px 10px;
+  background: white;
+  border-radius: 6px;
+  font-size: 0.85rem;
+
+  .label { color: $color-text-secondary; margin-right: 4px; }
+  .value { color: $color-text-dark; font-weight: 500; }
+}
+
+// 雷達圖
+.radar-chart {
+  width: 100%;
+  height: 260px;
+}
+
+// AI 綜合評分
+.score-row-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+
+  .score-card {
+    padding: 12px 8px;
+    background: white;
+    border-radius: 8px;
+    text-align: center;
+
+    &--primary {
+      background: rgba($module-color, 0.12);
+      border: 1px solid $module-color;
+    }
+
+    .score-card-label { font-size: 0.75rem; color: $color-text-secondary; margin-bottom: 4px; }
+    .score-card-value { font-size: 1.4rem; font-weight: 700; color: $color-text-dark; }
+    .score-card-weight { font-size: 0.7rem; color: $color-text-secondary; margin-top: 2px; }
+  }
+}
+
+.recommendation-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: white;
+  border-radius: 8px;
+  margin-bottom: 8px;
+
+  i { font-size: 1.5rem; }
+
+  .rec-text {
+    display: flex;
+    flex-direction: column;
+    .rec-label { font-size: 0.75rem; color: $color-text-secondary; }
+    .rec-value { font-size: 1rem; font-weight: 600; }
+  }
+}
+
+.missing-skills {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  background: white;
+  border-radius: 6px;
+  font-size: 0.8rem;
+
+  .label { color: $color-text-secondary; margin-right: 4px; }
+  .skill-tag {
+    padding: 2px 8px;
+    background: rgba(#B87D7B, 0.15);
+    color: #8E4E4C;
+    border-radius: 12px;
+    font-size: 0.75rem;
+  }
+}
+
+// ─── 決策結果 hero 區塊 ───
+.decision-result-hero {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  font-size: 1.4rem;
+  font-weight: 600;
+
+  i { font-size: 2rem; }
+
+  &.offered {
+    background: rgba($module-color, 0.12);
+    color: #4C7C32;
+    i { color: #4C7C32; }
+  }
+
+  &.rejected {
+    background: rgba(#B87D7B, 0.1);
+    color: #8E4E4C;
+    i { color: #8E4E4C; }
+  }
+}
+
+.result-line-block {
+  margin-bottom: 16px;
+
+  .reason-text {
+    margin: 4px 0 0;
+    padding: 12px 14px;
+    background: $color-soft-gray;
+    border-radius: 8px;
+    color: $color-text-dark;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+  }
+}
+
+// ─── Offer 回覆連結 ───
+.offer-link-section {
+  margin-top: 20px;
+  padding: 16px;
+  background: rgba(#E8A87C, 0.08);
+  border: 1px solid rgba(#E8A87C, 0.3);
+  border-radius: 10px;
+
+  .form-label {
+    color: #8B5A34;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  .link-hint {
+    margin: 0 0 10px;
+    font-size: 0.85rem;
+    color: $color-text-secondary;
+  }
+
+  .link-box {
+    display: flex;
+    gap: 8px;
+
+    .link-input {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid rgba(#E8A87C, 0.4);
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-family: 'SF Mono', Menlo, Monaco, Consolas, monospace;
+      background: white;
+      color: $color-text-dark;
+    }
+
+    .btn-copy {
+      flex-shrink: 0;
+    }
+  }
+
+  .response-status {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    &.response-accepted { background: rgba(#7FB069, 0.15); color: #4C7C32; }
+    &.response-declined { background: rgba(#B87D7B, 0.15); color: #8E4E4C; }
+    &.response-pending { background: rgba(#E8A87C, 0.15); color: #8B5A34; }
+  }
+}
+
+// ─── 空狀態 ───
+.empty-state {
+  @include card;
+  @include flex-center;
+  flex-direction: column;
+  padding: $spacing-2xl;
+  text-align: center;
+  min-height: 500px;
+
+  i {
+    font-size: 80px;
+    color: $color-muted-gray;
+    margin-bottom: $spacing-md;
+  }
+
+  h3 {
+    font-size: $font-size-xl;
+    color: $color-text-dark;
+    margin-bottom: $spacing-sm;
+  }
+
+  p {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    margin: 0;
+  }
+}
+
+.empty-hint, .loading-state {
+  padding: 24px;
+  text-align: center;
+  color: $color-text-secondary;
+
+  i { font-size: 2.5rem; display: block; margin-bottom: 12px; color: $color-muted-gray; }
+  p { margin: 0; font-size: 0.9rem; }
+}

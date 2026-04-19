@@ -2,6 +2,7 @@ import { Component, ChangeDetectionStrategy, DestroyRef, inject, signal, OnInit,
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { switchMap, forkJoin } from 'rxjs';
 import { Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { StatCardComponent } from '../../../../shared/components/stat-card/stat-card.component';
@@ -118,6 +119,7 @@ export class JobsPageComponent implements OnInit {
   private orgUnitService = inject(OrgUnitService);
   private destroyRef = inject(DestroyRef);
   private featureGateService = inject(FeatureGateService);
+  private http = inject(HttpClient);
 
   // Permission check
   readonly canEdit = computed(() => this.featureGateService.canEdit('L1.jobs'));
@@ -267,6 +269,9 @@ export class JobsPageComponent implements OnInit {
   departmentFilter = signal<string>('');
   statusFilter = signal<string>('');
 
+  // 職等選項（從 grade_levels 載入）
+  gradeOptions = signal<Array<{ grade: number; title: string }>>([]);
+
   // Form data
   newJob = signal({
     title: '',
@@ -274,6 +279,7 @@ export class JobsPageComponent implements OnInit {
     recruiter: 'Admin (您)',
     description: '',
     jdId: '',  // 關聯的 JD ID
+    grade: null as number | null,  // 職等（關聯 grade_levels.grade）
     syncTo104: false,  // 同步至 104
     // 104 專屬欄位
     job104: {
@@ -352,6 +358,24 @@ export class JobsPageComponent implements OnInit {
     this.loadJobDescriptions();
     this.load104Jobs();
     this.orgUnitService.loadOrgUnits().subscribe();
+    this.loadGradeOptions();
+  }
+
+  /** 載入職等選項（供 Create/Edit 職缺時選用） */
+  loadGradeOptions(): void {
+    this.http.get<any>('/api/grade-matrix').subscribe({
+      next: (data) => {
+        const list = Array.isArray(data) ? data : (data?.grades || []);
+        const opts = list.map((g: any) => ({
+          grade: g.grade,
+          title: g.title_management || g.title_professional || `第 ${g.grade} 職等`
+        }));
+        this.gradeOptions.set(opts);
+      },
+      error: () => {
+        this.gradeOptions.set([]);
+      }
+    });
   }
 
   loadData(): void {
@@ -479,6 +503,7 @@ export class JobsPageComponent implements OnInit {
       department: formData.department,
       description: formData.description,
       recruiter: formData.recruiter,
+      grade: formData.grade != null ? formData.grade : undefined,
       job104Data: job104Data,  // 只傳 job104Data，不傳 syncTo104
       org_unit_id: this.selectedSubsidiaryId() || this.modalSubsidiaryId() || undefined
     }).subscribe({
@@ -512,6 +537,11 @@ export class JobsPageComponent implements OnInit {
 
   getStatusIcon(status: string): string {
     return this.jobService.getStatusIcon(status as 'published' | 'draft' | 'review');
+  }
+
+  updateJobGrade(value: string): void {
+    const parsed = value === '' ? null : Number(value);
+    this.newJob.update(current => ({ ...current, grade: Number.isFinite(parsed as number) ? (parsed as number) : null }));
   }
 
   updateJobField(field: 'title' | 'department' | 'description' | 'jdId', value: string): void {
@@ -780,6 +810,7 @@ export class JobsPageComponent implements OnInit {
       recruiter: 'Admin (您)',
       description: '',
       jdId: '',
+      grade: null as number | null,
       syncTo104: false,
       job104: {
         role: 1,
@@ -858,6 +889,7 @@ export class JobsPageComponent implements OnInit {
           recruiter: job.recruiter,
           description: job.description || fullJob?.description || '',
           jdId: '',
+          grade: (job as any).grade ?? null,
           syncTo104: true,  // 104 職缺預設同步
           job104: job104Data
         });
@@ -871,6 +903,7 @@ export class JobsPageComponent implements OnInit {
         recruiter: job.recruiter,
         description: job.description || '',
         jdId: '',
+        grade: (job as any).grade ?? null,
         syncTo104: false,
         job104: defaultJob104
       });
@@ -959,6 +992,7 @@ export class JobsPageComponent implements OnInit {
       department: formData.department,
       description: formData.description,
       recruiter: formData.recruiter,
+      grade: formData.grade != null ? formData.grade : undefined,
       org_unit_id: this.selectedSubsidiaryId() || this.modalSubsidiaryId() || undefined
     };
 

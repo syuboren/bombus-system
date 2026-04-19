@@ -1,0 +1,566 @@
+<app-header pageTitle="面試決策" [breadcrumbs]="['首頁', '員工管理', '面試決策']" />
+
+<main class="main-content">
+  <div class="content-container">
+    <div class="decision-layout">
+
+      <!-- 候選人列表 Sidebar -->
+      <aside class="candidate-sidebar">
+        <div class="sidebar-header">
+          <h3>候選人列表</h3>
+          <span class="candidate-count">{{ filteredCandidates().length }} 人</span>
+        </div>
+
+        <!-- 狀態篩選 Tabs -->
+        <div class="filter-tabs">
+          <button class="filter-tab" [class.active]="statusFilter() === 'all'" (click)="setStatusFilter('all')" type="button">
+            全部
+          </button>
+          <button class="filter-tab" [class.active]="statusFilter() === 'pending'" (click)="setStatusFilter('pending')" type="button">
+            待決策
+          </button>
+          <button class="filter-tab" [class.active]="statusFilter() === 'decided'" (click)="setStatusFilter('decided')" type="button">
+            已決策
+          </button>
+        </div>
+
+        <div class="search-box">
+          <i class="ri-search-line"></i>
+          <input type="text" class="search-input" placeholder="搜尋候選人…"
+            [value]="searchQuery()" (input)="searchQuery.set($any($event.target).value)">
+        </div>
+
+        <div class="candidate-list">
+          @if (loading()) {
+            <div class="loading-state">載入中…</div>
+          } @else if (filteredCandidates().length === 0) {
+            <div class="empty-hint">
+              <i class="ri-inbox-line"></i>
+              <p>目前沒有符合條件的候選人</p>
+            </div>
+          } @else {
+            @for (candidate of filteredCandidates(); track candidate.id) {
+              <button class="candidate-card" [class.active]="selectedCandidateId() === candidate.id"
+                (click)="selectCandidate(candidate)" type="button">
+                <div class="candidate-avatar">
+                  @if (candidate.avatar) {
+                    <img [src]="candidate.avatar" [alt]="candidate.name" />
+                  } @else {
+                    {{ candidate.name.charAt(0) }}
+                  }
+                </div>
+                <div class="candidate-info">
+                  <div class="candidate-name">{{ candidate.name }}</div>
+                  <div class="candidate-position">{{ candidate.position }}</div>
+                  @if (candidate.interviewDate) {
+                    <div class="candidate-date">
+                      <i class="ri-calendar-line"></i>
+                      {{ candidate.interviewDate | date:'yyyy-MM-dd HH:mm' }}
+                    </div>
+                  }
+                </div>
+                <div class="candidate-status">
+                  <span class="status-badge" [attr.data-status]="candidate.status">
+                    {{ statusBadgeLabel(candidate.status) }}
+                  </span>
+                </div>
+              </button>
+            }
+          }
+        </div>
+      </aside>
+
+      <!-- 主內容區 -->
+      <div class="decision-content">
+        @if (selectedCandidate(); as c) {
+          <!-- ① 候選人基本資料 -->
+          <section class="card profile-section">
+            <div class="profile-header">
+              <div class="profile-avatar">
+                @if (c.avatar) {
+                  <img [src]="c.avatar" [alt]="c.name" />
+                } @else {
+                  {{ c.name.charAt(0) }}
+                }
+              </div>
+              <div class="profile-info">
+                <h2 class="profile-name">{{ c.name }}</h2>
+                <div class="profile-meta">
+                  <span class="meta-item"><i class="ri-briefcase-line"></i> {{ c.position }}</span>
+                  @if (c.interviewDate) {
+                    <span class="meta-item"><i class="ri-calendar-line"></i> {{ c.interviewDate | date:'yyyy-MM-dd HH:mm' }}</span>
+                  }
+                </div>
+              </div>
+              <span class="status-badge large" [attr.data-status]="c.status">
+                {{ statusBadgeLabel(c.status) }}
+              </span>
+            </div>
+          </section>
+
+          <!-- ② 職缺詳情 -->
+          <section class="card job-details-section">
+            <div class="card-header"><h4><i class="ri-briefcase-line"></i> 職缺詳情</h4></div>
+            <div class="card-body job-details-grid">
+              <div class="detail-item">
+                <label>職等</label>
+                <span class="detail-value">
+                  {{ salaryRange()?.grade_title || '未設定職等' }}
+                </span>
+              </div>
+              <div class="detail-item">
+                <label>薪資範圍</label>
+                <span class="detail-value">
+                  @if (salaryRange()?.has_range) {
+                    {{ salaryRange()!.salary_low | number }} ~ {{ salaryRange()!.salary_high | number }}
+                  } @else {
+                    無薪資範圍
+                  }
+                </span>
+              </div>
+              <div class="detail-item">
+                <label>候選人期望薪資</label>
+                <span class="detail-value">{{ candidateDetail()?.expectedSalary || '—' }}</span>
+              </div>
+              <div class="detail-item detail-item--full">
+                <label>JD 摘要</label>
+                <p class="jd-summary">{{ (candidateDetail()?.jobDescription || '').slice(0, 200) || '未提供工作描述' }}</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- ③ 面試官評分（唯讀，可展開詳情 Modal） -->
+          <section class="card scoring-section locked">
+            <div class="card-header">
+              <h4><i class="ri-file-list-3-line"></i> 面試官評分表（唯讀）</h4>
+              <span class="locked-badge"><i class="ri-lock-line"></i> 面試頁產出</span>
+            </div>
+            <div class="card-body">
+              @if (candidateDetail()?.evaluation; as evalData) {
+                <div class="scoring-summary">
+                  <div class="summary-item">
+                    <span class="summary-label">總分</span>
+                    <span class="summary-value" [class.low-score]="(evalData.totalScore || 0) < 65">
+                      {{ evalData.totalScore || 0 }}
+                    </span>
+                    <span class="summary-max">/ 100</span>
+                  </div>
+                  <div class="summary-item">
+                    <span class="summary-label">錄取建議</span>
+                    <span class="summary-badge" [class]="'badge-' + (evalData.recommendation || 'pending')">
+                      @switch (evalData.recommendation) {
+                        @case ('Pass') { 建議錄取 }
+                        @case ('Hold') { 待觀察 }
+                        @case ('Reject') { 不予錄取 }
+                        @default { 未評分 }
+                      }
+                    </span>
+                  </div>
+                </div>
+                <button class="btn btn-secondary view-detail-btn" type="button" (click)="openScoringDetailModal()">
+                  <i class="ri-file-search-line"></i> 查看評分詳情
+                </button>
+              } @else {
+                <p class="empty-hint-inline">面試官尚未完成評分</p>
+              }
+            </div>
+          </section>
+
+          <!-- ④ AI 量化分析（唯讀，完整 4 面板） -->
+          <section class="card ai-section locked">
+            <div class="card-header">
+              <h4><i class="ri-brain-line"></i> AI 量化分析（唯讀）</h4>
+              <span class="locked-badge"><i class="ri-lock-line"></i> 面試頁產出</span>
+            </div>
+            <div class="card-body">
+              @if (aiAnalysisData(); as ai) {
+                <div class="ai-result-grid-v2">
+                  <!-- 1. 關鍵字分析 -->
+                  @if (ai.keywordAnalysis) {
+                    <div class="keyword-analysis-panel">
+                      <h5 class="panel-title"><i class="ri-search-eye-line"></i> 關鍵字分析</h5>
+                      <div class="keyword-summary">
+                        <div class="keyword-stat positive">
+                          <span class="stat-icon"><i class="ri-add-circle-fill"></i></span>
+                          <span class="stat-value">+{{ ai.keywordAnalysis.positiveCount || 0 }}</span>
+                          <span class="stat-label">正向關鍵字</span>
+                        </div>
+                        <div class="keyword-stat negative">
+                          <span class="stat-icon"><i class="ri-indeterminate-circle-fill"></i></span>
+                          <span class="stat-value">-{{ ai.keywordAnalysis.negativeCount || 0 }}</span>
+                          <span class="stat-label">負向關鍵字</span>
+                        </div>
+                        <div class="keyword-stat total">
+                          <span class="stat-icon"><i class="ri-bar-chart-fill"></i></span>
+                          <span class="stat-value">{{ ai.keywordAnalysis.score || 0 }}</span>
+                          <span class="stat-label">關鍵字得分</span>
+                        </div>
+                      </div>
+                      @if (ai.keywordAnalysis.matches?.length) {
+                        <div class="keyword-matches">
+                          @for (m of ai.keywordAnalysis.matches; track $index) {
+                            <div class="keyword-match-item" [class.positive]="m.type === 'positive'" [class.negative]="m.type === 'negative'">
+                              <span class="match-keyword">{{ m.keyword }}</span>
+                              <span class="match-dimension">{{ m.dimensionName }}</span>
+                              <span class="match-score">{{ m.type === 'positive' ? '+' : '-' }}{{ (m.weight || 0) * (m.matchCount || 1) }}</span>
+                              <span class="match-count">×{{ m.matchCount || 1 }}</span>
+                            </div>
+                          }
+                        </div>
+                      }
+                    </div>
+                  }
+
+                  <!-- 2. 語意分析 -->
+                  @if (ai.semanticAnalysis) {
+                    <div class="semantic-analysis-panel">
+                      <h5 class="panel-title"><i class="ri-mind-map"></i> 語意分析</h5>
+                      <div class="insights-list">
+                        @for (insight of ai.semanticAnalysis.insights; track insight.category) {
+                          <div class="insight-item" [class.strength]="insight.type === 'strength'" [class.concern]="insight.type === 'concern'">
+                            <i [class]="insight.type === 'strength' ? 'ri-checkbox-circle-fill' : 'ri-alert-fill'"></i>
+                            <div class="insight-content">
+                              <strong>{{ insight.category }}:</strong> {{ insight.description }}
+                            </div>
+                          </div>
+                        }
+                      </div>
+                      @if (ai.semanticAnalysis.communicationStyle) {
+                        <div class="communication-style">
+                          <span class="label">溝通風格:</span>
+                          <span class="value">{{ ai.semanticAnalysis.communicationStyle }}</span>
+                        </div>
+                      }
+                    </div>
+                  }
+
+                  <!-- 3. 能力雷達圖 -->
+                  <div class="radar-panel">
+                    <h5 class="panel-title"><i class="ri-radar-line"></i> 能力雷達圖</h5>
+                    <div #radarChart class="radar-chart"></div>
+                  </div>
+
+                  <!-- 4. AI 綜合評分 -->
+                  <div class="score-panel-v2">
+                    <h5 class="panel-title"><i class="ri-trophy-line"></i> AI 綜合評分</h5>
+                    <div class="score-row-4">
+                      <div class="score-card">
+                        <div class="score-card-label">關鍵字匹配</div>
+                        <div class="score-card-value">{{ ai.scoreBreakdown?.keywordScore || 0 }}</div>
+                        <div class="score-card-weight">權重 40%</div>
+                      </div>
+                      <div class="score-card">
+                        <div class="score-card-label">語意分析</div>
+                        <div class="score-card-value">{{ ai.scoreBreakdown?.semanticScore || 0 }}</div>
+                        <div class="score-card-weight">權重 30%</div>
+                      </div>
+                      <div class="score-card">
+                        <div class="score-card-label">JD 適配度</div>
+                        <div class="score-card-value">{{ ai.scoreBreakdown?.jdMatchScore || 0 }}</div>
+                        <div class="score-card-weight">權重 30%</div>
+                      </div>
+                      <div class="score-card score-card--primary">
+                        <div class="score-card-label">綜合評分</div>
+                        <div class="score-card-value">{{ ai.overallScore || 0 }}</div>
+                        <div class="score-card-weight">總分 100</div>
+                      </div>
+                    </div>
+                    @if (ai.recommendation) {
+                      <div class="recommendation-card">
+                        <i [class]="ai.recommendation.icon || 'ri-lightbulb-line'" [style.color]="ai.recommendation.color"></i>
+                        <div class="rec-text">
+                          <span class="rec-label">建議結果</span>
+                          <span class="rec-value" [style.color]="ai.recommendation.color">{{ ai.recommendation.label }}</span>
+                        </div>
+                      </div>
+                    }
+                    @if (ai.jdMatchResult?.missingSkills?.length) {
+                      <div class="missing-skills">
+                        <span class="label">缺少技能:</span>
+                        @for (skill of ai.jdMatchResult.missingSkills; track skill) {
+                          <span class="skill-tag">{{ skill }}</span>
+                        }
+                      </div>
+                    }
+                  </div>
+                </div>
+              } @else {
+                <p class="empty-hint-inline">面試官尚未完成 AI 分析</p>
+              }
+            </div>
+          </section>
+
+          <!-- ⑤ 錄用決策 / 簽核狀態 -->
+          <section class="card decision-form-section">
+            <div class="card-header">
+              <h4><i class="ri-group-line"></i> 錄用決策</h4>
+              @if (approvalStatus() === 'PENDING') {
+                <span class="approval-badge pending"><i class="ri-time-line"></i> 簽核中</span>
+              } @else if (approvalStatus() === 'APPROVED') {
+                <span class="approval-badge approved"><i class="ri-checkbox-circle-line"></i> 已通過</span>
+              } @else if (approvalStatus() === 'REJECTED') {
+                <span class="approval-badge rejected"><i class="ri-refresh-line"></i> 已退回（重新送簽）</span>
+              }
+            </div>
+            <div class="card-body">
+
+              <!-- 情境 A：pending_decision → HR 可編輯決策表單 -->
+              @if (c.status === 'pending_decision' && canEdit()) {
+                @if (approvalStatus() === 'REJECTED' && c.approval_note) {
+                  <div class="reject-history">
+                    <i class="ri-alert-line"></i>
+                    <div>
+                      <strong>先前退回原因：</strong>
+                      <p>{{ c.approval_note }}</p>
+                    </div>
+                  </div>
+                }
+                <div class="decision-options">
+                  <label class="decision-option option-reject" [class.selected]="decisionValue() === 'Rejected'">
+                    <input type="radio" name="decision" [checked]="decisionValue() === 'Rejected'"
+                      (change)="setDecision('Rejected')">
+                    <i class="ri-close-circle-line"></i>
+                    <span class="title">未錄取</span>
+                  </label>
+                  <label class="decision-option option-offer" [class.selected]="decisionValue() === 'Offered'">
+                    <input type="radio" name="decision" [checked]="decisionValue() === 'Offered'"
+                      (change)="setDecision('Offered')">
+                    <i class="ri-checkbox-circle-line"></i>
+                    <span class="title">已錄取</span>
+                  </label>
+                </div>
+
+                @if (decisionValue()) {
+                  <div class="form-group">
+                    <label class="form-label">決策理由 <span class="required">*</span></label>
+                    <textarea class="form-textarea" rows="3" placeholder="請說明做出此決策的原因…"
+                      [value]="decisionReason()" (input)="decisionReason.set($any($event.target).value)"></textarea>
+                  </div>
+                }
+
+                <!-- 薪資核定（只在 Offered 時顯示） -->
+                @if (decisionValue() === 'Offered') {
+                  <div class="salary-section">
+                    <h5><i class="ri-money-dollar-circle-line"></i> 薪資核定</h5>
+                    <div class="salary-inputs">
+                      <div class="form-group form-group--inline">
+                        <label>薪資類型</label>
+                        <select class="form-select"
+                          [ngModel]="salaryType()"
+                          (ngModelChange)="salaryType.set($event)">
+                          <option [ngValue]="50">月薪</option>
+                          <option [ngValue]="60">年薪</option>
+                        </select>
+                      </div>
+                      <div class="form-group form-group--inline">
+                        <label>核定金額</label>
+                        <input type="number" class="form-input" [class.warning]="isOutOfRange()"
+                          [value]="salaryAmount() ?? ''" min="1"
+                          (input)="salaryAmount.set($any($event.target).value ? +$any($event.target).value : null)"
+                          placeholder="輸入金額">
+                      </div>
+                    </div>
+                    <div class="salary-hint">
+                      @if (salaryRange()?.has_range) {
+                        職缺職等：{{ salaryRange()!.grade_title }}；薪資範圍
+                        {{ salaryRange()!.salary_low | number }} ~ {{ salaryRange()!.salary_high | number }}
+                      } @else if (salaryRange()?.reason === 'no_grade') {
+                        此職缺未設定職等，無薪資範圍參考
+                      } @else if (salaryRange()?.reason === 'no_salary_levels') {
+                        此職等未設定薪資層級
+                      }
+                    </div>
+                    @if (isOutOfRange()) {
+                      <div class="salary-warning">
+                        <i class="ri-error-warning-line"></i>
+                        核定金額
+                        @if (salaryAmount()! < (salaryRange()?.salary_low ?? 0)) { 低於職等薪資下限 }
+                        @else { 高於職等薪資上限 }
+                        （仍可送出簽核，將於審核時留下標記）
+                      </div>
+                    }
+                  </div>
+                }
+
+                <div class="decision-actions">
+                  <button class="btn btn-primary btn-lg" (click)="submitForApproval()"
+                    [disabled]="!decisionValue() || !decisionReason().trim() || submitting()" type="button">
+                    @if (submitting()) {
+                      <i class="ri-loader-4-line spin"></i> 送交中…
+                    } @else {
+                      <i class="ri-send-plane-fill"></i> 送交簽核
+                    }
+                  </button>
+                </div>
+              }
+
+              <!-- 情境 B：pending_approval → 主管可簽核 -->
+              @if (c.status === 'pending_approval') {
+                <div class="approval-review">
+                  <div class="review-summary">
+                    <h5>待審閱內容</h5>
+                    <dl>
+                      <dt>決策理由</dt>
+                      <dd>{{ decisionReasonText() || '—' }}</dd>
+                      @if (c.approved_salary_amount) {
+                        <dt>核定薪資</dt>
+                        <dd>
+                          {{ c.approved_salary_amount | number }} / {{ salaryTypeLabel(c.approved_salary_type) }}
+                          @if (c.approved_salary_out_of_range === 1) {
+                            <span class="out-of-range-badge">超出職缺範圍</span>
+                          }
+                        </dd>
+                      }
+                    </dl>
+                  </div>
+
+                  @if (canApprove()) {
+                    <div class="approval-actions">
+                      <div class="form-group">
+                        <label class="form-label">退回原因（退回時必填）</label>
+                        <textarea class="form-textarea" rows="2" placeholder="若要退回，請填寫原因…"
+                          [value]="rejectNote()" (input)="rejectNote.set($any($event.target).value)"></textarea>
+                      </div>
+                      <div class="approval-buttons">
+                        <button class="btn btn-secondary" (click)="rejectApproval()"
+                          [disabled]="submitting() || !rejectNote().trim()" type="button">
+                          <i class="ri-arrow-go-back-line"></i> 退回 HR
+                        </button>
+                        <button class="btn btn-primary" (click)="approve()" [disabled]="submitting()" type="button">
+                          <i class="ri-check-line"></i> 簽核通過
+                        </button>
+                      </div>
+                    </div>
+                  } @else {
+                    <div class="approval-locked">
+                      <i class="ri-lock-line"></i>
+                      此決策等待主管簽核，您目前無簽核權限
+                    </div>
+                  }
+                </div>
+              }
+
+              <!-- 情境 C：已決策 → 顯示結果（唯讀） -->
+              @if (c.status === 'offered' || c.status === 'offer_accepted' ||
+                   c.status === 'offer_declined' || c.status === 'onboarded' || c.status === 'not_hired') {
+                <div class="decision-result-view">
+                  <!-- 決策結果大圖示 -->
+                  @if (c.status === 'not_hired') {
+                    <div class="decision-result-hero rejected">
+                      <i class="ri-close-circle-line"></i>
+                      <span class="result-text">未錄取</span>
+                    </div>
+                  } @else {
+                    <div class="decision-result-hero offered">
+                      <i class="ri-trophy-line"></i>
+                      <span class="result-text">已錄取</span>
+                    </div>
+                  }
+
+                  <!-- 決策理由 -->
+                  @if (decisionReasonText()) {
+                    <div class="result-line-block">
+                      <label class="form-label">決策理由</label>
+                      <p class="reason-text">{{ decisionReasonText() }}</p>
+                    </div>
+                  }
+
+                  <!-- 核定薪資 -->
+                  @if (c.approved_salary_amount) {
+                    <div class="result-line">
+                      <span class="result-label">核定薪資：</span>
+                      <span class="result-value">
+                        {{ c.approved_salary_amount | number }} / {{ salaryTypeLabel(c.approved_salary_type) }}
+                        @if (c.approved_salary_out_of_range === 1) {
+                          <span class="out-of-range-badge">超出職缺範圍</span>
+                        }
+                      </span>
+                    </div>
+                  }
+
+                  <!-- 簽核資訊 -->
+                  @if (c.decided_by_name) {
+                    <div class="result-line">
+                      <span class="result-label">送簽人員：</span>
+                      <span class="result-value">{{ c.decided_by_name }}</span>
+                    </div>
+                  }
+                  @if (c.approver_name) {
+                    <div class="result-line">
+                      <span class="result-label">簽核人員：</span>
+                      <span class="result-value">{{ c.approver_name }}</span>
+                    </div>
+                  }
+                  @if (c.approved_at) {
+                    <div class="result-line">
+                      <span class="result-label">簽核時間：</span>
+                      <span class="result-value">{{ c.approved_at | date:'yyyy-MM-dd HH:mm' }}</span>
+                    </div>
+                  }
+                  @if (c.approval_note && c.status !== 'not_hired') {
+                    <div class="result-line">
+                      <span class="result-label">簽核備註：</span>
+                      <span class="result-value">{{ c.approval_note }}</span>
+                    </div>
+                  }
+
+                  <!-- Offer 回覆連結（已錄取且非未錄取時顯示） -->
+                  @if ((c.status === 'offered' || c.status === 'offer_accepted' || c.status === 'offer_declined')
+                        && offerResponseLink()) {
+                    <div class="offer-link-section">
+                      <label class="form-label">
+                        <i class="ri-link"></i> Offer 回覆連結
+                      </label>
+                      <p class="link-hint">請將以下連結分享給候選人，讓他們回覆是否接受錄用：</p>
+                      <div class="link-box">
+                        <input type="text" readonly [value]="offerResponseLink()" class="link-input" />
+                        <button class="btn btn-primary btn-copy" type="button" (click)="copyOfferLink()">
+                          <i class="ri-file-copy-line"></i> 複製
+                        </button>
+                      </div>
+                      @if (c.status === 'offer_accepted') {
+                        <div class="response-status response-accepted">
+                          <i class="ri-checkbox-circle-fill"></i> 候選人已接受 Offer
+                        </div>
+                      } @else if (c.status === 'offer_declined') {
+                        <div class="response-status response-declined">
+                          <i class="ri-close-circle-fill"></i> 候選人婉拒 Offer
+                        </div>
+                      } @else {
+                        <div class="response-status response-pending">
+                          <i class="ri-time-line"></i> 等待候選人回覆中...
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </section>
+
+        } @else {
+          <div class="empty-state">
+            <i class="ri-user-search-line"></i>
+            <h3>請選擇候選人</h3>
+            <p>從左側列表選擇一位候選人開始面試決策流程</p>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- 面試官評分表詳情 Modal（唯讀） -->
+@if (selectedCandidate(); as c) {
+  @if (candidateDetail()) {
+    <app-interview-scoring-modal
+      [candidate]="candidateDetail()"
+      [candidateFull]="candidateFull()"
+      [resumeAnalysis]="resumeAnalysis()"
+      [isVisible]="isScoringModalVisible()"
+      [jobId]="c.jobId || ''"
+      [readOnly]="true"
+      (close)="closeScoringDetailModal()">
+    </app-interview-scoring-modal>
+  }
+}

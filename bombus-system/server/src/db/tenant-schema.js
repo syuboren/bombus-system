@@ -36,6 +36,7 @@ const FEATURE_SEED_DATA = [
   // L1 員工管理
   { id: 'L1.jobs', module: 'L1', name: '招募職缺管理', sort_order: 100 },
   { id: 'L1.recruitment', module: 'L1', name: 'AI智能面試', sort_order: 101 },
+  { id: 'L1.decision', module: 'L1', name: '面試決策', sort_order: 101.5 },
   { id: 'L1.talent-pool', module: 'L1', name: '人才庫與再接觸管理', sort_order: 102 },
   { id: 'L1.profile', module: 'L1', name: '員工檔案與歷程管理', sort_order: 103 },
   { id: 'L1.meeting', module: 'L1', name: '會議管理', sort_order: 104 },
@@ -92,6 +93,7 @@ const DEFAULT_ROLE_FEATURE_PERMS = {
     // L1
     'L1.jobs': _e('company', 'company'),
     'L1.recruitment': _e('company', 'company'),
+    'L1.decision': _e('company', 'company'),
     'L1.talent-pool': _e('company', 'company'),
     'L1.profile': _e('company', 'company'),
     'L1.meeting': _e('company', 'company'),
@@ -141,6 +143,7 @@ const DEFAULT_ROLE_FEATURE_PERMS = {
     // L1
     'L1.jobs': _e('company', 'company'),
     'L1.recruitment': _e('company', 'company'),
+    'L1.decision': _e('company', 'company'),
     'L1.talent-pool': _e('company', 'company'),
     'L1.profile': _e('company', 'company'),
     'L1.meeting': _e('self', 'company'),
@@ -190,6 +193,7 @@ const DEFAULT_ROLE_FEATURE_PERMS = {
     // L1
     'L1.jobs': _e('company', 'company'),
     'L1.recruitment': _v('company'),
+    'L1.decision': _e('company', 'company'),
     'L1.talent-pool': _e('company', 'company'),
     'L1.profile': _e('company', 'company'),
     'L1.meeting': _e('self', 'company'),
@@ -239,6 +243,7 @@ const DEFAULT_ROLE_FEATURE_PERMS = {
     // L1
     'L1.jobs': _n,
     'L1.recruitment': _e('company', 'company'),
+    'L1.decision': _n,
     'L1.talent-pool': _n,
     'L1.profile': _e('self', 'department'),
     'L1.meeting': _e('self', 'company'),
@@ -288,6 +293,7 @@ const DEFAULT_ROLE_FEATURE_PERMS = {
     // L1
     'L1.jobs': _n,
     'L1.recruitment': _n,
+    'L1.decision': _n,
     'L1.talent-pool': _n,
     'L1.profile': _e('self', 'self'),
     'L1.meeting': _e('self', 'company'),
@@ -570,6 +576,7 @@ const BUSINESS_TABLES_SQL = `
     sync_status TEXT DEFAULT 'local_only',
     job104_data TEXT,
     synced_at TEXT,
+    grade INTEGER REFERENCES grade_levels(grade),
     created_at TEXT DEFAULT (datetime('now')),
     updated_at TEXT
   );
@@ -636,6 +643,9 @@ const BUSINESS_TABLES_SQL = `
     experience TEXT,
     experience_years INTEGER DEFAULT 0,
     skills TEXT,
+    approved_salary_type INTEGER,
+    approved_salary_amount INTEGER,
+    approved_salary_out_of_range INTEGER DEFAULT 0,
     created_at TEXT DEFAULT (datetime('now')),
     updated_at TEXT,
     FOREIGN KEY (job_id) REFERENCES jobs(id)
@@ -1018,6 +1028,11 @@ const BUSINESS_TABLES_SQL = `
     reply_deadline TEXT,
     candidate_response TEXT,
     responded_at TEXT,
+    approval_status TEXT DEFAULT 'NONE',
+    approver_id TEXT,
+    approved_at TEXT,
+    approval_note TEXT,
+    submitted_for_approval_at TEXT,
     FOREIGN KEY (candidate_id) REFERENCES candidates(id)
   );
 
@@ -1810,6 +1825,22 @@ function initTenantSchema(adapter) {
 
   // 批次匯入表（import_jobs + import_results）
   db.exec(IMPORT_TABLES_SQL);
+
+  // 面試決策欄位遷移（0003_add_decision_fields）
+  const decisionMigrations = [
+    'ALTER TABLE candidates ADD COLUMN approved_salary_type INTEGER',
+    'ALTER TABLE candidates ADD COLUMN approved_salary_amount INTEGER',
+    'ALTER TABLE candidates ADD COLUMN approved_salary_out_of_range INTEGER DEFAULT 0',
+    "ALTER TABLE invitation_decisions ADD COLUMN approval_status TEXT DEFAULT 'NONE'",
+    'ALTER TABLE invitation_decisions ADD COLUMN approver_id TEXT',
+    'ALTER TABLE invitation_decisions ADD COLUMN approved_at TEXT',
+    'ALTER TABLE invitation_decisions ADD COLUMN approval_note TEXT',
+    'ALTER TABLE invitation_decisions ADD COLUMN submitted_for_approval_at TEXT',
+    'ALTER TABLE jobs ADD COLUMN grade INTEGER REFERENCES grade_levels(grade)'
+  ];
+  for (const sql of decisionMigrations) {
+    try { db.run(sql); } catch (e) { /* 欄位已存在則忽略 */ }
+  }
 
   adapter.save();
 }

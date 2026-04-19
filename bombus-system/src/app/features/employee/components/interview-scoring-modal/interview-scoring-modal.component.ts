@@ -47,7 +47,9 @@ export class InterviewScoringModalComponent {
   interviewId = input<string>();
   isVisible = input.required<boolean>();
   jobId = input<string>();
-  
+  /** 只讀模式：隱藏「儲存評分」按鈕、鎖定所有輸入；用於面試決策頁檢視歷史評分 */
+  readOnly = input<boolean>(false);
+
   // 參考資料
   resumeAnalysis = input<CandidateResumeAnalysis | null>(null);
   candidateFormData = input<CandidateFormData | null>(null);
@@ -313,6 +315,7 @@ export class InterviewScoringModalComponent {
   // Methods: 評核項目
   // ============================================================
   setScoringLevel(itemCode: string, level: ScoringLevel): void {
+    if (this.readOnly()) return;
     this.scoringItems.update(items =>
       items.map(item =>
         item.code === itemCode ? { ...item, score: level } : item
@@ -324,6 +327,7 @@ export class InterviewScoringModalComponent {
   // Methods: 流程檢核
   // ============================================================
   toggleChecklist(code: keyof ProcessChecklist): void {
+    if (this.readOnly()) return;
     this.processChecklist.update(checklist => ({
       ...checklist,
       [code]: !checklist[code]
@@ -334,6 +338,7 @@ export class InterviewScoringModalComponent {
   // Methods: 綜合評估
   // ============================================================
   setAssessmentValue(code: string, value: string): void {
+    if (this.readOnly()) return;
     this.comprehensiveAssessment.update(assessment => ({
       ...assessment,
       [code]: value
@@ -341,6 +346,7 @@ export class InterviewScoringModalComponent {
   }
 
   setAssessmentOther(code: string, value: string): void {
+    if (this.readOnly()) return;
     this.comprehensiveAssessment.update(assessment => ({
       ...assessment,
       [`${code}_other`]: value
@@ -351,7 +357,7 @@ export class InterviewScoringModalComponent {
    * 設定錄取建議
    */
   setRecommendation(value: RecommendationType): void {
-    console.log('Setting recommendation to:', value);
+    if (this.readOnly()) return;
     this.recommendation.set(value);
   }
 

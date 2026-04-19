@@ -1,10 +1,51 @@
+export type CandidateStatus =
+  | 'interview' | 'pending_ai' | 'pending_decision' | 'pending_approval'
+  | 'offered' | 'offer_accepted' | 'onboarded'
+  | 'not_hired' | 'not_invited'
+  | 'invite_declined' | 'interview_declined' | 'offer_declined';
+
+export type ApprovalStatus = 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED';
+
+// ─── 狀態分群（跨頁單一真理來源） ───
+// AI 智能面試頁負責的階段：評分 + AI 分析期間仍可編輯；
+// 一旦 HR 送簽（pending_approval 起）就由面試決策頁接手。
+export const INTERVIEW_PHASE_STATUSES: CandidateStatus[] = [
+  'interview', 'pending_ai', 'pending_decision'
+];
+
+// 面試決策頁的「待決策」群組：包含送簽中，因為送簽後仍屬「還沒最終定案」
+export const DECISION_PENDING_STATUSES: CandidateStatus[] = [
+  'pending_decision', 'pending_approval'
+];
+
+// 面試決策頁的「已決策」群組：決策已最終敲定
+export const DECISION_DECIDED_STATUSES: CandidateStatus[] = [
+  'offered', 'offer_accepted', 'offer_declined', 'onboarded', 'not_hired'
+];
+
+// 狀態中文顯示名稱；其他地方禁止再自建 status→中文 map，改引用此常數
+export const CANDIDATE_STATUS_LABELS: Record<CandidateStatus, string> = {
+  interview: '已安排面試',
+  pending_ai: '待 AI 分析',
+  pending_decision: '待決策',
+  pending_approval: '簽核中',
+  offered: '待回覆 Offer',
+  offer_accepted: '已錄取同意',
+  offer_declined: 'Offer 婉拒',
+  onboarded: '已報到',
+  not_hired: '未錄取',
+  not_invited: '不邀請',
+  invite_declined: '邀請婉拒',
+  interview_declined: '面試婉拒'
+};
+
 export interface Candidate {
   id: string;
   jobId?: string;
   name: string;
   position: string;
   interviewDate?: string;
-  status: 'interview' | 'pending_ai' | 'pending_decision' | 'offered' | 'offer_accepted' | 'onboarded' | 'not_hired' | 'not_invited' | 'invite_declined' | 'interview_declined' | 'offer_declined' | string;
+  status: CandidateStatus | string;
   stage?: 'Collected' | 'Invited' | 'Offered' | 'Rejected';
   scoringStatus?: 'Pending' | 'Scoring' | 'Scored';
 
@@ -15,6 +56,39 @@ export interface Candidate {
   audioUrl?: string;
   duration?: string;
   rescheduleNote?: string;
+
+  // 薪資核定（決策頁填寫；Offer 發出後鎖定）
+  approved_salary_type?: number | null;
+  approved_salary_amount?: number | null;
+  approved_salary_out_of_range?: 0 | 1 | null;
+
+  // 簽核欄位（來自 invitation_decisions JOIN）
+  approval_status?: ApprovalStatus | null;
+  approver_id?: string | null;
+  approved_at?: string | null;
+  approval_note?: string | null;
+  submitted_for_approval_at?: string | null;
+
+  // 職缺 grade（決策頁顯示薪資範圍依據）
+  job_grade?: number | null;
+
+  // 最新 invitation_decisions.reason（list 查詢預載，避免等待 candidateDetail 才顯示）
+  decision_reason?: string | null;
+  // 最新 invitation_decisions.decision（'Offered' | 'Rejected'），用於退回重送時還原表單選項
+  decision_type?: 'Offered' | 'Rejected' | null;
+  // 簽核人員姓名（approver_id → users.name）
+  approver_name?: string | null;
+  // HR 送簽人員姓名（decided_by → users.name）
+  decided_by_name?: string | null;
+}
+
+export interface SalaryRangeResult {
+  grade: number | null;
+  grade_title: string | null;
+  salary_low: number | null;
+  salary_high: number | null;
+  has_range: boolean;
+  reason: 'candidate_not_found' | 'no_grade' | 'no_salary_levels' | null;
 }
 
 export interface InterviewInvitation {

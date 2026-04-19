@@ -435,6 +435,10 @@ export interface PendingCandidate {
     offer_response: string;
     offer_accepted_at: string;
     days_since_accepted: number;
+    // 面試決策階段核定的薪資（由 /api/recruitment/candidates/:id/submit-approval 寫入）
+    approved_salary_type?: number | null;
+    approved_salary_amount?: number | null;
+    approved_salary_out_of_range?: 0 | 1 | null;
 }
 
 export interface ConvertCandidateRequest {
