@@ -4,6 +4,9 @@ const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
 const QRCode = require('qrcode');
 const { requireFeaturePerm, buildScopeFilter } = require('../middleware/permission');
+const decisionService = require('../services/decision.service');
+const { logAudit, getClientIP } = require('../utils/audit-logger');
+const { getPlatformDB } = require('../db/platform-db');
 
 /**
  * ------------------------------------------------------------------
@@ -439,16 +442,21 @@ router.post('/candidates/:candidateId/evaluation', requireFeaturePerm('L1.recrui
             );
         }
 
-        // 更新候選人狀態
-        let newStatus = 'pending_ai'; // 預設：待 AI 分析
-        if (aiResultJson) {
-            newStatus = 'pending_decision'; // 有 AI 結果：待決策
+        // 狀態推進：只有在「真正送出評分」或「保存 AI 分析」時才改變 candidates.status / scoring_status。
+        // 純媒體上傳或逐字稿自動存檔（payload 只含 mediaUrl/mediaSize/transcriptText）不應推進狀態。
+        const isScoringSubmit = !!(scoringItemsJson || comprehensiveAssessmentJson || prosComment || consComment || recommendation);
+        const isAiSave = !!aiResultJson;
+        if (isScoringSubmit || isAiSave) {
+            const newStatus = isAiSave ? 'pending_decision' : 'pending_ai';
+            req.tenantDB.prepare(
+                `UPDATE candidates SET status = ?, scoring_status = 'Scored', updated_at = ? WHERE id = ?`
+            ).run(newStatus, now, candidateId);
+        } else {
+            // 媒體/逐字稿部分更新：只 bump updated_at
+            req.tenantDB.prepare(
+                `UPDATE candidates SET updated_at = ? WHERE id = ?`
+            ).run(now, candidateId);
         }
-
-        const updateCand = req.tenantDB.prepare(`
-            UPDATE candidates SET status = ?, scoring_status = 'Scored', updated_at = ? WHERE id = ?
-        `);
-        updateCand.run(newStatus, now, candidateId);
 
         res.status(201).json({
             success: true,
@@ -608,8 +616,18 @@ router.get('/candidates', requireFeaturePerm('L1.recruitment', 'view'), (req, re
         const scopeFilter = buildScopeFilter(req, { tableAlias: 'j', orgUnitColumn: 'org_unit_id' });
 
         let query = `
-            SELECT c.*, j.title as job_title,
-            (SELECT ie.ai_analysis_result FROM interview_evaluations ie WHERE ie.candidate_id = c.id LIMIT 1) as ai_analysis_result
+            SELECT c.*, j.title as job_title, j.grade as job_grade,
+            (SELECT ie.ai_analysis_result FROM interview_evaluations ie WHERE ie.candidate_id = c.id LIMIT 1) as ai_analysis_result,
+            (SELECT id.approval_status FROM invitation_decisions id WHERE id.candidate_id = c.id ORDER BY id.decided_at DESC LIMIT 1) as approval_status,
+            (SELECT id.approver_id FROM invitation_decisions id WHERE id.candidate_id = c.id ORDER BY id.decided_at DESC LIMIT 1) as approver_id,
+            (SELECT id.approved_at FROM invitation_decisions id WHERE id.candidate_id = c.id ORDER BY id.decided_at DESC LIMIT 1) as approved_at,
+            (SELECT id.approval_note FROM invitation_decisions id WHERE id.candidate_id = c.id ORDER BY id.decided_at DESC LIMIT 1) as approval_note,
+            (SELECT id.submitted_for_approval_at FROM invitation_decisions id WHERE id.candidate_id = c.id ORDER BY id.decided_at DESC LIMIT 1) as submitted_for_approval_at,
+            (SELECT id.reason FROM invitation_decisions id WHERE id.candidate_id = c.id ORDER BY id.decided_at DESC LIMIT 1) as decision_reason,
+            (SELECT id.decision FROM invitation_decisions id WHERE id.candidate_id = c.id ORDER BY id.decided_at DESC LIMIT 1) as decision_type,
+            (SELECT u.name FROM users u WHERE u.id = (SELECT id2.approver_id FROM invitation_decisions id2 WHERE id2.candidate_id = c.id ORDER BY id2.decided_at DESC LIMIT 1)) as approver_name,
+            (SELECT u.name FROM users u WHERE u.id = (SELECT id3.decided_by FROM invitation_decisions id3 WHERE id3.candidate_id = c.id ORDER BY id3.decided_at DESC LIMIT 1)) as decided_by_name,
+            (SELECT iv.interview_at FROM interviews iv WHERE iv.candidate_id = c.id ORDER BY iv.interview_at DESC LIMIT 1) as latest_interview_at
             FROM candidates c
             LEFT JOIN jobs j ON c.job_id = j.id
             WHERE EXISTS (SELECT 1 FROM interviews WHERE candidate_id = c.id)
@@ -845,6 +863,133 @@ router.post('/candidates/:candidateId/decision', requireFeaturePerm('L1.recruitm
     } catch (error) {
         console.error('Error making decision:', error);
         res.status(500).json({ error: 'Failed to make decision' });
+    }
+});
+
+// ============================================================
+// 面試決策簽核流程 API（L1.decision）
+// ============================================================
+
+/**
+ * GET /api/recruitment/candidates/:candidateId/salary-range
+ * 依候選人職缺的 grade 解析薪資範圍
+ */
+router.get('/candidates/:candidateId/salary-range', requireFeaturePerm('L1.decision', 'view'), (req, res) => {
+    try {
+        const { candidateId } = req.params;
+        const range = decisionService.resolveSalaryRange(req.tenantDB, candidateId);
+        res.json(range);
+    } catch (err) {
+        console.error('Error resolving salary range:', err);
+        res.status(500).json({ error: 'Failed to resolve salary range' });
+    }
+});
+
+/**
+ * POST /api/recruitment/candidates/:candidateId/submit-approval
+ * HR 送簽：pending_decision → pending_approval
+ */
+router.post('/candidates/:candidateId/submit-approval', requireFeaturePerm('L1.decision', 'edit'), (req, res) => {
+    try {
+        const { candidateId } = req.params;
+        const { decision, decision_reason, approved_salary_type, approved_salary_amount } = req.body;
+
+        const result = decisionService.submitForApproval(req.tenantDB, {
+            candidateId,
+            decision,
+            decisionReason: decision_reason,
+            approvedSalaryType: approved_salary_type,
+            approvedSalaryAmount: approved_salary_amount,
+            currentUserId: req.user && req.user.userId
+        });
+
+        try {
+            logAudit(getPlatformDB(), {
+                tenant_id: req.user && req.user.tenantId,
+                user_id: req.user && req.user.userId,
+                action: 'candidate.submit_approval',
+                resource: 'candidate',
+                details: { candidateId, decision, outOfRange: result.outOfRange, fromStatus: result.fromStatus, toStatus: result.toStatus },
+                ip: getClientIP(req)
+            });
+        } catch (e) { /* audit failure non-fatal */ }
+
+        res.status(201).json({ success: true, ...result });
+    } catch (err) {
+        if (err.status) return res.status(err.status).json({ error: err.message });
+        console.error('Error submitting approval:', err);
+        res.status(500).json({ error: 'Failed to submit approval' });
+    }
+});
+
+/**
+ * POST /api/recruitment/candidates/:candidateId/approve
+ * 主管簽核通過：pending_approval → offered | not_hired
+ * 角色限制：super_admin 或 subsidiary_admin
+ */
+router.post('/candidates/:candidateId/approve', requireFeaturePerm('L1.decision', 'edit'), (req, res) => {
+    try {
+        const { candidateId } = req.params;
+        const { approval_note } = req.body;
+
+        const result = decisionService.approveDecision(req.tenantDB, {
+            candidateId,
+            approvalNote: approval_note,
+            currentUserId: req.user && req.user.userId,
+            currentUserRoles: (req.user && req.user.roles) || []
+        });
+
+        try {
+            logAudit(getPlatformDB(), {
+                tenant_id: req.user && req.user.tenantId,
+                user_id: req.user && req.user.userId,
+                action: 'candidate.approve',
+                resource: 'candidate',
+                details: { candidateId, newStatus: result.newStatus, decisionId: result.decisionId, approval_note: approval_note || null },
+                ip: getClientIP(req)
+            });
+        } catch (e) { /* audit failure non-fatal */ }
+
+        res.status(200).json({ success: true, ...result });
+    } catch (err) {
+        if (err.status) return res.status(err.status).json({ error: err.message });
+        console.error('Error approving decision:', err);
+        res.status(500).json({ error: 'Failed to approve decision' });
+    }
+});
+
+/**
+ * POST /api/recruitment/candidates/:candidateId/reject-approval
+ * 主管退回：pending_approval → pending_decision（可無限輪迴）
+ */
+router.post('/candidates/:candidateId/reject-approval', requireFeaturePerm('L1.decision', 'edit'), (req, res) => {
+    try {
+        const { candidateId } = req.params;
+        const { approval_note } = req.body;
+
+        const result = decisionService.rejectApproval(req.tenantDB, {
+            candidateId,
+            approvalNote: approval_note,
+            currentUserId: req.user && req.user.userId,
+            currentUserRoles: (req.user && req.user.roles) || []
+        });
+
+        try {
+            logAudit(getPlatformDB(), {
+                tenant_id: req.user && req.user.tenantId,
+                user_id: req.user && req.user.userId,
+                action: 'candidate.reject_approval',
+                resource: 'candidate',
+                details: { candidateId, decisionId: result.decisionId, approval_note },
+                ip: getClientIP(req)
+            });
+        } catch (e) { /* audit failure non-fatal */ }
+
+        res.status(200).json({ success: true, ...result });
+    } catch (err) {
+        if (err.status) return res.status(err.status).json({ error: err.message });
+        console.error('Error rejecting approval:', err);
+        res.status(500).json({ error: 'Failed to reject approval' });
     }
 });
 

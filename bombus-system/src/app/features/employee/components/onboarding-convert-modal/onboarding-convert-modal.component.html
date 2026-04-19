@@ -47,6 +47,27 @@
         <span class="hint">系統自動產生</span>
       </div>
 
+      <!-- 核定薪資（面試決策階段核定） -->
+      @if (candidate().approved_salary_amount) {
+      <div class="approved-salary-box">
+        <i class="ri-money-dollar-circle-line"></i>
+        <span class="label">核定薪資</span>
+        <span class="value">
+          {{ candidate().approved_salary_amount | number }}
+          <span class="unit">
+            / {{
+              candidate().approved_salary_type === 60 ? '年薪' :
+              candidate().approved_salary_type === 50 ? '月薪' : '—'
+            }}
+          </span>
+        </span>
+        @if (candidate().approved_salary_out_of_range === 1) {
+        <span class="out-of-range-tag">超出職缺範圍</span>
+        }
+        <span class="hint">面試決策階段核定</span>
+      </div>
+      }
+
       <!-- 表單 -->
       <form class="convert-form">
         <!-- 子公司選擇（若有組織單位） -->

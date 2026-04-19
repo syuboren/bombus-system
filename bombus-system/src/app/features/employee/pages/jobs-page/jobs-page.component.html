@@ -95,6 +95,7 @@
             <th>職缺名稱</th>
             <th>來源</th>
             <th>部門</th>
+            <th>職等</th>
             <th>發布日期</th>
             <th>應徵狀況</th>
             <th>狀態</th>
@@ -119,6 +120,13 @@
               </span>
             </td>
             <td>{{ job.department }}</td>
+            <td>
+              @if ($any(job).grade != null) {
+                <span class="grade-badge">第 {{ $any(job).grade }} 職等</span>
+              } @else {
+                <span class="text-muted">未設定</span>
+              }
+            </td>
             <td>{{ job.publishDate || '--' }}</td>
             <td>
               @if (job.status === 'published') {
@@ -287,6 +295,17 @@
     <div class="form-group">
       <label class="form-label">招募負責人</label>
       <input type="text" class="form-input" [value]="newJob().recruiter" readonly>
+    </div>
+    <div class="form-group">
+      <label class="form-label">職等（用於決策頁薪資範圍計算）</label>
+      <select class="form-select"
+        [value]="newJob().grade ?? ''"
+        (change)="updateJobGrade($any($event.target).value)">
+        <option value="">未設定</option>
+        @for (g of gradeOptions(); track g.grade) {
+          <option [value]="g.grade">第 {{ g.grade }} 職等 — {{ g.title }}</option>
+        }
+      </select>
     </div>
     <div class="form-group">
       <label class="form-label">職務說明</label>
@@ -1026,6 +1045,17 @@
         <option value="">請選擇部門</option>
         @for (dept of modalFilteredDepartments(); track dept.id) {
         <option [value]="dept.name">{{ dept.name }}</option>
+        }
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">職等（用於決策頁薪資範圍計算）</label>
+      <select class="form-select"
+        [value]="newJob().grade ?? ''"
+        (change)="updateJobGrade($any($event.target).value)">
+        <option value="">未設定</option>
+        @for (g of gradeOptions(); track g.grade) {
+          <option [value]="g.grade">第 {{ g.grade }} 職等 — {{ g.title }}</option>
         }
       </select>
     </div>

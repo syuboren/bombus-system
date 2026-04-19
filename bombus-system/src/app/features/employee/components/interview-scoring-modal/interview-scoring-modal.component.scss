@@ -31,6 +31,38 @@ $level-poor: #EF4444;
   z-index: 1000;
 }
 
+// 只讀模式：鎖定所有輸入互動，但保留視覺呈現、分頁切換與捲動
+.scoring-modal--readonly {
+  // 表單原子元素本身
+  .level-btn,
+  .radio-btn,
+  .score-level-btn,
+  input,
+  textarea,
+  select,
+  // label 包住 checkbox/radio 時，click 會透過 label 關聯 toggle input；
+  // 光鎖住 input 不夠，必須把 label 容器一起禁用
+  .checklist-item,
+  .radio-option,
+  .recommendation-option {
+    pointer-events: none !important;
+    user-select: none;
+  }
+
+  .level-btn:not(.selected):not(.active),
+  .radio-btn:not(.selected):not(.active),
+  .score-level-btn:not(.selected):not(.active),
+  .recommendation-option:not(.selected) {
+    opacity: 0.45;
+  }
+
+  input, textarea, select {
+    background-color: #F5F5F7 !important;
+    color: #4B5563;
+    cursor: not-allowed;
+  }
+}
+
 .scoring-modal {
   position: fixed;
   top: 50%;

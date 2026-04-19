@@ -144,6 +144,26 @@ function createPlatformTables(adapter) {
     )
   `);
 
+  // 遷移：已啟用 L1.recruitment 的方案自動納入 L1.decision（面試決策）
+  // 先用 LIKE 過濾，跳過已含 L1.decision 的方案；遷移完成後此段會是 no-op
+  try {
+    const plans = db.exec(
+      "SELECT id, features FROM subscription_plans WHERE features LIKE '%L1.recruitment%' AND features NOT LIKE '%L1.decision%'"
+    )[0];
+    if (plans && plans.values.length) {
+      for (const [planId, featuresJson] of plans.values) {
+        if (!featuresJson) continue;
+        let features;
+        try { features = JSON.parse(featuresJson); } catch (e) { continue; }
+        if (Array.isArray(features) && features.includes('L1.recruitment') && !features.includes('L1.decision')) {
+          const idx = features.indexOf('L1.recruitment');
+          features.splice(idx + 1, 0, 'L1.decision');
+          db.run('UPDATE subscription_plans SET features = ? WHERE id = ?', [JSON.stringify(features), planId]);
+        }
+      }
+    }
+  } catch (e) { /* 方案表尚未建立或結構不符則忽略 */ }
+
   adapter.save();
 }
 

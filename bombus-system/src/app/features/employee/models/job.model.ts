@@ -50,6 +50,8 @@ export interface Job {
   job104No?: string;
   syncStatus?: '104_synced' | '104_pending' | 'local_only';
   org_unit_id?: string;
+  grade?: number | null;       // 職等（關聯 grade_levels.grade），用於薪資範圍計算
+  grade_title?: string | null; // 由後端 JOIN grade_levels 帶出的顯示名稱
 }
 
 // 104 職缺原始資料介面

@@ -67,6 +67,7 @@ export class SidebarComponent {
           children: [
             { label: '招募職缺管理', icon: '', route: '/employee/jobs', featureId: 'L1.jobs' },
             { label: 'AI智能面試', icon: '', route: '/employee/recruitment', featureId: 'L1.recruitment' },
+            { label: '面試決策', icon: '', route: '/employee/decision', featureId: 'L1.decision' },
             { label: '人才庫與再接觸管理', icon: '', route: '/employee/talent-pool', featureId: 'L1.talent-pool' },
             { label: '員工檔案與歷程管理', icon: '', route: '/employee/profile', featureId: 'L1.profile' },
             { label: '會議管理', icon: '', route: '/employee/meeting', featureId: 'L1.meeting' },

@@ -595,6 +595,23 @@ class TenantDBManager {
       changed = true;
     } catch (e) { /* 表已存在 */ }
 
+    // ── 面試決策欄位遷移（0003_add_decision_fields） ──
+    // candidates +3 欄（薪資核定）、invitation_decisions +5 欄（簽核）、jobs +1 欄（grade）
+    const decisionMigrations = [
+      'ALTER TABLE candidates ADD COLUMN approved_salary_type INTEGER',
+      'ALTER TABLE candidates ADD COLUMN approved_salary_amount INTEGER',
+      'ALTER TABLE candidates ADD COLUMN approved_salary_out_of_range INTEGER DEFAULT 0',
+      "ALTER TABLE invitation_decisions ADD COLUMN approval_status TEXT DEFAULT 'NONE'",
+      'ALTER TABLE invitation_decisions ADD COLUMN approver_id TEXT',
+      'ALTER TABLE invitation_decisions ADD COLUMN approved_at TEXT',
+      'ALTER TABLE invitation_decisions ADD COLUMN approval_note TEXT',
+      'ALTER TABLE invitation_decisions ADD COLUMN submitted_for_approval_at TEXT',
+      'ALTER TABLE jobs ADD COLUMN grade INTEGER REFERENCES grade_levels(grade)'
+    ];
+    for (const sql of decisionMigrations) {
+      try { db.run(sql); changed = true; } catch (e) { /* 欄位已存在則忽略 */ }
+    }
+
     // ── Feature-based Permission 遷移（新舊並存） ──
 
     // 建立 features / role_feature_perms 表（冪等）

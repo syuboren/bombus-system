@@ -8,12 +8,17 @@ TBD - created by archiving change 'candidate-employee-user-linking'. Update Purp
 
 ### Requirement: Automatic user account creation during candidate conversion
 
-The system SHALL automatically create a user account in the `users` table when a candidate is converted to an employee via `POST /api/hr/onboarding/convert-candidate`. The initial password SHALL be the candidate's email address. The `must_change_password` flag SHALL be set to `1`.
+The system SHALL automatically create a user account in the `users` table when a candidate is converted to an employee via `POST /api/hr/onboarding/convert-candidate`. Conversion SHALL only be permitted for candidates whose `approval_status = 'APPROVED'` (i.e., the decision has passed subsidiary_admin approval) and whose status is `offer_accepted`. The initial password SHALL be the candidate's email address. The `must_change_password` flag SHALL be set to `1`.
 
 #### Scenario: New user account created successfully
 
-- **WHEN** HR converts a candidate (status=offer_accepted) to an employee and no user account with the same email exists
+- **WHEN** HR converts a candidate (status=offer_accepted, approval_status=APPROVED) to an employee and no user account with the same email exists
 - **THEN** the system creates a new user record with `email = candidate.email`, `password_hash = bcrypt(candidate.email)`, `employee_id = new_employee_id`, `status = 'active'`, and `must_change_password = 1`
+
+#### Scenario: Conversion blocked when approval not completed
+
+- **WHEN** HR attempts to convert a candidate whose `approval_status` is `PENDING`, `REJECTED`, or `NONE`
+- **THEN** the system SHALL return HTTP 409 with a message indicating the decision has not passed approval and conversion SHALL NOT proceed
 
 #### Scenario: Existing user account with same email
 
@@ -29,6 +34,57 @@ The system SHALL automatically create a user account in the `users` table when a
 
 - **WHEN** the candidate's email is shorter than 8 characters
 - **THEN** the system SHALL pad the initial password to at least 8 characters (e.g., append '1234')
+
+
+<!-- @trace
+source: split-interview-decision-pages
+updated: 2026-04-19
+code:
+  - bombus-system/server/src/routes/recruitment.js
+  - bombus-system/src/app/features/employee/pages/decision-page/decision-page.component.ts
+  - bombus-system/src/app/features/employee/models/candidate.model.ts
+  - bombus-system/server/src/db/tenant-schema.js
+  - bombus-system/openspec/changes/split-interview-decision-pages/tasks.md
+  - bombus-system/server/src/routes/jobs.js
+  - bombus-system/src/app/features/employee/pages/recruitment-page/recruitment-page.component.scss
+  - bombus-system/docs/~$現況與問題比對分析_20260406.xlsx
+  - bombus-system/openspec/changes/split-interview-decision-pages/specs/feature-perm-frontend-gate/spec.md
+  - bombus-system/src/app/shared/components/sidebar/sidebar.component.ts
+  - ARCHITECTURE.md
+  - bombus-system/src/app/features/employee/pages/decision-page/decision-page.component.scss
+  - bombus-system/src/app/features/employee/services/onboarding.service.ts
+  - bombus-system/docs/備份/現況與問題比對分析_20260406拷貝.xlsx
+  - bombus-system/src/app/features/employee/employee.routes.ts
+  - bombus-system/src/app/features/employee/components/interview-scoring-modal/interview-scoring-modal.component.scss
+  - bombus-system/src/app/features/employee/pages/jobs-page/jobs-page.component.html
+  - bombus-system/src/app/features/employee/pages/decision-page/decision-page.component.html
+  - bombus-system/src/app/features/employee/components/interview-scoring-modal/interview-scoring-modal.component.html
+  - bombus-system/src/app/features/employee/services/interview.service.ts
+  - bombus-system/src/app/features/employee/pages/jobs-page/jobs-page.component.scss
+  - bombus-system/src/app/features/employee/pages/recruitment-page/recruitment-page.component.html
+  - bombus-system/src/app/features/employee/pages/recruitment-page/recruitment-page.component.ts
+  - bombus-system/openspec/changes/split-interview-decision-pages/specs/feature-based-permissions/spec.md
+  - bombus-system/src/app/features/employee/services/decision.service.ts
+  - bombus-system/openspec/changes/split-interview-decision-pages/specs/approved-salary-field/spec.md
+  - bombus-system/openspec/changes/split-interview-decision-pages/proposal.md
+  - bombus-system/openspec/changes/split-interview-decision-pages/.openspec.yaml
+  - bombus-system/openspec/changes/split-interview-decision-pages/design.md
+  - bombus-system/openspec/changes/split-interview-decision-pages/specs/interview-decision-page/spec.md
+  - bombus-system/server/src/db/platform-db.js
+  - bombus-system/src/app/features/employee/models/job.model.ts
+  - bombus-system/openspec/changes/split-interview-decision-pages/specs/decision-approval-workflow/spec.md
+  - bombus-system/src/app/features/employee/components/interview-scoring-modal/interview-scoring-modal.component.ts
+  - bombus-system/src/app/features/employee/pages/jobs-page/jobs-page.component.ts
+  - bombus-system/src/app/features/employee/components/onboarding-convert-modal/onboarding-convert-modal.component.html
+  - bombus-system/openspec/changes/split-interview-decision-pages/specs/employee-onboarding-automation/spec.md
+  - bombus-system/server/src/db/tenant-db-manager.js
+  - bombus-system/server/src/services/decision.service.js
+  - bombus-system/src/app/features/employee/components/onboarding-convert-modal/onboarding-convert-modal.component.scss
+  - bombus-system/docs/現況與問題比對分析_20260406.xlsx
+  - bombus-system/server/src/routes/hr-onboarding.js
+tests:
+  - bombus-system/server/src/tests/test-decision-approval.js
+-->
 
 ---
 ### Requirement: Automatic employee role assignment
@@ -134,3 +190,68 @@ After successful candidate conversion, the success view in the conversion modal 
 
 - **WHEN** conversion succeeds but user account creation failed
 - **THEN** the success view SHALL display a warning message indicating manual account creation is needed
+
+---
+### Requirement: Approved salary carried into employee record
+
+When a candidate is converted to an employee, the system SHALL carry forward the approved salary information from the candidate record to enable downstream HR processes. The employee record SHALL reference the source candidate such that `candidates.approved_salary_amount`, `candidates.approved_salary_type`, and `candidates.approved_salary_out_of_range` remain retrievable for reporting.
+
+#### Scenario: Candidate approved salary accessible after conversion
+
+- **WHEN** a candidate with `approved_salary_amount = 60000` is converted to an employee
+- **THEN** the candidate record SHALL retain the approved salary fields and the employee record SHALL preserve the link via `employees.candidate_id` (if column exists) or via `employees.source_candidate_id`
+
+#### Scenario: Approval metadata retained on approved candidates
+
+- **WHEN** a candidate is converted (status transitions to `onboarded`)
+- **THEN** the candidate's `approval_status`, `approver_id`, `approved_at`, `approval_note` SHALL NOT be cleared, and SHALL be queryable for audit purposes
+
+<!-- @trace
+source: split-interview-decision-pages
+updated: 2026-04-19
+code:
+  - bombus-system/server/src/routes/recruitment.js
+  - bombus-system/src/app/features/employee/pages/decision-page/decision-page.component.ts
+  - bombus-system/src/app/features/employee/models/candidate.model.ts
+  - bombus-system/server/src/db/tenant-schema.js
+  - bombus-system/openspec/changes/split-interview-decision-pages/tasks.md
+  - bombus-system/server/src/routes/jobs.js
+  - bombus-system/src/app/features/employee/pages/recruitment-page/recruitment-page.component.scss
+  - bombus-system/docs/~$現況與問題比對分析_20260406.xlsx
+  - bombus-system/openspec/changes/split-interview-decision-pages/specs/feature-perm-frontend-gate/spec.md
+  - bombus-system/src/app/shared/components/sidebar/sidebar.component.ts
+  - ARCHITECTURE.md
+  - bombus-system/src/app/features/employee/pages/decision-page/decision-page.component.scss
+  - bombus-system/src/app/features/employee/services/onboarding.service.ts
+  - bombus-system/docs/備份/現況與問題比對分析_20260406拷貝.xlsx
+  - bombus-system/src/app/features/employee/employee.routes.ts
+  - bombus-system/src/app/features/employee/components/interview-scoring-modal/interview-scoring-modal.component.scss
+  - bombus-system/src/app/features/employee/pages/jobs-page/jobs-page.component.html
+  - bombus-system/src/app/features/employee/pages/decision-page/decision-page.component.html
+  - bombus-system/src/app/features/employee/components/interview-scoring-modal/interview-scoring-modal.component.html
+  - bombus-system/src/app/features/employee/services/interview.service.ts
+  - bombus-system/src/app/features/employee/pages/jobs-page/jobs-page.component.scss
+  - bombus-system/src/app/features/employee/pages/recruitment-page/recruitment-page.component.html
+  - bombus-system/src/app/features/employee/pages/recruitment-page/recruitment-page.component.ts
+  - bombus-system/openspec/changes/split-interview-decision-pages/specs/feature-based-permissions/spec.md
+  - bombus-system/src/app/features/employee/services/decision.service.ts
+  - bombus-system/openspec/changes/split-interview-decision-pages/specs/approved-salary-field/spec.md
+  - bombus-system/openspec/changes/split-interview-decision-pages/proposal.md
+  - bombus-system/openspec/changes/split-interview-decision-pages/.openspec.yaml
+  - bombus-system/openspec/changes/split-interview-decision-pages/design.md
+  - bombus-system/openspec/changes/split-interview-decision-pages/specs/interview-decision-page/spec.md
+  - bombus-system/server/src/db/platform-db.js
+  - bombus-system/src/app/features/employee/models/job.model.ts
+  - bombus-system/openspec/changes/split-interview-decision-pages/specs/decision-approval-workflow/spec.md
+  - bombus-system/src/app/features/employee/components/interview-scoring-modal/interview-scoring-modal.component.ts
+  - bombus-system/src/app/features/employee/pages/jobs-page/jobs-page.component.ts
+  - bombus-system/src/app/features/employee/components/onboarding-convert-modal/onboarding-convert-modal.component.html
+  - bombus-system/openspec/changes/split-interview-decision-pages/specs/employee-onboarding-automation/spec.md
+  - bombus-system/server/src/db/tenant-db-manager.js
+  - bombus-system/server/src/services/decision.service.js
+  - bombus-system/src/app/features/employee/components/onboarding-convert-modal/onboarding-convert-modal.component.scss
+  - bombus-system/docs/現況與問題比對分析_20260406.xlsx
+  - bombus-system/server/src/routes/hr-onboarding.js
+tests:
+  - bombus-system/server/src/tests/test-decision-approval.js
+-->

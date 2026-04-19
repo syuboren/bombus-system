@@ -469,6 +469,7 @@ router.post('/', requireFeaturePerm('L1.jobs', 'edit'), (req, res) => {
             recruiter = 'HR Admin',
             jdId,
             org_unit_id,
+            grade,
             job104Data  // 保存 104 設定，但不立即同步
         } = req.body;
 
@@ -484,8 +485,8 @@ router.post('/', requireFeaturePerm('L1.jobs', 'edit'), (req, res) => {
 
         // 儲存到資料庫
         req.tenantDB.prepare(`
-            INSERT INTO jobs (id, title, department, description, recruiter, status, jd_id, job104_no, sync_status, job104_data, synced_at, created_at, updated_at, org_unit_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO jobs (id, title, department, description, recruiter, status, jd_id, job104_no, sync_status, job104_data, synced_at, grade, created_at, updated_at, org_unit_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).run(
             id,
             title,
@@ -498,6 +499,7 @@ router.post('/', requireFeaturePerm('L1.jobs', 'edit'), (req, res) => {
             syncStatus,
             job104Data ? JSON.stringify(job104Data) : null,
             null,     // synced_at 在核准發布時才設定
+            Number.isInteger(grade) ? grade : null,
             now,
             now,
             org_unit_id || null
@@ -537,6 +539,7 @@ router.put('/:id', requireFeaturePerm('L1.jobs', 'edit'), async (req, res) => {
             status,
             jdId,
             org_unit_id,
+            grade,
             job104Data  // 104 設定資料 (可選)
         } = req.body;
 
@@ -559,6 +562,7 @@ router.put('/:id', requireFeaturePerm('L1.jobs', 'edit'), async (req, res) => {
                 jd_id = COALESCE(?, jd_id),
                 job104_data = COALESCE(?, job104_data),
                 org_unit_id = COALESCE(?, org_unit_id),
+                grade = COALESCE(?, grade),
                 updated_at = ?
             WHERE id = ?
         `).run(
@@ -570,6 +574,7 @@ router.put('/:id', requireFeaturePerm('L1.jobs', 'edit'), async (req, res) => {
             jdId || null,
             job104Data ? JSON.stringify(job104Data) : null,
             org_unit_id || null,
+            Number.isInteger(grade) ? grade : null,
             now,
             id
         );

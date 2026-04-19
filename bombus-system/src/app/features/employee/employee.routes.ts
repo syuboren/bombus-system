@@ -38,6 +38,13 @@ export const EMPLOYEE_ROUTES: Routes = [
       .then(m => m.RecruitmentPageComponent)
   },
   {
+    path: 'decision',
+    data: { requiredFeature: 'L1.decision' },
+    canActivate: [featureGateGuard],
+    loadComponent: () => import('./pages/decision-page/decision-page.component')
+      .then(m => m.DecisionPageComponent)
+  },
+  {
     path: 'profile',
     data: { requiredFeature: 'L1.profile' },
     canActivate: [featureGateGuard],

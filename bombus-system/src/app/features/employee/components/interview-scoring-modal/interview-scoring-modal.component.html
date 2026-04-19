@@ -1,6 +1,6 @@
 @if (isVisible()) {
 <div class="modal-backdrop"></div>
-<div class="scoring-modal">
+<div class="scoring-modal" [class.scoring-modal--readonly]="readOnly()">
   <!-- Modal Header -->
   <div class="modal-header">
     <h3 class="modal-title">
@@ -290,17 +290,19 @@
     </div>
     <div class="footer-right">
       <button class="btn btn-secondary" (click)="tryClose()" type="button" [disabled]="loading()">
-        取消
+        @if (readOnly()) { 關閉 } @else { 取消 }
       </button>
-      <button class="btn btn-primary" (click)="submit()" type="button" [disabled]="loading() || !isValid()">
-        @if (loading()) {
-        <i class="ri-loader-4-line spinning"></i>
-        保存中...
-        } @else {
-        <i class="ri-save-line"></i>
-        儲存評分
-        }
-      </button>
+      @if (!readOnly()) {
+        <button class="btn btn-primary" (click)="submit()" type="button" [disabled]="loading() || !isValid()">
+          @if (loading()) {
+          <i class="ri-loader-4-line spinning"></i>
+          保存中...
+          } @else {
+          <i class="ri-save-line"></i>
+          儲存評分
+          }
+        </button>
+      }
     </div>
   </div>
 </div>

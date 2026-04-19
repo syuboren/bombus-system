@@ -20,8 +20,28 @@
             待面試
           </button>
           <button class="filter-tab" [class.active]="statusFilter() === 'scored'" (click)="statusFilter.set('scored')">
-            面試後
+            已評分
           </button>
+        </div>
+
+        <!-- 面試日期篩選 -->
+        <div class="date-filter-group">
+          <div class="date-filter-row">
+            <span class="date-filter-label"><i class="ri-calendar-line"></i> 面試日期</span>
+            <input type="date" class="date-filter-input"
+              [value]="customDate()"
+              (change)="onCustomDateChange($any($event.target).value)" />
+          </div>
+          <div class="date-quick-tabs">
+            <button class="quick-tab" [class.active]="dateFilter() === 'all'"
+              (click)="setDateFilter('all')" type="button">全部</button>
+            <button class="quick-tab" [class.active]="dateFilter() === 'today'"
+              (click)="setDateFilter('today')" type="button">今日</button>
+            <button class="quick-tab" [class.active]="dateFilter() === '3days'"
+              (click)="setDateFilter('3days')" type="button">近 3 天</button>
+            <button class="quick-tab" [class.active]="dateFilter() === '7days'"
+              (click)="setDateFilter('7days')" type="button">近 7 天</button>
+          </div>
         </div>
 
         <div class="search-section">
@@ -58,7 +78,12 @@
             <div class="candidate-info">
               <div class="candidate-name">{{ candidate.name }}</div>
               <div class="candidate-position">{{ candidate.position }}</div>
-              <div class="candidate-date">{{ candidate.interviewDate }}</div>
+              @if (candidate.interviewDate) {
+                <div class="candidate-date">
+                  <i class="ri-calendar-line"></i>
+                  {{ candidate.interviewDate | date:'yyyy-MM-dd HH:mm' }}
+                </div>
+              }
             </div>
             <div class="candidate-status">
               @switch (candidate.status) {
@@ -70,6 +95,9 @@
               }
               @case ('pending_decision') {
               <span class="status-badge status-badge--scored">待決策</span>
+              }
+              @case ('pending_approval') {
+              <span class="status-badge status-badge--pending">簽核中</span>
               }
               @case ('offered') {
               <span class="status-badge status-badge--offered">待回覆 Offer</span>
@@ -126,10 +154,12 @@
                   <i class="ri-briefcase-line"></i>
                   {{ candidate.position }}
                 </span>
+                @if (candidate.interviewDate) {
                 <span class="meta-item">
                   <i class="ri-calendar-line"></i>
-                  {{ candidate.interviewDate }}
+                  {{ candidate.interviewDate | date:'yyyy-MM-dd HH:mm' }}
                 </span>
+                }
                 @if (candidate.duration) {
                 <span class="meta-item">
                   <i class="ri-time-line"></i>
@@ -323,11 +353,15 @@
             <!-- 按鈕區域 (決策已提交時隱藏) -->
             @if (!isDecisionSubmitted() && canEdit()) {
             <div class="header-actions">
+              <!-- 儲存分析結果：僅在「有尚未存檔的 AI 結果」時顯示；
+                   跑完 AI 分析或點重新分析後會出現，點儲存成功後消失 -->
+              @if (hasUnsavedAIResult()) {
               <button class="btn btn-outline" (click)="saveAIAnalysis()"
-                [disabled]="!aiAnalysisResult() || aiAnalysisLoading()" type="button" style="margin-right: 8px;">
+                [disabled]="aiAnalysisLoading()" type="button" style="margin-right: 8px;">
                 <i class="ri-save-3-line"></i>
                 儲存分析結果
               </button>
+              }
               <button class="btn btn-ai" (click)="triggerAIAnalysis()" [disabled]="aiAnalysisLoading()" type="button">
                 @if (aiAnalysisLoading()) {
                 <i class="ri-loader-4-line spin"></i>
@@ -482,132 +516,46 @@
         </section>
         }
 
-        <!-- 錄用決策 (AI 分析完成後顯示) -->
-        @if (isAIAnalysisDone()) {
-        <section class="card decision-section" [class.locked]="isDecisionSubmitted()">
-          <div class="card-header">
-            <h4 class="card-title">
-              <i class="ri-group-line"></i>
-              錄用決策
-              @if (isDecisionSubmitted()) {
-              <span class="locked-badge">
-                <i class="ri-lock-line"></i>
-                已鎖定
-              </span>
-              }
-            </h4>
-          </div>
-          <div class="card-body">
-            <!-- 已提交決策：顯示鎖定狀態 -->
-            @if (isDecisionSubmitted()) {
-            <div class="decision-submitted">
-              <!-- 決策結果顯示 (從 decision signal 或 candidate.status 推斷) -->
-              @if (selectedCandidate(); as candidate) {
-                @if (decision() === 'Offered' || candidate.status === 'offered' || candidate.status === 'offer_accepted' || candidate.status === 'offer_declined') {
-                <div class="decision-result decision-offered">
-                  <i class="ri-trophy-line"></i>
-                  <span class="result-text">已錄取</span>
-                </div>
-                } @else {
-                <div class="decision-result decision-rejected">
-                  <i class="ri-close-circle-line"></i>
-                  <span class="result-text">未錄取</span>
-                </div>
-                }
-              }
-              
-              <!-- 決策理由 -->
-              @if (decisionReason()) {
-              <div class="decision-reason-display">
-                <label class="form-label">決策理由</label>
-                <p>{{ decisionReason() }}</p>
-              </div>
-              }
-              
-              <!-- Offer 回覆連結（Offer 相關狀態顯示） -->
-              @if (selectedCandidate(); as candidate) {
-                @if ((decision() === 'Offered' || candidate.status === 'offered' || candidate.status === 'offer_accepted' || candidate.status === 'offer_declined') && offerResponseLink()) {
-                <div class="offer-link-section">
-                  <label class="form-label">
-                    <i class="ri-link"></i>
-                    Offer 回覆連結
-                  </label>
-                  <p class="link-hint">請將以下連結分享給候選人，讓他們回覆是否接受錄用：</p>
-                  <div class="link-box">
-                    <input type="text" readonly [value]="offerResponseLink()" class="link-input">
-                    <button class="btn btn-primary btn-copy" (click)="copyOfferLink()">
-                      <i class="ri-file-copy-line"></i>
-                      複製
-                    </button>
-                  </div>
-                  
-                  <!-- 候選人回覆狀態 -->
-                  @if (candidate.status === 'offer_accepted') {
-                  <div class="response-status response-accepted">
-                    <i class="ri-checkbox-circle-fill"></i>
-                    候選人已接受 Offer
-                  </div>
-                  } @else if (candidate.status === 'offer_declined') {
-                  <div class="response-status response-declined">
-                    <i class="ri-close-circle-fill"></i>
-                    候選人婉拒 Offer
-                  </div>
-                  } @else {
-                  <div class="response-status response-pending">
-                    <i class="ri-time-line"></i>
-                    等待候選人回覆中...
-                  </div>
-                  }
-                </div>
-                }
-              }
-            </div>
-            } @else {
-            <!-- 未提交決策：顯示選擇表單 -->
-            @if (canEdit()) {
-            <div class="decision-options">
-              <label class="decision-option option-reject" [class.selected]="decision() === 'Rejected'">
-                <input type="radio" name="decision" value="Rejected" [ngModel]="decision()"
-                  (ngModelChange)="decision.set($event)">
-                <i class="ri-close-circle-line"></i>
-                <span class="title">未錄取</span>
-                <span class="desc">候選人不符合目前的職缺需求</span>
-              </label>
-
-              <label class="decision-option option-offer" [class.selected]="decision() === 'Offered'">
-                <input type="radio" name="decision" value="Offered" [ngModel]="decision()"
-                  (ngModelChange)="decision.set($event)">
-                <i class="ri-checkbox-circle-line"></i>
-                <span class="title">已錄取</span>
-                <span class="desc">候選人表現優異，建議錄用</span>
-              </label>
-            </div>
-
-            @if (decision()) {
-            <div class="form-group slide-in">
-              <label class="form-label">決策理由</label>
-              <textarea class="form-textarea" rows="3" placeholder="請說明做出此決策的原因..." [value]="decisionReason()"
-                (input)="decisionReason.set($any($event.target).value)"></textarea>
-
-              <div class="decision-actions">
-                <button class="btn btn-lg btn-primary" (click)="submitDecision()"
-                  [disabled]="!decisionReason() || decisionSubmitting()">
-                  @if (decisionSubmitting()) {
-                  <i class="ri-loader-4-line spin"></i>
-                  提交中...
-                  } @else {
-                  <i class="ri-send-plane-fill"></i>
-                  提交決策
-                  }
-                </button>
+        <!-- 決策已送簽提示（pending_approval 以後才顯示；之前 HR 仍可修改評分與重跑 AI） -->
+        @if (isDecisionSubmitted()) {
+        <section class="card decision-handoff-notice">
+          <div class="card-body" style="display:flex; align-items:center; gap:12px; padding:16px 20px;">
+            <i class="ri-arrow-right-circle-line" style="font-size:1.5rem; color:#8DA399;"></i>
+            <div style="flex:1;">
+              <div style="font-weight:600; color:#1F2937;">此候選人的錄用決策已送簽</div>
+              <div style="font-size:0.85rem; color:#6B7280; margin-top:2px;">
+                後續流程請至「面試決策」頁面查看簽核狀態。本頁面已鎖定為唯讀。
               </div>
             </div>
-            }
-            }
+            @if (canAccessDecisionPage()) {
+              <a routerLink="/employee/decision" class="btn btn-outline" style="text-decoration:none;">
+                <i class="ri-external-link-line"></i>
+                前往決策頁
+              </a>
             }
           </div>
         </section>
+        } @else if (selectedCandidate()?.status === 'pending_decision') {
+          <!-- 已評分 + AI 分析完成：提示 HR 可前往決策頁進行錄用決策；此頁仍可編輯 -->
+          <section class="card decision-handoff-notice" style="border-left:3px solid #8DA399;">
+            <div class="card-body" style="display:flex; align-items:center; gap:12px; padding:16px 20px;">
+              <i class="ri-lightbulb-line" style="font-size:1.5rem; color:#8DA399;"></i>
+              <div style="flex:1;">
+                <div style="font-weight:600; color:#1F2937;">此候選人已可進行錄用決策</div>
+                <div style="font-size:0.85rem; color:#6B7280; margin-top:2px;">
+                  面試評分與 AI 分析皆已完成，可前往「面試決策」頁提交錄用決策；若需調整評分或重跑 AI 可直接於本頁修改。
+                </div>
+              </div>
+              @if (canAccessDecisionPage()) {
+                <a routerLink="/employee/decision" class="btn btn-outline" style="text-decoration:none;">
+                  <i class="ri-external-link-line"></i>
+                  前往決策頁
+                </a>
+              }
+            </div>
+          </section>
         }
+
         } @else {
         <!-- 空狀態 -->
         <div class="empty-state">

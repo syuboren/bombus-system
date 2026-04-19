@@ -213,6 +213,58 @@
   }
 }
 
+.approved-salary-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  background: rgba(141, 163, 153, 0.08);
+  border-left: 3px solid #8DA399;
+  border-radius: 8px;
+  color: #1F2937;
+
+  > i {
+    font-size: 20px;
+    color: #6B8577;
+  }
+
+  .label {
+    font-size: 13px;
+    color: #6B7280;
+  }
+
+  .value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1F2937;
+    font-family: 'SF Mono', Menlo, Monaco, Consolas, monospace;
+
+    .unit {
+      margin-left: 4px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #6B7280;
+      font-family: inherit;
+    }
+  }
+
+  .out-of-range-tag {
+    padding: 2px 8px;
+    background: rgba(232, 168, 124, 0.2);
+    color: #8B5A34;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .hint {
+    margin-left: auto;
+    font-size: 12px;
+    color: #6B7280;
+  }
+}
+
 // 表單
 .convert-form {
   display: flex;

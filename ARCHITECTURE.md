@@ -15,7 +15,7 @@ features/           → 功能模組（延遲載入）
 
 | 路由前綴 | 模組 | 說明 |
 | ---------- | ------ | ------ |
-| `/employee` | L1 員工管理 | 招募、員工檔案、入職、會議、人才庫 |
+| `/employee` | L1 員工管理 | 招募、AI 智能面試、**面試決策**、員工檔案、入職、會議、人才庫 |
 | `/competency` | L2 職能管理 | 職等職級、職務說明書、職能框架、評估 |
 | `/training` | L3 教育訓練 | 課程、學習地圖、九宮格、人才儀表板 |
 | `/project` | L4 專案管理 | 專案列表、損益、報表 |
@@ -41,6 +41,70 @@ features/           → 功能模組（延遲載入）
 - `_variables.scss` — 色彩、間距、圓角、陰影、斷點
 - `_mixins.scss` — 常用 mixin（詳見 `bombus-system/CLAUDE.md` 及 `DESIGN_SYSTEM.md`）
 - 每個功能模組 SCSS 頂部定義 `$module-color: $color-lX-xxx;`
+
+## L1 招募/面試/決策 流程（拆分架構）
+
+L1 員工管理模組內的招募流程跨 3 個頁面、2 個 feature 權限：
+
+| 頁面 | 路由 | Feature | 主要職責 |
+| ------ | ------ | ------ | ------ |
+| 招募職缺管理 | `/employee/jobs` | `L1.jobs` | 建立/編輯職缺（含**職等 grade** 選單）、同步 104 |
+| AI 智能面試 | `/employee/recruitment` | `L1.recruitment` | 面試官評分（17 題倒扣制）、AI 量化分析、面試錄音錄影 |
+| 面試決策 | `/employee/decision` | `L1.decision` | 職缺詳情 + 評分/AI（只讀）+ 錄用決策 + 薪資核定 + 主管簽核 |
+
+### 候選人狀態機（含簽核）
+
+```
+interview → pending_ai → pending_decision ──┐
+                                            │  HR 送簽
+                                            ▼
+                                      pending_approval
+                                            │
+          ┌─── subsidiary_admin 退回（可無限輪迴） ──┘
+          ▼
+    pending_decision                        │  subsidiary_admin 通過
+                                            ▼
+                                        offered / not_hired
+                                            │
+                                            ▼  候選人接受
+                                        offer_accepted
+                                            │
+                                            ▼  HR 轉入職（須 APPROVED）
+                                        onboarded
+```
+
+**狀態轉換端點：**
+- `POST /api/recruitment/candidates/:id/submit-approval` — HR 送簽
+- `POST /api/recruitment/candidates/:id/approve` — 主管簽核通過（role: subsidiary_admin/super_admin）
+- `POST /api/recruitment/candidates/:id/reject-approval` — 主管退回（要求 approval_note）
+- `GET /api/recruitment/candidates/:id/salary-range` — 依 `job.grade` 查詢薪資範圍
+
+### 資料表對應
+
+| 資料項 | 表 | 欄位 |
+| ------ | ------ | ------ |
+| 薪資核定（候選人層級） | `candidates` | `approved_salary_type` / `approved_salary_amount` / `approved_salary_out_of_range` |
+| 簽核歷程（決策事件層級） | `invitation_decisions` | `approval_status` / `approver_id` / `approved_at` / `approval_note` / `submitted_for_approval_at` |
+| 職等（職缺層級） | `jobs` | `grade INTEGER REFERENCES grade_levels(grade)` |
+| 薪資範圍計算 | `grade_salary_levels` | `SELECT MIN/MAX(salary) WHERE grade = ? AND (org_unit_id = ? OR org_unit_id IS NULL)` |
+
+### 預設角色權限（L1.decision）
+
+| 角色 | action_level | 可送簽？ | 可簽核？ |
+| ------ | ------ | ------ | ------ |
+| super_admin | edit/company | ✅ | ✅ |
+| subsidiary_admin | edit/company | ✅ | ✅ |
+| hr_manager | edit/company | ✅ | ❌（feature 過但 role 擋） |
+| dept_manager | none | ❌ | ❌ |
+| employee | none | ❌ | ❌ |
+
+### 相關服務/元件
+
+- **後端**：[server/src/services/decision.service.js](bombus-system/server/src/services/decision.service.js) — 集中狀態機與薪資驗證
+- **前端**：[src/app/features/employee/services/decision.service.ts](bombus-system/src/app/features/employee/services/decision.service.ts) — API 封裝
+- **元件**：[src/app/features/employee/pages/decision-page/](bombus-system/src/app/features/employee/pages/decision-page/) — 決策頁 standalone component
+- **整合測試**：[server/src/tests/test-decision-approval.js](bombus-system/server/src/tests/test-decision-approval.js) — 34/34 passed
+- **變更提案**：[openspec/changes/split-interview-decision-pages/](bombus-system/openspec/changes/split-interview-decision-pages/)
 
 ## Multi-Tenant SaaS 架構（已完成）
 

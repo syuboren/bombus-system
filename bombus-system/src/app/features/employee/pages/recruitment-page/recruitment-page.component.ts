@@ -10,7 +10,6 @@ import {
   ViewChild,
   effect,
   ChangeDetectorRef,
-  NgZone,
   DestroyRef
 } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
@@ -18,13 +17,14 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { switchMap } from 'rxjs/operators';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { NotificationService } from '../../../../core/services/notification.service';
 import { OrgUnitService } from '../../../../core/services/org-unit.service';
 import { InterviewService } from '../../services/interview.service';
 import { AIAnalysisService, AIAnalysisResult } from '../../services/ai-analysis.service';
 import { JobKeywordsService } from '../../services/job-keywords.service';
-import { Candidate, CandidateDetail, CandidateFormData, FullAIAnalysisResult } from '../../models/candidate.model';
+import { Candidate, CandidateDetail, CandidateFormData, FullAIAnalysisResult, INTERVIEW_PHASE_STATUSES } from '../../models/candidate.model';
 import { CandidateFull, CandidateResumeAnalysis } from '../../models/job.model';
 import { EvaluationDimension } from '../../models/job-keywords.model';
 import * as echarts from 'echarts';
@@ -92,7 +92,7 @@ import { FeatureGateService } from '../../../../core/services/feature-gate.servi
 @Component({
   selector: 'app-recruitment-page',
   standalone: true,
-  imports: [FormsModule, CommonModule, HeaderComponent, AiScoringOverlayComponent, InterviewScoringModalComponent],
+  imports: [FormsModule, CommonModule, RouterLink, HeaderComponent, AiScoringOverlayComponent, InterviewScoringModalComponent],
   templateUrl: './recruitment-page.component.html',
   styleUrl: './recruitment-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -106,7 +106,6 @@ export class RecruitmentPageComponent implements OnInit, OnDestroy {
   private notificationService = inject(NotificationService);
   private jobService = inject(JobService);
   private cdr = inject(ChangeDetectorRef);
-  private ngZone = inject(NgZone);
   private orgUnitService = inject(OrgUnitService);
   private destroyRef = inject(DestroyRef);
   private featureGateService = inject(FeatureGateService);
@@ -129,6 +128,9 @@ export class RecruitmentPageComponent implements OnInit, OnDestroy {
   candidates = signal<Candidate[]>([]);
   searchQuery = signal<string>('');
   statusFilter = signal<'all' | 'waiting' | 'scored'>('all');
+  // 面試日期範圍篩選：all=全部、today=今日、3days=近 3 天、7days=近 7 天、custom=自訂日期
+  dateFilter = signal<'all' | 'today' | '3days' | '7days' | 'custom'>('all');
+  customDate = signal<string>(''); // yyyy-MM-dd；dateFilter='custom' 時使用
   selectedCandidate = signal<CandidateDetail | null>(null);
   loading = signal<boolean>(false);
 
@@ -166,31 +168,26 @@ export class RecruitmentPageComponent implements OnInit, OnDestroy {
   // AI 分析
   // ============================================================
   aiAnalysisResult = signal<AIAnalysisResult | null>(null);
+  // true 表示「有 AI 結果尚未存檔」——剛跑完 AI 分析或剛重新分析時為 true；
+  // 點「儲存分析結果」成功後回 false，按鈕因此消失；直到下次重新分析才再出現
+  hasUnsavedAIResult = signal<boolean>(false);
   aiAnalysisLoading = signal<boolean>(false);
   aiAnalysisProgress = signal<number>(0);
 
 
   // ============================================================
-  // 錄用決策
+  // 只讀狀態判定（決策流程已移至 /employee/decision）
   // ============================================================
-  decision = signal<'Offered' | 'Rejected' | null>(null);
-  decisionReason = signal<string>('');
-  decisionSubmitting = signal<boolean>(false);
-  offerResponseLink = signal<string | null>(null); // 錄用通知回覆連結
-  
-  // 判斷是否已提交決策（鎖定狀態）
+  // 只有當 HR 實際送交決策簽核之後（pending_approval 起）才鎖定 AI 面試頁；
+  // 在此之前（interview / pending_ai / pending_decision）HR 仍可修改評分與重跑 AI 分析
   isDecisionSubmitted = computed(() => {
     const candidate = this.selectedCandidate();
     if (!candidate) return false;
-    // 檢查候選人狀態是否為已決策狀態
-    return ['offered', 'offer_accepted', 'offer_declined', 'not_hired', 'onboarded'].includes(candidate.status);
+    return ['pending_approval', 'offered', 'offer_accepted', 'offer_declined', 'not_hired', 'onboarded'].includes(candidate.status);
   });
-  
-  // 判斷候選人是否為 Offered 狀態（可顯示 Offer 連結）
-  isOfferPending = computed(() => {
-    const candidate = this.selectedCandidate();
-    return candidate?.status === 'offered';
-  });
+
+  // 此使用者是否可進入面試決策頁
+  canAccessDecisionPage = computed(() => this.featureGateService.canView('L1.decision'));
 
   // ============================================================
   // Computed
@@ -198,28 +195,67 @@ export class RecruitmentPageComponent implements OnInit, OnDestroy {
   filteredCandidates = computed(() => {
     const query = this.searchQuery().toLowerCase();
     const filter = this.statusFilter();
+    const dateRange = this.getDateRange();
 
+    // AI 智能面試頁負責「評分 + AI 分析」階段；HR 一旦在決策頁送簽
+    // （pending_approval 以後）才由 /employee/decision 鎖定並接手。
     return this.candidates().filter(c => {
+      if (!INTERVIEW_PHASE_STATUSES.includes(c.status as any)) return false;
+
       const matchesQuery = c.name.toLowerCase().includes(query) ||
         c.position.toLowerCase().includes(query);
+      if (!matchesQuery) return false;
 
-      if (filter === 'all') return matchesQuery;
-      if (filter === 'waiting') return matchesQuery && c.status === 'interview';
-      if (filter === 'scored') {
-        // 'scored' tab now covers all post-interview states
-        return matchesQuery && (
-          c.status === 'pending_ai' ||
-          c.status === 'pending_decision' ||
-          c.status === 'offered' ||
-          c.status === 'offer_accepted' ||
-          c.status === 'offer_declined' ||
-          c.status === 'onboarded' ||
-          c.status === 'not_hired'
-        );
+      // 面試日期範圍過濾（以 interviewDate = 最新 interview_at 為準）
+      if (dateRange) {
+        if (!c.interviewDate) return false;
+        const t = new Date(c.interviewDate).getTime();
+        if (isNaN(t)) return false;
+        if (t < dateRange.start || t > dateRange.end) return false;
       }
-      return matchesQuery;
+
+      if (filter === 'all') return true;
+      if (filter === 'waiting') return c.status === 'interview';
+      // 「已評分」tab：已送出評分（pending_ai）或已完成 AI 分析（pending_decision）
+      if (filter === 'scored') return c.status === 'pending_ai' || c.status === 'pending_decision';
+      return true;
     });
   });
+
+  /**
+   * 依 dateFilter 推導出 [start, end] 時間戳區間；all → null（不過濾）
+   */
+  private getDateRange(): { start: number; end: number } | null {
+    const f = this.dateFilter();
+    if (f === 'all') return null;
+
+    if (f === 'custom') {
+      const d = this.customDate();
+      if (!d) return null;
+      const start = new Date(d + 'T00:00:00').getTime();
+      const end = new Date(d + 'T23:59:59.999').getTime();
+      return { start, end };
+    }
+
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const todayEnd = todayStart + 24 * 60 * 60 * 1000 - 1;
+
+    if (f === 'today') return { start: todayStart, end: todayEnd };
+    if (f === '3days') return { start: todayStart - 2 * 24 * 60 * 60 * 1000, end: todayEnd };
+    if (f === '7days') return { start: todayStart - 6 * 24 * 60 * 60 * 1000, end: todayEnd };
+    return null;
+  }
+
+  setDateFilter(f: 'all' | 'today' | '3days' | '7days' | 'custom'): void {
+    this.dateFilter.set(f);
+    if (f !== 'custom') this.customDate.set('');
+  }
+
+  onCustomDateChange(d: string): void {
+    this.customDate.set(d);
+    if (d) this.dateFilter.set('custom');
+  }
 
   // AI 分析後的推薦
   hireRecommendation = computed(() => {
@@ -397,9 +433,9 @@ export class RecruitmentPageComponent implements OnInit, OnDestroy {
     this.overallComment.set('');
     this.transcriptText.set('');
     this.aiAnalysisResult.set(null);
-    this.decision.set(null);
-    this.decisionReason.set('');
-    this.offerResponseLink.set(null);
+    // 切換候選人時重置「尚未存檔的 AI 結果」旗標；後面若從 DB 載入 AI 結果
+    // 代表已存檔，不再需要顯示儲存按鈕
+    this.hasUnsavedAIResult.set(false);
     
     // 只有切換到不同候選人時才清除媒體
     const prevMediaOwner = this.mediaOwnerId();
@@ -457,40 +493,6 @@ export class RecruitmentPageComponent implements OnInit, OnDestroy {
       this.aiAnalysisResult.set(candidate.aiAnalysisResult);
     }
 
-    // 5. Load Decision if exists (從資料庫載入錄用決策)
-    if (candidate.decision) {
-      const dec = candidate.decision as any; // 使用 any 以存取蛇形命名欄位
-      // 將資料庫的 decision 值映射到 UI 的 'Offered' | 'Rejected'
-      if (dec.decision === 'Offered' || dec.decision === 'Rejected') {
-        this.decision.set(dec.decision);
-        this.decisionReason.set(dec.reason || '');
-      }
-      
-      // 如果是 Offered 狀態，載入 Offer 回覆連結
-      // 注意：後端返回蛇形命名 (response_token)，需同時檢查駝峰命名 (responseToken)
-      const token = dec.response_token || dec.responseToken;
-      if (dec.decision === 'Offered' && token) {
-        const fullLink = window.location.origin + `/public/offer-response/${token}`;
-        this.offerResponseLink.set(fullLink);
-      }
-    }
-    
-    // 6. 如果候選人狀態是 offered，也嘗試獲取 Offer 連結（後備方案）
-    if (candidate.status === 'offered' && !this.offerResponseLink()) {
-      this.loadOfferResponseLink(candidate.id);
-    }
-  }
-  
-  private loadOfferResponseLink(candidateId: string): void {
-    this.interviewService.getOfferResponseLink(candidateId).subscribe({
-      next: (data) => {
-        const fullLink = window.location.origin + data.responseLink;
-        this.offerResponseLink.set(fullLink);
-      },
-      error: () => {
-        // 如果獲取失敗，不顯示錯誤（可能是還沒有 Offer）
-      }
-    });
   }
 
   loadEvaluationDimensions(): void {
@@ -529,8 +531,6 @@ export class RecruitmentPageComponent implements OnInit, OnDestroy {
   resetForm(): void {
     this.performanceDescription.set('');
     this.overallComment.set('');
-    this.decision.set(null);
-    this.decisionReason.set('');
     this.transcriptText.set('');
     this.uploadedMedia.set(null); // Just clear the signal, revoke is handled in removeMedia or new upload
     const media = this.uploadedMedia();
@@ -631,14 +631,15 @@ export class RecruitmentPageComponent implements OnInit, OnDestroy {
           filename: file.name,
           size: file.size
         });
-        
-        console.log('[Upload] Completed, uploadedMedia:', this.uploadedMedia());
 
         this.notificationService.success('檔案上傳成功');
 
         // 釋放本地預覽 URL
         URL.revokeObjectURL(localUrl);
-        
+
+        // 立即寫回 evaluation，避免使用者 refresh 後媒體消失
+        this.persistMediaAndTranscript(candidateId, persistentUrl, file.size);
+
         // 因為 OnPush 策略，需要手動觸發變更檢測
         this.cdr.detectChanges();
       },
@@ -702,8 +703,28 @@ export class RecruitmentPageComponent implements OnInit, OnDestroy {
       this.transcriptText.set(mockTranscript);
       this.isTranscribing.set(false);
       this.notificationService.success('逐字稿產生完成');
+      // 產生後立即寫回 evaluation，避免 refresh 後遺失
+      const cand = this.selectedCandidate();
+      if (cand) this.persistMediaAndTranscript(cand.id);
       this.cdr.detectChanges();
     }, 2000);
+  }
+
+  /**
+   * 即時把「媒體 URL / 檔案大小 / 逐字稿」寫回 interview_evaluations，
+   * 讓 refresh 也能還原。後端 POST /candidates/:id/evaluation 使用 COALESCE
+   * 更新既有 row，payload 中未傳的欄位不會被清空，可安全做部分更新。
+   */
+  private persistMediaAndTranscript(candidateId: string, mediaUrl?: string, mediaSize?: number): void {
+    const media = this.uploadedMedia();
+    const payload = {
+      transcriptText: this.transcriptText() || undefined,
+      mediaUrl: mediaUrl ?? media?.url,
+      mediaSize: mediaSize ?? media?.size
+    };
+    this.interviewService.saveEvaluation(candidateId, payload).subscribe({
+      error: (err) => console.warn('[persistMediaAndTranscript] Failed to auto-save:', err)
+    });
   }
 
   // ============================================================
@@ -853,6 +874,7 @@ export class RecruitmentPageComponent implements OnInit, OnDestroy {
     ).subscribe({
       next: (result) => {
         this.aiAnalysisResult.set(result);
+        this.hasUnsavedAIResult.set(true);
         this.aiAnalysisLoading.set(false);
         this.notificationService.success('AI 分析完成，請檢閱後儲存');
 
@@ -896,6 +918,7 @@ export class RecruitmentPageComponent implements OnInit, OnDestroy {
     this.interviewService.saveEvaluation(candidate.id, evaluationData).subscribe({
       next: () => {
         this.aiAnalysisLoading.set(false);
+        this.hasUnsavedAIResult.set(false);
         this.notificationService.success('AI 分析結果已儲存');
 
         // Refresh list to update status
@@ -908,113 +931,6 @@ export class RecruitmentPageComponent implements OnInit, OnDestroy {
       }
     });
   }
-
-  // ============================================================
-  // 錄用決策
-  // ============================================================
-  submitDecision(): void {
-    const candidate = this.selectedCandidate();
-    if (!candidate) return;
-
-    if (!this.decision()) {
-      this.notificationService.warning('請選擇錄用或婉拒');
-      return;
-    }
-
-    this.decisionSubmitting.set(true);
-
-    this.interviewService.makeDecision(candidate.id, this.decision()!, this.decisionReason())
-      .subscribe({
-        next: (response) => {
-          this.decisionSubmitting.set(false);
-          
-          let offerLink: string | null = null;
-          
-          if (this.decision() === 'Offered' && response.responseLink) {
-            // 錄用決策：保存回覆連結
-            offerLink = window.location.origin + response.responseLink;
-            this.offerResponseLink.set(offerLink);
-            this.notificationService.success('錄用通知已送出');
-          } else {
-            this.notificationService.success(`決策已提交：${this.decision() === 'Offered' ? '錄用' : '婉拒'}`);
-          }
-          
-          // 【關鍵修正】立即更新 selectedCandidate 的狀態，觸發畫面鎖定
-          // 根據決策類型設定對應的狀態
-          const newStatus = this.decision() === 'Offered' ? 'offered' : 'not_hired';
-          const candidateId = candidate.id;
-          
-          // 使用 NgZone.run 確保在 Angular zone 內執行，觸發變更檢測
-          this.ngZone.run(() => {
-            // 1. 更新 selectedCandidate 狀態（觸發 isDecisionSubmitted computed）
-            this.selectedCandidate.update(c => c ? { ...c, status: newStatus } : null);
-            
-            // 2. 同步更新 candidates 列表中的對應候選人狀態（更新側邊欄）
-            this.candidates.update(list => 
-              list.map(c => c.id === candidateId ? { ...c, status: newStatus } : c)
-            );
-            
-            // 強制觸發變更檢測，確保畫面立即更新
-            this.cdr.detectChanges();
-          });
-          
-          // 異步重新載入候選人列表（取得完整後端資料）
-          this.loadCandidates();
-          
-          // 異步重新載入當前候選人完整資料（獲取完整的後端資料）
-          // 【重要】確保不覆蓋剛設定的狀態
-          this.interviewService.getCandidateDetail(candidate.id).subscribe({
-            next: (detail) => {
-              if (detail) {
-                // 【關鍵】保持已更新的 status，避免被後端舊資料覆蓋
-                const preservedStatus = newStatus;
-                detail.status = preservedStatus;
-                
-                this.selectedCandidate.set(detail);
-                if (offerLink && !this.offerResponseLink()) {
-                  this.offerResponseLink.set(offerLink);
-                }
-                this.cdr.detectChanges();
-              }
-            }
-          });
-        },
-        error: () => {
-          this.decisionSubmitting.set(false);
-          this.notificationService.error('提交失敗，請稍後再試');
-        }
-      });
-  }
-  
-  private reloadSelectedCandidateWithOfferLink(candidateId: string, offerLink: string | null): void {
-    this.interviewService.getCandidateDetail(candidateId).subscribe({
-      next: (detail) => {
-        if (detail) {
-          this.selectedCandidate.set(detail);
-          this.initializeForm(detail);
-          
-          // 如果 initializeForm 沒有從資料庫載入 Offer 連結，使用傳入的連結
-          if (offerLink && !this.offerResponseLink()) {
-            this.offerResponseLink.set(offerLink);
-          }
-          
-          this.cdr.detectChanges();
-        }
-      }
-    });
-  }
-
-  copyOfferLink(): void {
-    const link = this.offerResponseLink();
-    if (link) {
-      navigator.clipboard.writeText(link).then(() => {
-        this.notificationService.success('連結已複製到剪貼簿');
-      }).catch(() => {
-        this.notificationService.error('複製失敗，請手動複製');
-      });
-    }
-  }
-
 
   // ============================================================
   // 雷達圖

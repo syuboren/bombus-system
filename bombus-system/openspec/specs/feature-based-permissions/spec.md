@@ -26,7 +26,6 @@ The system SHALL maintain a `features` table containing business-level feature d
 - **THEN** the system SHALL return all features grouped by module, ordered by sort_order
 
 ---
-
 ### Requirement: Role-feature permission model
 
 The system SHALL maintain a `role_feature_perms` table that maps each role to feature-level permissions. Each record SHALL contain: `role_id`, `feature_id`, `action_level` ('none', 'view', or 'edit'), `edit_scope` (NULL, 'self', 'department', or 'company'), and `view_scope` (NULL, 'self', 'department', or 'company'). The primary key SHALL be (role_id, feature_id).
@@ -57,7 +56,6 @@ The system SHALL maintain a `role_feature_perms` table that maps each role to fe
 - **THEN** the system SHALL return HTTP 400 with an error message explaining the scope constraint
 
 ---
-
 ### Requirement: Bulk update role feature permissions
 
 The system SHALL provide an API to bulk-update all feature permissions for a given role in a single transaction.
@@ -78,7 +76,6 @@ The system SHALL provide an API to bulk-update all feature permissions for a giv
 - **THEN** the system SHALL allow the permission modification (system roles restrict name/delete changes, not permission changes)
 
 ---
-
 ### Requirement: Read role feature permissions
 
 The system SHALL provide an API to retrieve all feature permissions for a specific role.
@@ -94,7 +91,6 @@ The system SHALL provide an API to retrieve all feature permissions for a specif
 - **THEN** the API SHALL return an empty array (not an error)
 
 ---
-
 ### Requirement: Default role feature permission seeding
 
 The system SHALL seed feature permissions for the 5 default system roles during tenant database initialization.
@@ -124,7 +120,6 @@ The system SHALL seed feature permissions for the 5 default system roles during 
   - `action_level = 'none'` for restricted features (user_management, audit_log)
 
 ---
-
 ### Requirement: Feature permission check middleware
 
 The system SHALL provide a `requireFeaturePerm()` middleware function that checks the requesting user's feature-level permissions including data scope.
@@ -147,7 +142,6 @@ The system SHALL provide a `requireFeaturePerm()` middleware function that check
 - **THEN** the middleware SHALL return HTTP 403 Forbidden
 
 ---
-
 ### Requirement: Frontend feature permission service
 
 The frontend PermissionService SHALL provide a `hasFeaturePerm()` method that checks the current user's feature-level permissions.
@@ -168,7 +162,6 @@ The frontend PermissionService SHALL provide a `hasFeaturePerm()` method that ch
 - **THEN** the method SHALL return true only if the user's view_scope for employee_profile is 'department' or 'company'
 
 ---
-
 ### Requirement: Multi-role permission merging
 
 When a user holds multiple roles, the system SHALL merge their feature permissions by taking the highest privilege across all roles for each feature.
@@ -189,7 +182,6 @@ When a user holds multiple roles, the system SHALL merge their feature permissio
 - **THEN** the merged result SHALL be `action_level = 'edit'`, `edit_scope = 'company'`, `view_scope = 'company'`
 
 ---
-
 ### Requirement: User effective feature permissions API
 
 The system SHALL provide `GET /api/auth/my-feature-perms` to return the current user's merged feature permissions.
@@ -210,7 +202,6 @@ The system SHALL provide `GET /api/auth/my-feature-perms` to return the current 
 - **THEN** the system SHALL return HTTP 401 or 403 (this endpoint requires both authMiddleware and tenantMiddleware)
 
 ---
-
 ### Requirement: Feature IDs match sidebar identifiers
 
 The features table in each tenant database SHALL use the same identifier format as the sidebar component's `featureId` property (e.g., `L1.jobs`, `L2.grade-matrix`, `SYS.org-structure`). The features table SHALL contain one entry for every sidebar menu item that has a `featureId` defined. Feature names in the features table SHALL exactly match the sidebar menu item labels.
@@ -231,7 +222,6 @@ The features table in each tenant database SHALL use the same identifier format 
 - **THEN** the features table SHALL contain entries for all sidebar menu items plus SYS system management features, totaling approximately 40 features
 
 ---
-
 ### Requirement: Existing tenant data migration
 
 The system SHALL migrate existing tenant databases from the old feature ID format (`recruitment_jobs`) to the new format (`L1.jobs`) without data loss. The migration SHALL rename feature IDs in both the `features` table and the `role_feature_perms` table. Features that have no sidebar counterpart (`career_path`, `ai_career`) SHALL be removed along with their associated permission records.
@@ -252,7 +242,6 @@ The system SHALL migrate existing tenant databases from the old feature ID forma
 - **THEN** the system SHALL produce no errors and no data changes (UPDATE affects 0 rows for already-renamed IDs)
 
 ---
-
 ### Requirement: API filters features by tenant subscription plan
 
 The `GET /api/tenant-admin/features` endpoint SHALL return only features belonging to modules enabled in the tenant's subscription plan. The `GET /api/tenant-admin/roles/:id/feature-perms` endpoint SHALL likewise filter results by the tenant's enabled modules. SYS module features SHALL always be returned regardless of the subscription plan.
@@ -284,7 +273,6 @@ The `GET /api/tenant-admin/features` endpoint SHALL return only features belongi
 - **AND** SHALL NOT include permission entries for disabled modules
 
 ---
-
 ### Requirement: Default role permissions for new features
 
 When new features are added to the features table (via seed or migration), the system SHALL assign default permission levels to all five system roles (`super_admin`, `subsidiary_admin`, `hr_manager`, `dept_manager`, `employee`) using `INSERT OR IGNORE` for idempotency. Custom roles (non-system) SHALL receive `none` permissions for newly added features.
@@ -300,7 +288,6 @@ When new features are added to the features table (via seed or migration), the s
 - **THEN** that custom role SHALL receive `action_level: 'none'`, `edit_scope: null`, `view_scope: null` for the new feature
 
 ---
-
 ### Requirement: Frontend module type supports L3 through L6
 
 The `FeatureModule` TypeScript type SHALL include `'L3' | 'L4' | 'L5' | 'L6'` in addition to the existing `'L1' | 'L2' | 'SYS'`. The `MODULE_LABELS` and `MODULE_ORDER` constants SHALL include entries for all six business modules plus SYS.
@@ -314,3 +301,226 @@ The `FeatureModule` TypeScript type SHALL include `'L3' | 'L4' | 'L5' | 'L6'` in
 
 - **WHEN** features from multiple modules are displayed
 - **THEN** they SHALL be ordered as: L1, L2, L3, L4, L5, L6, SYS
+
+---
+### Requirement: L1.decision feature definition
+
+The `features` table seed data SHALL include `L1.decision` feature (module `L1`, name `面試決策`, sort_order `101.5` or inserted between 101 and 102). This feature SHALL be seeded on new tenant initialization and added via idempotent migration on existing tenants.
+
+#### Scenario: L1.decision present in new tenant
+
+- **WHEN** a new tenant database is initialized
+- **THEN** the `features` table SHALL contain a row with `id = 'L1.decision'`, `module = 'L1'`, `name = '面試決策'`
+
+#### Scenario: L1.decision added to existing tenants
+
+- **WHEN** an existing tenant database is loaded and `features` table lacks `L1.decision`
+- **THEN** the idempotent migration SHALL insert the row without affecting other features
+
+#### Scenario: Feature listing API returns L1.decision
+
+- **WHEN** tenant admin calls `GET /api/tenant-admin/features`
+- **THEN** the L1 module group SHALL include `L1.decision` ordered after `L1.recruitment` (101) and before `L1.talent-pool` (102)
+
+
+<!-- @trace
+source: split-interview-decision-pages
+updated: 2026-04-19
+code:
+  - bombus-system/server/src/routes/recruitment.js
+  - bombus-system/src/app/features/employee/pages/decision-page/decision-page.component.ts
+  - bombus-system/src/app/features/employee/models/candidate.model.ts
+  - bombus-system/server/src/db/tenant-schema.js
+  - bombus-system/openspec/changes/split-interview-decision-pages/tasks.md
+  - bombus-system/server/src/routes/jobs.js
+  - bombus-system/src/app/features/employee/pages/recruitment-page/recruitment-page.component.scss
+  - bombus-system/docs/~$現況與問題比對分析_20260406.xlsx
+  - bombus-system/openspec/changes/split-interview-decision-pages/specs/feature-perm-frontend-gate/spec.md
+  - bombus-system/src/app/shared/components/sidebar/sidebar.component.ts
+  - ARCHITECTURE.md
+  - bombus-system/src/app/features/employee/pages/decision-page/decision-page.component.scss
+  - bombus-system/src/app/features/employee/services/onboarding.service.ts
+  - bombus-system/docs/備份/現況與問題比對分析_20260406拷貝.xlsx
+  - bombus-system/src/app/features/employee/employee.routes.ts
+  - bombus-system/src/app/features/employee/components/interview-scoring-modal/interview-scoring-modal.component.scss
+  - bombus-system/src/app/features/employee/pages/jobs-page/jobs-page.component.html
+  - bombus-system/src/app/features/employee/pages/decision-page/decision-page.component.html
+  - bombus-system/src/app/features/employee/components/interview-scoring-modal/interview-scoring-modal.component.html
+  - bombus-system/src/app/features/employee/services/interview.service.ts
+  - bombus-system/src/app/features/employee/pages/jobs-page/jobs-page.component.scss
+  - bombus-system/src/app/features/employee/pages/recruitment-page/recruitment-page.component.html
+  - bombus-system/src/app/features/employee/pages/recruitment-page/recruitment-page.component.ts
+  - bombus-system/openspec/changes/split-interview-decision-pages/specs/feature-based-permissions/spec.md
+  - bombus-system/src/app/features/employee/services/decision.service.ts
+  - bombus-system/openspec/changes/split-interview-decision-pages/specs/approved-salary-field/spec.md
+  - bombus-system/openspec/changes/split-interview-decision-pages/proposal.md
+  - bombus-system/openspec/changes/split-interview-decision-pages/.openspec.yaml
+  - bombus-system/openspec/changes/split-interview-decision-pages/design.md
+  - bombus-system/openspec/changes/split-interview-decision-pages/specs/interview-decision-page/spec.md
+  - bombus-system/server/src/db/platform-db.js
+  - bombus-system/src/app/features/employee/models/job.model.ts
+  - bombus-system/openspec/changes/split-interview-decision-pages/specs/decision-approval-workflow/spec.md
+  - bombus-system/src/app/features/employee/components/interview-scoring-modal/interview-scoring-modal.component.ts
+  - bombus-system/src/app/features/employee/pages/jobs-page/jobs-page.component.ts
+  - bombus-system/src/app/features/employee/components/onboarding-convert-modal/onboarding-convert-modal.component.html
+  - bombus-system/openspec/changes/split-interview-decision-pages/specs/employee-onboarding-automation/spec.md
+  - bombus-system/server/src/db/tenant-db-manager.js
+  - bombus-system/server/src/services/decision.service.js
+  - bombus-system/src/app/features/employee/components/onboarding-convert-modal/onboarding-convert-modal.component.scss
+  - bombus-system/docs/現況與問題比對分析_20260406.xlsx
+  - bombus-system/server/src/routes/hr-onboarding.js
+tests:
+  - bombus-system/server/src/tests/test-decision-approval.js
+-->
+
+---
+### Requirement: L1.decision default role permissions
+
+The default role-feature seeding SHALL assign the following permissions for `L1.decision` during tenant initialization and via idempotent migration for existing tenants:
+
+- `super_admin`: `action_level = 'edit'`, `edit_scope = 'company'`, `view_scope = 'company'`
+- `subsidiary_admin`: `action_level = 'edit'`, `edit_scope = 'company'`, `view_scope = 'company'`
+- `hr_manager`: `action_level = 'edit'`, `edit_scope = 'company'`, `view_scope = 'company'`
+- `dept_manager`: `action_level = 'none'`
+- `employee`: `action_level = 'none'`
+
+#### Scenario: Super admin and subsidiary admin can edit decision
+
+- **WHEN** a new tenant is initialized
+- **THEN** both `super_admin` and `subsidiary_admin` roles SHALL have edit/company/company on `L1.decision`
+
+#### Scenario: HR manager can edit decision
+
+- **WHEN** a new tenant is initialized
+- **THEN** the `hr_manager` role SHALL have edit/company/company on `L1.decision`
+
+#### Scenario: Dept manager and employee cannot access decision
+
+- **WHEN** a new tenant is initialized
+- **THEN** both `dept_manager` and `employee` roles SHALL have `action_level = 'none'` on `L1.decision`
+
+#### Scenario: Existing tenants receive default permissions via migration
+
+- **WHEN** an existing tenant database is loaded and role-feature rows for `L1.decision` are missing
+- **THEN** the idempotent migration SHALL insert the default permissions for the five system roles
+
+
+<!-- @trace
+source: split-interview-decision-pages
+updated: 2026-04-19
+code:
+  - bombus-system/server/src/routes/recruitment.js
+  - bombus-system/src/app/features/employee/pages/decision-page/decision-page.component.ts
+  - bombus-system/src/app/features/employee/models/candidate.model.ts
+  - bombus-system/server/src/db/tenant-schema.js
+  - bombus-system/openspec/changes/split-interview-decision-pages/tasks.md
+  - bombus-system/server/src/routes/jobs.js
+  - bombus-system/src/app/features/employee/pages/recruitment-page/recruitment-page.component.scss
+  - bombus-system/docs/~$現況與問題比對分析_20260406.xlsx
+  - bombus-system/openspec/changes/split-interview-decision-pages/specs/feature-perm-frontend-gate/spec.md
+  - bombus-system/src/app/shared/components/sidebar/sidebar.component.ts
+  - ARCHITECTURE.md
+  - bombus-system/src/app/features/employee/pages/decision-page/decision-page.component.scss
+  - bombus-system/src/app/features/employee/services/onboarding.service.ts
+  - bombus-system/docs/備份/現況與問題比對分析_20260406拷貝.xlsx
+  - bombus-system/src/app/features/employee/employee.routes.ts
+  - bombus-system/src/app/features/employee/components/interview-scoring-modal/interview-scoring-modal.component.scss
+  - bombus-system/src/app/features/employee/pages/jobs-page/jobs-page.component.html
+  - bombus-system/src/app/features/employee/pages/decision-page/decision-page.component.html
+  - bombus-system/src/app/features/employee/components/interview-scoring-modal/interview-scoring-modal.component.html
+  - bombus-system/src/app/features/employee/services/interview.service.ts
+  - bombus-system/src/app/features/employee/pages/jobs-page/jobs-page.component.scss
+  - bombus-system/src/app/features/employee/pages/recruitment-page/recruitment-page.component.html
+  - bombus-system/src/app/features/employee/pages/recruitment-page/recruitment-page.component.ts
+  - bombus-system/openspec/changes/split-interview-decision-pages/specs/feature-based-permissions/spec.md
+  - bombus-system/src/app/features/employee/services/decision.service.ts
+  - bombus-system/openspec/changes/split-interview-decision-pages/specs/approved-salary-field/spec.md
+  - bombus-system/openspec/changes/split-interview-decision-pages/proposal.md
+  - bombus-system/openspec/changes/split-interview-decision-pages/.openspec.yaml
+  - bombus-system/openspec/changes/split-interview-decision-pages/design.md
+  - bombus-system/openspec/changes/split-interview-decision-pages/specs/interview-decision-page/spec.md
+  - bombus-system/server/src/db/platform-db.js
+  - bombus-system/src/app/features/employee/models/job.model.ts
+  - bombus-system/openspec/changes/split-interview-decision-pages/specs/decision-approval-workflow/spec.md
+  - bombus-system/src/app/features/employee/components/interview-scoring-modal/interview-scoring-modal.component.ts
+  - bombus-system/src/app/features/employee/pages/jobs-page/jobs-page.component.ts
+  - bombus-system/src/app/features/employee/components/onboarding-convert-modal/onboarding-convert-modal.component.html
+  - bombus-system/openspec/changes/split-interview-decision-pages/specs/employee-onboarding-automation/spec.md
+  - bombus-system/server/src/db/tenant-db-manager.js
+  - bombus-system/server/src/services/decision.service.js
+  - bombus-system/src/app/features/employee/components/onboarding-convert-modal/onboarding-convert-modal.component.scss
+  - bombus-system/docs/現況與問題比對分析_20260406.xlsx
+  - bombus-system/server/src/routes/hr-onboarding.js
+tests:
+  - bombus-system/server/src/tests/test-decision-approval.js
+-->
+
+---
+### Requirement: API endpoints enforce L1.decision permission
+
+The backend middleware SHALL require `action_level = 'edit'` on `L1.decision` for write endpoints `POST /api/recruitment/candidates/:id/submit-approval`. Approval and rejection endpoints (`approve`, `reject-approval`) SHALL additionally require the caller's role to be `subsidiary_admin` or `super_admin` regardless of feature permission.
+
+#### Scenario: HR manager submits approval successfully
+
+- **WHEN** an `hr_manager` with edit permission on `L1.decision` calls submit-approval
+- **THEN** the request SHALL proceed
+
+#### Scenario: HR manager approval attempt rejected
+
+- **WHEN** an `hr_manager` calls `approve` endpoint
+- **THEN** the system SHALL return HTTP 403 even though the user has edit permission on `L1.decision`, because the role check requires `subsidiary_admin` or `super_admin`
+
+#### Scenario: Dept manager blocked by feature permission
+
+- **WHEN** a `dept_manager` with `action_level = 'none'` on `L1.decision` attempts any decision API
+- **THEN** the system SHALL return HTTP 403 via the feature permission middleware
+
+<!-- @trace
+source: split-interview-decision-pages
+updated: 2026-04-19
+code:
+  - bombus-system/server/src/routes/recruitment.js
+  - bombus-system/src/app/features/employee/pages/decision-page/decision-page.component.ts
+  - bombus-system/src/app/features/employee/models/candidate.model.ts
+  - bombus-system/server/src/db/tenant-schema.js
+  - bombus-system/openspec/changes/split-interview-decision-pages/tasks.md
+  - bombus-system/server/src/routes/jobs.js
+  - bombus-system/src/app/features/employee/pages/recruitment-page/recruitment-page.component.scss
+  - bombus-system/docs/~$現況與問題比對分析_20260406.xlsx
+  - bombus-system/openspec/changes/split-interview-decision-pages/specs/feature-perm-frontend-gate/spec.md
+  - bombus-system/src/app/shared/components/sidebar/sidebar.component.ts
+  - ARCHITECTURE.md
+  - bombus-system/src/app/features/employee/pages/decision-page/decision-page.component.scss
+  - bombus-system/src/app/features/employee/services/onboarding.service.ts
+  - bombus-system/docs/備份/現況與問題比對分析_20260406拷貝.xlsx
+  - bombus-system/src/app/features/employee/employee.routes.ts
+  - bombus-system/src/app/features/employee/components/interview-scoring-modal/interview-scoring-modal.component.scss
+  - bombus-system/src/app/features/employee/pages/jobs-page/jobs-page.component.html
+  - bombus-system/src/app/features/employee/pages/decision-page/decision-page.component.html
+  - bombus-system/src/app/features/employee/components/interview-scoring-modal/interview-scoring-modal.component.html
+  - bombus-system/src/app/features/employee/services/interview.service.ts
+  - bombus-system/src/app/features/employee/pages/jobs-page/jobs-page.component.scss
+  - bombus-system/src/app/features/employee/pages/recruitment-page/recruitment-page.component.html
+  - bombus-system/src/app/features/employee/pages/recruitment-page/recruitment-page.component.ts
+  - bombus-system/openspec/changes/split-interview-decision-pages/specs/feature-based-permissions/spec.md
+  - bombus-system/src/app/features/employee/services/decision.service.ts
+  - bombus-system/openspec/changes/split-interview-decision-pages/specs/approved-salary-field/spec.md
+  - bombus-system/openspec/changes/split-interview-decision-pages/proposal.md
+  - bombus-system/openspec/changes/split-interview-decision-pages/.openspec.yaml
+  - bombus-system/openspec/changes/split-interview-decision-pages/design.md
+  - bombus-system/openspec/changes/split-interview-decision-pages/specs/interview-decision-page/spec.md
+  - bombus-system/server/src/db/platform-db.js
+  - bombus-system/src/app/features/employee/models/job.model.ts
+  - bombus-system/openspec/changes/split-interview-decision-pages/specs/decision-approval-workflow/spec.md
+  - bombus-system/src/app/features/employee/components/interview-scoring-modal/interview-scoring-modal.component.ts
+  - bombus-system/src/app/features/employee/pages/jobs-page/jobs-page.component.ts
+  - bombus-system/src/app/features/employee/components/onboarding-convert-modal/onboarding-convert-modal.component.html
+  - bombus-system/openspec/changes/split-interview-decision-pages/specs/employee-onboarding-automation/spec.md
+  - bombus-system/server/src/db/tenant-db-manager.js
+  - bombus-system/server/src/services/decision.service.js
+  - bombus-system/src/app/features/employee/components/onboarding-convert-modal/onboarding-convert-modal.component.scss
+  - bombus-system/docs/現況與問題比對分析_20260406.xlsx
+  - bombus-system/server/src/routes/hr-onboarding.js
+tests:
+  - bombus-system/server/src/tests/test-decision-approval.js
+-->

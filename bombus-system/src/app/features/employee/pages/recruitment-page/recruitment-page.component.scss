@@ -98,6 +98,77 @@
   }
 }
 
+// 面試日期篩選
+.date-filter-group {
+  padding: $spacing-sm $spacing-md;
+  border-bottom: 1px solid $color-soft-gray;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.date-filter-row {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+
+  .date-filter-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    white-space: nowrap;
+
+    i { color: $color-l1-sage; }
+  }
+
+  .date-filter-input {
+    flex: 1;
+    min-width: 0;
+    padding: 4px 8px;
+    font-size: $font-size-xs;
+    border: 1px solid $color-soft-gray;
+    border-radius: $radius-sm;
+    background: white;
+    color: $color-text-dark;
+    cursor: pointer;
+
+    &:focus {
+      outline: none;
+      border-color: $color-l1-sage;
+      box-shadow: 0 0 0 2px rgba($color-l1-sage, 0.12);
+    }
+  }
+}
+
+.date-quick-tabs {
+  display: flex;
+  gap: 4px;
+
+  .quick-tab {
+    flex: 1;
+    padding: 4px 6px;
+    font-size: 11px;
+    color: $color-text-secondary;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: $radius-sm;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+
+    &:hover { background: $color-cloud-gray; }
+
+    &.active {
+      background: rgba($color-l1-sage, 0.1);
+      border-color: $color-l1-sage;
+      color: $color-l1-sage;
+      font-weight: $font-weight-medium;
+    }
+  }
+}
+
 .search-section {
   display: flex;
   flex-direction: column;
@@ -178,6 +249,12 @@
 .candidate-date {
   font-size: $font-size-xs;
   color: $color-muted-gray;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+
+  i { font-size: 12px; }
 }
 
 .status-badge {

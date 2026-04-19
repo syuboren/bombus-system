@@ -86,6 +86,9 @@ router.get('/pending-conversions', requireFeaturePerm('L1.onboarding', 'view'), 
         jd.position_name as original_position_name,
         c.status,
         c.stage,
+        c.approved_salary_type,
+        c.approved_salary_amount,
+        c.approved_salary_out_of_range,
         d.candidate_response as offer_response,
         d.responded_at as offer_accepted_at,
         CAST((julianday('now') - julianday(d.responded_at)) AS INTEGER) as days_since_accepted
@@ -149,6 +152,16 @@ router.post('/convert-candidate', requireFeaturePerm('L1.onboarding', 'edit'), a
     if (candidate.status !== 'offer_accepted') {
       return res.status(400).json({
         error: `Invalid candidate status: ${candidate.status}. Expected: offer_accepted`
+      });
+    }
+
+    // 檢查簽核狀態：最新 invitation_decisions 須為 APPROVED，或為既有資料（approval_status = NONE，豁免）
+    const latestDecision = req.tenantDB.prepare(
+      "SELECT approval_status FROM invitation_decisions WHERE candidate_id = ? ORDER BY decided_at DESC LIMIT 1"
+    ).get(candidate_id);
+    if (latestDecision && latestDecision.approval_status && latestDecision.approval_status !== 'NONE' && latestDecision.approval_status !== 'APPROVED') {
+      return res.status(409).json({
+        error: `Cannot convert candidate: decision approval status is ${latestDecision.approval_status}. Expected APPROVED.`
       });
     }
 
