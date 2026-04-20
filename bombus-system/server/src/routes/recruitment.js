@@ -999,9 +999,10 @@ router.get('/candidates/:candidateId', requireFeaturePerm('L1.recruitment', 'vie
     try {
         const { candidateId } = req.params;
 
-        // Get basic info with Job Title
+        // Get basic info with Job Title + Description (供決策頁顯示 JD 摘要)
         const candidate = req.tenantDB.prepare(`
-            SELECT c.*, j.title as job_title,
+            SELECT c.*, j.title as job_title, j.description as job_description,
+            j.jd_id as job_jd_id, j.grade as job_grade,
             (SELECT ai_analysis_result FROM interview_evaluations WHERE candidate_id = c.id ORDER BY created_at DESC LIMIT 1) as ai_analysis_json
             FROM candidates c
             LEFT JOIN jobs j ON c.job_id = j.id
@@ -2229,3 +2230,5 @@ router.post('/reset-demo', requireFeaturePerm('L1.recruitment', 'edit'), (req, r
 });
 
 module.exports = router;
+// 額外暴露：讓其他模組（如 jobs.js 刪除職缺時）能呼叫候選人歸檔邏輯
+module.exports.importToTalentPool = importToTalentPool;

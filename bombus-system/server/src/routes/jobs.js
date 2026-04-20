@@ -17,6 +17,13 @@ function generateJobId() {
     return `JOB-${year}${random}`;
 }
 
+// 候選人狀態分類（職缺刪除防護用）
+// in-progress：流程進行中，刪除前必須先 HR 處理（婉拒/錄取/退回）
+// terminal：流程已結束（含已入職、已婉拒、已拒絕）
+// onboarded 另外處理（最嚴格 — 永不允許直接刪職缺）
+const CANDIDATE_IN_PROGRESS_STATUSES = ['invited', 'interview', 'pending_decision', 'offered', 'accepted'];
+const CANDIDATE_TERMINAL_STATUSES = ['onboarded', 'interview_declined', 'hired', 'rejected'];
+
 /**
  * GET /api/jobs
  * 取得職缺列表
@@ -527,6 +534,11 @@ router.post('/', requireFeaturePerm('L1.jobs', 'edit'), (req, res) => {
 /**
  * PUT /api/jobs/:id
  * 更新職缺 (若已同步 104 則同步更新)
+ *
+ * 審核流程防護：當職缺處於 published 狀態時，若修改任一「關鍵欄位」
+ * (title/department/description/jd_id/grade/org_unit_id/job104_data)，
+ * 系統會自動將狀態回退到 review，並關閉 104 上的職缺，
+ * 必須重新核准才能再次上架。前端應顯示防呆提示再送出。
  */
 router.put('/:id', requireFeaturePerm('L1.jobs', 'edit'), async (req, res) => {
     try {
@@ -549,9 +561,38 @@ router.put('/:id', requireFeaturePerm('L1.jobs', 'edit'), async (req, res) => {
             return res.status(404).json({ status: 'error', message: '職缺不存在' });
         }
 
+        // 偵測關鍵欄位是否變動（recruiter 非關鍵，不觸發回審）
+        const incomingJob104DataStr = job104Data ? JSON.stringify(job104Data) : null;
+        const changedFields = [];
+        if (title !== undefined && title !== null && title !== job.title) changedFields.push('title');
+        if (department !== undefined && department !== null && department !== job.department) changedFields.push('department');
+        if (description !== undefined && description !== null && description !== job.description) changedFields.push('description');
+        if (jdId !== undefined && jdId !== null && jdId !== job.jd_id) changedFields.push('jd_id');
+        if (Number.isInteger(grade) && grade !== job.grade) changedFields.push('grade');
+        if (org_unit_id !== undefined && org_unit_id !== null && org_unit_id !== job.org_unit_id) changedFields.push('org_unit_id');
+        if (incomingJob104DataStr !== null && incomingJob104DataStr !== job.job104_data) changedFields.push('job104_data');
+
+        // published 狀態下若關鍵欄位變動 → 自動回審
+        const shouldRevertToReview = job.status === 'published' && changedFields.length > 0;
+        const effectiveStatus = shouldRevertToReview ? 'review' : (status || null);
+
+        // 若需自動回審且已上架 104，先關閉 104 上的職缺
+        let close104Result = null;
+        if (shouldRevertToReview && job.job104_no) {
+            try {
+                console.log('🔒 Auto-revert: closing job on 104 due to critical field change...');
+                await job104Service.patchJobStatus(job.job104_no, { switch: 'off' });
+                close104Result = { success: true, action: 'auto_close', jobNo: job.job104_no };
+                console.log('✅ Job closed on 104 (auto-revert)');
+            } catch (error) {
+                console.error('⚠️ Failed to auto-close on 104:', error.message);
+                close104Result = { success: false, action: 'auto_close', error: error.message };
+            }
+        }
+
         const now = new Date().toISOString();
 
-        // 更新本地資料庫
+        // 更新本地資料庫（自動回審時清除 publish_date 並標記 sync_status 待重新同步）
         req.tenantDB.prepare(`
             UPDATE jobs
             SET title = COALESCE(?, title),
@@ -563,6 +604,8 @@ router.put('/:id', requireFeaturePerm('L1.jobs', 'edit'), async (req, res) => {
                 job104_data = COALESCE(?, job104_data),
                 org_unit_id = COALESCE(?, org_unit_id),
                 grade = COALESCE(?, grade),
+                publish_date = CASE WHEN ? = 1 THEN NULL ELSE publish_date END,
+                sync_status = CASE WHEN ? = 1 AND job104_no IS NOT NULL THEN '104_pending' ELSE sync_status END,
                 updated_at = ?
             WHERE id = ?
         `).run(
@@ -570,17 +613,19 @@ router.put('/:id', requireFeaturePerm('L1.jobs', 'edit'), async (req, res) => {
             department || null,
             description || null,
             recruiter || null,
-            status || null,
+            effectiveStatus,
             jdId || null,
             job104Data ? JSON.stringify(job104Data) : null,
             org_unit_id || null,
             Number.isInteger(grade) ? grade : null,
+            shouldRevertToReview ? 1 : 0,
+            shouldRevertToReview ? 1 : 0,
             now,
             id
         );
 
-        // 若已同步至 104 且狀態為 published，同步更新至 104
-        if (job.job104_no && job.status === 'published') {
+        // 若已同步至 104 且狀態為 published（且未自動回審），同步更新至 104
+        if (!shouldRevertToReview && job.job104_no && job.status === 'published') {
             try {
                 // 取得更新後的資料
                 const updatedJob = req.tenantDB.prepare('SELECT * FROM jobs WHERE id = ?').get(id);
@@ -652,7 +697,15 @@ router.put('/:id', requireFeaturePerm('L1.jobs', 'edit'), async (req, res) => {
         }
 
 
-        res.json({ status: 'success', message: '職缺已更新' });
+        res.json({
+            status: 'success',
+            message: shouldRevertToReview
+                ? '職缺關鍵欄位已更新，已自動下架並回到審核中，需重新核准才會再次上架'
+                : '職缺已更新',
+            autoRevertedToReview: shouldRevertToReview,
+            changedCriticalFields: shouldRevertToReview ? changedFields : [],
+            close104: close104Result
+        });
     } catch (error) {
         console.error('Failed to update job:', error);
         res.status(500).json({ status: 'error', message: error.message });
@@ -660,13 +713,92 @@ router.put('/:id', requireFeaturePerm('L1.jobs', 'edit'), async (req, res) => {
 });
 
 /**
+ * GET /api/jobs/:id/candidates-summary
+ * 取得職缺候選人摘要 (供刪除前防呆提示用)
+ *
+ * 回傳：
+ * - total: 總候選人數
+ * - byStatus: 各狀態人數
+ * - hasOnboarded: 是否已有候選人轉入職 (true 時禁止刪除職缺)
+ * - inProgressCount: 進行中流程的候選人數 (邀約/面試/決策/offer)，禁止直接刪除
+ * - inProgressByStatus: 進行中候選人按狀態分組 (供前端顯示具體卡點)
+ * - unresolvedCount: 早期或未明候選人數 (尚未進人才庫，刪除時會被自動歸檔)
+ */
+router.get('/:id/candidates-summary', requireFeaturePerm('L1.jobs', 'view'), (req, res) => {
+    try {
+        const { id } = req.params;
+        const job = req.tenantDB.prepare('SELECT id, title, status, job104_no FROM jobs WHERE id = ?').get(id);
+        if (!job) {
+            return res.status(404).json({ status: 'error', message: '職缺不存在' });
+        }
+
+        const rows = req.tenantDB.prepare(`
+            SELECT c.status, COUNT(*) as cnt,
+                SUM(CASE WHEN tp.id IS NOT NULL THEN 1 ELSE 0 END) as in_pool
+            FROM candidates c
+            LEFT JOIN talent_pool tp ON tp.candidate_id = c.id
+            WHERE c.job_id = ?
+            GROUP BY c.status
+        `).all(id);
+
+        const byStatus = {};
+        const inProgressByStatus = {};
+        let total = 0;
+        let hasOnboarded = false;
+        let inProgressCount = 0;
+        let unresolvedCount = 0;
+        for (const row of rows) {
+            const status = row.status || 'unknown';
+            byStatus[status] = row.cnt;
+            total += row.cnt;
+
+            if (status === 'onboarded') {
+                hasOnboarded = true;
+            } else if (CANDIDATE_IN_PROGRESS_STATUSES.includes(status)) {
+                inProgressCount += row.cnt;
+                inProgressByStatus[status] = row.cnt;
+            } else if (!CANDIDATE_TERMINAL_STATUSES.includes(status)) {
+                // 早期/未明狀態（new 等）且未進人才庫的，刪除時會被自動歸檔
+                unresolvedCount += (row.cnt - row.in_pool);
+            }
+        }
+
+        res.json({
+            status: 'success',
+            data: {
+                jobId: job.id,
+                jobTitle: job.title,
+                jobStatus: job.status,
+                synced104: !!job.job104_no,
+                total,
+                byStatus,
+                hasOnboarded,
+                inProgressCount,
+                inProgressByStatus,
+                unresolvedCount
+            }
+        });
+    } catch (error) {
+        console.error('Failed to fetch candidates summary:', error);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+/**
  * DELETE /api/jobs/:id
  * 刪除職缺 (若已同步 104 則同步刪除)
+ *
+ * 防護機制：
+ * - 若有候選人已轉入職 (status='onboarded')，拒絕刪除，回 409
+ * - 未結案候選人會自動匯入人才庫並標記「職缺已撤除」，再清除 candidates 紀錄
+ * - 已上架 104 會同步刪除
+ * 前端應先呼叫 GET /:id/candidates-summary 顯示防呆提示，再帶 ?force=true 送出刪除
  */
 router.delete('/:id', requireFeaturePerm('L1.jobs', 'edit'), async (req, res) => {
     try {
         const { id } = req.params;
-        console.log('🗑️ Deleting job:', id);
+        const force = req.query.force === 'true' || req.query.force === '1';
+        console.log('🗑️ Deleting job:', id, '(force:', force, ')');
 
         // 先檢查職缺是否存在並取得 104 編號
         const job = req.tenantDB.prepare('SELECT * FROM jobs WHERE id = ?').get(id);
@@ -674,23 +806,106 @@ router.delete('/:id', requireFeaturePerm('L1.jobs', 'edit'), async (req, res) =>
             return res.status(404).json({ status: 'error', message: '職缺不存在' });
         }
 
+        // 統計候選人狀況
+        const candidates = req.tenantDB.prepare(`
+            SELECT c.id, c.status,
+                (SELECT 1 FROM talent_pool tp WHERE tp.candidate_id = c.id) as in_pool
+            FROM candidates c
+            WHERE c.job_id = ?
+        `).all(id);
+
+        const onboardedList = candidates.filter(c => c.status === 'onboarded');
+        const inProgressList = candidates.filter(c => CANDIDATE_IN_PROGRESS_STATUSES.includes(c.status));
+        // 早期/未明狀態（new 等）且未進人才庫的可自動歸檔；terminal 狀態不歸檔但會清除
+        const unresolvedList = candidates.filter(c =>
+            c.status !== 'onboarded' &&
+            !CANDIDATE_IN_PROGRESS_STATUSES.includes(c.status) &&
+            !CANDIDATE_TERMINAL_STATUSES.includes(c.status) &&
+            !c.in_pool
+        );
+
+        // 防護 1：已有候選人轉入職 → 拒絕刪除
+        if (onboardedList.length > 0) {
+            return res.status(409).json({
+                status: 'error',
+                code: 'HAS_ONBOARDED_CANDIDATES',
+                message: `此職缺已有 ${onboardedList.length} 位候選人轉入職，無法刪除。建議改為「關閉」職缺。`,
+                onboardedCount: onboardedList.length
+            });
+        }
+
+        // 防護 2：有候選人正在面試流程中 → 拒絕刪除，請 HR 先處理
+        if (inProgressList.length > 0) {
+            const byStatus = inProgressList.reduce((acc, c) => {
+                acc[c.status] = (acc[c.status] || 0) + 1;
+                return acc;
+            }, {});
+            return res.status(409).json({
+                status: 'error',
+                code: 'HAS_IN_PROGRESS_CANDIDATES',
+                message: `此職缺有 ${inProgressList.length} 位候選人正在面試流程中（邀約/面試/決策/Offer），請先完成或婉拒後再刪除職缺。`,
+                inProgressCount: inProgressList.length,
+                inProgressByStatus: byStatus
+            });
+        }
+
+        // 防護 3：有候選人但未帶 force → 要求前端確認後重送
+        if (candidates.length > 0 && !force) {
+            return res.status(409).json({
+                status: 'error',
+                code: 'CANDIDATES_REQUIRE_CONFIRMATION',
+                message: `此職缺有 ${candidates.length} 位候選人，刪除前需確認。`,
+                totalCandidates: candidates.length,
+                unresolvedCount: unresolvedList.length
+            });
+        }
+
+        // 將早期/未明的候選人匯入人才庫（避免成為孤兒）
+        let archivedCount = 0;
+        if (unresolvedList.length > 0) {
+            // 動態載入避免循環依賴
+            const { importToTalentPool } = require('./recruitment');
+            const declineReason = `職缺已撤除：${job.title || job.id}`;
+            for (const cand of unresolvedList) {
+                try {
+                    importToTalentPool(req, cand.id, 'job_withdrawn', declineReason);
+                    archivedCount += 1;
+                } catch (error) {
+                    console.error(`⚠️ Failed to archive candidate ${cand.id}:`, error.message);
+                }
+            }
+            console.log(`📦 Archived ${archivedCount}/${unresolvedList.length} candidates to talent pool`);
+        }
+
         // 若已同步至 104，先刪除 104 端
+        let delete104Result = null;
         if (job.job104_no) {
             try {
                 console.log('🗑️ Deleting job from 104...');
                 await job104Service.deleteJob(job.job104_no);
                 console.log('✅ Job deleted from 104');
+                delete104Result = { success: true, jobNo: job.job104_no };
             } catch (error) {
                 console.error('⚠️ Failed to delete from 104:', error.message);
+                delete104Result = { success: false, jobNo: job.job104_no, error: error.message };
                 // 繼續刪除本地資料
             }
         }
 
-        // 刪除本地資料
+        // 清除本地候選人紀錄（避免 FK 孤兒）後刪除職缺
+        if (candidates.length > 0) {
+            req.tenantDB.prepare('DELETE FROM candidates WHERE job_id = ?').run(id);
+        }
         const deleteResult = req.tenantDB.prepare('DELETE FROM jobs WHERE id = ?').run(id);
         console.log('🗑️ Delete result:', deleteResult);
 
-        res.json({ status: 'success', message: '職缺已刪除' });
+        res.json({
+            status: 'success',
+            message: '職缺已刪除',
+            archivedCandidates: archivedCount,
+            removedCandidates: candidates.length,
+            delete104: delete104Result
+        });
     } catch (error) {
         console.error('Failed to delete job:', error);
         res.status(500).json({ status: 'error', message: error.message });

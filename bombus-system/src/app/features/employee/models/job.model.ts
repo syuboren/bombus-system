@@ -431,6 +431,42 @@ export interface CandidateStats {
   scheduled: number;
 }
 
+/**
+ * 職缺候選人摘要（刪除前防呆查詢用）
+ */
+export interface JobCandidatesSummary {
+  jobId: string;
+  jobTitle: string;
+  jobStatus: string;
+  synced104: boolean;
+  total: number;
+  byStatus: Record<string, number>;
+  /** 已轉入職人數，>0 時禁止刪除 */
+  hasOnboarded: boolean;
+  /** 進行中流程（邀約/面試/決策/offer），>0 時禁止刪除 */
+  inProgressCount: number;
+  inProgressByStatus: Record<string, number>;
+  /** 早期或未明且未進人才庫的候選人數（刪除時會自動歸檔） */
+  unresolvedCount: number;
+}
+
+/**
+ * 職缺刪除結果
+ */
+export interface JobDeleteResult {
+  ok: boolean;
+  archivedCandidates: number;
+  removedCandidates: number;
+  message?: string;
+  /** 後端回 409 時帶的錯誤代碼 */
+  code?: 'HAS_ONBOARDED_CANDIDATES' | 'HAS_IN_PROGRESS_CANDIDATES' | 'CANDIDATES_REQUIRE_CONFIRMATION' | string;
+  totalCandidates?: number;
+  unresolvedCount?: number;
+  onboardedCount?: number;
+  inProgressCount?: number;
+  inProgressByStatus?: Record<string, number>;
+}
+
 // =====================================================
 // 候選人履歷 AI 解析報告
 // =====================================================

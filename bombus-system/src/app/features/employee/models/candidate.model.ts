@@ -82,9 +82,24 @@ export interface Candidate {
   decided_by_name?: string | null;
 }
 
+export interface SalaryLevel {
+  code: string;
+  salary: number;
+  sort_order?: number;
+}
+
 export interface SalaryRangeResult {
   grade: number | null;
+  /** 主要顯示名稱（向後相容；優先取管理職職稱） */
   grade_title: string | null;
+  /** 管理職職稱（如：經理） */
+  title_management?: string | null;
+  /** 專業職職稱（如：高級工程師） */
+  title_professional?: string | null;
+  /** grade_levels.code_range，例：M5/P5 */
+  code_range?: string | null;
+  /** 該職等的所有職級（含薪資），依 sort_order 排序 */
+  salary_levels?: SalaryLevel[];
   salary_low: number | null;
   salary_high: number | null;
   has_range: boolean;

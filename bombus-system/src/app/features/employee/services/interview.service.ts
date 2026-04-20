@@ -297,9 +297,13 @@ export class InterviewService {
           avatar: data.avatar?.startsWith('/') || data.avatar?.startsWith('http') ? data.avatar : undefined,
           position: data.job_title || 'Unknown Position',
           jobId: data.job_id,
+          jobDescription: data.job_description || '', // 決策頁顯示 JD 摘要
+          jobJdId: data.job_jd_id || null,
+          jobGrade: typeof data.job_grade === 'number' ? data.job_grade : (data.job_grade != null ? Number(data.job_grade) : null),
           status: derivedStatus,
           stage: data.stage,
           scoringStatus: data.scoring_status,
+          expectedSalary: data.expected_salary || null,
 
           // Extended info
           invitation: data.invitation,

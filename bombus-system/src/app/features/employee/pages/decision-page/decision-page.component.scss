@@ -296,6 +296,52 @@ $module-color: $color-l1-sage;
       line-height: 1.6;
       color: $color-text-dark;
     }
+
+    // 職稱軌道徽章（管理職/專業職）
+    .track-tag {
+      display: inline-block;
+      padding: 2px 8px;
+      margin-right: 6px;
+      border-radius: 10px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      vertical-align: middle;
+
+      &--mgmt {
+        background: rgba($color-l1-sage, 0.15);
+        color: $color-l1-sage-dark;
+      }
+      &--prof {
+        background: rgba($color-l2-terracotta, 0.15);
+        color: $color-l2-terracotta-dark;
+      }
+    }
+    .track-divider {
+      color: $color-text-secondary;
+      margin: 0 6px;
+    }
+
+    // 職級徽章（如 M5/P5 + 薪資）
+    .rank-tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: rgba($color-brand-main, 0.1);
+      color: $color-brand-dark;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+    .rank-salary {
+      margin-left: 4px;
+      font-size: 0.8rem;
+      color: $color-text-secondary;
+    }
+    .rank-sep {
+      margin: 0 4px;
+      color: $color-text-secondary;
+    }
   }
 }
 

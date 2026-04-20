@@ -15,10 +15,24 @@ const SALARY_TYPE_VALUES = [10, 50, 60];
 const APPROVER_ROLES = ['super_admin', 'subsidiary_admin'];
 
 /**
- * 根據職缺 grade 計算薪資範圍
- * @returns {{grade: number|null, grade_title: string|null, salary_low: number|null, salary_high: number|null, has_range: boolean, reason: string|null}}
+ * 根據職缺 grade 計算薪資範圍 + 職等資訊
+ *
+ * 回傳含：
+ * - grade: 職等數字 (1-7)
+ * - grade_title: 主要顯示名稱（向後相容，優先取管理職）
+ * - title_management / title_professional: 兩條軌道分別的職稱
+ * - code_range: grade_levels.code_range
+ * - salary_levels: 該職等的所有職級（含 code/salary），依 sort_order 排序
+ * - salary_low / salary_high / has_range: 薪資範圍摘要
  */
 function resolveSalaryRange(tenantDB, candidateId) {
+  const empty = {
+    grade: null, grade_title: null,
+    title_management: null, title_professional: null, code_range: null,
+    salary_levels: [], salary_low: null, salary_high: null,
+    has_range: false, reason: null
+  };
+
   const row = tenantDB.prepare(`
     SELECT j.grade AS grade, c.id AS candidate_id
     FROM candidates c
@@ -26,11 +40,17 @@ function resolveSalaryRange(tenantDB, candidateId) {
     WHERE c.id = ?
   `).get(candidateId);
 
-  if (!row) return { grade: null, grade_title: null, salary_low: null, salary_high: null, has_range: false, reason: 'candidate_not_found' };
-  if (row.grade == null) return { grade: null, grade_title: null, salary_low: null, salary_high: null, has_range: false, reason: 'no_grade' };
+  if (!row) return { ...empty, reason: 'candidate_not_found' };
+  if (row.grade == null) return { ...empty, reason: 'no_grade' };
 
-  const gradeRow = tenantDB.prepare('SELECT title_management, title_professional FROM grade_levels WHERE grade = ?').get(row.grade);
-  const grade_title = gradeRow ? (gradeRow.title_management || gradeRow.title_professional || String(row.grade)) : String(row.grade);
+  const gradeRow = tenantDB.prepare(`
+    SELECT title_management, title_professional, code_range
+    FROM grade_levels WHERE grade = ?
+  `).get(row.grade);
+  const title_management = gradeRow?.title_management || null;
+  const title_professional = gradeRow?.title_professional || null;
+  const code_range = gradeRow?.code_range || null;
+  const grade_title = title_management || title_professional || String(row.grade);
 
   // org_unit_id 以 candidate 的 job 所屬為範圍（向上涵蓋 NULL 集團預設）
   const orgRow = tenantDB.prepare(`
@@ -38,21 +58,33 @@ function resolveSalaryRange(tenantDB, candidateId) {
   `).get(candidateId);
   const orgId = orgRow ? orgRow.org_unit_id : null;
 
-  const salaryRow = tenantDB.prepare(`
-    SELECT MIN(salary) AS salary_low, MAX(salary) AS salary_high
+  // 列出該 grade 的所有職級（含薪資），供前端顯示
+  const salary_levels = tenantDB.prepare(`
+    SELECT code, salary, sort_order
     FROM grade_salary_levels
     WHERE grade = ? AND (org_unit_id = ? OR org_unit_id IS NULL)
-  `).get(row.grade, orgId);
+    ORDER BY sort_order ASC, salary ASC
+  `).all(row.grade, orgId);
 
-  if (!salaryRow || salaryRow.salary_low == null) {
-    return { grade: row.grade, grade_title, salary_low: null, salary_high: null, has_range: false, reason: 'no_salary_levels' };
+  if (salary_levels.length === 0) {
+    return {
+      ...empty,
+      grade: row.grade, grade_title,
+      title_management, title_professional, code_range,
+      reason: 'no_salary_levels'
+    };
   }
 
+  const salaries = salary_levels.map(s => s.salary).filter(s => s != null);
   return {
     grade: row.grade,
     grade_title,
-    salary_low: salaryRow.salary_low,
-    salary_high: salaryRow.salary_high,
+    title_management,
+    title_professional,
+    code_range,
+    salary_levels,
+    salary_low: Math.min(...salaries),
+    salary_high: Math.max(...salaries),
     has_range: true,
     reason: null
   };

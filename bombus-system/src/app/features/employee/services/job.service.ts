@@ -12,7 +12,9 @@ import {
   Job104Response,
   Job104CreateRequest,
   CandidateFull,
-  CandidateResumeAnalysis
+  CandidateResumeAnalysis,
+  JobCandidatesSummary,
+  JobDeleteResult
 } from '../models/job.model';
 
 const API_104_BASE = '/api/jobs/104';
@@ -493,13 +495,29 @@ export class JobService {
 
   /**
    * 更新職缺
+   *
+   * 回傳的 autoRevertedToReview 表示後端因關鍵欄位變動而自動把 published 回退到 review。
+   * 前端應根據此旗標顯示「已自動下架，待重新核准」的提示。
    */
-  updateJob(jobId: string, jobData: Partial<Job>): Observable<boolean> {
-    return this.http.put<{ status: string }>(`${this.JOBS_API}/${jobId}`, jobData).pipe(
-      map(response => response.status === 'success'),
+  updateJob(
+    jobId: string,
+    jobData: Partial<Job>
+  ): Observable<{ ok: boolean; autoRevertedToReview: boolean; changedCriticalFields: string[]; message?: string }> {
+    return this.http.put<{
+      status: string;
+      message?: string;
+      autoRevertedToReview?: boolean;
+      changedCriticalFields?: string[];
+    }>(`${this.JOBS_API}/${jobId}`, jobData).pipe(
+      map(response => ({
+        ok: response.status === 'success',
+        autoRevertedToReview: !!response.autoRevertedToReview,
+        changedCriticalFields: response.changedCriticalFields || [],
+        message: response.message
+      })),
       catchError(error => {
         console.error('Failed to update job:', error);
-        return of(false);
+        return of({ ok: false, autoRevertedToReview: false, changedCriticalFields: [] });
       })
     );
   }
@@ -519,14 +537,58 @@ export class JobService {
 
 
   /**
-   * 刪除職缺
+   * 取得職缺候選人摘要（供刪除前防呆用）
+   * 回傳：總人數、按狀態分組、是否有已轉入職、未結案人數（將自動歸入人才庫）
    */
-  deleteJob(jobId: string): Observable<boolean> {
-    return this.http.delete<{ status: string }>(`${this.JOBS_API}/${jobId}`).pipe(
-      map(response => response.status === 'success'),
+  getCandidatesSummary(jobId: string): Observable<JobCandidatesSummary | null> {
+    return this.http.get<{ status: string; data: JobCandidatesSummary }>(
+      `${this.JOBS_API}/${jobId}/candidates-summary`
+    ).pipe(
+      map(response => (response.status === 'success' ? response.data : null)),
       catchError(error => {
-        console.error('Failed to delete job:', error);
-        return of(false);
+        console.error('Failed to fetch candidates summary:', error);
+        return of(null);
+      })
+    );
+  }
+
+  /**
+   * 刪除職缺
+   *
+   * 後端防護：若有候選人會回 409，前端需先顯示確認框後帶 force=true 重送。
+   * 回傳含 archivedCandidates / removedCandidates，用於 toast 顯示。
+   */
+  deleteJob(jobId: string, options: { force?: boolean } = {}): Observable<JobDeleteResult> {
+    let params = new HttpParams();
+    if (options.force) {
+      params = params.set('force', 'true');
+    }
+    return this.http.delete<{
+      status: string;
+      message?: string;
+      archivedCandidates?: number;
+      removedCandidates?: number;
+    }>(`${this.JOBS_API}/${jobId}`, { params }).pipe(
+      map(response => ({
+        ok: response.status === 'success',
+        archivedCandidates: response.archivedCandidates ?? 0,
+        removedCandidates: response.removedCandidates ?? 0,
+        message: response.message
+      })),
+      catchError(error => {
+        const errBody = error?.error || {};
+        return of({
+          ok: false,
+          archivedCandidates: 0,
+          removedCandidates: 0,
+          message: errBody.message,
+          code: errBody.code,
+          totalCandidates: errBody.totalCandidates,
+          unresolvedCount: errBody.unresolvedCount,
+          onboardedCount: errBody.onboardedCount,
+          inProgressCount: errBody.inProgressCount,
+          inProgressByStatus: errBody.inProgressByStatus
+        });
       })
     );
   }
@@ -547,7 +609,10 @@ export class JobService {
       recruiter: dbJob.recruiter || 'HR Admin',
       source: dbJob.job104_no ? '104' : 'internal',
       job104No: dbJob.job104_no || undefined,
-      syncStatus: dbJob.sync_status || 'local_only'
+      syncStatus: dbJob.sync_status || 'local_only',
+      org_unit_id: dbJob.org_unit_id || undefined,
+      grade: typeof dbJob.grade === 'number' ? dbJob.grade : (dbJob.grade != null ? Number(dbJob.grade) : null),
+      grade_title: dbJob.grade_title || null
     };
   }
 

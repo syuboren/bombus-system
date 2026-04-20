@@ -105,7 +105,45 @@
               <div class="detail-item">
                 <label>職等</label>
                 <span class="detail-value">
-                  {{ salaryRange()?.grade_title || '未設定職等' }}
+                  @if (salaryRange()?.grade != null) {
+                    第 {{ salaryRange()!.grade }} 職等
+                  } @else {
+                    未設定職等
+                  }
+                </span>
+              </div>
+              <div class="detail-item">
+                <label>職稱</label>
+                <span class="detail-value">
+                  @if (salaryRange()?.title_management || salaryRange()?.title_professional) {
+                    @if (salaryRange()?.title_management) {
+                      <span class="track-tag track-tag--mgmt">管理職</span>
+                      {{ salaryRange()!.title_management }}
+                    }
+                    @if (salaryRange()?.title_management && salaryRange()?.title_professional) {
+                      <span class="track-divider"> / </span>
+                    }
+                    @if (salaryRange()?.title_professional) {
+                      <span class="track-tag track-tag--prof">專業職</span>
+                      {{ salaryRange()!.title_professional }}
+                    }
+                  } @else {
+                    —
+                  }
+                </span>
+              </div>
+              <div class="detail-item">
+                <label>職級</label>
+                <span class="detail-value">
+                  @if ((salaryRange()?.salary_levels?.length ?? 0) > 0) {
+                    @for (lv of salaryRange()!.salary_levels!; track lv.code; let last = $last) {
+                      <span class="rank-tag">{{ lv.code }}</span><span class="rank-salary">({{ lv.salary | number }})</span>@if (!last) {<span class="rank-sep">、</span>}
+                    }
+                  } @else if (salaryRange()?.code_range) {
+                    {{ salaryRange()!.code_range }}
+                  } @else {
+                    —
+                  }
                 </span>
               </div>
               <div class="detail-item">
@@ -123,8 +161,8 @@
                 <span class="detail-value">{{ candidateDetail()?.expectedSalary || '—' }}</span>
               </div>
               <div class="detail-item detail-item--full">
-                <label>JD 摘要</label>
-                <p class="jd-summary">{{ (candidateDetail()?.jobDescription || '').slice(0, 200) || '未提供工作描述' }}</p>
+                <label>職務說明</label>
+                <p class="jd-summary">{{ (candidateDetail()?.jobDescription || '').slice(0, 300) || '未提供職務說明' }}</p>
               </div>
             </div>
           </section>
