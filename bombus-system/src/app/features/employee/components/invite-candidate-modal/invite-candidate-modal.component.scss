@@ -146,15 +146,121 @@ app-invite-candidate-modal {
 
     .slot-row {
         display: flex;
-        gap: $spacing-sm;
+        gap: $spacing-xs;
         margin-bottom: $spacing-xs;
+        align-items: center;
+        flex-wrap: wrap;
 
         .form-input {
+            padding: $spacing-sm;
+            border: 1px solid $color-soft-gray;
+            border-radius: $radius-md;
+        }
+
+        .slot-date {
+            flex: 1 1 150px;
+            min-width: 140px;
+        }
+
+        .slot-time-part {
+            flex: 0 0 70px;
+            padding: $spacing-sm 4px;
+            background: white;
+        }
+    }
+
+    .slot-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: $font-size-xs;
+        padding: 2px 8px;
+        border-radius: $radius-full;
+        white-space: nowrap;
+
+        &--available {
+            background: rgba($color-l1-sage, 0.15);
+            color: darken($color-l1-sage, 15%);
+        }
+
+        &--conflict {
+            background: rgba($color-error, 0.12);
+            color: $color-error;
+        }
+
+        &--invalid {
+            background: rgba($color-error, 0.12);
+            color: $color-error;
+        }
+
+        &--checking {
+            background: $color-cloud-gray;
+            color: $color-text-secondary;
+        }
+
+        .spin {
+            animation: spin 1s linear infinite;
+        }
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    .slot-reasons {
+        margin: 0 0 $spacing-xs 0;
+        padding-left: $spacing-lg;
+        font-size: $font-size-xs;
+        color: $color-error;
+
+        li {
+            line-height: 1.4;
+        }
+    }
+
+    .interviewer-row {
+        display: flex;
+        gap: $spacing-sm;
+        align-items: center;
+
+        select.form-input {
             flex: 1;
             padding: $spacing-sm;
             border: 1px solid $color-soft-gray;
             border-radius: $radius-md;
         }
+    }
+
+    .btn-filter-toggle {
+        @include button-base;
+        padding: 6px 12px;
+        font-size: $font-size-xs;
+        gap: 4px;
+        background: white;
+        color: $color-text-secondary;
+        border: 1px solid $color-soft-gray;
+
+        &.active {
+            background: rgba($color-l1-sage, 0.15);
+            color: darken($color-l1-sage, 10%);
+            border-color: $color-l1-sage;
+        }
+    }
+
+    .required {
+        color: $color-error;
+    }
+
+    .hint-text {
+        margin: $spacing-xs 0 0 0;
+        font-size: $font-size-xs;
+        color: $color-text-secondary;
+    }
+
+    .error-text {
+        margin: $spacing-xs 0 0 0;
+        font-size: $font-size-xs;
+        color: $color-error;
     }
 
     .btn-icon-danger {

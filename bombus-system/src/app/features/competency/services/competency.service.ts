@@ -1900,6 +1900,7 @@ export class CompetencyService {
       positionName: d.positionName ?? d.position_name ?? '',
       department: d.department ?? '',
       gradeLevel: d.gradeLevel ?? (d.grade != null ? String(d.grade) : '') ?? d.gradeCode ?? '',
+      grade: typeof d.grade === 'number' ? d.grade : (d.grade != null && !isNaN(Number(d.grade)) ? Number(d.grade) : undefined),
       gradeCode: d.gradeCode ?? d.grade_code ?? '',
       positionTitle: d.positionTitle ?? d.position_title ?? '',
       responsibilities: arr(d.responsibilities),

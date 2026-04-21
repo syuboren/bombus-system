@@ -8,7 +8,7 @@ import { HeaderComponent } from '../../../../shared/components/header/header.com
 import { StatCardComponent } from '../../../../shared/components/stat-card/stat-card.component';
 import { NotificationService } from '../../../../core/services/notification.service';
 import { JobService } from '../../services/job.service';
-import { Job, JobStats } from '../../models/job.model';
+import { Job, JobStats, JobCandidatesSummary } from '../../models/job.model';
 import { CompetencyService } from '../../../competency/services/competency.service';
 import { JobDescription } from '../../../competency/models/competency.model';
 import { OrgUnitService } from '../../../../core/services/org-unit.service';
@@ -364,8 +364,9 @@ export class JobsPageComponent implements OnInit {
   /** 載入職等選項（供 Create/Edit 職缺時選用） */
   loadGradeOptions(): void {
     this.http.get<any>('/api/grade-matrix').subscribe({
-      next: (data) => {
-        const list = Array.isArray(data) ? data : (data?.grades || []);
+      next: (resp) => {
+        // API 統一格式：{ success: true, data: [...] }；同時容忍裸陣列與舊格式
+        const list = Array.isArray(resp) ? resp : (resp?.data || resp?.grades || []);
         const opts = list.map((g: any) => ({
           grade: g.grade,
           title: g.title_management || g.title_professional || `第 ${g.grade} 職等`
@@ -379,8 +380,28 @@ export class JobsPageComponent implements OnInit {
   }
 
   loadData(): void {
-    // 透過 re-emit selectedSubsidiaryId 觸發 constructor 的 reactive subscription
-    this.selectedSubsidiaryId.set(this.selectedSubsidiaryId());
+    // 直接呼叫 API 重新載入（不能用 signal.set(sameValue)，因 Angular signal
+    // 相同值會被忽略而不觸發 constructor 的 reactive subscription）
+    this.loading.set(true);
+    const id = this.selectedSubsidiaryId() || undefined;
+    forkJoin({
+      stats: this.jobService.getJobStats(id),
+      jobs: this.jobService.getJobs(id),
+      jobs104: this.jobService.getSynced104Jobs(id)
+    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: ({ stats, jobs, jobs104 }) => {
+        this.stats.set(stats);
+        this.jobs.set(jobs);
+        this.jobs104.set(jobs104);
+        this.loading.set(false);
+        this.cdr?.markForCheck();
+      },
+      error: () => {
+        this.notificationService.error('載入職缺列表失敗');
+        this.loading.set(false);
+        this.cdr?.markForCheck();
+      }
+    });
   }
 
   loadJobDescriptions(orgUnitId?: string): void {
@@ -550,7 +571,8 @@ export class JobsPageComponent implements OnInit {
       [field]: value
     }));
 
-    // 如果選擇了 JD，自動填入職稱和部門
+    // 如果選擇了 JD，自動填入職稱、部門、職等、描述
+    // 職等（grade）從 JD 帶入，確保招募職缺的薪資範圍計算與 JD 一致
     if (field === 'jdId' && value) {
       const jd = this.jobDescriptions().find(j => j.id === value);
       if (jd) {
@@ -558,7 +580,10 @@ export class JobsPageComponent implements OnInit {
           ...current,
           title: jd.positionName,
           department: jd.department,
-          description: jd.summary
+          description: jd.summary,
+          grade: typeof jd.grade === 'number'
+            ? jd.grade
+            : (jd.gradeLevel && /^\d+$/.test(jd.gradeLevel) ? Number(jd.gradeLevel) : current.grade)
         }));
       }
     }
@@ -844,7 +869,21 @@ export class JobsPageComponent implements OnInit {
   showEditModal = signal<boolean>(false);
 
   openEditModal(job: Job): void {
-    this.modalSubsidiaryId.set(this.selectedSubsidiaryId());
+    // 防呆：published 狀態下編輯任一關鍵欄位（職缺名稱、薪資、職等等）會自動下架回審。
+    // 先讓使用者確認，避免無意修改造成 104 上的職缺被關閉。
+    if (job.status === 'published') {
+      const confirmed = window.confirm(
+        '此職缺已上架。\n\n' +
+        '若修改職缺名稱、部門、薪資、職等、職務說明書連結等關鍵欄位，' +
+        '系統會自動將狀態改回「審核中」並關閉 104 上的職缺，需重新核准才會再次上架。\n\n' +
+        '確認要繼續編輯嗎？'
+      );
+      if (!confirmed) return;
+    }
+
+    // modalSubsidiaryId 應依「此職缺所屬子公司」初始化，而非沿用頁面篩選器
+    // 否則「全部子公司」篩選下開編輯，子公司會顯示空白
+    this.modalSubsidiaryId.set((job as any).org_unit_id || this.selectedSubsidiaryId() || '');
     this.editingJob.set(job);
 
     // 預設 104 設定
@@ -1023,9 +1062,14 @@ export class JobsPageComponent implements OnInit {
     }
 
     this.jobService.updateJob(job.id, updateData).subscribe({
-      next: (success) => {
-        if (success) {
-          if (job.job104No) {
+      next: (result) => {
+        if (result.ok) {
+          if (result.autoRevertedToReview) {
+            // 後端因關鍵欄位變動而自動下架 → 顯示警示而非成功
+            this.notificationService.warning(
+              result.message || '職缺已更新，因關鍵欄位變動已自動下架並回到審核中，需重新核准才會再次上架到 104'
+            );
+          } else if (job.job104No) {
             this.notificationService.success('職缺已更新並同步至 104！');
           } else {
             this.notificationService.success('職缺已更新！');
@@ -1090,15 +1134,71 @@ export class JobsPageComponent implements OnInit {
   // ============================================================
   showDeleteConfirm = signal<boolean>(false);
   jobToDelete = signal<Job | null>(null);
+  /** 候選人摘要（防呆提示用，由 confirmDeleteJob 預載） */
+  deleteCandidatesSummary = signal<JobCandidatesSummary | null>(null);
+  deleteSummaryLoading = signal<boolean>(false);
 
   confirmDeleteJob(job: Job): void {
     this.jobToDelete.set(job);
-    this.showDeleteConfirm.set(true);
+    this.deleteCandidatesSummary.set(null);
+
+    // 沒有 ID 的暫存資料直接開確認框，跳過 summary 查詢
+    if (!job.id) {
+      this.showDeleteConfirm.set(true);
+      return;
+    }
+
+    this.deleteSummaryLoading.set(true);
+    this.jobService.getCandidatesSummary(job.id).subscribe({
+      next: (summary) => {
+        this.deleteSummaryLoading.set(false);
+        if (summary?.hasOnboarded) {
+          // 已有候選人轉入職 → 不允許刪除
+          this.jobToDelete.set(null);
+          const onboardedCount = summary.byStatus['onboarded'] ?? 0;
+          this.notificationService.error(
+            `此職缺已有 ${onboardedCount} 位候選人轉入職，無法刪除。建議改為「關閉」職缺。`
+          );
+          return;
+        }
+        if (summary && summary.inProgressCount > 0) {
+          // 有候選人在面試流程中 → 不允許刪除
+          this.jobToDelete.set(null);
+          const detail = this.formatInProgressDetail(summary.inProgressByStatus);
+          this.notificationService.error(
+            `此職缺有 ${summary.inProgressCount} 位候選人正在面試流程中（${detail}），請先完成或婉拒後再刪除職缺。`
+          );
+          return;
+        }
+        this.deleteCandidatesSummary.set(summary);
+        this.showDeleteConfirm.set(true);
+      },
+      error: () => {
+        this.deleteSummaryLoading.set(false);
+        // 摘要查詢失敗時，仍允許開啟確認框（後端會再次防護）
+        this.showDeleteConfirm.set(true);
+      }
+    });
+  }
+
+  /** 將 in-progress 狀態 map 轉為人類可讀的字串：邀約 1 / 面試 2 / 決策中 1 */
+  private formatInProgressDetail(byStatus: Record<string, number>): string {
+    const labels: Record<string, string> = {
+      invited: '邀約中',
+      interview: '面試中',
+      pending_decision: '決策中',
+      offered: '已發 Offer',
+      accepted: '已接受 Offer'
+    };
+    return Object.entries(byStatus)
+      .map(([status, count]) => `${labels[status] || status} ${count}`)
+      .join('、');
   }
 
   cancelDelete(): void {
     this.showDeleteConfirm.set(false);
     this.jobToDelete.set(null);
+    this.deleteCandidatesSummary.set(null);
   }
 
   executeDelete(): void {
@@ -1113,11 +1213,28 @@ export class JobsPageComponent implements OnInit {
       return;
     }
 
-    this.jobService.deleteJob(job.id).subscribe({
-      next: () => {
-        this.notificationService.success('職缺已刪除');
-        this.loadData(); // 重新載入列表
-        this.cancelDelete();
+    // 一律帶 force=true（已在 modal 中讓使用者確認候選人歸檔影響）
+    this.jobService.deleteJob(job.id, { force: true }).subscribe({
+      next: (result) => {
+        if (result.ok) {
+          if (result.archivedCandidates > 0) {
+            this.notificationService.success(
+              `職缺已刪除，${result.archivedCandidates} 位候選人已自動歸入人才庫`
+            );
+          } else {
+            this.notificationService.success('職缺已刪除');
+          }
+          this.loadData();
+          this.cancelDelete();
+        } else if (result.code === 'HAS_ONBOARDED_CANDIDATES') {
+          this.notificationService.error(result.message || '已有候選人轉入職，無法刪除');
+          this.cancelDelete();
+        } else if (result.code === 'HAS_IN_PROGRESS_CANDIDATES') {
+          this.notificationService.error(result.message || '有候選人在面試流程中，無法刪除');
+          this.cancelDelete();
+        } else {
+          this.notificationService.error(result.message || '刪除失敗');
+        }
       },
       error: () => {
         this.notificationService.error('刪除失敗');

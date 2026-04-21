@@ -1133,8 +1133,9 @@ $module-color: $color-l1-sage;
   max-width: 400px;
 }
 
+// 危險 modal header：莫蘭迪磚紅，避免刺眼的純紅
 .modal__header--danger {
-  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+  background: linear-gradient(135deg, $color-l5-brick 0%, $color-l5-brick-dark 100%);
   color: white;
 
   .modal__title {
@@ -1155,20 +1156,61 @@ $module-color: $color-l1-sage;
 
 .confirm-warning {
   font-size: $font-size-sm;
-  color: #dc3545;
+  color: $color-error;
   margin: 0;
 }
 
-// 危險按鈕
+// 刪除影響說明區塊（候選人歸檔提示）
+.confirm-impact {
+  margin: $spacing-sm 0;
+  padding: $spacing-sm $spacing-md;
+  background: $color-warning-light;
+  border-radius: 6px;
+
+  &__heading {
+    margin: 0 0 $spacing-xs;
+    font-size: $font-size-sm;
+    color: $color-text-primary;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    i {
+      color: $color-warning;
+    }
+
+    strong {
+      color: $color-brand-main;
+    }
+  }
+
+  &__list {
+    margin: 0;
+    padding-left: 1.25rem;
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    line-height: 1.6;
+
+    li + li {
+      margin-top: 4px;
+    }
+
+    strong {
+      color: $color-text-primary;
+    }
+  }
+}
+
+// 危險按鈕：莫蘭迪磚紅漸層
 .btn-danger {
-  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+  background: linear-gradient(135deg, $color-l5-brick 0%, $color-l5-brick-dark 100%);
   color: white;
   border: none;
 
   &:hover {
-    background: linear-gradient(135deg, #c82333 0%, #a71d2a 100%);
+    background: linear-gradient(135deg, $color-l5-brick-dark 0%, darken($color-l5-brick-dark, 6%) 100%);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(#dc3545, 0.3);
+    box-shadow: 0 4px 12px rgba($color-l5-brick, 0.3);
   }
 }
 

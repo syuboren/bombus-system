@@ -194,11 +194,10 @@
                   <i class="ri-edit-line"></i>
                 </button>
 
-                @if (job.status === 'draft') {
+                <!-- 刪除按鈕：所有狀態皆可嘗試，後端三層防護會擋下不適合刪除的職缺 -->
                 <button class="icon-btn icon-btn--danger" title="刪除" (click)="confirmDeleteJob(job)" type="button">
                   <i class="ri-delete-bin-line"></i>
                 </button>
-                }
                 }
                 <button class="icon-btn" title="查看候選人" (click)="viewCandidates(job)" type="button">
                   <i class="ri-user-search-line"></i>
@@ -299,11 +298,10 @@
     <div class="form-group">
       <label class="form-label">職等（用於決策頁薪資範圍計算）</label>
       <select class="form-select"
-        [value]="newJob().grade ?? ''"
         (change)="updateJobGrade($any($event.target).value)">
-        <option value="">未設定</option>
+        <option value="" [selected]="newJob().grade == null">未設定</option>
         @for (g of gradeOptions(); track g.grade) {
-          <option [value]="g.grade">第 {{ g.grade }} 職等 — {{ g.title }}</option>
+          <option [value]="g.grade" [selected]="newJob().grade === g.grade">第 {{ g.grade }} 職等 — {{ g.title }}</option>
         }
       </select>
     </div>
@@ -1029,33 +1027,32 @@
     @if (subsidiaries().length > 0) {
     <div class="form-group">
       <label class="form-label">所屬子公司</label>
-      <select class="form-select" [value]="modalSubsidiaryId()"
+      <select class="form-select"
         (change)="onModalSubsidiaryChange($any($event.target).value)">
-        <option value="">全部子公司</option>
+        <option value="" [selected]="!modalSubsidiaryId()">全部子公司</option>
         @for (sub of subsidiaries(); track sub.id) {
-        <option [value]="sub.id">{{ sub.name }}</option>
+        <option [value]="sub.id" [selected]="modalSubsidiaryId() === sub.id">{{ sub.name }}</option>
         }
       </select>
     </div>
     }
     <div class="form-group">
       <label class="form-label">部門 <span class="required">*</span></label>
-      <select class="form-select" [value]="newJob().department"
+      <select class="form-select"
         (change)="updateJobField('department', $any($event.target).value)">
-        <option value="">請選擇部門</option>
+        <option value="" [selected]="!newJob().department">請選擇部門</option>
         @for (dept of modalFilteredDepartments(); track dept.id) {
-        <option [value]="dept.name">{{ dept.name }}</option>
+        <option [value]="dept.name" [selected]="newJob().department === dept.name">{{ dept.name }}</option>
         }
       </select>
     </div>
     <div class="form-group">
       <label class="form-label">職等（用於決策頁薪資範圍計算）</label>
       <select class="form-select"
-        [value]="newJob().grade ?? ''"
         (change)="updateJobGrade($any($event.target).value)">
-        <option value="">未設定</option>
+        <option value="" [selected]="newJob().grade == null">未設定</option>
         @for (g of gradeOptions(); track g.grade) {
-          <option [value]="g.grade">第 {{ g.grade }} 職等 — {{ g.title }}</option>
+          <option [value]="g.grade" [selected]="newJob().grade === g.grade">第 {{ g.grade }} 職等 — {{ g.title }}</option>
         }
       </select>
     </div>
@@ -1314,6 +1311,34 @@
   </div>
   <div class="modal__body">
     <p class="confirm-text">確定要刪除職缺「<strong>{{ jobToDelete()?.title }}</strong>」嗎？</p>
+
+    @if (deleteCandidatesSummary(); as summary) {
+      @if (summary.total > 0) {
+        <div class="confirm-impact">
+          <p class="confirm-impact__heading">
+            <i class="ri-information-line"></i>
+            此職缺共有 <strong>{{ summary.total }}</strong> 位候選人，刪除後將：
+          </p>
+          <ul class="confirm-impact__list">
+            @if (summary.unresolvedCount > 0) {
+              <li>{{ summary.unresolvedCount }} 位未結案候選人會自動歸入<strong>人才庫</strong>，並標記為「職缺已撤除」</li>
+            }
+            @if (summary.total > summary.unresolvedCount) {
+              <li>{{ summary.total - summary.unresolvedCount }} 位已在人才庫的候選人，原職缺紀錄會被清除</li>
+            }
+            @if (summary.synced104) {
+              <li>已上架到 104 的職缺也會同步刪除</li>
+            }
+          </ul>
+        </div>
+      } @else if (summary.synced104) {
+        <p class="confirm-impact__heading">
+          <i class="ri-information-line"></i>
+          已上架到 104 的職缺也會同步刪除
+        </p>
+      }
+    }
+
     <p class="confirm-warning">此操作無法復原</p>
   </div>
   <div class="modal__footer">
