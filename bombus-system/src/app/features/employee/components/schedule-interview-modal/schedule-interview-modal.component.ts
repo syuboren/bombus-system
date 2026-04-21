@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, input, output, signal, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { JobCandidate } from '../../models/job.model';
@@ -14,35 +14,36 @@ import { NotificationService } from '../../../../core/services/notification.serv
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ScheduleInterviewModalComponent {
-  // Inputs
   candidate = input.required<JobCandidate>();
   isVisible = input.required<boolean>();
   jobId = input.required<string>();
 
-  // Outputs
   close = output<void>();
   scheduled = output<void>();
 
-  // Services
   private interviewService = inject(InterviewService);
   private notificationService = inject(NotificationService);
 
-  // Form Signals
   interviewDate = signal<string>('');
-  interviewTime = signal<string>('10:00');
+  interviewHour = signal<string>('10');
+  interviewMinute = signal<string>('00');
+  interviewTime = computed(() => `${this.interviewHour()}:${this.interviewMinute()}`);
   interviewType = signal<string>('onsite');
   meetingLink = signal<string>('');
   interviewAddress = signal<string>('');
-  selectedInterviewer = signal<string>('');
   loading = signal<boolean>(false);
 
-  // 面試官選項
-  readonly interviewerOptions = [
-    { id: 'INT-001', name: '張經理', department: '人資部', title: '人資經理' },
-    { id: 'INT-002', name: '李主管', department: '研發部', title: '技術主管' },
-    { id: 'INT-003', name: '王總監', department: '產品部', title: '產品總監' },
-    { id: 'INT-004', name: '陳協理', department: '業務部', title: '業務協理' }
-  ];
+  readonly hourOptions = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+  readonly minuteOptions = ['00', '15', '30', '45'];
+
+  hasInterviewer = computed(() => !!this.candidate()?.invitationInterviewerId);
+
+  canSubmit = computed(() => {
+    if (this.loading()) return false;
+    if (!this.hasInterviewer()) return false;
+    if (!this.interviewDate()) return false;
+    return true;
+  });
 
   tryClose(): void {
     if (this.loading()) return;
@@ -62,25 +63,24 @@ export class ScheduleInterviewModalComponent {
   selectSlot(slot: string): void {
     if (!slot) return;
 
-    // Handle ISO format (e.g. 2026-01-25T17:09)
     if (slot.includes('T')) {
       const [datePart, timePart] = slot.split('T');
       this.interviewDate.set(datePart);
       if (timePart) {
-        this.interviewTime.set(timePart.substring(0, 5));
+        this.setTimeFromHHMM(timePart.substring(0, 5));
       }
       return;
     }
 
     const parts = slot.split(' ');
     if (parts.length >= 1) {
-      let dateStr = parts[0].replace(/\//g, '-');
+      const dateStr = parts[0].replace(/\//g, '-');
       if (!isNaN(Date.parse(dateStr))) {
         this.interviewDate.set(dateStr);
       }
     }
 
-    let timePart = parts.find(p => p.includes('上午') || p.includes('下午') || p.includes('中午') || p.includes(':'));
+    const timePart = parts.find(p => p.includes('上午') || p.includes('下午') || p.includes('中午') || p.includes(':'));
     if (timePart) {
       let hours = 0;
       let minutes = 0;
@@ -89,15 +89,22 @@ export class ScheduleInterviewModalComponent {
         hours = parseInt(timeMatch[1], 10);
         minutes = parseInt(timeMatch[2], 10);
       }
-      if (timePart.includes('下午') && hours < 12) {
-        hours += 12;
-      } else if (timePart.includes('上午') && hours === 12) {
-        hours = 0;
-      }
-      const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-      if (formattedTime) {
-        this.interviewTime.set(formattedTime);
-      }
+      if (timePart.includes('下午') && hours < 12) hours += 12;
+      else if (timePart.includes('上午') && hours === 12) hours = 0;
+      const formatted = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+      this.setTimeFromHHMM(formatted);
+    }
+  }
+
+  /** 把 HH:MM 拆進 hour/minute 兩個 signal，minute 向下對齊到 15 分鐘 */
+  private setTimeFromHHMM(hhmm: string): void {
+    const [hStr, mStr] = hhmm.split(':');
+    const h = parseInt(hStr, 10);
+    const m = parseInt(mStr, 10);
+    if (Number.isFinite(h)) this.interviewHour.set(String(h).padStart(2, '0'));
+    if (Number.isFinite(m)) {
+      const aligned = Math.floor(m / 15) * 15;
+      this.interviewMinute.set(String(aligned).padStart(2, '0'));
     }
   }
 
@@ -107,14 +114,38 @@ export class ScheduleInterviewModalComponent {
       this.notificationService.error('請選擇面試日期');
       return;
     }
+    if (!c.invitationInterviewerId) {
+      this.notificationService.error('邀約尚未指派面試官，請先重發邀約');
+      return;
+    }
 
-    this.loading.set(true);
     const interviewAtStr = `${this.interviewDate()}T${this.interviewTime()}:00`;
+    this.loading.set(true);
 
+    // D-07: 送出前最終衝突驗證
+    this.interviewService.checkConflicts(c.invitationInterviewerId, [interviewAtStr], { candidateId: c.id })
+      .subscribe({
+        next: res => {
+          if (!res.allClear) {
+            this.loading.set(false);
+            const reasons = res.slots[0]?.conflicts?.map(x => x.reason).join('；') || '時段衝突';
+            this.notificationService.error(`該時段衝突：${reasons}`);
+            return;
+          }
+          this.doSchedule(c, interviewAtStr);
+        },
+        error: () => {
+          this.loading.set(false);
+          this.notificationService.error('無法確認時段可用性，請稍後再試');
+        }
+      });
+  }
+
+  private doSchedule(c: JobCandidate, interviewAtStr: string): void {
     this.interviewService.scheduleInterview({
       candidateId: c.id,
       jobId: this.jobId(),
-      interviewerId: this.selectedInterviewer(),
+      interviewerId: c.invitationInterviewerId!,
       interviewAt: interviewAtStr,
       location: this.interviewType(),
       meetingLink: this.interviewType() === 'online' ? this.meetingLink() : undefined,
@@ -122,27 +153,25 @@ export class ScheduleInterviewModalComponent {
       round: 1
     }).subscribe({
       next: (response) => {
-        this.notificationService.success(
-          `已安排面試，時間：${this.interviewDate()} ${this.interviewTime()}`
-        );
-        
-        // 背景產生面試表單 Token（不阻塞 UI，不顯示 Modal）
+        this.notificationService.success(`已安排面試，時間：${this.interviewDate()} ${this.interviewTime()}`);
         if (response.interviewId) {
-          this.interviewService.generateFormToken(response.interviewId).subscribe({
-            error: () => {
-              // Token 產生失敗不影響排程結果，靜默處理
-            }
-          });
+          this.interviewService.generateFormToken(response.interviewId).subscribe({ error: () => {} });
         }
-        
-        // 直接關閉視窗
         this.loading.set(false);
         this.resetForm();
         this.scheduled.emit();
         this.close.emit();
       },
-      error: () => {
-        this.notificationService.error('安排面試失敗');
+      error: (err) => {
+        if (err?.status === 409) {
+          const conflicts = err?.error?.conflicts || [];
+          const reasons = conflicts.map((x: any) => x.reason).join('；') || '該時段與其他行程衝突';
+          this.notificationService.error(`無法安排：${reasons}`);
+        } else if (err?.status === 400 && err?.error?.error === 'SLOT_NOT_ALIGNED') {
+          this.notificationService.error('面試時間需以 15 分鐘為單位');
+        } else {
+          this.notificationService.error('安排面試失敗');
+        }
         this.loading.set(false);
       }
     });
@@ -150,10 +179,10 @@ export class ScheduleInterviewModalComponent {
 
   private resetForm(): void {
     this.interviewDate.set('');
-    this.interviewTime.set('10:00');
+    this.interviewHour.set('10');
+    this.interviewMinute.set('00');
     this.interviewType.set('onsite');
     this.meetingLink.set('');
     this.interviewAddress.set('');
-    this.selectedInterviewer.set('');
   }
 }

@@ -17,7 +17,6 @@
             <span class="position-badge">{{ candidate().position }}</span>
         </div>
 
-        <!-- Reschedule Note Alert -->
         @if (candidate().rescheduleNote) {
         <div class="reschedule-alert">
             <i class="ri-calendar-todo-line"></i>
@@ -29,23 +28,88 @@
         }
 
         <div class="form-group">
+            <label class="form-label">
+                面試官 <span class="required">*</span>
+            </label>
+            <div class="interviewer-row">
+                <select class="form-input" [value]="interviewerId() ?? ''"
+                    (change)="interviewerId.set($any($event.target).value || null)">
+                    <option value="">請選擇面試官</option>
+                    @for (emp of filteredEmployees(); track emp.id) {
+                    <option [value]="emp.id">
+                        {{ emp.name }}｜{{ emp.department || '—' }}｜{{ emp.position || '—' }}
+                    </option>
+                    }
+                </select>
+                @if (jobDepartment()) {
+                <button type="button" class="btn-filter-toggle" (click)="toggleDeptFilter()"
+                    [class.active]="filterByDept()"
+                    [title]="filterByDept() ? '僅顯示同部門員工' : '顯示所有部門員工'">
+                    <i class="ri-filter-3-line"></i>
+                    {{ filterByDept() ? '同部門' : '全部門' }}
+                </button>
+                }
+            </div>
+            @if (deptFallbackHint()) {
+            <p class="hint-text">{{ deptFallbackHint() }}</p>
+            }
+            @if (!interviewerId()) {
+            <p class="error-text">請先選擇面試官</p>
+            }
+        </div>
+
+        <div class="form-group">
             <label class="form-label">邀約訊息</label>
             <textarea class="form-textarea" rows="4" [value]="message()"
                 (input)="message.set($any($event.target).value)"></textarea>
         </div>
 
         <div class="form-group">
-            <label class="form-label">建議面試時段 (候選人將從中選擇)</label>
-            @for (slot of proposedSlots(); track $index) {
+            <label class="form-label">建議面試時段（候選人將從中選擇；以 15 分鐘為單位）</label>
+            @for (part of slotParts(); track $index; let i = $index) {
             <div class="slot-row">
-                <input type="datetime-local" class="form-input" [value]="slot"
-                    (input)="updateSlot($index, $any($event.target).value)">
-                <button class="btn-icon-danger" (click)="removeSlot($index)" *ngIf="proposedSlots().length > 1">
+                <input type="date" class="form-input slot-date" [value]="part.date"
+                    (change)="updateSlotPart(i, 'date', $any($event.target).value)">
+                <select class="form-input slot-time-part" [value]="part.hour"
+                    (change)="updateSlotPart(i, 'hour', $any($event.target).value)">
+                    <option value="">時</option>
+                    @for (h of hourOptions; track h) {
+                    <option [value]="h">{{ h }}</option>
+                    }
+                </select>
+                <select class="form-input slot-time-part" [value]="part.minute"
+                    (change)="updateSlotPart(i, 'minute', $any($event.target).value)">
+                    <option value="">分</option>
+                    @for (m of minuteOptions; track m) {
+                    <option [value]="m">{{ m }}</option>
+                    }
+                </select>
+                @if (slotConflicts()[i]; as sc) {
+                <span class="slot-status slot-status--{{ sc.status }}" [title]="sc.reasons.join('\n')">
+                    @switch (sc.status) {
+                    @case ('checking') { <i class="ri-loader-4-line spin"></i>檢查中 }
+                    @case ('available') { <i class="ri-checkbox-circle-line"></i>可用 }
+                    @case ('conflict') { <i class="ri-error-warning-line"></i>衝突 }
+                    @case ('invalid') { <i class="ri-alert-line"></i>格式錯誤 }
+                    @default { &nbsp; }
+                    }
+                </span>
+                }
+                @if (slotParts().length > 1) {
+                <button type="button" class="btn-icon-danger" (click)="removeSlot(i)">
                     <i class="ri-delete-bin-line"></i>
                 </button>
+                }
             </div>
+            @if (slotConflicts()[i].status === 'conflict' && slotConflicts()[i].reasons.length > 0) {
+            <ul class="slot-reasons">
+                @for (reason of slotConflicts()[i].reasons; track reason) {
+                <li>{{ reason }}</li>
+                }
+            </ul>
             }
-            <button class="btn-add-slot" (click)="addSlot()">
+            }
+            <button type="button" class="btn-add-slot" (click)="addSlot()">
                 <i class="ri-add-line"></i> 新增時段
             </button>
         </div>
@@ -53,7 +117,7 @@
 
     <div class="modal-footer">
         <button class="btn btn-secondary" (click)="tryClose()" type="button" [disabled]="loading()">取消</button>
-        <button class="btn btn-primary" (click)="submit()" type="button" [disabled]="loading()">
+        <button class="btn btn-primary" (click)="submit()" type="button" [disabled]="!canSubmit()">
             <i class="ri-send-plane-line"></i>
             {{ loading() ? '發送中...' : '確認發送' }}
         </button>

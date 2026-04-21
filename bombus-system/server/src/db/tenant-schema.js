@@ -405,7 +405,15 @@ const USER_MIGRATIONS = [
 ];
 
 const INTERVIEW_MIGRATIONS = [
-  'ALTER TABLE interviews ADD COLUMN address TEXT'
+  'ALTER TABLE interviews ADD COLUMN address TEXT',
+  // D-07: invitations 新增 interviewer_id（發邀約時指定面試官）
+  'ALTER TABLE interview_invitations ADD COLUMN interviewer_id TEXT',
+  // D-07: interviews 與 meeting_attendees 查詢效能
+  'CREATE INDEX IF NOT EXISTS idx_invitations_interviewer ON interview_invitations(interviewer_id)',
+  'CREATE INDEX IF NOT EXISTS idx_interviews_interviewer_at ON interviews(interviewer_id, interview_at)',
+  'CREATE INDEX IF NOT EXISTS idx_meeting_attendees_employee_time ON meeting_attendees(employee_id)',
+  // meetings 表加 department 欄位（initTenantSchema 已加，此為既有租戶 migration 補齊）
+  'ALTER TABLE meetings ADD COLUMN department TEXT'
 ];
 
 // ─── 批次匯入表 SQL ───
@@ -963,6 +971,7 @@ const BUSINESS_TABLES_SQL = `
     id TEXT PRIMARY KEY,
     candidate_id TEXT NOT NULL,
     job_id TEXT NOT NULL,
+    interviewer_id TEXT,
     status TEXT DEFAULT 'Pending',
     proposed_slots TEXT,
     selected_slots TEXT,
@@ -976,7 +985,8 @@ const BUSINESS_TABLES_SQL = `
     created_at TEXT DEFAULT (datetime('now')),
     updated_at TEXT,
     FOREIGN KEY (candidate_id) REFERENCES candidates(id),
-    FOREIGN KEY (job_id) REFERENCES jobs(id)
+    FOREIGN KEY (job_id) REFERENCES jobs(id),
+    FOREIGN KEY (interviewer_id) REFERENCES employees(id) ON DELETE RESTRICT
   );
 
   CREATE TABLE IF NOT EXISTS interviews (
@@ -998,7 +1008,8 @@ const BUSINESS_TABLES_SQL = `
     created_at TEXT DEFAULT (datetime('now')),
     updated_at TEXT,
     FOREIGN KEY (candidate_id) REFERENCES candidates(id),
-    FOREIGN KEY (job_id) REFERENCES jobs(id)
+    FOREIGN KEY (job_id) REFERENCES jobs(id),
+    FOREIGN KEY (interviewer_id) REFERENCES employees(id) ON DELETE RESTRICT
   );
 
   CREATE TABLE IF NOT EXISTS candidate_interview_forms (

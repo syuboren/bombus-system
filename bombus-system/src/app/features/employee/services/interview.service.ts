@@ -352,12 +352,70 @@ export class InterviewService {
 
   // --- NEW RECRUITMENT ACTIONS ---
 
-  inviteCandidate(candidateId: string, jobId: string, message: string, slots: string[]): Observable<any> {
+  inviteCandidate(
+    candidateId: string,
+    jobId: string,
+    interviewerId: string,
+    message: string,
+    slots: string[]
+  ): Observable<any> {
     return this.http.post(`${this.apiUrl}/candidates/${candidateId}/invitations`, {
       jobId,
+      interviewerId,
       message,
       proposedSlots: slots
       // Backend now handles replyDeadline (7 days) and generates responseToken
+    });
+  }
+
+  /**
+   * D-07: 列出面試官候選清單（active 員工）
+   * @param options.dept 預設以職缺所屬部門篩選（可省略 = 全部門）
+   */
+  listActiveEmployees(options?: { dept?: string }): Observable<Array<{
+    id: string;
+    name: string;
+    department: string | null;
+    position: string | null;
+    employeeNo?: string;
+  }>> {
+    let params = new HttpParams().set('status', 'active');
+    if (options?.dept) params = params.set('dept', options.dept);
+    return this.http.get<any[]>('/api/employee/list', { params }).pipe(
+      map(list => (list || []).map(e => ({
+        id: e.id,
+        name: e.name,
+        department: e.department ?? null,
+        position: e.position ?? null,
+        employeeNo: e.employee_no
+      })))
+    );
+  }
+
+  /**
+   * D-07: 檢查面試官與候選人在指定時段的衝突狀態
+   */
+  checkConflicts(
+    interviewerId: string,
+    slots: string[],
+    options?: { candidateId?: string; excludeInterviewId?: string }
+  ): Observable<{
+    interviewerId: string;
+    candidateId: string | null;
+    slots: Array<{
+      start: string;
+      end?: string | null;
+      status: 'available' | 'conflict' | 'invalid';
+      conflicts: Array<{ type: string; id: string; title: string | null; startTime: string; endTime: string; reason: string }>;
+    }>;
+    allClear: boolean;
+    anyClear: boolean;
+  }> {
+    return this.http.post<any>(`${this.apiUrl}/interviews/check-conflicts`, {
+      interviewerId,
+      candidateId: options?.candidateId || null,
+      slots,
+      excludeInterviewId: options?.excludeInterviewId || null
     });
   }
 

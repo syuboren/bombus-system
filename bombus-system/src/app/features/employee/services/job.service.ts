@@ -223,7 +223,12 @@ export class JobService {
       responseToken: dbData.response_token,
       rescheduleNote: dbData.reschedule_note,
       interviewCount: dbData.interview_count || 0,
-      
+      // D-07 邀約時指定的面試官
+      invitationInterviewerId: dbData.invitation_interviewer_id || undefined,
+      invitationInterviewerName: dbData.invitation_interviewer_name || undefined,
+      invitationInterviewerDepartment: dbData.invitation_interviewer_department || undefined,
+      invitationInterviewerPosition: dbData.invitation_interviewer_position || undefined,
+
       // 面試資訊
       interviewId: dbData.interview_id,
       interviewAt: dbData.interview_at,
@@ -827,6 +832,11 @@ export class JobService {
       responseToken: dbCandidate.response_token,
       rescheduleNote: dbCandidate.reschedule_note,
       interviewCount: dbCandidate.interview_count || 0,
+      // D-07 邀約時指定的面試官
+      invitationInterviewerId: dbCandidate.invitation_interviewer_id || undefined,
+      invitationInterviewerName: dbCandidate.invitation_interviewer_name || undefined,
+      invitationInterviewerDepartment: dbCandidate.invitation_interviewer_department || undefined,
+      invitationInterviewerPosition: dbCandidate.invitation_interviewer_position || undefined,
       // 面試資訊
       interviewId: dbCandidate.interview_id,
       interviewAt: dbCandidate.interview_at,

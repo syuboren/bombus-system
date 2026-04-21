@@ -136,6 +136,11 @@ export interface JobCandidate {
   responseToken?: string;
   rescheduleNote?: string;
   interviewCount?: number;  // 面試記錄數量
+  // D-07 發邀約時指定的面試官
+  invitationInterviewerId?: string;
+  invitationInterviewerName?: string;
+  invitationInterviewerDepartment?: string;
+  invitationInterviewerPosition?: string;
   // 面試資訊
   interviewId?: string;           // 面試 ID
   interviewAt?: string;           // 面試時間

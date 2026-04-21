@@ -282,6 +282,10 @@ router.get('/:id/candidates', requireFeaturePerm('L1.jobs', 'view'), (req, res) 
             ii.status as invitation_status,
             ii.reschedule_note,
             ii.responded_at,
+            ii.interviewer_id as invitation_interviewer_id,
+            emp_int.name as invitation_interviewer_name,
+            emp_int.department as invitation_interviewer_department,
+            emp_int.position as invitation_interviewer_position,
             (SELECT COUNT(*) FROM interviews WHERE candidate_id = c.id) as interview_count,
             i.id as interview_id,
             i.interview_at,
@@ -299,6 +303,7 @@ router.get('/:id/candidates', requireFeaturePerm('L1.jobs', 'view'), (req, res) 
                 WHERE candidate_id = c.id
                 ORDER BY created_at DESC LIMIT 1
             )
+            LEFT JOIN employees emp_int ON emp_int.id = ii.interviewer_id
             LEFT JOIN interviews i ON i.id = (
                 SELECT id FROM interviews
                 WHERE candidate_id = c.id AND result != 'Cancelled'

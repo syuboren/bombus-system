@@ -39,6 +39,26 @@
     </div>
     }
 
+    <!-- D-07: 面試官改為唯讀顯示 -->
+    <div class="form-group">
+      <label class="form-label">面試官</label>
+      @if (hasInterviewer()) {
+      <div class="interviewer-readonly">
+        <i class="ri-user-star-line"></i>
+        <span>
+          {{ candidate().invitationInterviewerName }}
+          ｜{{ candidate().invitationInterviewerDepartment || '—' }}
+          ｜{{ candidate().invitationInterviewerPosition || '—' }}
+        </span>
+      </div>
+      } @else {
+      <div class="interviewer-missing">
+        <i class="ri-error-warning-line"></i>
+        <span>尚未指派面試官，請重發邀約</span>
+      </div>
+      }
+    </div>
+
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">面試日期 <span class="required">*</span></label>
@@ -48,22 +68,22 @@
 
       <div class="form-group">
         <label class="form-label">面試時間 <span class="required">*</span></label>
-        <input type="time" class="form-input" [value]="interviewTime()"
-          (input)="interviewTime.set($any($event.target).value)">
+        <div class="time-parts">
+          <select class="form-input time-part" [value]="interviewHour()"
+            (change)="interviewHour.set($any($event.target).value)">
+            @for (h of hourOptions; track h) {
+            <option [value]="h">{{ h }}</option>
+            }
+          </select>
+          <span class="time-colon">:</span>
+          <select class="form-input time-part" [value]="interviewMinute()"
+            (change)="interviewMinute.set($any($event.target).value)">
+            @for (m of minuteOptions; track m) {
+            <option [value]="m">{{ m }}</option>
+            }
+          </select>
+        </div>
       </div>
-    </div>
-
-    <div class="form-group">
-      <label class="form-label">面試官 <span class="required">*</span></label>
-      <select class="form-select" [value]="selectedInterviewer()"
-        (change)="selectedInterviewer.set($any($event.target).value)">
-        <option value="">請選擇面試官</option>
-        @for (interviewer of interviewerOptions; track interviewer.id) {
-        <option [value]="interviewer.id">
-          {{ interviewer.name }} - {{ interviewer.title }} ({{ interviewer.department }})
-        </option>
-        }
-      </select>
     </div>
 
     <div class="form-group">
@@ -112,7 +132,7 @@
   </div>
   <div class="modal-footer">
     <button class="btn btn-secondary" (click)="tryClose()" type="button" [disabled]="loading()">取消</button>
-    <button class="btn btn-primary" (click)="submit()" type="button" [disabled]="loading()">
+    <button class="btn btn-primary" (click)="submit()" type="button" [disabled]="!canSubmit()">
       @if (loading()) {
         <i class="ri-loader-4-line spin"></i>
         處理中...

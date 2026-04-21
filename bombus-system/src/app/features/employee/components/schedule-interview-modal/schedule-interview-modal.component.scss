@@ -1,6 +1,51 @@
 @import '../../../../../assets/styles/variables';
 @import '../../../../../assets/styles/mixins';
 
+// D-07 時間拆為時/分兩個下拉
+.time-parts {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+
+  .time-part {
+    flex: 0 0 70px;
+    padding: $spacing-sm 4px;
+    background: white;
+  }
+
+  .time-colon {
+    font-weight: bold;
+    color: $color-text-secondary;
+  }
+}
+
+// D-07 面試官唯讀顯示
+.interviewer-readonly {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  background: rgba($color-l1-sage, 0.1);
+  border-radius: $radius-md;
+  color: darken($color-l1-sage, 10%);
+  font-weight: $font-weight-medium;
+
+  i { font-size: 18px; }
+}
+
+.interviewer-missing {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  background: rgba($color-error, 0.1);
+  border-radius: $radius-md;
+  color: $color-error;
+  font-size: $font-size-sm;
+
+  i { font-size: 18px; }
+}
+
 .modal-backdrop {
   position: fixed;
   top: 0;

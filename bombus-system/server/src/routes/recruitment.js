@@ -14,6 +14,172 @@ const { getPlatformDB } = require('../db/platform-db');
  * ------------------------------------------------------------------
  */
 
+// D-07 面試行事曆衝突檢查常數與輔助函式
+const SLOT_ALIGN_SECONDS = 15 * 60;
+const DEFAULT_INTERVIEW_DURATION_MS = 60 * 60 * 1000;
+
+/** 將 ISO 時間格式化為「MM/DD HH:mm」顯示 */
+function formatSlotTime(iso) {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mi = String(d.getMinutes()).padStart(2, '0');
+    return `${mm}/${dd} ${hh}:${mi}`;
+}
+
+function parseSlotMs(ts) {
+    const ms = Date.parse(ts);
+    return Number.isFinite(ms) ? ms : NaN;
+}
+
+function isSlotAligned(ts) {
+    const ms = parseSlotMs(ts);
+    if (!Number.isFinite(ms)) return false;
+    return ms % (SLOT_ALIGN_SECONDS * 1000) === 0;
+}
+
+function alignSlotDown(ms) {
+    const stepMs = SLOT_ALIGN_SECONDS * 1000;
+    return Math.floor(ms / stepMs) * stepMs;
+}
+
+function rangesOverlap(aStart, aEnd, bStart, bEnd) {
+    return aStart < bEnd && bStart < aEnd;
+}
+
+/**
+ * 檢查單一時段衝突：面試官 (interviews + meetings) + 候選人其他面試
+ * @returns {Array<{type, id, title, startTime, endTime, reason}>}
+ */
+function findSlotConflicts(tenantDB, { interviewerId, candidateId, slotStartMs, slotEndMs, excludeInterviewId }) {
+    const conflicts = [];
+
+    // 面試官在 interviews 表的衝突（JOIN 候選人取姓名供訊息顯示）
+    const interviewRows = tenantDB.prepare(`
+        SELECT i.id, i.candidate_id, i.interview_at, c.name AS candidate_name
+        FROM interviews i
+        LEFT JOIN candidates c ON c.id = i.candidate_id
+        WHERE i.interviewer_id = ? AND i.cancelled_at IS NULL
+    `).all(interviewerId);
+    for (const row of interviewRows) {
+        if (excludeInterviewId && row.id === excludeInterviewId) continue;
+        const startMs = parseSlotMs(row.interview_at);
+        if (!Number.isFinite(startMs)) continue;
+        const endMs = startMs + DEFAULT_INTERVIEW_DURATION_MS;
+        if (rangesOverlap(slotStartMs, slotEndMs, startMs, endMs)) {
+            const startIso = new Date(startMs).toISOString();
+            const candName = row.candidate_name || row.candidate_id;
+            conflicts.push({
+                type: 'interview',
+                subject: 'interviewer',
+                id: row.id,
+                title: candName,
+                startTime: startIso,
+                endTime: new Date(endMs).toISOString(),
+                reason: `面試官在 ${formatSlotTime(startIso)} 已有其他面試「面試者：${candName}」`
+            });
+        }
+    }
+
+    // 面試官在 meetings 表的衝突（透過 meeting_attendees）
+    // 排除 type='interview' 的鏡像紀錄，避免與 interviews 查詢重複回報
+    const meetingRows = tenantDB.prepare(`
+        SELECT m.id, m.title, m.start_time, m.end_time
+        FROM meeting_attendees ma
+        JOIN meetings m ON m.id = ma.meeting_id
+        WHERE ma.employee_id = ?
+          AND (m.status IS NULL OR m.status != 'cancelled')
+          AND (m.type IS NULL OR m.type != 'interview')
+    `).all(interviewerId);
+    for (const row of meetingRows) {
+        const startMs = parseSlotMs(row.start_time);
+        const endMs = parseSlotMs(row.end_time);
+        if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) continue;
+        if (rangesOverlap(slotStartMs, slotEndMs, startMs, endMs)) {
+            const startIso = new Date(startMs).toISOString();
+            conflicts.push({
+                type: 'meeting',
+                subject: 'interviewer',
+                id: row.id,
+                title: row.title,
+                startTime: startIso,
+                endTime: new Date(endMs).toISOString(),
+                reason: `面試官在 ${formatSlotTime(startIso)} 有會議「${row.title || '未命名'}」`
+            });
+        }
+    }
+
+    // 候選人在 interviews 表的其他面試
+    if (candidateId) {
+        const candRows = tenantDB.prepare(`
+            SELECT id, interview_at
+            FROM interviews
+            WHERE candidate_id = ? AND cancelled_at IS NULL
+        `).all(candidateId);
+        for (const row of candRows) {
+            if (excludeInterviewId && row.id === excludeInterviewId) continue;
+            const startMs = parseSlotMs(row.interview_at);
+            if (!Number.isFinite(startMs)) continue;
+            const endMs = startMs + DEFAULT_INTERVIEW_DURATION_MS;
+            if (rangesOverlap(slotStartMs, slotEndMs, startMs, endMs)) {
+                const startIso = new Date(startMs).toISOString();
+                conflicts.push({
+                    type: 'interview',
+                    subject: 'candidate',
+                    id: row.id,
+                    title: null,
+                    startTime: startIso,
+                    endTime: new Date(endMs).toISOString(),
+                    reason: `候選人在 ${formatSlotTime(startIso)} 已有其他面試`
+                });
+            }
+        }
+    }
+
+    return conflicts;
+}
+
+/**
+ * 對一組時段進行衝突檢查，回傳每個時段的狀態
+ * @param {Array<string|{start:string,end?:string}>} slots
+ * @returns {{slots: Array<{start, end, status, conflicts?}>, allClear: boolean, anyClear: boolean}}
+ */
+function checkConflictsForSlots(tenantDB, { interviewerId, candidateId, slots, excludeInterviewId }) {
+    const results = [];
+    let anyClear = false;
+    let allClear = true;
+    for (const raw of slots) {
+        const start = typeof raw === 'string' ? raw : raw.start;
+        const end = typeof raw === 'object' && raw.end ? raw.end : null;
+        const startMs = parseSlotMs(start);
+        const endMs = end ? parseSlotMs(end) : startMs + DEFAULT_INTERVIEW_DURATION_MS;
+        if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) {
+            results.push({ start, end, status: 'invalid', conflicts: [] });
+            allClear = false;
+            continue;
+        }
+        const alignedStart = alignSlotDown(startMs);
+        const alignedEnd = alignSlotDown(endMs);
+        const conflicts = findSlotConflicts(tenantDB, {
+            interviewerId,
+            candidateId,
+            slotStartMs: alignedStart,
+            slotEndMs: alignedEnd,
+            excludeInterviewId
+        });
+        if (conflicts.length === 0) {
+            anyClear = true;
+            results.push({ start, end, status: 'available', conflicts: [] });
+        } else {
+            allClear = false;
+            results.push({ start, end, status: 'conflict', conflicts });
+        }
+    }
+    return { slots: results, allClear, anyClear };
+}
+
 /**
  * 輔助函數: 自動標籤人才
  * @param {string} candidateId - 候選人 ID
@@ -655,21 +821,83 @@ router.get('/candidates', requireFeaturePerm('L1.recruitment', 'view'), (req, re
     }
 });
 
+// D-07 Conflict Check: POST /api/recruitment/interviews/check-conflicts
+// Body: { interviewerId, candidateId?, slots: [string | {start, end?}], excludeInterviewId? }
+router.post('/interviews/check-conflicts', requireFeaturePerm('L1.recruitment', 'view'), (req, res) => {
+    try {
+        const { interviewerId, candidateId, slots, excludeInterviewId } = req.body || {};
+        if (!interviewerId || !Array.isArray(slots) || slots.length === 0) {
+            return res.status(400).json({ error: 'interviewerId 與 slots[] 為必填' });
+        }
+        const result = checkConflictsForSlots(req.tenantDB, {
+            interviewerId,
+            candidateId: candidateId || null,
+            slots,
+            excludeInterviewId: excludeInterviewId || null
+        });
+        res.json({
+            interviewerId,
+            candidateId: candidateId || null,
+            slots: result.slots,
+            allClear: result.allClear,
+            anyClear: result.anyClear
+        });
+    } catch (error) {
+        console.error('Error checking conflicts:', error);
+        res.status(500).json({ error: 'Failed to check conflicts' });
+    }
+});
+
 // 1. Send Interview Invitation
 // POST /api/recruitment/candidates/:candidateId/invitations
 router.post('/candidates/:candidateId/invitations', requireFeaturePerm('L1.recruitment', 'edit'), (req, res) => {
     try {
         const { candidateId } = req.params;
-        const { jobId, proposedSlots, message } = req.body;
+        const { jobId, interviewerId, proposedSlots, message } = req.body;
 
         if (!candidateId || !jobId) {
             return res.status(400).json({ error: 'Candidate ID and Job ID are required' });
         }
 
+        // D-07: 面試官必填 + 驗證為 active 員工
+        if (!interviewerId) {
+            return res.status(400).json({ error: 'INTERVIEWER_REQUIRED', message: '請選擇面試官' });
+        }
+        const interviewer = req.tenantDB.prepare(
+            "SELECT id, name, department, position FROM employees WHERE id = ? AND status = 'active'"
+        ).get(interviewerId);
+        if (!interviewer) {
+            return res.status(400).json({ error: 'INTERVIEWER_INVALID', message: '面試官不存在或非在職員工' });
+        }
+
+        // D-07: 15 分鐘對齊驗證
+        const slotsArr = Array.isArray(proposedSlots) ? proposedSlots : [];
+        for (const slot of slotsArr) {
+            if (!isSlotAligned(slot)) {
+                return res.status(400).json({ error: 'SLOT_NOT_ALIGNED', message: `時段需以 15 分鐘為單位：${slot}` });
+            }
+        }
+
+        // D-07: 衝突硬擋 — 所有建議時段皆衝突才擋；至少一時段可用則允許
+        if (slotsArr.length > 0) {
+            const check = checkConflictsForSlots(req.tenantDB, {
+                interviewerId,
+                candidateId,
+                slots: slotsArr
+            });
+            if (!check.anyClear) {
+                return res.status(409).json({
+                    error: 'ALL_SLOTS_CONFLICT',
+                    message: '所有建議時段皆與面試官或候選人既有行程衝突',
+                    slots: check.slots
+                });
+            }
+        }
+
         const invitationId = uuidv4();
         const responseToken = uuidv4(); // 專屬回覆連結 Token
         const now = new Date().toISOString();
-        const slotsJson = JSON.stringify(proposedSlots || []);
+        const slotsJson = JSON.stringify(slotsArr);
 
         // 7 天後過期
         const replyDeadline = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -677,10 +905,10 @@ router.post('/candidates/:candidateId/invitations', requireFeaturePerm('L1.recru
         // 1. Create Invitation with response_token
         const stmt = req.tenantDB.prepare(`
             INSERT INTO interview_invitations (
-                id, candidate_id, job_id, status, proposed_slots, message, reply_deadline, response_token, created_at, updated_at
-            ) VALUES (?, ?, ?, 'Pending', ?, ?, ?, ?, ?, ?)
+                id, candidate_id, job_id, interviewer_id, status, proposed_slots, message, reply_deadline, response_token, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, 'Pending', ?, ?, ?, ?, ?, ?)
         `);
-        stmt.run(invitationId, candidateId, jobId, slotsJson, message, replyDeadline, responseToken, now, now);
+        stmt.run(invitationId, candidateId, jobId, interviewerId, slotsJson, message, replyDeadline, responseToken, now, now);
 
         // 2. Update Candidate Stage & Status
         const updateStmt = req.tenantDB.prepare(`
@@ -715,31 +943,85 @@ router.post('/interviews', requireFeaturePerm('L1.recruitment', 'edit'), (req, r
             return res.status(400).json({ error: 'Missing required fields for scheduling' });
         }
 
+        // D-07: 面試官必填 + 驗證 active 員工
+        if (!interviewerId) {
+            return res.status(400).json({ error: 'INTERVIEWER_REQUIRED', message: '缺少面試官資訊' });
+        }
+        const interviewer = req.tenantDB.prepare(
+            "SELECT id, name, department, position FROM employees WHERE id = ? AND status = 'active'"
+        ).get(interviewerId);
+        if (!interviewer) {
+            return res.status(400).json({ error: 'INTERVIEWER_INVALID', message: '面試官不存在或非在職員工' });
+        }
+
+        // D-07: 15 分鐘對齊驗證
+        if (!isSlotAligned(interviewAt)) {
+            return res.status(400).json({ error: 'SLOT_NOT_ALIGNED', message: '面試時間需以 15 分鐘為單位' });
+        }
+
+        // D-07: 最終時段衝突檢查（Final-stage conflict verification）
+        const check = checkConflictsForSlots(req.tenantDB, {
+            interviewerId,
+            candidateId,
+            slots: [interviewAt]
+        });
+        if (!check.allClear) {
+            return res.status(409).json({
+                error: 'SLOT_CONFLICT',
+                message: '該時段與面試官或候選人既有行程衝突',
+                conflicts: check.slots[0]?.conflicts || []
+            });
+        }
+
         const interviewId = uuidv4();
         const cancelToken = uuidv4(); // 產生取消連結 Token
         const now = new Date().toISOString();
 
-        // 1. Create Interview Record with meeting_link, address and cancel_token
-        const stmt = req.tenantDB.prepare(`
-            INSERT INTO interviews (
-                id, candidate_id, job_id, interviewer_id, round, interview_at, location, meeting_link, address, cancel_token, result, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending', ?, ?)
-        `);
-        stmt.run(interviewId, candidateId, jobId, interviewerId, round || 1, interviewAt, location, meetingLink || null, address || null, cancelToken, now, now);
+        // D-07: 同步寫入 interviews + meetings + meeting_attendees（同 transaction 鏡像關聯）
+        const startMs = Date.parse(interviewAt);
+        const endIso = new Date(startMs + DEFAULT_INTERVIEW_DURATION_MS).toISOString();
+        const mirroredMeetingId = `mtg-${interviewId}`;
+        const candidate = req.tenantDB.prepare('SELECT name FROM candidates WHERE id = ?').get(candidateId);
+        const meetingTitle = `面試：${candidate?.name || candidateId}`;
+        const isOnline = location === 'online' ? 1 : 0;
 
-        // 2. Update Candidate Status to interview
-        const updateCand = req.tenantDB.prepare(`
-            UPDATE candidates 
-            SET status = 'interview', updated_at = ?
-            WHERE id = ?
-        `);
-        updateCand.run(now, candidateId);
+        req.tenantDB.transaction((db) => {
+            db.prepare(`
+                INSERT INTO interviews (
+                    id, candidate_id, job_id, interviewer_id, round, interview_at, location, meeting_link, address, cancel_token, result, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending', ?, ?)
+            `).run(interviewId, candidateId, jobId, interviewerId, round || 1, interviewAt, location, meetingLink || null, address || null, cancelToken, now, now);
+
+            db.prepare(`
+                INSERT INTO meetings (
+                    id, title, type, status, location, is_online, meeting_link, start_time, end_time, duration, notes, created_at, updated_at
+                ) VALUES (?, ?, 'interview', 'scheduled', ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `).run(
+                mirroredMeetingId, meetingTitle, address || location || null, isOnline,
+                meetingLink || null, interviewAt, endIso, 60,
+                `interview_ref:${interviewId}`, now, now
+            );
+
+            db.prepare(`
+                INSERT INTO meeting_attendees (
+                    id, meeting_id, employee_id, name, email, department, position, is_organizer, is_required, attendance_status
+                ) VALUES (?, ?, ?, ?, NULL, ?, ?, 1, 1, 'pending')
+            `).run(
+                uuidv4(), mirroredMeetingId, interviewerId, interviewer.name,
+                interviewer.department || null, interviewer.position || null
+            );
+
+            db.prepare(`
+                UPDATE candidates SET status = 'interview', updated_at = ? WHERE id = ?
+            `).run(now, candidateId);
+        });
 
         res.status(201).json({
             success: true,
             interviewId,
             cancelToken,
             cancelLink: `/public/interview-cancel/${cancelToken}`,
+            mirroredMeetingId,
             message: 'Interview scheduled successfully'
         });
 
@@ -1395,23 +1677,27 @@ router.post('/interviews/cancel/:token', (req, res) => {
 
         const now = new Date().toISOString();
 
-        // 1. 更新面試狀態為 Cancelled
-        const updateInterview = req.tenantDB.prepare(`
-            UPDATE interviews 
-            SET result = 'Cancelled', cancelled_at = ?, cancel_reason = ?, updated_at = ?
-            WHERE id = ?
-        `);
-        updateInterview.run(now, reason || '候選人婉拒', now, interview.id);
+        // D-07: 同 transaction 內更新 interviews、mirrored meeting、候選人；
+        // legacy 無鏡像 meeting 的紀錄亦允許取消（UPDATE 無匹配列不報錯）
+        req.tenantDB.transaction((db) => {
+            db.prepare(`
+                UPDATE interviews
+                SET result = 'Cancelled', cancelled_at = ?, cancel_reason = ?, updated_at = ?
+                WHERE id = ?
+            `).run(now, reason || '候選人婉拒', now, interview.id);
 
-        // 2. 更新候選人狀態
-        const updateCandidate = req.tenantDB.prepare(`
-            UPDATE candidates 
-            SET status = 'interview_declined', stage = 'Rejected', updated_at = ?
-            WHERE id = ?
-        `);
-        updateCandidate.run(now, interview.candidate_id);
+            db.prepare(`
+                UPDATE meetings SET status = 'cancelled', updated_at = ? WHERE id = ?
+            `).run(now, `mtg-${interview.id}`);
 
-        // 3. 自動將婉拒的候選人加入人才庫
+            db.prepare(`
+                UPDATE candidates
+                SET status = 'interview_declined', stage = 'Rejected', updated_at = ?
+                WHERE id = ?
+            `).run(now, interview.candidate_id);
+        });
+
+        // 3. 自動將婉拒的候選人加入人才庫（事務外，避免 talent-pool 副作用影響主事務）
         importToTalentPool(req, interview.candidate_id, 'interview', reason || '已安排面試但婉拒');
 
         res.json({
