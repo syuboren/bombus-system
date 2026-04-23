@@ -847,7 +847,12 @@ export class JobService {
       interviewResult: dbCandidate.interview_result,
       // AI 履歷解析
       aiOverallScore: dbCandidate.ai_overall_score ?? undefined,
-      aiAnalyzedAt: dbCandidate.ai_analyzed_at ?? undefined
+      aiAnalyzedAt: dbCandidate.ai_analyzed_at ?? undefined,
+      // 總年資描述（優先於 experienceYears 顯示，格式如「0年2個月」）
+      seniority: dbCandidate.seniority ?? undefined,
+      // 來源標記
+      reg_source: dbCandidate.reg_source ?? null,
+      source_detail: dbCandidate.source_detail ?? null
     };
   }
 

@@ -1,0 +1,914 @@
+<div class="candidate-full-form">
+  <!-- Tabs -->
+  <div class="tabs">
+    <button type="button" class="tab" [class.active]="tab() === 1" (click)="setTab(1)">
+      <i class="ri-user-line"></i> 基本資料
+      @if (!tab1Complete()) { <span class="tab-dot"></span> }
+    </button>
+    <button type="button" class="tab" [class.active]="tab() === 2" (click)="setTab(2)">
+      <i class="ri-briefcase-line"></i> 求職條件
+      @if (!tab2Complete()) { <span class="tab-dot"></span> }
+    </button>
+    <button type="button" class="tab" [class.active]="tab() === 3" (click)="setTab(3)">
+      <i class="ri-graduation-cap-line"></i> 學經歷
+      @if (!tab3Complete()) { <span class="tab-dot"></span> }
+    </button>
+    <button type="button" class="tab" [class.active]="tab() === 4" (click)="setTab(4)">
+      <i class="ri-star-line"></i> 技能與作品
+      @if (!tab4Complete()) { <span class="tab-dot"></span> }
+    </button>
+  </div>
+
+  <div class="form-body">
+
+    <!-- ========== Tab 1 基本資料 ========== -->
+    @if (tab() === 1) {
+      <!-- 大頭照上傳 + 裁切 -->
+      <div class="form-section avatar-section">
+        <h3 class="section-title">大頭照 <span class="optional-hint">（選填）</span></h3>
+
+        @switch (avatarState().kind) {
+          @case ('idle') {
+            @if (form().avatar) {
+              <!-- 已儲存過，顯示預覽 -->
+              <div class="avatar-preview-row">
+                <div class="avatar-preview">
+                  <img [src]="form().avatar" alt="avatar" />
+                </div>
+                <div class="avatar-actions-inline">
+                  <label class="btn-small as-file-button">
+                    <i class="ri-image-edit-line"></i> 更換照片
+                    <input type="file" hidden accept="image/*" (change)="onAvatarFileSelected($event)" />
+                  </label>
+                  <button type="button" class="btn-icon-danger" (click)="removeAvatar()" title="移除">
+                    <i class="ri-delete-bin-line"></i>
+                  </button>
+                </div>
+              </div>
+            } @else {
+              <!-- 未上傳 -->
+              <div class="avatar-upload-empty">
+                <div class="avatar-placeholder">
+                  <i class="ri-user-smile-line"></i>
+                </div>
+                <div class="avatar-upload-hint">
+                  <label class="btn-small as-file-button">
+                    <i class="ri-upload-line"></i> 選擇圖片
+                    <input type="file" hidden accept="image/*" (change)="onAvatarFileSelected($event)" />
+                  </label>
+                  <p class="hint-text">JPG / PNG 格式，5 MB 以內；上傳後可拖曳調整裁切位置</p>
+                </div>
+              </div>
+            }
+          }
+
+          @case ('editing') {
+            @let edit = $any(avatarState());
+            <div class="avatar-editor">
+              <div class="avatar-viewport"
+                [style.width.px]="avatarViewportPx"
+                [style.height.px]="avatarViewportPx"
+                (pointerdown)="onAvatarDragStart($event)"
+                (pointermove)="onAvatarDragMove($event)"
+                (pointerup)="onAvatarDragEnd($event)"
+                (pointercancel)="onAvatarDragEnd($event)">
+                <img class="avatar-draggable"
+                  [src]="edit.dataUrl"
+                  draggable="false"
+                  [style.width.px]="edit.imgW * edit.scale"
+                  [style.height.px]="edit.imgH * edit.scale"
+                  [style.transform]="'translate(' + edit.offsetX + 'px, ' + edit.offsetY + 'px)'" />
+                <div class="avatar-mask"></div>
+              </div>
+
+              <div class="avatar-controls">
+                <label class="form-label">縮放</label>
+                <input type="range"
+                  [min]="edit.minScale"
+                  [max]="edit.minScale * 4"
+                  [step]="0.01"
+                  [value]="edit.scale"
+                  (input)="onAvatarScaleInput($any($event.target).value)" />
+                <p class="hint-text">拖曳圖片調整位置，拉桿縮放</p>
+              </div>
+
+              <div class="avatar-buttons">
+                <button type="button" class="btn-ghost" (click)="cancelAvatarEdit()">取消</button>
+                <button type="button" class="btn-primary" (click)="confirmAvatarCrop()">
+                  <i class="ri-check-line"></i> 確認裁切
+                </button>
+              </div>
+            </div>
+          }
+
+          @case ('uploading') {
+            <div class="avatar-upload-empty">
+              <div class="avatar-placeholder">
+                <i class="ri-loader-2-line spin"></i>
+              </div>
+              <p class="hint-text">上傳中…</p>
+            </div>
+          }
+
+          @case ('ready') {
+            <div class="avatar-preview-row">
+              <div class="avatar-preview">
+                <img [src]="$any(avatarState()).url" alt="avatar" />
+              </div>
+              <div class="avatar-actions-inline">
+                <label class="btn-small as-file-button">
+                  <i class="ri-image-edit-line"></i> 重新選擇
+                  <input type="file" hidden accept="image/*" (change)="onAvatarFileSelected($event)" />
+                </label>
+                <button type="button" class="btn-icon-danger" (click)="removeAvatar()" title="移除">
+                  <i class="ri-delete-bin-line"></i>
+                </button>
+              </div>
+            </div>
+          }
+        }
+
+        @if (avatarError()) {
+          <p class="submit-error">
+            <i class="ri-error-warning-line"></i> {{ avatarError() }}
+          </p>
+        }
+      </div>
+
+      <div class="form-section">
+        <h3 class="section-title">個人資訊</h3>
+
+        <div class="form-row-3">
+          <div class="form-group">
+            <label class="form-label">姓名 <span class="required">*</span></label>
+            <input type="text" class="form-input"
+              [value]="form().name"
+              (input)="updateField('name', $any($event.target).value)"
+              placeholder="請輸入姓名" autocomplete="name" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">英文姓名 <span class="required">*</span></label>
+            <input type="text" class="form-input"
+              [value]="form().nameEn"
+              (input)="updateField('nameEn', $any($event.target).value)"
+              placeholder="請輸入英文姓名" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">性別 <span class="required">*</span></label>
+            <select class="form-input"
+              [value]="form().gender"
+              (change)="updateField('gender', $any($event.target).value)">
+              <option value="">請選擇</option>
+              <option value="male">男</option>
+              <option value="female">女</option>
+              <option value="other">其他</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row-3">
+          <div class="form-group">
+            <label class="form-label">生日 <span class="required">*</span></label>
+            <input type="date" class="form-input"
+              [value]="form().birthday"
+              (input)="updateField('birthday', $any($event.target).value)" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">國籍 <span class="required">*</span></label>
+            <select class="form-input"
+              [value]="form().nationality"
+              (change)="updateField('nationality', $any($event.target).value)">
+              <option value="">請選擇</option>
+              @for (n of nationalityOptions; track n) {
+                <option [value]="n">{{ n }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email @if (mode() === 'hr') { <span class="required">*</span> }</label>
+            <input type="email" class="form-input"
+              [value]="form().email"
+              (input)="updateField('email', $any($event.target).value)"
+              [readonly]="mode() === 'public'"
+              placeholder="example@email.com" />
+            @if (mode() === 'public') {
+              <p class="hint-text">此 email 由 HR 指定，無法更改</p>
+            }
+          </div>
+        </div>
+
+        <div class="form-row-3">
+          <div class="form-group">
+            <label class="form-label">手機 <span class="required">*</span></label>
+            <input type="tel" class="form-input"
+              [value]="form().phone"
+              (input)="updateField('phone', $any($event.target).value)"
+              placeholder="0912-345-678" autocomplete="tel" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">聯絡方式 <span class="required">*</span></label>
+            <select class="form-input"
+              [value]="form().contactInfo"
+              (change)="updateField('contactInfo', $any($event.target).value)">
+              <option value="">請選擇最佳聯絡方式</option>
+              @for (opt of contactMethodOptions; track opt) {
+                <option [value]="opt">{{ opt }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">市內電話</label>
+            <input type="tel" class="form-input"
+              [value]="form().tel"
+              (input)="updateField('tel', $any($event.target).value)"
+              placeholder="02-1234-5678" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">聯絡地址</label>
+          <input type="text" class="form-input"
+            [value]="form().address"
+            (input)="updateField('address', $any($event.target).value)"
+            placeholder="請輸入聯絡地址" />
+        </div>
+
+        <div class="form-row-3">
+          <div class="form-group">
+            <label class="form-label">兵役狀態 <span class="required">*</span></label>
+            <select class="form-input"
+              [value]="form().militaryStatus"
+              (change)="updateField('militaryStatus', $any($event.target).value)">
+              <option value="">請選擇</option>
+              <option value="已役">已役</option>
+              <option value="免役">免役</option>
+              <option value="未役">未役</option>
+              <option value="替代役">替代役</option>
+              <option value="不適用">不適用</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">駕照（可複選）</label>
+            <div class="check-chips">
+              @for (opt of drivingLicenseOptions; track opt) {
+                <label class="check-chip" [class.selected]="isDrivingLicenseSelected(opt)">
+                  <input type="checkbox"
+                    [checked]="isDrivingLicenseSelected(opt)"
+                    (change)="toggleDrivingLicense(opt)" />
+                  {{ opt }}
+                </label>
+              }
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">交通工具（可複選）</label>
+            <div class="check-chips">
+              @for (opt of transportOptions; track opt) {
+                <label class="check-chip" [class.selected]="isTransportSelected(opt)">
+                  <input type="checkbox"
+                    [checked]="isTransportSelected(opt)"
+                    (change)="toggleTransport(opt)" />
+                  {{ opt }}
+                </label>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- ========== Tab 2 求職條件 ========== -->
+    @if (tab() === 2) {
+      <div class="form-section">
+        <h3 class="section-title">工作偏好</h3>
+
+        <div class="form-row-3">
+          <div class="form-group">
+            <label class="form-label">工作型態 <span class="required">*</span></label>
+            <select class="form-input"
+              [value]="form().jobCharacteristic"
+              (change)="updateField('jobCharacteristic', $any($event.target).value)">
+              <option value="">請選擇</option>
+              <option value="全職">全職</option>
+              <option value="兼職">兼職</option>
+              <option value="約聘">約聘</option>
+              <option value="實習">實習</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">工作時段 <span class="required">*</span></label>
+            <select class="form-input"
+              [value]="form().workInterval"
+              (change)="updateField('workInterval', $any($event.target).value)">
+              <option value="">請選擇</option>
+              <option value="日班">日班</option>
+              <option value="夜班">夜班</option>
+              <option value="大夜班">大夜班</option>
+              <option value="假日班">假日班</option>
+              <option value="不拘">不拘</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">輪班制度 <span class="required">*</span></label>
+            <select class="form-input"
+              [value]="form().shiftWork === null ? '' : (form().shiftWork ? 'true' : 'false')"
+              (change)="updateField('shiftWork', $any($event.target).value === '' ? null : $any($event.target).value === 'true')">
+              <option value="">請選擇</option>
+              <option value="true">可接受輪班</option>
+              <option value="false">不接受輪班</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row-3">
+          <div class="form-group">
+            <label class="form-label">可上班日</label>
+            <input type="text" class="form-input"
+              [value]="form().startDateOpt"
+              (input)="updateField('startDateOpt', $any($event.target).value)"
+              placeholder="例：隨時、一週內" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">希望待遇</label>
+            <input type="text" class="form-input"
+              [value]="form().expectedSalary"
+              (input)="updateField('expectedSalary', $any($event.target).value)"
+              placeholder="例：月薪 50,000 以上" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">希望地點</label>
+            <input type="text" class="form-input"
+              [value]="form().preferredLocation"
+              (input)="updateField('preferredLocation', $any($event.target).value)"
+              placeholder="例：台北市" />
+          </div>
+        </div>
+
+        <div class="form-row-3">
+          <div class="form-group">
+            <label class="form-label">希望職稱</label>
+            <input type="text" class="form-input"
+              [value]="form().preferredJobName"
+              (input)="updateField('preferredJobName', $any($event.target).value)"
+              placeholder="例：前端工程師" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">希望職類</label>
+            <input type="text" class="form-input"
+              [value]="form().preferredJobCategory"
+              (input)="updateField('preferredJobCategory', $any($event.target).value)"
+              placeholder="例：軟體/工程類" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">希望產業</label>
+            <input type="text" class="form-input"
+              [value]="form().preferredIndustry"
+              (input)="updateField('preferredIndustry', $any($event.target).value)"
+              placeholder="例：資訊科技業" />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3 class="section-title">自我介紹（選填）</h3>
+
+        <div class="form-group">
+          <label class="form-label">個人簡介</label>
+          <textarea class="form-input" rows="3"
+            [value]="form().introduction"
+            (input)="updateField('introduction', $any($event.target).value)"
+            placeholder="簡短自我介紹"></textarea>
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label class="form-label">個人格言</label>
+            <input type="text" class="form-input"
+              [value]="form().motto"
+              (input)="updateField('motto', $any($event.target).value)"
+              placeholder="座右銘" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">個人特色</label>
+            <div class="tag-input-row">
+              <input type="text" class="form-input" #charInput
+                (keydown.enter)="$event.preventDefault(); addCharacteristicTag(charInput)"
+                placeholder="輸入特色，按 Enter 或點「建立」" />
+              <button type="button" class="btn-small"
+                (click)="addCharacteristicTag(charInput); charInput.focus()">
+                <i class="ri-add-line"></i> 建立
+              </button>
+            </div>
+            @if (parseTags(form().characteristic).length > 0) {
+              <div class="tag-chips-below">
+                @for (tag of parseTags(form().characteristic); track tag) {
+                  <span class="tag-chip">
+                    {{ tag }}
+                    <button type="button" class="tag-remove" (click)="removeCharacteristicTag(tag)">
+                      <i class="ri-close-line"></i>
+                    </button>
+                  </span>
+                }
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">證照</label>
+          <textarea class="form-input" rows="2"
+            [value]="form().certificates"
+            (input)="updateField('certificates', $any($event.target).value)"
+            placeholder="持有的證照名稱"></textarea>
+        </div>
+      </div>
+    }
+
+    <!-- ========== Tab 3 學經歷 ========== -->
+    @if (tab() === 3) {
+      <!-- 學歷 -->
+      <div class="form-section">
+        <div class="section-head">
+          <h3 class="section-title">學歷 <span class="required">*</span></h3>
+          <button type="button" class="btn-small" (click)="addEducation()">
+            <i class="ri-add-line"></i> 新增學歷
+          </button>
+        </div>
+        @for (edu of form().educationList; track $index) {
+          <div class="entry-card">
+            <div class="entry-card-head">
+              <span>學歷 {{ $index + 1 }}</span>
+              @if (form().educationList.length > 1) {
+                <button type="button" class="btn-icon-danger" (click)="removeEducation($index)">
+                  <i class="ri-delete-bin-line"></i>
+                </button>
+              }
+            </div>
+            <div class="form-row-2">
+              <div class="form-group">
+                <label class="form-label">學校名稱 <span class="required">*</span></label>
+                <input type="text" class="form-input"
+                  [value]="edu.schoolName"
+                  (input)="updateEducation($index, 'schoolName', $any($event.target).value)" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">科系 <span class="required">*</span></label>
+                <input type="text" class="form-input"
+                  [value]="edu.major"
+                  (input)="updateEducation($index, 'major', $any($event.target).value)" />
+              </div>
+            </div>
+            <div class="form-row-2">
+              <div class="form-group">
+                <label class="form-label">學位 <span class="required">*</span></label>
+                <select class="form-input"
+                  [value]="edu.degreeLevel"
+                  (change)="updateEducation($index, 'degreeLevel', $any($event.target).value)">
+                  <option value="">請選擇</option>
+                  <option value="博士">博士</option>
+                  <option value="碩士">碩士</option>
+                  <option value="大學">大學</option>
+                  <option value="專科">專科</option>
+                  <option value="高中職">高中職</option>
+                  <option value="國中以下">國中以下</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">就學狀態 <span class="required">*</span></label>
+                <select class="form-input"
+                  [value]="edu.degreeStatus"
+                  (change)="updateEducation($index, 'degreeStatus', $any($event.target).value)">
+                  <option value="">請選擇</option>
+                  <option value="畢業">畢業</option>
+                  <option value="肄業">肄業</option>
+                  <option value="就學中">就學中</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row-2">
+              <div class="form-group">
+                <label class="form-label">入學時間</label>
+                <input type="month" class="form-input"
+                  [value]="edu.startDate"
+                  (input)="updateEducation($index, 'startDate', $any($event.target).value)" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">畢/肄業時間</label>
+                <input type="month" class="form-input"
+                  [value]="edu.endDate"
+                  (input)="updateEducation($index, 'endDate', $any($event.target).value)" />
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- 工作經歷（選填） -->
+      <div class="form-section">
+        <div class="section-head">
+          <h3 class="section-title">工作經歷 <span class="optional-hint">（選填）</span></h3>
+          <button type="button" class="btn-small" (click)="addExperience()">
+            <i class="ri-add-line"></i> 新增經歷
+          </button>
+        </div>
+        @if (form().experienceList.length === 0) {
+          <div class="empty-card">
+            <i class="ri-briefcase-line"></i>
+            <p>尚未新增工作經歷（若為應屆可略過）</p>
+          </div>
+        }
+        @for (exp of form().experienceList; track $index; let expIdx = $index) {
+          <div class="entry-card">
+            <div class="entry-card-head">
+              <span>工作經歷 {{ $index + 1 }}</span>
+              <button type="button" class="btn-icon-danger" (click)="removeExperience($index)">
+                <i class="ri-delete-bin-line"></i>
+              </button>
+            </div>
+            <div class="form-row-2">
+              <div class="form-group">
+                <label class="form-label">公司名稱 <span class="required">*</span></label>
+                <input type="text" class="form-input"
+                  [value]="exp.firmName"
+                  (input)="updateExperience($index, 'firmName', $any($event.target).value)" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">職稱 <span class="required">*</span></label>
+                <input type="text" class="form-input"
+                  [value]="exp.jobName"
+                  (input)="updateExperience($index, 'jobName', $any($event.target).value)" />
+              </div>
+            </div>
+            <div class="form-row-3">
+              <div class="form-group">
+                <label class="form-label">產業類別 <span class="required">*</span></label>
+                <input type="text" class="form-input"
+                  [value]="exp.industryCategory"
+                  (input)="updateExperience($index, 'industryCategory', $any($event.target).value)"
+                  placeholder="例：資訊科技業" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">公司規模</label>
+                <select class="form-input"
+                  [value]="exp.companySize"
+                  (change)="updateExperience($index, 'companySize', $any($event.target).value)">
+                  <option value="">請選擇</option>
+                  <option value="少於10人">少於 10 人</option>
+                  <option value="10-50人">10-50 人</option>
+                  <option value="50-100人">50-100 人</option>
+                  <option value="100-500人">100-500 人</option>
+                  <option value="500-1000人">500-1000 人</option>
+                  <option value="1000人以上">1000 人以上</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">工作地點</label>
+                <input type="text" class="form-input"
+                  [value]="exp.workPlace"
+                  (input)="updateExperience($index, 'workPlace', $any($event.target).value)"
+                  placeholder="例：台北市" />
+              </div>
+            </div>
+            <div class="form-row-2">
+              <div class="form-group">
+                <label class="form-label">任職起始 <span class="required">*</span></label>
+                <input type="month" class="form-input"
+                  [value]="exp.startDate"
+                  (input)="updateExperience($index, 'startDate', $any($event.target).value)" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">任職結束</label>
+                <input type="month" class="form-input"
+                  [value]="exp.endDate"
+                  (input)="updateExperience($index, 'endDate', $any($event.target).value)"
+                  placeholder="在職中可留空" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">工作內容 <span class="required">*</span></label>
+              <textarea class="form-input" rows="3"
+                [value]="exp.jobDesc"
+                (input)="updateExperience($index, 'jobDesc', $any($event.target).value)"
+                placeholder="描述主要工作職責與內容"></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">使用技能標籤</label>
+              <div class="tag-input-row">
+                <input type="text" class="form-input" #expSkillInput
+                  (keydown.enter)="$event.preventDefault(); addExperienceSkill($index, exp.skills, expSkillInput)"
+                  placeholder="輸入技能，按 Enter 或點「建立」" />
+                <button type="button" class="btn-small"
+                  (click)="addExperienceSkill($index, exp.skills, expSkillInput); expSkillInput.focus()">
+                  <i class="ri-add-line"></i> 建立
+                </button>
+              </div>
+              @if (parseTags(exp.skills).length > 0) {
+                <div class="tag-chips-below">
+                  @for (tag of parseTags(exp.skills); track tag) {
+                    <span class="tag-chip">
+                      {{ tag }}
+                      <button type="button" class="tag-remove" (click)="removeExperienceSkill(expIdx, exp.skills, tag)">
+                        <i class="ri-close-line"></i>
+                      </button>
+                    </span>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ========== Tab 4 技能與作品 ========== -->
+    @if (tab() === 4) {
+      <!-- 技能專長 -->
+      <div class="form-section">
+        <div class="section-head">
+          <h3 class="section-title">技能專長 <span class="required">*</span></h3>
+          <button type="button" class="btn-small" (click)="addSpeciality()">
+            <i class="ri-add-line"></i> 新增技能
+          </button>
+        </div>
+        @for (sp of form().specialityList; track $index; let spIdx = $index) {
+          <div class="entry-card">
+            <div class="entry-card-head">
+              <span>技能 {{ $index + 1 }}</span>
+              @if (form().specialityList.length > 1) {
+                <button type="button" class="btn-icon-danger" (click)="removeSpeciality($index)">
+                  <i class="ri-delete-bin-line"></i>
+                </button>
+              }
+            </div>
+            <div class="form-group">
+              <label class="form-label">技能名稱 <span class="required">*</span></label>
+              <input type="text" class="form-input"
+                [value]="sp.skill"
+                (input)="updateSpeciality($index, 'skill', $any($event.target).value)"
+                placeholder="例：作曲、Pro Tools、前端開發" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">技能說明</label>
+              <textarea class="form-input" rows="2"
+                [value]="sp.description"
+                (input)="updateSpeciality($index, 'description', $any($event.target).value)"
+                placeholder="熟悉此技能的相關應用與經驗"></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">相關標籤</label>
+              <div class="tag-input-row">
+                <input type="text" class="form-input" #spTagInput
+                  (keydown.enter)="$event.preventDefault(); addSpecialityTag($index, sp.tags, spTagInput)"
+                  placeholder="輸入標籤，按 Enter 或點「建立」" />
+                <button type="button" class="btn-small"
+                  (click)="addSpecialityTag($index, sp.tags, spTagInput); spTagInput.focus()">
+                  <i class="ri-add-line"></i> 建立
+                </button>
+              </div>
+              @if (parseTags(sp.tags).length > 0) {
+                <div class="tag-chips-below">
+                  @for (tag of parseTags(sp.tags); track tag) {
+                    <span class="tag-chip">
+                      {{ tag }}
+                      <button type="button" class="tag-remove" (click)="removeSpecialityTag(spIdx, sp.tags, tag)">
+                        <i class="ri-close-line"></i>
+                      </button>
+                    </span>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- 語言能力 -->
+      <div class="form-section">
+        <div class="section-head">
+          <h3 class="section-title">語言能力 <span class="required">*</span></h3>
+          <button type="button" class="btn-small" (click)="addLanguage()">
+            <i class="ri-add-line"></i> 新增語言
+          </button>
+        </div>
+        @for (lang of form().languageList; track $index) {
+          <div class="entry-card">
+            <div class="entry-card-head">
+              <span>語言 {{ $index + 1 }}</span>
+              @if (form().languageList.length > 1) {
+                <button type="button" class="btn-icon-danger" (click)="removeLanguage($index)">
+                  <i class="ri-delete-bin-line"></i>
+                </button>
+              }
+            </div>
+            <div class="form-group">
+              <label class="form-label">語言 <span class="required">*</span></label>
+              <select class="form-input"
+                [value]="lang.langType"
+                (change)="updateLanguage($index, 'langType', $any($event.target).value)">
+                <option value="">請選擇</option>
+                @for (l of languageOptions; track l) {
+                  <option [value]="l">{{ l }}</option>
+                }
+              </select>
+            </div>
+            <div class="form-row-4">
+              <div class="form-group">
+                <label class="form-label">聽 <span class="required">*</span></label>
+                <select class="form-input"
+                  [value]="lang.listenDegree"
+                  (change)="updateLanguage($index, 'listenDegree', $any($event.target).value)">
+                  <option value="">請選擇</option>
+                  <option value="精通">精通</option>
+                  <option value="中等">中等</option>
+                  <option value="略懂">略懂</option>
+                  <option value="不會">不會</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">說 <span class="required">*</span></label>
+                <select class="form-input"
+                  [value]="lang.speakDegree"
+                  (change)="updateLanguage($index, 'speakDegree', $any($event.target).value)">
+                  <option value="">請選擇</option>
+                  <option value="精通">精通</option>
+                  <option value="中等">中等</option>
+                  <option value="略懂">略懂</option>
+                  <option value="不會">不會</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">讀</label>
+                <select class="form-input"
+                  [value]="lang.readDegree"
+                  (change)="updateLanguage($index, 'readDegree', $any($event.target).value)">
+                  <option value="">請選擇</option>
+                  <option value="精通">精通</option>
+                  <option value="中等">中等</option>
+                  <option value="略懂">略懂</option>
+                  <option value="不會">不會</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">寫</label>
+                <select class="form-input"
+                  [value]="lang.writeDegree"
+                  (change)="updateLanguage($index, 'writeDegree', $any($event.target).value)">
+                  <option value="">請選擇</option>
+                  <option value="精通">精通</option>
+                  <option value="中等">中等</option>
+                  <option value="略懂">略懂</option>
+                  <option value="不會">不會</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">語言證照</label>
+              <input type="text" class="form-input"
+                [value]="lang.certificates"
+                (input)="updateLanguage($index, 'certificates', $any($event.target).value)"
+                placeholder="例：TOEIC 850、JLPT N1" />
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- 專案作品（選填） -->
+      <div class="form-section">
+        <div class="section-head">
+          <h3 class="section-title">專案作品 <span class="optional-hint">（選填）</span></h3>
+          <button type="button" class="btn-small" (click)="addProject()">
+            <i class="ri-add-line"></i> 新增專案
+          </button>
+        </div>
+        @if (form().projectList.length === 0) {
+          <div class="empty-card">
+            <i class="ri-folder-line"></i>
+            <p>尚未新增專案作品（可略過）</p>
+          </div>
+        }
+        @for (pj of form().projectList; track $index) {
+          <div class="entry-card">
+            <div class="entry-card-head">
+              <span>專案 {{ $index + 1 }}</span>
+              <button type="button" class="btn-icon-danger" (click)="removeProject($index)">
+                <i class="ri-delete-bin-line"></i>
+              </button>
+            </div>
+            <div class="form-group">
+              <label class="form-label">專案名稱 <span class="required">*</span></label>
+              <input type="text" class="form-input"
+                [value]="pj.title"
+                (input)="updateProject($index, 'title', $any($event.target).value)"
+                placeholder="例：客戶關係管理系統建置" />
+            </div>
+            <div class="form-row-2">
+              <div class="form-group">
+                <label class="form-label">開始時間</label>
+                <input type="month" class="form-input"
+                  [value]="pj.startDate"
+                  (input)="updateProject($index, 'startDate', $any($event.target).value)" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">結束時間</label>
+                <input type="month" class="form-input"
+                  [value]="pj.endDate"
+                  (input)="updateProject($index, 'endDate', $any($event.target).value)" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">專案描述</label>
+              <textarea class="form-input" rows="3"
+                [value]="pj.description"
+                (input)="updateProject($index, 'description', $any($event.target).value)"
+                placeholder="描述專案目標、您的貢獻與成果"></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">專案連結</label>
+              <input type="url" class="form-input"
+                [value]="pj.resourceLink"
+                (input)="updateProject($index, 'resourceLink', $any($event.target).value)"
+                placeholder="https://..." />
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- 附件上傳 -->
+      <div class="form-section">
+        <div class="section-head">
+          <h3 class="section-title">證照與附件 <span class="optional-hint">（選填，10 MB 內，PDF/DOC/圖片）</span></h3>
+          <label class="btn-small as-file-button">
+            <i class="ri-upload-line"></i> 上傳檔案
+            <input type="file" hidden multiple
+              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx"
+              (change)="onFileSelected($event)" />
+          </label>
+        </div>
+
+        @if (uploadError()) {
+          <p class="submit-error">
+            <i class="ri-error-warning-line"></i> {{ uploadError() }}
+          </p>
+        }
+
+        @for (row of uploadingRows(); track row.localId) {
+          <div class="attachment-row uploading">
+            <i class="ri-loader-2-line spin"></i>
+            <span class="att-name">{{ row.fileName }}</span>
+            <span class="att-status">上傳中…</span>
+          </div>
+        }
+
+        @if (form().attachments.length === 0 && uploadingRows().length === 0) {
+          <div class="empty-card">
+            <i class="ri-attachment-line"></i>
+            <p>尚未上傳附件（履歷 PDF、證照掃描等）</p>
+          </div>
+        }
+
+        @for (att of form().attachments; track $index) {
+          <div class="attachment-row">
+            <i class="ri-file-line"></i>
+            <input type="text" class="att-title-input"
+              [value]="att.title || att.fileName"
+              (input)="updateAttachmentTitle($index, $any($event.target).value)"
+              placeholder="附件標題" />
+            <span class="att-filename">{{ att.fileName }}</span>
+            <span class="att-size">{{ formatBytes(att.size) }}</span>
+            <button type="button" class="btn-icon-danger" (click)="removeAttachment($index)">
+              <i class="ri-delete-bin-line"></i>
+            </button>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- 共用錯誤顯示 -->
+    @if (externalError()) {
+      <p class="submit-error">
+        <i class="ri-error-warning-line"></i> {{ externalError() }}
+      </p>
+    }
+
+    <!-- Nav -->
+    <div class="form-nav">
+      <button type="button" class="btn-ghost" (click)="prevTab()" [disabled]="tab() === 1">
+        <i class="ri-arrow-left-line"></i> 上一步
+      </button>
+      @if (tab() === 4) {
+        <button type="button" class="btn-primary" [disabled]="!isFormValid() || submitting()" (click)="submit()">
+          @if (submitting()) {
+            <i class="ri-loader-2-line spin"></i> 送出中…
+          } @else {
+            <i class="ri-send-plane-fill"></i> 送出
+          }
+        </button>
+      } @else {
+        <button type="button" class="btn-primary" (click)="nextTab()">
+          下一步 <i class="ri-arrow-right-line"></i>
+        </button>
+      }
+    </div>
+
+  </div>
+</div>

@@ -144,6 +144,20 @@ function createPlatformTables(adapter) {
     )
   `);
 
+  // 公開 token 索引（候選人未登入訪問公開端點時解析 tenant）
+  db.run(`
+    CREATE TABLE IF NOT EXISTS public_tokens (
+      token TEXT PRIMARY KEY,
+      tenant_id TEXT NOT NULL REFERENCES tenants(id),
+      resource_type TEXT NOT NULL,
+      resource_id TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
+    )
+  `);
+  try {
+    db.run('CREATE INDEX IF NOT EXISTS idx_public_tokens_tenant ON public_tokens(tenant_id)');
+  } catch (e) { /* 索引已存在 */ }
+
   // 遷移：已啟用 L1.recruitment 的方案自動納入 L1.decision（面試決策）
   // 先用 LIKE 過濾，跳過已含 L1.decision 的方案；遷移完成後此段會是 no-op
   try {

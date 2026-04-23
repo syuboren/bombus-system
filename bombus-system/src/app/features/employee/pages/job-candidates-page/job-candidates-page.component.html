@@ -77,9 +77,16 @@
               }
             </div>
             <div class="candidate-details">
-              <h3 class="candidate-name">{{ candidate.name }} ({{ candidate.nameEn }})</h3>
+              <h3 class="candidate-name">
+                {{ candidate.name }} ({{ candidate.nameEn }})
+                @if (getSourceBadge(candidate); as badge) {
+                  <span class="source-badge source-{{ badge.key }}" [title]="badge.tooltip">
+                    <i [class]="badge.icon"></i> {{ badge.label }}
+                  </span>
+                }
+              </h3>
               <p class="candidate-email">{{ candidate.email }}</p>
-              <p class="candidate-date">應徵日期：{{ candidate.applyDate }}</p>
+              <p class="candidate-date">應徵日期：{{ formatApplyDate(candidate.applyDate) }}</p>
             </div>
           </div>
           <div class="score-section">
@@ -115,7 +122,7 @@
           </div>
           <div class="info-row">
             <i class="ri-briefcase-line"></i>
-            <span>{{ candidate.experienceYears }}年工作經驗 • {{ candidate.experience }}</span>
+            <span>{{ candidate.seniority || (candidate.experienceYears + '年工作經驗') }} • {{ candidate.experience }}</span>
           </div>
           <div class="skill-tags">
             @for (skill of candidate.skills; track skill) {

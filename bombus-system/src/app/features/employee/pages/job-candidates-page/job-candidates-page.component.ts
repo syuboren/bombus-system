@@ -16,7 +16,7 @@ import { InterviewScoringModalComponent } from '../../components/interview-scori
 import { ScheduleInterviewModalComponent } from '../../components/schedule-interview-modal/schedule-interview-modal.component';
 import { InterviewInfoModalComponent } from '../../components/interview-info-modal/interview-info-modal.component';
 import { InterviewService } from '../../services/interview.service';
-import { CandidateDetail } from '../../models/candidate.model';
+import { CandidateDetail, parseReferralSourceDetail } from '../../models/candidate.model';
 
 interface CandidateWithUI extends JobCandidate {
   aiScoringStatus: 'pending' | 'scoring' | 'scored';
@@ -658,6 +658,44 @@ export class JobCandidatesPageComponent implements OnInit {
 
   getInitial(name: string): string {
     return name.charAt(0);
+  }
+
+  /** 應徵日期顯示：ISO 時間戳 → YYYY/MM/DD；若只含日期（YYYY-MM-DD）直接轉斜線；解析失敗回原字串 */
+  formatApplyDate(raw: string | null | undefined): string {
+    if (!raw) return '—';
+    const d = new Date(raw);
+    if (isNaN(d.getTime())) return raw;
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}/${mm}/${dd}`;
+  }
+
+  /**
+   * 來源標籤：根據 reg_source 決定 chip 樣式與 hover tooltip。
+   * referral 類型會透過 source_detail 帶出推薦人姓名 + 員編。
+   */
+  getSourceBadge(candidate: JobCandidate): { key: string; label: string; icon: string; tooltip: string } | null {
+    const src = candidate.reg_source;
+    if (!src) return null;
+
+    if (src === 'referral') {
+      const detail = parseReferralSourceDetail(candidate.source_detail ?? null);
+      const tooltip = detail?.recommender_name
+        ? `推薦人：${detail.recommender_name}（${detail.recommender_employee_no || '—'}）`
+        : '內部推薦';
+      return { key: 'referral', label: '內推', icon: 'ri-user-shared-line', tooltip };
+    }
+
+    if (src.includes('104')) {
+      return { key: '104', label: '104', icon: 'ri-global-line', tooltip: `來源：${src}` };
+    }
+
+    if (src === 'manual') {
+      return { key: 'other', label: '手動新增', icon: 'ri-user-add-line', tooltip: 'HR 手動新增候選人' };
+    }
+
+    return { key: 'other', label: src, icon: 'ri-bookmark-line', tooltip: `來源：${src}` };
   }
 
   getScoringStatusClass(status: string): string {

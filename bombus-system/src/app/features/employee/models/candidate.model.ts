@@ -80,6 +80,27 @@ export interface Candidate {
   approver_name?: string | null;
   // HR 送簽人員姓名（decided_by → users.name）
   decided_by_name?: string | null;
+
+  // 候選人來源（referral / 104 / manual / others）與來源詳情
+  reg_source?: string | null;
+  /** DB 儲存為 JSON 字串；前端使用時需 JSON.parse */
+  source_detail?: string | null;
+}
+
+/** 內推候選人的來源詳情 parsed 結構 */
+export interface ReferralSourceDetail {
+  invitation_id?: string;
+  recommender_employee_no?: string | null;
+  recommender_name?: string | null;
+}
+
+export function parseReferralSourceDetail(raw: string | null | undefined): ReferralSourceDetail | null {
+  if (!raw) return null;
+  try {
+    const obj = JSON.parse(raw);
+    if (obj && typeof obj === 'object') return obj as ReferralSourceDetail;
+  } catch { /* ignore malformed */ }
+  return null;
 }
 
 export interface SalaryLevel {

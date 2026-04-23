@@ -626,6 +626,43 @@ class TenantDBManager {
       try { db.run(sql); changed = true; } catch (e) { /* 欄位已存在則忽略 */ }
     }
 
+    // ── 內部推薦邀請（HR 代發起） ──
+    try {
+      db.run(`CREATE TABLE IF NOT EXISTS referral_invitations (
+        id TEXT PRIMARY KEY,
+        token TEXT UNIQUE NOT NULL,
+        job_id TEXT NOT NULL,
+        recommender_employee_id TEXT NOT NULL,
+        candidate_email TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending',
+        custom_message TEXT,
+        expires_at TEXT NOT NULL,
+        submitted_at TEXT,
+        submitted_candidate_id TEXT,
+        cancel_reason TEXT,
+        created_by TEXT,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT,
+        FOREIGN KEY (job_id) REFERENCES jobs(id),
+        FOREIGN KEY (recommender_employee_id) REFERENCES employees(id),
+        FOREIGN KEY (submitted_candidate_id) REFERENCES candidates(id),
+        FOREIGN KEY (created_by) REFERENCES employees(id)
+      )`);
+      changed = true;
+    } catch (e) { /* 表已存在 */ }
+
+    try { db.run('ALTER TABLE candidates ADD COLUMN source_detail TEXT'); changed = true; } catch (e) { /* 欄位已存在 */ }
+
+    try {
+      db.run('CREATE INDEX IF NOT EXISTS idx_referral_invitations_job_status ON referral_invitations(job_id, status)');
+      db.run('CREATE INDEX IF NOT EXISTS idx_referral_invitations_token ON referral_invitations(token)');
+      db.run(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_referral_invitations_pending_unique " +
+        "ON referral_invitations(job_id, candidate_email) WHERE status = 'pending'"
+      );
+      changed = true;
+    } catch (e) { /* 索引已存在 */ }
+
     // ── Feature-based Permission 遷移（新舊並存） ──
 
     // 建立 features / role_feature_perms 表（冪等）

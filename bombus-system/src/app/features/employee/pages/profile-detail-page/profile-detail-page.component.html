@@ -285,26 +285,34 @@
                           <span class="lang-cert">{{ lang.certificates }}</span>
                         }
                       </div>
-                      @if (lang.languageCategory === 'foreign') {
+                      @if (lang.listenDegree || lang.speakDegree || lang.readDegree || lang.writeDegree) {
                         <div class="lang-levels">
-                          <div class="lang-level-item">
-                            <span class="level-label">聽</span>
-                            <span class="level-value">{{ lang.listenDegree }}</span>
-                          </div>
-                          <div class="lang-level-item">
-                            <span class="level-label">說</span>
-                            <span class="level-value">{{ lang.speakDegree }}</span>
-                          </div>
-                          <div class="lang-level-item">
-                            <span class="level-label">讀</span>
-                            <span class="level-value">{{ lang.readDegree }}</span>
-                          </div>
-                          <div class="lang-level-item">
-                            <span class="level-label">寫</span>
-                            <span class="level-value">{{ lang.writeDegree }}</span>
-                          </div>
+                          @if (lang.listenDegree) {
+                            <div class="lang-level-item">
+                              <span class="level-label">聽</span>
+                              <span class="level-value">{{ lang.listenDegree }}</span>
+                            </div>
+                          }
+                          @if (lang.speakDegree) {
+                            <div class="lang-level-item">
+                              <span class="level-label">說</span>
+                              <span class="level-value">{{ lang.speakDegree }}</span>
+                            </div>
+                          }
+                          @if (lang.readDegree) {
+                            <div class="lang-level-item">
+                              <span class="level-label">讀</span>
+                              <span class="level-value">{{ lang.readDegree }}</span>
+                            </div>
+                          }
+                          @if (lang.writeDegree) {
+                            <div class="lang-level-item">
+                              <span class="level-label">寫</span>
+                              <span class="level-value">{{ lang.writeDegree }}</span>
+                            </div>
+                          }
                         </div>
-                      } @else {
+                      } @else if (lang.degree) {
                         <div class="lang-proficiency">精通程度：{{ lang.degree }}</div>
                       }
                     </div>

@@ -85,6 +85,14 @@ async function start() {
         const authRouter = require('./routes/auth');
         app.use('/api/auth', authLimiter, authRouter);
 
+        // 內推公開 API（候選人未登入，透過 platform public_tokens 表解析 tenant）
+        const publicReferralsRouter = require('./routes/public-referrals');
+        app.use('/api/public/referrals', publicReferralsRouter);
+
+        // 候選人附件上傳（公開 token 版）— 路徑為 /api/public/referrals/:token/upload
+        const { hrRouter: hrAttachmentsRouter, publicRouter: publicAttachmentsRouter } = require('./routes/candidate-attachments');
+        app.use('/api/public', publicAttachmentsRouter);
+
         // Platform Management Routes（需 Platform Admin）
         const platformRouter = require('./routes/platform');
         app.use('/api/platform', platformRouter);
@@ -118,6 +126,17 @@ async function start() {
         app.use('/api/jobs', authMiddleware, tenantMiddleware, jobsRouter);
 
         // Recruitment Routes
+        // 內推邀請 HR API（先掛較具體路徑，避免被 /api/recruitment router 攔截）
+        const recruitmentReferralsRouter = require('./routes/recruitment-referrals');
+        app.use('/api/recruitment/referrals', authMiddleware, tenantMiddleware, recruitmentReferralsRouter);
+
+        // HR 後台新增候選人 API（必須比 /api/recruitment 更早掛）
+        const recruitmentCandidatesRouter = require('./routes/recruitment-candidates');
+        app.use('/api/recruitment/candidates', authMiddleware, tenantMiddleware, recruitmentCandidatesRouter);
+
+        // HR 候選人附件上傳（登入版）
+        app.use('/api/recruitment/candidate-attachments', authMiddleware, tenantMiddleware, hrAttachmentsRouter);
+
         const recruitmentRouter = require('./routes/recruitment');
         app.use('/api/recruitment', authMiddleware, tenantMiddleware, recruitmentRouter);
 

@@ -212,7 +212,38 @@ $module-color: $color-l1-sage;
   font-weight: $font-weight-bold;
   color: $color-text-dark;
   margin: 0 0 4px;
-  @include text-truncate;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+// 來源標籤
+.source-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: default;
+  line-height: 1.4;
+
+  i { font-size: 12px; }
+
+  &.source-referral {
+    background: rgba($color-l1-sage, 0.15);
+    color: darken($color-l1-sage, 15%);
+  }
+  &.source-104 {
+    background: rgba(#d4823f, 0.15);
+    color: #a5551f;
+  }
+  &.source-other {
+    background: $color-soft-gray;
+    color: $color-text-secondary;
+  }
 }
 
 .candidate-email {

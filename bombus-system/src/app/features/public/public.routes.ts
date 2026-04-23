@@ -42,5 +42,26 @@ export const publicRoutes: Routes = [
             import('./pages/interview-form-page/interview-form-page.component')
                 .then(m => m.InterviewFormPageComponent),
         title: '表單提交成功'
+    },
+    {
+        path: 'referral/:token',
+        loadComponent: () =>
+            import('./pages/referral-intake-page/referral-intake-page.component')
+                .then(m => m.ReferralIntakePageComponent),
+        title: '內部推薦應徵'
+    },
+    {
+        path: 'referral-invalid',
+        loadComponent: () =>
+            import('./pages/referral-invalid-page/referral-invalid-page.component')
+                .then(m => m.ReferralInvalidPageComponent),
+        title: '連結無法使用'
+    },
+    {
+        path: 'referral-success',
+        loadComponent: () =>
+            import('./pages/referral-success-page/referral-success-page.component')
+                .then(m => m.ReferralSuccessPageComponent),
+        title: '應徵成功'
     }
 ];

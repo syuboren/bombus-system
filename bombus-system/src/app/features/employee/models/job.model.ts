@@ -162,6 +162,10 @@ export interface JobCandidate {
   birthday?: string;           // 生日
   employmentStatus?: string;   // 就業狀態
   seniority?: string;          // 總年資描述
+  // 候選人來源（referral / 104 / manual / 其他）
+  reg_source?: string | null;
+  /** DB 儲存為 JSON 字串，需 JSON.parse；referral 來源會有 recommender 資訊 */
+  source_detail?: string | null;
 }
 
 // =====================================================
