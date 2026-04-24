@@ -1,0 +1,380 @@
+@import '../../../../../assets/styles/variables';
+@import '../../../../../assets/styles/mixins';
+
+$module-color: $color-l1-sage;
+
+app-referral-invitation-modal {
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    backdrop-filter: blur(2px);
+  }
+
+  .modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 640px;
+    max-height: 90vh;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    z-index: 1001;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid $color-soft-gray;
+
+    .modal-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0;
+      font-size: 18px;
+      color: $color-text-dark;
+
+      i {
+        color: $module-color;
+        font-size: 22px;
+      }
+
+      .job-title-sub {
+        color: $color-text-secondary;
+        font-weight: 400;
+        font-size: 14px;
+      }
+    }
+
+    .btn-close {
+      background: none;
+      border: none;
+      font-size: 20px;
+      color: $color-text-secondary;
+      cursor: pointer;
+      line-height: 1;
+
+      &:hover { color: $color-text-dark; }
+    }
+  }
+
+  .tabs {
+    display: flex;
+    background: $color-cloud-gray;
+    padding: 0 24px;
+    border-bottom: 1px solid $color-soft-gray;
+
+    .tab {
+      background: none;
+      border: none;
+      padding: 12px 20px;
+      font-size: 14px;
+      color: $color-text-secondary;
+      cursor: pointer;
+      position: relative;
+
+      &:hover { color: $color-text-dark; }
+
+      &.active {
+        color: $module-color;
+        font-weight: 600;
+
+        &::after {
+          content: '';
+          position: absolute;
+          bottom: -1px;
+          left: 0;
+          right: 0;
+          height: 2px;
+          background: $module-color;
+        }
+      }
+    }
+  }
+
+  .modal-body {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+
+    .form-label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 14px;
+      color: $color-text-primary;
+      font-weight: 500;
+
+      .required { color: $color-l5-brick; margin-left: 2px; }
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid $color-soft-gray;
+      border-radius: 8px;
+      font-size: 14px;
+      background: #fff;
+      color: $color-text-dark;
+      transition: border-color 0.15s;
+      font-family: inherit;
+
+      &:focus {
+        outline: none;
+        border-color: $module-color;
+        box-shadow: 0 0 0 3px rgba($module-color, 0.15);
+      }
+    }
+
+    textarea.form-input {
+      resize: vertical;
+      min-height: 60px;
+    }
+
+    .hint-text {
+      margin: 6px 0 0;
+      font-size: 12px;
+      color: $color-text-secondary;
+
+      .spin { animation: spin 1s linear infinite; display: inline-block; }
+    }
+
+    .error-text {
+      margin: 6px 0 0;
+      font-size: 12px;
+      color: $color-l5-brick;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .recommender-preview {
+      margin: 6px 0 0;
+      padding: 8px 12px;
+      background: rgba($module-color, 0.08);
+      border-radius: 6px;
+      font-size: 13px;
+      color: $color-text-dark;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      i { color: $module-color; }
+
+      .meta {
+        color: $color-text-secondary;
+        font-size: 12px;
+        &::before { content: '｜'; }
+      }
+    }
+  }
+
+  .form-actions,
+  .post-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+  }
+
+  .btn-primary,
+  .btn-secondary,
+  .btn-ghost,
+  .btn-small {
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+
+  .btn-primary {
+    padding: 10px 20px;
+    background: $module-color;
+    color: #fff;
+    border: 1px solid $module-color;
+
+    &:hover:not(:disabled) { background: darken($module-color, 5%); }
+    &:disabled { opacity: 0.5; cursor: not-allowed; }
+  }
+
+  .btn-secondary {
+    padding: 10px 20px;
+    background: #fff;
+    color: $module-color;
+    border: 1px solid $module-color;
+
+    &:hover { background: rgba($module-color, 0.06); }
+  }
+
+  .btn-ghost {
+    padding: 10px 20px;
+    background: transparent;
+    color: $color-text-secondary;
+    border: 1px solid transparent;
+
+    &:hover { color: $color-text-dark; }
+  }
+
+  .btn-small {
+    padding: 6px 12px;
+    font-size: 12px;
+    background: #fff;
+    color: $color-text-dark;
+    border: 1px solid $color-soft-gray;
+
+    &:hover { border-color: $module-color; color: $module-color; }
+
+    &.btn-danger {
+      color: $color-l5-brick;
+      &:hover { border-color: $color-l5-brick; background: rgba($color-l5-brick, 0.06); }
+    }
+  }
+
+  // ─── 成功後的連結複製視圖 ───
+  .success-view {
+    .success-header {
+      display: flex;
+      gap: 12px;
+      padding: 14px 16px;
+      background: rgba($module-color, 0.08);
+      border: 1px solid rgba($module-color, 0.3);
+      border-radius: 8px;
+      margin-bottom: 18px;
+
+      i {
+        color: $module-color;
+        font-size: 26px;
+      }
+
+      strong { display: block; font-size: 15px; color: $color-text-dark; }
+      p { margin: 4px 0 0; color: $color-text-secondary; font-size: 13px; }
+    }
+
+    .link-box {
+      display: flex;
+      gap: 8px;
+      padding: 12px;
+      background: $color-cloud-gray;
+      border-radius: 8px;
+      margin-bottom: 10px;
+
+      input {
+        flex: 1;
+        padding: 8px 12px;
+        background: #fff;
+        border: 1px solid $color-soft-gray;
+        border-radius: 6px;
+        font-size: 13px;
+        color: $color-text-dark;
+        font-family: 'SF Mono', monospace;
+      }
+    }
+
+    .expires-hint {
+      font-size: 12px;
+      color: $color-text-secondary;
+      margin: 0 0 8px;
+    }
+  }
+
+  // ─── 歷史邀請 ───
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: $color-text-secondary;
+
+    i { font-size: 36px; display: block; margin-bottom: 8px; }
+  }
+
+  .history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .history-item {
+    padding: 14px 16px;
+    background: $color-cloud-gray;
+    border-radius: 8px;
+    border: 1px solid $color-soft-gray;
+  }
+
+  .history-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+
+    .candidate-email {
+      font-weight: 500;
+      color: $color-text-dark;
+    }
+  }
+
+  .status-badge {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+
+    &.status-pending { background: rgba($module-color, 0.15); color: darken($module-color, 15%); }
+    &.status-submitted { background: rgba(96, 165, 160, 0.2); color: #3a7a75; }
+    &.status-expired { background: rgba(176, 176, 176, 0.3); color: #666; }
+    &.status-cancelled { background: rgba($color-l5-brick, 0.15); color: darken($color-l5-brick, 10%); }
+  }
+
+  .history-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 12px;
+    color: $color-text-secondary;
+
+    i { margin-right: 2px; }
+  }
+
+  .link-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+
+    input {
+      flex: 1;
+      padding: 6px 10px;
+      background: #fff;
+      border: 1px solid $color-soft-gray;
+      border-radius: 4px;
+      font-size: 12px;
+      font-family: 'SF Mono', monospace;
+      color: $color-text-dark;
+    }
+  }
+
+  .history-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+}

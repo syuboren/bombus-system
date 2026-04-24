@@ -1,0 +1,71 @@
+@switch (state().kind) {
+  @case ('loading') {
+    <div class="page page-center">
+      <div class="loader"><i class="ri-loader-2-line spin"></i> 載入中…</div>
+    </div>
+  }
+
+  @case ('ready') {
+    @if (state().kind === 'ready') {
+      @let ctx = $any(state()).ctx;
+      <div class="page">
+        <!-- 頁首：職缺 + 公司 + 推薦人資訊 -->
+        <header class="intake-header">
+          <div class="brand-row">
+            <i class="ri-user-shared-line brand-icon"></i>
+            <span class="brand-title">內部推薦應徵</span>
+          </div>
+
+          <h1>{{ ctx.job?.title || '職缺' }}</h1>
+          <div class="job-meta">
+            @if (ctx.job?.company) {
+              <span><i class="ri-building-2-line"></i> {{ ctx.job.company }}</span>
+            }
+            @if (ctx.job?.department) {
+              <span><i class="ri-building-line"></i> {{ ctx.job.department }}</span>
+            }
+          </div>
+
+          <p class="recommender-line">
+            <i class="ri-user-star-line"></i>
+            由 <strong>{{ ctx.recommender.name }}</strong>
+            @if (ctx.recommender.company || ctx.recommender.department) {
+              <span class="recommender-meta">
+                （@if (ctx.recommender.company) { {{ ctx.recommender.company }} }@if (ctx.recommender.company && ctx.recommender.department) { ｜ }@if (ctx.recommender.department) { {{ ctx.recommender.department }} }）
+              </span>
+            }
+            推薦您申請此職缺
+          </p>
+          @if (ctx.custom_message) {
+            <blockquote class="custom-message">{{ ctx.custom_message }}</blockquote>
+          }
+          <p class="expires-hint">
+            <i class="ri-time-line"></i> 連結有效期至 {{ formatDate(ctx.expires_at) }}
+          </p>
+        </header>
+
+        <!-- 共用表單元件 -->
+        <div class="form-wrapper">
+          <app-candidate-full-form
+            mode="public"
+            [initialEmail]="ctx.candidate_email"
+            [uploadEndpoint]="uploadEndpoint()"
+            [submitting]="submitting()"
+            [externalError]="submitError()"
+            (submitForm)="onSubmit($event)"
+          ></app-candidate-full-form>
+        </div>
+      </div>
+    }
+  }
+
+  @case ('error') {
+    <div class="page page-center">
+      <div class="error-card">
+        <i class="ri-error-warning-line"></i>
+        <h2>連結無法使用</h2>
+        <p>{{ $any(state()).message }}</p>
+      </div>
+    </div>
+  }
+}

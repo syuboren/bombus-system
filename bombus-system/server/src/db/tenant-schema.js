@@ -589,6 +589,22 @@ const BUSINESS_TABLES_SQL = `
     updated_at TEXT
   );
 
+  -- 多平台職缺發布（1:N 對 jobs，支援 104 / 518 / 1111 等外部平台）
+  CREATE TABLE IF NOT EXISTS job_publications (
+    id TEXT PRIMARY KEY,
+    job_id TEXT NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+    platform TEXT NOT NULL,
+    platform_job_id TEXT,
+    status TEXT NOT NULL DEFAULT 'pending'
+      CHECK(status IN ('pending', 'syncing', 'synced', 'failed', 'closed')),
+    platform_fields TEXT,
+    sync_error TEXT,
+    last_sync_attempt_at TEXT,
+    published_at TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT
+  );
+
   CREATE TABLE IF NOT EXISTS candidates (
     id TEXT PRIMARY KEY,
     job_id TEXT NOT NULL,
@@ -612,6 +628,7 @@ const BUSINESS_TABLES_SQL = `
     address TEXT,
     birthday TEXT,
     reg_source TEXT,
+    source_detail TEXT,
     employment_status TEXT,
     military_status TEXT,
     military_retire_date TEXT,
@@ -1045,6 +1062,28 @@ const BUSINESS_TABLES_SQL = `
     approval_note TEXT,
     submitted_for_approval_at TEXT,
     FOREIGN KEY (candidate_id) REFERENCES candidates(id)
+  );
+
+  -- 內部推薦邀請（HR 代發起）
+  CREATE TABLE IF NOT EXISTS referral_invitations (
+    id TEXT PRIMARY KEY,
+    token TEXT UNIQUE NOT NULL,
+    job_id TEXT NOT NULL,
+    recommender_employee_id TEXT NOT NULL,
+    candidate_email TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    custom_message TEXT,
+    expires_at TEXT NOT NULL,
+    submitted_at TEXT,
+    submitted_candidate_id TEXT,
+    cancel_reason TEXT,
+    created_by TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT,
+    FOREIGN KEY (job_id) REFERENCES jobs(id),
+    FOREIGN KEY (recommender_employee_id) REFERENCES employees(id),
+    FOREIGN KEY (submitted_candidate_id) REFERENCES candidates(id),
+    FOREIGN KEY (created_by) REFERENCES employees(id)
   );
 
   -- =====================================================
@@ -1842,6 +1881,28 @@ function initTenantSchema(adapter) {
 
   // 批次匯入表（import_jobs + import_results）
   db.exec(IMPORT_TABLES_SQL);
+
+  // 內部推薦邀請索引
+  try {
+    db.run('CREATE INDEX IF NOT EXISTS idx_referral_invitations_job_status ON referral_invitations(job_id, status)');
+    db.run('CREATE INDEX IF NOT EXISTS idx_referral_invitations_token ON referral_invitations(token)');
+    db.run(
+      "CREATE UNIQUE INDEX IF NOT EXISTS idx_referral_invitations_pending_unique " +
+      "ON referral_invitations(job_id, candidate_email) WHERE status = 'pending'"
+    );
+  } catch (e) { /* 索引已存在 */ }
+
+  // job_publications 索引（多平台發布）
+  try {
+    db.run(
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_job_publications_job_platform ' +
+      'ON job_publications(job_id, platform)'
+    );
+    db.run(
+      'CREATE INDEX IF NOT EXISTS idx_job_publications_status ' +
+      'ON job_publications(status)'
+    );
+  } catch (e) { /* 索引已存在 */ }
 
   // 面試決策欄位遷移（0003_add_decision_fields）
   const decisionMigrations = [

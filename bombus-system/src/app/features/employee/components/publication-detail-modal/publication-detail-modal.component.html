@@ -1,0 +1,69 @@
+<div class="pub-modal-backdrop" (click)="close()"></div>
+
+<div class="pub-modal" role="dialog" aria-modal="true" [attr.aria-label]="platformLabel() + ' 發布狀態'">
+  <div class="pub-modal__header">
+    <h3 class="pub-modal__title">
+      <i class="ri-global-line"></i>
+      {{ platformLabel() }}
+    </h3>
+    <button class="pub-modal__close" type="button" (click)="close()" aria-label="關閉">
+      <i class="ri-close-line"></i>
+    </button>
+  </div>
+
+  <div class="pub-modal__body">
+    <div class="pub-detail">
+      <div class="pub-detail__row">
+        <span class="pub-detail__label">狀態</span>
+        <span class="pub-detail__value pub-status" [attr.data-status]="publication().status">
+          {{ statusLabel() }}
+        </span>
+      </div>
+
+      @if (publication().platform_job_id) {
+        <div class="pub-detail__row">
+          <span class="pub-detail__label">平台職缺編號</span>
+          <span class="pub-detail__value pub-detail__value--mono">{{ publication().platform_job_id }}</span>
+        </div>
+      }
+
+      @if (publication().published_at) {
+        <div class="pub-detail__row">
+          <span class="pub-detail__label">首次發布時間</span>
+          <span class="pub-detail__value">{{ publication().published_at | date:'yyyy-MM-dd HH:mm' }}</span>
+        </div>
+      }
+
+      @if (publication().last_sync_attempt_at) {
+        <div class="pub-detail__row">
+          <span class="pub-detail__label">最後同步嘗試</span>
+          <span class="pub-detail__value">{{ publication().last_sync_attempt_at | date:'yyyy-MM-dd HH:mm' }}</span>
+        </div>
+      }
+
+      @if (publication().sync_error) {
+        <div class="pub-detail__row pub-detail__row--error">
+          <span class="pub-detail__label">錯誤訊息</span>
+          <span class="pub-detail__value pub-detail__value--error">{{ publication().sync_error }}</span>
+        </div>
+      }
+    </div>
+
+    @if (isClosed()) {
+      <p class="pub-modal__hint">此平台發布已關閉，需先重新發布職缺才能重試同步。</p>
+    }
+  </div>
+
+  <div class="pub-modal__footer">
+    <button class="btn btn-ghost" type="button" (click)="close()">關閉</button>
+    @if (canRetry()) {
+      <button class="btn btn-primary"
+              type="button"
+              [disabled]="retrying()"
+              (click)="retry()">
+        <i class="ri-refresh-line" [class.spin]="retrying()"></i>
+        {{ retrying() ? '重試中…' : '重試同步' }}
+      </button>
+    }
+  </div>
+</div>

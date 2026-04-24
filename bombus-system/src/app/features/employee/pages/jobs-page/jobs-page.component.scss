@@ -1695,3 +1695,180 @@ $module-color: $color-l1-sage;
     font-size: 1.1rem;
   }
 }
+// ================================================================
+// 多平台發布 chips + Modal 內平台選擇器（D-02/D-03）
+// ================================================================
+
+$module-color: $color-l1-sage;
+
+.platform-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: flex-start;
+  min-width: 60px;
+}
+
+.platform-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.6;
+  background: $color-soft-gray;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  width: fit-content;
+
+  i {
+    font-size: 12px;
+    line-height: 1;
+  }
+
+  &__name {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 10px;
+    font-weight: 600;
+  }
+
+  &__dash {
+    display: none; // 空狀態以淡化樣式呈現，不再顯示「—」字元
+  }
+
+  &--empty {
+    cursor: default;
+    background: transparent;
+    border-color: transparent;
+    color: rgba($color-text-secondary, 0.45);
+  }
+
+  &--internal {
+    cursor: default;
+    background: rgba($color-text-secondary, 0.08);
+    color: $color-text-secondary;
+    border-color: rgba($color-text-secondary, 0.15);
+    font-size: 11px;
+  }
+
+  &[data-status='synced'] {
+    background: rgba($module-color, 0.15);
+    color: darken($module-color, 20%);
+
+    &:hover {
+      background: rgba($module-color, 0.25);
+    }
+  }
+
+  &[data-status='failed'] {
+    background: rgba($color-l5-brick, 0.15);
+    color: $color-l5-brick;
+
+    &:hover {
+      background: rgba($color-l5-brick, 0.25);
+    }
+  }
+
+  &[data-status='pending'],
+  &[data-status='syncing'] {
+    background: $color-soft-gray;
+    color: $color-text-secondary;
+
+    &[data-status='syncing'] i {
+      animation: spin 1s linear infinite;
+    }
+  }
+
+  &[data-status='closed'] {
+    background: rgba($color-text-secondary, 0.1);
+    color: $color-text-secondary;
+    border-color: rgba($color-text-secondary, 0.2);
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0); }
+  to { transform: rotate(360deg); }
+}
+
+// Modal 內多平台 checkbox 選擇器
+.platform-selector {
+  margin: $spacing-lg 0;
+  padding: $spacing-md;
+  background: rgba($module-color, 0.05);
+  border-radius: $radius-md;
+
+  &__label {
+    font-size: $font-size-sm;
+    font-weight: 600;
+    color: $color-text-dark;
+    margin-bottom: $spacing-sm;
+  }
+
+  &__options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $spacing-md;
+  }
+
+  &__hint {
+    margin: $spacing-sm 0 0;
+    font-size: 12px;
+    color: $color-text-secondary;
+  }
+}
+
+.platform-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #fff;
+  border: 1px solid $color-soft-gray;
+  border-radius: $radius-md;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: $font-size-sm;
+
+  input {
+    cursor: pointer;
+    margin: 0;
+    accent-color: $module-color;
+  }
+
+  &__name {
+    color: $color-text-dark;
+  }
+
+  &__badge {
+    margin-left: 6px;
+    padding: 1px 6px;
+    background: rgba($color-text-secondary, 0.1);
+    color: $color-text-secondary;
+    border-radius: 4px;
+    font-size: 10px;
+  }
+
+  &:hover:not(&--disabled) {
+    border-color: $module-color;
+    background: rgba($module-color, 0.05);
+  }
+
+  &--disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+
+    input {
+      cursor: not-allowed;
+    }
+  }
+
+  &__mark {
+    display: none; // 使用原生 input checkbox，不做自訂樣式
+  }
+}

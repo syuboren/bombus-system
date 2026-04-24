@@ -8,6 +8,11 @@ const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
 // tenantDB is accessed via req.tenantDB (injected by middleware)
 const job104Service = require('../services/104/job.service');
+const {
+    getPublisher,
+    SUPPORTED_PLATFORMS,
+    ENABLED_PLATFORMS
+} = require('../services/platform-publisher');
 const { requireFeaturePerm, buildScopeFilter } = require('../middleware/permission');
 
 // 生成職缺 ID
@@ -15,6 +20,231 @@ function generateJobId() {
     const year = new Date().getFullYear();
     const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
     return `JOB-${year}${random}`;
+}
+
+// ================================================================
+// 多平台發布 helpers（job_publications 1:N 對 jobs）
+// ================================================================
+
+/**
+ * 正規化 104 職缺資料（薪資 / role / jobCatSet 對齊規則）— 用於 publish（新增）路徑。
+ * 原本散佈在 PATCH/:id/status 與 POST/:id/sync-104 的驗證邏輯抽出成 helper，
+ * 本變更暫不搬進 104.adapter（另立 refactor-104-adapter-validation 處理）。
+ */
+function normalize104JobData(job104Data) {
+    const data = { ...job104Data };
+    // 規則 1: 高階主管 (role=3) 只能使用面議 (salaryType=10)
+    if (data.role === 3 && data.salaryType !== 10) {
+        data.salaryType = 10;
+        data.salaryLow = 0;
+        data.salaryHigh = 0;
+    }
+    // 規則 2: salaryType 驗證
+    const salaryType = data.salaryType;
+    if (salaryType === 10) {
+        data.salaryLow = 0;
+        data.salaryHigh = 0;
+    } else if (salaryType === 50 || salaryType === 60) {
+        if (!data.salaryLow || data.salaryLow <= 0) {
+            data.salaryLow = salaryType === 50 ? 30000 : 500000;
+        }
+        if (!data.salaryHigh || data.salaryHigh <= 0) {
+            data.salaryHigh = data.salaryLow;
+        }
+        if (data.salaryHigh < data.salaryLow) {
+            data.salaryHigh = data.salaryLow;
+        }
+    }
+    return data;
+}
+
+/**
+ * 建構 104 UpdateJob payload — 用於 update（編輯既有職缺）路徑。
+ * 注意：**不包含 role 欄位** — 104 API 規定職缺類型建立後不可變更（會回 validate 錯誤：
+ * `jobUpdateRequest-cantModifiedColumnRole`）。
+ * email 展平、role/jobCatSet 對齊等邏輯與 PUT /:id 既有行為一致。
+ */
+function build104UpdatePayload(job104Data, jobRow = {}) {
+    const data = job104Data || {};
+
+    // email 展平
+    let emailList = data.email || ['hr@company.com'];
+    while (Array.isArray(emailList) && emailList.length > 0 && Array.isArray(emailList[0])) {
+        emailList = emailList.flat();
+    }
+    if (!Array.isArray(emailList) || emailList.length === 0) emailList = ['hr@company.com'];
+    emailList = emailList.filter(e => typeof e === 'string');
+    if (emailList.length === 0) emailList = ['hr@company.com'];
+
+    // role / jobCatSet 對齊（但 role 不會放進 payload）
+    const role = data.role || 1;
+    let jobCatSet = data.jobCatSet || [2001002002];
+    const isHighLevelCat = jobCatSet[0] && jobCatSet[0] >= 9000000000;
+    if (isHighLevelCat && role !== 3) jobCatSet = [2001002002];
+    else if (!isHighLevelCat && role === 3) jobCatSet = [9001001000];
+
+    return {
+        job: data.job || jobRow.title || '',
+        description: data.description || jobRow.description || '',
+        jobCatSet,
+        salaryType: data.salaryType || 10,
+        salaryLow: data.salaryLow || 0,
+        salaryHigh: data.salaryHigh || 0,
+        addrNo: data.addrNo || 6001001001,
+        edu: data.edu || [8],
+        contact: data.contact || 'HR',
+        email: emailList,
+        replyDay: data.replyDay || 7,
+        applyType: data.applyType || { '104': [2] },
+        workShifts: data.workShifts || []
+    };
+}
+
+/**
+ * 為指定職缺的每個 selectedPlatforms 建立或重置 pending 列（冪等）。
+ * platformFieldsMap 可選，對應每個 platform 的 platform_fields JSON。
+ */
+function upsertPendingPublications(tenantDB, jobId, selectedPlatforms, platformFieldsMap = {}) {
+    if (!Array.isArray(selectedPlatforms) || selectedPlatforms.length === 0) return;
+    const now = new Date().toISOString();
+    for (const platform of selectedPlatforms) {
+        if (!SUPPORTED_PLATFORMS.includes(platform)) continue;
+        const fields = platformFieldsMap[platform]
+            ? JSON.stringify(platformFieldsMap[platform])
+            : null;
+        tenantDB.prepare(`
+            INSERT INTO job_publications (
+                id, job_id, platform, status, platform_fields, created_at, updated_at
+            )
+            VALUES (?, ?, ?, 'pending', ?, ?, ?)
+            ON CONFLICT(job_id, platform) DO UPDATE SET
+                status = 'pending',
+                sync_error = NULL,
+                platform_fields = COALESCE(excluded.platform_fields, job_publications.platform_fields),
+                updated_at = excluded.updated_at
+        `).run(uuidv4(), jobId, platform, fields, now, now);
+    }
+}
+
+function listPublications(tenantDB, jobId, statuses) {
+    const placeholders = statuses.map(() => '?').join(',');
+    return tenantDB.prepare(`
+        SELECT * FROM job_publications
+        WHERE job_id = ? AND status IN (${placeholders})
+    `).all(jobId, ...statuses);
+}
+
+function getPublicationsByJobId(tenantDB, jobId) {
+    return tenantDB.prepare(`
+        SELECT platform, status, platform_job_id, sync_error,
+               last_sync_attempt_at, published_at
+        FROM job_publications
+        WHERE job_id = ?
+        ORDER BY platform
+    `).all(jobId);
+}
+
+function updatePublicationAfterSync(tenantDB, publicationId, outcome) {
+    const now = new Date().toISOString();
+    if (outcome.success) {
+        tenantDB.prepare(`
+            UPDATE job_publications
+            SET status = ?,
+                platform_job_id = COALESCE(?, platform_job_id),
+                sync_error = NULL,
+                last_sync_attempt_at = ?,
+                published_at = COALESCE(published_at, ?),
+                updated_at = ?
+            WHERE id = ?
+        `).run(outcome.status || 'synced', outcome.platformJobId || null, now, now, now, publicationId);
+    } else {
+        tenantDB.prepare(`
+            UPDATE job_publications
+            SET status = 'failed',
+                sync_error = ?,
+                last_sync_attempt_at = ?,
+                updated_at = ?
+            WHERE id = ?
+        `).run(outcome.error || 'Unknown error', now, now, publicationId);
+    }
+}
+
+/**
+ * 將 job_publications 的 104 列狀態反寫回 jobs.sync_status / job104_no，
+ * 保留向後相容（避免 recruitment.js / talent-pool.js / candidates-summary 讀到過時資料）。
+ */
+function derive104WritebackToJobs(tenantDB, jobId) {
+    const pub104 = tenantDB.prepare(`
+        SELECT status, platform_job_id, published_at
+        FROM job_publications WHERE job_id = ? AND platform = '104'
+    `).get(jobId);
+    if (!pub104) return;
+    const syncStatus = pub104.status === 'synced' ? '104_synced'
+                    : pub104.status === 'closed' ? '104_closed'
+                    : pub104.status === 'failed' ? '104_pending'
+                    : '104_pending';
+    tenantDB.prepare(`
+        UPDATE jobs
+        SET job104_no = COALESCE(?, job104_no),
+            sync_status = ?,
+            synced_at = COALESCE(?, synced_at)
+        WHERE id = ?
+    `).run(pub104.platform_job_id, syncStatus, pub104.published_at, jobId);
+}
+
+/**
+ * 從 axios error 萃取「人看得懂的」平台錯誤訊息。
+ * 104 API 會把真實錯誤放在 `error.response.data.error.details[]`，
+ * 頂層 message 通常只有「validate 錯誤」這種無用訊息。
+ */
+function formatPlatformError(error) {
+    const payload = error?.response?.data?.error;
+    if (payload?.details && Array.isArray(payload.details) && payload.details.length > 0) {
+        return payload.details.map(d => `${d.code || ''}: ${d.message || ''}`).join('; ');
+    }
+    if (payload?.message) return payload.message;
+    return error?.message || String(error || 'Unknown error');
+}
+
+/**
+ * 根據 publication 列當前狀態決定呼叫哪個 adapter 動作：
+ * - 有 platform_job_id + status='closed' → reopen
+ * - 有 platform_job_id + 其他狀態（failed 重試）→ update
+ * - 無 platform_job_id → publish
+ *
+ * publishPayload / updatePayload 可能不同 —— 例如 104 update 不可帶 role 欄位；
+ * 由呼叫端各自用 normalize104JobData / build104UpdatePayload 建構。
+ */
+async function dispatchPlatformPublish(row, { publishPayload, updatePayload }) {
+    const publisher = getPublisher(row.platform);
+    if (!publisher) {
+        throw new Error(`Unknown platform: ${row.platform}`);
+    }
+    if (row.platform_job_id) {
+        if (row.status === 'closed') {
+            await publisher.reopen(row.platform_job_id);
+            return { platformJobId: row.platform_job_id, status: 'synced' };
+        }
+        await publisher.update(row.platform_job_id, updatePayload);
+        return { platformJobId: row.platform_job_id, status: 'synced' };
+    }
+    const result = await publisher.publish(publishPayload);
+    return { platformJobId: result?.platformJobId || null, status: 'synced' };
+}
+
+/**
+ * 為指定平台建構 publish / update 兩個 payload（同時適用於 dispatchPlatformPublish）。
+ * 把平台特化邏輯集中在此，routes 各處只需要傳 raw + jobRow。
+ */
+function buildPlatformPayloads(platform, rawData, jobRow) {
+    if (platform === '104') {
+        return {
+            publishPayload: normalize104JobData(rawData),
+            updatePayload: build104UpdatePayload(rawData, jobRow)
+        };
+    }
+    // 其他平台（518/1111 stub）直接傳 raw
+    return { publishPayload: rawData, updatePayload: rawData };
 }
 
 // 候選人狀態分類（職缺刪除防護用）
@@ -71,6 +301,11 @@ router.get('/', requireFeaturePerm('L1.jobs', 'view'), (req, res) => {
         params.push(parseInt(limit), parseInt(offset));
 
         const jobs = req.tenantDB.prepare(sql).all(...params);
+
+        // 為每個 job 附上 publications 陣列
+        for (const j of jobs) {
+            j.publications = getPublicationsByJobId(req.tenantDB, j.id);
+        }
 
         res.json({
             status: 'success',
@@ -258,6 +493,9 @@ router.get('/:id', requireFeaturePerm('L1.jobs', 'view'), (req, res) => {
             }
         }
 
+        // 附上 publications 陣列
+        job.publications = getPublicationsByJobId(req.tenantDB, id);
+
         res.json({ status: 'success', data: job });
     } catch (error) {
         console.error('Failed to fetch job:', error);
@@ -328,7 +566,7 @@ router.get('/:id/candidates', requireFeaturePerm('L1.jobs', 'view'), (req, res) 
 router.patch('/:id/status', requireFeaturePerm('L1.jobs', 'edit'), async (req, res) => {
     try {
         const { id } = req.params;
-        const { status } = req.body;
+        const { status, selectedPlatforms } = req.body;
 
         if (!status) {
             return res.status(400).json({ status: 'error', message: 'Status is required' });
@@ -345,121 +583,107 @@ router.patch('/:id/status', requireFeaturePerm('L1.jobs', 'edit'), async (req, r
             return res.status(404).json({ status: 'error', message: 'Job not found' });
         }
 
-        const previousStatus = job.status;
         let sql = 'UPDATE jobs SET status = ?, updated_at = datetime("now")';
         const params = [status];
 
-        // 追蹤 104 同步結果
-        let sync104Result = null;
+        let publicationOutcomes = [];
 
         // ============================================================
-        // 104 同步邏輯
+        // 多平台發布 — 對應 spec「Publishing a job dispatches to all
+        // selected platforms in parallel」與 Decision「Promise.allSettled 並行」
         // ============================================================
-
-        // 核准發布 (review → published 或 closed → published)
         if (status === 'published') {
             sql += ', publish_date = date("now")';
 
-            // 情況 1: 有 104 設定但尚未同步 → 新增至 104
-            if (job.job104_data && !job.job104_no) {
-                try {
-                    console.log('📤 Syncing new job to 104...');
-                    const job104Data = JSON.parse(job.job104_data);
-                    
-                    // 【修正】驗證並正規化薪資資料，確保符合 104 API 規則
-                    // 規則 1: 高階主管 (role=3) 只能使用面議 (salaryType=10)
-                    if (job104Data.role === 3 && job104Data.salaryType !== 10) {
-                        console.log('⚠️ 高階主管職缺強制使用面議');
-                        job104Data.salaryType = 10;
-                        job104Data.salaryLow = 0;
-                        job104Data.salaryHigh = 0;
-                    }
-                    
-                    // 規則 2: salaryType 驗證
-                    // salaryType: 10=面議(薪資需為0), 50=月薪, 60=年薪(薪資需>0)
-                    const salaryType = job104Data.salaryType;
-                    if (salaryType === 10) {
-                        // 面議：薪資必須為 0
-                        job104Data.salaryLow = 0;
-                        job104Data.salaryHigh = 0;
-                    } else if (salaryType === 50 || salaryType === 60) {
-                        // 月薪/年薪：薪資必須大於 0
-                        if (!job104Data.salaryLow || job104Data.salaryLow <= 0) {
-                            job104Data.salaryLow = salaryType === 50 ? 30000 : 500000; // 預設月薪 3 萬或年薪 50 萬
-                        }
-                        if (!job104Data.salaryHigh || job104Data.salaryHigh <= 0) {
-                            job104Data.salaryHigh = job104Data.salaryLow;
-                        }
-                        // 確保 salaryHigh >= salaryLow
-                        if (job104Data.salaryHigh < job104Data.salaryLow) {
-                            job104Data.salaryHigh = job104Data.salaryLow;
-                        }
-                    }
-                    console.log('📊 Validated job data:', { role: job104Data.role, salaryType: job104Data.salaryType, salaryLow: job104Data.salaryLow, salaryHigh: job104Data.salaryHigh });
-                    
-                    const result = await job104Service.postJob(job104Data);
+            // 若 payload 有 selectedPlatforms（重新選擇發布平台），upsert pending
+            if (Array.isArray(selectedPlatforms) && selectedPlatforms.length > 0) {
+                const fieldsMap = {};
+                if (job.job104_data) {
+                    try { fieldsMap['104'] = JSON.parse(job.job104_data); } catch (e) { /* ignore */ }
+                }
+                upsertPendingPublications(req.tenantDB, id, selectedPlatforms, fieldsMap);
+            }
 
-                    if (result?.data?.jobNo) {
-                        sql += ', job104_no = ?, sync_status = ?, synced_at = datetime("now")';
-                        params.push(String(result.data.jobNo), '104_synced');
-                        console.log('✅ Job synced to 104, jobNo:', result.data.jobNo);
-                        sync104Result = { success: true, action: 'create', jobNo: result.data.jobNo };
-                    }
-                } catch (error) {
-                    // 【修正】同步 104 失敗時，停止並返回錯誤，不繼續建立內部職缺
-                    const errorDetails = error.response?.data?.error?.details || [];
-                    const errorMessage = errorDetails.map(d => `${d.code}: ${d.message}`).join('; ') || error.message;
-                    console.error('❌ Failed to sync to 104:', errorMessage);
-                    
-                    return res.status(400).json({
-                        status: 'error',
-                        message: '同步 104 失敗，職缺未發布',
-                        sync104Error: {
-                            message: errorMessage,
-                            details: errorDetails
+            // 讀取所有需要 dispatch 的列（pending / failed / closed 皆會被推送）
+            const rowsToDispatch = listPublications(req.tenantDB, id, ['pending', 'failed', 'closed']);
+
+            if (rowsToDispatch.length > 0) {
+                const dispatches = rowsToDispatch.map(async row => {
+                    try {
+                        let raw;
+                        if (row.platform === '104') {
+                            raw = job.job104_data
+                                ? JSON.parse(job.job104_data)
+                                : (row.platform_fields ? JSON.parse(row.platform_fields) : null);
+                            if (!raw) throw new Error('104 job data missing');
+                        } else {
+                            raw = row.platform_fields ? JSON.parse(row.platform_fields) : {};
                         }
-                    });
+                        const payloads = buildPlatformPayloads(row.platform, raw, job);
+                        const result = await dispatchPlatformPublish(row, payloads);
+                        return { row, success: true, ...result };
+                    } catch (error) {
+                        const msg = formatPlatformError(error);
+                        console.error(`❌ [${row.platform}] publish failed:`, msg);
+                        return { row, success: false, error: msg };
+                    }
+                });
+                const settled = await Promise.allSettled(dispatches);
+                publicationOutcomes = settled.map(s =>
+                    s.status === 'fulfilled'
+                        ? s.value
+                        : { row: null, success: false, error: s.reason?.message || 'Unknown error' }
+                );
+                for (const outcome of publicationOutcomes) {
+                    if (!outcome.row) continue;
+                    updatePublicationAfterSync(req.tenantDB, outcome.row.id, outcome);
                 }
             }
 
-            // 情況 2: 已同步過且有 job104_no → 確保 104 上是開啟狀態
-            // 不再檢查 previousStatus，因為用戶可能從 closed→draft→review→published 流程
-            if (job.job104_no) {
-                try {
-                    console.log('🔄 Ensuring job is open on 104...');
-                    await job104Service.patchJobStatus(job.job104_no, { switch: 'on' });
-                    console.log('✅ Job opened on 104');
-                    sync104Result = { success: true, action: 'open', jobNo: job.job104_no };
-                } catch (error) {
-                    // 如果職缺已經是開啟狀態，104 API 可能返回錯誤，這是預期行為
-                    console.log('ℹ️ Job may already be open on 104:', error.message);
-                    sync104Result = { success: true, action: 'open_skipped', jobNo: job.job104_no, note: 'Already open or API error' };
-                }
-            }
+            // 反寫 104 狀態至 jobs 欄位（向後相容：recruitment.js / talent-pool.js / candidates-summary）
+            derive104WritebackToJobs(req.tenantDB, id);
         }
 
-        // 關閉職缺 (published → closed)
-        if (status === 'closed' && job.job104_no) {
-            try {
-                console.log('🔒 Closing job on 104...');
-                await job104Service.patchJobStatus(job.job104_no, { switch: 'off' });
-                console.log('✅ Job closed on 104');
-                sync104Result = { success: true, action: 'close', jobNo: job.job104_no };
-            } catch (error) {
-                console.error('⚠️ Failed to close on 104:', error.message);
-                sync104Result = { success: false, action: 'close', error: error.message };
+        // 關閉職缺 (status → closed)：對 synced 列呼叫 adapter.close
+        if (status === 'closed') {
+            const syncedRows = listPublications(req.tenantDB, id, ['synced']);
+            if (syncedRows.length > 0) {
+                const dispatches = syncedRows.map(async row => {
+                    try {
+                        const publisher = getPublisher(row.platform);
+                        if (!publisher) throw new Error(`Unknown platform: ${row.platform}`);
+                        await publisher.close(row.platform_job_id);
+                        return { row, success: true, status: 'closed' };
+                    } catch (error) {
+                        const msg = formatPlatformError(error);
+                        console.error(`❌ [${row.platform}] close failed:`, msg);
+                        return { row, success: false, error: msg };
+                    }
+                });
+                const settled = await Promise.allSettled(dispatches);
+                publicationOutcomes = settled.map(s =>
+                    s.status === 'fulfilled'
+                        ? s.value
+                        : { row: null, success: false, error: s.reason?.message || 'Unknown error' }
+                );
+                for (const outcome of publicationOutcomes) {
+                    if (!outcome.row) continue;
+                    updatePublicationAfterSync(req.tenantDB, outcome.row.id, outcome);
+                }
             }
+            derive104WritebackToJobs(req.tenantDB, id);
         }
 
         sql += ' WHERE id = ?';
         params.push(id);
-
         req.tenantDB.prepare(sql).run(...params);
 
-        // 返回結果，包含 104 同步狀態
+        const publications = getPublicationsByJobId(req.tenantDB, id);
         res.json({
             status: 'success',
-            sync104: sync104Result
+            publications,
+            // 向後相容：舊前端讀 sync104 欄位
+            sync104: publicationOutcomes.find(o => o.row?.platform === '104') || null
         });
     } catch (error) {
         console.error('Failed to update job status:', error);
@@ -482,7 +706,8 @@ router.post('/', requireFeaturePerm('L1.jobs', 'edit'), (req, res) => {
             jdId,
             org_unit_id,
             grade,
-            job104Data  // 保存 104 設定，但不立即同步
+            job104Data,         // 保存 104 設定，但不立即同步（向後相容）
+            selectedPlatforms   // 多平台：['104', '518', ...]；若未傳則由 job104Data 推導
         } = req.body;
 
         if (!title) {
@@ -492,7 +717,7 @@ router.post('/', requireFeaturePerm('L1.jobs', 'edit'), (req, res) => {
         const id = generateJobId();
         const now = new Date().toISOString();
 
-        // 永遠以 draft 狀態建立，104 同步在核准發布時才觸發
+        // 永遠以 draft 狀態建立，同步在核准發布時才觸發
         const syncStatus = job104Data ? '104_pending' : 'local_only';
 
         // 儲存到資料庫
@@ -517,7 +742,15 @@ router.post('/', requireFeaturePerm('L1.jobs', 'edit'), (req, res) => {
             org_unit_id || null
         );
 
-        console.log(`📝 Job created as draft: ${id}${job104Data ? ' (with 104 config)' : ''}`);
+        // 多平台：upsert pending publications
+        const platformsToUpsert = Array.isArray(selectedPlatforms) && selectedPlatforms.length > 0
+            ? selectedPlatforms
+            : (job104Data ? ['104'] : []);
+        const platformFieldsMap = {};
+        if (job104Data) platformFieldsMap['104'] = job104Data;
+        upsertPendingPublications(req.tenantDB, id, platformsToUpsert, platformFieldsMap);
+
+        console.log(`📝 Job created as draft: ${id} (platforms: ${platformsToUpsert.join(',') || 'none'})`);
 
         res.json({
             status: 'success',
@@ -527,7 +760,8 @@ router.post('/', requireFeaturePerm('L1.jobs', 'edit'), (req, res) => {
                 department,
                 status: 'draft',
                 job104_no: null,
-                sync_status: syncStatus
+                sync_status: syncStatus,
+                publications: getPublicationsByJobId(req.tenantDB, id)
             }
         });
     } catch (error) {
@@ -581,17 +815,39 @@ router.put('/:id', requireFeaturePerm('L1.jobs', 'edit'), async (req, res) => {
         const shouldRevertToReview = job.status === 'published' && changedFields.length > 0;
         const effectiveStatus = shouldRevertToReview ? 'review' : (status || null);
 
-        // 若需自動回審且已上架 104，先關閉 104 上的職缺
+        // 若需自動回審，對所有 synced publications 呼叫 adapter.close
         let close104Result = null;
-        if (shouldRevertToReview && job.job104_no) {
-            try {
-                console.log('🔒 Auto-revert: closing job on 104 due to critical field change...');
-                await job104Service.patchJobStatus(job.job104_no, { switch: 'off' });
-                close104Result = { success: true, action: 'auto_close', jobNo: job.job104_no };
-                console.log('✅ Job closed on 104 (auto-revert)');
-            } catch (error) {
-                console.error('⚠️ Failed to auto-close on 104:', error.message);
-                close104Result = { success: false, action: 'auto_close', error: error.message };
+        let autoCloseOutcomes = [];
+        if (shouldRevertToReview) {
+            const syncedRows = listPublications(req.tenantDB, id, ['synced']);
+            if (syncedRows.length > 0) {
+                const dispatches = syncedRows.map(async row => {
+                    try {
+                        const publisher = getPublisher(row.platform);
+                        if (!publisher) throw new Error(`Unknown platform: ${row.platform}`);
+                        await publisher.close(row.platform_job_id);
+                        return { row, success: true, status: 'closed' };
+                    } catch (error) {
+                        const msg = formatPlatformError(error);
+                        console.error(`⚠️ [${row.platform}] auto-close failed:`, msg);
+                        return { row, success: false, error: msg };
+                    }
+                });
+                const settled = await Promise.allSettled(dispatches);
+                autoCloseOutcomes = settled.map(s =>
+                    s.status === 'fulfilled' ? s.value : { row: null, success: false, error: s.reason?.message }
+                );
+                for (const o of autoCloseOutcomes) {
+                    if (!o.row) continue;
+                    updatePublicationAfterSync(req.tenantDB, o.row.id, o);
+                }
+                derive104WritebackToJobs(req.tenantDB, id);
+                const oc104 = autoCloseOutcomes.find(o => o.row?.platform === '104');
+                if (oc104) {
+                    close104Result = oc104.success
+                        ? { success: true, action: 'auto_close', jobNo: oc104.row.platform_job_id }
+                        : { success: false, action: 'auto_close', error: oc104.error };
+                }
             }
         }
 
@@ -629,75 +885,67 @@ router.put('/:id', requireFeaturePerm('L1.jobs', 'edit'), async (req, res) => {
             id
         );
 
-        // 若已同步至 104 且狀態為 published（且未自動回審），同步更新至 104
-        if (!shouldRevertToReview && job.job104_no && job.status === 'published') {
-            try {
-                // 取得更新後的資料
+        // 若未自動回審且目前為 published，對 synced publications 呼叫 adapter.update
+        let updateOutcomes = [];
+        if (!shouldRevertToReview && job.status === 'published') {
+            const syncedRows = listPublications(req.tenantDB, id, ['synced']);
+            if (syncedRows.length > 0) {
                 const updatedJob = req.tenantDB.prepare('SELECT * FROM jobs WHERE id = ?').get(id);
-                const updateData = updatedJob.job104_data ? JSON.parse(updatedJob.job104_data) : {};
-
-                // 構建符合 104 API UpdateJob 規格的 payload
-                // 必填欄位: addrNo, applyType, contact, edu, email, job, jobCatSet, replyDay, salaryHigh, salaryLow, salaryType, description
-
-                // 確保 email 是單層字串陣列
-                let emailList = updateData.email || ['hr@company.com'];
-                // 如果 email 是巢狀陣列，展平它
-                while (Array.isArray(emailList) && emailList.length > 0 && Array.isArray(emailList[0])) {
-                    emailList = emailList.flat();
+                const dispatches = syncedRows.map(async row => {
+                    try {
+                        let payload;
+                        if (row.platform === '104') {
+                            const updateData = updatedJob.job104_data ? JSON.parse(updatedJob.job104_data) : {};
+                            // 104 UpdateJob 規格 payload（email 展平、role/jobCatSet 對齊）
+                            let emailList = updateData.email || ['hr@company.com'];
+                            while (Array.isArray(emailList) && emailList.length > 0 && Array.isArray(emailList[0])) {
+                                emailList = emailList.flat();
+                            }
+                            if (!Array.isArray(emailList) || emailList.length === 0) emailList = ['hr@company.com'];
+                            emailList = emailList.filter(e => typeof e === 'string');
+                            if (emailList.length === 0) emailList = ['hr@company.com'];
+                            let role = updateData.role || 1;
+                            let jobCatSet = updateData.jobCatSet || [2001002002];
+                            const isHighLevelCat = jobCatSet[0] && jobCatSet[0] >= 9000000000;
+                            if (isHighLevelCat && role !== 3) jobCatSet = [2001002002];
+                            else if (!isHighLevelCat && role === 3) jobCatSet = [9001001000];
+                            payload = {
+                                job: title || updateData.job || updatedJob.title,
+                                description: description || updateData.description || updatedJob.description || '',
+                                jobCatSet: jobCatSet,
+                                salaryType: updateData.salaryType || 10,
+                                salaryLow: updateData.salaryLow || 0,
+                                salaryHigh: updateData.salaryHigh || 0,
+                                addrNo: updateData.addrNo || 6001001001,
+                                edu: updateData.edu || [8],
+                                contact: updateData.contact || 'HR',
+                                email: emailList,
+                                replyDay: updateData.replyDay || 7,
+                                applyType: updateData.applyType || { '104': [2] },
+                                workShifts: updateData.workShifts || []
+                            };
+                        } else {
+                            payload = row.platform_fields ? JSON.parse(row.platform_fields) : {};
+                        }
+                        const publisher = getPublisher(row.platform);
+                        if (!publisher) throw new Error(`Unknown platform: ${row.platform}`);
+                        await publisher.update(row.platform_job_id, payload);
+                        return { row, success: true, status: 'synced' };
+                    } catch (error) {
+                        const msg = formatPlatformError(error);
+                        console.error(`⚠️ [${row.platform}] update sync failed:`, msg);
+                        return { row, success: false, error: msg };
+                    }
+                });
+                const settled = await Promise.allSettled(dispatches);
+                updateOutcomes = settled.map(s =>
+                    s.status === 'fulfilled' ? s.value : { row: null, success: false, error: s.reason?.message }
+                );
+                for (const o of updateOutcomes) {
+                    if (!o.row) continue;
+                    updatePublicationAfterSync(req.tenantDB, o.row.id, o);
                 }
-                // 如果最終是空陣列或非陣列，設為預設值
-                if (!Array.isArray(emailList) || emailList.length === 0) {
-                    emailList = ['hr@company.com'];
-                }
-                // 確保所有元素都是字串
-                emailList = emailList.filter(e => typeof e === 'string');
-                if (emailList.length === 0) {
-                    emailList = ['hr@company.com'];
-                }
-
-                // 取得 role 並確保 jobCatSet 匹配
-                let role = updateData.role || 1;
-                let jobCatSet = updateData.jobCatSet || [2001002002];
-
-                // 檢查 jobCatSet 是否為高階類別 (9xxxxxxxx)
-                const isHighLevelCat = jobCatSet[0] && jobCatSet[0] >= 9000000000;
-
-                // 確保 role 與 jobCatSet 匹配
-                if (isHighLevelCat && role !== 3) {
-                    // 高階類別但 role 不是高階 → 改用一般類別
-                    console.log('⚠️ jobCatSet is high-level but role is not 3. Switching to general category.');
-                    jobCatSet = [2001002002];
-                } else if (!isHighLevelCat && role === 3) {
-                    // 一般類別但 role 是高階 → 改用高階類別
-                    console.log('⚠️ role is 3 but jobCatSet is not high-level. Switching to high-level category.');
-                    jobCatSet = [9001001000];
-                }
-
-                const payload = {
-                    // 注意：role 欄位無法透過 PUT 修改，104 API 規定職缺類型建立後不可變更
-
-                    job: title || updateData.job || updatedJob.title,
-                    description: description || updateData.description || updatedJob.description || '',
-                    jobCatSet: jobCatSet,
-                    salaryType: updateData.salaryType || 10,
-                    salaryLow: updateData.salaryLow || 0,
-                    salaryHigh: updateData.salaryHigh || 0,
-                    addrNo: updateData.addrNo || 6001001001,
-                    edu: updateData.edu || [8],
-                    contact: updateData.contact || 'HR',
-                    email: emailList,
-                    replyDay: updateData.replyDay || 7,
-                    applyType: updateData.applyType || { '104': [2] },
-                    workShifts: updateData.workShifts || []
-                };
-
-
-                console.log('📤 Syncing update to 104...', JSON.stringify(payload, null, 2));
-                await job104Service.updateJob(job.job104_no, payload);
-                console.log('✅ Job updated on 104');
-            } catch (error) {
-                console.error('⚠️ Failed to sync update to 104:', error.response?.data || error.message);
-                // 不阻止本地更新成功
+                derive104WritebackToJobs(req.tenantDB, id);
             }
         }
 
@@ -709,7 +957,8 @@ router.put('/:id', requireFeaturePerm('L1.jobs', 'edit'), async (req, res) => {
                 : '職缺已更新',
             autoRevertedToReview: shouldRevertToReview,
             changedCriticalFields: shouldRevertToReview ? changedFields : [],
-            close104: close104Result
+            close104: close104Result,
+            publications: getPublicationsByJobId(req.tenantDB, id)
         });
     } catch (error) {
         console.error('Failed to update job:', error);
@@ -882,18 +1131,42 @@ router.delete('/:id', requireFeaturePerm('L1.jobs', 'edit'), async (req, res) =>
             console.log(`📦 Archived ${archivedCount}/${unresolvedList.length} candidates to talent pool`);
         }
 
-        // 若已同步至 104，先刪除 104 端
+        // 對所有 synced publications 呼叫 adapter.close（不呼叫 deleteJob — 詳見 design.md
+        // Decision「Delete flow：呼叫 `adapter.close()` 而非 `deleteJob()`」）
+        // 單一平台 close 失敗以 log 記錄但不中斷本地刪除（ON DELETE CASCADE 會清掉 publications 列）
         let delete104Result = null;
-        if (job.job104_no) {
-            try {
-                console.log('🗑️ Deleting job from 104...');
-                await job104Service.deleteJob(job.job104_no);
-                console.log('✅ Job deleted from 104');
-                delete104Result = { success: true, jobNo: job.job104_no };
-            } catch (error) {
-                console.error('⚠️ Failed to delete from 104:', error.message);
-                delete104Result = { success: false, jobNo: job.job104_no, error: error.message };
-                // 繼續刪除本地資料
+        const closeWarnings = [];
+        const syncedRows = listPublications(req.tenantDB, id, ['synced']);
+        if (syncedRows.length > 0) {
+            const dispatches = syncedRows.map(async row => {
+                try {
+                    const publisher = getPublisher(row.platform);
+                    if (!publisher) throw new Error(`Unknown platform: ${row.platform}`);
+                    await publisher.close(row.platform_job_id);
+                    return { row, success: true };
+                } catch (error) {
+                    const msg = error.response?.data?.error?.message || error.message || String(error);
+                    console.error(`⚠️ [${row.platform}] close-on-delete failed:`, msg);
+                    return { row, success: false, error: msg };
+                }
+            });
+            const settled = await Promise.allSettled(dispatches);
+            for (const s of settled) {
+                if (s.status === 'fulfilled' && !s.value.success) {
+                    closeWarnings.push({
+                        platform: s.value.row.platform,
+                        jobNo: s.value.row.platform_job_id,
+                        error: s.value.error
+                    });
+                }
+            }
+            const oc104 = settled.find(s =>
+                s.status === 'fulfilled' && s.value.row?.platform === '104'
+            );
+            if (oc104) {
+                delete104Result = oc104.value.success
+                    ? { success: true, jobNo: oc104.value.row.platform_job_id }
+                    : { success: false, jobNo: oc104.value.row.platform_job_id, error: oc104.value.error };
             }
         }
 
@@ -909,10 +1182,90 @@ router.delete('/:id', requireFeaturePerm('L1.jobs', 'edit'), async (req, res) =>
             message: '職缺已刪除',
             archivedCandidates: archivedCount,
             removedCandidates: candidates.length,
-            delete104: delete104Result
+            delete104: delete104Result,
+            closeWarnings
         });
     } catch (error) {
         console.error('Failed to delete job:', error);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+/**
+ * POST /api/jobs/:jobId/publications/:platform/retry
+ * 重試單一平台同步（失敗列、強制 re-sync 已同步列皆可；已 closed 回 409）
+ * 完成需求「HR can retry a failed platform synchronization」
+ */
+router.post('/:jobId/publications/:platform/retry', requireFeaturePerm('L1.jobs', 'edit'), async (req, res) => {
+    try {
+        const { jobId, platform } = req.params;
+
+        if (!SUPPORTED_PLATFORMS.includes(platform)) {
+            return res.status(400).json({ status: 'error', message: `Unsupported platform: ${platform}` });
+        }
+
+        const job = req.tenantDB.prepare('SELECT * FROM jobs WHERE id = ?').get(jobId);
+        if (!job) {
+            return res.status(404).json({ status: 'error', message: 'Job not found' });
+        }
+
+        const pub = req.tenantDB.prepare(
+            'SELECT * FROM job_publications WHERE job_id = ? AND platform = ?'
+        ).get(jobId, platform);
+        if (!pub) {
+            return res.status(404).json({
+                status: 'error',
+                message: `No publication row for job ${jobId} on platform ${platform}`
+            });
+        }
+
+        if (pub.status === 'closed') {
+            return res.status(409).json({
+                status: 'error',
+                code: 'PUBLICATION_CLOSED',
+                message: 'Publication is closed — reopen job before retrying'
+            });
+        }
+
+        const publisher = getPublisher(platform);
+        if (!publisher) {
+            return res.status(500).json({ status: 'error', message: `Publisher not registered: ${platform}` });
+        }
+
+        let outcome;
+        try {
+            let raw;
+            if (platform === '104') {
+                raw = job.job104_data
+                    ? JSON.parse(job.job104_data)
+                    : (pub.platform_fields ? JSON.parse(pub.platform_fields) : null);
+                if (!raw) throw new Error('104 job data missing');
+            } else {
+                raw = pub.platform_fields ? JSON.parse(pub.platform_fields) : {};
+            }
+            const payloads = buildPlatformPayloads(platform, raw, job);
+            const result = await dispatchPlatformPublish(pub, payloads);
+            outcome = { row: pub, success: true, ...result };
+        } catch (error) {
+            const msg = formatPlatformError(error);
+            console.error(`❌ [${platform}] retry failed:`, msg);
+            outcome = { row: pub, success: false, error: msg };
+        }
+
+        updatePublicationAfterSync(req.tenantDB, pub.id, outcome);
+        if (platform === '104') derive104WritebackToJobs(req.tenantDB, jobId);
+
+        const refreshed = req.tenantDB.prepare(
+            'SELECT platform, status, platform_job_id, sync_error, last_sync_attempt_at, published_at FROM job_publications WHERE id = ?'
+        ).get(pub.id);
+
+        res.json({
+            status: 'success',
+            publication: refreshed,
+            retryResult: { success: outcome.success, error: outcome.error || null }
+        });
+    } catch (error) {
+        console.error('Failed to retry publication:', error);
         res.status(500).json({ status: 'error', message: error.message });
     }
 });

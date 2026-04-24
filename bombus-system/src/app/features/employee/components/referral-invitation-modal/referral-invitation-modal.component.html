@@ -1,0 +1,185 @@
+@if (isVisible()) {
+<div class="modal-backdrop" (click)="tryClose()"></div>
+<div class="modal referral-modal" role="dialog" aria-labelledby="referral-modal-title">
+  <div class="modal-header">
+    <h3 class="modal-title" id="referral-modal-title">
+      <i class="ri-user-add-line"></i>
+      發起內部推薦
+      @if (jobTitle()) {
+        <span class="job-title-sub">｜{{ jobTitle() }}</span>
+      }
+    </h3>
+    <button class="btn-close" (click)="tryClose()" type="button" aria-label="關閉">
+      <i class="ri-close-line"></i>
+    </button>
+  </div>
+
+  <div class="tabs">
+    <button type="button" class="tab" [class.active]="tab() === 'create'" (click)="switchTab('create')">
+      發起新邀請
+    </button>
+    <button type="button" class="tab" [class.active]="tab() === 'history'" (click)="switchTab('history')">
+      歷史邀請
+    </button>
+  </div>
+
+  <div class="modal-body">
+    @if (tab() === 'create') {
+      @if (createdInvitation(); as inv) {
+        <!-- 成功後的「複製連結」視圖 -->
+        <div class="success-view">
+          <div class="success-header">
+            <i class="ri-check-double-line"></i>
+            <div>
+              <strong>內推邀請已建立</strong>
+              <p>請將下方連結透過 email / IM 傳給候選人，連結 7 天內有效。</p>
+            </div>
+          </div>
+          <div class="link-box">
+            <input type="text" readonly [value]="inv.referralLink" #linkInput (focus)="linkInput.select()" />
+            <button type="button" class="btn-primary" (click)="copyLink(inv.referralLink)">
+              <i class="ri-file-copy-line"></i> 複製連結
+            </button>
+          </div>
+          <p class="expires-hint">
+            到期時間：{{ formatDate(inv.expiresAt) }}
+          </p>
+          <div class="post-actions">
+            <button type="button" class="btn-secondary" (click)="switchTab('history')">查看歷史邀請</button>
+            <button type="button" class="btn-ghost" (click)="tryClose()">關閉</button>
+          </div>
+        </div>
+      } @else {
+        <!-- 表單 -->
+        <div class="form-group">
+          <label class="form-label">推薦人員編 <span class="required">*</span></label>
+          <input
+            type="text"
+            class="form-input"
+            [value]="recommenderEmployeeNo()"
+            (input)="onEmployeeNoInput($any($event.target).value)"
+            placeholder="輸入推薦員工員編（例：E001）"
+            autocomplete="off"
+          />
+          @switch (recommenderState().kind) {
+            @case ('loading') { <p class="hint-text"><i class="ri-loader-2-line spin"></i> 查詢中…</p> }
+            @case ('ok') {
+              @let preview = $any(recommenderState()).preview;
+              <p class="recommender-preview">
+                <i class="ri-user-line"></i>
+                <strong>{{ preview.name }}</strong>
+                @if (preview.company) {
+                  <span class="meta">{{ preview.company }}</span>
+                }
+                @if (preview.department) {
+                  <span class="meta">{{ preview.department }}</span>
+                }
+                @if (preview.position) {
+                  <span class="meta">{{ preview.position }}</span>
+                }
+              </p>
+            }
+            @case ('error') {
+              <p class="error-text">
+                <i class="ri-error-warning-line"></i>
+                {{ $any(recommenderState()).message }}
+              </p>
+            }
+          }
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">候選人 Email <span class="required">*</span></label>
+          <input
+            type="email"
+            class="form-input"
+            [value]="candidateEmail()"
+            (input)="candidateEmail.set($any($event.target).value)"
+            placeholder="candidate@example.com"
+            autocomplete="off"
+          />
+          <p class="hint-text">系統產生的連結中，候選人不能修改此 email。</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">自訂訊息（可選）</label>
+          <textarea
+            class="form-input"
+            rows="3"
+            maxlength="200"
+            [value]="customMessage()"
+            (input)="customMessage.set($any($event.target).value)"
+            placeholder="（可選）寫給候選人的訊息，會顯示在填寫頁頂。200 字以內。"
+          ></textarea>
+          <p class="hint-text">{{ customMessage().length }} / 200</p>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-ghost" (click)="tryClose()">取消</button>
+          <button
+            type="button"
+            class="btn-primary"
+            [disabled]="!isFormValid() || submitting()"
+            (click)="onSubmit()"
+          >
+            @if (submitting()) {
+              <i class="ri-loader-2-line spin"></i> 處理中…
+            } @else {
+              <i class="ri-send-plane-line"></i> 建立邀請並取得連結
+            }
+          </button>
+        </div>
+      }
+    } @else {
+      <!-- 歷史邀請 -->
+      @if (historyLoading()) {
+        <p class="hint-text"><i class="ri-loader-2-line spin"></i> 載入中…</p>
+      } @else if (invitations().length === 0) {
+        <div class="empty-state">
+          <i class="ri-inbox-line"></i>
+          <p>此職缺尚無內推邀請</p>
+        </div>
+      } @else {
+        <div class="history-list">
+          @for (inv of invitations(); track inv.id) {
+            <div class="history-item">
+              <div class="history-head">
+                <span class="status-badge status-{{ inv.status }}">{{ statusLabel(inv.status) }}</span>
+                <span class="candidate-email">{{ inv.candidate_email }}</span>
+              </div>
+              <div class="history-meta">
+                <span><i class="ri-user-line"></i> 推薦人：{{ inv.recommender_name }}（{{ inv.recommender_employee_no }}）</span>
+                <span><i class="ri-time-line"></i> 發起：{{ formatDate(inv.created_at) }}</span>
+                <span><i class="ri-calendar-line"></i> 到期：{{ formatDate(inv.expires_at) }}</span>
+                @if (inv.submitted_at) {
+                  <span><i class="ri-check-line"></i> 提交：{{ formatDate(inv.submitted_at) }}</span>
+                }
+              </div>
+              @if (inv.referralLink) {
+                <div class="link-row">
+                  <input type="text" readonly [value]="inv.referralLink" />
+                  <button type="button" class="btn-small" (click)="copyLink(inv.referralLink!)">
+                    <i class="ri-file-copy-line"></i> 複製
+                  </button>
+                </div>
+              }
+              <div class="history-actions">
+                @if (inv.status === 'pending' || inv.status === 'expired') {
+                  <button type="button" class="btn-small" (click)="renewInvitation(inv.id)">
+                    <i class="ri-refresh-line"></i> 延長 7 天
+                  </button>
+                }
+                @if (inv.status === 'pending') {
+                  <button type="button" class="btn-small btn-danger" (click)="cancelInvitation(inv.id)">
+                    <i class="ri-close-circle-line"></i> 取消邀請
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    }
+  </div>
+</div>
+}

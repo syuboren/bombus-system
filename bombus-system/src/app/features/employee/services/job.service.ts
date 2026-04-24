@@ -14,7 +14,8 @@ import {
   CandidateFull,
   CandidateResumeAnalysis,
   JobCandidatesSummary,
-  JobDeleteResult
+  JobDeleteResult,
+  JobPublication
 } from '../models/job.model';
 
 const API_104_BASE = '/api/jobs/104';
@@ -617,8 +618,23 @@ export class JobService {
       syncStatus: dbJob.sync_status || 'local_only',
       org_unit_id: dbJob.org_unit_id || undefined,
       grade: typeof dbJob.grade === 'number' ? dbJob.grade : (dbJob.grade != null ? Number(dbJob.grade) : null),
-      grade_title: dbJob.grade_title || null
+      grade_title: dbJob.grade_title || null,
+      publications: Array.isArray(dbJob.publications) ? dbJob.publications : undefined
     };
+  }
+
+  /**
+   * 重試單一平台同步
+   * 對應後端 POST /api/jobs/:jobId/publications/:platform/retry
+   * closed 狀態的 publication 會回 409（需先 reopen 職缺）
+   */
+  retryPublication(jobId: string, platform: string): Observable<JobPublication> {
+    return this.http.post<{ status: string; publication: JobPublication; retryResult: { success: boolean; error: string | null } }>(
+      `${this.JOBS_API}/${jobId}/publications/${platform}/retry`,
+      {}
+    ).pipe(
+      map(response => response.publication)
+    );
   }
 
 
@@ -847,7 +863,12 @@ export class JobService {
       interviewResult: dbCandidate.interview_result,
       // AI 履歷解析
       aiOverallScore: dbCandidate.ai_overall_score ?? undefined,
-      aiAnalyzedAt: dbCandidate.ai_analyzed_at ?? undefined
+      aiAnalyzedAt: dbCandidate.ai_analyzed_at ?? undefined,
+      // 總年資描述（優先於 experienceYears 顯示，格式如「0年2個月」）
+      seniority: dbCandidate.seniority ?? undefined,
+      // 來源標記
+      reg_source: dbCandidate.reg_source ?? null,
+      source_detail: dbCandidate.source_detail ?? null
     };
   }
 

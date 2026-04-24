@@ -14,25 +14,6 @@
 
     <!-- Filter Bar (參考 project-list 風格) -->
     <div class="filter-bar">
-      <!-- 資料來源切換 -->
-      <div class="tab-group">
-        <button class="tab-btn" [class.active]="dataSource() === 'internal'" (click)="switchDataSource('internal')"
-          type="button">
-          <i class="ri-home-office-line"></i>
-          內部職缺
-        </button>
-        <button class="tab-btn" [class.active]="dataSource() === '104'" (click)="switchDataSource('104')" type="button">
-          <i class="ri-global-line"></i>
-          104 職缺 (Sandbox)
-        </button>
-      </div>
-      @if (dataSource() === '104') {
-      <button class="btn-import-settings" (click)="openImport104SettingsModal()" type="button">
-        <i class="ri-settings-4-line"></i>
-        匯入設定
-      </button>
-      }
-      <div class="filter-divider"></div>
       <div class="filter-item filter-item--search">
         <i class="ri-search-line"></i>
         <input type="text" placeholder="搜尋職稱、部門…" [value]="searchQuery()"
@@ -73,6 +54,15 @@
           <option value="closed">已關閉</option>
         </select>
       </div>
+      <div class="filter-item">
+        <select class="filter-select" [value]="platformFilter()" (change)="platformFilter.set($any($event.target).value)">
+          <option value="">所有平台</option>
+          <option value="104">104 人力銀行</option>
+          <option value="518">518 人力銀行</option>
+          <option value="1111">1111 人力銀行</option>
+          <option value="__none__">僅內部（未外發）</option>
+        </select>
+      </div>
       @if (canEdit()) {
       <button class="btn btn-primary" (click)="openModal()" type="button">
         <i class="ri-add-line"></i>
@@ -83,17 +73,11 @@
 
     <!-- Job Table -->
     <div class="table-card">
-      @if (dataSource() === '104' && loading104()) {
-      <div class="loading-overlay">
-        <i class="ri-loader-4-line spin"></i>
-        <span>載入 104 職缺中...</span>
-      </div>
-      }
       <table class="job-table">
         <thead>
           <tr>
             <th>職缺名稱</th>
-            <th>來源</th>
+            <th>發布平台</th>
             <th>部門</th>
             <th>職等</th>
             <th>發布日期</th>
@@ -111,13 +95,26 @@
               <div class="job-id">ID: {{ job.id }}@if (job.job104No) { (104: {{ job.job104No }}) }</div>
             </td>
             <td>
-              <span class="source-badge" [class.source-badge--104]="job.source === '104'">
-                @if (job.source === '104') {
-                <i class="ri-global-line"></i> 104
+              <!-- 多平台發布狀態 chips（只顯示已設定的平台） -->
+              <div class="platform-chips">
+                @if (job.publications && job.publications.length > 0) {
+                  @for (pub of job.publications; track pub.platform) {
+                    <button type="button"
+                            class="platform-chip"
+                            [attr.data-status]="pub.status"
+                            [title]="pub.platform + ' ' + getPublicationStatusText(pub.status) + (pub.sync_error ? ' — ' + pub.sync_error : '')"
+                            (click)="openPublicationDetail(job, pub)">
+                      <i [class]="getPublicationStatusIcon(pub.status)"></i>
+                      <span class="platform-chip__name">{{ pub.platform }}</span>
+                    </button>
+                  }
                 } @else {
-                <i class="ri-home-office-line"></i> 內部
+                  <span class="platform-chip platform-chip--internal" title="此職缺未公開到任何外部平台">
+                    <i class="ri-home-office-line"></i>
+                    僅內部
+                  </span>
                 }
-              </span>
+              </div>
             </td>
             <td>{{ job.department }}</td>
             <td>
@@ -169,9 +166,17 @@
                 }
 
                 @if (job.status === 'published') {
-                @if (job.source !== '104') {
+                <!-- 新增候選人 / 發起內推是所有職缺共通的基礎能力，與是否發布到外部平台無關 -->
                 <button class="icon-btn" title="新增候選人" (click)="openImportModal(job)" type="button">
                   <i class="ri-user-add-line"></i>
+                </button>
+                <button class="icon-btn" title="發起內推" (click)="openReferralModal(job)" type="button">
+                  <i class="ri-user-shared-line"></i>
+                </button>
+                @if (hasSyncedPublication(job)) {
+                <button class="icon-btn" title="從外部平台同步候選人（如 104 履歷）"
+                        (click)="openSyncCandidatesModal(job)" type="button">
+                  <i class="ri-download-cloud-2-line"></i>
                 </button>
                 }
                 <button class="icon-btn icon-btn--danger" title="關閉職缺" (click)="updateJobStatus(job, 'closed')"
@@ -209,11 +214,7 @@
           <tr>
             <td colspan="8" class="empty-row">
               <i class="ri-folder-open-line"></i>
-              @if (dataSource() === '104') {
-              <p>104 Sandbox 無職缺資料，請確認 API 連線狀態</p>
-              } @else {
               <p>目前沒有職缺資料</p>
-              }
             </td>
           </tr>
           }
@@ -311,17 +312,33 @@
         (input)="updateJobField('description', $any($event.target).value)">
         </textarea>
     </div>
-    <!-- 同步至 104 選項 -->
-    <div class="sync-option">
-      <label class="sync-checkbox">
-        <input type="checkbox" [checked]="newJob().syncTo104" (change)="toggleSyncTo104($any($event.target).checked)">
-        <span class="sync-checkbox__mark"></span>
-        <span class="sync-checkbox__label">
-          <i class="ri-global-line"></i>
-          填寫 104 (Sandbox) 設定
-        </span>
-      </label>
-      <p class="sync-option__hint">勾選後請填寫下方 104 詳細設定，職缺將在核准發布時自動同步</p>
+    <!-- 多平台發布選擇（D-02/D-03） -->
+    <div class="platform-selector">
+      <div class="platform-selector__label">發布平台</div>
+      <div class="platform-selector__options">
+        <label class="platform-checkbox">
+          <input type="checkbox"
+                 [checked]="newJob().syncTo104"
+                 (change)="toggleSyncTo104($any($event.target).checked)">
+          <span class="platform-checkbox__mark"></span>
+          <span class="platform-checkbox__name">104 人力銀行</span>
+        </label>
+        <label class="platform-checkbox platform-checkbox--disabled"
+               title="平台尚未開放">
+          <input type="checkbox" disabled>
+          <span class="platform-checkbox__mark"></span>
+          <span class="platform-checkbox__name">518 人力銀行</span>
+          <span class="platform-checkbox__badge">平台尚未開放</span>
+        </label>
+        <label class="platform-checkbox platform-checkbox--disabled"
+               title="平台尚未開放">
+          <input type="checkbox" disabled>
+          <span class="platform-checkbox__mark"></span>
+          <span class="platform-checkbox__name">1111 人力銀行</span>
+          <span class="platform-checkbox__badge">平台尚未開放</span>
+        </label>
+      </div>
+      <p class="platform-selector__hint">勾選後請填寫下方平台詳細設定，職缺將在核准發布時自動同步至所選平台</p>
     </div>
 
     <!-- 104 詳細設定 (勾選同步時展開) -->
@@ -541,466 +558,27 @@
 </div>
 }
 
-<!-- Add Candidate Modal -->
+<!-- Add Candidate Modal (共用 candidate-full-form) -->
 @if (showImportModal()) {
 <div class="modal-backdrop"></div>
 <div class="modal modal--large">
   <div class="modal__header">
     <h3 class="modal__title">
       <i class="ri-user-add-line"></i>
-      新增候選人
+      新增候選人 — {{ selectedJobForImport()?.title }}
     </h3>
     <button class="modal__close" (click)="closeImportModal()" type="button">
       <i class="ri-close-line"></i>
     </button>
   </div>
-  <div class="modal__body modal__body--tabs">
-    @if (selectedJobForImport(); as job) {
-    <div class="import-info">
-      <p><strong>目標職缺：</strong>{{ job.title }}</p>
-      <p><strong>部門：</strong>{{ job.department }}</p>
-    </div>
-    }
-    
-    <!-- Tab Navigation -->
-    <div class="candidate-tabs">
-      <button class="candidate-tab" [class.active]="candidateFormTab() === 1" (click)="setCandidateFormTab(1)" type="button">
-        <i class="ri-user-line"></i> 基本資料
-        @if (hasTabErrors(1)) {
-        <span class="tab-error-dot"></span>
-        }
-      </button>
-      <button class="candidate-tab" [class.active]="candidateFormTab() === 2" (click)="setCandidateFormTab(2)" type="button">
-        <i class="ri-briefcase-line"></i> 求職條件
-        @if (hasTabErrors(2)) {
-        <span class="tab-error-dot"></span>
-        }
-      </button>
-      <button class="candidate-tab" [class.active]="candidateFormTab() === 3" (click)="setCandidateFormTab(3)" type="button">
-        <i class="ri-graduation-cap-line"></i> 學經歷
-        @if (hasTabErrors(3)) {
-        <span class="tab-error-dot"></span>
-        }
-      </button>
-      <button class="candidate-tab" [class.active]="candidateFormTab() === 4" (click)="setCandidateFormTab(4)" type="button">
-        <i class="ri-attachment-line"></i> 附件上傳
-      </button>
-    </div>
-
-    <!-- Tab 1: 基本資料 -->
-    @if (candidateFormTab() === 1) {
-    <div class="candidate-form">
-      <div class="form-section">
-        <h4 class="form-section__title">個人資訊</h4>
-        <div class="form-grid form-grid--3">
-          <div class="form-group">
-            <label class="form-label">姓名 <span class="required">*</span></label>
-            <input type="text" class="form-input" [(ngModel)]="newCandidate().name" placeholder="請輸入姓名">
-          </div>
-          <div class="form-group">
-            <label class="form-label">英文姓名 <span class="required">*</span></label>
-            <input type="text" class="form-input" [(ngModel)]="newCandidate().nameEn" placeholder="請輸入英文姓名">
-          </div>
-          <div class="form-group">
-            <label class="form-label">性別 <span class="required">*</span></label>
-            <select class="form-select" [(ngModel)]="newCandidate().gender">
-              <option value="">請選擇</option>
-              <option value="male">男</option>
-              <option value="female">女</option>
-              <option value="other">其他</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-grid form-grid--3">
-          <div class="form-group">
-            <label class="form-label">生日 <span class="required">*</span></label>
-            <input type="date" class="form-input" [(ngModel)]="newCandidate().birthday">
-          </div>
-          <div class="form-group">
-            <label class="form-label">國籍 <span class="required">*</span></label>
-            <input type="text" class="form-input" [(ngModel)]="newCandidate().nationality" placeholder="例：中華民國">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Email <span class="required">*</span></label>
-            <input type="email" class="form-input" [(ngModel)]="newCandidate().email" placeholder="example@email.com">
-          </div>
-        </div>
-        <div class="form-grid form-grid--3">
-          <div class="form-group">
-            <label class="form-label">手機 <span class="required">*</span></label>
-            <input type="tel" class="form-input" [(ngModel)]="newCandidate().phone" placeholder="0912-345-678">
-          </div>
-          <div class="form-group">
-            <label class="form-label">聯絡方式 <span class="required">*</span></label>
-            <input type="text" class="form-input" [(ngModel)]="newCandidate().contactInfo" placeholder="最佳聯絡方式">
-          </div>
-          <div class="form-group">
-            <label class="form-label">市內電話</label>
-            <input type="tel" class="form-input" [(ngModel)]="newCandidate().tel" placeholder="02-1234-5678">
-          </div>
-        </div>
-        <div class="form-grid form-grid--1">
-          <div class="form-group">
-            <label class="form-label">聯絡地址 <span class="required">*</span></label>
-            <input type="text" class="form-input" [(ngModel)]="newCandidate().address" placeholder="完整聯絡地址">
-          </div>
-        </div>
-      </div>
-
-      <div class="form-section">
-        <h4 class="form-section__title">其他資訊（選填）</h4>
-        <div class="form-grid form-grid--3">
-          <div class="form-group">
-            <label class="form-label">兵役狀況</label>
-            <select class="form-select" [(ngModel)]="newCandidate().militaryStatus">
-              <option value="">請選擇</option>
-              <option value="免役">免役</option>
-              <option value="役畢">役畢</option>
-              <option value="待役">待役</option>
-              <option value="服役中">服役中</option>
-              <option value="替代役">替代役</option>
-              <option value="不適用">不適用</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">駕照</label>
-            <input type="text" class="form-input" [(ngModel)]="newCandidate().drivingLicenses" placeholder="例：汽車、機車">
-          </div>
-          <div class="form-group">
-            <label class="form-label">交通工具</label>
-            <input type="text" class="form-input" [(ngModel)]="newCandidate().transports" placeholder="例：自有汽車">
-          </div>
-        </div>
-      </div>
-    </div>
-    }
-
-    <!-- Tab 2: 求職條件 -->
-    @if (candidateFormTab() === 2) {
-    <div class="candidate-form">
-      <div class="form-section">
-        <h4 class="form-section__title">求職條件</h4>
-        <div class="form-grid form-grid--3">
-          <div class="form-group">
-            <label class="form-label">希望性質 <span class="required">*</span></label>
-            <select class="form-select" [(ngModel)]="newCandidate().jobCharacteristic">
-              <option value="">請選擇</option>
-              <option value="全職">全職</option>
-              <option value="兼職">兼職</option>
-              <option value="全職/兼職">全職/兼職皆可</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">上班時段 <span class="required">*</span></label>
-            <select class="form-select" [(ngModel)]="newCandidate().workInterval">
-              <option value="">請選擇</option>
-              <option value="日班">日班</option>
-              <option value="夜班">夜班</option>
-              <option value="大夜班">大夜班</option>
-              <option value="假日班">假日班</option>
-              <option value="不拘">不拘</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">輪班制度 <span class="required">*</span></label>
-            <select class="form-select" [(ngModel)]="newCandidate().shiftWork">
-              <option [ngValue]="null">請選擇</option>
-              <option [ngValue]="true">可接受輪班</option>
-              <option [ngValue]="false">不接受輪班</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-grid form-grid--3">
-          <div class="form-group">
-            <label class="form-label">可上班日</label>
-            <input type="text" class="form-input" [(ngModel)]="newCandidate().startDateOpt" placeholder="例：隨時、一週內">
-          </div>
-          <div class="form-group">
-            <label class="form-label">希望待遇</label>
-            <input type="text" class="form-input" [(ngModel)]="newCandidate().expectedSalary" placeholder="例：月薪 50,000 以上">
-          </div>
-          <div class="form-group">
-            <label class="form-label">希望地點</label>
-            <input type="text" class="form-input" [(ngModel)]="newCandidate().preferredLocation" placeholder="例：台北市">
-          </div>
-        </div>
-        <div class="form-grid form-grid--3">
-          <div class="form-group">
-            <label class="form-label">希望職稱</label>
-            <input type="text" class="form-input" [(ngModel)]="newCandidate().preferredJobName" placeholder="例：前端工程師">
-          </div>
-          <div class="form-group">
-            <label class="form-label">希望職類</label>
-            <input type="text" class="form-input" [(ngModel)]="newCandidate().preferredJobCategory" placeholder="例：軟體/工程類">
-          </div>
-          <div class="form-group">
-            <label class="form-label">希望產業</label>
-            <input type="text" class="form-input" [(ngModel)]="newCandidate().preferredIndustry" placeholder="例：資訊科技業">
-          </div>
-        </div>
-      </div>
-
-      <div class="form-section">
-        <h4 class="form-section__title">自我介紹（選填）</h4>
-        <div class="form-grid form-grid--1">
-          <div class="form-group">
-            <label class="form-label">個人簡介</label>
-            <textarea class="form-textarea" [(ngModel)]="newCandidate().introduction" rows="3" placeholder="簡短自我介紹"></textarea>
-          </div>
-        </div>
-        <div class="form-grid form-grid--2">
-          <div class="form-group">
-            <label class="form-label">個人格言</label>
-            <input type="text" class="form-input" [(ngModel)]="newCandidate().motto" placeholder="座右銘">
-          </div>
-          <div class="form-group">
-            <label class="form-label">個人特色</label>
-            <input type="text" class="form-input" [(ngModel)]="newCandidate().characteristic" placeholder="個人特色標籤">
-          </div>
-        </div>
-        <div class="form-grid form-grid--1">
-          <div class="form-group">
-            <label class="form-label">證照</label>
-            <textarea class="form-textarea" [(ngModel)]="newCandidate().certificates" rows="2" placeholder="持有的證照名稱"></textarea>
-          </div>
-        </div>
-      </div>
-    </div>
-    }
-
-    <!-- Tab 3: 學經歷 -->
-    @if (candidateFormTab() === 3) {
-    <div class="candidate-form">
-      <!-- 學歷 -->
-      <div class="form-section">
-        <div class="form-section__header">
-          <h4 class="form-section__title">學歷 <span class="required">*</span></h4>
-          <button class="btn btn-sm btn-outline" (click)="addEducation()" type="button">
-            <i class="ri-add-line"></i> 新增學歷
-          </button>
-        </div>
-        @for (edu of newCandidate().educationList; track $index) {
-        <div class="form-card">
-          <div class="form-card__header">
-            <span class="form-card__title">學歷 {{ $index + 1 }}</span>
-            @if (newCandidate().educationList.length > 1) {
-            <button class="btn-icon btn-icon--danger" (click)="removeEducation($index)" type="button">
-              <i class="ri-delete-bin-line"></i>
-            </button>
-            }
-          </div>
-          <div class="form-grid form-grid--2">
-            <div class="form-group">
-              <label class="form-label">學校名稱 <span class="required">*</span></label>
-              <input type="text" class="form-input" [(ngModel)]="edu.schoolName" placeholder="學校名稱">
-            </div>
-            <div class="form-group">
-              <label class="form-label">科系 <span class="required">*</span></label>
-              <input type="text" class="form-input" [(ngModel)]="edu.major" placeholder="科系名稱">
-            </div>
-          </div>
-          <div class="form-grid form-grid--2">
-            <div class="form-group">
-              <label class="form-label">學位 <span class="required">*</span></label>
-              <select class="form-select" [(ngModel)]="edu.degreeLevel">
-                <option value="">請選擇</option>
-                <option value="博士">博士</option>
-                <option value="碩士">碩士</option>
-                <option value="大學">大學</option>
-                <option value="專科">專科</option>
-                <option value="高中職">高中職</option>
-                <option value="國中以下">國中以下</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">就學狀態 <span class="required">*</span></label>
-              <select class="form-select" [(ngModel)]="edu.degreeStatus">
-                <option value="">請選擇</option>
-                <option value="畢業">畢業</option>
-                <option value="肄業">肄業</option>
-                <option value="就學中">就學中</option>
-              </select>
-            </div>
-          </div>
-        </div>
-        } @empty {
-        <div class="empty-card">
-          <i class="ri-graduation-cap-line"></i>
-          <p>尚未新增學歷，請點擊「新增學歷」按鈕</p>
-        </div>
-        }
-      </div>
-
-      <!-- 工作經歷 -->
-      <div class="form-section">
-        <div class="form-section__header">
-          <h4 class="form-section__title">工作經歷 <span class="required">*</span></h4>
-          <button class="btn btn-sm btn-outline" (click)="addExperience()" type="button">
-            <i class="ri-add-line"></i> 新增經歷
-          </button>
-        </div>
-        @for (exp of newCandidate().experienceList; track $index) {
-        <div class="form-card">
-          <div class="form-card__header">
-            <span class="form-card__title">工作經歷 {{ $index + 1 }}</span>
-            @if (newCandidate().experienceList.length > 1) {
-            <button class="btn-icon btn-icon--danger" (click)="removeExperience($index)" type="button">
-              <i class="ri-delete-bin-line"></i>
-            </button>
-            }
-          </div>
-          <div class="form-grid form-grid--2">
-            <div class="form-group">
-              <label class="form-label">公司名稱 <span class="required">*</span></label>
-              <input type="text" class="form-input" [(ngModel)]="exp.firmName" placeholder="公司名稱">
-            </div>
-            <div class="form-group">
-              <label class="form-label">職稱 <span class="required">*</span></label>
-              <input type="text" class="form-input" [(ngModel)]="exp.jobName" placeholder="職稱">
-            </div>
-          </div>
-          <div class="form-grid form-grid--3">
-            <div class="form-group">
-              <label class="form-label">產業類別 <span class="required">*</span></label>
-              <input type="text" class="form-input" [(ngModel)]="exp.industryCategory" placeholder="例：資訊科技業">
-            </div>
-            <div class="form-group">
-              <label class="form-label">任職起始 <span class="required">*</span></label>
-              <input type="month" class="form-input" [(ngModel)]="exp.startDate">
-            </div>
-            <div class="form-group">
-              <label class="form-label">任職結束 <span class="required">*</span></label>
-              <input type="month" class="form-input" [(ngModel)]="exp.endDate" placeholder="在職中可留空">
-            </div>
-          </div>
-          <div class="form-grid form-grid--1">
-            <div class="form-group">
-              <label class="form-label">工作內容 <span class="required">*</span></label>
-              <textarea class="form-textarea" [(ngModel)]="exp.jobDesc" rows="3" placeholder="描述主要工作職責與內容"></textarea>
-            </div>
-          </div>
-        </div>
-        } @empty {
-        <div class="empty-card">
-          <i class="ri-briefcase-line"></i>
-          <p>尚未新增工作經歷，請點擊「新增經歷」按鈕</p>
-        </div>
-        }
-      </div>
-
-      <!-- 技能專長 -->
-      <div class="form-section">
-        <h4 class="form-section__title">技能專長（選填）</h4>
-        <div class="form-grid form-grid--1">
-          <div class="form-group">
-            <label class="form-label">技能標籤</label>
-            <input type="text" class="form-input" [(ngModel)]="newCandidate().skillsText" placeholder="以逗號分隔，例：Angular, TypeScript, Node.js">
-          </div>
-        </div>
-      </div>
-    </div>
-    }
-
-    <!-- Tab 4: 附件上傳 -->
-    @if (candidateFormTab() === 4) {
-    <div class="candidate-form">
-      <div class="form-section">
-        <h4 class="form-section__title">履歷附件（選填）</h4>
-        <div class="upload-zone" (click)="fileInput.click()" (dragover)="onDragOver($event)" (drop)="onFileDrop($event)">
-          <input #fileInput type="file" hidden multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" (change)="onFileSelect($event)">
-          <i class="ri-upload-cloud-2-line"></i>
-          <p class="upload-zone__title">點擊或拖曳上傳履歷附件</p>
-          <p class="upload-zone__hint">支援 PDF、Word、圖片格式，單檔最大 10MB</p>
-        </div>
-        @if (candidateAttachments().length > 0) {
-        <div class="attachment-list">
-          @for (file of candidateAttachments(); track $index) {
-          <div class="attachment-item">
-            <i class="ri-file-text-line"></i>
-            <span class="attachment-name">{{ file.name }}</span>
-            <span class="attachment-size">{{ formatFileSize(file.size) }}</span>
-            <button class="btn-icon btn-icon--danger" (click)="removeAttachment($index)" type="button">
-              <i class="ri-close-line"></i>
-            </button>
-          </div>
-          }
-        </div>
-        }
-      </div>
-
-      <div class="form-section">
-        <div class="form-section__header">
-          <h4 class="form-section__title">推薦人（選填）</h4>
-          <button class="btn btn-sm btn-outline" (click)="addRecommender()" type="button">
-            <i class="ri-add-line"></i> 新增推薦人
-          </button>
-        </div>
-        @for (rec of newCandidate().recommenderList; track $index) {
-        <div class="form-card">
-          <div class="form-card__header">
-            <span class="form-card__title">推薦人 {{ $index + 1 }}</span>
-            <button class="btn-icon btn-icon--danger" (click)="removeRecommender($index)" type="button">
-              <i class="ri-delete-bin-line"></i>
-            </button>
-          </div>
-          <div class="form-grid form-grid--3">
-            <div class="form-group">
-              <label class="form-label">姓名</label>
-              <input type="text" class="form-input" [(ngModel)]="rec.name" placeholder="推薦人姓名">
-            </div>
-            <div class="form-group">
-              <label class="form-label">公司/單位</label>
-              <input type="text" class="form-input" [(ngModel)]="rec.corp" placeholder="所屬公司">
-            </div>
-            <div class="form-group">
-              <label class="form-label">職稱</label>
-              <input type="text" class="form-input" [(ngModel)]="rec.jobTitle" placeholder="職稱">
-            </div>
-          </div>
-          <div class="form-grid form-grid--2">
-            <div class="form-group">
-              <label class="form-label">電話</label>
-              <input type="tel" class="form-input" [(ngModel)]="rec.tel" placeholder="聯絡電話">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Email</label>
-              <input type="email" class="form-input" [(ngModel)]="rec.email" placeholder="電子郵件">
-            </div>
-          </div>
-        </div>
-        } @empty {
-        <div class="empty-card empty-card--sm">
-          <i class="ri-user-voice-line"></i>
-          <p>尚未新增推薦人</p>
-        </div>
-        }
-      </div>
-    </div>
-    }
-
-    <div class="import-note">
-      <i class="ri-information-line"></i>
-      <span>新增後將自動進行 AI 履歷評分，依據 JD 職能需求計算匹配分數</span>
-    </div>
-  </div>
-  <div class="modal__footer">
-    <button class="btn btn-secondary" (click)="closeImportModal()" type="button">取消</button>
-    <div class="footer-nav">
-      @if (candidateFormTab() > 1) {
-      <button class="btn btn-outline" (click)="prevCandidateTab()" type="button">
-        <i class="ri-arrow-left-line"></i> 上一步
-      </button>
-      }
-      @if (candidateFormTab() < 4) {
-      <button class="btn btn-primary" (click)="nextCandidateTab()" type="button">
-        下一步 <i class="ri-arrow-right-line"></i>
-      </button>
-      } @else {
-      <button class="btn btn-primary" (click)="submitCandidate()" [disabled]="!isCandidateFormValid()" type="button">
-        <i class="ri-check-line"></i> 確認新增
-      </button>
-      }
-    </div>
+  <div class="modal__body modal__body--no-padding">
+    <app-candidate-full-form
+      mode="hr"
+      uploadEndpoint="/api/recruitment/candidate-attachments/upload"
+      [submitting]="candidateSubmitting()"
+      [externalError]="candidateSubmitError()"
+      (submitForm)="onHrCandidateSubmit($event)"
+    ></app-candidate-full-form>
   </div>
 </div>
 }
@@ -1062,7 +640,34 @@
         (input)="updateJobField('description', $any($event.target).value)" placeholder="輸入職缺說明..."></textarea>
     </div>
 
-    @if (editingJob()?.job104No) {
+    <!-- 發布平台選擇（與新增職缺 Modal 一致） -->
+    <div class="platform-selector">
+      <div class="platform-selector__label">發布平台</div>
+      <div class="platform-selector__options">
+        <label class="platform-checkbox">
+          <input type="checkbox"
+                 [checked]="newJob().syncTo104"
+                 (change)="toggleSyncTo104($any($event.target).checked)">
+          <span class="platform-checkbox__mark"></span>
+          <span class="platform-checkbox__name">104 人力銀行</span>
+        </label>
+        <label class="platform-checkbox platform-checkbox--disabled" title="平台尚未開放">
+          <input type="checkbox" disabled>
+          <span class="platform-checkbox__mark"></span>
+          <span class="platform-checkbox__name">518 人力銀行</span>
+          <span class="platform-checkbox__badge">平台尚未開放</span>
+        </label>
+        <label class="platform-checkbox platform-checkbox--disabled" title="平台尚未開放">
+          <input type="checkbox" disabled>
+          <span class="platform-checkbox__mark"></span>
+          <span class="platform-checkbox__name">1111 人力銀行</span>
+          <span class="platform-checkbox__badge">平台尚未開放</span>
+        </label>
+      </div>
+      <p class="platform-selector__hint">取消勾選會保留該平台既有設定但不再同步；勾選後請在下方填寫平台詳細設定</p>
+    </div>
+
+    @if (editingJob()?.job104No || newJob().syncTo104) {
     <!-- 104 職缺設定區塊 -->
     <div class="job104-settings">
       <div class="job104-settings__header">
@@ -1598,4 +1203,25 @@
     }
   </div>
 </div>
+}
+
+<!-- 內推邀請 Modal -->
+@if (selectedJobForReferral(); as refJob) {
+<app-referral-invitation-modal
+  [isVisible]="showReferralModal()"
+  [jobId]="refJob.id"
+  [jobTitle]="refJob.title"
+  (close)="closeReferralModal()"
+  (invitationCreated)="onReferralInvitationCreated()"
+></app-referral-invitation-modal>
+}
+
+<!-- 多平台發布詳情 Modal（D-02/D-03） -->
+@if (publicationDetailOpen() && publicationDetailPub(); as pub) {
+  <app-publication-detail-modal
+    [jobId]="publicationDetailJobId()"
+    [publication]="pub"
+    (closed)="closePublicationDetail()"
+    (retried)="onPublicationRetried()"
+  ></app-publication-detail-modal>
 }

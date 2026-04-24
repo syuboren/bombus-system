@@ -8,73 +8,15 @@ import { HeaderComponent } from '../../../../shared/components/header/header.com
 import { StatCardComponent } from '../../../../shared/components/stat-card/stat-card.component';
 import { NotificationService } from '../../../../core/services/notification.service';
 import { JobService } from '../../services/job.service';
-import { Job, JobStats, JobCandidatesSummary } from '../../models/job.model';
+import { Job, JobStats, JobCandidatesSummary, JobPublication, JobPublicationStatus } from '../../models/job.model';
+import { PublicationDetailModalComponent } from '../../components/publication-detail-modal/publication-detail-modal.component';
 import { CompetencyService } from '../../../competency/services/competency.service';
 import { JobDescription } from '../../../competency/models/competency.model';
 import { OrgUnitService } from '../../../../core/services/org-unit.service';
 import { FeatureGateService } from '../../../../core/services/feature-gate.service';
-
-// 新增候選人表單介面
-interface NewCandidateForm {
-  // 基本資料
-  name: string;
-  nameEn: string;
-  gender: string;
-  birthday: string;
-  email: string;
-  phone: string;
-  tel: string;
-  contactInfo: string;
-  address: string;
-  nationality: string;
-  militaryStatus: string;
-  drivingLicenses: string;
-  transports: string;
-  // 求職條件
-  jobCharacteristic: string;
-  workInterval: string;
-  shiftWork: boolean | null;
-  startDateOpt: string;
-  expectedSalary: string;
-  preferredLocation: string;
-  preferredJobName: string;
-  preferredJobCategory: string;
-  preferredIndustry: string;
-  introduction: string;
-  motto: string;
-  characteristic: string;
-  certificates: string;
-  // 學經歷
-  educationList: EducationEntry[];
-  experienceList: ExperienceEntry[];
-  skillsText: string;
-  // 推薦人
-  recommenderList: RecommenderEntry[];
-}
-
-interface EducationEntry {
-  schoolName: string;
-  major: string;
-  degreeLevel: string;
-  degreeStatus: string;
-}
-
-interface ExperienceEntry {
-  firmName: string;
-  jobName: string;
-  industryCategory: string;
-  startDate: string;
-  endDate: string;
-  jobDesc: string;
-}
-
-interface RecommenderEntry {
-  name: string;
-  corp: string;
-  jobTitle: string;
-  tel: string;
-  email: string;
-}
+import { ReferralInvitationModalComponent } from '../../components/referral-invitation-modal/referral-invitation-modal.component';
+import { CandidateFullFormComponent } from '../../../../shared/components/candidate-full-form/candidate-full-form.component';
+import { CandidateFullForm } from '../../../../shared/components/candidate-full-form/candidate-full-form.model';
 
 // 104 匯入排程設定介面
 interface Import104Schedule {
@@ -105,7 +47,7 @@ interface ImportJobStatus {
 @Component({
   selector: 'app-jobs-page',
   standalone: true,
-  imports: [FormsModule, HeaderComponent, StatCardComponent],
+  imports: [FormsModule, HeaderComponent, StatCardComponent, ReferralInvitationModalComponent, CandidateFullFormComponent, PublicationDetailModalComponent],
   templateUrl: './jobs-page.component.html',
   styleUrl: './jobs-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -135,50 +77,87 @@ export class JobsPageComponent implements OnInit {
   showImportModal = signal<boolean>(false);
   selectedJobForImport = signal<Job | null>(null);
 
-  // ============================================================
-  // 新增候選人相關 Signals
-  // ============================================================
-  candidateFormTab = signal<number>(1);
-  candidateAttachments = signal<File[]>([]);
-  newCandidate = signal<NewCandidateForm>({
-    // 基本資料
-    name: '',
-    nameEn: '',
-    gender: '',
-    birthday: '',
-    email: '',
-    phone: '',
-    tel: '',
-    contactInfo: '',
-    address: '',
-    nationality: '',
-    militaryStatus: '',
-    drivingLicenses: '',
-    transports: '',
-    // 求職條件
-    jobCharacteristic: '',
-    workInterval: '',
-    shiftWork: null,
-    startDateOpt: '',
-    expectedSalary: '',
-    preferredLocation: '',
-    preferredJobName: '',
-    preferredJobCategory: '',
-    preferredIndustry: '',
-    introduction: '',
-    motto: '',
-    characteristic: '',
-    certificates: '',
-    // 學經歷
-    educationList: [{ schoolName: '', major: '', degreeLevel: '', degreeStatus: '' }],
-    experienceList: [{ firmName: '', jobName: '', industryCategory: '', startDate: '', endDate: '', jobDesc: '' }],
-    skillsText: '',
-    // 推薦人
-    recommenderList: []
-  });
+  // 內推邀請 Modal
+  showReferralModal = signal<boolean>(false);
+  selectedJobForReferral = signal<Job | null>(null);
 
-  // 資料來源切換
+  // 新增候選人（共用 candidate-full-form）送出狀態
+  candidateSubmitting = signal<boolean>(false);
+  candidateSubmitError = signal<string | null>(null);
+
+  // 資料來源切換（D-02 已移除 Tab，signal 保留供既有程式碼讀取但不再設值）
   dataSource = signal<'internal' | '104'>('internal');
+
+  // ============================================================
+  // 多平台發布（D-02/D-03）
+  // ============================================================
+  readonly SUPPORTED_PLATFORMS: ReadonlyArray<'104' | '518' | '1111'> = ['104', '518', '1111'];
+  readonly ENABLED_PLATFORMS: ReadonlyArray<string> = ['104'];
+
+  selectedPlatforms = signal<string[]>(['104']);
+  publicationDetailOpen = signal<boolean>(false);
+  publicationDetailJobId = signal<string>('');
+  publicationDetailPub = signal<JobPublication | null>(null);
+
+  getPublication(job: Job, platform: string): JobPublication | undefined {
+    return job.publications?.find(p => p.platform === platform);
+  }
+
+  hasSyncedPublication(job: Job): boolean {
+    return !!job.publications?.some(p => p.status === 'synced');
+  }
+
+  getPublicationStatusText(status: JobPublicationStatus): string {
+    const labels: Record<JobPublicationStatus, string> = {
+      pending: '等待同步',
+      syncing: '同步中',
+      synced: '已同步',
+      failed: '同步失敗',
+      closed: '已關閉'
+    };
+    return labels[status] || status;
+  }
+
+  getPublicationStatusIcon(status: JobPublicationStatus): string {
+    const icons: Record<JobPublicationStatus, string> = {
+      pending: 'ri-time-line',
+      syncing: 'ri-loader-4-line',
+      synced: 'ri-checkbox-circle-fill',
+      failed: 'ri-error-warning-fill',
+      closed: 'ri-close-circle-line'
+    };
+    return icons[status] || 'ri-question-line';
+  }
+
+  /**
+   * 從外部平台（如 104）同步候選人履歷 —— 僅對有 synced publication 的職缺開放。
+   * 本次變更僅預留 UI 入口，實際整合（104 Resume API → insertFullCandidate）屬
+   * 另立變更 `job-104-candidate-sync` 的範圍（對應 proposal Non-Goals 的 D-03 cron）。
+   */
+  openSyncCandidatesModal(job: Job): void {
+    const syncedPlatforms = (job.publications || [])
+      .filter(p => p.status === 'synced')
+      .map(p => p.platform)
+      .join('、');
+    this.notificationService.info(
+      `「${job.title}」已發布到 ${syncedPlatforms}。候選人同步功能即將推出 — 目前請手動新增或發起內推`
+    );
+  }
+
+  openPublicationDetail(job: Job, pub: JobPublication): void {
+    this.publicationDetailJobId.set(job.id);
+    this.publicationDetailPub.set(pub);
+    this.publicationDetailOpen.set(true);
+  }
+
+  closePublicationDetail(): void {
+    this.publicationDetailOpen.set(false);
+  }
+
+  onPublicationRetried(): void {
+    this.publicationDetailOpen.set(false);
+    this.loadData();
+  }
 
   // ============================================================
   // 104 匯入設定相關 Signals
@@ -268,6 +247,7 @@ export class JobsPageComponent implements OnInit {
   searchQuery = signal<string>('');
   departmentFilter = signal<string>('');
   statusFilter = signal<string>('');
+  platformFilter = signal<string>(''); // '' = 所有平台；'104' / '518' / '1111'；'__none__' = 未設定
 
   // 職等選項（從 grade_levels 載入）
   gradeOptions = signal<Array<{ grade: number; title: string }>>([]);
@@ -313,26 +293,16 @@ export class JobsPageComponent implements OnInit {
   });
 
   // Computed: 根據過濾條件計算過濾後的職缺列表
+  // D-02：移除 dataSource Tab，列表一律顯示所有職缺（內部 + 多平台）
   filteredJobs = computed(() => {
     const jobs = this.jobs();
-    const jobs104 = this.jobs104();
-    const source = this.dataSource();
     const query = this.searchQuery().toLowerCase();
     const dept = this.departmentFilter();
     const status = this.statusFilter();
-
-    // 根據資料來源選擇對應的職缺列表
-    let result: Job[];
-    if (source === 'internal') {
-      // 內部職缺：顯示沒有 104 編號的職缺
-      result = jobs.filter(j => !j.job104No);
-    } else {
-      // 104 職缺：使用 jobs104（已從資料庫獲取的 104 同步職缺）
-      result = [...jobs104];
-    }
+    const platform = this.platformFilter();
 
     // 過濾掉沒有 ID 的異常資料
-    result = result.filter(j => !!j.id);
+    let result = jobs.filter(j => !!j.id);
 
     if (query) {
       result = result.filter(j =>
@@ -347,6 +317,12 @@ export class JobsPageComponent implements OnInit {
 
     if (status) {
       result = result.filter(j => j.status === status);
+    }
+
+    if (platform === '__none__') {
+      result = result.filter(j => !j.publications || j.publications.length === 0);
+    } else if (platform) {
+      result = result.filter(j => j.publications?.some(p => p.platform === platform));
     }
 
     return result;
@@ -635,196 +611,57 @@ export class JobsPageComponent implements OnInit {
   // ============================================================
   openImportModal(job: Job): void {
     this.selectedJobForImport.set(job);
-    this.resetCandidateForm();
     this.showImportModal.set(true);
   }
 
   closeImportModal(): void {
     this.showImportModal.set(false);
     this.selectedJobForImport.set(null);
-    this.resetCandidateForm();
   }
 
-  // 頁籤切換
-  setCandidateFormTab(tab: number): void {
-    this.candidateFormTab.set(tab);
+  // 內推邀請 Modal
+  openReferralModal(job: Job): void {
+    this.selectedJobForReferral.set(job);
+    this.showReferralModal.set(true);
   }
 
-  prevCandidateTab(): void {
-    const current = this.candidateFormTab();
-    if (current > 1) {
-      this.candidateFormTab.set(current - 1);
-    }
+  closeReferralModal(): void {
+    this.showReferralModal.set(false);
+    this.selectedJobForReferral.set(null);
   }
 
-  nextCandidateTab(): void {
-    const current = this.candidateFormTab();
-    if (current < 4) {
-      this.candidateFormTab.set(current + 1);
-    }
+  onReferralInvitationCreated(): void {
+    // Modal 內已處理 toast 與後續操作，此處暫無需重新載入職缺清單
   }
 
-  // 學歷操作
-  addEducation(): void {
-    this.newCandidate.update(c => ({
-      ...c,
-      educationList: [...c.educationList, { schoolName: '', major: '', degreeLevel: '', degreeStatus: '' }]
-    }));
-  }
-
-  removeEducation(index: number): void {
-    this.newCandidate.update(c => ({
-      ...c,
-      educationList: c.educationList.filter((_, i) => i !== index)
-    }));
-  }
-
-  // 工作經歷操作
-  addExperience(): void {
-    this.newCandidate.update(c => ({
-      ...c,
-      experienceList: [...c.experienceList, { firmName: '', jobName: '', industryCategory: '', startDate: '', endDate: '', jobDesc: '' }]
-    }));
-  }
-
-  removeExperience(index: number): void {
-    this.newCandidate.update(c => ({
-      ...c,
-      experienceList: c.experienceList.filter((_, i) => i !== index)
-    }));
-  }
-
-  // 推薦人操作
-  addRecommender(): void {
-    this.newCandidate.update(c => ({
-      ...c,
-      recommenderList: [...c.recommenderList, { name: '', corp: '', jobTitle: '', tel: '', email: '' }]
-    }));
-  }
-
-  removeRecommender(index: number): void {
-    this.newCandidate.update(c => ({
-      ...c,
-      recommenderList: c.recommenderList.filter((_, i) => i !== index)
-    }));
-  }
-
-  // 附件上傳
-  onFileSelect(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input.files) {
-      const newFiles = Array.from(input.files);
-      this.candidateAttachments.update(files => [...files, ...newFiles]);
-    }
-  }
-
-  onDragOver(event: DragEvent): void {
-    event.preventDefault();
-    event.stopPropagation();
-  }
-
-  onFileDrop(event: DragEvent): void {
-    event.preventDefault();
-    event.stopPropagation();
-    if (event.dataTransfer?.files) {
-      const newFiles = Array.from(event.dataTransfer.files);
-      this.candidateAttachments.update(files => [...files, ...newFiles]);
-    }
-  }
-
-  removeAttachment(index: number): void {
-    this.candidateAttachments.update(files => files.filter((_, i) => i !== index));
-  }
-
-  formatFileSize(bytes: number): string {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  }
-
-  // 表單驗證
-  hasTabErrors(tab: number): boolean {
-    const c = this.newCandidate();
-    switch (tab) {
-      case 1: // 基本資料
-        return !c.name || !c.nameEn || !c.gender || !c.birthday || 
-               !c.email || !c.phone || !c.contactInfo || !c.address || !c.nationality;
-      case 2: // 求職條件
-        return !c.jobCharacteristic || !c.workInterval || c.shiftWork === null;
-      case 3: // 學經歷
-        const hasValidEdu = c.educationList.some(e => 
-          e.schoolName && e.major && e.degreeLevel && e.degreeStatus);
-        const hasValidExp = c.experienceList.some(e => 
-          e.firmName && e.jobName && e.industryCategory && e.startDate && e.jobDesc);
-        return !hasValidEdu || !hasValidExp;
-      default:
-        return false;
-    }
-  }
-
-  isCandidateFormValid(): boolean {
-    return !this.hasTabErrors(1) && !this.hasTabErrors(2) && !this.hasTabErrors(3);
-  }
-
-  // 提交候選人
-  submitCandidate(): void {
-    if (!this.isCandidateFormValid()) {
-      this.notificationService.error('請填寫所有必填欄位');
-      return;
-    }
-
+  /** HR 後台新增候選人：接 candidate-full-form 送出的 payload，呼叫 POST /api/recruitment/candidates */
+  onHrCandidateSubmit(form: CandidateFullForm): void {
     const job = this.selectedJobForImport();
-    if (!job) return;
+    if (!job || this.candidateSubmitting()) return;
 
-    // TODO: 呼叫 API 建立候選人
-    console.log('Submitting candidate:', {
-      jobId: job.id,
-      candidate: this.newCandidate(),
-      attachments: this.candidateAttachments()
-    });
+    this.candidateSubmitting.set(true);
+    this.candidateSubmitError.set(null);
 
-    this.notificationService.success('候選人新增成功！已觸發 AI 履歷評分');
-    this.closeImportModal();
-    this.loadData();
-  }
-
-  // 重置候選人表單
-  private resetCandidateForm(): void {
-    this.candidateFormTab.set(1);
-    this.candidateAttachments.set([]);
-    this.newCandidate.set({
-      name: '',
-      nameEn: '',
-      gender: '',
-      birthday: '',
-      email: '',
-      phone: '',
-      tel: '',
-      contactInfo: '',
-      address: '',
-      nationality: '',
-      militaryStatus: '',
-      drivingLicenses: '',
-      transports: '',
-      jobCharacteristic: '',
-      workInterval: '',
-      shiftWork: null,
-      startDateOpt: '',
-      expectedSalary: '',
-      preferredLocation: '',
-      preferredJobName: '',
-      preferredJobCategory: '',
-      preferredIndustry: '',
-      introduction: '',
-      motto: '',
-      characteristic: '',
-      certificates: '',
-      educationList: [{ schoolName: '', major: '', degreeLevel: '', degreeStatus: '' }],
-      experienceList: [{ firmName: '', jobName: '', industryCategory: '', startDate: '', endDate: '', jobDesc: '' }],
-      skillsText: '',
-      recommenderList: []
+    this.http.post<{ success: true; candidateId: string }>(
+      '/api/recruitment/candidates',
+      { ...form, jobId: job.id }
+    ).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.candidateSubmitting.set(false);
+        this.notificationService.success('候選人新增成功');
+        this.closeImportModal();
+        this.loadData();
+      },
+      error: err => {
+        this.candidateSubmitting.set(false);
+        const code = err?.error?.error;
+        const msg = err?.error?.message;
+        if (code === 'DUPLICATE_CANDIDATE') {
+          this.candidateSubmitError.set(msg || '此 email 已應徵過此職缺');
+        } else {
+          this.candidateSubmitError.set(msg || '新增失敗，請稍後再試');
+        }
+      }
     });
   }
 
@@ -1076,9 +913,7 @@ export class JobsPageComponent implements OnInit {
           }
           this.closeEditModal();
           this.loadData();
-          if (this.dataSource() === '104') {
-            this.load104Jobs();
-          }
+          // D-02：移除 dataSource Tab 後不再需要額外載入 104 列表
         } else {
           this.notificationService.error('更新職缺失敗');
         }
@@ -1114,9 +949,7 @@ export class JobsPageComponent implements OnInit {
 
           // 重新載入資料
           this.loadData();
-          if (this.dataSource() === '104') {
-            this.load104Jobs();
-          }
+          // D-02：移除 dataSource Tab 後不再需要額外載入 104 列表
           this.cdr.markForCheck();
         } else {
           this.notificationService.error('狀態更新失敗');
