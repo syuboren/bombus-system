@@ -46,7 +46,7 @@
 ## 7. 整合測試與驗證
 
 - [x] 7.1 撰寫後端整合測試：邀約流程端到端（發邀約 → 衝突檢查 → 候選人回覆 → 安排面試 → meeting 鏡像建立 → 取消同步）。驗證：全部情境通過
-- [ ] 7.2 撰寫前端 spec：invite-candidate-modal 含面試官下拉、15 分鐘 step、衝突標示；schedule-interview-modal 含唯讀顯示與最終驗證。驗證：`npm test` 全綠
+- [x] 7.2 撰寫前端 spec：invite-candidate-modal 含面試官下拉、15 分鐘 step、衝突標示；schedule-interview-modal 含唯讀顯示與最終驗證。驗證：`npm test` 全綠
 - [x] 7.3 對相鄰功能做迴歸驗證：interview-decision-page 讀取 `interviews.interviewer_id` 應仍可正確顯示姓名（型別變更 + FK 新增的副作用）。驗證：決策頁候選人清單呈現正確的面試官
 - [x] 7.4 執行 `/verify` 全流程：tsc 無錯、`ng build --configuration=development` 成功、API 手測三端點、欄位對應端到端驗證、檢查對相鄰元件無版面副作用
 - [x] 7.5 執行 `/seed-verify` 確認 demo 資料完整且可重現所有情境（含有衝突的資料）。驗證：衝突標籤在 UI 正確出現

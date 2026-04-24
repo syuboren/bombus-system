@@ -124,23 +124,51 @@ The tenant settings SHALL provide a role management interface with role list, ro
 
 ---
 ### Requirement: 使用者管理介面
-租戶設定 SHALL 提供使用者管理介面，包含使用者列表、新增、編輯、角色指派。使用者帳號 SHALL 與既有 employees 表的員工資料關聯。
+
+租戶設定 SHALL 提供精簡版使用者帳號總覽介面，顯示帳號清單（姓名、email、角色摘要、狀態、最後登入）。使用者帳號 SHALL 與既有 employees 表的員工資料關聯。帳號建立功能 SHALL 移至 HR 員工管理中心（`/organization/employee-management`），不在此頁面提供。
 
 #### Scenario: 使用者列表
+
 - **WHEN** 管理員進入使用者管理
-- **THEN** 系統顯示所有使用者，包含姓名、email、狀態、所屬角色、關聯的員工資料
+- **THEN** 系統顯示所有使用者帳號清單，包含姓名、email、角色摘要（逗號分隔角色名稱）、帳號狀態、最後登入時間
 
-#### Scenario: 指派角色給使用者
-- **WHEN** 管理員為使用者指派角色
-- **THEN** 系統顯示角色選擇介面，選擇角色後需指定作用範圍（對應的組織單位）
+#### Scenario: 快速操作 — 啟用/停用
 
-#### Scenario: 新增使用者
-- **WHEN** 管理員新增使用者
-- **THEN** 系統提供表單輸入 email、姓名、密碼（最低 8 字元），可選擇關聯既有員工，並立即指派角色
+- **WHEN** 管理員點擊帳號的啟用/停用切換
+- **THEN** 系統更新帳號狀態並顯示成功通知
 
-#### Scenario: 從既有員工建立帳號
-- **WHEN** 管理員選擇「從員工建立帳號」
-- **THEN** 系統顯示尚無帳號的員工列表（來自 employees 表），選擇後自動填入姓名和 email，管理員只需設定密碼和角色
+#### Scenario: 快速操作 — 密碼重設
+
+- **WHEN** 管理員點擊「重設密碼」按鈕
+- **THEN** 系統顯示確認對話框，確認後產生新隨機密碼、顯示在 Modal 中、設定 `must_change_password = 1`
+
+#### Scenario: 導向 HR 管理中心
+
+- **WHEN** 管理員點擊帳號列的「管理」連結
+- **THEN** 系統導向 `/organization/employee-management?userId={userId}`，在 HR 管理中心開啟該員工的詳情 Modal 並切換至「帳號與權限」Tab
+
+#### Scenario: 無新增使用者功能
+
+- **WHEN** 管理員檢視使用者管理頁面
+- **THEN** 頁面 SHALL NOT 顯示「新增使用者」按鈕或使用者建立表單。頁面標題或說明文字 SHALL 指示新帳號透過「組織管理 > 員工管理」建立
+
+
+<!-- @trace
+source: unified-employee-management
+updated: 2026-04-24
+code:
+  - bombus-system/openspec/specs/user-overview-lite/spec.md
+  - bombus-system/openspec/specs/batch-employee-import/spec.md
+  - bombus-system/openspec/specs/shared-employee-detail/spec.md
+  - bombus-system/openspec/changes/interviewer-selection-at-invitation/tasks.md
+  - bombus-system/openspec/specs/admin-portal/spec.md
+  - bombus-system/openspec/changes/recruitment-hr-initiated-referral/tasks.md
+  - bombus-system/openspec/specs/employee-self-service/spec.md
+  - bombus-system/openspec/specs/unified-account-creation/spec.md
+  - bombus-system/openspec/specs/hr-employee-hub/spec.md
+  - bombus-system/openspec/specs/employee-onboarding-automation/spec.md
+  - bombus-system/openspec/specs/unified-employee-model/spec.md
+-->
 
 ---
 ### Requirement: 標籤完整中文化

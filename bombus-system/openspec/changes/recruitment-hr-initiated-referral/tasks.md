@@ -66,5 +66,5 @@
 - [ ] 9.2 撰寫後端整合測試 `server/src/tests/test-recruitment-referrals.js`：涵蓋成功邀請（驗證 response 含絕對 URL referralLink）/ 員編無效（離職員工被拒，用 `employees.status='terminated'` 建資料）/ 重複 pending（UNIQUE 部分索引生效）/ 取消 / renew 延長（pending 與 expired 兩分支，驗 expired→pending 且 referralLink 含同一 token）/ token 過期自動轉 expired / token 重用被拒 / 候選人重複 email（409 + 邀請標 cancelled+duplicate）；每個場景對應 spec 中的 requirement（含完整流程斷言）
 - [ ] 9.3 撰寫 Angular 元件 spec：`referral-invitation-modal.component.spec.ts`（表單驗證與員編預覽 debounce 行為）、`referral-intake-page.component.spec.ts`（guard 導向與提交成功）。驗證：`npm test -- --watch=false` 通過
 - [x] 9.4 執行 `/verify` 技能：`npx tsc --noEmit`、`npx ng build --configuration=development`、後端 integration test 全綠、新建租戶驗證遷移兩份清單一致（對應 CLAUDE.md「雙遷移清單同步」防護規則）。驗證：`/verify` 回報全部通過
-- [ ] 9.5 `/seed-verify` 確認 demo 租戶示範資料可選擇既有員工作為推薦人員編（employee_no 需存在）。驗證：demo 帳號可完整走過一次內推流程
+- [x] 9.5 `/seed-verify` 確認 demo 租戶示範資料可選擇既有員工作為推薦人員編（employee_no 需存在）。驗證：demo 帳號可完整走過一次內推流程
 - [ ] 9.6 產出操作手冊片段（README 或 docs）：說明 HR 如何發起內推、候選人收信後的操作、取消邀請流程。驗證：PM 閱讀後能獨立操作一次
