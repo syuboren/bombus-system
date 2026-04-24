@@ -14,25 +14,6 @@
 
     <!-- Filter Bar (參考 project-list 風格) -->
     <div class="filter-bar">
-      <!-- 資料來源切換 -->
-      <div class="tab-group">
-        <button class="tab-btn" [class.active]="dataSource() === 'internal'" (click)="switchDataSource('internal')"
-          type="button">
-          <i class="ri-home-office-line"></i>
-          內部職缺
-        </button>
-        <button class="tab-btn" [class.active]="dataSource() === '104'" (click)="switchDataSource('104')" type="button">
-          <i class="ri-global-line"></i>
-          104 職缺 (Sandbox)
-        </button>
-      </div>
-      @if (dataSource() === '104') {
-      <button class="btn-import-settings" (click)="openImport104SettingsModal()" type="button">
-        <i class="ri-settings-4-line"></i>
-        匯入設定
-      </button>
-      }
-      <div class="filter-divider"></div>
       <div class="filter-item filter-item--search">
         <i class="ri-search-line"></i>
         <input type="text" placeholder="搜尋職稱、部門…" [value]="searchQuery()"
@@ -73,6 +54,15 @@
           <option value="closed">已關閉</option>
         </select>
       </div>
+      <div class="filter-item">
+        <select class="filter-select" [value]="platformFilter()" (change)="platformFilter.set($any($event.target).value)">
+          <option value="">所有平台</option>
+          <option value="104">104 人力銀行</option>
+          <option value="518">518 人力銀行</option>
+          <option value="1111">1111 人力銀行</option>
+          <option value="__none__">僅內部（未外發）</option>
+        </select>
+      </div>
       @if (canEdit()) {
       <button class="btn btn-primary" (click)="openModal()" type="button">
         <i class="ri-add-line"></i>
@@ -83,17 +73,11 @@
 
     <!-- Job Table -->
     <div class="table-card">
-      @if (dataSource() === '104' && loading104()) {
-      <div class="loading-overlay">
-        <i class="ri-loader-4-line spin"></i>
-        <span>載入 104 職缺中...</span>
-      </div>
-      }
       <table class="job-table">
         <thead>
           <tr>
             <th>職缺名稱</th>
-            <th>來源</th>
+            <th>發布平台</th>
             <th>部門</th>
             <th>職等</th>
             <th>發布日期</th>
@@ -111,13 +95,26 @@
               <div class="job-id">ID: {{ job.id }}@if (job.job104No) { (104: {{ job.job104No }}) }</div>
             </td>
             <td>
-              <span class="source-badge" [class.source-badge--104]="job.source === '104'">
-                @if (job.source === '104') {
-                <i class="ri-global-line"></i> 104
+              <!-- 多平台發布狀態 chips（只顯示已設定的平台） -->
+              <div class="platform-chips">
+                @if (job.publications && job.publications.length > 0) {
+                  @for (pub of job.publications; track pub.platform) {
+                    <button type="button"
+                            class="platform-chip"
+                            [attr.data-status]="pub.status"
+                            [title]="pub.platform + ' ' + getPublicationStatusText(pub.status) + (pub.sync_error ? ' — ' + pub.sync_error : '')"
+                            (click)="openPublicationDetail(job, pub)">
+                      <i [class]="getPublicationStatusIcon(pub.status)"></i>
+                      <span class="platform-chip__name">{{ pub.platform }}</span>
+                    </button>
+                  }
                 } @else {
-                <i class="ri-home-office-line"></i> 內部
+                  <span class="platform-chip platform-chip--internal" title="此職缺未公開到任何外部平台">
+                    <i class="ri-home-office-line"></i>
+                    僅內部
+                  </span>
                 }
-              </span>
+              </div>
             </td>
             <td>{{ job.department }}</td>
             <td>
@@ -169,14 +166,19 @@
                 }
 
                 @if (job.status === 'published') {
-                @if (job.source !== '104') {
+                <!-- 新增候選人 / 發起內推是所有職缺共通的基礎能力，與是否發布到外部平台無關 -->
                 <button class="icon-btn" title="新增候選人" (click)="openImportModal(job)" type="button">
                   <i class="ri-user-add-line"></i>
                 </button>
-                }
                 <button class="icon-btn" title="發起內推" (click)="openReferralModal(job)" type="button">
                   <i class="ri-user-shared-line"></i>
                 </button>
+                @if (hasSyncedPublication(job)) {
+                <button class="icon-btn" title="從外部平台同步候選人（如 104 履歷）"
+                        (click)="openSyncCandidatesModal(job)" type="button">
+                  <i class="ri-download-cloud-2-line"></i>
+                </button>
+                }
                 <button class="icon-btn icon-btn--danger" title="關閉職缺" (click)="updateJobStatus(job, 'closed')"
                   type="button">
                   <i class="ri-stop-circle-line"></i>
@@ -212,11 +214,7 @@
           <tr>
             <td colspan="8" class="empty-row">
               <i class="ri-folder-open-line"></i>
-              @if (dataSource() === '104') {
-              <p>104 Sandbox 無職缺資料，請確認 API 連線狀態</p>
-              } @else {
               <p>目前沒有職缺資料</p>
-              }
             </td>
           </tr>
           }
@@ -314,17 +312,33 @@
         (input)="updateJobField('description', $any($event.target).value)">
         </textarea>
     </div>
-    <!-- 同步至 104 選項 -->
-    <div class="sync-option">
-      <label class="sync-checkbox">
-        <input type="checkbox" [checked]="newJob().syncTo104" (change)="toggleSyncTo104($any($event.target).checked)">
-        <span class="sync-checkbox__mark"></span>
-        <span class="sync-checkbox__label">
-          <i class="ri-global-line"></i>
-          填寫 104 (Sandbox) 設定
-        </span>
-      </label>
-      <p class="sync-option__hint">勾選後請填寫下方 104 詳細設定，職缺將在核准發布時自動同步</p>
+    <!-- 多平台發布選擇（D-02/D-03） -->
+    <div class="platform-selector">
+      <div class="platform-selector__label">發布平台</div>
+      <div class="platform-selector__options">
+        <label class="platform-checkbox">
+          <input type="checkbox"
+                 [checked]="newJob().syncTo104"
+                 (change)="toggleSyncTo104($any($event.target).checked)">
+          <span class="platform-checkbox__mark"></span>
+          <span class="platform-checkbox__name">104 人力銀行</span>
+        </label>
+        <label class="platform-checkbox platform-checkbox--disabled"
+               title="平台尚未開放">
+          <input type="checkbox" disabled>
+          <span class="platform-checkbox__mark"></span>
+          <span class="platform-checkbox__name">518 人力銀行</span>
+          <span class="platform-checkbox__badge">平台尚未開放</span>
+        </label>
+        <label class="platform-checkbox platform-checkbox--disabled"
+               title="平台尚未開放">
+          <input type="checkbox" disabled>
+          <span class="platform-checkbox__mark"></span>
+          <span class="platform-checkbox__name">1111 人力銀行</span>
+          <span class="platform-checkbox__badge">平台尚未開放</span>
+        </label>
+      </div>
+      <p class="platform-selector__hint">勾選後請填寫下方平台詳細設定，職缺將在核准發布時自動同步至所選平台</p>
     </div>
 
     <!-- 104 詳細設定 (勾選同步時展開) -->
@@ -626,7 +640,34 @@
         (input)="updateJobField('description', $any($event.target).value)" placeholder="輸入職缺說明..."></textarea>
     </div>
 
-    @if (editingJob()?.job104No) {
+    <!-- 發布平台選擇（與新增職缺 Modal 一致） -->
+    <div class="platform-selector">
+      <div class="platform-selector__label">發布平台</div>
+      <div class="platform-selector__options">
+        <label class="platform-checkbox">
+          <input type="checkbox"
+                 [checked]="newJob().syncTo104"
+                 (change)="toggleSyncTo104($any($event.target).checked)">
+          <span class="platform-checkbox__mark"></span>
+          <span class="platform-checkbox__name">104 人力銀行</span>
+        </label>
+        <label class="platform-checkbox platform-checkbox--disabled" title="平台尚未開放">
+          <input type="checkbox" disabled>
+          <span class="platform-checkbox__mark"></span>
+          <span class="platform-checkbox__name">518 人力銀行</span>
+          <span class="platform-checkbox__badge">平台尚未開放</span>
+        </label>
+        <label class="platform-checkbox platform-checkbox--disabled" title="平台尚未開放">
+          <input type="checkbox" disabled>
+          <span class="platform-checkbox__mark"></span>
+          <span class="platform-checkbox__name">1111 人力銀行</span>
+          <span class="platform-checkbox__badge">平台尚未開放</span>
+        </label>
+      </div>
+      <p class="platform-selector__hint">取消勾選會保留該平台既有設定但不再同步；勾選後請在下方填寫平台詳細設定</p>
+    </div>
+
+    @if (editingJob()?.job104No || newJob().syncTo104) {
     <!-- 104 職缺設定區塊 -->
     <div class="job104-settings">
       <div class="job104-settings__header">
@@ -1173,4 +1214,14 @@
   (close)="closeReferralModal()"
   (invitationCreated)="onReferralInvitationCreated()"
 ></app-referral-invitation-modal>
+}
+
+<!-- 多平台發布詳情 Modal（D-02/D-03） -->
+@if (publicationDetailOpen() && publicationDetailPub(); as pub) {
+  <app-publication-detail-modal
+    [jobId]="publicationDetailJobId()"
+    [publication]="pub"
+    (closed)="closePublicationDetail()"
+    (retried)="onPublicationRetried()"
+  ></app-publication-detail-modal>
 }

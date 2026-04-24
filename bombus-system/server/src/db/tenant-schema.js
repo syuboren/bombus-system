@@ -589,6 +589,22 @@ const BUSINESS_TABLES_SQL = `
     updated_at TEXT
   );
 
+  -- 多平台職缺發布（1:N 對 jobs，支援 104 / 518 / 1111 等外部平台）
+  CREATE TABLE IF NOT EXISTS job_publications (
+    id TEXT PRIMARY KEY,
+    job_id TEXT NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+    platform TEXT NOT NULL,
+    platform_job_id TEXT,
+    status TEXT NOT NULL DEFAULT 'pending'
+      CHECK(status IN ('pending', 'syncing', 'synced', 'failed', 'closed')),
+    platform_fields TEXT,
+    sync_error TEXT,
+    last_sync_attempt_at TEXT,
+    published_at TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT
+  );
+
   CREATE TABLE IF NOT EXISTS candidates (
     id TEXT PRIMARY KEY,
     job_id TEXT NOT NULL,
@@ -1873,6 +1889,18 @@ function initTenantSchema(adapter) {
     db.run(
       "CREATE UNIQUE INDEX IF NOT EXISTS idx_referral_invitations_pending_unique " +
       "ON referral_invitations(job_id, candidate_email) WHERE status = 'pending'"
+    );
+  } catch (e) { /* 索引已存在 */ }
+
+  // job_publications 索引（多平台發布）
+  try {
+    db.run(
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_job_publications_job_platform ' +
+      'ON job_publications(job_id, platform)'
+    );
+    db.run(
+      'CREATE INDEX IF NOT EXISTS idx_job_publications_status ' +
+      'ON job_publications(status)'
     );
   } catch (e) { /* 索引已存在 */ }
 

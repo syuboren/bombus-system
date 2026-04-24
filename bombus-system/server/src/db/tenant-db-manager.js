@@ -663,6 +663,70 @@ class TenantDBManager {
       changed = true;
     } catch (e) { /* 索引已存在 */ }
 
+    // ── 職缺多平台發布（job_publications 1:N 對 jobs） ──
+    try {
+      db.run(`CREATE TABLE IF NOT EXISTS job_publications (
+        id TEXT PRIMARY KEY,
+        job_id TEXT NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+        platform TEXT NOT NULL,
+        platform_job_id TEXT,
+        status TEXT NOT NULL DEFAULT 'pending'
+          CHECK(status IN ('pending', 'syncing', 'synced', 'failed', 'closed')),
+        platform_fields TEXT,
+        sync_error TEXT,
+        last_sync_attempt_at TEXT,
+        published_at TEXT,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT
+      )`);
+      changed = true;
+    } catch (e) { /* 表已存在 */ }
+
+    try {
+      db.run(
+        'CREATE UNIQUE INDEX IF NOT EXISTS idx_job_publications_job_platform ' +
+        'ON job_publications(job_id, platform)'
+      );
+      db.run(
+        'CREATE INDEX IF NOT EXISTS idx_job_publications_status ' +
+        'ON job_publications(status)'
+      );
+      changed = true;
+    } catch (e) { /* 索引已存在 */ }
+
+    // 冪等遷移：既有 jobs.job104_no 塞入一筆 platform='104' 紀錄
+    try {
+      const migrationResult = db.exec(`
+        INSERT INTO job_publications (
+          id, job_id, platform, platform_job_id, status,
+          platform_fields, published_at, created_at
+        )
+        SELECT
+          lower(hex(randomblob(16))),
+          j.id, '104', j.job104_no,
+          CASE j.sync_status
+            WHEN '104_synced' THEN 'synced'
+            ELSE 'pending'
+          END,
+          j.job104_data,
+          j.synced_at,
+          COALESCE(j.created_at, datetime('now'))
+        FROM jobs j
+        WHERE j.job104_no IS NOT NULL
+          AND NOT EXISTS (
+            SELECT 1 FROM job_publications p
+            WHERE p.job_id = j.id AND p.platform = '104'
+          )
+      `);
+      const inserted = db.getRowsModified();
+      if (inserted > 0) {
+        console.log(`  ✅ job_publications: 遷移 ${inserted} 筆歷史 104 紀錄`);
+        changed = true;
+      }
+    } catch (e) {
+      console.warn('  ⚠️ job_publications 歷史資料遷移失敗：', e.message);
+    }
+
     // ── Feature-based Permission 遷移（新舊並存） ──
 
     // 建立 features / role_feature_perms 表（冪等）

@@ -133,6 +133,24 @@ const publications = await Promise.allSettled(
 - 比「重新 publish 整筆職缺」更明確，不會誤動到已成功的平台
 - HR 看到失敗 chip 直接按「重試」，體驗直觀
 
+### Delete flow：呼叫 `adapter.close()` 而非 `deleteJob()`
+
+**決策**：本地刪除職缺（`DELETE /api/jobs/:id`）時，對每個 `status='synced'` 的 `job_publications` 列呼叫 `adapter.close(platformJobId)`，**不**在 adapter 介面新增 `delete()` 方法。本地列由 `jobs ON DELETE CASCADE` 自動清除。
+
+**理由**：
+
+- **介面最小化**：adapter 介面保持 4 方法（publish / update / close / reopen），不因單一平台（104）曾有 `deleteJob` 就擴張介面；518 / 1111 未來接入時也不必實作 delete
+- **外部平台歷史可追溯**：104 端保留「已關閉」紀錄比「無紀錄」對稽核、候選人查詢都更友善（候選人若有投遞履歷仍可追溯職缺歷史）
+- **使用者感知一致**：HR 點「刪除」後本地列不再出現；外部平台狀態「已關閉」不等於「消失」，但實際上 104 前台已不顯示 off 狀態職缺
+- **既有 `deleteJob` 端點保留**：`services/104/job.service.js.deleteJob()` 不刪除程式碼，僅從 routes/jobs.js delete flow 移除呼叫；若未來需要強制清理 104 資料，可獨立實作「從 104 端點觸發刪除」的管理介面
+
+**替代方案（已否決）**：
+
+- adapter.delete() 與 close() 並存：增加實作負擔（stub 也要多寫一份），語意模糊（「刪除」在各平台定義不同，104 是永久刪除、1111 可能只是下架）
+- 保留 `job104Service.deleteJob` 呼叫：違背 strategy pattern「routes 不認識特定平台」原則
+
+**影響範圍**：[routes/jobs.js:890](server/src/routes/jobs.js#L890) 的 delete flow 需改寫；本變更不觸及 `services/104/job.service.js` 本體。
+
 ### 狀態機：`job_publications.status` 5 態
 
 ```
@@ -177,7 +195,22 @@ WHERE job104_no IS NOT NULL
 
 **理由**：
 - Tab 切換違背「一職缺多平台」的心智模型
-- 使用者現在用 Tab 主要是找「還沒發到 104 的職缺」— 未來要做可改為「依平台篩選」的 filter（放在 filter bar 而非 Tab），但本變更先不做 filter UI（不阻塞核心功能）
+- 使用者現在用 Tab 主要是找「還沒發到 104 的職缺」— 未來要做可改為「依平台篩選」的 filter（放在 filter bar 而非 Tab），本變更直接於 filter bar 新增「所有平台 / 104 / 518 / 1111 / 僅內部」下拉
+
+### 職缺基礎能力與外部發布解耦
+
+**決策**：每個職缺的基礎能力（**新增候選人 / 發起內推 / 關閉職缺 / 編輯 / 刪除 / 查看候選人**）不受「是否發布到外部平台」影響。外部平台是**管道**，不是職缺類型。僅有「從外部平台同步候選人」這類直接依賴外部 API 的功能，才會依 `publications[].status='synced'` 條件顯示。
+
+**理由**：
+
+- 業主心智模型：「職缺本質都是內部職缺，104/518/1111 只是發布管道」。HR 不論職缺是否發到 104 都會希望能手動新增候選人或發起內推 — 這些是通用的招聘動作，不屬於特定平台
+- 舊行為：UI 用 `job.source === '104'` 條件把「新增候選人」按鈕藏起來（僅在非 104 職缺顯示），造成 HR 看到 104 職缺時無法直接新增候選人，必須從其他路徑繞道
+- 新行為：
+  - **共通動作** — `status='published'` 的職缺一律顯示「新增候選人 / 發起內推 / 關閉職缺」等基礎按鈕
+  - **外部依賴動作** — 僅當 `job.publications.some(p => p.status === 'synced')` 時顯示「從外部平台同步候選人」按鈕（本次為 UI stub，實際 104 Resume API 整合屬後續 `job-104-candidate-sync` 變更範圍）
+- 前端 `Job.source` 欄位從此視為 **deprecated**，僅供舊查詢相容，UI 條件判斷一律改讀 `publications`
+
+**影響範圍**：[jobs-page.component.html](src/app/features/employee/pages/jobs-page/jobs-page.component.html) 移除所有 `job.source === '104'` 條件判斷，改以 `publications` 作為條件來源。
 
 ## Risks / Trade-offs
 

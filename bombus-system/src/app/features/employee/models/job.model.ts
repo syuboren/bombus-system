@@ -35,6 +35,18 @@ export type CandidateStatus =
 
 export type ScoreLevel = 'high' | 'medium' | 'low';
 
+export type JobPublicationStatus = 'pending' | 'syncing' | 'synced' | 'failed' | 'closed';
+export type JobPlatform = '104' | '518' | '1111';
+
+export interface JobPublication {
+  platform: JobPlatform;
+  status: JobPublicationStatus;
+  platform_job_id?: string | null;
+  sync_error?: string | null;
+  last_sync_attempt_at?: string | null;
+  published_at?: string | null;
+}
+
 export interface Job {
   id: string;
   title: string;
@@ -45,13 +57,17 @@ export interface Job {
   totalCandidates: number;
   status: JobStatus;
   recruiter: string;
-  // 104 整合欄位
+  /** @deprecated use publications 來源欄位改走 job_publications 表，保留供舊 UI 容錯 */
   source?: 'internal' | '104';
+  /** @deprecated 由 publications[platform=104].platform_job_id 衍生，保留相容 */
   job104No?: string;
-  syncStatus?: '104_synced' | '104_pending' | 'local_only';
+  /** @deprecated 由 publications[platform=104].status 衍生，保留相容 */
+  syncStatus?: '104_synced' | '104_pending' | '104_closed' | 'local_only';
   org_unit_id?: string;
   grade?: number | null;       // 職等（關聯 grade_levels.grade），用於薪資範圍計算
   grade_title?: string | null; // 由後端 JOIN grade_levels 帶出的顯示名稱
+  /** 多平台發布狀態（D-02/D-03）；每個 platform 一筆，未勾選平台不出現 */
+  publications?: JobPublication[];
 }
 
 // 104 職缺原始資料介面

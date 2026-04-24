@@ -8,7 +8,8 @@ import { HeaderComponent } from '../../../../shared/components/header/header.com
 import { StatCardComponent } from '../../../../shared/components/stat-card/stat-card.component';
 import { NotificationService } from '../../../../core/services/notification.service';
 import { JobService } from '../../services/job.service';
-import { Job, JobStats, JobCandidatesSummary } from '../../models/job.model';
+import { Job, JobStats, JobCandidatesSummary, JobPublication, JobPublicationStatus } from '../../models/job.model';
+import { PublicationDetailModalComponent } from '../../components/publication-detail-modal/publication-detail-modal.component';
 import { CompetencyService } from '../../../competency/services/competency.service';
 import { JobDescription } from '../../../competency/models/competency.model';
 import { OrgUnitService } from '../../../../core/services/org-unit.service';
@@ -46,7 +47,7 @@ interface ImportJobStatus {
 @Component({
   selector: 'app-jobs-page',
   standalone: true,
-  imports: [FormsModule, HeaderComponent, StatCardComponent, ReferralInvitationModalComponent, CandidateFullFormComponent],
+  imports: [FormsModule, HeaderComponent, StatCardComponent, ReferralInvitationModalComponent, CandidateFullFormComponent, PublicationDetailModalComponent],
   templateUrl: './jobs-page.component.html',
   styleUrl: './jobs-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -84,8 +85,79 @@ export class JobsPageComponent implements OnInit {
   candidateSubmitting = signal<boolean>(false);
   candidateSubmitError = signal<string | null>(null);
 
-  // 資料來源切換
+  // 資料來源切換（D-02 已移除 Tab，signal 保留供既有程式碼讀取但不再設值）
   dataSource = signal<'internal' | '104'>('internal');
+
+  // ============================================================
+  // 多平台發布（D-02/D-03）
+  // ============================================================
+  readonly SUPPORTED_PLATFORMS: ReadonlyArray<'104' | '518' | '1111'> = ['104', '518', '1111'];
+  readonly ENABLED_PLATFORMS: ReadonlyArray<string> = ['104'];
+
+  selectedPlatforms = signal<string[]>(['104']);
+  publicationDetailOpen = signal<boolean>(false);
+  publicationDetailJobId = signal<string>('');
+  publicationDetailPub = signal<JobPublication | null>(null);
+
+  getPublication(job: Job, platform: string): JobPublication | undefined {
+    return job.publications?.find(p => p.platform === platform);
+  }
+
+  hasSyncedPublication(job: Job): boolean {
+    return !!job.publications?.some(p => p.status === 'synced');
+  }
+
+  getPublicationStatusText(status: JobPublicationStatus): string {
+    const labels: Record<JobPublicationStatus, string> = {
+      pending: '等待同步',
+      syncing: '同步中',
+      synced: '已同步',
+      failed: '同步失敗',
+      closed: '已關閉'
+    };
+    return labels[status] || status;
+  }
+
+  getPublicationStatusIcon(status: JobPublicationStatus): string {
+    const icons: Record<JobPublicationStatus, string> = {
+      pending: 'ri-time-line',
+      syncing: 'ri-loader-4-line',
+      synced: 'ri-checkbox-circle-fill',
+      failed: 'ri-error-warning-fill',
+      closed: 'ri-close-circle-line'
+    };
+    return icons[status] || 'ri-question-line';
+  }
+
+  /**
+   * 從外部平台（如 104）同步候選人履歷 —— 僅對有 synced publication 的職缺開放。
+   * 本次變更僅預留 UI 入口，實際整合（104 Resume API → insertFullCandidate）屬
+   * 另立變更 `job-104-candidate-sync` 的範圍（對應 proposal Non-Goals 的 D-03 cron）。
+   */
+  openSyncCandidatesModal(job: Job): void {
+    const syncedPlatforms = (job.publications || [])
+      .filter(p => p.status === 'synced')
+      .map(p => p.platform)
+      .join('、');
+    this.notificationService.info(
+      `「${job.title}」已發布到 ${syncedPlatforms}。候選人同步功能即將推出 — 目前請手動新增或發起內推`
+    );
+  }
+
+  openPublicationDetail(job: Job, pub: JobPublication): void {
+    this.publicationDetailJobId.set(job.id);
+    this.publicationDetailPub.set(pub);
+    this.publicationDetailOpen.set(true);
+  }
+
+  closePublicationDetail(): void {
+    this.publicationDetailOpen.set(false);
+  }
+
+  onPublicationRetried(): void {
+    this.publicationDetailOpen.set(false);
+    this.loadData();
+  }
 
   // ============================================================
   // 104 匯入設定相關 Signals
@@ -175,6 +247,7 @@ export class JobsPageComponent implements OnInit {
   searchQuery = signal<string>('');
   departmentFilter = signal<string>('');
   statusFilter = signal<string>('');
+  platformFilter = signal<string>(''); // '' = 所有平台；'104' / '518' / '1111'；'__none__' = 未設定
 
   // 職等選項（從 grade_levels 載入）
   gradeOptions = signal<Array<{ grade: number; title: string }>>([]);
@@ -220,26 +293,16 @@ export class JobsPageComponent implements OnInit {
   });
 
   // Computed: 根據過濾條件計算過濾後的職缺列表
+  // D-02：移除 dataSource Tab，列表一律顯示所有職缺（內部 + 多平台）
   filteredJobs = computed(() => {
     const jobs = this.jobs();
-    const jobs104 = this.jobs104();
-    const source = this.dataSource();
     const query = this.searchQuery().toLowerCase();
     const dept = this.departmentFilter();
     const status = this.statusFilter();
-
-    // 根據資料來源選擇對應的職缺列表
-    let result: Job[];
-    if (source === 'internal') {
-      // 內部職缺：顯示沒有 104 編號的職缺
-      result = jobs.filter(j => !j.job104No);
-    } else {
-      // 104 職缺：使用 jobs104（已從資料庫獲取的 104 同步職缺）
-      result = [...jobs104];
-    }
+    const platform = this.platformFilter();
 
     // 過濾掉沒有 ID 的異常資料
-    result = result.filter(j => !!j.id);
+    let result = jobs.filter(j => !!j.id);
 
     if (query) {
       result = result.filter(j =>
@@ -254,6 +317,12 @@ export class JobsPageComponent implements OnInit {
 
     if (status) {
       result = result.filter(j => j.status === status);
+    }
+
+    if (platform === '__none__') {
+      result = result.filter(j => !j.publications || j.publications.length === 0);
+    } else if (platform) {
+      result = result.filter(j => j.publications?.some(p => p.platform === platform));
     }
 
     return result;
@@ -844,9 +913,7 @@ export class JobsPageComponent implements OnInit {
           }
           this.closeEditModal();
           this.loadData();
-          if (this.dataSource() === '104') {
-            this.load104Jobs();
-          }
+          // D-02：移除 dataSource Tab 後不再需要額外載入 104 列表
         } else {
           this.notificationService.error('更新職缺失敗');
         }
@@ -882,9 +949,7 @@ export class JobsPageComponent implements OnInit {
 
           // 重新載入資料
           this.loadData();
-          if (this.dataSource() === '104') {
-            this.load104Jobs();
-          }
+          // D-02：移除 dataSource Tab 後不再需要額外載入 104 列表
           this.cdr.markForCheck();
         } else {
           this.notificationService.error('狀態更新失敗');
