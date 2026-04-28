@@ -4,15 +4,15 @@
 
 This project uses Spectra for Spec-Driven Development(SDD). Specs live in `openspec/specs/`, change proposals in `openspec/changes/`.
 
-## Use `/spectra-*` skills when:
+## Use `/spectra:*` skills when:
 
-- A discussion needs structure before coding → `/spectra-discuss`
-- User wants to plan, propose, or design a change → `/spectra-propose`
-- Tasks are ready to implement → `/spectra-apply`
-- There's an in-progress change to continue → `/spectra-ingest`
-- User asks about specs or how something works → `/spectra-ask`
-- Implementation is done → `/spectra-archive`
-- Commit only files related to a specific change → `/spectra-commit`
+- A discussion needs structure before coding → `/spectra:discuss`
+- User wants to plan, propose, or design a change → `/spectra:propose`
+- Tasks are ready to implement → `/spectra:apply`
+- There's an in-progress change to continue → `/spectra:ingest`
+- User asks about specs or how something works → `/spectra:ask`
+- Implementation is done → `/spectra:archive`
+- Commit only files related to a specific change → `/spectra:commit`
 
 ## Workflow
 
@@ -23,7 +23,7 @@ discuss? → propose → apply ⇄ ingest → archive
 
 ## Parked Changes
 
-Changes can be parked（暫存）— temporarily moved out of `openspec/changes/`. Parked changes won't appear in `spectra list` but can be found with `spectra list --parked`. To restore: `spectra unpark <name>`. The `/spectra-apply` and `/spectra-ingest` skills handle parked changes automatically.
+Changes can be parked（暫存）— temporarily moved out of `openspec/changes/`. Parked changes won't appear in `spectra list` but can be found with `spectra list --parked`. To restore: `spectra unpark <name>`. The `/spectra:apply` and `/spectra:ingest` skills handle parked changes automatically.
 
 <!-- SPECTRA:END -->
 
@@ -37,6 +37,7 @@ Changes can be parked（暫存）— temporarily moved out of `openspec/changes/
 | 模組 | 色名 | 色碼 | SCSS 變數 |
 |------|------|------|-----------|
 | L1 員工管理 | 鼠尾草綠 | #8DA399 | `$color-l1-sage` |
+| L1 招募管理 | 鼠尾草綠（沿用 L1） | #8DA399 | `$color-l1-sage` |
 | L2 職能管理 | 陶土橙 | #D6A28C | `$color-l2-terracotta` |
 | L3 教育訓練 | 復古藍綠 | #7F9CA0 | `$color-l3-petrol` |
 | L4 專案管理 | 錦葵紫 | #9A8C98 | `$color-l4-mauve` |
