@@ -75,7 +75,10 @@ export interface Department {
   parentDepartmentId?: string;
   managerId?: string;
   managerName?: string;
-  responsibilities: string[];
+  /** 最終產出價值清單（D-16：DB 欄位為 departments.value） */
+  value: string[];
+  /** @deprecated 改用 `value`；過渡期向後相容別名 */
+  responsibilities?: string[];
   level: DepartmentLevel;
   employeeCount: number;
   color?: string;
@@ -226,6 +229,9 @@ export interface OrgTreeNode {
   managerId: string | null;
   managerName: string | null;
   employeeCount: number;
+  /** 最終產出價值（D-16：取代 responsibilities） */
+  value: string[];
+  /** @deprecated 改用 `value`；後端仍同時提供以利過渡 */
   responsibilities: string[];
   kpiItems: string[];
   competencyFocus: string[];

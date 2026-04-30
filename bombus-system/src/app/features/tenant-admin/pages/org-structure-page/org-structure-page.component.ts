@@ -31,6 +31,10 @@ import {
 } from '../../../organization/models/organization.model';
 import { UnifiedEmployee } from '../../../../shared/models/employee.model';
 import { OrgUnit } from '../../models/tenant-admin.model';
+import { ImportFromTemplateModalComponent, SelectedItemsEvent } from '../../components/department-import/import-from-template-modal.component';
+import { ImportFromCsvModalComponent, CsvSelectedItemsEvent } from '../../components/department-import/import-from-csv-modal.component';
+import { ConflictConfirmModalComponent, ConflictPreview, ConfirmEvent, ImportMode } from '../../components/department-import/conflict-confirm-modal.component';
+import { NotificationService } from '../../../../core/services/notification.service';
 
 type ViewMode = 'canvas' | 'list';
 type AlignType = 'left' | 'center-h' | 'right' | 'top' | 'center-v' | 'bottom' | 'distribute-h' | 'distribute-v';
@@ -51,7 +55,15 @@ interface UnifiedTreeNode {
   selector: 'app-org-structure-page',
   templateUrl: './org-structure-page.component.html',
   styleUrl: './org-structure-page.component.scss',
-  imports: [CommonModule, FormsModule, HeaderComponent, HasPermissionDirective],
+  imports: [
+    CommonModule,
+    FormsModule,
+    HeaderComponent,
+    HasPermissionDirective,
+    ImportFromTemplateModalComponent,
+    ImportFromCsvModalComponent,
+    ConflictConfirmModalComponent
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class OrgStructurePageComponent implements OnInit, AfterViewInit {
@@ -59,6 +71,7 @@ export class OrgStructurePageComponent implements OnInit, AfterViewInit {
   private employeeService = inject(EmployeeService);
   private tenantAdminService = inject(TenantAdminService);
   private orgUnitService = inject(OrgUnitService);
+  private notificationService = inject(NotificationService);
   private cdr = inject(ChangeDetectorRef);
 
   @ViewChild('canvasContainer') canvasContainerRef!: ElementRef<HTMLDivElement>;
@@ -1288,25 +1301,44 @@ export class OrgStructurePageComponent implements OnInit, AfterViewInit {
         this.loadData();
       });
     } else {
-      // Create as org_unit type=department, then update extended fields
+      // Create as org_unit type=department，code 與名稱於此次 POST 一併帶入（D-16）
       this.tenantAdminService.createOrgUnit({
         name: data.name,
         type: 'department',
-        parent_id: data.parentId
-      }).subscribe((result: any) => {
-        if (result?.id) {
-          this.orgService.updateDepartmentExtended(result.id, {
-            managerId: data.managerId || undefined,
-            responsibilities: data.responsibilities,
-            kpiItems: data.kpiItems,
-            competencyFocus: data.competencyFocus
-          }).subscribe(() => {
+        parent_id: data.parentId,
+        code: data.code || undefined
+      }).subscribe({
+        next: (result: any) => {
+          if (result?.id) {
+            // 更新 manager 與 Value 等延伸欄位（code/name 已在 POST 時寫入）
+            this.orgService.updateDepartmentExtended(result.id, {
+              managerId: data.managerId || undefined,
+              responsibilities: data.responsibilities,
+              kpiItems: data.kpiItems,
+              competencyFocus: data.competencyFocus
+            }).subscribe(() => {
+              this.notificationService.success(`部門「${data.name}」已建立`);
+              this.closeDepartmentForm();
+              this.loadData();
+            });
+          } else {
             this.closeDepartmentForm();
             this.loadData();
-          });
-        } else {
-          this.closeDepartmentForm();
-          this.loadData();
+          }
+        },
+        error: (err) => {
+          // D-16: 重複名稱 / 代碼回 409 — 友善提示
+          if (err?.status === 409) {
+            this.notificationService.warning(
+              err.error?.message || `「${data.name}」已存在於此公司，請使用其他名稱或代碼`,
+              5000
+            );
+          } else {
+            this.notificationService.error(
+              err?.error?.message || '建立部門失敗，請重試',
+              5000
+            );
+          }
         }
       });
     }
@@ -1471,14 +1503,26 @@ export class OrgStructurePageComponent implements OnInit, AfterViewInit {
     if (!target) return;
 
     if (target.type === 'node') {
-      this.tenantAdminService.deleteOrgUnit(target.id).subscribe(() => {
-        this.closeDeleteConfirm();
-        this.loadData();
+      this.tenantAdminService.deleteOrgUnit(target.id).subscribe({
+        next: () => {
+          this.notificationService.success(`已刪除「${target.name}」`);
+          this.closeDeleteConfirm();
+          this.loadData();
+        },
+        error: (err) => {
+          this.notificationService.error(err.error?.message || '刪除失敗', 6000);
+        }
       });
     } else {
-      this.orgService.deleteCollaboration(target.id).subscribe(() => {
-        this.closeDeleteConfirm();
-        this.loadData();
+      this.orgService.deleteCollaboration(target.id).subscribe({
+        next: () => {
+          this.notificationService.success(`已刪除協作關係`);
+          this.closeDeleteConfirm();
+          this.loadData();
+        },
+        error: (err) => {
+          this.notificationService.error(err.error?.message || '刪除失敗', 6000);
+        }
       });
     }
   }
@@ -1541,10 +1585,9 @@ export class OrgStructurePageComponent implements OnInit, AfterViewInit {
   }
 
   getParentOptions(excludeId?: string): OrgTreeNode[] {
-    return this.orgTree().filter(n => {
-      if (excludeId && n.id === excludeId) return false;
-      return n.type !== 'department' || true; // all nodes can be parents
-    });
+    return excludeId
+      ? this.orgTree().filter(n => n.id !== excludeId)
+      : this.orgTree();
   }
 
   getNodeName(nodeId: string): string {
@@ -1584,8 +1627,151 @@ export class OrgStructurePageComponent implements OnInit, AfterViewInit {
     if (childType === 'subsidiary' || childType === 'group') {
       this.openCreateCompanyForm(parent);
     } else if (childType === 'department') {
-      this.openCreateDepartmentForm(parent);
+      // D-16: 在公司（group/subsidiary）下新增部門時展開三選項
+      // 子部門（parent.type === 'department'）仍直接走單筆表單
+      if (parent.type === 'department') {
+        this.openCreateDepartmentForm(parent);
+      } else {
+        this.openAddDepartmentMenu(parent);
+      }
     }
+  }
+
+  // ============================================================
+  // D-16 新增部門三選項菜單 + 範本/CSV 匯入流程
+  // ============================================================
+
+  /** 三選項菜單狀態（自行新增 / 範本庫導入 / CSV 批次匯入） */
+  addDeptMenu = signal<{ open: boolean; parent: OrgTreeNode | null }>({ open: false, parent: null });
+
+  /** 範本/CSV modal 狀態 */
+  showImportTemplateModal = signal(false);
+  showImportCsvModal = signal(false);
+
+  /** 衝突確認 modal 狀態 */
+  showConflictConfirm = signal(false);
+  conflictPreview = signal<ConflictPreview | null>(null);
+  pendingItems = signal<Array<{ name: string; value: string[] }>>([]);
+  pendingMode = signal<ImportMode>('merge');
+  importExecuting = signal(false);
+  /** 衝突確認頁來源（讓「回上一步」知道要重開哪個 modal） */
+  importSource = signal<'template' | 'csv' | null>(null);
+
+  /** 當前匯入流程的目標公司節點 */
+  importTargetNode = signal<OrgTreeNode | null>(null);
+
+  openAddDepartmentMenu(parent: OrgTreeNode): void {
+    this.addDeptMenu.set({ open: true, parent });
+  }
+
+  closeAddDepartmentMenu(): void {
+    this.addDeptMenu.set({ open: false, parent: null });
+  }
+
+  pickAddOwnDepartment(): void {
+    const parent = this.addDeptMenu().parent;
+    this.closeAddDepartmentMenu();
+    if (parent) this.openCreateDepartmentForm(parent);
+  }
+
+  pickAddFromTemplate(): void {
+    const parent = this.addDeptMenu().parent;
+    if (!parent) return;
+    this.importTargetNode.set(parent);
+    this.closeAddDepartmentMenu();
+    this.showImportTemplateModal.set(true);
+  }
+
+  pickAddFromCsv(): void {
+    const parent = this.addDeptMenu().parent;
+    if (!parent) return;
+    this.importTargetNode.set(parent);
+    this.closeAddDepartmentMenu();
+    this.showImportCsvModal.set(true);
+  }
+
+  onTemplateModalSelected(event: SelectedItemsEvent): void {
+    this.showImportTemplateModal.set(false);
+    this.importSource.set('template');
+    this.startConflictCheck(event.items);
+  }
+
+  onCsvModalSelected(event: CsvSelectedItemsEvent): void {
+    this.showImportCsvModal.set(false);
+    this.importSource.set('csv');
+    this.startConflictCheck(event.items);
+  }
+
+  cancelTemplateModal(): void { this.showImportTemplateModal.set(false); }
+  cancelCsvModal(): void { this.showImportCsvModal.set(false); }
+
+  private startConflictCheck(items: Array<{ name: string; value: string[] }>): void {
+    const target = this.importTargetNode();
+    if (!target || !items.length) return;
+
+    this.pendingItems.set(items);
+    this.pendingMode.set('merge'); // 預設模式
+
+    this.orgService.validateDepartmentImport(target.id, items, 'merge').subscribe({
+      next: (result) => {
+        this.conflictPreview.set(result as ConflictPreview);
+        this.showConflictConfirm.set(true);
+      },
+      error: (err) => {
+        this.notificationService.error(err.error?.message || '預檢失敗，請重試');
+      }
+    });
+  }
+
+  onConflictConfirmed(event: ConfirmEvent): void {
+    const target = this.importTargetNode();
+    const items = this.pendingItems();
+    if (!target || !items.length) return;
+
+    this.importExecuting.set(true);
+    this.orgService.executeDepartmentImport(target.id, items, event.mode).subscribe({
+      next: (result) => {
+        this.importExecuting.set(false);
+        this.showConflictConfirm.set(false);
+        const summary = result.summary;
+        this.notificationService.success(
+          `匯入完成：新增 ${summary.created} 個、更新 ${summary.updated} 個、跳過 ${summary.skipped} 個`,
+          5000
+        );
+        this.cleanupImportFlow();
+        // 重新載入組織樹
+        this.loadData();
+      },
+      error: (err) => {
+        this.importExecuting.set(false);
+        this.notificationService.error(err.error?.message || '匯入失敗，請重試整批', 6000);
+      }
+    });
+  }
+
+  onConflictCancelled(): void {
+    this.showConflictConfirm.set(false);
+    this.cleanupImportFlow();
+  }
+
+  /** 衝突確認頁「回上一步」：關掉確認頁、重開來源 modal、保留 importTargetNode 不要清空 */
+  onConflictBack(): void {
+    this.showConflictConfirm.set(false);
+    this.conflictPreview.set(null);
+    this.pendingItems.set([]);
+    const source = this.importSource();
+    if (source === 'template') {
+      this.showImportTemplateModal.set(true);
+    } else if (source === 'csv') {
+      this.showImportCsvModal.set(true);
+    }
+  }
+
+  private cleanupImportFlow(): void {
+    this.conflictPreview.set(null);
+    this.pendingItems.set([]);
+    this.importTargetNode.set(null);
+    this.importSource.set(null);
   }
 
   getDepartmentEmployees(): UnifiedEmployee[] {

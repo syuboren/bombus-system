@@ -7,7 +7,16 @@ import {
   CreateTenantRequest,
   TenantAdmin,
   SubscriptionPlan,
-  AuditLogListResponse
+  AuditLogListResponse,
+  Industry,
+  CreateIndustryRequest,
+  UpdateIndustryRequest,
+  DepartmentTemplate,
+  CreateDepartmentTemplateRequest,
+  UpdateDepartmentTemplateRequest,
+  IndustryDeptAssignment,
+  CreateAssignmentRequest,
+  UpdateAssignmentRequest
 } from '../models/platform.model';
 
 @Injectable({ providedIn: 'root' })
@@ -111,5 +120,76 @@ export class PlatformAdminService {
     if (params?.end_date) httpParams = httpParams.set('end_date', params.end_date);
 
     return this.http.get<AuditLogListResponse>('/api/audit/logs', { params: httpParams });
+  }
+
+  // ============================================================
+  // D-16 產業類別管理 (industry-classification)
+  // ============================================================
+
+  getIndustries(activeOnly = false): Observable<Industry[]> {
+    const url = activeOnly ? '/api/platform/industries?active=true' : '/api/platform/industries';
+    return this.http.get<Industry[]>(url);
+  }
+
+  createIndustry(data: CreateIndustryRequest): Observable<Industry> {
+    return this.http.post<Industry>('/api/platform/industries', data);
+  }
+
+  updateIndustry(code: string, updates: UpdateIndustryRequest): Observable<Industry> {
+    return this.http.put<Industry>(`/api/platform/industries/${code}`, updates);
+  }
+
+  deleteIndustry(code: string): Observable<{ code: string; deleted: boolean }> {
+    return this.http.delete<{ code: string; deleted: boolean }>(`/api/platform/industries/${code}`);
+  }
+
+  moveIndustry(code: string, direction: 'up' | 'down'): Observable<{ swapped: [string, string]; direction: 'up' | 'down' }> {
+    return this.http.post<{ swapped: [string, string]; direction: 'up' | 'down' }>(
+      `/api/platform/industries/${code}/move`,
+      { direction }
+    );
+  }
+
+  // ============================================================
+  // D-16 部門範本管理
+  // ============================================================
+
+  getDepartmentTemplates(params?: { industry?: string; is_common?: boolean }): Observable<DepartmentTemplate[]> {
+    let httpParams = new HttpParams();
+    if (params?.industry) httpParams = httpParams.set('industry', params.industry);
+    if (params?.is_common !== undefined) httpParams = httpParams.set('is_common', String(params.is_common));
+    return this.http.get<DepartmentTemplate[]>('/api/platform/department-templates', { params: httpParams });
+  }
+
+  createDepartmentTemplate(data: CreateDepartmentTemplateRequest): Observable<DepartmentTemplate> {
+    return this.http.post<DepartmentTemplate>('/api/platform/department-templates', data);
+  }
+
+  updateDepartmentTemplate(id: string, updates: UpdateDepartmentTemplateRequest): Observable<DepartmentTemplate> {
+    return this.http.put<DepartmentTemplate>(`/api/platform/department-templates/${id}`, updates);
+  }
+
+  deleteDepartmentTemplate(id: string): Observable<{ id: string; deleted: boolean }> {
+    return this.http.delete<{ id: string; deleted: boolean }>(`/api/platform/department-templates/${id}`);
+  }
+
+  // ============================================================
+  // D-16 產業 × 範本指派
+  // ============================================================
+
+  getIndustryDeptAssignments(industry: string): Observable<IndustryDeptAssignment[]> {
+    return this.http.get<IndustryDeptAssignment[]>(`/api/platform/industry-dept-assignments?industry=${encodeURIComponent(industry)}`);
+  }
+
+  createAssignment(data: CreateAssignmentRequest): Observable<IndustryDeptAssignment> {
+    return this.http.post<IndustryDeptAssignment>('/api/platform/industry-dept-assignments', data);
+  }
+
+  updateAssignment(id: string, updates: UpdateAssignmentRequest): Observable<IndustryDeptAssignment> {
+    return this.http.put<IndustryDeptAssignment>(`/api/platform/industry-dept-assignments/${id}`, updates);
+  }
+
+  deleteAssignment(id: string): Observable<{ id: string; deleted: boolean }> {
+    return this.http.delete<{ id: string; deleted: boolean }>(`/api/platform/industry-dept-assignments/${id}`);
   }
 }

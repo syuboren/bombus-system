@@ -29,4 +29,26 @@ function resolveCompanyFromOrgUnit(tenantDB, orgUnitId, fallback) {
   return fallback;
 }
 
-module.exports = { resolveCompanyFromOrgUnit };
+/**
+ * 從任一 org_unit_id 往上找第一個 subsidiary/group 節點 id。
+ * 用於部門相關操作中決定「所屬公司」。10 層深度上限防無窮迴圈。
+ * @param {object} tenantDB
+ * @param {string|null} startId
+ * @returns {string|null}
+ */
+function resolveCompanyOrgUnitId(tenantDB, startId) {
+  let walkId = startId;
+  for (let i = 0; i < 10; i++) {
+    if (!walkId) return null;
+    const unit = tenantDB.queryOne(
+      'SELECT id, type, parent_id FROM org_units WHERE id = ?',
+      [walkId]
+    );
+    if (!unit) return null;
+    if (unit.type === 'subsidiary' || unit.type === 'group') return unit.id;
+    walkId = unit.parent_id;
+  }
+  return null;
+}
+
+module.exports = { resolveCompanyFromOrgUnit, resolveCompanyOrgUnitId };

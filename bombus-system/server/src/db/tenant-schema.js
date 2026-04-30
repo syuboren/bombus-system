@@ -1798,10 +1798,12 @@ function initTenantSchema(adapter) {
   seedFeatureData(db);
 
   // departments 表欄位遷移（冪等：try-catch 忽略已存在欄位）
+  // 註：D-16 變更後，原 responsibilities 已 rename 為 value（限 departments 表；
+  //     L2 的 job_descriptions.responsibilities 不受影響）
   const deptMigrations = [
     'ALTER TABLE departments ADD COLUMN manager_id TEXT REFERENCES employees(id)',
     'ALTER TABLE departments ADD COLUMN head_count INTEGER DEFAULT 0',
-    "ALTER TABLE departments ADD COLUMN responsibilities TEXT DEFAULT '[]'",
+    "ALTER TABLE departments ADD COLUMN value TEXT DEFAULT '[]'",
     "ALTER TABLE departments ADD COLUMN kpi_items TEXT DEFAULT '[]'",
     "ALTER TABLE departments ADD COLUMN competency_focus TEXT DEFAULT '[]'"
   ];

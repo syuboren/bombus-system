@@ -736,48 +736,12 @@
         <!-- Responsibilities (department only) -->
         @if (node.type === 'department' && node.responsibilities.length > 0) {
           <div class="detail-section">
-            <h3 class="section-title">負責任務</h3>
+            <h3 class="section-title">Value（最終產出價值）</h3>
             <ul class="tag-list">
               @for (item of node.responsibilities; track $index) {
                 <li class="tag-item">{{ item }}</li>
               }
             </ul>
-          </div>
-        }
-
-        <!-- KPI Items -->
-        @if (node.type === 'department' && node.kpiItems.length > 0) {
-          <div class="detail-section">
-            <h3 class="section-title">KPI 事項</h3>
-            <ul class="tag-list tag-list--kpi">
-              @for (item of node.kpiItems; track $index) {
-                <li class="tag-item">{{ item }}</li>
-              }
-            </ul>
-          </div>
-        }
-
-        <!-- Competency Focus -->
-        @if (node.type === 'department' && node.competencyFocus.length > 0) {
-          <div class="detail-section">
-            <h3 class="section-title">職能框架分類</h3>
-            @for (cat of node.competencyFocus; track $index) {
-              <div class="competency-detail-card">
-                <h4 class="competency-detail-card__title">{{ $any(cat).name || cat }}</h4>
-                @if ($any(cat).jobs?.length > 0) {
-                  <div class="competency-detail-card__jobs">
-                    @for (job of $any(cat).jobs; track $index) {
-                      <div class="competency-detail-job">
-                        <span class="competency-detail-job__name">{{ job.name }}</span>
-                        @if (job.description) {
-                          <span class="competency-detail-job__desc">{{ job.description }}</span>
-                        }
-                      </div>
-                    }
-                  </div>
-                }
-              </div>
-            }
           </div>
         }
 
@@ -1094,7 +1058,7 @@
         <!-- Section 2: Responsibilities -->
         <div class="form-section">
           <h3 class="form-section__title">
-            負責任務
+            Value（最終產出價值）
             <button class="btn-text" type="button" (click)="addListItem('responsibilities')">
               <i class="ri-add-circle-line"></i> 新增
             </button>
@@ -1113,88 +1077,7 @@
             </div>
           }
           @if (departmentForm().responsibilities.length === 0) {
-            <p class="form-hint">尚無負責任務，點擊「新增」添加</p>
-          }
-        </div>
-
-        <!-- Section 3: KPI Items -->
-        <div class="form-section">
-          <h3 class="form-section__title">
-            KPI 事項
-            <button class="btn-text" type="button" (click)="addListItem('kpiItems')">
-              <i class="ri-add-circle-line"></i> 新增
-            </button>
-          </h3>
-          @for (item of departmentForm().kpiItems; track $index) {
-            <div class="dynamic-list-item">
-              <input
-                type="text"
-                class="form-input"
-                [value]="item"
-                placeholder="輸入 KPI 項目"
-                (input)="updateListItem('kpiItems', $index, $any($event.target).value)" />
-              <button class="btn-icon btn-icon--danger" type="button" (click)="removeListItem('kpiItems', $index)">
-                <i class="ri-close-line"></i>
-              </button>
-            </div>
-          }
-          @if (departmentForm().kpiItems.length === 0) {
-            <p class="form-hint">尚無 KPI 事項，點擊「新增」添加</p>
-          }
-        </div>
-
-        <!-- Section 4: Competency Focus (Card-based) -->
-        <div class="form-section">
-          <h3 class="form-section__title">
-            職能框架分類
-            <button class="btn-text" type="button" (click)="addCompetencyCategory()">
-              <i class="ri-add-circle-line"></i> 新增分類
-            </button>
-          </h3>
-          @for (cat of departmentForm().competencyFocus; track $index) {
-            @let catIdx = $index;
-            <div class="competency-category-card">
-              <div class="competency-category-card__header">
-                <input
-                  type="text"
-                  class="form-input form-input--inline"
-                  placeholder="分類名稱（例：核心職能）"
-                  [value]="cat.name"
-                  (input)="updateCategoryName(catIdx, $any($event.target).value)" />
-                <button class="btn-icon btn-icon--danger" type="button" (click)="removeCompetencyCategory(catIdx)">
-                  <i class="ri-delete-bin-line"></i>
-                </button>
-              </div>
-              <div class="competency-category-card__body">
-                @for (job of cat.jobs; track $index) {
-                  <div class="competency-job-item">
-                    <div class="competency-job-item__fields">
-                      <input
-                        type="text"
-                        class="form-input"
-                        placeholder="職務名稱"
-                        [value]="job.name"
-                        (input)="updateJobField(catIdx, $index, 'name', $any($event.target).value)" />
-                      <input
-                        type="text"
-                        class="form-input"
-                        placeholder="職務說明"
-                        [value]="job.description"
-                        (input)="updateJobField(catIdx, $index, 'description', $any($event.target).value)" />
-                    </div>
-                    <button class="btn-icon btn-icon--danger" type="button" (click)="removeCategoryJob(catIdx, $index)">
-                      <i class="ri-close-line"></i>
-                    </button>
-                  </div>
-                }
-                <button class="btn-text btn-text--sm" type="button" (click)="addCategoryJob(catIdx)">
-                  <i class="ri-add-line"></i> 新增職務
-                </button>
-              </div>
-            </div>
-          }
-          @if (departmentForm().competencyFocus.length === 0) {
-            <p class="form-hint">尚無職能分類，點擊「新增分類」添加</p>
+            <p class="form-hint">尚無 Value 項目，點擊「新增」添加</p>
           }
         </div>
 
@@ -1372,4 +1255,74 @@
       </div>
     </div>
   </div>
+}
+
+<!-- D-16 新增部門三選項菜單 -->
+@if (addDeptMenu().open) {
+  <div class="modal-overlay" (click)="closeAddDepartmentMenu()">
+    <div class="modal-container modal-container--sm" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">
+          <i class="ri-add-circle-line"></i>
+          新增部門至「{{ addDeptMenu().parent?.name }}」
+        </h2>
+        <button class="modal-close" type="button" (click)="closeAddDepartmentMenu()">
+          <i class="ri-close-line"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="form-hint">請選擇新增方式：</p>
+        <div class="add-dept-options">
+          <button class="option-card" type="button" (click)="pickAddOwnDepartment()">
+            <i class="ri-edit-2-line option-icon"></i>
+            <div class="option-text">
+              <strong>自行新增</strong>
+              <span>單筆部門表單，沿用現行流程</span>
+            </div>
+          </button>
+          <button class="option-card" type="button" (click)="pickAddFromTemplate()">
+            <i class="ri-archive-drawer-line option-icon"></i>
+            <div class="option-text">
+              <strong>從範本庫導入</strong>
+              <span>選產業 + 規模，從平台維護的部門清單勾選</span>
+            </div>
+          </button>
+          <button class="option-card" type="button" (click)="pickAddFromCsv()">
+            <i class="ri-file-upload-line option-icon"></i>
+            <div class="option-text">
+              <strong>批次匯入 (CSV)</strong>
+              <span>上傳 CSV 檔案（UTF-8 / UTF-8 BOM）</span>
+            </div>
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" type="button" (click)="closeAddDepartmentMenu()">取消</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- D-16 範本庫導入 modal -->
+@if (showImportTemplateModal()) {
+  <app-import-from-template-modal
+    (selected)="onTemplateModalSelected($event)"
+    (cancel)="cancelTemplateModal()" />
+}
+
+<!-- D-16 CSV 批次匯入 modal -->
+@if (showImportCsvModal()) {
+  <app-import-from-csv-modal
+    (selected)="onCsvModalSelected($event)"
+    (cancel)="cancelCsvModal()" />
+}
+
+<!-- D-16 衝突確認 modal -->
+@if (showConflictConfirm() && conflictPreview()) {
+  <app-conflict-confirm-modal
+    [preview]="conflictPreview()!"
+    [executing]="importExecuting()"
+    (confirm)="onConflictConfirmed($event)"
+    (cancel)="onConflictCancelled()"
+    (back)="onConflictBack()" />
 }

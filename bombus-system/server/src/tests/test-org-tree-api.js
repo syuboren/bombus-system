@@ -84,7 +84,9 @@ async function run() {
     assert('managerId' in node, '1.9 節點有 managerId');
     assert('managerName' in node, '1.10 節點有 managerName');
     assert('employeeCount' in node, '1.11 節點有 employeeCount');
-    assert('responsibilities' in node, '1.12 節點有 responsibilities');
+    // D-16: API 回傳 value（新主欄位）+ responsibilities（舊別名，過渡期保留）
+    assert('value' in node, '1.12 節點有 value（D-16 取代 responsibilities）');
+    assert('responsibilities' in node, '1.12b 節點同時保留 responsibilities 別名（向後相容）');
     assert('kpiItems' in node, '1.13 節點有 kpiItems');
     assert('competencyFocus' in node, '1.14 節點有 competencyFocus');
   }
@@ -155,8 +157,9 @@ async function run() {
   console.log('[Part 4] PUT /api/organization/departments/:id — 擴充欄位\n');
 
   if (deptId) {
+    // D-16: 主送 value 欄位（新；DB 對應 departments.value）
     const updatePayload = {
-      responsibilities: ['任務A', '任務B', '任務C'],
+      value: ['任務A', '任務B', '任務C'],
       kpiItems: ['KPI-1', 'KPI-2'],
       competencyFocus: ['core', 'professional']
     };
@@ -171,8 +174,12 @@ async function run() {
 
     if (updatedDept) {
       assert(
+        Array.isArray(updatedDept.value) && updatedDept.value.length === 3,
+        '4.3 value 正確（3 項，D-16 主欄位）'
+      );
+      assert(
         Array.isArray(updatedDept.responsibilities) && updatedDept.responsibilities.length === 3,
-        '4.3 responsibilities 正確（3 項）'
+        '4.3b responsibilities 別名同步（向後相容）'
       );
       assert(
         Array.isArray(updatedDept.kpiItems) && updatedDept.kpiItems.length === 2,
@@ -183,14 +190,28 @@ async function run() {
         '4.5 competencyFocus 正確（2 項）'
       );
       assert(
-        updatedDept.responsibilities[0] === '任務A',
-        '4.6 responsibilities[0] = 任務A'
+        updatedDept.value[0] === '任務A',
+        '4.6 value[0] = 任務A'
+      );
+    }
+
+    // D-16: 驗證 PUT 也接受 responsibilities 別名（過渡相容）
+    const aliasUpdate = await req('PUT', `/api/organization/departments/${deptId}`, {
+      responsibilities: ['Z1', 'Z2']  // 用舊欄位名
+    }, token);
+    assert(aliasUpdate.status === 200, '4.7 PUT 接受舊 responsibilities 別名 (200)');
+    const treeAfterAlias = await req('GET', '/api/organization/tree', null, token);
+    const aliasDept = treeAfterAlias.data?.find(n => n.id === deptId);
+    if (aliasDept) {
+      assert(
+        Array.isArray(aliasDept.value) && aliasDept.value.length === 2 && aliasDept.value[0] === 'Z1',
+        '4.8 透過 responsibilities 別名寫入後，value 欄位正確同步'
       );
     }
 
     // 清理：還原為空陣列
     await req('PUT', `/api/organization/departments/${deptId}`, {
-      responsibilities: [],
+      value: [],
       kpiItems: [],
       competencyFocus: []
     }, token);

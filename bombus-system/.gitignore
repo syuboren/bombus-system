@@ -46,3 +46,6 @@ Thumbs.db
 server/onboarding.db
 .spectra/
 openspec/.vector-search.db*
+
+# Local document archive (not for repo history — see docs root for active versions)
+docs/備份/

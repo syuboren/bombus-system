@@ -235,7 +235,7 @@
               class="form-input"
               (change)="updateFormField('industry', $any($event.target).value)">
               <option value="" [selected]="!formData().industry">請選擇產業別</option>
-              @for (opt of industryOptions; track opt.value) {
+              @for (opt of industryOptions(); track opt.value) {
                 <option [value]="opt.value" [selected]="formData().industry === opt.value">{{ opt.label }}</option>
               }
             </select>

@@ -9,6 +9,7 @@ const initSqlJs = require('sql.js');
 const fs = require('fs');
 const path = require('path');
 const { SqliteAdapter } = require('./db-adapter');
+const { seedDepartmentTemplates } = require('./seeds/dept-template-seed');
 
 const DATA_DIR = path.join(__dirname, '../../data');
 const PLATFORM_DB_PATH = path.join(DATA_DIR, 'platform.db');
@@ -157,6 +158,103 @@ function createPlatformTables(adapter) {
   try {
     db.run('CREATE INDEX IF NOT EXISTS idx_public_tokens_tenant ON public_tokens(tenant_id)');
   } catch (e) { /* 索引已存在 */ }
+
+  // ─── 產業類別 lookup（D-16 industry-classification） ───
+  db.run(`
+    CREATE TABLE IF NOT EXISTS industries (
+      code TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      display_order INTEGER DEFAULT 0,
+      is_active INTEGER DEFAULT 1,
+      created_at TEXT DEFAULT (datetime('now'))
+    )
+  `);
+
+  // Seed 12 個預設產業（INSERT OR IGNORE 冪等）
+  const DEFAULT_INDUSTRIES = [
+    ['it-services', '資訊服務業', 10],
+    ['tech', '科技業', 20],
+    ['manufacturing', '製造業', 30],
+    ['retail', '零售業', 40],
+    ['food-service', '餐飲業', 50],
+    ['healthcare', '醫療機構', 60],
+    ['finance', '金融業', 70],
+    ['nonprofit', '非營利組織', 80],
+    ['education', '教育業', 90],
+    ['construction', '建築業', 100],
+    ['logistics', '物流業', 110],
+    ['other', '其他', 999]
+  ];
+  for (const [code, name, order] of DEFAULT_INDUSTRIES) {
+    db.run('INSERT OR IGNORE INTO industries (code, name, display_order) VALUES (?, ?, ?)', [code, name, order]);
+  }
+
+  // ─── 部門範本字典（D-16 department-template-import） ───
+  db.run(`
+    CREATE TABLE IF NOT EXISTS department_templates (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      value TEXT DEFAULT '[]',
+      is_common INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    )
+  `);
+
+  // ─── 產業 × 範本指派 junction ───
+  db.run(`
+    CREATE TABLE IF NOT EXISTS industry_dept_assignments (
+      id TEXT PRIMARY KEY,
+      industry_code TEXT NOT NULL REFERENCES industries(code),
+      dept_template_id TEXT NOT NULL REFERENCES department_templates(id) ON DELETE CASCADE,
+      sizes_json TEXT NOT NULL DEFAULT '[]',
+      display_order INTEGER DEFAULT 0,
+      UNIQUE(industry_code, dept_template_id)
+    )
+  `);
+  try {
+    db.run('CREATE INDEX IF NOT EXISTS idx_assignments_industry ON industry_dept_assignments(industry_code)');
+    db.run('CREATE INDEX IF NOT EXISTS idx_assignments_template ON industry_dept_assignments(dept_template_id)');
+  } catch (e) { /* 索引已存在 */ }
+
+  // tenants.industry 字串對映遷移（free-form → industries.code）
+  // 冪等：已是有效 code 不動；不在對映表的字串改寫為 'other' 並警告
+  const INDUSTRY_MIGRATION_MAP = {
+    '製造業': 'manufacturing', '製造': 'manufacturing', 'Manufacturing': 'manufacturing',
+    '科技業': 'tech', '科技': 'tech', 'Tech': 'tech', 'Technology': 'tech',
+    '資訊服務業': 'it-services', 'IT Services': 'it-services', 'it services': 'it-services',
+    '零售業': 'retail', '零售': 'retail', 'Retail': 'retail',
+    '餐飲業': 'food-service', '餐飲': 'food-service', 'F&B': 'food-service',
+    '醫療': 'healthcare', '醫療機構': 'healthcare', '醫療業': 'healthcare', 'Healthcare': 'healthcare',
+    '金融業': 'finance', '金融': 'finance', 'Finance': 'finance',
+    '非營利': 'nonprofit', '非營利組織': 'nonprofit', 'NPO': 'nonprofit',
+    '教育': 'education', '教育業': 'education', 'Education': 'education',
+    '建築': 'construction', '建築業': 'construction', 'Construction': 'construction',
+    '物流': 'logistics', '物流業': 'logistics', 'Logistics': 'logistics'
+  };
+  try {
+    const validCodes = new Set(DEFAULT_INDUSTRIES.map(([c]) => c));
+    const tenantsResult = db.exec("SELECT id, industry FROM tenants WHERE industry IS NOT NULL AND industry != ''");
+    if (tenantsResult.length && tenantsResult[0].values.length) {
+      for (const [tenantId, industryStr] of tenantsResult[0].values) {
+        if (validCodes.has(industryStr)) continue; // already migrated
+        const mapped = INDUSTRY_MIGRATION_MAP[industryStr];
+        if (mapped) {
+          db.run('UPDATE tenants SET industry = ? WHERE id = ?', [mapped, tenantId]);
+        } else {
+          db.run('UPDATE tenants SET industry = ? WHERE id = ?', ['other', tenantId]);
+          console.warn(`⚠️ Tenant ${tenantId}: industry '${industryStr}' 不在對映表，已歸入 'other'，請平台管理員手動修正`);
+        }
+      }
+    }
+  } catch (e) { /* tenants 表尚未建立或查詢失敗 */ }
+
+  // Seed 部門範本（共通池 + 各產業專屬）
+  try {
+    seedDepartmentTemplates(db);
+  } catch (e) {
+    console.error('⚠️ 部門範本 seed 失敗:', e.message);
+  }
 
   // 遷移：已啟用 L1.recruitment 的方案自動納入 L1.decision（面試決策）
   // 先用 LIKE 過濾，跳過已含 L1.decision 的方案；遷移完成後此段會是 no-op

@@ -79,3 +79,75 @@ export interface AuditLogListResponse {
     totalPages: number;
   };
 }
+
+// ============================================================
+// D-16 產業分類與部門範本（industry-classification + department-template-import）
+// ============================================================
+
+export type CompanySize = 'micro' | 'small' | 'medium' | 'large';
+
+export interface Industry {
+  code: string;
+  name: string;
+  display_order: number;
+  is_active: number;
+  created_at?: string;
+  tenant_count?: number;
+  assignment_count?: number;
+}
+
+export interface CreateIndustryRequest {
+  code: string;
+  name: string;
+  display_order?: number;
+}
+
+export interface UpdateIndustryRequest {
+  name?: string;
+  display_order?: number;
+  is_active?: boolean;
+}
+
+export interface DepartmentTemplate {
+  id: string;
+  name: string;
+  value: string[];
+  is_common: number | boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CreateDepartmentTemplateRequest {
+  name: string;
+  value?: string[];
+  is_common?: boolean;
+}
+
+export interface UpdateDepartmentTemplateRequest {
+  name?: string;
+  value?: string[];
+  is_common?: boolean;
+}
+
+export interface IndustryDeptAssignment {
+  id: string;
+  industry_code: string;
+  dept_template_id: string;
+  sizes_json: CompanySize[];
+  display_order: number;
+  template_name?: string;
+  template_value?: string[];
+  is_common?: number | boolean;
+}
+
+export interface CreateAssignmentRequest {
+  industry_code: string;
+  dept_template_id: string;
+  sizes_json: CompanySize[];
+  display_order?: number;
+}
+
+export interface UpdateAssignmentRequest {
+  sizes_json?: CompanySize[];
+  display_order?: number;
+}

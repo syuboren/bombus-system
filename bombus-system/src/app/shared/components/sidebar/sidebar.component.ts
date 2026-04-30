@@ -181,6 +181,16 @@ export class SidebarComponent {
           route: '/platform/plans'
         },
         {
+          label: '產業類別維護',
+          icon: 'ri-stack-line',
+          route: '/platform/industries'
+        },
+        {
+          label: '部門範本管理',
+          icon: 'ri-archive-drawer-line',
+          route: '/platform/department-templates'
+        },
+        {
           label: '審計日誌',
           icon: 'ri-file-list-3-line',
           route: '/platform/audit'

@@ -1,0 +1,196 @@
+@import '../../../../../assets/styles/variables';
+
+.filters {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+
+  .form-group {
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 500;
+      color: $color-text-dark;
+
+      .required { color: $color-l5-brick; }
+    }
+
+    select, input[type="file"] {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid $color-soft-gray;
+      border-radius: 8px;
+      font-size: 14px;
+      background: white;
+
+      &:focus {
+        outline: none;
+        border-color: $color-l1-sage;
+        box-shadow: 0 0 0 3px rgba($color-l1-sage, 0.15);
+      }
+
+      &:disabled { background: rgba($color-soft-gray, 0.3); cursor: not-allowed; }
+    }
+  }
+}
+
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: $color-text-secondary;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  margin-bottom: 8px;
+  border-bottom: 1px solid $color-soft-gray;
+
+  .counter {
+    margin-left: auto;
+    color: $color-text-secondary;
+    font-size: 13px;
+  }
+}
+
+.template-list {
+  max-height: 360px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  .template-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px;
+    border: 1px solid $color-soft-gray;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+
+    input[type="checkbox"] { margin-top: 4px; }
+
+    &:hover { border-color: $color-l1-sage; }
+    &.checked {
+      background: rgba($color-l1-sage, 0.06);
+      border-color: $color-l1-sage;
+    }
+
+    .row-content { flex: 1; }
+    .row-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+    .row-meta {
+      color: $color-text-secondary;
+      font-size: 12px;
+      margin-bottom: 6px;
+
+      .meta-label { color: $color-text-secondary; }
+    }
+    .row-value {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+
+      .value-chip {
+        background: rgba($color-soft-gray, 0.5);
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 12px;
+      }
+    }
+  }
+}
+
+.size-pill {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  background: rgba($color-soft-gray, 0.5);
+  color: $color-text-dark;
+  margin-right: 4px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+
+  &.badge-common {
+    background: rgba($color-l4-mauve, 0.2);
+    color: $color-l4-mauve;
+  }
+  &.badge-specific {
+    background: rgba($color-l1-sage, 0.2);
+    color: $color-l1-sage;
+  }
+  &.badge-pre {
+    background: rgba($color-l2-terracotta, 0.18);
+    color: $color-l2-terracotta;
+  }
+  &.badge-error {
+    background: rgba($color-l5-brick, 0.18);
+    color: $color-l5-brick;
+  }
+}
+
+// CSV import 專用
+.csv-uploader {
+  border: 2px dashed $color-soft-gray;
+  border-radius: 12px;
+  padding: 32px;
+  text-align: center;
+  margin-bottom: 16px;
+
+  // 只針對 .csv-uploader 「直接子元素」的雲朵 icon 套用大尺寸；
+  // 按鈕內的 icon 不在此規則範圍，會繼承按鈕本身的 font-size 與 color
+  > i { font-size: 36px; color: $color-text-secondary; }
+  p { margin: 8px 0; color: $color-text-secondary; }
+
+  input[type="file"] { display: none; }
+  // 註：label.btn-primary 由 shared-modal.scss 的 .btn-primary 統一處理樣式（與其他按鈕一致）
+
+  .file-info {
+    color: $color-text-dark;
+    margin-top: 8px;
+    font-size: 13px;
+  }
+}
+
+.parsed-list {
+  max-height: 280px;
+  overflow-y: auto;
+  border: 1px solid $color-soft-gray;
+  border-radius: 8px;
+  margin-bottom: 8px;
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+
+    th, td {
+      padding: 8px 12px;
+      text-align: left;
+      border-bottom: 1px solid rgba($color-soft-gray, 0.5);
+      font-size: 13px;
+    }
+
+    th {
+      background: rgba($color-soft-gray, 0.3);
+      font-weight: 600;
+    }
+
+    tr.error-row { background: rgba($color-l5-brick, 0.08); }
+  }
+}

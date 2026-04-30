@@ -26,6 +26,10 @@
 const express = require('express');
 const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
+const { getPlatformDB } = require('../db/platform-db');
+const { validateImport, executeImport } = require('../services/dept-import.service');
+const { logAudit, getClientIP } = require('../utils/audit-logger');
+const { resolveCompanyOrgUnitId } = require('../utils/org-unit');
 
 // ══════════════════════════════════════════════════════════
 //  公司管理（org_units type=group/subsidiary）
@@ -472,6 +476,37 @@ router.post('/departments', (req, res) => {
     });
   }
 
+  // 向上遞迴找所屬子公司/集團 ID（用於重複檢查與 departments 表 org_unit_id）
+  const deptOrgUnitId = resolveCompanyOrgUnitId(req.tenantDB, companyId);
+
+  // 同一公司下不可有同名部門：檢查 departments 表（業務主檔）
+  if (deptOrgUnitId) {
+    const dupDept = req.tenantDB.queryOne(
+      'SELECT id FROM departments WHERE name = ? AND org_unit_id = ?',
+      [name, deptOrgUnitId]
+    );
+    if (dupDept) {
+      return res.status(409).json({
+        error: 'Conflict',
+        message: `「${name}」已存在於此公司，請使用其他名稱`,
+        existing_id: dupDept.id
+      });
+    }
+  }
+
+  // 2. 檢查 org_units 樹狀表（防止樹狀結構與 departments 表脫鉤造成的孤兒）
+  const dupOrgUnit = req.tenantDB.queryOne(
+    "SELECT id FROM org_units WHERE name = ? AND parent_id = ? AND type = 'department'",
+    [name, companyId]
+  );
+  if (dupOrgUnit) {
+    return res.status(409).json({
+      error: 'Conflict',
+      message: `「${name}」已存在於此上層單位下，請使用其他名稱`,
+      existing_id: dupOrgUnit.id
+    });
+  }
+
   const id = uuidv4();
   const level = parent.level + 1;
 
@@ -482,23 +517,8 @@ router.post('/departments', (req, res) => {
       [id, name, companyId, level]
     );
 
-    // 找到所屬子公司/集團 ID（向上遞迴）
-    let deptOrgUnitId = null;
-    let walkId = companyId;
-    for (let i = 0; i < 10; i++) {
-      const unit = req.tenantDB.queryOne('SELECT id, type, parent_id FROM org_units WHERE id = ?', [walkId]);
-      if (!unit) break;
-      if (unit.type === 'subsidiary' || unit.type === 'group') { deptOrgUnitId = unit.id; break; }
-      walkId = unit.parent_id;
-      if (!walkId) break;
-    }
-
     // 同步建立 departments 表記錄（帶 org_unit_id）
-    const existing = req.tenantDB.queryOne(
-      'SELECT id FROM departments WHERE name = ? AND org_unit_id = ?',
-      [name, deptOrgUnitId]
-    );
-    if (!existing) {
+    if (deptOrgUnitId) {
       req.tenantDB.run(
         'INSERT INTO departments (id, name, org_unit_id) VALUES (?, ?, ?)',
         [uuidv4(), name, deptOrgUnitId]
@@ -521,7 +541,9 @@ router.post('/departments', (req, res) => {
 // ─── 更新部門 ───
 
 router.put('/departments/:id', (req, res) => {
-  const { name, code, managerId, responsibilities, kpiItems, competencyFocus } = req.body;
+  const { name, code, managerId, value, responsibilities, kpiItems, competencyFocus } = req.body;
+  // `responsibilities` 為舊欄位別名，過渡期保留以相容舊前端
+  const valueField = value !== undefined ? value : responsibilities;
 
   const dept = req.tenantDB.queryOne(
     "SELECT * FROM org_units WHERE id = ? AND type = 'department'",
@@ -533,17 +555,7 @@ router.put('/departments/:id', (req, res) => {
   }
 
   const currentName = dept.name;
-
-  // 找到所屬子公司/集團 ID
-  let deptOrgUnitId = null;
-  let walkId = dept.parent_id;
-  for (let i = 0; i < 10; i++) {
-    if (!walkId) break;
-    const unit = req.tenantDB.queryOne('SELECT id, type, parent_id FROM org_units WHERE id = ?', [walkId]);
-    if (!unit) break;
-    if (unit.type === 'subsidiary' || unit.type === 'group') { deptOrgUnitId = unit.id; break; }
-    walkId = unit.parent_id;
-  }
+  const deptOrgUnitId = resolveCompanyOrgUnitId(req.tenantDB, dept.parent_id);
 
   if (name) {
     req.tenantDB.run('UPDATE org_units SET name = ? WHERE id = ?', [name, req.params.id]);
@@ -565,10 +577,10 @@ router.put('/departments/:id', (req, res) => {
     );
   }
 
-  if (responsibilities !== undefined) {
+  if (valueField !== undefined) {
     req.tenantDB.run(
-      'UPDATE departments SET responsibilities = ? WHERE name = ? AND org_unit_id = ?',
-      [JSON.stringify(responsibilities), deptName, deptOrgUnitId]
+      'UPDATE departments SET value = ? WHERE name = ? AND org_unit_id = ?',
+      [JSON.stringify(valueField), deptName, deptOrgUnitId]
     );
   }
 
@@ -633,20 +645,15 @@ router.delete('/departments/:id', (req, res) => {
     });
   }
 
-  // 刪除 org_units 記錄
-  req.tenantDB.run('DELETE FROM org_units WHERE id = ?', [req.params.id]);
+  // 先解析所屬子公司/集團 ID，再以 transaction 同時刪除兩表，避免 org_units 已刪而 departments 行 orphan
+  const delOrgUnitId = resolveCompanyOrgUnitId(req.tenantDB, dept.parent_id);
 
-  // 找到所屬子公司/集團 ID，精確刪除 departments 記錄
-  let delOrgUnitId = null;
-  let delWalkId = dept.parent_id;
-  for (let i = 0; i < 10; i++) {
-    if (!delWalkId) break;
-    const unit = req.tenantDB.queryOne('SELECT id, type, parent_id FROM org_units WHERE id = ?', [delWalkId]);
-    if (!unit) break;
-    if (unit.type === 'subsidiary' || unit.type === 'group') { delOrgUnitId = unit.id; break; }
-    delWalkId = unit.parent_id;
-  }
-  req.tenantDB.run('DELETE FROM departments WHERE name = ? AND org_unit_id = ?', [dept.name, delOrgUnitId]);
+  req.tenantDB.transaction(() => {
+    req.tenantDB.run('DELETE FROM org_units WHERE id = ?', [req.params.id]);
+    if (delOrgUnitId) {
+      req.tenantDB.run('DELETE FROM departments WHERE name = ? AND org_unit_id = ?', [dept.name, delOrgUnitId]);
+    }
+  });
 
   res.json({ success: true, message: '部門已刪除' });
 });
@@ -711,7 +718,7 @@ router.get('/tree', (req, res) => {
       SELECT ou.id, ou.name, ou.type, ou.parent_id, ou.level,
              ou.code, ou.address, ou.phone, ou.email, ou.description,
              ou.tax_id, ou.status, ou.established_date,
-             d.manager_id, d.head_count, d.responsibilities, d.kpi_items, d.competency_focus
+             d.manager_id, d.head_count, d.value, d.kpi_items, d.competency_focus
       FROM org_units ou
       LEFT JOIN departments d ON TRIM(d.name) = TRIM(ou.name) COLLATE NOCASE AND d.org_unit_id = ou.parent_id AND ou.type = 'department'
       ORDER BY ou.level ASC, ou.name ASC
@@ -772,8 +779,9 @@ router.get('/tree', (req, res) => {
         taxId: node.tax_id || null,
         status: node.status || 'active',
         establishedDate: node.established_date || null,
-        // 部門詳情欄位
-        responsibilities: node.responsibilities ? JSON.parse(node.responsibilities) : [],
+        // value 為新欄位、responsibilities 為過渡期別名（舊前端相容）
+        value: node.value ? JSON.parse(node.value) : [],
+        responsibilities: node.value ? JSON.parse(node.value) : [],
         kpiItems: node.kpi_items ? JSON.parse(node.kpi_items) : [],
         competencyFocus: node.competency_focus ? JSON.parse(node.competency_focus) : []
       };
@@ -1016,6 +1024,148 @@ router.delete('/collaborations/:id', (req, res) => {
 
   req.tenantDB.run('DELETE FROM department_collaborations WHERE id = ?', [req.params.id]);
   res.json({ success: true, message: '協作關係已刪除' });
+});
+
+// ════════════════════════════════════════════════════════════
+//  D-16 部門範本與匯入（department-template-import）
+// ════════════════════════════════════════════════════════════
+
+/**
+ * GET /api/organization/industries?active=true
+ *
+ * 取得啟用中的產業類別清單（唯讀，供租戶端「範本庫導入」流程使用）。
+ * 從 platform.db.industries 讀取，是 platform-admin 端 GET /api/platform/industries 的精簡公開版。
+ */
+router.get('/industries', (req, res) => {
+  const platformDB = getPlatformDB();
+  const onlyActive = req.query.active !== 'false';  // 預設只列啟用中
+
+  let sql = 'SELECT code, name, display_order FROM industries';
+  if (onlyActive) sql += ' WHERE is_active = 1';
+  sql += ' ORDER BY display_order ASC, code ASC';
+
+  const rows = platformDB.query(sql);
+  res.json(rows);
+});
+
+/**
+ * GET /api/organization/department-templates?industry=&size=
+ *
+ * 取得指定產業的範本清單（含共通池），含 pre_checked 旗標。
+ * 從 platform.db 讀取（唯讀，無跨 DB 交易）。
+ */
+router.get('/department-templates', (req, res) => {
+  const { industry, size } = req.query;
+
+  if (!industry) {
+    return res.status(400).json({ error: 'BadRequest', message: 'industry 參數必填' });
+  }
+
+  const platformDB = getPlatformDB();
+
+  // 驗證 industry 存在
+  const industryRow = platformDB.queryOne('SELECT code, name FROM industries WHERE code = ?', [industry]);
+  if (!industryRow) {
+    return res.status(400).json({ error: 'BadRequest', message: `產業代碼 '${industry}' 不存在` });
+  }
+
+  // 取得該產業的所有指派 + 範本詳情
+  const rows = platformDB.query(
+    `SELECT ida.id AS assignment_id, ida.industry_code, ida.dept_template_id,
+            ida.sizes_json, ida.display_order,
+            dt.name, dt.value, dt.is_common
+     FROM industry_dept_assignments ida
+     JOIN department_templates dt ON dt.id = ida.dept_template_id
+     WHERE ida.industry_code = ?
+     ORDER BY dt.is_common DESC, ida.display_order ASC, dt.name ASC`,
+    [industry]
+  );
+
+  const departments = rows.map(r => {
+    let applicableSizes = [];
+    try { applicableSizes = JSON.parse(r.sizes_json || '[]'); } catch (e) { applicableSizes = []; }
+
+    let value = [];
+    try { value = JSON.parse(r.value || '[]'); } catch (e) { value = []; }
+
+    return {
+      assignment_id: r.assignment_id,
+      template_id: r.dept_template_id,
+      name: r.name,
+      value,
+      is_common: !!r.is_common,
+      applicable_sizes: applicableSizes,
+      display_order: r.display_order,
+      pre_checked: size ? applicableSizes.includes(size) : false
+    };
+  });
+
+  res.json({
+    industry: { code: industryRow.code, name: industryRow.name },
+    size: size || null,
+    departments
+  });
+});
+
+/**
+ * POST /api/organization/companies/:id/departments/import/validate
+ *
+ * 驗證匯入清單 + 衝突檢查。不寫入 DB。
+ * Body: { items: [{name, value?}], mode: 'overwrite' | 'merge' }
+ */
+router.post('/companies/:id/departments/import/validate', (req, res) => {
+  const { items, mode } = req.body || {};
+  const result = validateImport(req.tenantDB, req.params.id, items, mode);
+
+  if (result.error) {
+    return res.status(400).json(result);
+  }
+  res.json(result);
+});
+
+/**
+ * POST /api/organization/companies/:id/departments/import/execute
+ *
+ * 執行匯入，包 transaction 確保 org_units + departments 兩表原子性。
+ * Body: { items: [{name, value?}], mode: 'overwrite' | 'merge' }
+ */
+router.post('/companies/:id/departments/import/execute', (req, res) => {
+  const { items, mode } = req.body || {};
+
+  // D-15 codeGenerator hook（目前未啟用，回 null）
+  const codeGenHook = (item, ctx) => {
+    // TODO(D-15): 整合 codeGenerator.tryNext('department', { tenantId, orgUnitId })
+    return null;
+  };
+
+  const result = executeImport(req.tenantDB, req.params.id, items, mode, { codeGenHook });
+
+  if (result.error) {
+    return res.status(result.error === 'BadRequest' ? 400 : 500).json(result);
+  }
+
+  // 記錄 audit log
+  try {
+    const platformDB = getPlatformDB();
+    logAudit(platformDB, {
+      tenant_id: req.user?.tenantId || null,
+      user_id: req.user?.userId || null,
+      action: 'import_departments',
+      resource: 'departments',
+      details: {
+        companyId: req.params.id,
+        mode,
+        created: result.summary.created,
+        updated: result.summary.updated,
+        skipped: result.summary.skipped
+      },
+      ip: getClientIP(req)
+    });
+  } catch (e) {
+    console.warn('audit log for import_departments failed:', e.message);
+  }
+
+  res.json(result);
 });
 
 module.exports = router;

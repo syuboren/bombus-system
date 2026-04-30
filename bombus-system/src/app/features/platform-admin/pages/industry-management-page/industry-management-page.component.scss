@@ -1,0 +1,296 @@
+@import '../../../../../assets/styles/variables';
+@import '../../../../../assets/styles/mixins';
+
+.page {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+
+    h1 {
+      margin: 0 0 4px 0;
+      font-size: 24px;
+      color: $color-text-dark;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: $color-text-secondary;
+      font-size: 14px;
+    }
+  }
+
+  .alert {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+
+    span { flex: 1; }
+
+    &.alert-error {
+      background: rgba(184, 125, 123, 0.1);
+      color: $color-l5-brick;
+      border-left: 4px solid $color-l5-brick;
+    }
+  }
+
+  .loading {
+    text-align: center;
+    padding: 40px;
+    color: $color-text-secondary;
+  }
+
+  .card {
+    @include card;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
+
+    .standard-table {
+      width: 100%;
+      border-collapse: collapse;
+
+      th, td {
+        padding: 12px 16px;
+        text-align: left;
+        border-bottom: 1px solid $color-soft-gray;
+      }
+
+      th {
+        font-weight: 600;
+        color: $color-text-dark;
+        background: rgba($color-soft-gray, 0.3);
+      }
+
+      tr.inactive {
+        opacity: 0.55;
+      }
+
+      td.num { text-align: center; }
+      td.actions {
+        white-space: nowrap;
+        display: flex;
+        gap: 4px;
+      }
+
+      td.order-cell {
+        display: flex;
+        gap: 2px;
+        align-items: center;
+
+        .order-locked {
+          color: $color-text-secondary;
+          font-size: 13px;
+          padding: 0 4px;
+        }
+      }
+
+      .btn-order {
+        background: white;
+        border: 1px solid $color-soft-gray;
+        border-radius: 6px;
+        width: 28px;
+        height: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: $color-text-dark;
+        font-size: 16px;
+        line-height: 1;
+        padding: 0;
+        transition: all 0.15s;
+
+        i { font-size: 16px; }
+
+        &:hover:not(:disabled) {
+          background: rgba($color-l1-sage, 0.12);
+          border-color: $color-l1-sage;
+          color: $color-l1-sage;
+        }
+
+        &:disabled {
+          opacity: 0.35;
+          cursor: not-allowed;
+        }
+      }
+
+      .empty {
+        text-align: center;
+        color: $color-text-secondary;
+        padding: 32px;
+      }
+
+      code {
+        font-family: 'JetBrains Mono', 'Consolas', monospace;
+        background: rgba($color-soft-gray, 0.4);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 12px;
+      }
+    }
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+
+    &.badge-active {
+      background: rgba(141, 163, 153, 0.18);
+      color: $color-l1-sage;
+    }
+    &.badge-inactive {
+      background: rgba($color-text-secondary, 0.18);
+      color: $color-text-secondary;
+    }
+  }
+
+  .btn-primary, .btn-secondary, .btn-text {
+    @include button-base;
+    cursor: pointer;
+  }
+
+  .btn-primary {
+    background: $color-l1-sage;
+    color: white;
+    padding: 8px 16px;
+
+    &:hover { background: darken($color-l1-sage, 8%); }
+  }
+
+  .btn-secondary {
+    background: white;
+    color: $color-text-dark;
+    border: 1px solid $color-soft-gray;
+    padding: 8px 16px;
+
+    &:hover { background: rgba($color-soft-gray, 0.3); }
+  }
+
+  .btn-text {
+    background: transparent;
+    color: $color-l1-sage;
+    padding: 4px 8px;
+    font-size: 13px;
+
+    &:hover { background: rgba($color-l1-sage, 0.1); }
+
+    &.btn-text--warn { color: #c9a96e; }
+    &.btn-text--danger { color: $color-l5-brick; }
+  }
+
+  .btn-icon {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    color: $color-text-secondary;
+
+    &:hover { color: $color-text-dark; }
+  }
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+  width: 90%;
+  max-width: 480px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 1px solid $color-soft-gray;
+
+    h2 { margin: 0; font-size: 18px; }
+  }
+
+  .modal-body {
+    padding: 24px;
+    overflow-y: auto;
+
+    h4 { margin: 16px 0 8px 0; }
+  }
+
+  .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 16px 24px;
+    border-top: 1px solid $color-soft-gray;
+  }
+
+  .form-group {
+    margin-bottom: 16px;
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 500;
+      color: $color-text-dark;
+
+      .required { color: $color-l5-brick; }
+    }
+
+    input[type="text"], input[type="number"] {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid $color-soft-gray;
+      border-radius: 8px;
+      font-size: 14px;
+
+      &:focus {
+        outline: none;
+        border-color: $color-l1-sage;
+        box-shadow: 0 0 0 3px rgba($color-l1-sage, 0.15);
+      }
+
+      &:disabled { background: rgba($color-soft-gray, 0.3); cursor: not-allowed; }
+    }
+
+    .hint { color: $color-text-secondary; font-size: 12px; }
+
+    &.form-group--row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      label { margin-bottom: 0; }
+    }
+  }
+
+  .list-block {
+    margin: 8px 0;
+    padding-left: 20px;
+    code { font-family: monospace; color: $color-text-secondary; font-size: 12px; }
+  }
+}
