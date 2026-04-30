@@ -968,6 +968,16 @@ $color-collab-downstream: #6B8E23;
   }
 }
 
+// 列表模式操作欄：水平排列 icon buttons
+td.col-actions {
+  white-space: nowrap;
+
+  .action-btn {
+    display: inline-flex;
+    margin-right: 2px;
+  }
+}
+
 // Collaboration list in list view
 .collaboration-list-section {
   padding: $spacing-lg;
@@ -1531,5 +1541,60 @@ $color-collab-downstream: #6B8E23;
   .canvas-legend {
     flex-direction: column;
     gap: $spacing-sm;
+  }
+}
+
+// ========================================================
+// D-16 新增部門三選項菜單
+// ========================================================
+
+.add-dept-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+
+  .option-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: white;
+    border: 1.5px solid $color-soft-gray;
+    border-radius: 12px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s;
+    width: 100%;
+
+    &:hover {
+      border-color: $color-l1-sage;
+      background: rgba($color-l1-sage, 0.04);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    }
+
+    .option-icon {
+      font-size: 28px;
+      color: $color-l1-sage;
+      flex-shrink: 0;
+    }
+
+    .option-text {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+
+      strong {
+        font-size: 15px;
+        color: $color-text-dark;
+        margin-bottom: 4px;
+      }
+
+      span {
+        font-size: 12px;
+        color: $color-text-secondary;
+      }
+    }
   }
 }

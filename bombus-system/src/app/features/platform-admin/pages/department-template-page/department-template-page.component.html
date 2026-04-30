@@ -1,0 +1,389 @@
+<div class="page">
+  <header class="page-header">
+    <div>
+      <h1>部門範本管理</h1>
+      <p class="subtitle">維護平台共用的部門範本字典 + 產業 × 規模指派</p>
+    </div>
+  </header>
+
+  @if (error(); as msg) {
+    <div class="alert alert-error">
+      <i class="ri-error-warning-line"></i>
+      <span>{{ msg }}</span>
+      <button class="btn-icon" (click)="error.set(null)"><i class="ri-close-line"></i></button>
+    </div>
+  }
+
+  <div class="layout">
+    <!-- 左側：產業導覽 + 共通池入口 -->
+    <aside class="sidebar">
+      <h3>產業</h3>
+      <ul class="nav-list">
+        @for (ind of industries(); track ind.code) {
+          <li>
+            <button class="nav-item"
+                    [class.active]="selectedIndustryCode() === ind.code"
+                    (click)="selectIndustry(ind.code)">
+              <span class="nav-name">{{ ind.name }}</span>
+              <span class="nav-count">{{ ind.assignment_count ?? 0 }}</span>
+            </button>
+          </li>
+        }
+      </ul>
+      <div class="separator"></div>
+      <button class="nav-item nav-item--common"
+              [class.active]="isCommonPoolView()"
+              (click)="selectIndustry(COMMON_POOL_KEY)">
+        <i class="ri-archive-line"></i>
+        <span class="nav-name">共通部門池</span>
+      </button>
+    </aside>
+
+    <!-- 右側：詳細內容 -->
+    <main class="content">
+      @if (loading()) {
+        <div class="loading">載入中…</div>
+      } @else if (isCommonPoolView()) {
+        <!-- 共通池視圖 -->
+        <header class="content-header">
+          <div>
+            <h2>跨產業共通部門池</h2>
+            <p class="hint">這些部門可被任意產業納入；修改會影響全部使用此範本的產業</p>
+          </div>
+          <button class="btn-primary" (click)="openNewCommon()">
+            <i class="ri-add-line"></i> 新增共通部門
+          </button>
+        </header>
+
+        <div class="card">
+          <div class="table-wrapper">
+            <table class="standard-table">
+              <thead>
+                <tr>
+                  <th>名稱</th>
+                  <th>Value（最終產出價值）</th>
+                  <th style="width: 180px">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (tpl of commonTemplates(); track tpl.id) {
+                  <tr>
+                    <td><strong>{{ tpl.name }}</strong></td>
+                    <td>
+                      @if (tpl.value.length) {
+                        <ul class="inline-list">
+                          @for (v of tpl.value; track $index) { <li>{{ v }}</li> }
+                        </ul>
+                      } @else {
+                        <span class="muted">— 未設定</span>
+                      }
+                    </td>
+                    <td class="actions">
+                      <button class="btn-text" (click)="startEditTemplate(tpl)">編輯</button>
+                      <button class="btn-text btn-text--danger" (click)="deleteTemplate(tpl)">刪除</button>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="3" class="empty">共通池尚無範本</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      } @else if (currentIndustry()) {
+        <!-- 產業詳細視圖 -->
+        <header class="content-header">
+          <div>
+            <h2>{{ currentIndustry()!.name }} <code class="industry-code">{{ currentIndustry()!.code }}</code></h2>
+            <p class="hint">該產業可用的部門範本（含共通池納入），勾選 sizes 控制租戶端的智慧預設</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn-secondary" (click)="openAddFromCommon()">
+              <i class="ri-add-circle-line"></i> 從共通池納入
+            </button>
+            <button class="btn-primary" (click)="openNewSpecific()">
+              <i class="ri-add-line"></i> 新增專屬部門
+            </button>
+          </div>
+        </header>
+
+        <div class="card">
+          <div class="table-wrapper">
+            <table class="standard-table">
+              <thead>
+                <tr>
+                  <th style="width: 60px">類型</th>
+                  <th>名稱</th>
+                  <th>Value</th>
+                  <th style="width: 280px">適用規模</th>
+                  <th style="width: 160px">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of assignments(); track row.id) {
+                  <tr [class.is-common-row]="row.is_common">
+                    <td>
+                      @if (row.is_common) {
+                        <span class="badge badge-common">共通</span>
+                      } @else {
+                        <span class="badge badge-specific">專屬</span>
+                      }
+                    </td>
+                    <td><strong>{{ row.template_name }}</strong></td>
+                    <td>
+                      @if (row.template_value.length) {
+                        <ul class="inline-list">
+                          @for (v of row.template_value; track $index) { <li>{{ v }}</li> }
+                        </ul>
+                      } @else {
+                        <span class="muted">—</span>
+                      }
+                    </td>
+                    <td>
+                      <div class="size-display">
+                        @for (s of row.sizes; track s) {
+                          <span class="badge badge-size">{{ sizeLabel(s) }}</span>
+                        }
+                        @if (!row.sizes.length) {
+                          <span class="muted">— 未設定</span>
+                        }
+                      </div>
+                    </td>
+                    <td class="actions">
+                      <button class="btn-text" (click)="openEditAssignmentModal(row)">編輯</button>
+                      <button class="btn-text btn-text--danger" (click)="removeAssignment(row)">移除</button>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="5" class="empty">尚無指派 — 點上方按鈕建立</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+    </main>
+  </div>
+
+  <!-- 新增範本表單（共通 or 專屬） -->
+  @if (showNewSpecificForm()) {
+    <div class="modal-backdrop" (click)="closeNewForm()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <h2>{{ newSpecificForm().is_common ? '新增共通部門' : '新增 ' + (currentIndustry()?.name || '') + ' 專屬部門' }}</h2>
+          <button class="btn-icon" (click)="closeNewForm()"><i class="ri-close-line"></i></button>
+        </header>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>部門名稱 <span class="required">*</span></label>
+            <input type="text"
+                   [value]="newSpecificForm().name"
+                   (input)="updateNewName($any($event.target).value)"
+                   placeholder="例：研發部" />
+          </div>
+          <div class="form-group">
+            <label>Value（最終產出價值）</label>
+            @for (v of newSpecificForm().value; track $index) {
+              <div class="value-row">
+                <input type="text"
+                       [value]="v"
+                       (input)="updateValueItem($index, $any($event.target).value)"
+                       placeholder="輸入一項產出價值" />
+                @if (newSpecificForm().value.length > 1) {
+                  <button class="btn-icon" (click)="removeValueItem($index)" type="button">
+                    <i class="ri-close-line"></i>
+                  </button>
+                }
+              </div>
+            }
+            <button class="btn-text" (click)="addValueItem()" type="button">
+              <i class="ri-add-line"></i> 新增一項
+            </button>
+          </div>
+          @if (!newSpecificForm().is_common) {
+            <div class="form-group">
+              <label>適用規模（智慧預設用）</label>
+              <div class="size-options">
+                @for (s of SIZE_OPTIONS; track s.code) {
+                  <label class="chk-pill" [class.checked]="newSpecificForm().sizes.includes(s.code)">
+                    <input type="checkbox"
+                           [checked]="newSpecificForm().sizes.includes(s.code)"
+                           (change)="toggleNewSize(s.code)" />
+                    {{ s.label }}<small>{{ s.hint }}</small>
+                  </label>
+                }
+              </div>
+            </div>
+          }
+        </div>
+        <footer class="modal-footer">
+          <button class="btn-secondary" (click)="closeNewForm()">取消</button>
+          <button class="btn-primary" (click)="submitNewTemplate()">建立</button>
+        </footer>
+      </div>
+    </div>
+  }
+
+  <!-- 從共通池納入 -->
+  @if (showAddCommonForm()) {
+    <div class="modal-backdrop" (click)="closeAddCommonForm()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <h2>從共通池納入到「{{ currentIndustry()?.name }}」</h2>
+          <button class="btn-icon" (click)="closeAddCommonForm()"><i class="ri-close-line"></i></button>
+        </header>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>選擇共通部門</label>
+            <div class="common-list">
+              @for (tpl of allTemplates(); track tpl.id) {
+                <label class="radio-row" [class.disabled]="alreadyAssignedTemplateIds().has(tpl.id)">
+                  <input type="radio"
+                         name="commonTpl"
+                         [value]="tpl.id"
+                         [checked]="selectedCommonTemplateId() === tpl.id"
+                         [disabled]="alreadyAssignedTemplateIds().has(tpl.id)"
+                         (change)="selectedCommonTemplateId.set(tpl.id)" />
+                  <span class="radio-name">{{ tpl.name }}</span>
+                  @if (alreadyAssignedTemplateIds().has(tpl.id)) {
+                    <span class="badge badge-muted">已納入</span>
+                  }
+                </label>
+              } @empty {
+                <p class="muted">共通池尚無範本</p>
+              }
+            </div>
+          </div>
+          <div class="form-group">
+            <label>適用規模（針對此產業）</label>
+            <div class="size-options">
+              @for (s of SIZE_OPTIONS; track s.code) {
+                <label class="chk-pill" [class.checked]="addCommonSizes().includes(s.code)">
+                  <input type="checkbox"
+                         [checked]="addCommonSizes().includes(s.code)"
+                         (change)="toggleAddCommonSize(s.code)" />
+                  {{ s.label }}<small>{{ s.hint }}</small>
+                </label>
+              }
+            </div>
+          </div>
+        </div>
+        <footer class="modal-footer">
+          <button class="btn-secondary" (click)="closeAddCommonForm()">取消</button>
+          <button class="btn-primary"
+                  [disabled]="!selectedCommonTemplateId()"
+                  (click)="submitAddFromCommon()">納入</button>
+        </footer>
+      </div>
+    </div>
+  }
+
+  <!-- 編輯共通池範本 -->
+  @if (editingTemplate(); as tpl) {
+    <div class="modal-backdrop" (click)="cancelEditTemplate()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <h2>編輯範本：{{ tpl.name }}</h2>
+          <button class="btn-icon" (click)="cancelEditTemplate()"><i class="ri-close-line"></i></button>
+        </header>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>部門名稱 <span class="required">*</span></label>
+            <input type="text"
+                   [value]="editingTemplateForm().name"
+                   (input)="updateEditingTemplateField('name', $any($event.target).value)" />
+          </div>
+          <div class="form-group">
+            <label>Value</label>
+            @for (v of editingTemplateForm().value; track $index) {
+              <div class="value-row">
+                <input type="text"
+                       [value]="v"
+                       (input)="updateEditValueItem($index, $any($event.target).value)" />
+                @if (editingTemplateForm().value.length > 1) {
+                  <button class="btn-icon" (click)="removeEditValueItem($index)" type="button">
+                    <i class="ri-close-line"></i>
+                  </button>
+                }
+              </div>
+            }
+            <button class="btn-text" (click)="addEditValueItem()" type="button">
+              <i class="ri-add-line"></i> 新增一項
+            </button>
+          </div>
+          <p class="hint">註：修改共通池範本會影響所有使用此範本的產業。</p>
+        </div>
+        <footer class="modal-footer">
+          <button class="btn-secondary" (click)="cancelEditTemplate()">取消</button>
+          <button class="btn-primary" (click)="saveTemplateEdit()">儲存</button>
+        </footer>
+      </div>
+    </div>
+  }
+
+  <!-- 編輯指派（產業詳細視圖：名稱 / Value / 適用規模 三合一） -->
+  @if (editingAssignmentRow(); as row) {
+    <div class="modal-backdrop" (click)="cancelEditAssignmentFull()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <h2>
+            編輯部門：{{ row.template_name }}
+            @if (row.is_common) {
+              <span class="badge badge-common" style="margin-left: 8px">共通</span>
+            } @else {
+              <span class="badge badge-specific" style="margin-left: 8px">專屬</span>
+            }
+          </h2>
+          <button class="btn-icon" (click)="cancelEditAssignmentFull()"><i class="ri-close-line"></i></button>
+        </header>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>部門名稱 <span class="required">*</span></label>
+            <input type="text"
+                   [value]="editingAssignmentName()"
+                   (input)="editingAssignmentName.set($any($event.target).value)" />
+          </div>
+          <div class="form-group">
+            <label>Value（最終產出價值）</label>
+            @for (v of editingAssignmentValue(); track $index) {
+              <div class="value-row">
+                <input type="text"
+                       [value]="v"
+                       (input)="updateAssignValueItem($index, $any($event.target).value)"
+                       placeholder="輸入一項產出價值" />
+                @if (editingAssignmentValue().length > 1) {
+                  <button class="btn-icon" (click)="removeAssignValueItem($index)" type="button">
+                    <i class="ri-close-line"></i>
+                  </button>
+                }
+              </div>
+            }
+            <button class="btn-text" (click)="addAssignValueItem()" type="button">
+              <i class="ri-add-line"></i> 新增一項
+            </button>
+          </div>
+          <div class="form-group">
+            <label>適用規模（智慧預設用）</label>
+            <div class="size-options">
+              @for (s of SIZE_OPTIONS; track s.code) {
+                <label class="chk-pill" [class.checked]="editingAssignmentSizesFull().includes(s.code)">
+                  <input type="checkbox"
+                         [checked]="editingAssignmentSizesFull().includes(s.code)"
+                         (change)="toggleEditFullSize(s.code)" />
+                  {{ s.label }}<small>{{ s.hint }}</small>
+                </label>
+              }
+            </div>
+          </div>
+          @if (row.is_common) {
+            <p class="hint">註：此為共通範本，修改名稱與 Value 會同步影響其他使用此範本的產業；適用規模僅影響本產業。</p>
+          }
+        </div>
+        <footer class="modal-footer">
+          <button class="btn-secondary" (click)="cancelEditAssignmentFull()">取消</button>
+          <button class="btn-primary" (click)="saveEditAssignmentFull()">儲存</button>
+        </footer>
+      </div>
+    </div>
+  }
+</div>

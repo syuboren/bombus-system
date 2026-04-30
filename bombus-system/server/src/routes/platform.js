@@ -362,6 +362,20 @@ router.post('/tenants', async (req, res) => {
     }
   }
 
+  // 驗證 industry（若提供）：必須是 industries.code 中的有效值（D-16）
+  if (industry) {
+    const industryRow = platformDB.queryOne(
+      'SELECT code FROM industries WHERE code = ?',
+      [industry]
+    );
+    if (!industryRow) {
+      return res.status(400).json({
+        error: 'BadRequest',
+        message: `產業代碼 '${industry}' 無效，必須為 industries 表中已存在的代碼`
+      });
+    }
+  }
+
   const tenantId = uuidv4();
   const dbFile = `tenant_${tenantId}.db`;
 
@@ -465,6 +479,19 @@ router.put('/tenants/:id', (req, res) => {
   }
 
   if (industry !== undefined) {
+    // 驗證 industry FK（若非 null/空字串）
+    if (industry) {
+      const industryRow = platformDB.queryOne(
+        'SELECT code FROM industries WHERE code = ?',
+        [industry]
+      );
+      if (!industryRow) {
+        return res.status(400).json({
+          error: 'BadRequest',
+          message: `產業代碼 '${industry}' 無效，必須為 industries 表中已存在的代碼`
+        });
+      }
+    }
     updates.push('industry = ?');
     params.push(industry || null);
   }
@@ -884,5 +911,478 @@ router.put('/plans/:id', (req, res) => {
 
   res.json(updated);
 });
+
+// ════════════════════════════════════════════════════════════
+//  D-16 產業類別管理 (industry-classification)
+// ════════════════════════════════════════════════════════════
+
+// GET /api/platform/industries — 列表 (支援 ?active=true 過濾)
+router.get('/industries', (req, res) => {
+  const platformDB = getPlatformDB();
+  const onlyActive = req.query.active === 'true';
+
+  let sql = `
+    SELECT i.code, i.name, i.display_order, i.is_active, i.created_at,
+           (SELECT COUNT(*) FROM tenants WHERE industry = i.code) AS tenant_count,
+           (SELECT COUNT(*) FROM industry_dept_assignments WHERE industry_code = i.code) AS assignment_count
+    FROM industries i
+  `;
+  if (onlyActive) sql += ' WHERE i.is_active = 1';
+  sql += ' ORDER BY i.display_order ASC, i.code ASC';
+
+  const rows = platformDB.query(sql);
+  res.json(rows);
+});
+
+// POST /api/platform/industries — 新增
+router.post('/industries', (req, res) => {
+  const { code, name, display_order } = req.body;
+  const platformDB = getPlatformDB();
+  const ip = getClientIP(req);
+
+  if (!code || !name) {
+    return res.status(400).json({ error: 'BadRequest', message: '缺少必要欄位：code, name' });
+  }
+  if (!/^[a-z0-9][a-z0-9-]*[a-z0-9]$/.test(code)) {
+    return res.status(400).json({ error: 'BadRequest', message: 'code 格式不正確（kebab-case，至少 2 字元）' });
+  }
+
+  const existing = platformDB.queryOne('SELECT code FROM industries WHERE code = ?', [code]);
+  if (existing) {
+    return res.status(409).json({ error: 'Conflict', message: `產業代碼 '${code}' 已存在` });
+  }
+
+  platformDB.run(
+    'INSERT INTO industries (code, name, display_order, is_active) VALUES (?, ?, ?, 1)',
+    [code, name, display_order || 0]
+  );
+
+  logAudit(platformDB, {
+    user_id: req.user.userId,
+    action: 'industry_create',
+    resource: 'industry',
+    details: { code, name },
+    ip
+  });
+
+  res.status(201).json({ code, name, display_order: display_order || 0, is_active: 1 });
+});
+
+// PUT /api/platform/industries/:code — 更新（不可改 code）
+router.put('/industries/:code', (req, res) => {
+  const { name, display_order, is_active } = req.body;
+  const platformDB = getPlatformDB();
+  const ip = getClientIP(req);
+
+  const existing = platformDB.queryOne('SELECT code FROM industries WHERE code = ?', [req.params.code]);
+  if (!existing) {
+    return res.status(404).json({ error: 'NotFound', message: '產業不存在' });
+  }
+
+  const updates = [];
+  const params = [];
+  if (name !== undefined) { updates.push('name = ?'); params.push(name); }
+  if (display_order !== undefined) { updates.push('display_order = ?'); params.push(display_order); }
+  if (is_active !== undefined) { updates.push('is_active = ?'); params.push(is_active ? 1 : 0); }
+
+  if (updates.length === 0) {
+    return res.status(400).json({ error: 'BadRequest', message: '沒有提供任何更新欄位' });
+  }
+
+  params.push(req.params.code);
+  platformDB.run(`UPDATE industries SET ${updates.join(', ')} WHERE code = ?`, params);
+
+  logAudit(platformDB, {
+    user_id: req.user.userId,
+    action: 'industry_update',
+    resource: 'industry',
+    details: { code: req.params.code, ...req.body },
+    ip
+  });
+
+  const updated = platformDB.queryOne('SELECT * FROM industries WHERE code = ?', [req.params.code]);
+  res.json(updated);
+});
+
+// DELETE /api/platform/industries/:code — 刪除（被引用時阻擋）
+router.delete('/industries/:code', (req, res) => {
+  const platformDB = getPlatformDB();
+  const ip = getClientIP(req);
+
+  const existing = platformDB.queryOne('SELECT code FROM industries WHERE code = ?', [req.params.code]);
+  if (!existing) {
+    return res.status(404).json({ error: 'NotFound', message: '產業不存在' });
+  }
+
+  // 檢查引用：tenants.industry 或 industry_dept_assignments.industry_code
+  const refTenants = platformDB.query(
+    'SELECT id, name FROM tenants WHERE industry = ?',
+    [req.params.code]
+  );
+  const refAssignments = platformDB.query(
+    'SELECT COUNT(*) AS cnt FROM industry_dept_assignments WHERE industry_code = ?',
+    [req.params.code]
+  );
+  const assignCount = refAssignments[0]?.cnt || 0;
+
+  if (refTenants.length > 0 || assignCount > 0) {
+    return res.status(409).json({
+      error: 'Conflict',
+      message: `產業使用中無法刪除（${refTenants.length} 個租戶、${assignCount} 個範本指派引用），請改用「停用」(PUT { is_active: 0 })`,
+      tenants: refTenants.map(t => ({ id: t.id, name: t.name })),
+      assignment_count: assignCount
+    });
+  }
+
+  platformDB.run('DELETE FROM industries WHERE code = ?', [req.params.code]);
+
+  logAudit(platformDB, {
+    user_id: req.user.userId,
+    action: 'industry_delete',
+    resource: 'industry',
+    details: { code: req.params.code },
+    ip
+  });
+
+  res.json({ code: req.params.code, deleted: true });
+});
+
+// POST /api/platform/industries/:code/move — 上下移動排序（與相鄰列交換 display_order）
+// body: { direction: 'up' | 'down' }
+// 'other' 視為固定錨點：不可移動，且其他列的相鄰計算會跳過 'other'
+router.post('/industries/:code/move', (req, res) => {
+  const { direction } = req.body || {};
+  const platformDB = getPlatformDB();
+  const ip = getClientIP(req);
+
+  if (direction !== 'up' && direction !== 'down') {
+    return res.status(400).json({ error: 'BadRequest', message: 'direction 必須為 up 或 down' });
+  }
+
+  const target = platformDB.queryOne(
+    'SELECT code, name, display_order FROM industries WHERE code = ?',
+    [req.params.code]
+  );
+  if (!target) {
+    return res.status(404).json({ error: 'NotFound', message: '產業不存在' });
+  }
+  if (target.code === 'other') {
+    return res.status(400).json({ error: 'BadRequest', message: '"other" 為固定錨點，無法移動' });
+  }
+
+  const adjacent = direction === 'up'
+    ? platformDB.queryOne(
+        `SELECT code, display_order FROM industries
+         WHERE display_order < ? AND code != 'other'
+         ORDER BY display_order DESC, code DESC LIMIT 1`,
+        [target.display_order]
+      )
+    : platformDB.queryOne(
+        `SELECT code, display_order FROM industries
+         WHERE display_order > ? AND code != 'other'
+         ORDER BY display_order ASC, code ASC LIMIT 1`,
+        [target.display_order]
+      );
+
+  if (!adjacent) {
+    return res.status(409).json({
+      error: 'Conflict',
+      message: direction === 'up' ? '已位於最上方' : '已位於最下方'
+    });
+  }
+
+  platformDB.transaction(() => {
+    platformDB.run('UPDATE industries SET display_order = ? WHERE code = ?', [adjacent.display_order, target.code]);
+    platformDB.run('UPDATE industries SET display_order = ? WHERE code = ?', [target.display_order, adjacent.code]);
+  });
+
+  logAudit(platformDB, {
+    user_id: req.user.userId,
+    action: 'industry_move',
+    resource: 'industry',
+    details: { code: target.code, direction, swapped_with: adjacent.code },
+    ip
+  });
+
+  res.json({ swapped: [target.code, adjacent.code], direction });
+});
+
+// ════════════════════════════════════════════════════════════
+//  D-16 部門範本管理 (department-template-import)
+// ════════════════════════════════════════════════════════════
+
+// GET /api/platform/department-templates — 列表（可選 ?industry= / ?is_common=true）
+router.get('/department-templates', (req, res) => {
+  const platformDB = getPlatformDB();
+  const { industry, is_common } = req.query;
+
+  let sql = 'SELECT * FROM department_templates';
+  const params = [];
+  const conds = [];
+
+  if (industry) {
+    sql = `
+      SELECT dt.*, ida.sizes_json, ida.display_order AS assignment_order
+      FROM department_templates dt
+      JOIN industry_dept_assignments ida ON ida.dept_template_id = dt.id
+      WHERE ida.industry_code = ?
+    `;
+    params.push(industry);
+    if (is_common !== undefined) {
+      sql += ' AND dt.is_common = ?';
+      params.push(is_common === 'true' ? 1 : 0);
+    }
+    sql += ' ORDER BY dt.is_common DESC, ida.display_order ASC, dt.name ASC';
+  } else {
+    if (is_common !== undefined) conds.push('is_common = ' + (is_common === 'true' ? 1 : 0));
+    if (conds.length) sql += ' WHERE ' + conds.join(' AND ');
+    sql += ' ORDER BY is_common DESC, name ASC';
+  }
+
+  const rows = platformDB.query(sql, params);
+  // 解析 value JSON
+  const result = rows.map(r => ({
+    ...r,
+    value: parseJsonField(r.value, []),
+    sizes_json: r.sizes_json ? parseJsonField(r.sizes_json, []) : undefined
+  }));
+  res.json(result);
+});
+
+// POST /api/platform/department-templates — 新增範本
+router.post('/department-templates', (req, res) => {
+  const { name, value, is_common } = req.body;
+  const platformDB = getPlatformDB();
+  const ip = getClientIP(req);
+
+  if (!name) {
+    return res.status(400).json({ error: 'BadRequest', message: '缺少必要欄位：name' });
+  }
+
+  const id = uuidv4();
+  platformDB.run(
+    `INSERT INTO department_templates (id, name, value, is_common) VALUES (?, ?, ?, ?)`,
+    [id, name, JSON.stringify(value || []), is_common ? 1 : 0]
+  );
+
+  logAudit(platformDB, {
+    user_id: req.user.userId,
+    action: 'dept_template_create',
+    resource: 'department_template',
+    details: { id, name, is_common: !!is_common },
+    ip
+  });
+
+  res.status(201).json({ id, name, value: value || [], is_common: is_common ? 1 : 0 });
+});
+
+// PUT /api/platform/department-templates/:id — 更新
+router.put('/department-templates/:id', (req, res) => {
+  const { name, value, is_common } = req.body;
+  const platformDB = getPlatformDB();
+  const ip = getClientIP(req);
+
+  const existing = platformDB.queryOne('SELECT id FROM department_templates WHERE id = ?', [req.params.id]);
+  if (!existing) {
+    return res.status(404).json({ error: 'NotFound', message: '範本不存在' });
+  }
+
+  const updates = [];
+  const params = [];
+  if (name !== undefined) { updates.push('name = ?'); params.push(name); }
+  if (value !== undefined) { updates.push('value = ?'); params.push(JSON.stringify(value)); }
+  if (is_common !== undefined) { updates.push('is_common = ?'); params.push(is_common ? 1 : 0); }
+  updates.push("updated_at = datetime('now')");
+
+  if (updates.length === 1) {
+    return res.status(400).json({ error: 'BadRequest', message: '沒有提供任何更新欄位' });
+  }
+
+  params.push(req.params.id);
+  platformDB.run(`UPDATE department_templates SET ${updates.join(', ')} WHERE id = ?`, params);
+
+  logAudit(platformDB, {
+    user_id: req.user.userId,
+    action: 'dept_template_update',
+    resource: 'department_template',
+    details: { id: req.params.id, name },
+    ip
+  });
+
+  const updated = platformDB.queryOne('SELECT * FROM department_templates WHERE id = ?', [req.params.id]);
+  res.json({ ...updated, value: parseJsonField(updated.value, []) });
+});
+
+// DELETE /api/platform/department-templates/:id — 刪除（CASCADE 連帶刪除指派）
+router.delete('/department-templates/:id', (req, res) => {
+  const platformDB = getPlatformDB();
+  const ip = getClientIP(req);
+
+  const existing = platformDB.queryOne('SELECT id, name FROM department_templates WHERE id = ?', [req.params.id]);
+  if (!existing) {
+    return res.status(404).json({ error: 'NotFound', message: '範本不存在' });
+  }
+
+  // CASCADE 自動刪除 industry_dept_assignments 中的對應 row
+  platformDB.run('DELETE FROM department_templates WHERE id = ?', [req.params.id]);
+
+  logAudit(platformDB, {
+    user_id: req.user.userId,
+    action: 'dept_template_delete',
+    resource: 'department_template',
+    details: { id: req.params.id, name: existing.name },
+    ip
+  });
+
+  res.json({ id: req.params.id, deleted: true });
+});
+
+// ─── 產業 × 範本指派 (industry_dept_assignments) ───
+
+// GET /api/platform/industry-dept-assignments?industry=xxx — 列表（必填 industry）
+router.get('/industry-dept-assignments', (req, res) => {
+  const platformDB = getPlatformDB();
+  const { industry } = req.query;
+
+  if (!industry) {
+    return res.status(400).json({ error: 'BadRequest', message: 'industry query param 必填' });
+  }
+
+  const rows = platformDB.query(
+    `SELECT ida.id, ida.industry_code, ida.dept_template_id, ida.sizes_json, ida.display_order,
+            dt.name AS template_name, dt.value AS template_value, dt.is_common
+     FROM industry_dept_assignments ida
+     JOIN department_templates dt ON dt.id = ida.dept_template_id
+     WHERE ida.industry_code = ?
+     ORDER BY dt.is_common DESC, ida.display_order ASC, dt.name ASC`,
+    [industry]
+  );
+
+  const result = rows.map(r => ({
+    ...r,
+    sizes_json: parseJsonField(r.sizes_json, []),
+    template_value: parseJsonField(r.template_value, [])
+  }));
+  res.json(result);
+});
+
+// POST /api/platform/industry-dept-assignments — 新增指派
+router.post('/industry-dept-assignments', (req, res) => {
+  const { industry_code, dept_template_id, sizes_json, display_order } = req.body;
+  const platformDB = getPlatformDB();
+  const ip = getClientIP(req);
+
+  if (!industry_code || !dept_template_id) {
+    return res.status(400).json({ error: 'BadRequest', message: '缺少必要欄位：industry_code, dept_template_id' });
+  }
+
+  // 驗證 FK
+  const industry = platformDB.queryOne('SELECT code FROM industries WHERE code = ?', [industry_code]);
+  if (!industry) {
+    return res.status(400).json({ error: 'BadRequest', message: `產業代碼 '${industry_code}' 不存在` });
+  }
+  const tpl = platformDB.queryOne('SELECT id FROM department_templates WHERE id = ?', [dept_template_id]);
+  if (!tpl) {
+    return res.status(400).json({ error: 'BadRequest', message: '範本不存在' });
+  }
+
+  // 重複檢查
+  const existing = platformDB.queryOne(
+    'SELECT id FROM industry_dept_assignments WHERE industry_code = ? AND dept_template_id = ?',
+    [industry_code, dept_template_id]
+  );
+  if (existing) {
+    return res.status(409).json({ error: 'Conflict', message: '此產業已指派此範本' });
+  }
+
+  const id = uuidv4();
+  const sizes = Array.isArray(sizes_json) ? sizes_json : (sizes_json || []);
+  platformDB.run(
+    'INSERT INTO industry_dept_assignments (id, industry_code, dept_template_id, sizes_json, display_order) VALUES (?, ?, ?, ?, ?)',
+    [id, industry_code, dept_template_id, JSON.stringify(sizes), display_order || 0]
+  );
+
+  logAudit(platformDB, {
+    user_id: req.user.userId,
+    action: 'industry_dept_assignment_create',
+    resource: 'industry_dept_assignment',
+    details: { id, industry_code, dept_template_id, sizes },
+    ip
+  });
+
+  res.status(201).json({ id, industry_code, dept_template_id, sizes_json: sizes, display_order: display_order || 0 });
+});
+
+// PUT /api/platform/industry-dept-assignments/:id — 更新（主要更新 sizes_json）
+router.put('/industry-dept-assignments/:id', (req, res) => {
+  const { sizes_json, display_order } = req.body;
+  const platformDB = getPlatformDB();
+  const ip = getClientIP(req);
+
+  const existing = platformDB.queryOne('SELECT id FROM industry_dept_assignments WHERE id = ?', [req.params.id]);
+  if (!existing) {
+    return res.status(404).json({ error: 'NotFound', message: '指派不存在' });
+  }
+
+  const updates = [];
+  const params = [];
+  if (sizes_json !== undefined) {
+    const sizes = Array.isArray(sizes_json) ? sizes_json : sizes_json;
+    updates.push('sizes_json = ?');
+    params.push(JSON.stringify(sizes));
+  }
+  if (display_order !== undefined) {
+    updates.push('display_order = ?');
+    params.push(display_order);
+  }
+
+  if (updates.length === 0) {
+    return res.status(400).json({ error: 'BadRequest', message: '沒有提供任何更新欄位' });
+  }
+
+  params.push(req.params.id);
+  platformDB.run(`UPDATE industry_dept_assignments SET ${updates.join(', ')} WHERE id = ?`, params);
+
+  logAudit(platformDB, {
+    user_id: req.user.userId,
+    action: 'industry_dept_assignment_update',
+    resource: 'industry_dept_assignment',
+    details: { id: req.params.id, ...req.body },
+    ip
+  });
+
+  const updated = platformDB.queryOne('SELECT * FROM industry_dept_assignments WHERE id = ?', [req.params.id]);
+  res.json({ ...updated, sizes_json: parseJsonField(updated.sizes_json, []) });
+});
+
+// DELETE /api/platform/industry-dept-assignments/:id — 移除指派
+router.delete('/industry-dept-assignments/:id', (req, res) => {
+  const platformDB = getPlatformDB();
+  const ip = getClientIP(req);
+
+  const existing = platformDB.queryOne('SELECT * FROM industry_dept_assignments WHERE id = ?', [req.params.id]);
+  if (!existing) {
+    return res.status(404).json({ error: 'NotFound', message: '指派不存在' });
+  }
+
+  platformDB.run('DELETE FROM industry_dept_assignments WHERE id = ?', [req.params.id]);
+
+  logAudit(platformDB, {
+    user_id: req.user.userId,
+    action: 'industry_dept_assignment_delete',
+    resource: 'industry_dept_assignment',
+    details: { id: req.params.id },
+    ip
+  });
+
+  res.json({ id: req.params.id, deleted: true });
+});
+
+// ─── helper：JSON 欄位安全解析 ───
+function parseJsonField(s, fallback) {
+  if (s === null || s === undefined) return fallback;
+  if (typeof s !== 'string') return s;
+  try { return JSON.parse(s); } catch (e) { return fallback; }
+}
 
 module.exports = router;

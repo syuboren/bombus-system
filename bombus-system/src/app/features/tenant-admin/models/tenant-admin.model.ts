@@ -13,6 +13,8 @@ export interface OrgUnit {
   type: OrgUnitType;
   parent_id: string | null;
   level: number;
+  /** 單位代碼（選填，部門/子公司皆可使用） */
+  code?: string | null;
   created_at: string;
   children?: OrgUnit[];
 }

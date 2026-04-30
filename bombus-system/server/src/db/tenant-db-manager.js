@@ -200,10 +200,11 @@ class TenantDBManager {
     let changed = false;
 
     // departments 表新增欄位
+    // 註：D-16 變更後，responsibilities 已重新命名為 value（限 departments；JD 不受影響）。
+    //     responsibilities → value 的 RENAME 由下方獨立冪等區塊處理。
     const deptMigrations = [
       'ALTER TABLE departments ADD COLUMN manager_id TEXT REFERENCES employees(id)',
       'ALTER TABLE departments ADD COLUMN head_count INTEGER DEFAULT 0',
-      "ALTER TABLE departments ADD COLUMN responsibilities TEXT DEFAULT '[]'",
       "ALTER TABLE departments ADD COLUMN kpi_items TEXT DEFAULT '[]'",
       "ALTER TABLE departments ADD COLUMN competency_focus TEXT DEFAULT '[]'",
       'ALTER TABLE departments ADD COLUMN org_unit_id TEXT REFERENCES org_units(id)'
@@ -211,6 +212,22 @@ class TenantDBManager {
     for (const sql of deptMigrations) {
       try { db.run(sql); changed = true; } catch (e) { /* 欄位已存在則忽略 */ }
     }
+
+    // D-16：departments.responsibilities → value（rename 而非新增；冪等）
+    // - 既有租戶有 responsibilities 但無 value：執行 RENAME COLUMN
+    // - 兩者皆無（極早期租戶）：直接 ADD COLUMN value
+    // - 已是 value：no-op
+    try {
+      const cols = db.exec("PRAGMA table_info(departments)")[0]?.values?.map(r => r[1]) || [];
+      if (cols.includes('responsibilities') && !cols.includes('value')) {
+        db.run('ALTER TABLE departments RENAME COLUMN responsibilities TO value');
+        console.log('🔄 departments.responsibilities → value (D-16)');
+        changed = true;
+      } else if (!cols.includes('responsibilities') && !cols.includes('value')) {
+        db.run("ALTER TABLE departments ADD COLUMN value TEXT DEFAULT '[]'");
+        changed = true;
+      }
+    } catch (e) { console.warn('departments.value migration:', e.message); }
 
     // departments.org_unit_id 回填：遞迴向上找到 subsidiary/group 祖先
     try {
@@ -268,14 +285,15 @@ class TenantDBManager {
             sort_order INTEGER DEFAULT 0,
             manager_id TEXT REFERENCES employees(id),
             head_count INTEGER DEFAULT 0,
-            responsibilities TEXT DEFAULT '[]',
+            value TEXT DEFAULT '[]',
             kpi_items TEXT DEFAULT '[]',
             competency_focus TEXT DEFAULT '[]',
             org_unit_id TEXT REFERENCES org_units(id),
             created_at TEXT DEFAULT (datetime('now')),
             UNIQUE(name, org_unit_id)
           )`);
-          db.run('INSERT INTO departments_new SELECT id, name, code, sort_order, manager_id, head_count, responsibilities, kpi_items, competency_focus, org_unit_id, created_at FROM departments');
+          // 此時 responsibilities 已被先前的 D-16 rename 區塊改為 value
+          db.run('INSERT INTO departments_new (id, name, code, sort_order, manager_id, head_count, value, kpi_items, competency_focus, org_unit_id, created_at) SELECT id, name, code, sort_order, manager_id, head_count, value, kpi_items, competency_focus, org_unit_id, created_at FROM departments');
           const newCount = db.exec('SELECT COUNT(*) FROM departments_new')[0].values[0][0];
           if (newCount !== oldCount) {
             db.run('DROP TABLE departments_new');

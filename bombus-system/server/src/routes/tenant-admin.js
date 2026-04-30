@@ -40,6 +40,7 @@ const { tenantMiddleware } = require('../middleware/tenant');
 const { requireRole } = require('../middleware/permission');
 const { getPlatformDB } = require('../db/platform-db');
 const { logAudit, getClientIP } = require('../utils/audit-logger');
+const { resolveCompanyOrgUnitId } = require('../utils/org-unit');
 
 // 所有路由需認證 + 租戶上下文 + 管理員角色
 router.use(authMiddleware, tenantMiddleware, requireRole('super_admin', 'subsidiary_admin'));
@@ -56,7 +57,7 @@ router.get('/org-units', (req, res) => {
 });
 
 router.post('/org-units', (req, res) => {
-  const { name, type, parent_id } = req.body;
+  const { name, type, parent_id, code } = req.body;
 
   if (!name || !type) {
     return res.status(400).json({
@@ -70,6 +71,15 @@ router.post('/org-units', (req, res) => {
     return res.status(400).json({
       error: 'BadRequest',
       message: `無效類型：${type}（有效值：${validTypes.join(', ')}）`
+    });
+  }
+
+  // code 格式驗證（選填）
+  const trimmedCode = (code || '').trim() || null;
+  if (trimmedCode && trimmedCode.length > 50) {
+    return res.status(400).json({
+      error: 'BadRequest',
+      message: 'code 不可超過 50 字元'
     });
   }
 
@@ -89,12 +99,80 @@ router.post('/org-units', (req, res) => {
     level = parent.level + 1;
   }
 
+  const dup = req.tenantDB.queryOne(
+    'SELECT id FROM org_units WHERE name = ? AND type = ? AND parent_id IS ?',
+    [name, type, parent_id || null]
+  );
+  if (dup) {
+    return res.status(409).json({
+      error: 'Conflict',
+      message: `「${name}」已存在於此上層單位下，請使用其他名稱`,
+      existing_id: dup.id
+    });
+  }
+
+  // 同上層單位下 code 也不可重複（若有提供 code）
+  if (trimmedCode) {
+    const dupCode = req.tenantDB.queryOne(
+      'SELECT id, name FROM org_units WHERE code = ? AND parent_id IS ?',
+      [trimmedCode, parent_id || null]
+    );
+    if (dupCode) {
+      return res.status(409).json({
+        error: 'Conflict',
+        message: `代碼「${trimmedCode}」已被「${dupCode.name}」使用，請使用其他代碼`,
+        existing_id: dupCode.id
+      });
+    }
+  }
+
+  // 部門層額外檢查 departments 業務主檔（不同 parent_id 但同 org_unit_id 也算重複）
+  let companyOrgUnitId = null;
+  if (type === 'department' && parent_id) {
+    companyOrgUnitId = resolveCompanyOrgUnitId(req.tenantDB, parent_id);
+    if (companyOrgUnitId) {
+      const dupDept = req.tenantDB.queryOne(
+        'SELECT id FROM departments WHERE name = ? AND org_unit_id = ?',
+        [name, companyOrgUnitId]
+      );
+      if (dupDept) {
+        return res.status(409).json({
+          error: 'Conflict',
+          message: `「${name}」已存在於此公司，請使用其他名稱`,
+          existing_id: dupDept.id
+        });
+      }
+      // departments 表 code 重複檢查（同公司內）
+      if (trimmedCode) {
+        const dupDeptCode = req.tenantDB.queryOne(
+          'SELECT id, name FROM departments WHERE code = ? AND org_unit_id = ?',
+          [trimmedCode, companyOrgUnitId]
+        );
+        if (dupDeptCode) {
+          return res.status(409).json({
+            error: 'Conflict',
+            message: `代碼「${trimmedCode}」已被部門「${dupDeptCode.name}」使用，請使用其他代碼`,
+            existing_id: dupDeptCode.id
+          });
+        }
+      }
+    }
+  }
+
   const id = uuidv4();
 
   req.tenantDB.run(
-    'INSERT INTO org_units (id, name, type, parent_id, level) VALUES (?, ?, ?, ?, ?)',
-    [id, name, type, parent_id || null, level]
+    'INSERT INTO org_units (id, name, type, parent_id, level, code) VALUES (?, ?, ?, ?, ?, ?)',
+    [id, name, type, parent_id || null, level, trimmedCode]
   );
+
+  // 同步建立 departments 表（type=department 才需要，沿用既有設計）
+  if (type === 'department' && companyOrgUnitId) {
+    req.tenantDB.run(
+      'INSERT INTO departments (id, name, code, org_unit_id) VALUES (?, ?, ?, ?)',
+      [uuidv4(), name, trimmedCode, companyOrgUnitId]
+    );
+  }
 
   const created = req.tenantDB.queryOne(
     'SELECT * FROM org_units WHERE id = ?',
@@ -190,25 +268,71 @@ router.delete('/org-units/:id', (req, res) => {
   if (children.count > 0) {
     return res.status(400).json({
       error: 'BadRequest',
-      message: '此組織單位下仍有子組織，請先刪除或移動'
+      message: `此組織單位下仍有 ${children.count} 個子組織，請先刪除或移動`
     });
   }
 
-  // 檢查是否有角色綁定
-  const roleBindings = req.tenantDB.queryOne(
-    'SELECT COUNT(*) as count FROM user_roles WHERE org_unit_id = ?',
+  // 檢查是否有角色綁定；列出前 5 筆具體 user × role，避免訊息與 payload 過大
+  const totalBinding = req.tenantDB.queryOne(
+    'SELECT COUNT(*) AS count FROM user_roles WHERE org_unit_id = ?',
     [req.params.id]
   );
 
-  if (roleBindings.count > 0) {
+  if (totalBinding && totalBinding.count > 0) {
+    const sampleBindings = req.tenantDB.query(
+      `SELECT u.id AS user_id, u.name AS user_name, u.email, r.name AS role_name
+       FROM user_roles ur
+       JOIN users u ON u.id = ur.user_id
+       JOIN roles r ON r.id = ur.role_id
+       WHERE ur.org_unit_id = ?
+       ORDER BY u.name
+       LIMIT 5`,
+      [req.params.id]
+    );
+    const detail = sampleBindings
+      .map(b => `${b.user_name}（${b.role_name}）`)
+      .join('、');
+    const more = totalBinding.count > sampleBindings.length
+      ? `（另有 ${totalBinding.count - sampleBindings.length} 筆）`
+      : '';
     return res.status(400).json({
       error: 'BadRequest',
-      message: '此組織單位仍有使用者角色綁定，請先移除'
+      message: `此組織單位仍有角色綁定：${detail}${more}。請至「員工與帳號管理」移除後再刪除。`,
+      bindings: sampleBindings,
+      total: totalBinding.count
     });
   }
 
-  req.tenantDB.run('DELETE FROM org_units WHERE id = ?', [req.params.id]);
-  res.json({ message: '組織單位已刪除' });
+  // 部門類型：額外檢查員工綁定 + 同步刪除 departments 表的對應 row
+  if (orgUnit.type === 'department') {
+    const empCount = req.tenantDB.queryOne(
+      'SELECT COUNT(*) as count FROM employees WHERE department = ? AND org_unit_id = ?',
+      [orgUnit.name, orgUnit.parent_id]
+    );
+
+    if (empCount && empCount.count > 0) {
+      return res.status(400).json({
+        error: 'BadRequest',
+        message: `此部門仍有 ${empCount.count} 名員工，請先移動員工`
+      });
+    }
+
+    const companyOrgUnitId = resolveCompanyOrgUnitId(req.tenantDB, orgUnit.parent_id);
+
+    req.tenantDB.transaction(() => {
+      req.tenantDB.run('DELETE FROM org_units WHERE id = ?', [req.params.id]);
+      if (companyOrgUnitId) {
+        req.tenantDB.run(
+          'DELETE FROM departments WHERE name = ? AND org_unit_id = ?',
+          [orgUnit.name, companyOrgUnitId]
+        );
+      }
+    });
+  } else {
+    req.tenantDB.run('DELETE FROM org_units WHERE id = ?', [req.params.id]);
+  }
+
+  res.json({ success: true, message: '組織單位已刪除' });
 });
 
 // ══════════════════════════════════════════════════════════

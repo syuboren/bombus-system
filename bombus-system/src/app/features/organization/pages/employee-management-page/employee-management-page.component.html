@@ -177,7 +177,7 @@
                       <div class="employee-position-info">
                         <span class="position-title">{{ employee.position }}</span>
                         <span class="position-dept">{{ employee.department }}</span>
-                        @if (employee.positions?.[0]?.companyName) {
+                        @if (employee.positions.length > 0 && employee.positions[0].companyName) {
                         <span class="position-company">{{ employee.positions[0].companyName }}</span>
                         }
                       </div>
@@ -247,7 +247,7 @@
                           </div>
                         </td>
                         <td class="col-no">{{ employee.employeeNo }}</td>
-                        <td class="col-company">{{ employee.positions?.[0]?.companyName || '-' }}</td>
+                        <td class="col-company">{{ (employee.positions.length > 0 && employee.positions[0].companyName) || '-' }}</td>
                         <td class="col-department">{{ employee.department }}</td>
                         <td class="col-grade">Grade {{ employee.grade }}</td>
                         <td class="col-level">{{ employee.level }}</td>

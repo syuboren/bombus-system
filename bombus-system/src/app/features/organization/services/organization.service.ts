@@ -298,6 +298,8 @@ export class OrganizationService {
   }
 
   private mapDepartment(d: any): Department {
+    // D-16: API 回傳同時帶 value 與 responsibilities（過渡期）；以 value 為主
+    const valueArr: string[] = d.value || d.responsibilities || [];
     return {
       id: d.id,
       companyId: d.companyId,
@@ -307,8 +309,95 @@ export class OrganizationService {
       managerName: d.managerName,
       level: d.level || 1,
       employeeCount: d.employeeCount || 0,
-      responsibilities: d.responsibilities || []
+      value: valueArr,
+      responsibilities: valueArr
     };
+  }
+
+  // ============================================================
+  // D-16 部門範本 + 匯入相關 API
+  // ============================================================
+
+  /**
+   * 取得啟用中的產業類別清單（租戶端唯讀，供「範本庫導入」流程使用）
+   */
+  getIndustriesForTenant(activeOnly = true): Observable<Array<{
+    code: string;
+    name: string;
+    display_order: number;
+  }>> {
+    const url = activeOnly
+      ? '/api/organization/industries?active=true'
+      : '/api/organization/industries?active=false';
+    return this.http.get<Array<{ code: string; name: string; display_order: number }>>(url);
+  }
+
+  /**
+   * 取得指定產業的部門範本清單（含共通池），含 pre_checked 旗標
+   */
+  getDepartmentTemplates(industry: string, size?: string): Observable<{
+    industry: { code: string; name: string };
+    size: string | null;
+    departments: Array<{
+      assignment_id: string;
+      template_id: string;
+      name: string;
+      value: string[];
+      is_common: boolean;
+      applicable_sizes: string[];
+      display_order: number;
+      pre_checked: boolean;
+    }>;
+  }> {
+    const params: Record<string, string> = { industry };
+    if (size) params['size'] = size;
+    const query = new URLSearchParams(params).toString();
+    return this.http.get<any>(`/api/organization/department-templates?${query}`);
+  }
+
+  /**
+   * 預檢匯入：驗證 + 衝突檢查（不寫入 DB）
+   */
+  validateDepartmentImport(
+    companyId: string,
+    items: Array<{ name: string; code?: string; value?: string[] }>,
+    mode: 'overwrite' | 'merge'
+  ): Observable<{
+    totalRows: number;
+    validRows: number;
+    errorRows: number;
+    targetOrgUnitId: string;
+    items: Array<{ row: number; status: 'valid' | 'conflict' | 'error'; data: any; errors?: string[]; existing_id?: string }>;
+    conflicts: Array<{ row: number; name: string; code: string | null; existing_id: string; value: string[] }>;
+    to_insert: Array<{ row: number; name: string; code: string | null; value: string[] }>;
+    mode: 'overwrite' | 'merge';
+  }> {
+    return this.http.post<any>(
+      `/api/organization/companies/${companyId}/departments/import/validate`,
+      { items, mode }
+    );
+  }
+
+  /**
+   * 執行匯入：包 transaction 寫入 org_units + departments
+   */
+  executeDepartmentImport(
+    companyId: string,
+    items: Array<{ name: string; code?: string; value?: string[] }>,
+    mode: 'overwrite' | 'merge'
+  ): Observable<{
+    success: boolean;
+    mode: 'overwrite' | 'merge';
+    targetOrgUnitId: string;
+    created: Array<{ id: string; orgUnitId: string; name: string; code: string | null; row: number }>;
+    updated: Array<{ id: string; name: string; row: number }>;
+    skipped: Array<{ name: string; row: number; reason: string }>;
+    summary: { totalRows: number; created: number; updated: number; skipped: number };
+  }> {
+    return this.http.post<any>(
+      `/api/organization/companies/${companyId}/departments/import/execute`,
+      { items, mode }
+    );
   }
 
 }

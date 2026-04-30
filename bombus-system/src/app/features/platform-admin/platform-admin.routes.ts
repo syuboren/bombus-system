@@ -20,5 +20,15 @@ export const PLATFORM_ADMIN_ROUTES: Routes = [
     path: 'audit',
     loadComponent: () => import('./pages/audit-log-page/audit-log-page.component')
       .then(m => m.AuditLogPageComponent)
+  },
+  {
+    path: 'industries',
+    loadComponent: () => import('./pages/industry-management-page/industry-management-page.component')
+      .then(m => m.IndustryManagementPageComponent)
+  },
+  {
+    path: 'department-templates',
+    loadComponent: () => import('./pages/department-template-page/department-template-page.component')
+      .then(m => m.DepartmentTemplatePageComponent)
   }
 ];

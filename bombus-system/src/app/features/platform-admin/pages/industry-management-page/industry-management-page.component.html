@@ -1,0 +1,166 @@
+<div class="page">
+  <header class="page-header">
+    <div>
+      <h1>產業類別維護</h1>
+      <p class="subtitle">管理平台共用的產業分類，供建立租戶與部門範本指派使用</p>
+    </div>
+    <button class="btn-primary" (click)="openCreateForm()">
+      <i class="ri-add-line"></i> 新增產業
+    </button>
+  </header>
+
+  @if (error(); as msg) {
+    <div class="alert alert-error">
+      <i class="ri-error-warning-line"></i>
+      <span>{{ msg }}</span>
+      <button class="btn-icon" (click)="error.set(null)"><i class="ri-close-line"></i></button>
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="loading">載入中…</div>
+  } @else {
+    <div class="card">
+      <div class="table-wrapper">
+        <table class="standard-table">
+          <thead>
+            <tr>
+              <th style="width: 96px">排序</th>
+              <th style="width: 160px">代碼</th>
+              <th>名稱</th>
+              <th style="width: 100px; text-align: center">租戶數</th>
+              <th style="width: 100px; text-align: center">指派數</th>
+              <th style="width: 100px; text-align: center">狀態</th>
+              <th style="width: 180px">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (ind of industries(); track ind.code) {
+              <tr [class.inactive]="!ind.is_active">
+                <td class="order-cell">
+                  @if (ind.code === 'other') {
+                    <span class="order-locked" title="固定錨點">—</span>
+                  } @else {
+                    <button class="btn-order"
+                            type="button"
+                            [disabled]="!canMoveUp(ind)"
+                            (click)="moveUp(ind)"
+                            aria-label="上移">
+                      <i class="ri-arrow-up-s-line"></i>
+                    </button>
+                    <button class="btn-order"
+                            type="button"
+                            [disabled]="!canMoveDown(ind)"
+                            (click)="moveDown(ind)"
+                            aria-label="下移">
+                      <i class="ri-arrow-down-s-line"></i>
+                    </button>
+                  }
+                </td>
+                <td><code>{{ ind.code }}</code></td>
+                <td>{{ ind.name }}</td>
+                <td class="num">{{ ind.tenant_count ?? 0 }}</td>
+                <td class="num">{{ ind.assignment_count ?? 0 }}</td>
+                <td class="status-cell">
+                  @if (ind.is_active) {
+                    <span class="badge badge-active">啟用</span>
+                  } @else {
+                    <span class="badge badge-inactive">停用</span>
+                  }
+                </td>
+                <td class="actions">
+                  <button class="btn-text" (click)="openEditForm(ind)">編輯</button>
+                  <button class="btn-text"
+                          [class.btn-text--warn]="ind.is_active"
+                          (click)="toggleActive(ind)">
+                    {{ ind.is_active ? '停用' : '啟用' }}
+                  </button>
+                  <button class="btn-text btn-text--danger" (click)="attemptDelete(ind)">刪除</button>
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="7" class="empty">尚無產業資料</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  <!-- 新增 / 編輯表單 -->
+  @if (showForm()) {
+    <div class="modal-backdrop" (click)="closeForm()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <h2>{{ editingCode() ? '編輯產業' : '新增產業' }}</h2>
+          <button class="btn-icon" (click)="closeForm()"><i class="ri-close-line"></i></button>
+        </header>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>代碼 <span class="required">*</span></label>
+            <input type="text"
+                   [value]="formData().code"
+                   (input)="updateField('code', $any($event.target).value)"
+                   [disabled]="!!editingCode()"
+                   placeholder="kebab-case，例：manufacturing" />
+            <small class="hint">建立後不可變更代碼。僅小寫英數字與短橫線。</small>
+          </div>
+          <div class="form-group">
+            <label>名稱 <span class="required">*</span></label>
+            <input type="text"
+                   [value]="formData().name"
+                   (input)="updateField('name', $any($event.target).value)"
+                   placeholder="例：製造業" />
+            @if (!editingCode()) {
+              <small class="hint">建立後將排在最後一筆，可於列表使用上下箭頭調整順序。</small>
+            }
+          </div>
+          @if (editingCode()) {
+            <div class="form-group form-group--row">
+              <label>啟用狀態</label>
+              <input type="checkbox"
+                     [checked]="formData().is_active"
+                     (change)="updateField('is_active', $any($event.target).checked)" />
+              <span>{{ formData().is_active ? '啟用' : '停用' }}</span>
+            </div>
+          }
+        </div>
+        <footer class="modal-footer">
+          <button class="btn-secondary" (click)="closeForm()">取消</button>
+          <button class="btn-primary" (click)="submit()">
+            {{ editingCode() ? '更新' : '建立' }}
+          </button>
+        </footer>
+      </div>
+    </div>
+  }
+
+  <!-- 阻擋刪除對話框 -->
+  @if (blockedDelete(); as info) {
+    <div class="modal-backdrop" (click)="closeBlockedDeleteDialog()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <h2>無法刪除：使用中</h2>
+          <button class="btn-icon" (click)="closeBlockedDeleteDialog()"><i class="ri-close-line"></i></button>
+        </header>
+        <div class="modal-body">
+          <p>此產業正被以下資源引用，請改用「停用」操作以隱藏於新表單。</p>
+          @if (info.tenants.length) {
+            <h4>使用中租戶（{{ info.tenants.length }}）</h4>
+            <ul class="list-block">
+              @for (t of info.tenants; track t.id) {
+                <li>{{ t.name }} <code>({{ t.id }})</code></li>
+              }
+            </ul>
+          }
+          @if (info.assignment_count > 0) {
+            <p>另有 {{ info.assignment_count }} 筆部門範本指派引用此產業。</p>
+          }
+        </div>
+        <footer class="modal-footer">
+          <button class="btn-secondary" (click)="closeBlockedDeleteDialog()">了解</button>
+        </footer>
+      </div>
+    </div>
+  }
+</div>
