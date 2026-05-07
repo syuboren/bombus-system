@@ -584,7 +584,8 @@ router.get('/permissions', (req, res) => {
 // ══════════════════════════════════════════════════════════
 
 router.get('/users', (req, res) => {
-  const { page = 1, limit = 20, search, status } = req.query;
+  const { page = 1, limit = 20, search, status, all } = req.query;
+  const wantAll = all === 'true' || all === '1';
   const offset = (parseInt(page) - 1) * parseInt(limit);
 
   let whereClauses = [];
@@ -609,22 +610,23 @@ router.get('/users', (req, res) => {
     params
   ).count;
 
-  const users = req.tenantDB.query(
-    `SELECT u.id, u.email, u.name, u.avatar, u.status, u.employee_id,
+  const baseSelectSQL = `SELECT u.id, u.email, u.name, u.avatar, u.status, u.employee_id,
             u.last_login, u.created_at,
-            e.name as employee_name, e.department
+            e.name as employee_name, e.department, e.employee_no, e.org_unit_id
      FROM users u
      LEFT JOIN employees e ON e.id = u.employee_id
      ${whereSQL}
-     ORDER BY u.created_at DESC
-     LIMIT ? OFFSET ?`,
-    [...params, parseInt(limit), offset]
-  );
+     ORDER BY u.created_at DESC`;
 
-  // 附加角色資訊
+  const paginationClause = wantAll ? '' : ' LIMIT ? OFFSET ?';
+  const queryParams = wantAll ? params : [...params, parseInt(limit), offset];
+  const users = req.tenantDB.query(baseSelectSQL + paginationClause, queryParams);
+
+  // 附加角色資訊（與 GET /user-roles/:userId 同 shape：含 role_id + 唯一 id）
   const result = users.map(user => {
     const roles = req.tenantDB.query(
-      `SELECT r.id, r.name as role_name,
+      `SELECT (ur.user_id || '-' || ur.role_id || '-' || COALESCE(ur.org_unit_id, '')) as id,
+              ur.role_id, r.name as role_name,
               CASE WHEN ur.org_unit_id IS NULL THEN 'global' ELSE ou.type END as scope_type,
               ur.org_unit_id as scope_id, ou.name as scope_name
        FROM user_roles ur
@@ -638,12 +640,14 @@ router.get('/users', (req, res) => {
 
   res.json({
     data: result,
-    pagination: {
-      page: parseInt(page),
-      limit: parseInt(limit),
-      total,
-      totalPages: Math.ceil(total / parseInt(limit))
-    }
+    pagination: wantAll
+      ? { page: 1, limit: total, total, totalPages: 1 }
+      : {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          totalPages: Math.ceil(total / parseInt(limit))
+        }
   });
 });
 

@@ -308,7 +308,8 @@ export class FrameworkPageComponent implements OnInit {
   }
 
   // View mode toggle
-  setViewMode(mode: 'card' | 'list'): void {
+  setViewMode(mode: 'card' | 'list' | 'matrix'): void {
+    if (mode === 'matrix') return;
     this.viewMode.set(mode);
   }
 

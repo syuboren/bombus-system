@@ -1,0 +1,51 @@
+<div
+  class="popover-shell"
+  [style.top]="position().top"
+  [style.left]="position().left"
+  role="dialog"
+  [attr.aria-label]="'持有 ' + role().name + ' 的員工'">
+
+  <div class="popover-header">
+    <i class="ri-team-line"></i>
+    <span class="popover-title">{{ role().name }} <small>· {{ holders().length }} 人持有</small></span>
+    <button class="popover-close" type="button" (click)="close.emit()" aria-label="關閉">
+      <i class="ri-close-line"></i>
+    </button>
+  </div>
+
+  <div class="popover-body">
+    @if (holders().length === 0) {
+      <div class="empty-state">
+        <i class="ri-user-unfollow-line"></i>
+        <p>此角色目前無人持有</p>
+      </div>
+    } @else {
+      <ul class="holder-list">
+        @for (h of holders(); track h.user.id) {
+          <li class="holder-item">
+            <button
+              class="holder-link"
+              type="button"
+              (click)="onHolderClick(h.user)">
+              <div class="holder-main">
+                <span class="holder-name">{{ h.user.name }}</span>
+                @if (h.user.employee_no) {
+                  <span class="holder-no">{{ h.user.employee_no }}</span>
+                }
+              </div>
+              <div class="holder-scopes">
+                @for (a of h.assignments; track a.id) {
+                  <span class="scope-chip">{{ scopeLabel(a) }}</span>
+                }
+              </div>
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+
+  <div class="popover-footer">
+    <small>點擊員工開啟「帳號與權限」</small>
+  </div>
+</div>

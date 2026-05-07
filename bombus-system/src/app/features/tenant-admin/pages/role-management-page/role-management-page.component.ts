@@ -467,11 +467,14 @@ export class RoleManagementPageComponent implements OnInit {
   }
 
   getScopeLabel(scopeOrType: string): string {
+    // 'company' = 功能權限的編輯範圍（perm_scope）保留「全公司」
+    // 'global' / 'group' = 角色指派層級（scope_type），改用「全集團」避免名詞重複
     const scopeLabels: Record<string, string> = {
       self: '個人',
       department: '部門',
       company: '全公司',
-      global: '全域',
+      global: '全集團',
+      group: '全集團',
       subsidiary: '子公司'
     };
     return scopeLabels[scopeOrType] || scopeOrType;

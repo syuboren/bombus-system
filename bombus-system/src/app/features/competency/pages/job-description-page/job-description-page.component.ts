@@ -233,7 +233,8 @@ export class JobDescriptionPageComponent implements OnInit {
     this.selectedStatus.set(value);
   }
 
-  setViewMode(mode: 'card' | 'list'): void {
+  setViewMode(mode: 'card' | 'list' | 'matrix'): void {
+    if (mode === 'matrix') return;
     this.viewMode.set(mode);
   }
 

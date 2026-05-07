@@ -69,20 +69,36 @@ export class AccountPermissionComponent {
   selectedSubsidiaryForScope = signal('');
   filteredDepartmentsForScope = signal<{ id: string; name: string }[]>([]);
 
-  // Computed
-  assignableRoles = computed(() => {
-    const currentIds = new Set(this.userRoles().map(r => r.roleId));
-    return this.availableRoles().filter(r => !currentIds.has(r.id));
-  });
+  // 顯示所有角色 — 同一角色在不同 scope 是合法的多重指派（DB PK 為 user_id+role_id+org_unit_id）
+  assignableRoles = computed(() => this.availableRoles());
 
   selectedRole = computed(() =>
     this.availableRoles().find(r => r.id === this.selectedRoleId()) || null
   );
 
-  canAssign = computed(() => {
-    if (!this.selectedRoleId()) return false;
+  // 偵測 (role_id, org_unit_id) 完全重複的指派以避免 PK 衝突
+  isDuplicateAssignment = computed(() => {
+    const roleId = this.selectedRoleId();
+    if (!roleId) return false;
+    const orgUnitId = this.selectedScopeType() === 'global'
+      ? undefined
+      : this.selectedScopeId();
+    return this.userRoles().some(ur =>
+      ur.roleId === roleId && (ur.orgUnitId ?? undefined) === (orgUnitId || undefined)
+    );
+  });
+
+  // 顯示提示僅當有選 scope（避免剛選角色就閃警示）
+  isDuplicateAssignmentVisible = computed(() => {
+    if (!this.isDuplicateAssignment()) return false;
     if (this.selectedScopeType() === 'global') return true;
     return !!this.selectedScopeId();
+  });
+
+  canAssign = computed(() => {
+    if (!this.selectedRoleId()) return false;
+    if (this.selectedScopeType() !== 'global' && !this.selectedScopeId()) return false;
+    return !this.isDuplicateAssignment();
   });
 
   constructor() {
@@ -204,7 +220,7 @@ export class AccountPermissionComponent {
     if (!role) return [];
     if (role.scope_type === 'global') {
       return [
-        { value: 'global', label: '全域（不限組織）' },
+        { value: 'global', label: '全集團（不限組織）' },
         { value: 'subsidiary', label: '指定子公司' },
         { value: 'department', label: '指定部門' }
       ];

@@ -124,7 +124,8 @@ export class CourseManagementPageComponent implements OnInit {
     this.selectedCourseType.set(type);
   }
 
-  setViewMode(mode: 'list' | 'card'): void {
+  setViewMode(mode: 'list' | 'card' | 'matrix'): void {
+    if (mode === 'matrix') return;
     this.viewMode.set(mode);
   }
 

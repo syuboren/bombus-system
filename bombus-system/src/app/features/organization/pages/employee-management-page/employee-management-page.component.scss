@@ -272,6 +272,139 @@ $module-color-dark: $color-l1-sage-dark;
   @include filter-bar($module-color);
 }
 
+// Role multi-select dropdown for matrix view filtering
+.filter-item--roles {
+  position: relative;
+
+  .role-multi-select {
+    summary {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      background: white;
+      border: 1px solid $color-soft-gray;
+      cursor: pointer;
+      list-style: none;
+      font-size: 0.875rem;
+      color: $color-text-primary;
+      user-select: none;
+      min-width: 140px;
+
+      &::-webkit-details-marker {
+        display: none;
+      }
+
+      &:hover {
+        border-color: $module-color;
+      }
+
+      i:first-child {
+        color: $module-color;
+      }
+
+      i:last-child {
+        margin-left: auto;
+        transition: transform 0.2s;
+      }
+    }
+  }
+
+  &.has-selection .role-multi-select summary {
+    border-color: $module-color;
+    background: rgba($module-color, 0.06);
+  }
+
+  .role-multi-select[open] summary i:last-child {
+    transform: rotate(180deg);
+  }
+
+  .role-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 50;
+    min-width: 220px;
+    max-height: 320px;
+    overflow-y: auto;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    border: 1px solid $color-soft-gray;
+    padding: 8px 4px;
+  }
+
+  .role-dropdown-clear {
+    display: block;
+    width: 100%;
+    padding: 6px 10px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid $color-soft-gray;
+    color: $module-color;
+    font-size: 0.75rem;
+    cursor: pointer;
+    text-align: left;
+    margin-bottom: 4px;
+
+    &:hover {
+      background: rgba($module-color, 0.06);
+    }
+  }
+
+  .role-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8125rem;
+    color: $color-text-primary;
+
+    &:hover {
+      background: rgba($module-color, 0.06);
+    }
+
+    input {
+      accent-color: $module-color;
+    }
+
+    .role-system-tag {
+      margin-left: auto;
+      font-size: 0.625rem;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: rgba($module-color, 0.12);
+      color: $module-color;
+    }
+  }
+}
+
+// Result count summary for matrix view
+.result-summary {
+  margin: 12px 0 0;
+  padding: 8px 12px;
+  font-size: 0.8125rem;
+  color: $color-text-secondary;
+  background: rgba($module-color, 0.04);
+  border-radius: 8px;
+  display: inline-block;
+}
+
+// CSV export button (matrix view)
+.btn-export {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
 .view-toggle {
   display: flex;
   background: $color-cloud-gray;

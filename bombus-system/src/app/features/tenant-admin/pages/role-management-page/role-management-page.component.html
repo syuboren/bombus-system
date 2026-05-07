@@ -28,7 +28,7 @@
               }
               <span class="scope-badge scope-badge--{{ role.scope_type }}">
                 @switch (role.scope_type) {
-                  @case ('global') { 全域 }
+                  @case ('global') { 全集團 }
                   @case ('subsidiary') { 子公司 }
                   @case ('department') { 部門 }
                 }
@@ -281,16 +281,16 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label">作用範圍類型</label>
+            <label class="form-label">可指派層級</label>
             <select
               class="form-input"
               [value]="formScopeType()"
               (change)="formScopeType.set($any($event.target).value)">
-              <option value="global">全域 — 可指派為全域、子公司或部門</option>
+              <option value="global">全集團 — 可指派為全集團、子公司或部門</option>
               <option value="subsidiary">子公司 — 可指派為子公司或部門</option>
               <option value="department">部門 — 只能指派到部門</option>
             </select>
-            <p class="form-hint">定義此角色在指派時允許的最大作用範圍</p>
+            <p class="form-hint">定義此角色「可被指派的最廣層級」（僅控制指派時的可選範圍）。實際的功能權限請於角色建立後，於下方「編輯功能權限」設定。</p>
           </div>
 
           <p class="text-muted">功能權限請於角色建立後，透過「編輯功能權限」設定。</p>

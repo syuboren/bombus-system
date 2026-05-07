@@ -8,130 +8,515 @@ Provide a concise user account overview at `/settings/users` limited to read-onl
 
 ### Requirement: Simplified user overview page
 
-The system SHALL provide a simplified user account overview page at route `/settings/users` that displays a concise list of all user accounts with quick actions. The page SHALL NOT include user creation forms, detailed role assignment modals, or permission preview features. These capabilities SHALL be accessed via the HR employee management hub.
+The system SHALL provide a user account overview page at route `/settings/users` that displays employees with their role assignments and account status. The page SHALL support three view modes (`card | list | matrix`) selectable via a view toggle, with `list` as the default. The page SHALL serve as the central hub for tenant-level user account management, including viewing role assignments, opening per-employee account & permission management via modal, and exporting role assignments.
 
 #### Scenario: User overview page loads
 
-- **WHEN** a user with `SYS.user-management` view permission accesses `/settings/users`
-- **THEN** the page SHALL display a data table of all user accounts with columns: name, email, role summary (comma-separated role names), account status (active/inactive/locked), and last login timestamp
+- **WHEN** an administrator with `SYS.user-management` view permission accesses `/settings/users`
+- **THEN** the page SHALL display the employee data in `list` view by default, including columns: name, employee number, email, role badges (comma-separated role names), account status, and creation date
 
 #### Scenario: Search users
 
-- **WHEN** the user enters a search keyword in the search bar
-- **THEN** the list SHALL filter by matching name or email
+- **WHEN** the admin enters a search keyword in the search bar
+- **THEN** the list or matrix SHALL filter by matching name, employee number, or email (case-insensitive substring), and the result count SHALL update
 
 
 <!-- @trace
-source: unified-employee-management
-updated: 2026-04-24
+source: employee-role-matrix-view
+updated: 2026-05-08
 code:
-  - bombus-system/openspec/specs/user-overview-lite/spec.md
-  - bombus-system/openspec/specs/batch-employee-import/spec.md
-  - bombus-system/openspec/specs/shared-employee-detail/spec.md
-  - bombus-system/openspec/changes/interviewer-selection-at-invitation/tasks.md
-  - bombus-system/openspec/specs/admin-portal/spec.md
+  - bombus-system/src/app/features/organization/pages/employee-management-page/employee-management-page.component.html
+  - bombus-system/src/app/features/competency/pages/framework-page/framework-page.component.ts
+  - bombus-system/src/app/features/tenant-admin/pages/role-management-page/role-management-page.component.html
+  - bombus-system/src/app/features/organization/components/role-holders-popover/role-holders-popover.component.html
+  - bombus-system/openspec/changes/employee-role-matrix-view/design.md
+  - bombus-system/docs/系統流程優化與介面調整紀錄_20260506（to心偲).xlsx
+  - bombus-system/src/app/shared/components/account-permission/account-permission.component.ts
+  - bombus-system/src/app/shared/components/view-toggle/view-toggle.component.ts
+  - bombus-system/docs/系統流程優化與介面調整紀錄_20260506（to心偲).pdf
+  - bombus-system/src/app/shared/components/account-permission/account-permission.component.scss
+  - bombus-system/src/app/features/organization/utils/role-matrix-csv.ts
+  - bombus-system/src/app/features/tenant-admin/pages/user-management-page/user-management-page.component.html
+  - bombus-system/src/app/features/tenant-admin/pages/permission-visualization-page/permission-visualization-page.component.scss
+  - bombus-system/src/app/features/organization/components/employee-role-matrix/employee-role-matrix.component.html
+  - bombus-system/src/app/features/organization/components/employee-role-matrix/employee-role-matrix.component.ts
+  - bombus-system/src/app/features/tenant-admin/pages/role-management-page/role-management-page.component.ts
+  - bombus-system/src/app/features/tenant-admin/pages/user-management-page/user-management-page.component.scss
+  - bombus-system/src/app/features/organization/pages/employee-management-page/employee-management-page.component.ts
+  - bombus-system/src/app/features/organization/components/employee-role-matrix/employee-role-matrix.component.scss
+  - bombus-system/src/app/features/organization/components/role-holders-popover/role-holders-popover.component.ts
+  - bombus-system/src/app/features/tenant-admin/pages/permission-visualization-page/permission-visualization-page.component.html
+  - bombus-system/server/src/routes/tenant-admin.js
+  - bombus-system/docs/客戶回饋比對分析_L0權限與系統設定_20260429.xlsx
+  - bombus-system/docs/系統優化紀錄_20260416-20260430.xlsx
+  - bombus-system/src/app/features/organization/components/role-holders-popover/role-holders-popover.component.scss
+  - bombus-system/src/app/features/tenant-admin/pages/permission-visualization-page/permission-visualization-page.component.ts
+  - bombus-system/src/app/features/tenant-admin/services/tenant-admin.service.ts
+  - bombus-system/src/app/shared/components/account-permission/account-permission.component.html
+  - bombus-system/docs/測試計畫/測試計畫與驗收標準(範本).md
+  - bombus-system/src/app/features/organization/pages/employee-management-page/employee-management-page.component.scss
+  - bombus-system/src/app/features/tenant-admin/models/tenant-admin.model.ts
+  - bombus-system/openspec/changes/employee-role-matrix-view/.openspec.yaml
+  - bombus-system/openspec/changes/employee-role-matrix-view/specs/user-overview-lite/spec.md
+  - bombus-system/src/app/features/training/pages/course-management-page/course-management-page.component.ts
+  - bombus-system/src/app/features/tenant-admin/pages/user-management-page/user-management-page.component.ts
+  - bombus-system/package.json
+  - bombus-system/openspec/changes/employee-role-matrix-view/proposal.md
+  - bombus-system/src/app/features/competency/pages/job-description-page/job-description-page.component.ts
   - bombus-system/openspec/changes/recruitment-hr-initiated-referral/tasks.md
-  - bombus-system/openspec/specs/employee-self-service/spec.md
-  - bombus-system/openspec/specs/unified-account-creation/spec.md
-  - bombus-system/openspec/specs/hr-employee-hub/spec.md
-  - bombus-system/openspec/specs/employee-onboarding-automation/spec.md
-  - bombus-system/openspec/specs/unified-employee-model/spec.md
+  - bombus-system/openspec/changes/employee-role-matrix-view/tasks.md
+tests:
+  - bombus-system/src/app/features/organization/utils/role-matrix-csv.spec.ts
 -->
 
 ---
 ### Requirement: Quick actions on user overview
 
-The user overview page SHALL provide quick actions that can be performed without navigating away: enable/disable account and reset password.
+Per-employee account actions (toggle status, reset password) and role management (assign role, revoke role, view effective permissions) SHALL be performed inside the shared `AccountPermissionComponent` modal, opened by clicking an employee row in any view mode.
 
-#### Scenario: Toggle account status
+The modal SHALL be the single entry point for these actions; no inline buttons in list rows or matrix cells SHALL duplicate these capabilities. The previous direct row-action buttons (inline enable/disable, inline reset password) are superseded by the modal-based flow.
 
-- **WHEN** the admin clicks the enable/disable toggle for a user account
-- **THEN** the system SHALL call `PUT /api/tenant-admin/users/:id` to update the status, display a success notification, and refresh the row
+#### Scenario: Toggle account status from modal
 
-#### Scenario: Reset password
+- **WHEN** the admin clicks an employee row → modal opens → clicks "停用帳號" (or "啟用帳號")
+- **THEN** the system SHALL call `PUT /api/tenant-admin/users/:id` to update the status, display a success notification, and refresh both the modal and the underlying list/matrix row
 
-- **WHEN** the admin clicks "Reset Password" for a user account
-- **THEN** the system SHALL display a confirmation dialog, generate a new random password via the unified account creation service's password generation logic, display the new password in a modal, and set `must_change_password = 1`
+#### Scenario: Reset password from modal
+
+- **WHEN** the admin clicks an employee row → modal opens → clicks "重設密碼"
+- **THEN** the system SHALL generate a new random password, display the new password in the modal, and set `must_change_password = 1` for that user
+
+#### Scenario: Assign role from modal
+
+- **WHEN** the admin clicks an employee row → modal opens → selects a role and scope → clicks "指派角色"
+- **THEN** the system SHALL persist the assignment, refresh the modal's role list, and update the underlying matrix cell to reflect the new assignment
+
+#### Scenario: Assign the same role at different scopes
+
+The role assignment dropdown SHALL show every available role (no exclusion based on existing assignments) so an employee can hold the same role at multiple scopes. The system SHALL detect a `(role_id, org_unit_id)` exact-duplicate combination and disable "指派角色" with an inline warning, preventing primary-key conflicts.
+
+- **GIVEN** employee 田馥甄 already holds `hr_manager` at scope `subsidiary / TEST`
+- **WHEN** admin opens the modal → selects `hr_manager` again → selects scope = `全集團` (global) → clicks "指派角色"
+- **THEN** the assignment SHALL succeed and the modal's role list SHALL display two `hr_manager` rows: one at `TEST`, one at `全集團`
+- **AND** if admin instead re-selects `hr_manager` + `TEST` (the existing combination), the warning text "此角色於相同 scope 已指派，請選擇不同 scope 或撤除既有指派" SHALL appear and the "指派角色" button SHALL be disabled
+
+#### Scenario: Modal close refreshes matrix data
+
+The matrix view caches role/user data fetched via `GET /api/tenant-admin/users?all=true`; this cache SHALL be invalidated when the modal closes if any change was made during the session, so role assignments / status changes immediately reflect in the matrix cells.
+
+- **GIVEN** admin is on the matrix view
+- **WHEN** admin clicks an employee row → modal opens → makes one or more changes (assign/revoke role, toggle status, reset password) → closes the modal
+- **THEN** the matrix data SHALL be re-fetched and the affected cell(s) SHALL reflect the new state
+- **AND** if admin closes the modal without making any changes, no re-fetch SHALL occur
 
 
 <!-- @trace
-source: unified-employee-management
-updated: 2026-04-24
+source: employee-role-matrix-view
+updated: 2026-05-08
 code:
-  - bombus-system/openspec/specs/user-overview-lite/spec.md
-  - bombus-system/openspec/specs/batch-employee-import/spec.md
-  - bombus-system/openspec/specs/shared-employee-detail/spec.md
-  - bombus-system/openspec/changes/interviewer-selection-at-invitation/tasks.md
-  - bombus-system/openspec/specs/admin-portal/spec.md
+  - bombus-system/src/app/features/organization/pages/employee-management-page/employee-management-page.component.html
+  - bombus-system/src/app/features/competency/pages/framework-page/framework-page.component.ts
+  - bombus-system/src/app/features/tenant-admin/pages/role-management-page/role-management-page.component.html
+  - bombus-system/src/app/features/organization/components/role-holders-popover/role-holders-popover.component.html
+  - bombus-system/openspec/changes/employee-role-matrix-view/design.md
+  - bombus-system/docs/系統流程優化與介面調整紀錄_20260506（to心偲).xlsx
+  - bombus-system/src/app/shared/components/account-permission/account-permission.component.ts
+  - bombus-system/src/app/shared/components/view-toggle/view-toggle.component.ts
+  - bombus-system/docs/系統流程優化與介面調整紀錄_20260506（to心偲).pdf
+  - bombus-system/src/app/shared/components/account-permission/account-permission.component.scss
+  - bombus-system/src/app/features/organization/utils/role-matrix-csv.ts
+  - bombus-system/src/app/features/tenant-admin/pages/user-management-page/user-management-page.component.html
+  - bombus-system/src/app/features/tenant-admin/pages/permission-visualization-page/permission-visualization-page.component.scss
+  - bombus-system/src/app/features/organization/components/employee-role-matrix/employee-role-matrix.component.html
+  - bombus-system/src/app/features/organization/components/employee-role-matrix/employee-role-matrix.component.ts
+  - bombus-system/src/app/features/tenant-admin/pages/role-management-page/role-management-page.component.ts
+  - bombus-system/src/app/features/tenant-admin/pages/user-management-page/user-management-page.component.scss
+  - bombus-system/src/app/features/organization/pages/employee-management-page/employee-management-page.component.ts
+  - bombus-system/src/app/features/organization/components/employee-role-matrix/employee-role-matrix.component.scss
+  - bombus-system/src/app/features/organization/components/role-holders-popover/role-holders-popover.component.ts
+  - bombus-system/src/app/features/tenant-admin/pages/permission-visualization-page/permission-visualization-page.component.html
+  - bombus-system/server/src/routes/tenant-admin.js
+  - bombus-system/docs/客戶回饋比對分析_L0權限與系統設定_20260429.xlsx
+  - bombus-system/docs/系統優化紀錄_20260416-20260430.xlsx
+  - bombus-system/src/app/features/organization/components/role-holders-popover/role-holders-popover.component.scss
+  - bombus-system/src/app/features/tenant-admin/pages/permission-visualization-page/permission-visualization-page.component.ts
+  - bombus-system/src/app/features/tenant-admin/services/tenant-admin.service.ts
+  - bombus-system/src/app/shared/components/account-permission/account-permission.component.html
+  - bombus-system/docs/測試計畫/測試計畫與驗收標準(範本).md
+  - bombus-system/src/app/features/organization/pages/employee-management-page/employee-management-page.component.scss
+  - bombus-system/src/app/features/tenant-admin/models/tenant-admin.model.ts
+  - bombus-system/openspec/changes/employee-role-matrix-view/.openspec.yaml
+  - bombus-system/openspec/changes/employee-role-matrix-view/specs/user-overview-lite/spec.md
+  - bombus-system/src/app/features/training/pages/course-management-page/course-management-page.component.ts
+  - bombus-system/src/app/features/tenant-admin/pages/user-management-page/user-management-page.component.ts
+  - bombus-system/package.json
+  - bombus-system/openspec/changes/employee-role-matrix-view/proposal.md
+  - bombus-system/src/app/features/competency/pages/job-description-page/job-description-page.component.ts
   - bombus-system/openspec/changes/recruitment-hr-initiated-referral/tasks.md
-  - bombus-system/openspec/specs/employee-self-service/spec.md
-  - bombus-system/openspec/specs/unified-account-creation/spec.md
-  - bombus-system/openspec/specs/hr-employee-hub/spec.md
-  - bombus-system/openspec/specs/employee-onboarding-automation/spec.md
-  - bombus-system/openspec/specs/unified-employee-model/spec.md
+  - bombus-system/openspec/changes/employee-role-matrix-view/tasks.md
+tests:
+  - bombus-system/src/app/features/organization/utils/role-matrix-csv.spec.ts
 -->
 
 ---
-### Requirement: Navigate to employee management for detailed operations
+### Requirement: Role matrix view at user overview page
 
-The user overview page SHALL provide a "Manage" link for each user row that navigates to the HR employee management hub with the user ID as a query parameter, opening the employee detail modal with the Account & Permissions tab active.
+The system SHALL provide a role matrix view at `/settings/users` that displays all employees as rows and all tenant roles (system + custom) as columns, allowing administrators to inspect role assignments across the entire workforce without opening individual modals.
 
-#### Scenario: Click manage navigates to employee hub
+The view SHALL be selectable via a three-mode view toggle (`card | list | matrix`) on the page header, with `list` as the default mode.
 
-- **WHEN** the admin clicks "Manage" on a user row
-- **THEN** the system SHALL navigate to `/organization/employee-management?userId={userId}`, which opens the employee detail modal with the Account & Permissions tab active
+The matrix SHALL render up to 500 employees using virtual scrolling (CDK `cdk-virtual-scroll-viewport`) to maintain frame-rate above 30 fps during scroll.
 
-#### Scenario: User without linked employee
+Each cell SHALL display:
+- Empty state when the employee does not hold that role
+- A single "● <label>" chip representing the **broadest** scope across all assignments of that role for that employee. Chip label uses one of three category buckets (reflecting the merged effective permission level):
+  - `全集團` when the broadest scope_type is `global` or `group` (visually merged — both are functionally equivalent in single-tenant single-group setups)
+  - `子公司` when the broadest scope_type is `subsidiary`
+  - `部門` when the broadest scope_type is `department`
+- Broadest is determined by the order: global / group > subsidiary > department
+- An on-hover tooltip listing the full scope detail of every assignment (sorted broadest-first, deduplicated). For each assignment: its `scope_name` when present (e.g., "台北分公司", "業務部"), or the bucket label as fallback (`全集團` / `子公司` / `部門`). Multiple assignments concatenate with " · " separator
 
-- **WHEN** the admin clicks "Manage" on a user row where the user has no linked employee record
-- **THEN** the system SHALL display a dialog with two options: (1) link to an existing employee record (showing a searchable employee list filtered to those without user accounts), or (2) create a new employee record for this user. Both options SHALL use the `linkUserToEmployee()` function from the unified account creation service. After linking, the system SHALL navigate to the employee detail modal
+The first column (employee identity) SHALL be sticky-left; the first row (role headers) SHALL be sticky-top during vertical/horizontal scroll.
+
+**Naming convention — DO NOT "unify" these two terms** (they refer to different RBAC layers and must remain distinct in UI):
+- **「全集團」** — used for **role assignment scope** (`user_roles.org_unit_id` → derived `scope_type` of `global` or `group`). Appears in: matrix cell chips, role-holders popover, modal's assigned-role list, role management page's role card scope badge, role edit modal's "可指派層級" dropdown, CSV `scope_type` column.
+- **「全公司」** — used for **functional permission scope** (`role_feature_perms.view_scope` / `edit_scope` value `company`). Appears in: role management page's per-feature 檢視範圍/編輯範圍 column, modal's 有效權限總覽 table.
+
+Maintainers SHALL NOT unify these two terms even if they look similar in different contexts; doing so would re-introduce the original ambiguity that this distinction resolves.
+
+#### Scenario: Switch from list to role matrix view
+
+- **WHEN** the admin clicks the matrix icon in the view toggle on `/settings/users`
+- **THEN** the page SHALL replace the list with the role matrix, preserving the current filter state (search keyword, department, role, status)
+
+#### Scenario: Cell display with single role at department scope
+
+- **GIVEN** employee "王小明" holds role "dept_manager" at scope `department / 業務部`
+- **WHEN** the matrix renders
+- **THEN** the cell at row "王小明", column "dept_manager" SHALL display "● 部門" and the tooltip SHALL show "業務部"
+
+#### Scenario: Cell display with multiple scopes for the same role (same type)
+
+- **GIVEN** employee "李小華" holds role "subsidiary_admin" at two scopes: `subsidiary / 台北分公司` and `subsidiary / 高雄分公司`
+- **WHEN** the matrix renders
+- **THEN** the cell SHALL display the single broadest-bucket chip "● 子公司" (both assignments are subsidiary type so the bucket is the same), and the tooltip SHALL list every assignment separated by " · ": "台北分公司 · 高雄分公司"
+
+#### Scenario: Cell display with mixed-type multiple scopes
+
+- **GIVEN** employee "田馥甄" holds role "hr_manager" at two different scope types: `global` (no `scope_name`) and `subsidiary / TEST`
+- **WHEN** the matrix renders
+- **THEN** the cell SHALL display "● 全集團" (the broadest scope wins because permissions effectively merge to the broadest), and the tooltip SHALL show "全集團 · TEST"
+
+#### Scenario: Cell display deduplicates global and group at the same role
+
+- **GIVEN** employee "李小華" holds role "hr_manager" at two assignments: `global` (org_unit_id=NULL) and `group` (org_unit_id pointing at the tenant's group root, e.g., "Demo集團")
+- **WHEN** the matrix renders
+- **THEN** the cell SHALL display "● 全集團", and the tooltip SHALL show a single deduplicated "全集團" entry (not "全集團 · 全集團")
+
+#### Scenario: Click employee row opens existing AccountPermissionComponent modal
+
+- **WHEN** the admin clicks on an employee row in the matrix view
+- **THEN** the system SHALL open the existing `AccountPermissionComponent` modal for that employee, identical to the modal opened from list view
+
+#### Scenario: Screen below 1024px width
+
+- **WHEN** the matrix view is active and the viewport width drops below 1024px
+- **THEN** the system SHALL automatically switch back to `list` view and display a non-blocking toast: "矩陣視圖建議使用 1024px 以上螢幕，已切換回列表"
+
+##### Example: filter state preservation across view modes
+
+| Before toggle (list view) | After toggle (matrix view) | Notes |
+|---|---|---|
+| keyword="王", dept="業務部" | keyword="王", dept="業務部" | filters persist |
+| status="active" | status="active" | persists |
+| sort="name asc" (list-only) | (no sort applied) | matrix has its own column order |
 
 
 <!-- @trace
-source: unified-employee-management
-updated: 2026-04-24
+source: employee-role-matrix-view
+updated: 2026-05-08
 code:
-  - bombus-system/openspec/specs/user-overview-lite/spec.md
-  - bombus-system/openspec/specs/batch-employee-import/spec.md
-  - bombus-system/openspec/specs/shared-employee-detail/spec.md
-  - bombus-system/openspec/changes/interviewer-selection-at-invitation/tasks.md
-  - bombus-system/openspec/specs/admin-portal/spec.md
+  - bombus-system/src/app/features/organization/pages/employee-management-page/employee-management-page.component.html
+  - bombus-system/src/app/features/competency/pages/framework-page/framework-page.component.ts
+  - bombus-system/src/app/features/tenant-admin/pages/role-management-page/role-management-page.component.html
+  - bombus-system/src/app/features/organization/components/role-holders-popover/role-holders-popover.component.html
+  - bombus-system/openspec/changes/employee-role-matrix-view/design.md
+  - bombus-system/docs/系統流程優化與介面調整紀錄_20260506（to心偲).xlsx
+  - bombus-system/src/app/shared/components/account-permission/account-permission.component.ts
+  - bombus-system/src/app/shared/components/view-toggle/view-toggle.component.ts
+  - bombus-system/docs/系統流程優化與介面調整紀錄_20260506（to心偲).pdf
+  - bombus-system/src/app/shared/components/account-permission/account-permission.component.scss
+  - bombus-system/src/app/features/organization/utils/role-matrix-csv.ts
+  - bombus-system/src/app/features/tenant-admin/pages/user-management-page/user-management-page.component.html
+  - bombus-system/src/app/features/tenant-admin/pages/permission-visualization-page/permission-visualization-page.component.scss
+  - bombus-system/src/app/features/organization/components/employee-role-matrix/employee-role-matrix.component.html
+  - bombus-system/src/app/features/organization/components/employee-role-matrix/employee-role-matrix.component.ts
+  - bombus-system/src/app/features/tenant-admin/pages/role-management-page/role-management-page.component.ts
+  - bombus-system/src/app/features/tenant-admin/pages/user-management-page/user-management-page.component.scss
+  - bombus-system/src/app/features/organization/pages/employee-management-page/employee-management-page.component.ts
+  - bombus-system/src/app/features/organization/components/employee-role-matrix/employee-role-matrix.component.scss
+  - bombus-system/src/app/features/organization/components/role-holders-popover/role-holders-popover.component.ts
+  - bombus-system/src/app/features/tenant-admin/pages/permission-visualization-page/permission-visualization-page.component.html
+  - bombus-system/server/src/routes/tenant-admin.js
+  - bombus-system/docs/客戶回饋比對分析_L0權限與系統設定_20260429.xlsx
+  - bombus-system/docs/系統優化紀錄_20260416-20260430.xlsx
+  - bombus-system/src/app/features/organization/components/role-holders-popover/role-holders-popover.component.scss
+  - bombus-system/src/app/features/tenant-admin/pages/permission-visualization-page/permission-visualization-page.component.ts
+  - bombus-system/src/app/features/tenant-admin/services/tenant-admin.service.ts
+  - bombus-system/src/app/shared/components/account-permission/account-permission.component.html
+  - bombus-system/docs/測試計畫/測試計畫與驗收標準(範本).md
+  - bombus-system/src/app/features/organization/pages/employee-management-page/employee-management-page.component.scss
+  - bombus-system/src/app/features/tenant-admin/models/tenant-admin.model.ts
+  - bombus-system/openspec/changes/employee-role-matrix-view/.openspec.yaml
+  - bombus-system/openspec/changes/employee-role-matrix-view/specs/user-overview-lite/spec.md
+  - bombus-system/src/app/features/training/pages/course-management-page/course-management-page.component.ts
+  - bombus-system/src/app/features/tenant-admin/pages/user-management-page/user-management-page.component.ts
+  - bombus-system/package.json
+  - bombus-system/openspec/changes/employee-role-matrix-view/proposal.md
+  - bombus-system/src/app/features/competency/pages/job-description-page/job-description-page.component.ts
   - bombus-system/openspec/changes/recruitment-hr-initiated-referral/tasks.md
-  - bombus-system/openspec/specs/employee-self-service/spec.md
-  - bombus-system/openspec/specs/unified-account-creation/spec.md
-  - bombus-system/openspec/specs/hr-employee-hub/spec.md
-  - bombus-system/openspec/specs/employee-onboarding-automation/spec.md
-  - bombus-system/openspec/specs/unified-employee-model/spec.md
+  - bombus-system/openspec/changes/employee-role-matrix-view/tasks.md
+tests:
+  - bombus-system/src/app/features/organization/utils/role-matrix-csv.spec.ts
 -->
 
 ---
-### Requirement: Remove user creation from settings
+### Requirement: Role column header reverse-lookup popover
 
-The user overview page SHALL NOT include a "Create User" button or user creation form. User accounts SHALL only be created through the HR employee management hub (manual add or batch import) or through the onboarding conversion flow.
+The matrix view SHALL provide a reverse-lookup popover when the admin clicks a role column header, listing all employees holding that role at any scope.
 
-#### Scenario: No create user button
+The popover SHALL be read-only (no assignment/revocation actions) and SHALL display, for each holder: employee name, employee number, scope label (full text), and a clickable link that opens the `AccountPermissionComponent` modal for that employee.
 
-- **WHEN** the admin views the user overview page
-- **THEN** no "Create User", "Add User", or similar account creation button SHALL be visible
+The popover SHALL close when the admin clicks outside it or presses Escape.
 
-#### Scenario: Page header indicates where to create users
+#### Scenario: Click role column header shows holders
 
-- **WHEN** the admin views the user overview page
-- **THEN** the page header or a help text SHALL indicate that new user accounts are created via "Organization > Employee Management"
+- **WHEN** the admin clicks the column header for role "subsidiary_admin"
+- **THEN** the system SHALL display a popover anchored below the header, listing all employees holding "subsidiary_admin" with their scope (e.g., "台北分公司")
+
+#### Scenario: Click holder name in popover opens modal
+
+- **WHEN** the admin clicks an employee name inside the role-holders popover
+- **THEN** the popover SHALL close and the `AccountPermissionComponent` modal SHALL open for that employee
+
+#### Scenario: Empty role with no holders
+
+- **WHEN** the admin clicks the column header of a role with zero holders
+- **THEN** the popover SHALL display the message "此角色目前無人持有"
+
 
 <!-- @trace
-source: unified-employee-management
-updated: 2026-04-24
+source: employee-role-matrix-view
+updated: 2026-05-08
 code:
-  - bombus-system/openspec/specs/user-overview-lite/spec.md
-  - bombus-system/openspec/specs/batch-employee-import/spec.md
-  - bombus-system/openspec/specs/shared-employee-detail/spec.md
-  - bombus-system/openspec/changes/interviewer-selection-at-invitation/tasks.md
-  - bombus-system/openspec/specs/admin-portal/spec.md
+  - bombus-system/src/app/features/organization/pages/employee-management-page/employee-management-page.component.html
+  - bombus-system/src/app/features/competency/pages/framework-page/framework-page.component.ts
+  - bombus-system/src/app/features/tenant-admin/pages/role-management-page/role-management-page.component.html
+  - bombus-system/src/app/features/organization/components/role-holders-popover/role-holders-popover.component.html
+  - bombus-system/openspec/changes/employee-role-matrix-view/design.md
+  - bombus-system/docs/系統流程優化與介面調整紀錄_20260506（to心偲).xlsx
+  - bombus-system/src/app/shared/components/account-permission/account-permission.component.ts
+  - bombus-system/src/app/shared/components/view-toggle/view-toggle.component.ts
+  - bombus-system/docs/系統流程優化與介面調整紀錄_20260506（to心偲).pdf
+  - bombus-system/src/app/shared/components/account-permission/account-permission.component.scss
+  - bombus-system/src/app/features/organization/utils/role-matrix-csv.ts
+  - bombus-system/src/app/features/tenant-admin/pages/user-management-page/user-management-page.component.html
+  - bombus-system/src/app/features/tenant-admin/pages/permission-visualization-page/permission-visualization-page.component.scss
+  - bombus-system/src/app/features/organization/components/employee-role-matrix/employee-role-matrix.component.html
+  - bombus-system/src/app/features/organization/components/employee-role-matrix/employee-role-matrix.component.ts
+  - bombus-system/src/app/features/tenant-admin/pages/role-management-page/role-management-page.component.ts
+  - bombus-system/src/app/features/tenant-admin/pages/user-management-page/user-management-page.component.scss
+  - bombus-system/src/app/features/organization/pages/employee-management-page/employee-management-page.component.ts
+  - bombus-system/src/app/features/organization/components/employee-role-matrix/employee-role-matrix.component.scss
+  - bombus-system/src/app/features/organization/components/role-holders-popover/role-holders-popover.component.ts
+  - bombus-system/src/app/features/tenant-admin/pages/permission-visualization-page/permission-visualization-page.component.html
+  - bombus-system/server/src/routes/tenant-admin.js
+  - bombus-system/docs/客戶回饋比對分析_L0權限與系統設定_20260429.xlsx
+  - bombus-system/docs/系統優化紀錄_20260416-20260430.xlsx
+  - bombus-system/src/app/features/organization/components/role-holders-popover/role-holders-popover.component.scss
+  - bombus-system/src/app/features/tenant-admin/pages/permission-visualization-page/permission-visualization-page.component.ts
+  - bombus-system/src/app/features/tenant-admin/services/tenant-admin.service.ts
+  - bombus-system/src/app/shared/components/account-permission/account-permission.component.html
+  - bombus-system/docs/測試計畫/測試計畫與驗收標準(範本).md
+  - bombus-system/src/app/features/organization/pages/employee-management-page/employee-management-page.component.scss
+  - bombus-system/src/app/features/tenant-admin/models/tenant-admin.model.ts
+  - bombus-system/openspec/changes/employee-role-matrix-view/.openspec.yaml
+  - bombus-system/openspec/changes/employee-role-matrix-view/specs/user-overview-lite/spec.md
+  - bombus-system/src/app/features/training/pages/course-management-page/course-management-page.component.ts
+  - bombus-system/src/app/features/tenant-admin/pages/user-management-page/user-management-page.component.ts
+  - bombus-system/package.json
+  - bombus-system/openspec/changes/employee-role-matrix-view/proposal.md
+  - bombus-system/src/app/features/competency/pages/job-description-page/job-description-page.component.ts
   - bombus-system/openspec/changes/recruitment-hr-initiated-referral/tasks.md
-  - bombus-system/openspec/specs/employee-self-service/spec.md
-  - bombus-system/openspec/specs/unified-account-creation/spec.md
-  - bombus-system/openspec/specs/hr-employee-hub/spec.md
-  - bombus-system/openspec/specs/employee-onboarding-automation/spec.md
-  - bombus-system/openspec/specs/unified-employee-model/spec.md
+  - bombus-system/openspec/changes/employee-role-matrix-view/tasks.md
+tests:
+  - bombus-system/src/app/features/organization/utils/role-matrix-csv.spec.ts
+-->
+
+---
+### Requirement: Filter bar for user overview
+
+The page SHALL provide a filter bar applicable to both list and matrix views, with the following controls:
+- Search input matching employee name, employee number, or email (case-insensitive substring)
+- Department selector (dropdown sourced from `org_units` where `type = 'department'`, scoped to the currently selected subsidiary)
+- Role selector (multi-select; default "all")
+- Employment status selector (`active=在職 | probation=試用期 | on_leave=留職停薪 | resigned=已離職 | all`; default "all"). The filter operates on `UnifiedEmployee.status` (employment lifecycle); for matrix view, the filter is applied by computing the set of `UnifiedEmployee.userId` matching the selected status, then intersecting with `TenantUser.id`. (Note: this is **employment** status, not the `TenantUser.status` account-state field which only takes `active | inactive | locked`.)
+
+The filter state SHALL be reflected in URL query parameters (`?q=<keyword>&dept=<name>&roles=<ids>&status=<value>&view=<mode>`) so the view is shareable and back/forward navigation preserves state. The `dept` parameter uses the department's display name (matching the project-wide convention used by list/card views), not its ID.
+
+The filter bar SHALL display a result count summary: "總計 N 人 · 已篩選 M 人" (matrix view only; list/card views retain pagination).
+
+#### Scenario: Apply department filter
+
+- **WHEN** the admin selects "業務部" from the department selector
+- **THEN** the list/matrix SHALL display only employees whose `department` field matches the selected department name (case-sensitive equality), and the URL SHALL update to include `?dept=業務部`
+
+#### Scenario: Multi-select roles filter
+
+- **WHEN** the admin selects multiple roles ("hr_manager" and "dept_manager") from the role selector
+- **THEN** the list/matrix SHALL display only employees holding at least one of the selected roles, and the count summary SHALL update
+
+
+<!-- @trace
+source: employee-role-matrix-view
+updated: 2026-05-08
+code:
+  - bombus-system/src/app/features/organization/pages/employee-management-page/employee-management-page.component.html
+  - bombus-system/src/app/features/competency/pages/framework-page/framework-page.component.ts
+  - bombus-system/src/app/features/tenant-admin/pages/role-management-page/role-management-page.component.html
+  - bombus-system/src/app/features/organization/components/role-holders-popover/role-holders-popover.component.html
+  - bombus-system/openspec/changes/employee-role-matrix-view/design.md
+  - bombus-system/docs/系統流程優化與介面調整紀錄_20260506（to心偲).xlsx
+  - bombus-system/src/app/shared/components/account-permission/account-permission.component.ts
+  - bombus-system/src/app/shared/components/view-toggle/view-toggle.component.ts
+  - bombus-system/docs/系統流程優化與介面調整紀錄_20260506（to心偲).pdf
+  - bombus-system/src/app/shared/components/account-permission/account-permission.component.scss
+  - bombus-system/src/app/features/organization/utils/role-matrix-csv.ts
+  - bombus-system/src/app/features/tenant-admin/pages/user-management-page/user-management-page.component.html
+  - bombus-system/src/app/features/tenant-admin/pages/permission-visualization-page/permission-visualization-page.component.scss
+  - bombus-system/src/app/features/organization/components/employee-role-matrix/employee-role-matrix.component.html
+  - bombus-system/src/app/features/organization/components/employee-role-matrix/employee-role-matrix.component.ts
+  - bombus-system/src/app/features/tenant-admin/pages/role-management-page/role-management-page.component.ts
+  - bombus-system/src/app/features/tenant-admin/pages/user-management-page/user-management-page.component.scss
+  - bombus-system/src/app/features/organization/pages/employee-management-page/employee-management-page.component.ts
+  - bombus-system/src/app/features/organization/components/employee-role-matrix/employee-role-matrix.component.scss
+  - bombus-system/src/app/features/organization/components/role-holders-popover/role-holders-popover.component.ts
+  - bombus-system/src/app/features/tenant-admin/pages/permission-visualization-page/permission-visualization-page.component.html
+  - bombus-system/server/src/routes/tenant-admin.js
+  - bombus-system/docs/客戶回饋比對分析_L0權限與系統設定_20260429.xlsx
+  - bombus-system/docs/系統優化紀錄_20260416-20260430.xlsx
+  - bombus-system/src/app/features/organization/components/role-holders-popover/role-holders-popover.component.scss
+  - bombus-system/src/app/features/tenant-admin/pages/permission-visualization-page/permission-visualization-page.component.ts
+  - bombus-system/src/app/features/tenant-admin/services/tenant-admin.service.ts
+  - bombus-system/src/app/shared/components/account-permission/account-permission.component.html
+  - bombus-system/docs/測試計畫/測試計畫與驗收標準(範本).md
+  - bombus-system/src/app/features/organization/pages/employee-management-page/employee-management-page.component.scss
+  - bombus-system/src/app/features/tenant-admin/models/tenant-admin.model.ts
+  - bombus-system/openspec/changes/employee-role-matrix-view/.openspec.yaml
+  - bombus-system/openspec/changes/employee-role-matrix-view/specs/user-overview-lite/spec.md
+  - bombus-system/src/app/features/training/pages/course-management-page/course-management-page.component.ts
+  - bombus-system/src/app/features/tenant-admin/pages/user-management-page/user-management-page.component.ts
+  - bombus-system/package.json
+  - bombus-system/openspec/changes/employee-role-matrix-view/proposal.md
+  - bombus-system/src/app/features/competency/pages/job-description-page/job-description-page.component.ts
+  - bombus-system/openspec/changes/recruitment-hr-initiated-referral/tasks.md
+  - bombus-system/openspec/changes/employee-role-matrix-view/tasks.md
+tests:
+  - bombus-system/src/app/features/organization/utils/role-matrix-csv.spec.ts
+-->
+
+---
+### Requirement: Employee-perspective CSV export
+
+The page SHALL provide an "Export CSV" button that exports the currently filtered employee × role assignments as a flat CSV (long format), with one row per employee × role combination.
+
+CSV columns (in order, with localized cell values):
+1. `employee_number` (員工編號)
+2. `name` (姓名)
+3. `email` (Email)
+4. `department_name` (部門)
+5. `role_name` (角色名稱)
+6. `scope_type` — Chinese category labels matching matrix UI: `全集團` (covers both `global` and `group` backend values), `子公司`, `部門`
+7. `scope_name` (specific anchor name, e.g., 業務部 / 台北分公司; empty for `全集團` rows since global/group are visually merged with no anchor distinction)
+8. `account_status` — Chinese labels: `啟用` / `停用` / `鎖定` (mapped from backend `active` / `inactive` / `locked`)
+9. `exported_at` (ISO 8601 timestamp)
+
+The CSV file name SHALL follow the pattern `員工權限總覽_<YYYYMMDD-HHmm>.csv`. UTF-8 BOM SHALL be prepended so Excel for Windows opens it without garbled Chinese characters.
+
+Employees with zero roles SHALL still appear once in the CSV with `role_name`, `scope_type`, `scope_name` left empty (so the export is a complete employee roster).
+
+#### Scenario: Export filtered results
+
+- **GIVEN** the filter shows 47 employees
+- **WHEN** the admin clicks "Export CSV"
+- **THEN** the browser SHALL download a CSV containing only those 47 employees' role assignments
+
+##### Example: employee with multiple roles produces multiple rows (with Chinese-localized cell values)
+
+| employee_number | name | role_name | scope_type | scope_name | account_status |
+|---|---|---|---|---|---|
+| HR-001 | 李小華 | hr_manager | 全集團 | (empty) | 啟用 |
+| HR-001 | 李小華 | dept_manager | 部門 | 業務部 | 啟用 |
+| HR-001 | 李小華 | 招募官 | 全集團 | (empty) | 啟用 |
+
+##### Example: employee with no roles produces single empty-role row
+
+| employee_number | name | role_name | scope_type | scope_name | account_status |
+|---|---|---|---|---|---|
+| INTERN-09 | 林小新 | (empty) | (empty) | (empty) | 啟用 |
+
+##### Example: group-anchored assignment merges into 全集團
+
+| employee_number | name | role_name | scope_type | scope_name | account_status |
+|---|---|---|---|---|---|
+| ADMIN-01 | 趙大偉 | hr_manager | 全集團 | (empty) | 啟用 |
+
+(Backend stored value: `scope_type='group'`, `scope_name='Demo集團'` — both are normalized to `全集團` + empty in CSV to match matrix UI semantics.)
+
+<!-- @trace
+source: employee-role-matrix-view
+updated: 2026-05-08
+code:
+  - bombus-system/src/app/features/organization/pages/employee-management-page/employee-management-page.component.html
+  - bombus-system/src/app/features/competency/pages/framework-page/framework-page.component.ts
+  - bombus-system/src/app/features/tenant-admin/pages/role-management-page/role-management-page.component.html
+  - bombus-system/src/app/features/organization/components/role-holders-popover/role-holders-popover.component.html
+  - bombus-system/openspec/changes/employee-role-matrix-view/design.md
+  - bombus-system/docs/系統流程優化與介面調整紀錄_20260506（to心偲).xlsx
+  - bombus-system/src/app/shared/components/account-permission/account-permission.component.ts
+  - bombus-system/src/app/shared/components/view-toggle/view-toggle.component.ts
+  - bombus-system/docs/系統流程優化與介面調整紀錄_20260506（to心偲).pdf
+  - bombus-system/src/app/shared/components/account-permission/account-permission.component.scss
+  - bombus-system/src/app/features/organization/utils/role-matrix-csv.ts
+  - bombus-system/src/app/features/tenant-admin/pages/user-management-page/user-management-page.component.html
+  - bombus-system/src/app/features/tenant-admin/pages/permission-visualization-page/permission-visualization-page.component.scss
+  - bombus-system/src/app/features/organization/components/employee-role-matrix/employee-role-matrix.component.html
+  - bombus-system/src/app/features/organization/components/employee-role-matrix/employee-role-matrix.component.ts
+  - bombus-system/src/app/features/tenant-admin/pages/role-management-page/role-management-page.component.ts
+  - bombus-system/src/app/features/tenant-admin/pages/user-management-page/user-management-page.component.scss
+  - bombus-system/src/app/features/organization/pages/employee-management-page/employee-management-page.component.ts
+  - bombus-system/src/app/features/organization/components/employee-role-matrix/employee-role-matrix.component.scss
+  - bombus-system/src/app/features/organization/components/role-holders-popover/role-holders-popover.component.ts
+  - bombus-system/src/app/features/tenant-admin/pages/permission-visualization-page/permission-visualization-page.component.html
+  - bombus-system/server/src/routes/tenant-admin.js
+  - bombus-system/docs/客戶回饋比對分析_L0權限與系統設定_20260429.xlsx
+  - bombus-system/docs/系統優化紀錄_20260416-20260430.xlsx
+  - bombus-system/src/app/features/organization/components/role-holders-popover/role-holders-popover.component.scss
+  - bombus-system/src/app/features/tenant-admin/pages/permission-visualization-page/permission-visualization-page.component.ts
+  - bombus-system/src/app/features/tenant-admin/services/tenant-admin.service.ts
+  - bombus-system/src/app/shared/components/account-permission/account-permission.component.html
+  - bombus-system/docs/測試計畫/測試計畫與驗收標準(範本).md
+  - bombus-system/src/app/features/organization/pages/employee-management-page/employee-management-page.component.scss
+  - bombus-system/src/app/features/tenant-admin/models/tenant-admin.model.ts
+  - bombus-system/openspec/changes/employee-role-matrix-view/.openspec.yaml
+  - bombus-system/openspec/changes/employee-role-matrix-view/specs/user-overview-lite/spec.md
+  - bombus-system/src/app/features/training/pages/course-management-page/course-management-page.component.ts
+  - bombus-system/src/app/features/tenant-admin/pages/user-management-page/user-management-page.component.ts
+  - bombus-system/package.json
+  - bombus-system/openspec/changes/employee-role-matrix-view/proposal.md
+  - bombus-system/src/app/features/competency/pages/job-description-page/job-description-page.component.ts
+  - bombus-system/openspec/changes/recruitment-hr-initiated-referral/tasks.md
+  - bombus-system/openspec/changes/employee-role-matrix-view/tasks.md
+tests:
+  - bombus-system/src/app/features/organization/utils/role-matrix-csv.spec.ts
 -->

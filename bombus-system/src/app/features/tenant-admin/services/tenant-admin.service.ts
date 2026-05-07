@@ -73,8 +73,11 @@ export class TenantAdminService {
   // 使用者管理
   // ============================================================
 
-  getUsers(): Observable<TenantUser[]> {
-    return this.http.get<{ data: TenantUser[]; pagination: unknown }>('/api/tenant-admin/users').pipe(
+  getUsers(options?: { all?: boolean }): Observable<TenantUser[]> {
+    const url = options?.all
+      ? '/api/tenant-admin/users?all=true'
+      : '/api/tenant-admin/users';
+    return this.http.get<{ data: TenantUser[]; pagination: unknown }>(url).pipe(
       map(res => res.data)
     );
   }
