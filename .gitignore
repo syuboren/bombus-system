@@ -22,3 +22,8 @@ bombus-system/server/.env
 .spectra/
 openspec/.vector-search.db*
 senzfor 識別提供.ai
+
+# 工作底稿（會議紀錄、雙週優化紀錄、測試計畫範本等個人/交付前材料，不入 repo）
+bombus-system/docs/測試計畫/
+bombus-system/docs/系統優化紀錄_*.xlsx
+bombus-system/docs/系統流程優化與介面調整紀錄_*
