@@ -369,9 +369,15 @@ export class InterviewService {
   }
 
   /**
-   * D-07: 列出面試官候選清單（active 員工）
+   * D-07: 列出面試官候選清單
    * @param options.dept 預設以職缺所屬部門篩選（可省略 = 全部門）
    * @param options.role rbac-row-level-and-interview-scope: 限定持有指定 role code 的員工（如 'interviewer'）
+   *
+   * Status 過濾規則（rbac-row-level-and-interview-scope post-fix）：
+   *   - 沒帶 role：嚴格 status='active'（D-07 既有行為，向後相容）
+   *   - 有帶 role：不限定 status，走後端預設 IN ('active','probation')
+   *     理由：HR 主動指派 role 已是明確認可，role 過濾本身就足夠精確；試用期員工
+   *     通常是新進中高階主管，協助面試是合理場景
    */
   listActiveEmployees(options?: { dept?: string; role?: string }): Observable<Array<{
     id: string;
@@ -380,7 +386,10 @@ export class InterviewService {
     position: string | null;
     employeeNo?: string;
   }>> {
-    let params = new HttpParams().set('status', 'active');
+    let params = new HttpParams();
+    if (!options?.role) {
+      params = params.set('status', 'active');
+    }
     if (options?.dept) params = params.set('dept', options.dept);
     if (options?.role) params = params.set('role', options.role);
     return this.http.get<any[]>('/api/employee/list', { params }).pipe(
