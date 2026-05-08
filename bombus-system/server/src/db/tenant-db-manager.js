@@ -14,6 +14,7 @@ const path = require('path');
 const { SqliteAdapter } = require('./db-adapter');
 const {
   EMPLOYEE_MIGRATIONS, USER_MIGRATIONS, INTERVIEW_MIGRATIONS,
+  ROLE_FEATURE_PERMS_MIGRATIONS,
   FEATURE_TABLES_SQL, IMPORT_TABLES_SQL, FEATURE_SEED_DATA, DEFAULT_ROLE_FEATURE_PERMS,
   seedFeatureData, seedDefaultRoleFeaturePerms
 } = require('./tenant-schema');
@@ -416,6 +417,11 @@ class TenantDBManager {
       try { db.run(sql); changed = true; } catch (e) { /* 欄位已存在則忽略 */ }
     }
 
+    // role_feature_perms 表擴 3 欄（rbac-row-level-and-interview-scope）
+    for (const sql of ROLE_FEATURE_PERMS_MIGRATIONS) {
+      try { db.run(sql); changed = true; } catch (e) { /* 欄位已存在則忽略 */ }
+    }
+
     // templates 表新增草稿欄位（has_draft, draft_pdf_base64, draft_mapping_config）
     const templateMigrations = [
       'ALTER TABLE templates ADD COLUMN has_draft INTEGER DEFAULT 0',
@@ -781,10 +787,26 @@ class TenantDBManager {
       } catch (e) { /* 忽略 */ }
     }
 
+    // 為既有租戶補入 interviewer 系統角色（rbac-row-level-and-interview-scope）
+    // 新建租戶由 platform.js seedTenantRBAC 直接 seed；此處僅針對已存在但無此角色的租戶
+    try {
+      const existing = db.exec("SELECT id FROM roles WHERE name = 'interviewer' AND is_system = 1");
+      if (!existing.length || !existing[0].values.length) {
+        const { randomUUID } = require('crypto');
+        db.run(
+          'INSERT OR IGNORE INTO roles (id, name, description, scope_type, is_system) VALUES (?, ?, ?, ?, 1)',
+          [randomUUID(), 'interviewer', '面試官（僅見被指派候選人）', 'global']
+        );
+        changed = true;
+      }
+    } catch (e) {
+      console.error('⚠️ interviewer role backfill failed:', e.message);
+    }
+
     // 為系統預設角色插入 feature 權限（冪等：INSERT OR IGNORE）
     try {
       const systemRoles = db.exec(
-        "SELECT id, name FROM roles WHERE is_system = 1 AND name IN ('super_admin','subsidiary_admin','hr_manager','dept_manager','employee')"
+        "SELECT id, name FROM roles WHERE is_system = 1 AND name IN ('super_admin','subsidiary_admin','hr_manager','dept_manager','employee','interviewer')"
       );
       if (systemRoles.length && systemRoles[0].values.length) {
         const roleMap = {};
@@ -809,9 +831,9 @@ class TenantDBManager {
           for (const f of FEATURE_SEED_DATA) {
             try {
               const stmt = db.prepare(
-                'INSERT OR IGNORE INTO role_feature_perms (role_id, feature_id, action_level, edit_scope, view_scope) VALUES (?, ?, ?, ?, ?)'
+                'INSERT OR IGNORE INTO role_feature_perms (role_id, feature_id, action_level, edit_scope, view_scope, can_approve, approve_scope, row_filter_key) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
               );
-              stmt.bind([roleId, f.id, 'none', null, null]);
+              stmt.bind([roleId, f.id, 'none', null, null, 0, null, null]);
               stmt.step();
               stmt.free();
             } catch (e) { /* 已存在則忽略 */ }

@@ -26,6 +26,10 @@ interface FeaturePermState {
   action_level: ActionLevel;
   edit_scope: PermScope | null;
   view_scope: PermScope | null;
+  // rbac-row-level-and-interview-scope
+  can_approve: 0 | 1;
+  approve_scope: PermScope | null;
+  row_filter_key: string | null;
 }
 
 const MODULE_LABELS: Record<string, string> = {
@@ -48,6 +52,16 @@ const SCOPE_OPTIONS: { value: PermScope; label: string }[] = [
   { value: 'self', label: '個人' },
   { value: 'department', label: '部門' },
   { value: 'company', label: '全公司' }
+];
+
+// rbac-row-level-and-interview-scope: 已註冊 row_filter predicate（與後端 ROW_FILTERS registry 同步）
+// 決議 8：UI 名詞遵守「全集團 vs 全公司」分層 — row_filter 是過濾邏輯標籤，非 scope，用業務語意命名
+const ROW_FILTER_OPTIONS: { value: string | null; label: string }[] = [
+  { value: null, label: '不限制' },
+  { value: 'interview_assigned', label: '僅被指派的面試者' },
+  { value: 'subordinate_only', label: '僅下屬' },
+  { value: 'self_only', label: '僅本人' },
+  { value: 'org_unit_scope', label: '依組織單位' }
 ];
 
 const SCOPE_RANK: Record<string, number> = { self: 1, department: 2, company: 3 };
@@ -104,6 +118,7 @@ export class RoleManagementPageComponent implements OnInit {
   readonly moduleLabels = MODULE_LABELS;
   readonly actionLevelOptions = ACTION_LEVEL_OPTIONS;
   readonly scopeOptions = SCOPE_OPTIONS;
+  readonly rowFilterOptions = ROW_FILTER_OPTIONS;
 
   // Computed: features grouped by module
   featuresByModule = computed(() => {
@@ -276,7 +291,10 @@ export class RoleManagementPageComponent implements OnInit {
         feature_id: f.id,
         action_level: 'none',
         edit_scope: null,
-        view_scope: null
+        view_scope: null,
+        can_approve: 0,
+        approve_scope: null,
+        row_filter_key: null
       });
     }
     this.featurePermStates.set(states);
@@ -291,7 +309,11 @@ export class RoleManagementPageComponent implements OnInit {
               feature_id: p.feature_id,
               action_level: p.action_level,
               edit_scope: p.edit_scope,
-              view_scope: p.view_scope
+              view_scope: p.view_scope,
+              // rbac-row-level-and-interview-scope: 從後端 sync 三新欄位
+              can_approve: (p.can_approve === 1 ? 1 : 0),
+              approve_scope: p.approve_scope ?? null,
+              row_filter_key: p.row_filter_key ?? null
             });
           }
           return next;
@@ -310,7 +332,10 @@ export class RoleManagementPageComponent implements OnInit {
       feature_id: featureId,
       action_level: 'none',
       edit_scope: null,
-      view_scope: null
+      view_scope: null,
+      can_approve: 0,
+      approve_scope: null,
+      row_filter_key: null
     };
   }
 
@@ -318,7 +343,8 @@ export class RoleManagementPageComponent implements OnInit {
     this.featurePermStates.update(map => {
       const next = new Map(map);
       const current = next.get(featureId) || {
-        feature_id: featureId, action_level: 'none', edit_scope: null, view_scope: null
+        feature_id: featureId, action_level: 'none', edit_scope: null, view_scope: null,
+        can_approve: 0 as const, approve_scope: null, row_filter_key: null
       };
 
       if (level === 'none') {
@@ -378,6 +404,50 @@ export class RoleManagementPageComponent implements OnInit {
     });
   }
 
+  // rbac-row-level-and-interview-scope: 審核位元變更
+  onCanApproveChange(featureId: string, checked: boolean): void {
+    this.featurePermStates.update(map => {
+      const next = new Map(map);
+      const current = next.get(featureId) || {
+        feature_id: featureId, action_level: 'none' as const,
+        edit_scope: null, view_scope: null,
+        can_approve: 0 as const, approve_scope: null, row_filter_key: null
+      };
+      // 勾選時預設 approve_scope='department'（中庸），取消勾選清空 approve_scope
+      next.set(featureId, {
+        ...current,
+        can_approve: checked ? 1 : 0,
+        approve_scope: checked ? (current.approve_scope || 'department') : null
+      });
+      return next;
+    });
+  }
+
+  onApproveScopeChange(featureId: string, scope: PermScope): void {
+    this.featurePermStates.update(map => {
+      const next = new Map(map);
+      const current = next.get(featureId);
+      if (!current) return next;
+      next.set(featureId, { ...current, approve_scope: scope });
+      return next;
+    });
+  }
+
+  // rbac-row-level-and-interview-scope: 資料列限制變更
+  onRowFilterKeyChange(featureId: string, value: string): void {
+    this.featurePermStates.update(map => {
+      const next = new Map(map);
+      const current = next.get(featureId) || {
+        feature_id: featureId, action_level: 'none' as const,
+        edit_scope: null, view_scope: null,
+        can_approve: 0 as const, approve_scope: null, row_filter_key: null
+      };
+      // 空字串視為 NULL（HTML select 對 NULL value 的常見處理）
+      next.set(featureId, { ...current, row_filter_key: value || null });
+      return next;
+    });
+  }
+
   saveFeaturePerms(): void {
     const role = this.editingRole();
     if (!role) return;
@@ -388,7 +458,11 @@ export class RoleManagementPageComponent implements OnInit {
         feature_id: state.feature_id,
         action_level: state.action_level,
         edit_scope: state.edit_scope,
-        view_scope: state.view_scope
+        view_scope: state.view_scope,
+        // rbac-row-level-and-interview-scope: 帶上新欄位
+        can_approve: state.can_approve,
+        approve_scope: state.approve_scope,
+        row_filter_key: state.row_filter_key
       });
     }
 
@@ -467,11 +541,14 @@ export class RoleManagementPageComponent implements OnInit {
   }
 
   getScopeLabel(scopeOrType: string): string {
+    // 'company' = 功能權限的編輯範圍（perm_scope）保留「全公司」
+    // 'global' / 'group' = 角色指派層級（scope_type），改用「全集團」避免名詞重複
     const scopeLabels: Record<string, string> = {
       self: '個人',
       department: '部門',
       company: '全公司',
-      global: '全域',
+      global: '全集團',
+      group: '全集團',
       subsidiary: '子公司'
     };
     return scopeLabels[scopeOrType] || scopeOrType;

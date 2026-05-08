@@ -1,0 +1,231 @@
+@import '../../../../../assets/styles/variables';
+@import '../../../../../assets/styles/mixins';
+
+$module-color: $color-l1-sage;
+$cell-row-height: 56px;
+$cell-employee-width: 240px;
+$cell-role-width: 176px;
+$header-bg: #FAFAFB;
+
+:host {
+  display: block;
+}
+
+.matrix-shell {
+  @include card;
+  padding: 0;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 600px;
+  min-height: 600px;
+}
+
+.matrix-header,
+.matrix-row {
+  display: grid;
+  grid-template-columns: $cell-employee-width repeat(var(--col-count), $cell-role-width);
+  align-items: center;
+  min-width: max-content;
+}
+
+.matrix-header {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: $header-bg;
+  border-bottom: 1px solid $color-soft-gray;
+  height: 56px;
+
+  .cell {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    font-weight: 600;
+    color: $color-text-dark;
+    font-size: 0.875rem;
+  }
+
+  .cell-role-header {
+    cursor: pointer;
+    border-left: 1px solid $color-soft-gray;
+    transition: background 0.15s ease;
+    overflow: hidden;
+    gap: 6px;
+    flex-direction: row;
+
+    &:hover {
+      background: rgba($module-color, 0.08);
+      color: $module-color;
+    }
+
+    .role-name {
+      flex: 1 1 auto;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .role-badge-system {
+      flex: 0 0 auto;
+      font-size: 0.625rem;
+      padding: 2px 4px;
+      border-radius: 4px;
+      background: rgba($module-color, 0.12);
+      color: $module-color;
+      font-weight: 500;
+    }
+  }
+}
+
+.matrix-viewport {
+  flex: 1 1 auto;
+  // CDK viewport sets contain: strict & overflow: auto by default
+}
+
+.matrix-row {
+  height: $cell-row-height;
+  border-bottom: 1px solid $color-soft-gray;
+  background: white;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: rgba($module-color, 0.06);
+  }
+
+  &.row-inactive {
+    background: rgba($color-soft-gray, 0.4);
+    color: $color-text-secondary;
+    opacity: 0.7;
+  }
+
+  .cell {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    font-size: 0.875rem;
+  }
+
+  .cell-employee {
+    .employee-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      overflow: hidden;
+    }
+
+    .employee-name {
+      font-weight: 600;
+      color: $color-text-dark;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .employee-meta {
+      font-size: 0.75rem;
+      color: $color-text-secondary;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .employee-no {
+      font-family: 'SFMono-Regular', Menlo, Consolas, monospace;
+    }
+  }
+
+  .cell-role {
+    justify-content: center;
+    border-left: 1px solid $color-soft-gray;
+  }
+
+  .scope-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: $module-color;
+
+    i {
+      font-size: 0.7rem;
+    }
+
+    .chip-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+  }
+}
+
+.sticky-left {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: inherit;
+  border-right: 1px solid $color-soft-gray;
+}
+
+.matrix-header .sticky-left {
+  z-index: 4;
+  background: $header-bg;
+}
+
+.matrix-row .sticky-left {
+  background: white;
+}
+
+.matrix-row:hover .sticky-left {
+  background: #F5F8F6;
+}
+
+.matrix-row.row-inactive .sticky-left {
+  background: rgba($color-soft-gray, 0.5);
+}
+
+// Loading skeleton
+.matrix-loading {
+  @include card;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  .skeleton-header,
+  .skeleton-row {
+    height: 56px;
+    border-radius: 8px;
+    background: linear-gradient(90deg, $color-soft-gray 0%, #F5F5F7 50%, $color-soft-gray 100%);
+    background-size: 200% 100%;
+    animation: matrix-skeleton 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes matrix-skeleton {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+// Empty state
+.matrix-empty {
+  @include card;
+  padding: 64px 24px;
+  text-align: center;
+  color: $color-text-secondary;
+
+  i {
+    font-size: 2.5rem;
+    color: rgba($module-color, 0.4);
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.875rem;
+  }
+}

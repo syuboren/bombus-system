@@ -28,6 +28,10 @@ const FEATURE_TABLES_SQL = `
       CHECK(edit_scope IN (NULL, 'self', 'department', 'company')),
     view_scope TEXT DEFAULT NULL
       CHECK(view_scope IN (NULL, 'self', 'department', 'company')),
+    can_approve INTEGER NOT NULL DEFAULT 0,
+    approve_scope TEXT DEFAULT NULL
+      CHECK(approve_scope IN (NULL, 'self', 'department', 'company')),
+    row_filter_key TEXT DEFAULT NULL,
     PRIMARY KEY (role_id, feature_id)
   );
 `;
@@ -83,10 +87,22 @@ const FEATURE_SEED_DATA = [
 ];
 
 // 預設角色 feature 權限映射（Decision 5）
-// 格式：{ action_level, edit_scope, view_scope }
-const _e = (es, vs) => ({ action_level: 'edit', edit_scope: es, view_scope: vs });
-const _v = (vs) => ({ action_level: 'view', edit_scope: null, view_scope: vs });
-const _n = { action_level: 'none', edit_scope: null, view_scope: null };
+// 格式：{ action_level, edit_scope, view_scope, can_approve, approve_scope, row_filter_key }
+// 新增三欄（rbac-row-level-and-interview-scope）：fail-safe 預設 0/NULL/NULL
+const _e = (es, vs, extras = {}) => ({
+  action_level: 'edit', edit_scope: es, view_scope: vs,
+  can_approve: 0, approve_scope: null, row_filter_key: null,
+  ...extras
+});
+const _v = (vs, extras = {}) => ({
+  action_level: 'view', edit_scope: null, view_scope: vs,
+  can_approve: 0, approve_scope: null, row_filter_key: null,
+  ...extras
+});
+const _n = {
+  action_level: 'none', edit_scope: null, view_scope: null,
+  can_approve: 0, approve_scope: null, row_filter_key: null
+};
 
 const DEFAULT_ROLE_FEATURE_PERMS = {
   super_admin: {
@@ -339,6 +355,58 @@ const DEFAULT_ROLE_FEATURE_PERMS = {
 
     'SYS.audit': _n,
   },
+  // 面試官（rbac-row-level-and-interview-scope）：僅見被指派的候選人/評分
+  // 一個 L1.recruitment feature 涵蓋候選人列表 + 邀約 + 面試 + 評分
+  // （recruitment.js:512/642/676/777/938/1036 共用 requireFeaturePerm('L1.recruitment')）
+  interviewer: {
+    // L1
+    'L1.jobs': _n,
+    'L1.recruitment': _e('company', 'company', { row_filter_key: 'interview_assigned' }),
+    'L1.decision': _n,
+    'L1.talent-pool': _n,
+    'L1.profile': _n,
+    'L1.meeting': _n,
+    'L1.onboarding': _n,
+    // L2
+    'L2.grade-matrix': _n,
+    'L2.framework': _n,
+    'L2.job-description': _n,
+    'L2.assessment': _n,
+    'L2.gap-analysis': _n,
+    // L3
+    'L3.course-management': _n,
+    'L3.learning-map': _n,
+    'L3.effectiveness': _n,
+    'L3.competency-heatmap': _n,
+    'L3.nine-box': _n,
+    'L3.learning-path': _n,
+    'L3.key-talent': _n,
+    // L4
+    'L4.list': _n,
+    'L4.profit-prediction': _n,
+    'L4.forecast': _n,
+    'L4.report': _n,
+    // L5
+    'L5.profit-dashboard': _n,
+    'L5.bonus-distribution': _n,
+    'L5.goal-task': _n,
+    'L5.profit-settings': _n,
+    'L5.review': _n,
+    'L5.360-feedback': _n,
+    // L6
+    'L6.handbook': _n,
+    'L6.eap': _n,
+    'L6.awards': _n,
+    'L6.documents': _n,
+    'L6.ai-assistant': _n,
+    'L6.analysis': _n,
+    'L6.impact': _n,
+    // SYS
+    'SYS.org-structure': _n,
+    'SYS.user-management': _n,
+    'SYS.role-management': _n,
+    'SYS.audit': _n,
+  },
 };
 
 /**
@@ -368,9 +436,15 @@ function seedDefaultRoleFeaturePerms(db, roleMap) {
     for (const [featureId, perm] of Object.entries(perms)) {
       try {
         const stmt = db.prepare(
-          'INSERT OR IGNORE INTO role_feature_perms (role_id, feature_id, action_level, edit_scope, view_scope) VALUES (?, ?, ?, ?, ?)'
+          'INSERT OR IGNORE INTO role_feature_perms (role_id, feature_id, action_level, edit_scope, view_scope, can_approve, approve_scope, row_filter_key) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
         );
-        stmt.bind([roleId, featureId, perm.action_level, perm.edit_scope, perm.view_scope]);
+        stmt.bind([
+          roleId, featureId,
+          perm.action_level, perm.edit_scope, perm.view_scope,
+          perm.can_approve ?? 0,
+          perm.approve_scope ?? null,
+          perm.row_filter_key ?? null
+        ]);
         stmt.step();
         stmt.free();
       } catch (e) { /* 資料已存在則忽略 */ }
@@ -414,6 +488,13 @@ const INTERVIEW_MIGRATIONS = [
   'CREATE INDEX IF NOT EXISTS idx_meeting_attendees_employee_time ON meeting_attendees(employee_id)',
   // meetings 表加 department 欄位（initTenantSchema 已加，此為既有租戶 migration 補齊）
   'ALTER TABLE meetings ADD COLUMN department TEXT'
+];
+
+// rbac-row-level-and-interview-scope: role_feature_perms 擴 3 欄
+const ROLE_FEATURE_PERMS_MIGRATIONS = [
+  'ALTER TABLE role_feature_perms ADD COLUMN can_approve INTEGER NOT NULL DEFAULT 0',
+  'ALTER TABLE role_feature_perms ADD COLUMN approve_scope TEXT DEFAULT NULL',
+  'ALTER TABLE role_feature_perms ADD COLUMN row_filter_key TEXT DEFAULT NULL'
 ];
 
 // ─── 批次匯入表 SQL ───
@@ -1929,6 +2010,7 @@ module.exports = {
   initTenantSchema,
   RBAC_TABLES_SQL, BUSINESS_TABLES_SQL, FEATURE_TABLES_SQL, IMPORT_TABLES_SQL,
   EMPLOYEE_MIGRATIONS, USER_MIGRATIONS, INTERVIEW_MIGRATIONS,
+  ROLE_FEATURE_PERMS_MIGRATIONS,
   FEATURE_SEED_DATA, DEFAULT_ROLE_FEATURE_PERMS,
   seedFeatureData, seedDefaultRoleFeaturePerms
 };

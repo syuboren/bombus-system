@@ -231,6 +231,23 @@
   i { font-size: 1rem; }
 }
 
+.ap-assign-hint {
+  margin: $spacing-sm 0 0;
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $radius-sm;
+  font-size: 0.8125rem;
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+
+  &--warn {
+    background: rgba(#B87D7B, 0.08);
+    color: #B87D7B;
+
+    i { font-size: 0.95rem; }
+  }
+}
+
 // ===== Role List =====
 .ap-role-list {
   display: flex;

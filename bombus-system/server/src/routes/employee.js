@@ -238,7 +238,7 @@ router.get('/progress', requireFeaturePerm('L1.profile', 'view'), (req, res) => 
  */
 router.get('/list', requireFeaturePerm('L1.profile', 'view'), (req, res) => {
     try {
-        const { dept, status, all, org_unit_id } = req.query;
+        const { dept, status, all, org_unit_id, role } = req.query;
 
         let query = `
             SELECT id, employee_no, name, email, phone, department, position,
@@ -274,6 +274,21 @@ router.get('/list', requireFeaturePerm('L1.profile', 'view'), (req, res) => {
         if (status) {
             query += ` AND status = ?`;
             params.push(status);
+        }
+
+        // role 過濾（rbac-row-level-and-interview-scope）：限定持有指定 role code 的員工
+        // SQL：JOIN users → user_roles → roles，僅納入 users.status='active' 的帳號
+        if (role) {
+            query += ` AND id IN (
+                SELECT u.employee_id
+                FROM users u
+                JOIN user_roles ur ON ur.user_id = u.id
+                JOIN roles r ON r.id = ur.role_id
+                WHERE r.name = ?
+                  AND (u.status IS NULL OR u.status = 'active')
+                  AND u.employee_id IS NOT NULL
+            )`;
+            params.push(role);
         }
 
         // Apply scope filter

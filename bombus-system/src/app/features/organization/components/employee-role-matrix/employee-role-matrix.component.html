@@ -1,0 +1,66 @@
+@if (loading()) {
+  <div class="matrix-loading">
+    <div class="skeleton-header"></div>
+    @for (n of [1,2,3,4,5,6,7,8]; track n) {
+      <div class="skeleton-row"></div>
+    }
+  </div>
+} @else if (employees().length === 0) {
+  <div class="matrix-empty">
+    <i class="ri-grid-line"></i>
+    <p>無員工符合目前篩選條件</p>
+  </div>
+} @else {
+  <div class="matrix-shell" [style.--col-count]="roles().length">
+    <!-- Sticky header row -->
+    <div class="matrix-header">
+      <div class="cell cell-employee header-cell sticky-left">員工</div>
+      @for (role of roles(); track trackByRoleId($index, role)) {
+        <div
+          class="cell cell-role-header"
+          [title]="role.name"
+          (click)="onRoleHeaderClick(role, $event)">
+          <span class="role-name">{{ role.name }}</span>
+          @if (role.is_system === 1) {
+            <span class="role-badge-system">系統</span>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Virtual-scrolled rows -->
+    <cdk-virtual-scroll-viewport itemSize="56" class="matrix-viewport">
+      <div
+        *cdkVirtualFor="let user of employees(); trackBy: trackByUserId"
+        class="matrix-row"
+        [class.row-inactive]="user.status !== 'active'"
+        (click)="onRowClick(user)">
+        <div class="cell cell-employee sticky-left">
+          <div class="employee-info">
+            <div class="employee-name">{{ user.name }}</div>
+            <div class="employee-meta">
+              @if (user.employee_no) {
+                <span class="employee-no">{{ user.employee_no }}</span>
+              }
+              @if (user.department) {
+                <span class="employee-dept">· {{ user.department }}</span>
+              }
+            </div>
+          </div>
+        </div>
+        @for (role of roles(); track trackByRoleId($index, role)) {
+          <div class="cell cell-role" [title]="getCellTooltip(getCell(user, role))">
+            @if (getCell(user, role); as cell) {
+              @if (cell.hasRole) {
+                <span class="scope-chip">
+                  <i class="ri-checkbox-blank-circle-fill"></i>
+                  <span class="chip-label">{{ cell.chip }}</span>
+                </span>
+              }
+            }
+          </div>
+        }
+      </div>
+    </cdk-virtual-scroll-viewport>
+  </div>
+}

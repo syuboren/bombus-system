@@ -10,17 +10,23 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { switchMap, forkJoin } from 'rxjs';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { EmployeeDetailComponent } from '../../../../shared/components/employee-detail/employee-detail.component';
 import { AccountPermissionComponent } from '../../../../shared/components/account-permission/account-permission.component';
+import { ViewToggleComponent, ViewMode } from '../../../../shared/components/view-toggle/view-toggle.component';
+import { EmployeeRoleMatrixComponent } from '../../components/employee-role-matrix/employee-role-matrix.component';
+import { RoleHoldersPopoverComponent, RoleHolder } from '../../components/role-holders-popover/role-holders-popover.component';
 import { NotificationService } from '../../../../core/services/notification.service';
 import { EmployeeService } from '../../../employee/services/employee.service';
 import { CompetencyService } from '../../../competency/services/competency.service';
 import { OrgUnitService } from '../../../../core/services/org-unit.service';
 import { FeatureGateService } from '../../../../core/services/feature-gate.service';
+import { TenantAdminService } from '../../../tenant-admin/services/tenant-admin.service';
+import { TenantUser, Role } from '../../../tenant-admin/models/tenant-admin.model';
+import { buildEmployeeRoleCsv, buildCsvFileName, triggerCsvDownload } from '../../utils/role-matrix-csv';
 import {
   UnifiedEmployee,
   EmployeeStats,
@@ -30,8 +36,6 @@ import {
   BatchImportJob,
   BatchImportResult
 } from '../../../../shared/models/employee.model';
-
-type ViewMode = 'card' | 'list';
 type BatchStep = 'upload' | 'validating' | 'preview' | 'importing' | 'complete';
 
 // 中文欄位名 → 內部欄位名（自動處理 (*) 必填標記）
@@ -55,7 +59,16 @@ function resolveHeader(raw: string): keyof BatchImportRow | undefined {
 @Component({
   selector: 'app-employee-management-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, HeaderComponent, EmployeeDetailComponent, AccountPermissionComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    HeaderComponent,
+    EmployeeDetailComponent,
+    AccountPermissionComponent,
+    ViewToggleComponent,
+    EmployeeRoleMatrixComponent,
+    RoleHoldersPopoverComponent
+  ],
   templateUrl: './employee-management-page.component.html',
   styleUrl: './employee-management-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -66,8 +79,10 @@ export class EmployeeManagementPageComponent implements OnInit, OnDestroy {
   private featureGateService = inject(FeatureGateService);
   private notificationService = inject(NotificationService);
   private competencyService = inject(CompetencyService);
+  private tenantAdminService = inject(TenantAdminService);
   private destroyRef = inject(DestroyRef);
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
 
   // Module color for shared component
   readonly moduleColor = '#8DA399'; // L1 sage
@@ -94,9 +109,35 @@ export class EmployeeManagementPageComponent implements OnInit, OnDestroy {
   searchKeyword = signal<string>('');
   selectedDepartment = signal<string>('all');
   statusFilter = signal<string>('all');
+  selectedRoleIds = signal<readonly string[]>([]);
 
-  // View mode
+  // View mode (now supports 'matrix')
   viewMode = signal<ViewMode>('list');
+  readonly availableViewModes: readonly ViewMode[] = ['card', 'list', 'matrix'];
+
+  // Matrix data (loaded lazily on first matrix view)
+  matrixUsers = signal<TenantUser[]>([]);
+  matrixRoles = signal<Role[]>([]);
+  matrixLoading = signal(false);
+  private matrixLoaded = signal(false);
+  // modal 期間是否有觸發 userUpdated（角色指派/撤銷、停啟用、改密碼），用於 close 時決定是否重抓矩陣
+  private matrixDirty = signal(false);
+
+  // Role holders popover
+  popoverState = signal<{ role: Role; rect: DOMRect } | null>(null);
+  popoverHolders = computed<RoleHolder[]>(() => {
+    const state = this.popoverState();
+    if (!state) return [];
+    const roleId = state.role.id;
+    const holders: RoleHolder[] = [];
+    for (const u of this.matrixUsers()) {
+      const matches = (u.roles ?? []).filter(r => r.role_id === roleId);
+      if (matches.length > 0) {
+        holders.push({ user: u, assignments: matches });
+      }
+    }
+    return holders;
+  });
 
   // Employee detail modal
   selectedEmployeeId = signal<string | null>(null);
@@ -178,6 +219,48 @@ export class EmployeeManagementPageComponent implements OnInit, OnDestroy {
 
   totalPages = computed(() => Math.ceil(this.filteredEmployees().length / this.pageSize()));
 
+  // Matrix-side filtered users (operates on TenantUser[] not UnifiedEmployee[])
+  filteredMatrixUsers = computed<TenantUser[]>(() => {
+    let result = this.matrixUsers();
+    const keyword = this.searchKeyword().toLowerCase().trim();
+    const dept = this.selectedDepartment();
+    const status = this.statusFilter();
+    const roleIds = new Set(this.selectedRoleIds());
+
+    if (keyword) {
+      result = result.filter(u =>
+        u.name.toLowerCase().includes(keyword) ||
+        u.email.toLowerCase().includes(keyword) ||
+        (u.employee_no ?? '').toLowerCase().includes(keyword)
+      );
+    }
+
+    if (dept && dept !== 'all') {
+      result = result.filter(u => (u.department ?? '') === dept);
+    }
+
+    // 注意：篩選列下拉的「狀態」是員工狀態（試用期 / 在職 / 留職停薪 / 已離職）
+    // 來自 UnifiedEmployee.status，不是 TenantUser.status（後者只有 active/inactive/locked 帳號狀態）
+    // 與列表/卡片視圖共用同一個 statusFilter signal，必須沿用相同語意 → 跨表查詢符合員工狀態的 userId 集合
+    if (status !== 'all') {
+      const matchingUserIds = new Set(
+        this.employees()
+          .filter(e => e.status === status)
+          .map(e => e.userId)
+          .filter((id): id is string => !!id)
+      );
+      result = result.filter(u => matchingUserIds.has(u.id));
+    }
+
+    if (roleIds.size > 0) {
+      result = result.filter(u => (u.roles ?? []).some(r => roleIds.has(r.role_id)));
+    }
+
+    return result;
+  });
+
+  totalMatrixUsers = computed(() => this.matrixUsers().length);
+
   constructor() {
     // Reload employees when subsidiary changes or refresh triggered
     toObservable(computed(() => ({
@@ -203,10 +286,15 @@ export class EmployeeManagementPageComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.orgUnitService.loadOrgUnits().subscribe();
 
-    // Handle ?userId deep link
+    // One-shot URL filter restore on first emission
+    let urlRestored = false;
     this.route.queryParams.pipe(
       takeUntilDestroyed(this.destroyRef)
     ).subscribe(params => {
+      if (!urlRestored) {
+        this.restoreFiltersFromUrl(params as Record<string, string | undefined>);
+        urlRestored = true;
+      }
       if (params['userId']) {
         this.openDetailByUserId(params['userId']);
       }
@@ -237,6 +325,15 @@ export class EmployeeManagementPageComponent implements OnInit, OnDestroy {
   closeAccountModal(): void {
     this.showAccountModal.set(false);
     this.accountEmployee.set(null);
+
+    // modal 內若有更動（指派/撤銷/停啟用），失效矩陣 cache；當前在 matrix 視圖則立即重抓
+    if (this.matrixDirty()) {
+      this.matrixLoaded.set(false);
+      this.matrixDirty.set(false);
+      if (this.viewMode() === 'matrix') {
+        this.loadMatrixData();
+      }
+    }
   }
 
   createAccountForEmployee(employee: UnifiedEmployee): void {
@@ -260,6 +357,8 @@ export class EmployeeManagementPageComponent implements OnInit, OnDestroy {
 
   onEmployeeUpdated(): void {
     this.refreshTrigger.update(v => v + 1);
+    // 標記 modal 期間有變動，讓 closeAccountModal 知道需要重抓矩陣資料
+    this.matrixDirty.set(true);
   }
 
   private openDetailByUserId(userId: string): void {
@@ -587,20 +686,172 @@ export class EmployeeManagementPageComponent implements OnInit, OnDestroy {
   onSearch(keyword: string): void {
     this.searchKeyword.set(keyword);
     this.currentPage.set(1);
+    this.syncFiltersToUrl();
   }
 
   onDepartmentChange(dept: string): void {
     this.selectedDepartment.set(dept);
     this.currentPage.set(1);
+    this.syncFiltersToUrl();
   }
 
   onStatusChange(status: string): void {
     this.statusFilter.set(status);
     this.currentPage.set(1);
+    this.syncFiltersToUrl();
+  }
+
+  toggleRoleFilter(roleId: string, checked: boolean): void {
+    const current = new Set(this.selectedRoleIds());
+    if (checked) {
+      current.add(roleId);
+    } else {
+      current.delete(roleId);
+    }
+    this.selectedRoleIds.set(Array.from(current));
+    this.syncFiltersToUrl();
+  }
+
+  clearRoleFilter(): void {
+    this.selectedRoleIds.set([]);
+    this.syncFiltersToUrl();
+  }
+
+  isRoleFilterChecked(roleId: string): boolean {
+    return this.selectedRoleIds().includes(roleId);
   }
 
   setViewMode(mode: ViewMode): void {
     this.viewMode.set(mode);
+    if (mode === 'matrix') {
+      this.loadMatrixData();
+    }
+  }
+
+  // ===== Matrix data =====
+
+  private loadMatrixData(): void {
+    if (this.matrixLoaded() || this.matrixLoading()) return;
+    this.matrixLoading.set(true);
+
+    forkJoin({
+      users: this.tenantAdminService.getUsers({ all: true }),
+      roles: this.tenantAdminService.getRoles()
+    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: ({ users, roles }) => {
+        // Defensive: warn on orphan role assignments
+        const validRoleIds = new Set(roles.map(r => r.id));
+        for (const u of users) {
+          for (const r of u.roles ?? []) {
+            if (!validRoleIds.has(r.role_id)) {
+              console.warn('[matrix] orphan role assignment skipped', {
+                userId: u.id,
+                role_id: r.role_id
+              });
+            }
+          }
+        }
+        // Sort roles: system roles first (by is_system desc, then created_at asc)
+        const sortedRoles = [...roles].sort((a, b) => {
+          if (a.is_system !== b.is_system) return b.is_system - a.is_system;
+          return a.created_at.localeCompare(b.created_at);
+        });
+        this.matrixUsers.set(users);
+        this.matrixRoles.set(sortedRoles);
+        this.matrixLoaded.set(true);
+        this.matrixLoading.set(false);
+      },
+      error: () => {
+        this.matrixUsers.set([]);
+        this.matrixRoles.set([]);
+        this.matrixLoading.set(false);
+        this.notificationService.error('矩陣資料載入失敗');
+      }
+    });
+  }
+
+  // ===== Matrix interactions =====
+
+  onMatrixEmployeeClick(user: TenantUser): void {
+    // Construct minimal UnifiedEmployee shim for the existing AccountPermission modal
+    const shim = {
+      id: user.employee_id ?? user.id,
+      userId: user.id,
+      name: user.name,
+      email: user.email,
+      userEmail: user.email,
+      userStatus: user.status,
+      employeeNo: user.employee_no ?? '',
+      department: user.department ?? ''
+    } as unknown as UnifiedEmployee;
+    this.accountEmployee.set(shim);
+    this.showAccountModal.set(true);
+  }
+
+  onMatrixRoleHeaderClick(payload: { role: Role; anchor: HTMLElement }): void {
+    const rect = payload.anchor.getBoundingClientRect();
+    this.popoverState.set({ role: payload.role, rect });
+  }
+
+  onMatrixAutoFallback(): void {
+    if (this.viewMode() === 'matrix') {
+      this.viewMode.set('list');
+      this.notificationService.info('矩陣視圖建議使用 1024px 以上螢幕，已切換回列表');
+    }
+  }
+
+  closePopover(): void {
+    this.popoverState.set(null);
+  }
+
+  onPopoverHolderClick(user: TenantUser): void {
+    this.popoverState.set(null);
+    this.onMatrixEmployeeClick(user);
+  }
+
+  // ===== CSV Export =====
+
+  exportMatrixCsv(): void {
+    const employees = this.filteredMatrixUsers();
+    if (employees.length === 0) {
+      this.notificationService.error('目前篩選結果為 0 筆，無法匯出');
+      return;
+    }
+    const now = new Date();
+    const csv = buildEmployeeRoleCsv(employees, { exportTimestamp: now });
+    triggerCsvDownload(csv, buildCsvFileName(now));
+    this.notificationService.success(`已匯出 ${employees.length} 位員工的角色資料`);
+  }
+
+  // ===== URL sync =====
+
+  private syncFiltersToUrl(): void {
+    const params: Record<string, string | null> = {
+      q: this.searchKeyword() || null,
+      dept: this.selectedDepartment() === 'all' ? null : this.selectedDepartment(),
+      status: this.statusFilter() === 'all' ? null : this.statusFilter(),
+      roles: this.selectedRoleIds().length > 0 ? this.selectedRoleIds().join(',') : null,
+      view: this.viewMode() === 'list' ? null : this.viewMode()
+    };
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: params,
+      queryParamsHandling: 'merge',
+      replaceUrl: true
+    });
+  }
+
+  private restoreFiltersFromUrl(params: Record<string, string | undefined>): void {
+    if (params['q']) this.searchKeyword.set(params['q']);
+    if (params['dept']) this.selectedDepartment.set(params['dept']);
+    if (params['status']) this.statusFilter.set(params['status']);
+    if (params['roles']) {
+      this.selectedRoleIds.set(params['roles'].split(',').filter(Boolean));
+    }
+    if (params['view'] === 'matrix' || params['view'] === 'card') {
+      this.viewMode.set(params['view']);
+      if (params['view'] === 'matrix') this.loadMatrixData();
+    }
   }
 
   goToPage(page: number): void {

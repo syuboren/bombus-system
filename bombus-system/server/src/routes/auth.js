@@ -552,8 +552,10 @@ const { ACTION_LEVEL_RANK, SCOPE_RANK } = require('../middleware/permission');
 router.get('/my-feature-perms', authMiddleware, tenantMiddleware, (req, res) => {
   try {
     // 查詢使用者所有角色的 feature perms，JOIN features 取得 module/name
+    // rbac-row-level-and-interview-scope: 補 SELECT can_approve / approve_scope / row_filter_key
     const rows = req.tenantDB.query(`
       SELECT rfp.feature_id, rfp.action_level, rfp.edit_scope, rfp.view_scope,
+             rfp.can_approve, rfp.approve_scope, rfp.row_filter_key,
              f.module, f.name, f.sort_order
       FROM user_roles ur
       JOIN role_feature_perms rfp ON rfp.role_id = ur.role_id
@@ -580,6 +582,11 @@ router.get('/my-feature-perms', authMiddleware, tenantMiddleware, (req, res) => 
       let actionLevel = 'none';
       let editScope = null;
       let viewScope = null;
+      // rbac-row-level-and-interview-scope: 合併新欄位
+      let canApprove = 0;
+      let approveScope = null;
+      let rowFilterKey = undefined;
+      let sawNullRowFilter = false;
 
       for (const r of g.rows) {
         if (ACTION_LEVEL_RANK[r.action_level] > ACTION_LEVEL_RANK[actionLevel]) {
@@ -591,6 +598,18 @@ router.get('/my-feature-perms', authMiddleware, tenantMiddleware, (req, res) => 
         if (r.view_scope && (!viewScope || SCOPE_RANK[r.view_scope] > SCOPE_RANK[viewScope])) {
           viewScope = r.view_scope;
         }
+        // BUGFIX: action_level='none' 的 row 不該貢獻 approve 或解除 row_filter
+        if (r.action_level !== 'none') {
+          if (r.can_approve === 1 || r.can_approve === true) canApprove = 1;
+          if (r.approve_scope && (!approveScope || SCOPE_RANK[r.approve_scope] > SCOPE_RANK[approveScope])) {
+            approveScope = r.approve_scope;
+          }
+          if (r.row_filter_key === null || r.row_filter_key === undefined) {
+            sawNullRowFilter = true;
+          } else if (rowFilterKey === undefined) {
+            rowFilterKey = r.row_filter_key;
+          }
+        }
       }
 
       return {
@@ -599,7 +618,10 @@ router.get('/my-feature-perms', authMiddleware, tenantMiddleware, (req, res) => 
         name: g.name,
         action_level: actionLevel,
         edit_scope: editScope,
-        view_scope: viewScope
+        view_scope: viewScope,
+        can_approve: canApprove,
+        approve_scope: approveScope,
+        row_filter_key: sawNullRowFilter ? null : (rowFilterKey ?? null)
       };
     });
 

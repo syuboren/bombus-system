@@ -166,6 +166,12 @@
         }
         指派角色
       </button>
+      @if (selectedRoleId() && isDuplicateAssignmentVisible()) {
+        <p class="ap-assign-hint ap-assign-hint--warn">
+          <i class="ri-error-warning-line"></i>
+          此角色於相同 scope 已指派，請選擇不同 scope 或撤除既有指派
+        </p>
+      }
     </div>
     }
 
@@ -180,7 +186,7 @@
               @if (role.orgUnitName) {
               <i class="ri-building-line"></i> {{ role.orgUnitName }}
               } @else {
-              <i class="ri-global-line"></i> 全域
+              <i class="ri-global-line"></i> 全集團
               }
             </span>
           </div>

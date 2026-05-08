@@ -1,17 +1,35 @@
-import { Component, EventEmitter, Input, Output, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation, input, output, computed } from '@angular/core';
+
+export type ViewMode = 'card' | 'list' | 'matrix';
+
+interface ModeConfig {
+  mode: ViewMode;
+  icon: string;
+  title: string;
+}
+
+const MODE_CATALOG: Record<ViewMode, ModeConfig> = {
+  card: { mode: 'card', icon: 'ri-layout-grid-line', title: '卡片檢視' },
+  list: { mode: 'list', icon: 'ri-list-check', title: '列表檢視' },
+  matrix: { mode: 'matrix', icon: 'ri-grid-fill', title: '矩陣檢視' }
+};
 
 @Component({
   selector: 'app-view-toggle',
   standalone: true,
   encapsulation: ViewEncapsulation.None,
   template: `
-    <div class="view-toggle-group" [style.--toggle-active-color]="moduleColor">
-      <button class="toggle-btn" [class.active]="viewMode === 'card'" (click)="setMode('card')" type="button" title="卡片檢視">
-        <i class="ri-layout-grid-line"></i>
-      </button>
-      <button class="toggle-btn" [class.active]="viewMode === 'list'" (click)="setMode('list')" type="button" title="列表檢視">
-        <i class="ri-list-check"></i>
-      </button>
+    <div class="view-toggle-group" [style.--toggle-active-color]="moduleColor()">
+      @for (m of visibleModes(); track m.mode) {
+        <button
+          class="toggle-btn"
+          type="button"
+          [class.active]="viewMode() === m.mode"
+          [title]="m.title"
+          (click)="setMode(m.mode)">
+          <i [class]="m.icon"></i>
+        </button>
+      }
     </div>
   `,
   styles: [`
@@ -29,30 +47,34 @@ import { Component, EventEmitter, Input, Output, ViewEncapsulation } from '@angu
       border: none;
       border-radius: 8px;
       background: transparent;
-      color: #6c757d; /* text-secondary */
+      color: #6c757d;
       cursor: pointer;
       transition: all 0.2s ease;
       font-size: 18px;
 
       &:hover {
-        background: #f8f9fa; /* soft-gray */
-        color: #212529; /* text-primary */
+        background: #f8f9fa;
+        color: #212529;
       }
 
       &.active {
-        background: var(--toggle-active-color, #8DA399); /* Fallback to KSA color */
+        background: var(--toggle-active-color, #8DA399);
         color: white;
       }
     }
   `]
 })
 export class ViewToggleComponent {
-  @Input() viewMode: 'card' | 'list' = 'card';
-  @Input() moduleColor: string = '#8DA399'; // Default KSA color
-  @Output() viewModeChange = new EventEmitter<'card' | 'list'>();
+  viewMode = input<ViewMode>('card');
+  moduleColor = input<string>('#8DA399');
+  modes = input<readonly ViewMode[]>(['card', 'list']);
+  viewModeChange = output<ViewMode>();
 
-  setMode(mode: 'card' | 'list') {
-    this.viewMode = mode;
+  visibleModes = computed<ModeConfig[]>(() =>
+    this.modes().map(m => MODE_CATALOG[m])
+  );
+
+  setMode(mode: ViewMode): void {
     this.viewModeChange.emit(mode);
   }
 }

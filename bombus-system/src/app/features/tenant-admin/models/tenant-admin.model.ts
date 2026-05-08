@@ -22,7 +22,7 @@ export interface OrgUnit {
 // ============================================================
 // 角色與權限
 // ============================================================
-export type ScopeType = 'global' | 'subsidiary' | 'department';
+export type ScopeType = 'global' | 'group' | 'subsidiary' | 'department';
 
 export interface Role {
   id: string;
@@ -51,13 +51,21 @@ export interface RolePermission {
 // ============================================================
 // 使用者
 // ============================================================
+export type UserStatus = 'active' | 'inactive' | 'locked';
+
 export interface TenantUser {
   id: string;
   email: string;
   name: string;
   employee_id: string | null;
-  is_active: number;
+  employee_no?: string | null;
+  org_unit_id?: string | null;
+  status: UserStatus;
   created_at: string;
+  last_login?: string | null;
+  avatar?: string | null;
+  employee_name?: string | null;
+  department?: string | null;
   roles?: UserRole[];
 }
 
@@ -99,6 +107,10 @@ export interface RoleFeaturePerm {
   action_level: ActionLevel;
   edit_scope: PermScope | null;
   view_scope: PermScope | null;
+  // rbac-row-level-and-interview-scope
+  can_approve?: number;
+  approve_scope?: PermScope | null;
+  row_filter_key?: string | null;
 }
 
 export interface FeaturePermPayload {
@@ -106,6 +118,10 @@ export interface FeaturePermPayload {
   action_level: ActionLevel;
   edit_scope: PermScope | null;
   view_scope: PermScope | null;
+  // rbac-row-level-and-interview-scope
+  can_approve?: number;
+  approve_scope?: PermScope | null;
+  row_filter_key?: string | null;
 }
 
 export interface UserFeaturePerm {
@@ -113,6 +129,10 @@ export interface UserFeaturePerm {
   action_level: ActionLevel;
   edit_scope: PermScope | null;
   view_scope: PermScope | null;
+  // rbac-row-level-and-interview-scope
+  can_approve?: number;
+  approve_scope?: PermScope | null;
+  row_filter_key?: string | null;
 }
 
 export interface RoleUser {

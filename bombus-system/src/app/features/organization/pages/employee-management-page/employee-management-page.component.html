@@ -125,22 +125,75 @@
             <option value="resigned">已離職</option>
           </select>
         </div>
-        <div class="filter-actions">
-          <div class="view-toggle">
-            <button class="toggle-btn" [class.active]="viewMode() === 'card'"
-              (click)="setViewMode('card')" type="button">
-              <i class="ri-layout-grid-line"></i>
-            </button>
-            <button class="toggle-btn" [class.active]="viewMode() === 'list'"
-              (click)="setViewMode('list')" type="button">
-              <i class="ri-list-check"></i>
-            </button>
+        @if (viewMode() === 'matrix') {
+          <div class="filter-item filter-item--roles" [class.has-selection]="selectedRoleIds().length > 0">
+            <details class="role-multi-select">
+              <summary>
+                <i class="ri-shield-keyhole-line"></i>
+                @if (selectedRoleIds().length === 0) {
+                  <span>全部角色</span>
+                } @else {
+                  <span>已選 {{ selectedRoleIds().length }} 個角色</span>
+                }
+                <i class="ri-arrow-down-s-line"></i>
+              </summary>
+              <div class="role-dropdown">
+                @if (selectedRoleIds().length > 0) {
+                  <button type="button" class="role-dropdown-clear" (click)="clearRoleFilter()">
+                    清除選取
+                  </button>
+                }
+                @for (role of matrixRoles(); track role.id) {
+                  <label class="role-checkbox">
+                    <input
+                      type="checkbox"
+                      [checked]="isRoleFilterChecked(role.id)"
+                      (change)="toggleRoleFilter(role.id, $any($event.target).checked)" />
+                    <span>{{ role.name }}</span>
+                    @if (role.is_system === 1) {
+                      <small class="role-system-tag">系統</small>
+                    }
+                  </label>
+                }
+              </div>
+            </details>
           </div>
+        }
+        <div class="filter-actions">
+          @if (viewMode() === 'matrix') {
+            <button
+              class="btn-secondary btn-export"
+              type="button"
+              (click)="exportMatrixCsv()"
+              [disabled]="matrixLoading() || filteredMatrixUsers().length === 0">
+              <i class="ri-download-2-line"></i> 匯出 CSV
+            </button>
+          }
+          <app-view-toggle
+            [viewMode]="viewMode()"
+            [moduleColor]="moduleColor"
+            [modes]="availableViewModes"
+            (viewModeChange)="setViewMode($event)" />
         </div>
       </div>
 
+      <!-- Result count summary -->
+      @if (viewMode() === 'matrix') {
+        <div class="result-summary">
+          總計 {{ totalMatrixUsers() }} 人 · 已篩選 {{ filteredMatrixUsers().length }} 人
+        </div>
+      }
+
       <!-- Main Content -->
-      @if (loading()) {
+      @if (viewMode() === 'matrix') {
+        <app-employee-role-matrix
+          [employees]="filteredMatrixUsers()"
+          [roles]="matrixRoles()"
+          [loading]="matrixLoading()"
+          (employeeClick)="onMatrixEmployeeClick($event)"
+          (roleHeaderClick)="onMatrixRoleHeaderClick($event)"
+          (autoFallback)="onMatrixAutoFallback()" />
+      } @else if (loading()) {
         <div class="loading-container">
           <i class="ri-loader-4-line spinner"></i>
           <span>載入員工資料中...</span>
@@ -853,4 +906,14 @@
       </div>
     </div>
   </div>
+}
+
+<!-- Role Holders Popover (overlay) -->
+@if (popoverState(); as state) {
+  <app-role-holders-popover
+    [role]="state.role"
+    [holders]="popoverHolders()"
+    [anchorRect]="state.rect"
+    (holderClick)="onPopoverHolderClick($event)"
+    (close)="closePopover()" />
 }

@@ -584,7 +584,8 @@ router.get('/permissions', (req, res) => {
 // ══════════════════════════════════════════════════════════
 
 router.get('/users', (req, res) => {
-  const { page = 1, limit = 20, search, status } = req.query;
+  const { page = 1, limit = 20, search, status, all } = req.query;
+  const wantAll = all === 'true' || all === '1';
   const offset = (parseInt(page) - 1) * parseInt(limit);
 
   let whereClauses = [];
@@ -609,22 +610,23 @@ router.get('/users', (req, res) => {
     params
   ).count;
 
-  const users = req.tenantDB.query(
-    `SELECT u.id, u.email, u.name, u.avatar, u.status, u.employee_id,
+  const baseSelectSQL = `SELECT u.id, u.email, u.name, u.avatar, u.status, u.employee_id,
             u.last_login, u.created_at,
-            e.name as employee_name, e.department
+            e.name as employee_name, e.department, e.employee_no, e.org_unit_id
      FROM users u
      LEFT JOIN employees e ON e.id = u.employee_id
      ${whereSQL}
-     ORDER BY u.created_at DESC
-     LIMIT ? OFFSET ?`,
-    [...params, parseInt(limit), offset]
-  );
+     ORDER BY u.created_at DESC`;
 
-  // 附加角色資訊
+  const paginationClause = wantAll ? '' : ' LIMIT ? OFFSET ?';
+  const queryParams = wantAll ? params : [...params, parseInt(limit), offset];
+  const users = req.tenantDB.query(baseSelectSQL + paginationClause, queryParams);
+
+  // 附加角色資訊（與 GET /user-roles/:userId 同 shape：含 role_id + 唯一 id）
   const result = users.map(user => {
     const roles = req.tenantDB.query(
-      `SELECT r.id, r.name as role_name,
+      `SELECT (ur.user_id || '-' || ur.role_id || '-' || COALESCE(ur.org_unit_id, '')) as id,
+              ur.role_id, r.name as role_name,
               CASE WHEN ur.org_unit_id IS NULL THEN 'global' ELSE ou.type END as scope_type,
               ur.org_unit_id as scope_id, ou.name as scope_name
        FROM user_roles ur
@@ -638,12 +640,14 @@ router.get('/users', (req, res) => {
 
   res.json({
     data: result,
-    pagination: {
-      page: parseInt(page),
-      limit: parseInt(limit),
-      total,
-      totalPages: Math.ceil(total / parseInt(limit))
-    }
+    pagination: wantAll
+      ? { page: 1, limit: total, total, totalPages: 1 }
+      : {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          totalPages: Math.ceil(total / parseInt(limit))
+        }
   });
 });
 
@@ -1015,6 +1019,7 @@ router.get('/features', (req, res) => {
 router.get('/roles/:id/feature-perms', (req, res) => {
   const perms = req.tenantDB.query(
     `SELECT rfp.role_id, rfp.feature_id, rfp.action_level, rfp.edit_scope, rfp.view_scope,
+            rfp.can_approve, rfp.approve_scope, rfp.row_filter_key,
             f.module, f.name AS feature_name, f.sort_order
      FROM role_feature_perms rfp
      JOIN features f ON f.id = rfp.feature_id
@@ -1089,6 +1094,8 @@ router.put('/roles/:id/feature-perms', (req, res) => {
   const SCOPE_RANK = { self: 1, department: 2, company: 3 };
   const validLevels = ['none', 'view', 'edit'];
   const validScopes = ['self', 'department', 'company'];
+  // rbac-row-level-and-interview-scope: 已註冊的 row_filter_key 白名單（client 不可注入未知 key）
+  const validRowFilterKeys = ['interview_assigned', 'subordinate_only', 'self_only', 'org_unit_scope'];
 
   // 預先驗證所有項目
   for (const p of perms) {
@@ -1148,6 +1155,32 @@ router.put('/roles/:id/feature-perms', (req, res) => {
         });
       }
     }
+
+    // rbac-row-level-and-interview-scope: 驗證新欄位
+    if (p.can_approve !== undefined && p.can_approve !== null && p.can_approve !== 0 && p.can_approve !== 1) {
+      return res.status(400).json({
+        error: 'BadRequest',
+        message: `can_approve 必須為 0 或 1（feature: ${p.feature_id}）`
+      });
+    }
+    if (p.approve_scope !== undefined && p.approve_scope !== null && !validScopes.includes(p.approve_scope)) {
+      return res.status(400).json({
+        error: 'BadRequest',
+        message: `approve_scope 必須為 self/department/company 或 NULL（feature: ${p.feature_id}）`
+      });
+    }
+    if (p.can_approve === 1 && !p.approve_scope) {
+      return res.status(400).json({
+        error: 'BadRequest',
+        message: `can_approve=1 時 approve_scope 必須非空（feature: ${p.feature_id}）`
+      });
+    }
+    if (p.row_filter_key !== undefined && p.row_filter_key !== null && !validRowFilterKeys.includes(p.row_filter_key)) {
+      return res.status(400).json({
+        error: 'BadRequest',
+        message: `無效的 row_filter_key: ${p.row_filter_key}（feature: ${p.feature_id}），僅接受已註冊的 predicate key`
+      });
+    }
   }
 
   // Transaction: DELETE + INSERT
@@ -1160,8 +1193,14 @@ router.put('/roles/:id/feature-perms', (req, res) => {
 
       for (const p of perms) {
         req.tenantDB.run(
-          'INSERT INTO role_feature_perms (role_id, feature_id, action_level, edit_scope, view_scope) VALUES (?, ?, ?, ?, ?)',
-          [roleId, p.feature_id, p.action_level, p.edit_scope || null, p.view_scope || null]
+          'INSERT INTO role_feature_perms (role_id, feature_id, action_level, edit_scope, view_scope, can_approve, approve_scope, row_filter_key) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+          [
+            roleId, p.feature_id, p.action_level,
+            p.edit_scope || null, p.view_scope || null,
+            p.can_approve === 1 ? 1 : 0,
+            p.approve_scope || null,
+            p.row_filter_key || null
+          ]
         );
       }
     });
@@ -1169,6 +1208,7 @@ router.put('/roles/:id/feature-perms', (req, res) => {
     // 回傳更新後的資料
     const updated = req.tenantDB.query(
       `SELECT rfp.role_id, rfp.feature_id, rfp.action_level, rfp.edit_scope, rfp.view_scope,
+              rfp.can_approve, rfp.approve_scope, rfp.row_filter_key,
               f.module, f.name, f.sort_order
        FROM role_feature_perms rfp
        JOIN features f ON f.id = rfp.feature_id
