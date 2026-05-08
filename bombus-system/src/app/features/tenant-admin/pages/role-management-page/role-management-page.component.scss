@@ -255,7 +255,7 @@ $module-color: $color-brand-main;
 
 .fp-header-row {
   display: grid;
-  grid-template-columns: 1fr 140px 140px 140px;
+  grid-template-columns: 1fr 140px 140px 140px 160px 160px;
   gap: $spacing-sm;
   padding: $spacing-sm $spacing-md;
   background: $color-cloud-gray;
@@ -267,7 +267,7 @@ $module-color: $color-brand-main;
   border-bottom: 1px solid $color-soft-gray;
 
   @include media-max-md {
-    grid-template-columns: 1fr 100px 100px 100px;
+    grid-template-columns: 1fr 100px 100px 100px 130px 130px;
     font-size: 10px;
     padding: $spacing-xs $spacing-sm;
   }
@@ -318,7 +318,7 @@ $module-color: $color-brand-main;
 
 .fp-row {
   display: grid;
-  grid-template-columns: 1fr 140px 140px 140px;
+  grid-template-columns: 1fr 140px 140px 140px 160px 160px;
   gap: $spacing-sm;
   padding: $spacing-sm $spacing-md;
   align-items: center;
@@ -330,7 +330,7 @@ $module-color: $color-brand-main;
   }
 
   @include media-max-md {
-    grid-template-columns: 1fr 100px 100px 100px;
+    grid-template-columns: 1fr 100px 100px 100px 130px 130px;
     padding: $spacing-xs $spacing-sm;
   }
 }
@@ -339,6 +339,36 @@ $module-color: $color-brand-main;
   &--feature {
     padding-left: $spacing-md;
   }
+  // rbac-row-level-and-interview-scope: 審核欄
+  &--approve {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  // rbac-row-level-and-interview-scope: 資料列限制下拉
+  &--row-filter {
+    min-width: 0;
+  }
+}
+
+// rbac-row-level-and-interview-scope: 審核 checkbox label
+.fp-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: $font-size-xs;
+  color: $color-text-primary;
+  cursor: pointer;
+  user-select: none;
+
+  input[type="checkbox"] {
+    cursor: pointer;
+  }
+}
+
+.fp-select--inline {
+  width: 100%;
+  margin-top: 2px;
 }
 
 .fp-feature-name {

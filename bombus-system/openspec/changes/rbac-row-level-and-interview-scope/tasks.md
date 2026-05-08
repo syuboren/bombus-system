@@ -46,9 +46,9 @@
 
 - [x] 5.1 `src/app/features/tenant-admin/models/tenant-admin.model.ts` 三個 interface 全部新增 `can_approve?: number`、`approve_scope?: PermScope | null`、`row_filter_key?: string | null` 三欄位（preflight 0.6 確認需動三個）：`RoleFeaturePerm` (line 102-110)、`FeaturePermPayload` (line 112-117)、`UserFeaturePerm` (line 119-123)
 - [x] 5.2 `src/app/features/tenant-admin/services/tenant-admin.service.ts` 確保 GET/PUT roles 序列化包含新欄位
-- [ ] 5.3 `role-management-page` 編輯介面：每個 feature 列既有「檢視範圍 / 編輯範圍」勾選框旁加「審核」第三欄（顯示 can_approve 勾選 + approve_scope 下拉），對應 design.md 決議 1：approve 採位元層級而非流程層級 與 決議 2：approve 用獨立欄位 can_approve + approve_scope。UI 名詞遵守 design.md 決議 8：UI 名詞遵守既有「全集團 vs 全公司」分層 — approve_scope=company 顯示「全公司」
-- [ ] 5.4 `role-management-page` 每個 feature 列加「資料列限制」下拉（呼應 design.md 決議 12：role-management-page 的 row_filter 下拉對所有 features 一致顯示），options 對應 ROW_FILTERS registry 的 keys + 中文化標籤（design.md 決議 3 與 8）：`interview_assigned`→「僅被指派的面試者」、`subordinate_only`→「僅下屬」、`self_only`→「僅本人」、`org_unit_scope`→「依組織單位」、NULL→「不限制」
-- [ ] 5.5 `role-management-page` 系統角色顯示 interviewer：`is_system=1` 不可改名/刪除（既有邏輯涵蓋，但 UI 角色卡片需正確顯示「系統角色」標籤）
+- [x] 5.3 `role-management-page` 編輯介面：每個 feature 列既有「檢視範圍 / 編輯範圍」勾選框旁加「審核」第三欄（顯示 can_approve 勾選 + approve_scope 下拉），對應 design.md 決議 1：approve 採位元層級而非流程層級 與 決議 2：approve 用獨立欄位 can_approve + approve_scope。UI 名詞遵守 design.md 決議 8：UI 名詞遵守既有「全集團 vs 全公司」分層 — approve_scope=company 顯示「全公司」
+- [x] 5.4 `role-management-page` 每個 feature 列加「資料列限制」下拉（呼應 design.md 決議 12：role-management-page 的 row_filter 下拉對所有 features 一致顯示），options 對應 ROW_FILTERS registry 的 keys + 中文化標籤（design.md 決議 3 與 8）：`interview_assigned`→「僅被指派的面試者」、`subordinate_only`→「僅下屬」、`self_only`→「僅本人」、`org_unit_scope`→「依組織單位」、NULL→「不限制」
+- [x] 5.5 `role-management-page` 系統角色顯示 interviewer：`is_system=1` 不可改名/刪除（既有邏輯涵蓋，但 UI 角色卡片需正確顯示「系統角色」標籤）
 
 ## 6. 前端：兩個 modal 換 API（interviewer 下拉過濾，三道防線第 1 層）
 
@@ -59,24 +59,24 @@
 
 ## 7. 測試（spec 驗證 + 三道防線完整性 + 雙清單驗證）
 
-- [ ] 7.1 新建 `server/src/tests/test-rbac-row-level.js`：覆蓋 spec `Named predicate registry for row-level filtering` 全部 scenarios（registry 解析 / 未知 key 回 1=0 / client 輸入不被信任）；spec `Shared scope filter utility for backend routes` 的新增 scenarios（row filter 與 scope 各種組合 + short-circuit 短路驗證）
-- [ ] 7.2 新建 `server/src/tests/test-rbac-approve.js`：覆蓋 spec `Approve action verb independent from view/edit` 全部 scenarios（與 view/edit 並存 / 多角色 OR 合併 / scope rank 取最大）+ `requireApprovePerm middleware for approve actions` middleware 行為 + `Approve endpoints enforce can_approve and approve_scope` enforcement matrix
-- [ ] 7.3 新建 `server/src/tests/test-d05-interviewer-scope.js`：覆蓋 spec `Interviewer-assigned row filter for candidates and evaluations` 全部 scenarios（含 cancelled invitation 排除、HR 全可見、空指派回空陣列）+ `Three-layer defense for interviewer scope` 三道防線（UI 過濾 / 403 feature gate / row filter）+ `Interviewer dropdown filters by interviewer role` API 過濾行為
-- [ ] 7.4 新建 `server/src/tests/test-rbac-merge-multi-role.js`：覆蓋 spec `Row-level filter key in role_feature_perms` 的 least-restrictive 合併 scenarios + 驗證 mergeFeaturePerms 對新欄位的合併
-- [ ] 7.5 新建 `server/src/tests/test-d05-interviewer-seed.js`：覆蓋 spec `Interviewer system role with locked semantics` 全部 scenarios（新建租戶 seed / 既有租戶 INSERT OR IGNORE 補入 / 不可刪除 / 可改 perms）+ modified `預設角色初始化` 的 6 角色驗證
+- [x] 7.1 新建 `server/src/tests/test-rbac-row-level.js`：覆蓋 spec `Named predicate registry for row-level filtering` 全部 scenarios（registry 解析 / 未知 key 回 1=0 / client 輸入不被信任）；spec `Shared scope filter utility for backend routes` 的新增 scenarios（row filter 與 scope 各種組合 + short-circuit 短路驗證）
+- [x] 7.2 新建 `server/src/tests/test-rbac-approve.js`：覆蓋 spec `Approve action verb independent from view/edit` 全部 scenarios（與 view/edit 並存 / 多角色 OR 合併 / scope rank 取最大）+ `requireApprovePerm middleware for approve actions` middleware 行為 + `Approve endpoints enforce can_approve and approve_scope` enforcement matrix
+- [x] 7.3 新建 `server/src/tests/test-d05-interviewer-scope.js`：覆蓋 spec `Interviewer-assigned row filter for candidates and evaluations` 全部 scenarios（含 cancelled invitation 排除、HR 全可見、空指派回空陣列）+ `Three-layer defense for interviewer scope` 三道防線（UI 過濾 / 403 feature gate / row filter）+ `Interviewer dropdown filters by interviewer role` API 過濾行為
+- [x] 7.4 新建 `server/src/tests/test-rbac-merge-multi-role.js`：覆蓋 spec `Row-level filter key in role_feature_perms` 的 least-restrictive 合併 scenarios + 驗證 mergeFeaturePerms 對新欄位的合併
+- [x] 7.5 新建 `server/src/tests/test-d05-interviewer-seed.js`：覆蓋 spec `Interviewer system role with locked semantics` 全部 scenarios（新建租戶 seed / 既有租戶 INSERT OR IGNORE 補入 / 不可刪除 / 可改 perms）+ modified `預設角色初始化` 的 6 角色驗證
 
 ## 8. Verify（雙路徑驗證 + 完成驗證）
 
-- [ ] 8.1 執行 `/verify`：`npx tsc --noEmit` + `npx ng build --configuration=development` 全綠；後端 7.1–7.5 整合測試全部通過
-- [ ] 8.2 雙清單路徑驗證（呼應 CLAUDE.md「雙遷移清單同步」防護 + design.md 風險 2：雙遷移清單同步）：(a) 新建 demo 租戶 — 刪除 demo DB 後 `npm run init-db`，跑 `PRAGMA table_info(role_feature_perms)` 確認 6 欄齊全 + `SELECT * FROM roles WHERE code='interviewer'` 回 1 筆；(b) 既有租戶遷移 — 保留既有 DB 啟動，migration log 出現 3 條 ALTER + 1 條 INSERT OR IGNORE roles
-- [ ] 8.3 EXPLAIN QUERY PLAN 驗證 row_filter EXISTS 走索引（呼應 design.md 風險 4：row_filter EXISTS 子查詢效能）：mock interviewer 用戶執行 candidates 列表 query，確認執行計畫顯示 SEARCH USING INDEX `idx_invitations_interviewer`，非 SCAN 全表
-- [ ] 8.4 三道防線完整性手動 QA：(a) 沒 interviewer 角色的員工嘗試查 candidates → 403；(b) 有 interviewer 角色但無指派 → 空陣列；(c) HR 在 invite-candidate-modal 下拉只看到有 interviewer 角色的員工
-- [ ] 8.5 D-03 矩陣視圖兼容性驗證（呼應 design.md 風險 5：D-03 矩陣視圖的 scope chip 行為改變）：登入 super_admin 看矩陣，scope chip 顯示行為應與 D-03 完工時一致（不破壞既有 UI）
-- [ ] 8.6 approve middleware 鋪路驗證（呼應 design.md 風險 6：approve middleware 套用點不夠完整 + 決議 9：approve middleware 純鋪路，不附示範審核端點）：本 change 不新增審核端點，但要驗證 `requireApprovePerm` middleware 可被未來 routes 正確 import 與套用（寫一個 sanity-check 測試端點然後 mark 為 deprecated 後刪除）
+- [x] 8.1 執行 `/verify`：`npx tsc --noEmit` + `npx ng build --configuration=development` 全綠；後端 7.1–7.5 整合測試全部通過
+- [x] 8.2 雙清單路徑驗證（呼應 CLAUDE.md「雙遷移清單同步」防護 + design.md 風險 2：雙遷移清單同步）：(a) 新建 demo 租戶 — 刪除 demo DB 後 `npm run init-db`，跑 `PRAGMA table_info(role_feature_perms)` 確認 6 欄齊全 + `SELECT * FROM roles WHERE code='interviewer'` 回 1 筆；(b) 既有租戶遷移 — 保留既有 DB 啟動，migration log 出現 3 條 ALTER + 1 條 INSERT OR IGNORE roles
+- [x] 8.3 EXPLAIN QUERY PLAN 驗證 row_filter EXISTS 走索引（呼應 design.md 風險 4：row_filter EXISTS 子查詢效能）：mock interviewer 用戶執行 candidates 列表 query，確認執行計畫顯示 SEARCH USING INDEX `idx_invitations_interviewer`，非 SCAN 全表
+- [x] 8.4 三道防線完整性手動 QA：(a) 沒 interviewer 角色的員工嘗試查 candidates → 403；(b) 有 interviewer 角色但無指派 → 空陣列；(c) HR 在 invite-candidate-modal 下拉只看到有 interviewer 角色的員工
+- [x] 8.5 D-03 矩陣視圖兼容性驗證（呼應 design.md 風險 5：D-03 矩陣視圖的 scope chip 行為改變）：登入 super_admin 看矩陣，scope chip 顯示行為應與 D-03 完工時一致（不破壞既有 UI）
+- [x] 8.6 approve middleware 鋪路驗證（呼應 design.md 風險 6：approve middleware 套用點不夠完整 + 決議 9：approve middleware 純鋪路，不附示範審核端點）：本 change 不新增審核端點，但要驗證 `requireApprovePerm` middleware 可被未來 routes 正確 import 與套用（寫一個 sanity-check 測試端點然後 mark 為 deprecated 後刪除）
 
 ## 9. 文件與封存準備
 
-- [ ] 9.1 更新 `bombus-system/docs/客戶回饋比對分析_L0權限與系統設定_20260429.xlsx` D-02 與 D-05 row：執行狀態 ⚠️→✅、修改狀態「尚未修正」→「已完成」、預計修改填入本 change 的 8 個 Decision 摘要、修改說明填入實作後完工狀態（OpenSpec change 名稱 + archive 日期）；同步「統計總覽」L0-RBAC 已實作數
-- [ ] 9.2 release notes 草稿（屬本 change 的交付物，放在 archive 目錄即可）：(a) 「審核」位元預設無人可按、HR 需主動勾說明；(b) interviewer 角色用法 + 三道防線運作；(c) 新增 ROW_FILTERS 4 個 predicate 清單與後續擴充方式；(d) 簡核流程自定義（L0-Workflow）為未來範疇，本次 approve 已鋪路（呼應 Non-Goal）
+- [x] 9.1 更新 `bombus-system/docs/客戶回饋比對分析_L0權限與系統設定_20260429.xlsx` D-02 與 D-05 row：執行狀態 ⚠️→✅、修改狀態「尚未修正」→「已完成」、預計修改填入本 change 的 8 個 Decision 摘要、修改說明填入實作後完工狀態（OpenSpec change 名稱 + archive 日期）；同步「統計總覽」L0-RBAC 已實作數
+- [x] 9.2 release notes 草稿（屬本 change 的交付物，放在 archive 目錄即可）：(a) 「審核」位元預設無人可按、HR 需主動勾說明；(b) interviewer 角色用法 + 三道防線運作；(c) 新增 ROW_FILTERS 4 個 predicate 清單與後續擴充方式；(d) 簡核流程自定義（L0-Workflow）為未來範疇，本次 approve 已鋪路（呼應 Non-Goal）
 - [ ] 9.3 archive 階段：執行 `/spectra:archive`，確認 4 份 spec delta 正確 sync 回 `openspec/specs/{rbac, feature-perm-data-scope, edit-scope-enforcement, interviewer-role-scope}/spec.md`
 - [ ] 9.4 memory 同步：在 archive 完成後更新 MEMORY.md，把 D-02 row-level + D-05 interviewer-scope 從「Active OpenSpec Changes」移到「Recently Archived」，並修正「Scope is metadata-only」記憶條目（部分缺口已由 `org_unit_scope` predicate 補上）
