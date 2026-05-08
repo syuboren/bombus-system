@@ -31,7 +31,7 @@ The `role_feature_perms` schema SHALL support an independent approve action verb
 
 ### Requirement: Row-level filter key in role_feature_perms
 
-The `role_feature_perms` schema SHALL support row-level filtering via a new column `row_filter_key TEXT DEFAULT NULL`. The value SHALL reference a key registered in the backend `ROW_FILTERS` registry. NULL SHALL mean no row-level restriction (backward-compatible with existing behavior). The system SHALL NOT accept arbitrary SQL expressions, regular expressions, or user-defined predicates from clients — only registry-registered keys SHALL be valid values. Multi-role merging of `row_filter_key` SHALL pick the **least restrictive** outcome: if any role grants the same feature with `row_filter_key=NULL`, the merged result SHALL be NULL (no row restriction); otherwise the merged result SHALL retain a non-NULL key (logic for combining different non-NULL keys is undefined and SHALL be avoided by tenant admin convention — design a single key per role-feature pair).
+The `role_feature_perms` schema SHALL support row-level filtering via a new column `row_filter_key TEXT DEFAULT NULL`. The value SHALL reference a key registered in the backend `ROW_FILTERS` registry. NULL SHALL mean no row-level restriction (backward-compatible with existing behavior). The system SHALL NOT accept arbitrary SQL expressions, regular expressions, or user-defined predicates from clients — only registry-registered keys SHALL be valid values. Multi-role merging of `row_filter_key` SHALL pick the **least restrictive** outcome **among rows that actually grant access** (action_level != 'none'): if any access-granting role for the same feature has `row_filter_key=NULL`, the merged result SHALL be NULL (no row restriction); otherwise the merged result SHALL retain a non-NULL key. Rows with `action_level='none'` SHALL NOT contribute to row_filter_key merging — they grant no access, so their NULL row_filter_key cannot lift restrictions imposed by other access-granting roles. (Logic for combining different non-NULL keys is undefined and SHALL be avoided by tenant admin convention — design a single key per role-feature pair.)
 
 #### Scenario: NULL row_filter_key preserves existing behavior
 
@@ -50,8 +50,14 @@ The `role_feature_perms` schema SHALL support row-level filtering via a new colu
 
 #### Scenario: Least-restrictive merging for row_filter_key
 
-- **WHEN** a user has two roles for the same feature: role-A with `row_filter_key='interview_assigned'` and role-B with `row_filter_key=NULL`
+- **WHEN** a user has two roles for the same feature: role-A with `row_filter_key='interview_assigned'` and role-B with `row_filter_key=NULL`, AND role-B has `action_level='view'` or higher (actually grants access)
 - **THEN** the merged `row_filter_key` SHALL be NULL (least restrictive — role-B grants unrestricted access)
+
+#### Scenario: action_level='none' row does NOT lift row_filter_key restriction
+
+- **GIVEN** an interviewer has two roles for `L1.recruitment`: interviewer (action_level='edit', row_filter_key='interview_assigned') AND employee (action_level='none', row_filter_key=NULL)
+- **WHEN** their permissions are merged
+- **THEN** the merged result SHALL be `(action_level='edit', row_filter_key='interview_assigned')` — the employee row's NULL row_filter_key SHALL NOT lift the interviewer's row restriction, because action_level='none' grants no access and therefore cannot grant unrestricted access either
 
 ---
 

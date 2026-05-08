@@ -598,14 +598,17 @@ router.get('/my-feature-perms', authMiddleware, tenantMiddleware, (req, res) => 
         if (r.view_scope && (!viewScope || SCOPE_RANK[r.view_scope] > SCOPE_RANK[viewScope])) {
           viewScope = r.view_scope;
         }
-        if (r.can_approve === 1 || r.can_approve === true) canApprove = 1;
-        if (r.approve_scope && (!approveScope || SCOPE_RANK[r.approve_scope] > SCOPE_RANK[approveScope])) {
-          approveScope = r.approve_scope;
-        }
-        if (r.row_filter_key === null || r.row_filter_key === undefined) {
-          sawNullRowFilter = true;
-        } else if (rowFilterKey === undefined) {
-          rowFilterKey = r.row_filter_key;
+        // BUGFIX: action_level='none' 的 row 不該貢獻 approve 或解除 row_filter
+        if (r.action_level !== 'none') {
+          if (r.can_approve === 1 || r.can_approve === true) canApprove = 1;
+          if (r.approve_scope && (!approveScope || SCOPE_RANK[r.approve_scope] > SCOPE_RANK[approveScope])) {
+            approveScope = r.approve_scope;
+          }
+          if (r.row_filter_key === null || r.row_filter_key === undefined) {
+            sawNullRowFilter = true;
+          } else if (rowFilterKey === undefined) {
+            rowFilterKey = r.row_filter_key;
+          }
         }
       }
 

@@ -188,12 +188,18 @@ const FULL_ACCESS_PERM = Object.freeze({
 const ROW_FILTERS = {
   // D-05 主用途：interviewer 限定被指派的候選人
   // 反查 interview_invitations + interviews 兩張表的 interviewer_id（衍生方案，無需 interview_assignments 表）
+  // 重要：interview_invitations.interviewer_id / interviews.interviewer_id 都 REFERENCE employees(id)，
+  // 而非 users(id)。所以比對時必須用 req.user.employeeId（authMiddleware 注入），不是 userId。
   // 注意：本 predicate 與 buildScopeFilter 的 tableAlias（org_unit 表別名）解耦，使用獨立 options：
   //   - candidateTableAlias: candidates 表別名（預設 'c'）
   //   - candidateIdColumn: candidate id 欄位名（預設 'id'，interview_evaluations 場景需傳 'candidate_id'）
   'interview_assigned': (req, options = {}) => {
     const { candidateTableAlias = 'c', candidateIdColumn = 'id' } = options;
     const candidateRef = `${candidateTableAlias}.${candidateIdColumn}`;
+    // 沒 employeeId（如未綁員工的 user）→ 沒有任何指派，回 deny
+    if (!req.user.employeeId) {
+      return { clause: '1=0', params: [], reason: 'no_employee_link' };
+    }
     return {
       clause: `EXISTS (
         SELECT 1 FROM interview_invitations ii
@@ -205,27 +211,33 @@ const ROW_FILTERS = {
         WHERE i.interviewer_id = ?
           AND i.candidate_id = ${candidateRef}
       )`,
-      params: [req.user.userId, req.user.userId]
+      params: [req.user.employeeId, req.user.employeeId]
     };
   },
 
-  // 主管視角：限定下屬
+  // 主管視角：限定下屬。employees.manager_id 指向 employees(id)，故比對 employeeId
   'subordinate_only': (req, options = {}) => {
     const { tableAlias = 'e' } = options;
     const prefix = tableAlias ? `${tableAlias}.` : '';
+    if (!req.user.employeeId) {
+      return { clause: '1=0', params: [], reason: 'no_employee_link' };
+    }
     return {
       clause: `${prefix}manager_id = ?`,
-      params: [req.user.userId]
+      params: [req.user.employeeId]
     };
   },
 
-  // 員工本人
+  // 員工本人。employees 表用 id 自身，故比對 employeeId
   'self_only': (req, options = {}) => {
     const { tableAlias = 'e' } = options;
     const prefix = tableAlias ? `${tableAlias}.` : '';
+    if (!req.user.employeeId) {
+      return { clause: '1=0', params: [], reason: 'no_employee_link' };
+    }
     return {
-      clause: `${prefix}user_id = ?`,
-      params: [req.user.userId]
+      clause: `${prefix}id = ?`,
+      params: [req.user.employeeId]
     };
   },
 
@@ -286,19 +298,23 @@ function mergeFeaturePerms(rows) {
     if (row.view_scope && (!viewScope || SCOPE_RANK[row.view_scope] > SCOPE_RANK[viewScope])) {
       viewScope = row.view_scope;
     }
-    // can_approve OR 合併
-    if (row.can_approve === 1 || row.can_approve === true) {
+    // can_approve OR 合併（只從實際授予存取的 row 取 — 'none' 不該貢獻 approve）
+    if (row.action_level !== 'none' && (row.can_approve === 1 || row.can_approve === true)) {
       canApprove = 1;
     }
-    // approve_scope 取最大
-    if (row.approve_scope && (!approveScope || SCOPE_RANK[row.approve_scope] > SCOPE_RANK[approveScope])) {
+    // approve_scope 取最大（只從實際授予存取的 row 取）
+    if (row.action_level !== 'none' && row.approve_scope &&
+        (!approveScope || SCOPE_RANK[row.approve_scope] > SCOPE_RANK[approveScope])) {
       approveScope = row.approve_scope;
     }
-    // row_filter_key least-restrictive：任一 NULL → 解除
-    if (row.row_filter_key === null || row.row_filter_key === undefined) {
-      sawNullRowFilter = true;
-    } else if (rowFilterKey === undefined) {
-      rowFilterKey = row.row_filter_key;
+    // row_filter_key least-restrictive：任一**授予存取的 row**為 NULL → 解除
+    // BUGFIX: action_level='none' 的 row 本來就無存取權，不該影響 row 限制（不能用來解除 row_filter）
+    if (row.action_level !== 'none') {
+      if (row.row_filter_key === null || row.row_filter_key === undefined) {
+        sawNullRowFilter = true;
+      } else if (rowFilterKey === undefined) {
+        rowFilterKey = row.row_filter_key;
+      }
     }
   }
 
