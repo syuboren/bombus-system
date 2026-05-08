@@ -53,6 +53,9 @@
             @if (deptFallbackHint()) {
             <p class="hint-text">{{ deptFallbackHint() }}</p>
             }
+            @if (employees().length === 0) {
+            <p class="hint-text">目前無設定面試官，請至「系統設定 → 員工與帳號管理」為員工加上「面試官」角色。</p>
+            }
             @if (!interviewerId()) {
             <p class="error-text">請先選擇面試官</p>
             }

@@ -176,19 +176,104 @@ function requireRole(...allowedRoles) {
 // ── Feature-based Permission 合併常數 ──
 const ACTION_LEVEL_RANK = { none: 0, view: 1, edit: 2 };
 const SCOPE_RANK = { self: 1, department: 2, company: 3 };
-const FULL_ACCESS_PERM = Object.freeze({ action_level: 'edit', edit_scope: 'company', view_scope: 'company' });
+const FULL_ACCESS_PERM = Object.freeze({
+  action_level: 'edit', edit_scope: 'company', view_scope: 'company',
+  can_approve: 1, approve_scope: 'company', row_filter_key: null
+});
+
+// ── ROW_FILTERS Registry（rbac-row-level-and-interview-scope）──
+// 每個 predicate 簽名 (req, options) => { clause, params, reason? }
+// options: { tableAlias?, candidateIdColumn? } — 預設 tableAlias='c'、candidateIdColumn='id'
+// 安全規則：row_filter_key 永不來自 client request；只能由 role_feature_perms 寫入後查詢取得
+const ROW_FILTERS = {
+  // D-05 主用途：interviewer 限定被指派的候選人
+  // 反查 interview_invitations + interviews 兩張表的 interviewer_id（衍生方案，無需 interview_assignments 表）
+  // 注意：本 predicate 與 buildScopeFilter 的 tableAlias（org_unit 表別名）解耦，使用獨立 options：
+  //   - candidateTableAlias: candidates 表別名（預設 'c'）
+  //   - candidateIdColumn: candidate id 欄位名（預設 'id'，interview_evaluations 場景需傳 'candidate_id'）
+  'interview_assigned': (req, options = {}) => {
+    const { candidateTableAlias = 'c', candidateIdColumn = 'id' } = options;
+    const candidateRef = `${candidateTableAlias}.${candidateIdColumn}`;
+    return {
+      clause: `EXISTS (
+        SELECT 1 FROM interview_invitations ii
+        WHERE ii.interviewer_id = ?
+          AND ii.candidate_id = ${candidateRef}
+          AND ii.status NOT IN ('Cancelled')
+        UNION
+        SELECT 1 FROM interviews i
+        WHERE i.interviewer_id = ?
+          AND i.candidate_id = ${candidateRef}
+      )`,
+      params: [req.user.userId, req.user.userId]
+    };
+  },
+
+  // 主管視角：限定下屬
+  'subordinate_only': (req, options = {}) => {
+    const { tableAlias = 'e' } = options;
+    const prefix = tableAlias ? `${tableAlias}.` : '';
+    return {
+      clause: `${prefix}manager_id = ?`,
+      params: [req.user.userId]
+    };
+  },
+
+  // 員工本人
+  'self_only': (req, options = {}) => {
+    const { tableAlias = 'e' } = options;
+    const prefix = tableAlias ? `${tableAlias}.` : '';
+    return {
+      clause: `${prefix}user_id = ?`,
+      params: [req.user.userId]
+    };
+  },
+
+  // 補既有 user_roles.org_unit_id metadata-only 缺口（決議 10：採遞迴含子部門）
+  'org_unit_scope': (req, options = {}) => {
+    const { tableAlias = 'e' } = options;
+    const prefix = tableAlias ? `${tableAlias}.` : '';
+    // 收集 user 所有 user_roles.org_unit_id 的子樹（含子部門遞迴）
+    const orgUnitIds = (req.user.assignedOrgUnitIds || []).filter(Boolean);
+    if (!orgUnitIds.length) {
+      return { clause: '1=0', params: [], reason: 'empty_org_unit_scope' };
+    }
+    const allIds = new Set();
+    for (const id of orgUnitIds) {
+      const subtree = getUserDepartmentIds(req.tenantDB, id);
+      subtree.forEach(x => allIds.add(x));
+    }
+    const ids = [...allIds];
+    if (!ids.length) return { clause: '1=0', params: [], reason: 'empty_org_unit_scope' };
+    const placeholders = ids.map(() => '?').join(',');
+    return {
+      clause: `${prefix}org_unit_id IN (${placeholders})`,
+      params: ids
+    };
+  }
+};
 
 /**
  * 合併多角色的 feature 權限（Decision 9: 取最高權限）
+ * 擴充欄位（rbac-row-level-and-interview-scope）：
+ *   - can_approve: OR（任一角色開放即放行）
+ *   - approve_scope: 取最大（沿用 SCOPE_RANK）
+ *   - row_filter_key: 採 least-restrictive（任一 NULL → 整體 NULL，等於不限制）
  * @param {Array} rows - role_feature_perms 查詢結果
- * @returns {Object} { action_level, edit_scope, view_scope }
+ * @returns {Object} { action_level, edit_scope, view_scope, can_approve, approve_scope, row_filter_key }
  */
 function mergeFeaturePerms(rows) {
   let actionLevel = 'none';
   let editScope = null;
   let viewScope = null;
+  let canApprove = 0;
+  let approveScope = null;
+  let rowFilterKey = undefined; // 用 undefined 區分「尚未遇到任何 row」與「遇到 NULL 解除限制」
+  let sawAnyRow = false;
+  let sawNullRowFilter = false;
 
   for (const row of rows) {
+    sawAnyRow = true;
     // action_level 取最高
     if (ACTION_LEVEL_RANK[row.action_level] > ACTION_LEVEL_RANK[actionLevel]) {
       actionLevel = row.action_level;
@@ -201,9 +286,33 @@ function mergeFeaturePerms(rows) {
     if (row.view_scope && (!viewScope || SCOPE_RANK[row.view_scope] > SCOPE_RANK[viewScope])) {
       viewScope = row.view_scope;
     }
+    // can_approve OR 合併
+    if (row.can_approve === 1 || row.can_approve === true) {
+      canApprove = 1;
+    }
+    // approve_scope 取最大
+    if (row.approve_scope && (!approveScope || SCOPE_RANK[row.approve_scope] > SCOPE_RANK[approveScope])) {
+      approveScope = row.approve_scope;
+    }
+    // row_filter_key least-restrictive：任一 NULL → 解除
+    if (row.row_filter_key === null || row.row_filter_key === undefined) {
+      sawNullRowFilter = true;
+    } else if (rowFilterKey === undefined) {
+      rowFilterKey = row.row_filter_key;
+    }
   }
 
-  return { action_level: actionLevel, edit_scope: editScope, view_scope: viewScope };
+  // 至少有一筆 row_filter_key 為 NULL → 整體不限制
+  const finalRowFilterKey = !sawAnyRow ? null : (sawNullRowFilter ? null : (rowFilterKey ?? null));
+
+  return {
+    action_level: actionLevel,
+    edit_scope: editScope,
+    view_scope: viewScope,
+    can_approve: canApprove,
+    approve_scope: approveScope,
+    row_filter_key: finalRowFilterKey
+  };
 }
 
 /**
@@ -249,7 +358,8 @@ function requireFeaturePerm(featureId, requiredLevel) {
     try {
       // 查詢使用者所有角色對此 feature 的權限
       const rows = req.tenantDB.query(`
-        SELECT rfp.action_level, rfp.edit_scope, rfp.view_scope
+        SELECT rfp.action_level, rfp.edit_scope, rfp.view_scope,
+               rfp.can_approve, rfp.approve_scope, rfp.row_filter_key
         FROM user_roles ur
         JOIN role_feature_perms rfp ON rfp.role_id = ur.role_id
         WHERE ur.user_id = ? AND rfp.feature_id = ?
@@ -334,13 +444,36 @@ function getUserDepartmentIds(db, departmentId) {
 }
 
 /**
+ * 套用 row_filter_key 對應的 predicate
+ * 內部 helper，由 buildScopeFilter 呼叫；unknown key 走 deny-by-default fallback
+ * @param {string} key - row_filter_key 值
+ * @param {Object} req - Express request
+ * @param {Object} options - 傳給 predicate 的選項（tableAlias、candidateIdColumn 等）
+ * @returns {{ clause: string, params: any[] }}
+ */
+function applyRowFilter(key, req, options = {}) {
+  if (!key) return { clause: null, params: [] };
+  const predicate = ROW_FILTERS[key];
+  if (!predicate) {
+    console.warn(`[ROW_FILTERS] Unknown row_filter_key: ${key} — deny by default (1=0)`);
+    return { clause: '1=0', params: [] };
+  }
+  return predicate(req, options);
+}
+
+/**
  * 根據使用者的 view_scope 產生 SQL WHERE clause
+ * 擴充（rbac-row-level-and-interview-scope）：在生成 scope clause 後，若 perm.row_filter_key 不為 NULL，
+ * 從 ROW_FILTERS registry 取對應 predicate 並 AND 串接。
+ * Short-circuit：若 scope clause 為 '1=0'，整體回 '1=0' 不執行 row_filter；
+ *               若 row_filter 回 '1=0'，整體 clause 為 '1=0'。
  * @param {Object} req - Express request（需有 req.featurePerm、req.user、req.tenantDB）
  * @param {Object} [options]
  * @param {string} [options.tableAlias] - 表別名
  * @param {string} [options.employeeIdColumn] - employee_id 欄位名（預設 'employee_id'）
  * @param {string} [options.createdByColumn] - 若指定則 self scope 改用此欄位
  * @param {string} [options.orgUnitColumn] - org_unit_id 欄位名（預設 'org_unit_id'）
+ * @param {string} [options.candidateIdColumn] - candidate_id 欄位名（預設 'id'，僅 row_filter 使用）
  * @returns {{ clause: string, params: any[] }}
  */
 function buildScopeFilter(req, options = {}) {
@@ -348,9 +481,26 @@ function buildScopeFilter(req, options = {}) {
   const prefix = tableAlias ? `${tableAlias}.` : '';
   const perm = req.featurePerm;
 
+  // 內部 helper：在 scope clause 後串接 row_filter（若有）
+  const combineRowFilter = (scopeResult) => {
+    if (!perm || !perm.row_filter_key) return scopeResult;
+    // Short-circuit：scope 已 1=0，無需 row_filter
+    if (scopeResult.clause === '1=0') return scopeResult;
+    const rf = applyRowFilter(perm.row_filter_key, req, options);
+    if (!rf.clause) return scopeResult;
+    if (rf.clause === '1=0') return { clause: '1=0', params: [], reason: rf.reason || 'row_filter_empty' };
+    if (scopeResult.clause === '1=1' || scopeResult.clause === '') {
+      return { clause: rf.clause, params: rf.params };
+    }
+    return {
+      clause: `(${scopeResult.clause}) AND (${rf.clause})`,
+      params: [...scopeResult.params, ...rf.params]
+    };
+  };
+
   // 無權限 → 空結果
   if (!perm || perm.action_level === 'none') {
-    return { clause: '1=0', params: [] };
+    return combineRowFilter({ clause: '1=0', params: [] });
   }
 
   // company scope → 子公司過濾
@@ -358,7 +508,7 @@ function buildScopeFilter(req, options = {}) {
     // super_admin 不限
     const roles = req.user.roles || [];
     if (roles.includes('super_admin')) {
-      return { clause: '1=1', params: [] };
+      return combineRowFilter({ clause: '1=1', params: [] });
     }
     // 有 subsidiaryId → 限制到該子公司下所有 org_unit
     if (req.user.subsidiaryId) {
@@ -368,32 +518,32 @@ function buildScopeFilter(req, options = {}) {
         [req.user.subsidiaryId]
       );
       if (subUnit?.type === 'group') {
-        return { clause: '1=1', params: [] };
+        return combineRowFilter({ clause: '1=1', params: [] });
       }
       const subIds = getUserDepartmentIds(req.tenantDB, req.user.subsidiaryId);
       if (subIds.length === 0) {
-        return { clause: '1=0', params: [], reason: 'empty_subsidiary_scope' };
+        return combineRowFilter({ clause: '1=0', params: [], reason: 'empty_subsidiary_scope' });
       }
       const placeholders = subIds.map(() => '?').join(',');
-      return { clause: `${prefix}${orgUnitColumn} IN (${placeholders})`, params: subIds };
+      return combineRowFilter({ clause: `${prefix}${orgUnitColumn} IN (${placeholders})`, params: subIds });
     }
     // 無 subsidiaryId → fail-secure
-    return { clause: '1=0', params: [], reason: 'no_subsidiary_link' };
+    return combineRowFilter({ clause: '1=0', params: [], reason: 'no_subsidiary_link' });
   }
 
   // self scope → 僅自己
   if (perm.view_scope === 'self') {
     if (!req.user.employeeId) {
-      return { clause: '1=0', params: [], reason: 'no_employee_link' };
+      return combineRowFilter({ clause: '1=0', params: [], reason: 'no_employee_link' });
     }
     const col = createdByColumn || `${prefix}${employeeIdColumn}`;
-    return { clause: `${col} = ?`, params: [req.user.employeeId] };
+    return combineRowFilter({ clause: `${col} = ?`, params: [req.user.employeeId] });
   }
 
   // department scope → 使用者部門及子部門
   if (perm.view_scope === 'department') {
     if (!req.user.departmentId) {
-      return { clause: '1=0', params: [], reason: 'no_department_link' };
+      return combineRowFilter({ clause: '1=0', params: [], reason: 'no_department_link' });
     }
     // 防護：確認 departmentId 指向 department 類型，避免 group/subsidiary 導致全域存取
     const orgUnit = req.tenantDB.queryOne(
@@ -402,18 +552,24 @@ function buildScopeFilter(req, options = {}) {
     );
     if (orgUnit && orgUnit.type !== 'department') {
       console.warn(`[Scope] department scope but org_unit "${req.user.departmentId}" is type="${orgUnit.type}", denying access`);
-      return { clause: '1=0', params: [], reason: 'org_unit_not_department' };
+      return combineRowFilter({ clause: '1=0', params: [], reason: 'org_unit_not_department' });
     }
     const deptIds = getUserDepartmentIds(req.tenantDB, req.user.departmentId);
     if (deptIds.length === 0) {
-      return { clause: '1=0', params: [] };
+      return combineRowFilter({ clause: '1=0', params: [] });
     }
     const placeholders = deptIds.map(() => '?').join(',');
-    return { clause: `${prefix}${orgUnitColumn} IN (${placeholders})`, params: deptIds };
+    return combineRowFilter({ clause: `${prefix}${orgUnitColumn} IN (${placeholders})`, params: deptIds });
+  }
+
+  // view_scope 為 NULL 但 row_filter_key 存在 → 純 row-filter 場景（如 interviewer 無 view_scope 但有 row filter）
+  // 此情況下沿用 perm.action_level 已過閘的結果，row_filter 自行決定可見集
+  if (!perm.view_scope && perm.row_filter_key) {
+    return combineRowFilter({ clause: '1=1', params: [] });
   }
 
   // 預設 fail-secure：未知的 view_scope 值不應授予存取權
-  return { clause: '1=0', params: [], reason: 'unknown_scope' };
+  return combineRowFilter({ clause: '1=0', params: [], reason: 'unknown_scope' });
 }
 
 /**
@@ -489,17 +645,114 @@ function checkEditScope(req, targetRecord, options = {}) {
   return { allowed: false, message: '未知的編輯範圍設定' };
 }
 
+/**
+ * Approve 動作守衛中介層（rbac-row-level-and-interview-scope）
+ * 與 requireFeaturePerm 並行的第二類權限閘：檢查使用者對該 feature 是否有 can_approve=1。
+ * 通過時注入 req.featurePerm（含 approve_scope 供 handler 做進一步比對）。
+ *
+ * @param {string} featureId - feature ID
+ * @returns {Function} Express middleware
+ */
+function requireApprovePerm(featureId) {
+  return (req, res, next) => {
+    if (req.user && req.user.isPlatformAdmin) {
+      req.featurePerm = FULL_ACCESS_PERM;
+      return next();
+    }
+
+    if (!req.user || !req.tenantDB) {
+      return res.status(401).json({ error: 'Unauthorized', message: '未認證' });
+    }
+
+    if (req.user.tenantId && !isModuleEnabledByPlan(req.user.tenantId, featureId)) {
+      return res.status(403).json({
+        error: 'ModuleNotEnabled',
+        message: '此功能未包含在您的訂閱方案中'
+      });
+    }
+
+    const roles = req.user.roles || [];
+    if (roles.includes('super_admin')) {
+      req.featurePerm = FULL_ACCESS_PERM;
+      return next();
+    }
+
+    try {
+      const rows = req.tenantDB.query(`
+        SELECT rfp.action_level, rfp.edit_scope, rfp.view_scope,
+               rfp.can_approve, rfp.approve_scope, rfp.row_filter_key
+        FROM user_roles ur
+        JOIN role_feature_perms rfp ON rfp.role_id = ur.role_id
+        WHERE ur.user_id = ? AND rfp.feature_id = ?
+      `, [req.user.userId, featureId]);
+
+      const merged = mergeFeaturePerms(rows);
+
+      if (merged.can_approve !== 1) {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: `缺少審核權限: ${featureId}（需要 can_approve=1）`
+        });
+      }
+
+      req.featurePerm = merged;
+      next();
+    } catch (err) {
+      console.error('Approve permission check error:', err.message);
+      return res.status(500).json({
+        error: 'InternalError',
+        message: '審核權限檢查失敗'
+      });
+    }
+  };
+}
+
+/**
+ * 單筆記錄 row_filter 存取驗證（rbac-row-level-and-interview-scope）
+ * 用於 /candidates/:id/* 等以單一 ID 取資料的端點，確保使用者透過 row_filter_key 規則仍可存取該筆。
+ *
+ * @param {Object} req - Express request（需有 req.featurePerm、req.user、req.tenantDB）
+ * @param {string} candidateId - 候選人 ID（直接從 URL 取）
+ * @returns {{ allowed: boolean, reason?: string }}
+ */
+function verifyCandidateAccessByRowFilter(req, candidateId) {
+  const perm = req.featurePerm;
+  if (!perm) return { allowed: false, reason: 'no_perm' };
+  // super_admin 走 FULL_ACCESS_PERM，row_filter_key 為 null → 直接放行
+  if (!perm.row_filter_key) return { allowed: true };
+
+  const rf = applyRowFilter(perm.row_filter_key, req, {});
+  if (!rf.clause || rf.clause === '1=0') {
+    return { allowed: false, reason: rf.reason || 'row_filter_empty' };
+  }
+  if (rf.clause === '1=1') return { allowed: true };
+
+  // 用 EXISTS 檢查該 candidateId 是否在 row_filter 範圍內
+  const sql = `SELECT 1 FROM candidates c WHERE c.id = ? AND (${rf.clause}) LIMIT 1`;
+  try {
+    const found = req.tenantDB.queryOne(sql, [candidateId, ...rf.params]);
+    return found ? { allowed: true } : { allowed: false, reason: 'not_in_row_filter' };
+  } catch (err) {
+    console.error('verifyCandidateAccessByRowFilter SQL error:', err.message);
+    return { allowed: false, reason: 'sql_error' };
+  }
+}
+
 module.exports = {
   requirePermission,
   requireRole,
   isModuleEnabledByPlan,
   getTenantEnabledFeatures,
   requireFeaturePerm,
+  requireApprovePerm,
   mergeFeaturePerms,
   buildScopeFilter,
+  applyRowFilter,
   checkEditScope,
+  verifyCandidateAccessByRowFilter,
   getUserDepartmentIds,
   findUserSubsidiaryId,
+  ROW_FILTERS,
   ACTION_LEVEL_RANK,
   SCOPE_RANK
 };

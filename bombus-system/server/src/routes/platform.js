@@ -89,6 +89,7 @@ function seedTenantRBAC(tenantAdapter, tenantName, adminEmail, adminName, passwo
     { key: 'hr_manager', name: 'hr_manager', desc: '人資管理員', scope: 'global' },
     { key: 'dept_manager', name: 'dept_manager', desc: '部門主管', scope: 'department' },
     { key: 'employee', name: 'employee', desc: '一般員工', scope: 'department' },
+    { key: 'interviewer', name: 'interviewer', desc: '面試官（僅見被指派候選人）', scope: 'global' },
   ];
   for (const r of roles) {
     roleIds[r.key] = uuidv4();

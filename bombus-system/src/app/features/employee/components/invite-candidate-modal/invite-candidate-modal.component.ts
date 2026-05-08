@@ -117,7 +117,8 @@ export class InviteCandidateModalComponent {
     }
 
     private loadEmployees(): void {
-        this.interviewService.listActiveEmployees().subscribe({
+        // rbac-row-level-and-interview-scope: 三道防線第 1 層 — 下拉只列有 interviewer 角色的員工
+        this.interviewService.listActiveEmployees({ role: 'interviewer' }).subscribe({
             next: list => this.employees.set(list),
             error: () => this.notificationService.error('載入員工清單失敗')
         });

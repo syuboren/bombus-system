@@ -371,8 +371,9 @@ export class InterviewService {
   /**
    * D-07: 列出面試官候選清單（active 員工）
    * @param options.dept 預設以職缺所屬部門篩選（可省略 = 全部門）
+   * @param options.role rbac-row-level-and-interview-scope: 限定持有指定 role code 的員工（如 'interviewer'）
    */
-  listActiveEmployees(options?: { dept?: string }): Observable<Array<{
+  listActiveEmployees(options?: { dept?: string; role?: string }): Observable<Array<{
     id: string;
     name: string;
     department: string | null;
@@ -381,6 +382,7 @@ export class InterviewService {
   }>> {
     let params = new HttpParams().set('status', 'active');
     if (options?.dept) params = params.set('dept', options.dept);
+    if (options?.role) params = params.set('role', options.role);
     return this.http.get<any[]>('/api/employee/list', { params }).pipe(
       map(list => (list || []).map(e => ({
         id: e.id,

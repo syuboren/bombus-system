@@ -107,6 +107,10 @@ export interface RoleFeaturePerm {
   action_level: ActionLevel;
   edit_scope: PermScope | null;
   view_scope: PermScope | null;
+  // rbac-row-level-and-interview-scope
+  can_approve?: number;
+  approve_scope?: PermScope | null;
+  row_filter_key?: string | null;
 }
 
 export interface FeaturePermPayload {
@@ -114,6 +118,10 @@ export interface FeaturePermPayload {
   action_level: ActionLevel;
   edit_scope: PermScope | null;
   view_scope: PermScope | null;
+  // rbac-row-level-and-interview-scope
+  can_approve?: number;
+  approve_scope?: PermScope | null;
+  row_filter_key?: string | null;
 }
 
 export interface UserFeaturePerm {
@@ -121,6 +129,10 @@ export interface UserFeaturePerm {
   action_level: ActionLevel;
   edit_scope: PermScope | null;
   view_scope: PermScope | null;
+  // rbac-row-level-and-interview-scope
+  can_approve?: number;
+  approve_scope?: PermScope | null;
+  row_filter_key?: string | null;
 }
 
 export interface RoleUser {

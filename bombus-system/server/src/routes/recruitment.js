@@ -3,7 +3,7 @@ const router = express.Router();
 // tenantDB is accessed via req.tenantDB (injected by middleware)
 const { v4: uuidv4 } = require('uuid');
 const QRCode = require('qrcode');
-const { requireFeaturePerm, buildScopeFilter } = require('../middleware/permission');
+const { requireFeaturePerm, buildScopeFilter, verifyCandidateAccessByRowFilter } = require('../middleware/permission');
 const decisionService = require('../services/decision.service');
 const { logAudit, getClientIP } = require('../utils/audit-logger');
 const { getPlatformDB } = require('../db/platform-db');
@@ -510,6 +510,13 @@ function importToTalentPool(req, candidateId, declineStage, declineReason = null
 // 9. 儲存面試評分 (完整) - 新版面試官評分表
 // POST /api/recruitment/candidates/:candidateId/evaluation
 router.post('/candidates/:candidateId/evaluation', requireFeaturePerm('L1.recruitment', 'edit'), (req, res) => {
+    // rbac-row-level-and-interview-scope: 套 row_filter 驗證單筆候選人存取
+    {
+        const access = verifyCandidateAccessByRowFilter(req, req.params.candidateId);
+        if (!access.allowed) {
+            return res.status(403).json({ error: 'Forbidden', message: '無權建立此候選人評分', reason: access.reason });
+        }
+    }
     try {
         const { candidateId } = req.params;
         const {
@@ -643,10 +650,16 @@ router.get('/candidates/:candidateId/evaluation', requireFeaturePerm('L1.recruit
     try {
         const { candidateId } = req.params;
 
+        // rbac-row-level-and-interview-scope: 套 row_filter 驗證單筆候選人存取
+        const access = verifyCandidateAccessByRowFilter(req, candidateId);
+        if (!access.allowed) {
+            return res.status(403).json({ error: 'Forbidden', message: '無權存取此候選人評分', reason: access.reason });
+        }
+
         const evaluation = req.tenantDB.prepare(`
-            SELECT * FROM interview_evaluations 
-            WHERE candidate_id = ? 
-            ORDER BY created_at DESC 
+            SELECT * FROM interview_evaluations
+            WHERE candidate_id = ?
+            ORDER BY created_at DESC
             LIMIT 1
         `).get(candidateId);
 
@@ -676,6 +689,12 @@ router.get('/candidates/:candidateId/evaluation', requireFeaturePerm('L1.recruit
 router.patch('/candidates/:candidateId/evaluation', requireFeaturePerm('L1.recruitment', 'edit'), (req, res) => {
     try {
         const { candidateId } = req.params;
+
+        // rbac-row-level-and-interview-scope: 套 row_filter 驗證單筆候選人存取
+        const access = verifyCandidateAccessByRowFilter(req, candidateId);
+        if (!access.allowed) {
+            return res.status(403).json({ error: 'Forbidden', message: '無權編輯此候選人評分', reason: access.reason });
+        }
         const {
             // 保留欄位
             performanceDescription,
@@ -1278,6 +1297,13 @@ router.post('/candidates/:candidateId/reject-approval', requireFeaturePerm('L1.d
 // 5. Get Extended Candidate Details
 // GET /api/recruitment/candidates/:candidateId
 router.get('/candidates/:candidateId', requireFeaturePerm('L1.recruitment', 'view'), (req, res) => {
+    // rbac-row-level-and-interview-scope: 套 row_filter 驗證單筆候選人存取
+    {
+        const access = verifyCandidateAccessByRowFilter(req, req.params.candidateId);
+        if (!access.allowed) {
+            return res.status(403).json({ error: 'Forbidden', message: '無權存取此候選人', reason: access.reason });
+        }
+    }
     try {
         const { candidateId } = req.params;
 
