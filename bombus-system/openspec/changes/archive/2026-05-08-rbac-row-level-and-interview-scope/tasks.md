@@ -78,5 +78,5 @@
 
 - [x] 9.1 更新 `bombus-system/docs/客戶回饋比對分析_L0權限與系統設定_20260429.xlsx` D-02 與 D-05 row：執行狀態 ⚠️→✅、修改狀態「尚未修正」→「已完成」、預計修改填入本 change 的 8 個 Decision 摘要、修改說明填入實作後完工狀態（OpenSpec change 名稱 + archive 日期）；同步「統計總覽」L0-RBAC 已實作數
 - [x] 9.2 release notes 草稿（屬本 change 的交付物，放在 archive 目錄即可）：(a) 「審核」位元預設無人可按、HR 需主動勾說明；(b) interviewer 角色用法 + 三道防線運作；(c) 新增 ROW_FILTERS 4 個 predicate 清單與後續擴充方式；(d) 簡核流程自定義（L0-Workflow）為未來範疇，本次 approve 已鋪路（呼應 Non-Goal）
-- [ ] 9.3 archive 階段：執行 `/spectra:archive`，確認 4 份 spec delta 正確 sync 回 `openspec/specs/{rbac, feature-perm-data-scope, edit-scope-enforcement, interviewer-role-scope}/spec.md`
-- [ ] 9.4 memory 同步：在 archive 完成後更新 MEMORY.md，把 D-02 row-level + D-05 interviewer-scope 從「Active OpenSpec Changes」移到「Recently Archived」，並修正「Scope is metadata-only」記憶條目（部分缺口已由 `org_unit_scope` predicate 補上）
+- [x] 9.3 archive 階段：執行 `/spectra:archive`，確認 4 份 spec delta 正確 sync 回 `openspec/specs/{rbac, feature-perm-data-scope, edit-scope-enforcement, interviewer-role-scope}/spec.md`
+- [x] 9.4 memory 同步：在 archive 完成後更新 MEMORY.md，把 D-02 row-level + D-05 interviewer-scope 從「Active OpenSpec Changes」移到「Recently Archived」，並修正「Scope is metadata-only」記憶條目（部分缺口已由 `org_unit_scope` predicate 補上）
