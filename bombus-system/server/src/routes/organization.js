@@ -28,6 +28,7 @@ const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
 const { getPlatformDB } = require('../db/platform-db');
 const { validateImport, executeImport } = require('../services/dept-import.service');
+const codeGenerator = require('../services/code-generator');
 const { logAudit, getClientIP } = require('../utils/audit-logger');
 const { resolveCompanyOrgUnitId } = require('../utils/org-unit');
 
@@ -1132,10 +1133,15 @@ router.post('/companies/:id/departments/import/validate', (req, res) => {
 router.post('/companies/:id/departments/import/execute', (req, res) => {
   const { items, mode } = req.body || {};
 
-  // D-15 codeGenerator hook（目前未啟用，回 null）
+  // cross-company-employment-and-naming-rules (D-15): codeGenerator hook 啟用
+  // 在 dept-import 的 transaction 內被呼叫，tryNext 的 _inTransaction 檢查可通過
   const codeGenHook = (item, ctx) => {
-    // TODO(D-15): 整合 codeGenerator.tryNext('department', { tenantId, orgUnitId })
-    return null;
+    try {
+      return codeGenerator.tryNext(ctx.tenantDB, 'department', { targetOrgUnitId: ctx.targetOrgUnitId }) || null;
+    } catch (e) {
+      console.warn('[D-15 hook] codeGenerator failed for department, falling back to null:', e.message);
+      return null;
+    }
   };
 
   const result = executeImport(req.tenantDB, req.params.id, items, mode, { codeGenHook });

@@ -11,6 +11,7 @@ const express = require('express');
 const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
 const { createEmployeeWithAccount } = require('../services/account-creation');
+const codeGenerator = require('../services/code-generator');
 
 // 格式驗證正規表達式
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -49,7 +50,9 @@ function resolveFieldName(header) {
   return FIELD_MAP_BASE[clean] || FIELD_MAP_BASE[header] || null;
 }
 
-const REQUIRED_FIELDS = ['name', 'email', 'employee_no', 'subsidiary', 'department', 'hire_date', 'level', 'grade', 'position'];
+// cross-company-employment-and-naming-rules (D-15): employee_no 降為 optional
+// 空白時由 codeGenerator.tryNext('employee') 自動補齊（規則須由 super_admin 設定）
+const REQUIRED_FIELDS = ['name', 'email', 'subsidiary', 'department', 'hire_date', 'level', 'grade', 'position'];
 
 /**
  * 驗證單筆資料
@@ -255,8 +258,47 @@ router.post('/validate', (req, res) => {
       return res.status(400).json({ error: '匯入檔案無資料' });
     }
 
+    // cross-company-employment-and-naming-rules (D-15)
+    // 預先讀取 employee 規則（不消耗 seq），用於：
+    //   1. 空白 row 預覽下一個 code（previewedSequence 陣列，與 row 索引對應；非空白 row 為 null）
+    //   2. 偵測手填值超過 current_seq 的警告
+    //   3. 空白且規則不存在時報錯
+    const employeeRule = req.tenantDB.queryOne(
+      "SELECT prefix, padding, current_seq, enabled FROM code_naming_rules WHERE target = 'employee'"
+    );
+    const ruleActive = employeeRule && employeeRule.enabled === 1;
+    const rulePrefix = ruleActive ? (employeeRule.prefix || '') : '';
+    const rulePadding = ruleActive ? (employeeRule.padding || 4) : 4;
+    let projSeq = ruleActive ? (employeeRule.current_seq || 0) : 0;
+    const previewedSequence = []; // 與 rows 等長，非空白 row 為 null
+
     const results = rows.map((row, idx) => {
       const { errors, warnings } = validateRow(row, idx, rows, req.tenantDB);
+
+      const empNoBlank = !row.employee_no || !String(row.employee_no).trim();
+
+      if (empNoBlank) {
+        // 規則不存在 / disabled → error；存在 → 預覽下一個 code
+        if (!ruleActive) {
+          errors.push('工號未填且系統未設定員工編號規則，請填寫或聯絡 super_admin 設定規則');
+          previewedSequence.push(null);
+        } else {
+          projSeq += 1;
+          const code = rulePrefix + String(projSeq).padStart(rulePadding, '0');
+          previewedSequence.push(code);
+        }
+      } else {
+        previewedSequence.push(null);
+        // 手填值若數字部分超過 current_seq → warning（不阻擋）
+        if (ruleActive && rulePrefix && row.employee_no.startsWith(rulePrefix)) {
+          const tail = row.employee_no.slice(rulePrefix.length);
+          const num = parseInt(tail, 10);
+          if (Number.isInteger(num) && num > (employeeRule.current_seq || 0)) {
+            warnings.push(`您手填的「${row.employee_no}」已超過自動編號當前序號 ${employeeRule.current_seq || 0}，建議調整 current_seq 以避免日後撞號`);
+          }
+        }
+      }
+
       return {
         row: idx + 1,
         status: errors.length > 0 ? 'error' : 'valid',
@@ -268,12 +310,17 @@ router.post('/validate', (req, res) => {
 
     const errorRows = results.filter(r => r.status === 'error').length;
     const validRows = results.filter(r => r.status === 'valid').length;
+    const hasBlankRows = previewedSequence.some(c => c !== null);
 
     res.json({
       totalRows: rows.length,
       validRows,
       errorRows,
-      rows: results
+      rows: results,
+      previewedSequence,
+      previewWarning: hasBlankRows
+        ? '並發匯入時實際分配可能與預覽不同，請以執行結果為準'
+        : null
     });
   } catch (error) {
     console.error('Error validating batch import:', error);
@@ -302,6 +349,44 @@ router.post('/execute', async (req, res) => {
     });
     // 注意：這裡不阻擋，因為前端應該已經確認過 validation
 
+    // cross-company-employment-and-naming-rules (D-15)
+    // 預先消耗 seq：對 CSV 中空白 employee_no 的 row 依序取下一個 code，
+    // 整段在單一 tenantDB.transaction 內完成（並發批次序列化保證）。
+    // Trade-off：bcrypt.hash 是 async（見 account-creation.js），無法整批包同一 transaction，
+    // 故 seq 消耗為獨立 transaction；後續 row 失敗不會 ROLLBACK seq（會留下空號）。
+    // Validate 已預警「並發匯入時實際分配可能與預覽不同」。
+    const blankIndexes = [];
+    rows.forEach((r, i) => {
+      if (!r.employee_no || !String(r.employee_no).trim()) blankIndexes.push(i);
+    });
+
+    const preassignedCodes = new Map(); // rowIndex -> code
+    if (blankIndexes.length > 0) {
+      // 規則須存在且 enabled，否則 409
+      const ruleCheck = req.tenantDB.queryOne(
+        "SELECT enabled FROM code_naming_rules WHERE target = 'employee'"
+      );
+      if (!ruleCheck || ruleCheck.enabled !== 1) {
+        return res.status(409).json({
+          error: '員工編號規則已被停用，請重新驗證',
+          code: 'EMPLOYEE_RULE_DISABLED'
+        });
+      }
+      try {
+        req.tenantDB.transaction(() => {
+          for (const idx of blankIndexes) {
+            const code = codeGenerator.tryNext(req.tenantDB, 'employee', { batchImport: true });
+            if (!code) {
+              throw new Error('員工編號規則已被停用，請重新驗證');
+            }
+            preassignedCodes.set(idx, code);
+          }
+        });
+      } catch (e) {
+        return res.status(409).json({ error: e.message, code: 'EMPLOYEE_RULE_DISABLED' });
+      }
+    }
+
     const jobId = uuidv4();
     const userId = req.user?.id || null;
     const now = new Date().toISOString();
@@ -323,7 +408,8 @@ router.post('/execute', async (req, res) => {
       let successCount = 0;
       let errorCount = 0;
 
-      for (const row of rows) {
+      for (let rowIdx = 0; rowIdx < rows.length; rowIdx++) {
+        const row = rows[rowIdx];
         try {
           // 解析 org_unit_id
           let orgUnitId = row._org_unit_id || null;
@@ -339,11 +425,17 @@ router.post('/execute', async (req, res) => {
 
           const birthDate = row.birth_date ? row.birth_date.replace(/\//g, '-') : null;
 
+          // cross-company-employment-and-naming-rules (D-15)：使用預先消耗的 code 補齊空白 employee_no
+          // 手填值維持原樣不動 seq（preassignedCodes 不含該 idx）
+          const effectiveEmployeeNo = row.employee_no && String(row.employee_no).trim()
+            ? row.employee_no
+            : preassignedCodes.get(rowIdx);
+
           const result = await createEmployeeWithAccount(tenantDB, {
             employeeData: {
               name: row.name,
               email: row.email,
-              employee_no: row.employee_no,
+              employee_no: effectiveEmployeeNo,
               department: row.department,
               position: row.position,
               level: row.level,
@@ -367,6 +459,39 @@ router.post('/execute', async (req, res) => {
             defaultRole: 'employee',
             orgUnitId
           });
+
+          // cross-company-employment-and-naming-rules (D-10) — task 11.9
+          // 每筆 row 建一筆 is_primary=1 assignment（無 secondary，故 D-14 不觸發）
+          // backfill migration 會在新 employees 缺 assignment 時補建，這裡是即時建立避免 race
+          if (orgUnitId && result.employee && result.employee.id) {
+            try {
+              tenantDB.transaction(() => {
+                const exists = tenantDB.queryOne(
+                  'SELECT id FROM employee_assignments WHERE employee_id = ? LIMIT 1',
+                  [result.employee.id]
+                );
+                if (!exists) {
+                  tenantDB.run(
+                    `INSERT INTO employee_assignments
+                       (id, employee_id, org_unit_id, position, grade, level, is_primary, start_date, created_at)
+                     VALUES (?, ?, ?, ?, ?, ?, 1, ?, datetime('now'))`,
+                    [
+                      `asgn-${result.employee.id}`,
+                      result.employee.id,
+                      orgUnitId,
+                      row.position || null,
+                      row.grade || null,
+                      row.level || null,
+                      hireDate || new Date().toISOString().slice(0, 10)
+                    ]
+                  );
+                }
+              });
+            } catch (asgnErr) {
+              console.warn('[batch-import] Failed to create primary assignment for', result.employee.id, asgnErr.message);
+              // 不阻擋 import 成功（員工本體已建立、backfill migration 之後也會補）
+            }
+          }
 
           successCount++;
 

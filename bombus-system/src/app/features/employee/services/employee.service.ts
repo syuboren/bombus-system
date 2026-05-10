@@ -142,6 +142,8 @@ export class EmployeeService {
     return {
       id: data.id,
       employeeNo: data.employee_no,
+      // cross-company-employment-and-naming-rules (D-14): 跨公司專屬編號（HQ-xxx）
+      crossCompanyCode: data.crossCompanyCode || data.cross_company_code || null,
       name: data.name,
       englishName: data.english_name || undefined,
       email: data.email,
@@ -170,6 +172,20 @@ export class EmployeeService {
         startDate: p.startDate ? new Date(p.startDate) : undefined,
         endDate: p.endDate ? new Date(p.endDate) : undefined
       })) : [],
+      // cross-company-employment-and-naming-rules (D-10): assignments DB-row 陣列
+      assignments: Array.isArray(data.assignments) ? data.assignments.map((a: any) => ({
+        id: a.id,
+        employeeId: a.employeeId || a.employee_id,
+        orgUnitId: a.orgUnitId || a.org_unit_id,
+        position: a.position || undefined,
+        grade: a.grade || undefined,
+        level: a.level || undefined,
+        isPrimary: !!a.isPrimary || a.is_primary === 1,
+        startDate: a.startDate || a.start_date,
+        endDate: a.endDate || a.end_date || null,
+        createdAt: a.createdAt || a.created_at,
+        updatedAt: a.updatedAt || a.updated_at || null
+      })) : undefined,
       userId: data.userId || data.user_id || null,
       userStatus: data.userStatus || data.user_status || null,
       userEmail: data.userEmail || data.user_email || null,

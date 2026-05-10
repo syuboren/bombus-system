@@ -337,7 +337,7 @@ router.get('/list', requireFeaturePerm('L1.profile', 'view'), (req, res) => {
         }
 
         // Apply scope filter（D-02 row-level）
-        const scope = buildScopeFilter(req, { employeeIdColumn: 'id', orgUnitColumn: 'org_unit_id' });
+        const scope = buildScopeFilter(req, { employeeIdColumn: 'id', orgUnitColumn: 'org_unit_id', useAssignmentsUnion: true });
         whereClause += ` AND ${scope.clause}`;
         whereParams.push(...scope.params);
 
@@ -353,7 +353,7 @@ router.get('/list', requireFeaturePerm('L1.profile', 'view'), (req, res) => {
             : ` ORDER BY department, name`;
 
         const baseSelect = `
-            SELECT id, employee_no, name, email, phone, department, position,
+            SELECT id, employee_no, cross_company_code, name, email, phone, department, position,
                    level, grade, manager_id, hire_date, contract_type,
                    work_location, avatar, status, org_unit_id
             FROM employees
@@ -418,16 +418,28 @@ router.get('/list', requireFeaturePerm('L1.profile', 'view'), (req, res) => {
             return null;
         }
 
-        // 組合資料（含 positions[]、userId、userStatus）
-        const result = employees.map(emp => {
-            const user = usersMap.get(emp.id);
-            let companyName = null;
-            let companyId = null;
-            let departmentId = null;
-            let departmentName = null;
+        // cross-company-employment-and-naming-rules (D-10)：批次載入 assignments
+        const assignmentsByEmp = new Map();
+        if (empIds.length > 0) {
+            const allAssignments = req.tenantDB.prepare(
+                `SELECT id, employee_id, org_unit_id, position, grade, level, is_primary, start_date, end_date, created_at, updated_at
+                 FROM employee_assignments
+                 WHERE employee_id IN (${empIds.map(() => '?').join(',')})
+                 ORDER BY is_primary DESC, start_date ASC`
+            ).all(...empIds);
+            allAssignments.forEach(a => {
+                if (!assignmentsByEmp.has(a.employee_id)) assignmentsByEmp.set(a.employee_id, []);
+                assignmentsByEmp.get(a.employee_id).push(a);
+            });
+        }
 
-            if (emp.org_unit_id) {
-                const orgUnit = allOrgUnits.get(emp.org_unit_id);
+        // 從 org_unit_id 解析 { companyId, companyName, departmentId, departmentName }
+        // — 與既有 positions[] hard-coded 邏輯同形狀；fallback 字串部門用 employees.department
+        function resolveOrgUnit(orgUnitId, fallbackDeptName) {
+            let companyId = null, companyName = null;
+            let departmentId = null, departmentName = null;
+            if (orgUnitId) {
+                const orgUnit = allOrgUnits.get(orgUnitId);
                 if (orgUnit) {
                     if (orgUnit.type === 'department') {
                         departmentId = orgUnit.id;
@@ -435,41 +447,84 @@ router.get('/list', requireFeaturePerm('L1.profile', 'view'), (req, res) => {
                         const company = findCompany(orgUnit.parent_id);
                         if (company) { companyId = company.id; companyName = company.name; }
                     } else {
-                        // org_unit_id 指向 group/subsidiary，直接作為公司
                         companyId = orgUnit.id;
                         companyName = orgUnit.name;
-                        // 用 department 文字欄位反查，但限定在此公司下的部門
-                        if (emp.department) {
-                            const depts = allOrgUnits;
-                            for (const [, unit] of depts) {
-                                if (unit.type === 'department' && unit.name === emp.department && unit.parent_id === orgUnit.id) {
+                        if (fallbackDeptName) {
+                            for (const [, unit] of allOrgUnits) {
+                                if (unit.type === 'department' && unit.name === fallbackDeptName && unit.parent_id === orgUnit.id) {
                                     departmentId = unit.id;
                                     departmentName = unit.name;
                                     break;
                                 }
                             }
-                            if (!departmentName) departmentName = emp.department;
+                            if (!departmentName) departmentName = fallbackDeptName;
                         }
                     }
                 }
             }
+            return { companyId, companyName, departmentId, departmentName };
+        }
 
-            return {
-                ...emp,
-                managerName: managersMap.get(emp.manager_id) || null,
-                userId: user ? user.id : null,
-                userStatus: user ? user.status : null,
-                userEmail: user ? user.email : null,
-                positions: [{
-                    companyId,
-                    companyName,
-                    departmentId,
-                    departmentName: departmentName || emp.department,
+        // 組合資料（含 positions[]、assignments[]、crossCompanyCode、userId、userStatus）
+        const result = employees.map(emp => {
+            const user = usersMap.get(emp.id);
+            const allAsgns = assignmentsByEmp.get(emp.id) || [];
+            const activeAsgns = allAsgns.filter(a => !a.end_date);
+
+            // positions[] 改為從 active assignments 衍生（每筆 active 一筆 position）
+            // 若無 assignments（極端 migration 邊界），fallback 至 employees.org_unit_id 單筆
+            let positions;
+            if (activeAsgns.length > 0) {
+                positions = activeAsgns.map(a => {
+                    const r = resolveOrgUnit(a.org_unit_id, emp.department);
+                    return {
+                        companyId: r.companyId,
+                        companyName: r.companyName,
+                        departmentId: r.departmentId,
+                        departmentName: r.departmentName || emp.department,
+                        positionTitle: a.position || emp.position,
+                        positionLevel: a.level || emp.level,
+                        isPrimary: a.is_primary === 1,
+                        startDate: a.start_date,
+                        endDate: a.end_date || null
+                    };
+                });
+            } else {
+                const r = resolveOrgUnit(emp.org_unit_id, emp.department);
+                positions = [{
+                    companyId: r.companyId,
+                    companyName: r.companyName,
+                    departmentId: r.departmentId,
+                    departmentName: r.departmentName || emp.department,
                     positionTitle: emp.position,
                     positionLevel: emp.level,
                     isPrimary: true,
                     startDate: emp.hire_date
-                }]
+                }];
+            }
+
+            return {
+                ...emp,
+                crossCompanyCode: emp.cross_company_code || null,
+                managerName: managersMap.get(emp.manager_id) || null,
+                userId: user ? user.id : null,
+                userStatus: user ? user.status : null,
+                userEmail: user ? user.email : null,
+                positions,
+                // 提供原始 row 給編輯 UI（assignment-modal 使用）；含 active + 已結束
+                assignments: allAsgns.map(a => ({
+                    id: a.id,
+                    employeeId: a.employee_id,
+                    orgUnitId: a.org_unit_id,
+                    position: a.position,
+                    grade: a.grade,
+                    level: a.level,
+                    isPrimary: a.is_primary === 1,
+                    startDate: a.start_date,
+                    endDate: a.end_date,
+                    createdAt: a.created_at,
+                    updatedAt: a.updated_at
+                }))
             };
         });
 
@@ -884,7 +939,7 @@ router.get('/stats', requireFeaturePerm('L1.profile', 'view'), (req, res) => {
         }
 
         // Scope 過濾
-        const scope = buildScopeFilter(req, { employeeIdColumn: 'id', orgUnitColumn: 'org_unit_id' });
+        const scope = buildScopeFilter(req, { employeeIdColumn: 'id', orgUnitColumn: 'org_unit_id', useAssignmentsUnion: true });
         const scopeFilter = ` AND ${scope.clause}`;
 
         // 員工總數
@@ -913,7 +968,7 @@ router.get('/stats', requireFeaturePerm('L1.profile', 'view'), (req, res) => {
         const avgTenure = avgTenureResult.avgMonths ? Math.round(avgTenureResult.avgMonths) : 0;
 
         // 30天內到期文件數（從 employee_certifications 表，需 JOIN employees 做 scope 過濾）
-        const certScope = buildScopeFilter(req, { tableAlias: 'e', employeeIdColumn: 'id', orgUnitColumn: 'org_unit_id' });
+        const certScope = buildScopeFilter(req, { tableAlias: 'e', employeeIdColumn: 'id', orgUnitColumn: 'org_unit_id', useAssignmentsUnion: true });
         const expiringDocuments = req.tenantDB.prepare(`
             SELECT COUNT(*) as count
             FROM employee_certifications ec
@@ -960,7 +1015,7 @@ router.get('/stats', requireFeaturePerm('L1.profile', 'view'), (req, res) => {
 // GET /api/employee/expiring-documents - 30天內到期文件列表
 router.get('/expiring-documents', requireFeaturePerm('L1.profile', 'view'), (req, res) => {
     try {
-        const scope = buildScopeFilter(req, { tableAlias: 'e', employeeIdColumn: 'id', orgUnitColumn: 'org_unit_id' });
+        const scope = buildScopeFilter(req, { tableAlias: 'e', employeeIdColumn: 'id', orgUnitColumn: 'org_unit_id', useAssignmentsUnion: true });
         const expiringCerts = req.tenantDB.prepare(`
             SELECT
                 ec.id,
@@ -1019,7 +1074,7 @@ router.get('/:id', requireFeaturePerm('L1.profile', 'view'), (req, res) => {
         const { id } = req.params;
 
         // Scope 驗證：確認目標員工在使用者的 view_scope 範圍內
-        const scope = buildScopeFilter(req, { employeeIdColumn: 'id', orgUnitColumn: 'org_unit_id' });
+        const scope = buildScopeFilter(req, { employeeIdColumn: 'id', orgUnitColumn: 'org_unit_id', useAssignmentsUnion: true });
         const employee = req.tenantDB.prepare(`
             SELECT * FROM employees WHERE id = ? AND ${scope.clause}
         `).get(id, ...scope.params);
@@ -1353,12 +1408,22 @@ router.get('/:id', requireFeaturePerm('L1.profile', 'view'), (req, res) => {
             `).all(linkedUser.id);
         }
 
-        // 建立 positions 陣列
-        let companyName = null, companyId = null, departmentId = null, departmentName = null;
-        if (employee.org_unit_id) {
+        // cross-company-employment-and-naming-rules (D-10)：載入 assignments 並衍生 positions
+        const allAsgns = req.tenantDB.prepare(
+            `SELECT id, employee_id, org_unit_id, position, grade, level, is_primary, start_date, end_date, created_at, updated_at
+             FROM employee_assignments
+             WHERE employee_id = ?
+             ORDER BY is_primary DESC, start_date ASC`
+        ).all(id);
+        const activeAsgns = allAsgns.filter(a => !a.end_date);
+
+        // 解析 org_unit 至 { companyId, companyName, departmentId, departmentName }
+        function resolveOrgUnit(orgUnitId, fallbackDeptName) {
+            let companyId = null, companyName = null, departmentId = null, departmentName = null;
+            if (!orgUnitId) return { companyId, companyName, departmentId, departmentName };
             const orgUnit = req.tenantDB.prepare(
                 'SELECT id, name, type, parent_id FROM org_units WHERE id = ?'
-            ).get(employee.org_unit_id);
+            ).get(orgUnitId);
             if (orgUnit) {
                 if (orgUnit.type === 'department') {
                     departmentId = orgUnit.id;
@@ -1372,20 +1437,46 @@ router.get('/:id', requireFeaturePerm('L1.profile', 'view'), (req, res) => {
                 } else {
                     companyId = orgUnit.id;
                     companyName = orgUnit.name;
+                    if (fallbackDeptName) departmentName = fallbackDeptName;
                 }
             }
+            return { companyId, companyName, departmentId, departmentName };
         }
-        const positions = [{
-            companyId, companyName,
-            departmentId, departmentName: departmentName || employee.department,
-            positionTitle: employee.position,
-            positionLevel: employee.level,
-            isPrimary: true,
-            startDate: employee.hire_date
-        }];
+
+        // positions[] 從 active assignments 衍生（每筆一條），無 assignments 時 fallback 至 employees.org_unit_id
+        let positions;
+        if (activeAsgns.length > 0) {
+            positions = activeAsgns.map(a => {
+                const r = resolveOrgUnit(a.org_unit_id, employee.department);
+                return {
+                    companyId: r.companyId,
+                    companyName: r.companyName,
+                    departmentId: r.departmentId,
+                    departmentName: r.departmentName || employee.department,
+                    positionTitle: a.position || employee.position,
+                    positionLevel: a.level || employee.level,
+                    isPrimary: a.is_primary === 1,
+                    startDate: a.start_date,
+                    endDate: a.end_date || null
+                };
+            });
+        } else {
+            const r = resolveOrgUnit(employee.org_unit_id, employee.department);
+            positions = [{
+                companyId: r.companyId,
+                companyName: r.companyName,
+                departmentId: r.departmentId,
+                departmentName: r.departmentName || employee.department,
+                positionTitle: employee.position,
+                positionLevel: employee.level,
+                isPrimary: true,
+                startDate: employee.hire_date
+            }];
+        }
 
         res.json({
             ...employee,
+            crossCompanyCode: employee.cross_company_code || null,
             education,
             skills: skills.map(s => s.skill_name),
             certifications,
@@ -1400,7 +1491,20 @@ router.get('/:id', requireFeaturePerm('L1.profile', 'view'), (req, res) => {
             userId,
             userStatus,
             userRoles,
-            positions
+            positions,
+            assignments: allAsgns.map(a => ({
+                id: a.id,
+                employeeId: a.employee_id,
+                orgUnitId: a.org_unit_id,
+                position: a.position,
+                grade: a.grade,
+                level: a.level,
+                isPrimary: a.is_primary === 1,
+                startDate: a.start_date,
+                endDate: a.end_date,
+                createdAt: a.created_at,
+                updatedAt: a.updated_at
+            }))
         });
     } catch (error) {
         console.error('Error fetching employee detail:', error);
@@ -1620,6 +1724,92 @@ router.post('/:id/create-account', requireFeaturePerm('L1.profile', 'edit'), asy
     } catch (error) {
         console.error('Error creating account for employee:', error);
         res.status(500).json({ error: error.message || 'Failed to create account' });
+    }
+});
+
+// =====================================================
+// cross-company-employment-and-naming-rules (D-10 + D-14)
+// 員工跨公司任職管理 — 所有寫入經 EmployeeAssignmentService 走 transaction
+// =====================================================
+const employeeAssignmentSvc = require('../services/employee-assignment.service');
+
+/**
+ * GET /api/employee/:id/assignments
+ * 列出該員工所有任職紀錄（含 active + 結束）
+ */
+router.get('/:id/assignments', requireFeaturePerm('L1.profile', 'view'), (req, res) => {
+    try {
+        const rows = employeeAssignmentSvc.listAssignments(req.tenantDB, req.params.id);
+        res.json(rows);
+    } catch (error) {
+        console.error('Error listing assignments:', error);
+        res.status(500).json({ error: error.message || 'Failed to list assignments' });
+    }
+});
+
+/**
+ * POST /api/employee/:id/assignments
+ * 新增任職（addAssignment 內含 D-14 cross_company_code trigger）
+ * Body: { orgUnitId, position?, grade?, level?, isPrimary, startDate }
+ */
+router.post('/:id/assignments', requireFeaturePerm('L1.profile', 'edit'), (req, res) => {
+    try {
+        const { orgUnitId, position, grade, level, isPrimary, startDate } = req.body || {};
+        if (!orgUnitId || !startDate) {
+            return res.status(400).json({ error: '必填：orgUnitId, startDate' });
+        }
+        let result;
+        req.tenantDB.transaction(() => {
+            result = employeeAssignmentSvc.addAssignment(req.tenantDB, req.params.id, {
+                orgUnitId,
+                position,
+                grade,
+                level,
+                isPrimary: isPrimary === true,
+                startDate,
+                actor: req.user && req.user.userId
+            });
+        });
+        res.json(result);
+    } catch (error) {
+        console.error('Error adding assignment:', error);
+        const status = /必填|不存在|已結束/.test(error.message) ? 400 : 500;
+        res.status(status).json({ error: error.message || 'Failed to add assignment' });
+    }
+});
+
+/**
+ * PATCH /api/employee/:id/assignments/:assignmentId
+ * 更新任職欄位；isPrimary=true 會自動切換並 sync employees.org_unit_id
+ */
+router.patch('/:id/assignments/:assignmentId', requireFeaturePerm('L1.profile', 'edit'), (req, res) => {
+    try {
+        let result;
+        req.tenantDB.transaction(() => {
+            result = employeeAssignmentSvc.updateAssignment(req.tenantDB, req.params.assignmentId, req.body || {});
+        });
+        res.json(result);
+    } catch (error) {
+        console.error('Error updating assignment:', error);
+        const status = /不存在|不可|請先/.test(error.message) ? 400 : 500;
+        res.status(status).json({ error: error.message || 'Failed to update assignment' });
+    }
+});
+
+/**
+ * DELETE /api/employee/:id/assignments/:assignmentId
+ * 刪除任職；保留至少一筆 active；不清空 cross_company_code
+ */
+router.delete('/:id/assignments/:assignmentId', requireFeaturePerm('L1.profile', 'edit'), (req, res) => {
+    try {
+        req.tenantDB.transaction(() => {
+            employeeAssignmentSvc.deleteAssignment(req.tenantDB, req.params.assignmentId);
+        });
+        res.json({ deleted: true });
+    } catch (error) {
+        console.error('Error deleting assignment:', error);
+        const status = /不存在|至少需保留|請先/.test(error.message) ? 400 : 500;
+        res.status(status).json({ error: error.message || 'Failed to delete assignment' });
     }
 });
 

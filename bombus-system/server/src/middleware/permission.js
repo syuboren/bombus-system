@@ -490,10 +490,15 @@ function applyRowFilter(key, req, options = {}) {
  * @param {string} [options.createdByColumn] - 若指定則 self scope 改用此欄位
  * @param {string} [options.orgUnitColumn] - org_unit_id 欄位名（預設 'org_unit_id'）
  * @param {string} [options.candidateIdColumn] - candidate_id 欄位名（預設 'id'，僅 row_filter 使用）
+ * @param {boolean} [options.useAssignmentsUnion] - cross-company-employment-and-naming-rules (D-10)：
+ *   設為 true 且 view_scope='department' 時，department clause 改為「員工有任一 active assignment
+ *   在 user 子樹 OR employees.org_unit_id 在 user 子樹」union 語意。僅供查詢 `employees` 表時啟用，
+ *   非 employees 表（如 interview_invitations）SHALL 維持單純 org_unit_id 過濾。
+ *   啟用此 flag 時，employeeIdColumn 應為 'id'（即 employees.id）。
  * @returns {{ clause: string, params: any[] }}
  */
 function buildScopeFilter(req, options = {}) {
-  const { tableAlias = '', employeeIdColumn = 'employee_id', createdByColumn = null, orgUnitColumn = 'org_unit_id' } = options;
+  const { tableAlias = '', employeeIdColumn = 'employee_id', createdByColumn = null, orgUnitColumn = 'org_unit_id', useAssignmentsUnion = false } = options;
   const prefix = tableAlias ? `${tableAlias}.` : '';
   const perm = req.featurePerm;
 
@@ -575,6 +580,16 @@ function buildScopeFilter(req, options = {}) {
       return combineRowFilter({ clause: '1=0', params: [] });
     }
     const placeholders = deptIds.map(() => '?').join(',');
+    // cross-company-employment-and-naming-rules (D-10)：useAssignmentsUnion 啟用時，
+    // 員工 row 的 department scope = (任一 active assignment 在子樹) OR (employees.org_unit_id 在子樹)
+    // 後者作為 migration 邊界 fallback；前者為跨公司員工被任一子公司 HR 看見的聯集語意
+    if (useAssignmentsUnion) {
+      const idCol = `${prefix}${employeeIdColumn}`;
+      return combineRowFilter({
+        clause: `(${idCol} IN (SELECT DISTINCT employee_id FROM employee_assignments WHERE end_date IS NULL AND org_unit_id IN (${placeholders})) OR ${prefix}${orgUnitColumn} IN (${placeholders}))`,
+        params: [...deptIds, ...deptIds]
+      });
+    }
     return combineRowFilter({ clause: `${prefix}${orgUnitColumn} IN (${placeholders})`, params: deptIds });
   }
 

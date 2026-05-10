@@ -16,7 +16,8 @@ export type ContractType = 'full-time' | 'part-time' | 'contract' | 'intern';
 export type Gender = 'male' | 'female' | 'other';
 
 // ============================================================
-// 職位（跨公司/跨部門支援）
+// 職位（跨公司/跨部門支援）— 顯示用聚合 shape
+// 由後端從 employee_assignments JOIN org_units 衍生而來，含解析後的公司/部門名
 // ============================================================
 
 export interface EmployeePosition {
@@ -31,6 +32,29 @@ export interface EmployeePosition {
   endDate?: Date;
 }
 
+/**
+ * cross-company-employment-and-naming-rules (D-10)
+ * 員工跨公司任職紀錄 — DB-row 對應 shape
+ *
+ * 與 EmployeePosition 的差異：
+ *   - EmployeePosition 是「顯示用」聚合（解析後的 companyName / departmentName 字串）
+ *   - EmployeeAssignment 是「DB row」（含原始 orgUnitId、編輯 modal 直接操作此型別）
+ *   - 不要與 user_roles 的 role assignments 或 D-16 IndustryDeptAssignment 混淆
+ */
+export interface EmployeeAssignment {
+  id: string;
+  employeeId: string;
+  orgUnitId: string;
+  position?: string;
+  grade?: string;
+  level?: string;
+  isPrimary: boolean;
+  startDate: string;       // 'YYYY-MM-DD'
+  endDate?: string | null; // null = active
+  createdAt?: string;
+  updatedAt?: string | null;
+}
+
 // ============================================================
 // 統一員工列表模型
 // ============================================================
@@ -38,6 +62,8 @@ export interface EmployeePosition {
 export interface UnifiedEmployee {
   id: string;
   employeeNo: string;
+  /** cross-company-employment-and-naming-rules (D-14): 跨公司專屬編號（HQ-xxx），員工有過 ≥2 筆 active assignments 才會被指派；永久保留 */
+  crossCompanyCode?: string | null;
   name: string;
   englishName?: string;
   email: string;
@@ -56,15 +82,18 @@ export interface UnifiedEmployee {
   contractType: ContractType;
   workLocation: string;
 
-  // 跨公司職位
+  // 跨公司職位（顯示用，自 assignments 衍生）
   positions: EmployeePosition[];
+
+  /** cross-company-employment-and-naming-rules (D-10): 任職紀錄 DB row 陣列；含 active 與已結束 */
+  assignments?: EmployeeAssignment[];
 
   // 使用者帳號關聯
   userId: string | null;
   userStatus: string | null;
   userEmail: string | null;
 
-  // 組織歸屬
+  // 組織歸屬（= 主任職 org_unit_id）
   orgUnitId?: string;
 
   // 技能與證照

@@ -24,10 +24,10 @@
 
 ## 4. D-10 跨公司任職 service 與 API（採用「主任職保留 + 副任職表」資料模型（路徑 A）、Assignment service maintains employees.org_unit_id consistency）
 
-- [ ] 4.1 新建 `server/src/services/employee-assignment.service.js` 暴露 `addAssignment / updateAssignment / endAssignment / setPrimary / listAssignments` 五個 function，全部走 transaction — Assignment service maintains employees.org_unit_id consistency；驗證：unit test 涵蓋 addAssignment 後 employees.org_unit_id 同步、setPrimary 切換時兩筆 assignment is_primary 翻轉、最後一筆 active 不可 endAssignment
-- [ ] 4.2 `setPrimary` 操作：先 UPDATE 既有 primary 為 0、再 UPDATE 目標為 1、再 UPDATE employees.org_unit_id；任一失敗 ROLLBACK — Assignment service maintains employees.org_unit_id consistency；驗證：sql.js 模擬中間步驟失敗、確認三表全還原
-- [ ] 4.3 新建 `server/src/routes/employee-assignment.js` 實作四個 endpoint（GET /:id/assignments / POST /:id/assignments / PATCH /:id/assignments/:aid / DELETE /:id/assignments/:aid）配 `requireFeaturePerm('L1.profile', 'edit')` — API endpoints for cross-company assignment management；驗證：integration test 涵蓋 CRUD、最後一筆刪除回 400、HR view_scope 限制
-- [ ] 4.4 POST endpoint 觸發 `EmployeeAssignmentService.addAssignment` 同時呼叫 D-14 trigger（見 task 6.1）— Auto-generation triggered by adding second active assignment；驗證：建立第二筆 active assignment 後 employees.cross_company_code 被填入
+- [x] 4.1 新建 `server/src/services/employee-assignment.service.js` 暴露 `addAssignment / updateAssignment / endAssignment / setPrimary / listAssignments` 五個 function，全部走 transaction — Assignment service maintains employees.org_unit_id consistency；驗證：unit test 涵蓋 addAssignment 後 employees.org_unit_id 同步、setPrimary 切換時兩筆 assignment is_primary 翻轉、最後一筆 active 不可 endAssignment
+- [x] 4.2 `setPrimary` 操作：先 UPDATE 既有 primary 為 0、再 UPDATE 目標為 1、再 UPDATE employees.org_unit_id；任一失敗 ROLLBACK — Assignment service maintains employees.org_unit_id consistency；驗證：sql.js 模擬中間步驟失敗、確認三表全還原
+- [x] 4.3 新建 `server/src/routes/employee-assignment.js` 實作四個 endpoint（GET /:id/assignments / POST /:id/assignments / PATCH /:id/assignments/:aid / DELETE /:id/assignments/:aid）配 `requireFeaturePerm('L1.profile', 'edit')` — API endpoints for cross-company assignment management；驗證：integration test 涵蓋 CRUD、最後一筆刪除回 400、HR view_scope 限制
+- [x] 4.4 POST endpoint 觸發 `EmployeeAssignmentService.addAssignment` 同時呼叫 D-14 trigger（見 task 6.1）— Auto-generation triggered by adding second active assignment；驗證：建立第二筆 active assignment 後 employees.cross_company_code 被填入
 
 ## 5. D-10 員工檔案頁 UI（Cross-company assignment management UI in employee detail page、Employee detail page assignments section）
 
@@ -38,9 +38,9 @@
 
 ## 6. D-14 cross_company_code 自動生成（D-14 cross_company_code 由 service 層 trigger，不用 DB trigger）
 
-- [ ] 6.1 在 `EmployeeAssignmentService.addAssignment` 結尾加入 trigger：若該員工 active assignments 數量 ≥ 2 且 `employees.cross_company_code IS NULL`，呼叫 `codeGenerator.tryNext('employee_cross', ctx)` 並 UPDATE employees — Auto-generation triggered by adding second active assignment；驗證：建立第二筆 assignment 後 cross_company_code 寫入、第三筆不再寫入、無規則時保持 NULL
-- [ ] 6.2 確保 cross_company_code 一旦寫入即永久保留：endAssignment 時不清空、删除副任職時不清空 — Cross-company employee identifier column；驗證：員工從 2 筆 active 降回 1 筆後 cross_company_code 仍保留原值
-- [ ] 6.3 撰寫 audit log 記錄：generation 成功時寫入 `audit_logs` row（action='cross_company_code_generated', target_id=employee_id, detail JSON 含 code 與 triggering_assignment_id）— Audit trail in employee history；驗證：audit_logs 有對應 row、包含 actor user_id
+- [x] 6.1 在 `EmployeeAssignmentService.addAssignment` 結尾加入 trigger：若該員工 active assignments 數量 ≥ 2 且 `employees.cross_company_code IS NULL`，呼叫 `codeGenerator.tryNext('employee_cross', ctx)` 並 UPDATE employees — Auto-generation triggered by adding second active assignment；驗證：建立第二筆 assignment 後 cross_company_code 寫入、第三筆不再寫入、無規則時保持 NULL
+- [x] 6.2 確保 cross_company_code 一旦寫入即永久保留：endAssignment 時不清空、删除副任職時不清空 — Cross-company employee identifier column；驗證：員工從 2 筆 active 降回 1 筆後 cross_company_code 仍保留原值
+- [x] 6.3 撰寫 audit log 記錄：generation 成功時寫入 `audit_logs` row（action='cross_company_code_generated', target_id=employee_id, detail JSON 含 code 與 triggering_assignment_id）— Audit trail in employee history；驗證：audit_logs 有對應 row、包含 actor user_id
 
 ## 7. D-14 員工列表與檔案顯示（Display in employee list and detail pages）
 
@@ -51,33 +51,33 @@
 
 ## 8. unified-employee-model 介面與 mapping 擴充（採用「主任職保留 + 副任職表」資料模型（路徑 A））
 
-- [ ] 8.1 在 `shared/models/employee.model.ts` 新增 `EmployeeAssignment` interface（id / employeeId / orgUnitId / position? / grade? / level? / isPrimary / startDate / endDate?） — Unified Employee interface；驗證：`npx tsc --noEmit` 無錯誤
-- [ ] 8.2 擴充 `UnifiedEmployee` interface 加入 `assignments: EmployeeAssignment[]` 與 `crossCompanyCode?: string` 欄位 — Unified Employee interface；驗證：既有所有 caller 編譯通過、新欄位 optional 不破壞既有
-- [ ] 8.3 後端 `routes/employee.js` 的 `/api/employee/list` 與 `/api/employee/:id` response 加入 `assignments` 陣列（active + historical 全列、依 is_primary DESC, start_date ASC 排序）與 `crossCompanyCode` 欄位；同時把現行 `employee.js:463` 的 hard-coded `positions: [{...}]` 單筆陣列**改為從 active assignments 衍生 multi-position**（每筆 active assignment → 一筆 position 含 resolved companyName / departmentName，isPrimary 沿用 assignment 值）— Unified Employee API includes assignments and cross_company_code；驗證：跨公司員工 response 的 positions[] 長度等於 active assignments 數、isPrimary 正確、curl response 含 assignments 與 crossCompanyCode 兩欄、null 顯式回傳不省略
-- [ ] 8.4 前端 `employee.service.ts` 的 `transformEmployee` / `transformUnifiedEmployee` 補上 `assignments` 與 `crossCompanyCode` mapping，避免欄位掉漏；spot check 既有 5 個 caller（platform-admin.service.ts / role-matrix-csv.spec.ts / department-template-page.component.ts / role-holders-popover.component.ts / employee-management-page.component.ts）的 `assignments` 字眼皆為**不同概念**（D-16 industry-dept-assignments / role assignments）不會與 `UnifiedEmployee.assignments` 命名衝突，新欄位以 optional 形式加入確保不破壞既有渲染 — Unified Employee API includes assignments and cross_company_code；驗證：UnifiedEmployee 物件含完整 assignments 陣列、5 個 caller 頁面手動點選正常顯示
+- [x] 8.1 在 `shared/models/employee.model.ts` 新增 `EmployeeAssignment` interface（id / employeeId / orgUnitId / position? / grade? / level? / isPrimary / startDate / endDate?） — Unified Employee interface；驗證：`npx tsc --noEmit` 無錯誤
+- [x] 8.2 擴充 `UnifiedEmployee` interface 加入 `assignments: EmployeeAssignment[]` 與 `crossCompanyCode?: string` 欄位 — Unified Employee interface；驗證：既有所有 caller 編譯通過、新欄位 optional 不破壞既有
+- [x] 8.3 後端 `routes/employee.js` 的 `/api/employee/list` 與 `/api/employee/:id` response 加入 `assignments` 陣列（active + historical 全列、依 is_primary DESC, start_date ASC 排序）與 `crossCompanyCode` 欄位；同時把現行 `employee.js:463` 的 hard-coded `positions: [{...}]` 單筆陣列**改為從 active assignments 衍生 multi-position**（每筆 active assignment → 一筆 position 含 resolved companyName / departmentName，isPrimary 沿用 assignment 值）— Unified Employee API includes assignments and cross_company_code；驗證：跨公司員工 response 的 positions[] 長度等於 active assignments 數、isPrimary 正確、curl response 含 assignments 與 crossCompanyCode 兩欄、null 顯式回傳不省略
+- [x] 8.4 前端 `employee.service.ts` 的 `transformEmployee` / `transformUnifiedEmployee` 補上 `assignments` 與 `crossCompanyCode` mapping，避免欄位掉漏；spot check 既有 5 個 caller（platform-admin.service.ts / role-matrix-csv.spec.ts / department-template-page.component.ts / role-holders-popover.component.ts / employee-management-page.component.ts）的 `assignments` 字眼皆為**不同概念**（D-16 industry-dept-assignments / role assignments）不會與 `UnifiedEmployee.assignments` 命名衝突，新欄位以 optional 形式加入確保不破壞既有渲染 — Unified Employee API includes assignments and cross_company_code；驗證：UnifiedEmployee 物件含完整 assignments 陣列、5 個 caller 頁面手動點選正常顯示
 
 ## 9. 跨公司權限聯集（跨公司權限聯集走 `employee_assignments` JOIN）
 
-- [ ] 9.1 修改 `server/src/middleware/scope-filter.js` 的 `buildScopeFilter`，當查詢來源為 employees 時加入「assignments union」子查詢：`employees.id IN (SELECT DISTINCT employee_id FROM employee_assignments WHERE end_date IS NULL AND org_unit_id IN (子樹清單)) OR employees.org_unit_id IN (子樹清單)` — Shared scope filter utility for backend routes；驗證：跨公司員工被任一子公司 HR 都看得到
-- [ ] 9.2 確保非 employees 表（如 interview_invitations）的 scope filter 邏輯不變 — Shared scope filter utility for backend routes；驗證：interview_invitations 仍用 org_unit_id IN (子樹清單)、不誤觸 assignments union
-- [ ] 9.3 撰寫 integration test：跨公司員工跨 sub-A 與 sub-B、HR-A 與 HR-B 都能在自己列表看見 — Shared scope filter utility for backend routes；驗證：兩個 HR account 各自查詢都包含此跨公司員工
+- [x] 9.1 修改 `server/src/middleware/scope-filter.js` 的 `buildScopeFilter`，當查詢來源為 employees 時加入「assignments union」子查詢：`employees.id IN (SELECT DISTINCT employee_id FROM employee_assignments WHERE end_date IS NULL AND org_unit_id IN (子樹清單)) OR employees.org_unit_id IN (子樹清單)` — Shared scope filter utility for backend routes；驗證：跨公司員工被任一子公司 HR 都看得到
+- [x] 9.2 確保非 employees 表（如 interview_invitations）的 scope filter 邏輯不變 — Shared scope filter utility for backend routes；驗證：interview_invitations 仍用 org_unit_id IN (子樹清單)、不誤觸 assignments union
+- [x] 9.3 撰寫 integration test：跨公司員工跨 sub-A 與 sub-B、HR-A 與 HR-B 都能在自己列表看見 — Shared scope filter utility for backend routes；驗證：兩個 HR account 各自查詢都包含此跨公司員工
 
 ## 10. D-16 hook 啟用（Department code generator hook for D-15）
 
-- [ ] 10.1 將 `routes/organization.js` 第 1135 行的 `codeGenHook` 從 `return null` 改為 `return codeGenerator.tryNext('department', ctx)` — Department code generator hook for D-15；驗證：規則有效時部門匯入回 code、規則 disabled / 缺則回 NULL
-- [ ] 10.2 確保 hook 在 import execute 的 transaction 內呼叫，與 department INSERT 同 transaction — Department code generator hook for D-15；驗證：mid-import 失敗 ROLLBACK 後 current_seq 不前進
+- [x] 10.1 將 `routes/organization.js` 第 1135 行的 `codeGenHook` 從 `return null` 改為 `return codeGenerator.tryNext('department', ctx)` — Department code generator hook for D-15；驗證：規則有效時部門匯入回 code、規則 disabled / 缺則回 NULL
+- [x] 10.2 確保 hook 在 import execute 的 transaction 內呼叫，與 department INSERT 同 transaction — Department code generator hook for D-15；驗證：mid-import 失敗 ROLLBACK 後 current_seq 不前進
 
 ## 11. 員工批次匯入調整（批次匯入 employee_no optional + transaction lock 並發保護）
 
-- [ ] 11.1 將 `batch-import.js:52` 的 `REQUIRED_FIELDS` 移除 `employee_no`（保留為其他必填）— CSV required fields validation；驗證：CSV employee_no 空白不再觸發 missing 錯誤
-- [ ] 11.2 在 validate endpoint 加入 `previewedSequence` 計算：對 CSV 中空白 employee_no rows 依序對應 `current_seq + 1, current_seq + 2, ...`，已填 row 對應 null — Validate-phase preview of auto-generated employee numbers；驗證：mixed CSV 預覽陣列順序與位置正確
-- [ ] 11.3 validate response 加入 banner warning：「並發匯入時實際分配可能與預覽不同，請以執行結果為準」（有 row 預覽時顯示） — Validate-phase preview of auto-generated employee numbers；驗證：純手填 CSV 不顯示 banner、含空白 row 顯示
-- [ ] 11.4 validate 對 row 缺 employee_no 且無規則時回 status='error'：「工號未填且系統未設定員工編號規則，請填寫或聯絡 super_admin 設定規則」 — CSV required fields validation；驗證：規則 disabled 時空白 row 不誤過驗證
-- [ ] 11.5 validate 對 row 手填 `employee_no` 數字部分超過 `current_seq` 時回 warning（非 error）— Manual code values do not bump current_seq；驗證：CSV 手填 'E0050' 而 current_seq=10 時 response 含警告字串
-- [ ] 11.6 execute endpoint 在單一 db.transaction 內逐 row 處理：空白 row 呼叫 `codeGenerator.tryNext('employee', ctx)`、手填 row 寫入原值不動 seq — Execute-phase atomic seq consumption with concurrent protection；驗證：integration test 涵蓋 mixed CSV、final current_seq 等於 initial + 空白 row 數
-- [ ] 11.7 execute 過程 mid-batch 失敗（row 26 reference invalid）整批 ROLLBACK、current_seq 還原 — Execute-phase atomic seq consumption with concurrent protection；驗證：故意失敗測試後 current_seq 不前進、無員工被建立
-- [ ] 11.8 execute 偵測規則被 disable 時 ROLLBACK 並回 409：「員工編號規則已被停用，請重新驗證」 — Execute-phase atomic seq consumption with concurrent protection；驗證：模擬 validate 後 disable rule、execute 收到 409
-- [ ] 11.9 確認 batch import 不觸發 D-14：每筆 row 建立員工 + 一筆 is_primary=1 assignment，cross_company_code 永遠 NULL — Cross-company assignment is not handled by batch import；驗證：批次匯入 50 員工後查 employees.cross_company_code 全部 NULL
+- [x] 11.1 將 `batch-import.js:52` 的 `REQUIRED_FIELDS` 移除 `employee_no`（保留為其他必填）— CSV required fields validation；驗證：CSV employee_no 空白不再觸發 missing 錯誤
+- [x] 11.2 在 validate endpoint 加入 `previewedSequence` 計算：對 CSV 中空白 employee_no rows 依序對應 `current_seq + 1, current_seq + 2, ...`，已填 row 對應 null — Validate-phase preview of auto-generated employee numbers；驗證：mixed CSV 預覽陣列順序與位置正確
+- [x] 11.3 validate response 加入 banner warning：「並發匯入時實際分配可能與預覽不同，請以執行結果為準」（有 row 預覽時顯示） — Validate-phase preview of auto-generated employee numbers；驗證：純手填 CSV 不顯示 banner、含空白 row 顯示
+- [x] 11.4 validate 對 row 缺 employee_no 且無規則時回 status='error'：「工號未填且系統未設定員工編號規則，請填寫或聯絡 super_admin 設定規則」 — CSV required fields validation；驗證：規則 disabled 時空白 row 不誤過驗證
+- [x] 11.5 validate 對 row 手填 `employee_no` 數字部分超過 `current_seq` 時回 warning（非 error）— Manual code values do not bump current_seq；驗證：CSV 手填 'E0050' 而 current_seq=10 時 response 含警告字串
+- [x] 11.6 execute endpoint 在單一 db.transaction 內逐 row 處理：空白 row 呼叫 `codeGenerator.tryNext('employee', ctx)`、手填 row 寫入原值不動 seq — Execute-phase atomic seq consumption with concurrent protection；驗證：integration test 涵蓋 mixed CSV、final current_seq 等於 initial + 空白 row 數
+- [x] 11.7 execute 過程 mid-batch 失敗（row 26 reference invalid）整批 ROLLBACK、current_seq 還原 — Execute-phase atomic seq consumption with concurrent protection；驗證：故意失敗測試後 current_seq 不前進、無員工被建立
+- [x] 11.8 execute 偵測規則被 disable 時 ROLLBACK 並回 409：「員工編號規則已被停用，請重新驗證」 — Execute-phase atomic seq consumption with concurrent protection；驗證：模擬 validate 後 disable rule、execute 收到 409
+- [x] 11.9 確認 batch import 不觸發 D-14：每筆 row 建立員工 + 一筆 is_primary=1 assignment，cross_company_code 永遠 NULL — Cross-company assignment is not handled by batch import；驗證：批次匯入 50 員工後查 employees.cross_company_code 全部 NULL
 
 ## 12. 端到端驗證與既有功能不破壞
 

@@ -532,7 +532,21 @@ const CROSS_COMPANY_NAMING_MIGRATIONS = [
      AND NOT EXISTS (
        SELECT 1 FROM employee_assignments
        WHERE employee_assignments.employee_id = employees.id
-     )`
+     )`,
+  // 6. 租戶層 audit_logs 表（D-14 cross_company_code 生成事件、batch-import 匯入事件用）
+  // 既有 batch-import.js:410 已預期此表存在（採 try/catch 容錯）；此次正式加入 schema。
+  // D-07 後續可擴充 old_data/new_data diff 欄位，不衝突。
+  `CREATE TABLE IF NOT EXISTS audit_logs (
+    id TEXT PRIMARY KEY,
+    user_id TEXT,
+    action TEXT NOT NULL,
+    resource TEXT,
+    resource_id TEXT,
+    details TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
+  )`,
+  'CREATE INDEX IF NOT EXISTS idx_audit_logs_resource ON audit_logs(resource, resource_id)',
+  'CREATE INDEX IF NOT EXISTS idx_audit_logs_action_created ON audit_logs(action, created_at)'
 ];
 
 const USER_MIGRATIONS = [
