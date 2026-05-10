@@ -67,4 +67,4 @@
 - [x] 9.3 撰寫 Angular 元件 spec：`referral-invitation-modal.component.spec.ts`（表單驗證與員編預覽 debounce 行為）、`referral-intake-page.component.spec.ts`（guard 導向與提交成功）。驗證：`npm test -- --watch=false` 通過
 - [x] 9.4 執行 `/verify` 技能：`npx tsc --noEmit`、`npx ng build --configuration=development`、後端 integration test 全綠、新建租戶驗證遷移兩份清單一致（對應 CLAUDE.md「雙遷移清單同步」防護規則）。驗證：`/verify` 回報全部通過
 - [x] 9.5 `/seed-verify` 確認 demo 租戶示範資料可選擇既有員工作為推薦人員編（employee_no 需存在）。驗證：demo 帳號可完整走過一次內推流程
-- [ ] 9.6 產出操作手冊片段（README 或 docs）：說明 HR 如何發起內推、候選人收信後的操作、取消邀請流程。驗證：PM 閱讀後能獨立操作一次
+- [x] 9.6 產出操作手冊片段（README 或 docs）：說明 HR 如何發起內推、候選人收信後的操作、取消邀請流程。驗證：PM 閱讀後能獨立操作一次
