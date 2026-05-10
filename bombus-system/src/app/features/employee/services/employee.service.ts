@@ -21,6 +21,26 @@ import {
   BatchImportResult
 } from '../../../shared/models/employee.model';
 
+/**
+ * employee-list-pagination (D-13): GET /api/employee/list?page=N 的轉型後回傳結構
+ * data 為 UnifiedEmployee（與 getUnifiedEmployees 一致），用於 employee-management-page list 視圖
+ */
+export interface EmployeeListResult {
+  data: UnifiedEmployee[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+interface EmployeeListResponse {
+  data: any[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -267,6 +287,50 @@ export class EmployeeService {
     if (orgUnitId) params = params.set('org_unit_id', orgUnitId);
     return this.http.get<any[]>(`${this.apiUrl}/list`, { params }).pipe(
       map(data => data.map(e => this.transformEmployee(e))),
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * employee-list-pagination (D-13): 員工列表分頁取得
+   *
+   * 不同於 getEmployees() 的全量陣列，此方法 opt-in 後端分頁，回傳含 total/page 等元資訊。
+   * 既有 caller 不需改動；只有員工列表頁 list 視圖會使用此方法。
+   *
+   * @param opts.page     1-based 頁碼
+   * @param opts.pageSize 每頁筆數（後端 cap 200，預設 50）
+   * @param opts.search   對 name/email/employee_no 做不分大小寫 LIKE
+   * @param opts.sort     白名單：name / hire_date / employee_no / department
+   * @param opts.order    asc | desc
+   */
+  getEmployeesPaginated(opts: {
+    page: number;
+    pageSize?: number;
+    search?: string;
+    sort?: 'name' | 'hire_date' | 'employee_no' | 'department';
+    order?: 'asc' | 'desc';
+    orgUnitId?: string;
+    dept?: string;
+    status?: string;
+    all?: boolean;
+  }): Observable<EmployeeListResult> {
+    let params = new HttpParams().set('page', String(opts.page));
+    if (opts.pageSize !== undefined) params = params.set('pageSize', String(opts.pageSize));
+    if (opts.search) params = params.set('search', opts.search);
+    if (opts.sort) params = params.set('sort', opts.sort);
+    if (opts.order) params = params.set('order', opts.order);
+    if (opts.orgUnitId) params = params.set('org_unit_id', opts.orgUnitId);
+    if (opts.dept) params = params.set('dept', opts.dept);
+    if (opts.status) params = params.set('status', opts.status);
+    if (opts.all) params = params.set('all', 'true');
+    return this.http.get<EmployeeListResponse>(`${this.apiUrl}/list`, { params }).pipe(
+      map(resp => ({
+        data: resp.data.map(e => this.transformUnifiedEmployee(e)),
+        total: resp.total,
+        page: resp.page,
+        pageSize: resp.pageSize,
+        totalPages: resp.totalPages
+      })),
       catchError(this.handleError)
     );
   }

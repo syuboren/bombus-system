@@ -166,6 +166,110 @@ $module-color: $color-l1-sage;
 
 .data-table {
   @include data-table($module-color);
+
+  // employee-list-pagination (D-13): 排序欄頭
+  th.sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: color $transition-fast;
+
+    &:hover {
+      color: $module-color;
+    }
+
+    .sort-active {
+      color: $module-color;
+      margin-left: 2px;
+    }
+
+    .sort-idle {
+      color: $color-text-secondary;
+      opacity: 0.4;
+      margin-left: 2px;
+      font-size: 14px;
+    }
+  }
+}
+
+// employee-list-pagination (D-13): paginator
+.pagination-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+  padding: $spacing-md $spacing-lg;
+  border-top: 1px solid $color-soft-gray;
+}
+
+.pagination-page-size {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+
+  select {
+    padding: 4px 8px;
+    border: 1px solid $color-soft-gray;
+    border-radius: $radius-sm;
+    background: $color-pure-white;
+    color: $color-text-primary;
+    font-size: $font-size-sm;
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: 2px solid $module-color;
+      outline-offset: 1px;
+    }
+  }
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+}
+
+.pagination-btn {
+  min-width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid $color-soft-gray;
+  background: $color-pure-white;
+  color: $color-text-primary;
+  font-size: $font-size-sm;
+  border-radius: $radius-sm;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover:not(:disabled) {
+    border-color: $module-color;
+    color: $module-color;
+  }
+
+  &.active {
+    background: $module-color;
+    border-color: $module-color;
+    color: $color-pure-white;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.pagination-ellipsis {
+  padding: 0 $spacing-xs;
+  color: $color-text-secondary;
+}
+
+.pagination-info {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
 }
 
 .employee-cell {

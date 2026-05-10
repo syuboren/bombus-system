@@ -679,6 +679,29 @@ $module-color-dark: $color-l1-sage-dark;
     white-space: nowrap;
   }
 
+  // employee-list-pagination (D-13): 排序欄頭
+  th.sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: color $transition-fast;
+
+    &:hover {
+      color: $module-color;
+    }
+
+    .sort-active {
+      color: $module-color;
+      margin-left: 2px;
+    }
+
+    .sort-idle {
+      color: $color-text-secondary;
+      opacity: 0.4;
+      margin-left: 2px;
+      font-size: 14px;
+    }
+  }
+
   td {
     font-size: $font-size-sm;
     color: $color-text-primary;
@@ -729,6 +752,32 @@ $module-color-dark: $color-l1-sage-dark;
   background: $color-pure-white;
   border-radius: $radius-lg;
   box-shadow: $shadow-sm;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+}
+
+// employee-list-pagination (D-13): list 視圖每頁筆數下拉
+.pagination-page-size {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+
+  select {
+    padding: 4px 8px;
+    border: 1px solid $color-soft-gray;
+    border-radius: $radius-sm;
+    background: $color-pure-white;
+    color: $color-text-primary;
+    font-size: $font-size-sm;
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: 2px solid $module-color;
+      outline-offset: 1px;
+    }
+  }
 }
 
 .pagination {

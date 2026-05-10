@@ -471,7 +471,9 @@ const EMPLOYEE_MIGRATIONS = [
   'ALTER TABLE employees ADD COLUMN emergency_contact_name TEXT',
   'ALTER TABLE employees ADD COLUMN emergency_contact_relation TEXT',
   'ALTER TABLE employees ADD COLUMN emergency_contact_phone TEXT',
-  'ALTER TABLE employees ADD COLUMN import_job_id TEXT'
+  'ALTER TABLE employees ADD COLUMN import_job_id TEXT',
+  // employee-list-pagination (D-13): 覆蓋預設 ORDER BY (department, name) + status/org_unit_id 過濾路徑
+  'CREATE INDEX IF NOT EXISTS idx_employees_status_org_dept_name ON employees(status, org_unit_id, department, name)'
 ];
 
 const USER_MIGRATIONS = [

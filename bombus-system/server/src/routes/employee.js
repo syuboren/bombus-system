@@ -228,58 +228,92 @@ router.get('/progress', requireFeaturePerm('L1.profile', 'view'), (req, res) => 
 });
 
 
+// employee-list-pagination (D-13): 排序白名單與 paginator 上限
+const LIST_ALLOWED_SORTS = {
+    name: 'name',
+    hire_date: 'hire_date',
+    employee_no: 'employee_no',
+    department: 'department'
+};
+const LIST_ALLOWED_ORDERS = { asc: 'ASC', desc: 'DESC' };
+const LIST_PAGE_SIZE_DEFAULT = 50;
+const LIST_PAGE_SIZE_MAX = 200;
+
 /**
  * GET /api/employee/list
- * 取得所有員工列表 (用於會議出席人員選擇)
+ * 取得員工列表（用於會議出席人員選擇 / 員工列表頁分頁瀏覽）
+ *
  * Query params:
- *   - dept: 依部門過濾
- *   - status: 依狀態過濾 (active, probation, resigned)
- *   - all: 設為 true 時包含非在職員工
+ *   - dept:        依部門過濾
+ *   - status:      依狀態過濾 (active, probation, resigned)
+ *   - all:         設為 true 時包含非在職員工
+ *   - org_unit_id: 階層式子公司/部門過濾
+ *   - role:        限定持有指定 role code 的員工（rbac-row-level-and-interview-scope）
+ *
+ * employee-list-pagination (D-13) — opt-in 分頁/搜尋/排序：
+ *   - page:     1-based。提供時切換為分頁回傳格式（偵測規則：page !== undefined 且 parseInt 非 NaN）
+ *   - pageSize: 預設 50、上限 200；非數值或 ≤0 回退預設
+ *   - search:   對 name/email/employee_no 三欄做 LIKE COLLATE NOCASE
+ *   - sort:     白名單 [name, hire_date, employee_no, department]
+ *   - order:    白名單 [asc, desc]
+ *
+ * 回傳格式（向後相容）：
+ *   - 不含 page → JSON 陣列（原行為，5 個既有 caller 不變）
+ *   - 含 page  → { data: Employee[], total, page, pageSize, totalPages }
  */
 router.get('/list', requireFeaturePerm('L1.profile', 'view'), (req, res) => {
     try {
-        const { dept, status, all, org_unit_id, role } = req.query;
+        const { dept, status, all, org_unit_id, role, search, sort, order } = req.query;
 
-        let query = `
-            SELECT id, employee_no, name, email, phone, department, position,
-                   level, grade, manager_id, hire_date, contract_type,
-                   work_location, avatar, status, org_unit_id
-            FROM employees
-            WHERE 1=1
-        `;
-        let params = [];
+        // 偵測 opt-in 分頁：page 必須存在且 parseInt 非 NaN
+        // （防 ?page=undefined / ?page= 的 caller 誤觸分頁路徑）
+        const pageParam = req.query.page;
+        const pageNum = parseInt(pageParam, 10);
+        const paginate = pageParam !== undefined && pageParam !== '' && !Number.isNaN(pageNum) && pageNum >= 1;
+
+        let pageSize = LIST_PAGE_SIZE_DEFAULT;
+        if (paginate) {
+            const psNum = parseInt(req.query.pageSize, 10);
+            if (Number.isFinite(psNum) && psNum > 0) {
+                pageSize = Math.min(psNum, LIST_PAGE_SIZE_MAX);
+            }
+        }
+
+        // 共用 WHERE clause builder（COUNT 與 SELECT 共用以確保 total 與 data 一致）
+        let whereClause = ' WHERE 1=1';
+        const whereParams = [];
 
         // 子公司/部門篩選（階層式：包含所有子組織）
         if (org_unit_id) {
             const childIds = getUserDepartmentIds(req.tenantDB, org_unit_id);
             if (childIds.length > 0) {
-                query += ` AND org_unit_id IN (${childIds.map(() => '?').join(',')})`;
-                params.push(...childIds);
+                whereClause += ` AND org_unit_id IN (${childIds.map(() => '?').join(',')})`;
+                whereParams.push(...childIds);
             } else {
-                query += ` AND org_unit_id = ?`;
-                params.push(org_unit_id);
+                whereClause += ` AND org_unit_id = ?`;
+                whereParams.push(org_unit_id);
             }
         }
 
         // 預設只顯示在職員工
         if (all !== 'true') {
-            query += ` AND status IN ('active', 'probation')`;
+            whereClause += ` AND status IN ('active', 'probation')`;
         }
 
         if (dept) {
-            query += ` AND department = ?`;
-            params.push(dept);
+            whereClause += ` AND department = ?`;
+            whereParams.push(dept);
         }
 
         if (status) {
-            query += ` AND status = ?`;
-            params.push(status);
+            whereClause += ` AND status = ?`;
+            whereParams.push(status);
         }
 
         // role 過濾（rbac-row-level-and-interview-scope）：限定持有指定 role code 的員工
         // SQL：JOIN users → user_roles → roles，僅納入 users.status='active' 的帳號
         if (role) {
-            query += ` AND id IN (
+            whereClause += ` AND id IN (
                 SELECT u.employee_id
                 FROM users u
                 JOIN user_roles ur ON ur.user_id = u.id
@@ -288,17 +322,63 @@ router.get('/list', requireFeaturePerm('L1.profile', 'view'), (req, res) => {
                   AND (u.status IS NULL OR u.status = 'active')
                   AND u.employee_id IS NOT NULL
             )`;
-            params.push(role);
+            whereParams.push(role);
         }
 
-        // Apply scope filter
+        // 搜尋（D-13）：name / email / employee_no 任一命中即納入；空字串 trim 後忽略
+        if (typeof search === 'string' && search.trim() !== '') {
+            const term = search.trim();
+            whereClause += ` AND (
+                name LIKE '%' || ? || '%' COLLATE NOCASE
+                OR email LIKE '%' || ? || '%' COLLATE NOCASE
+                OR employee_no LIKE '%' || ? || '%' COLLATE NOCASE
+            )`;
+            whereParams.push(term, term, term);
+        }
+
+        // Apply scope filter（D-02 row-level）
         const scope = buildScopeFilter(req, { employeeIdColumn: 'id', orgUnitColumn: 'org_unit_id' });
-        query += ` AND ${scope.clause}`;
-        params.push(...scope.params);
+        whereClause += ` AND ${scope.clause}`;
+        whereParams.push(...scope.params);
 
-        query += ` ORDER BY department, name`;
+        // 排序白名單（D-13）：未匹配回退預設
+        const sortCol = (typeof sort === 'string' && Object.prototype.hasOwnProperty.call(LIST_ALLOWED_SORTS, sort))
+            ? LIST_ALLOWED_SORTS[sort]
+            : null;
+        const orderDir = (typeof order === 'string' && Object.prototype.hasOwnProperty.call(LIST_ALLOWED_ORDERS, order.toLowerCase()))
+            ? LIST_ALLOWED_ORDERS[order.toLowerCase()]
+            : 'ASC';
+        const orderClause = sortCol
+            ? ` ORDER BY ${sortCol} ${orderDir}`
+            : ` ORDER BY department, name`;
 
-        const employees = req.tenantDB.prepare(query).all(...params);
+        const baseSelect = `
+            SELECT id, employee_no, name, email, phone, department, position,
+                   level, grade, manager_id, hire_date, contract_type,
+                   work_location, avatar, status, org_unit_id
+            FROM employees
+        `;
+
+        let total = null;
+        let employees;
+
+        if (paginate) {
+            // 先算 total（套用相同 WHERE，但不含 ORDER/LIMIT — COUNT 與 ORDER 無關）
+            const countRow = req.tenantDB.prepare(
+                `SELECT COUNT(*) AS cnt FROM employees${whereClause}`
+            ).get(...whereParams);
+            total = countRow ? countRow.cnt : 0;
+
+            // 取該頁資料
+            const offset = (pageNum - 1) * pageSize;
+            employees = req.tenantDB.prepare(
+                `${baseSelect}${whereClause}${orderClause} LIMIT ? OFFSET ?`
+            ).all(...whereParams, pageSize, offset);
+        } else {
+            employees = req.tenantDB.prepare(
+                `${baseSelect}${whereClause}${orderClause}`
+            ).all(...whereParams);
+        }
 
         // 取得主管名稱
         const managerIds = employees.map(e => e.manager_id).filter(Boolean);
@@ -393,7 +473,17 @@ router.get('/list', requireFeaturePerm('L1.profile', 'view'), (req, res) => {
             };
         });
 
-        res.json(result);
+        if (paginate) {
+            res.json({
+                data: result,
+                total,
+                page: pageNum,
+                pageSize,
+                totalPages: total === 0 ? 0 : Math.ceil(total / pageSize)
+            });
+        } else {
+            res.json(result);
+        }
     } catch (error) {
         console.error('Error fetching employee list:', error);
         res.status(500).json({ error: 'Failed to fetch employee list' });

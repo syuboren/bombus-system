@@ -199,7 +199,7 @@
           <span>載入員工資料中...</span>
         </div>
       } @else {
-        @if (filteredEmployees().length === 0) {
+        @if (viewMode() === 'card' && filteredEmployees().length === 0) {
           <div class="empty-state">
             <i class="ri-user-search-line"></i>
             <h3>沒有找到符合條件的員工</h3>
@@ -266,80 +266,170 @@
             </section>
           }
 
-          <!-- List View -->
+          <!-- List View — employee-list-pagination (D-13) 使用伺服端分頁 -->
           @if (viewMode() === 'list') {
             <section class="list-section">
-              <div class="list-container">
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      <th class="col-employee">員工</th>
-                      <th class="col-no">工號</th>
-                      <th class="col-company">子公司</th>
-                      <th class="col-department">部門</th>
-                      <th class="col-grade">職等</th>
-                      <th class="col-level">職級</th>
-                      <th class="col-position">職位</th>
-                      <th class="col-date">到職日</th>
-                      <th class="col-status">狀態</th>
-                      <th class="col-actions">操作</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (employee of paginatedEmployees(); track employee.id) {
-                      <tr class="data-row">
-                        <td class="col-employee">
-                          <div class="employee-cell">
-                            <div class="employee-avatar employee-avatar--sm">
-                              {{ employee.name.charAt(0) }}
-                            </div>
-                            <div class="employee-info">
-                              <span class="employee-name">{{ employee.name }}</span>
-                              <span class="employee-email">{{ employee.email }}</span>
-                            </div>
-                          </div>
-                        </td>
-                        <td class="col-no">{{ employee.employeeNo }}</td>
-                        <td class="col-company">{{ (employee.positions.length > 0 && employee.positions[0].companyName) || '-' }}</td>
-                        <td class="col-department">{{ employee.department }}</td>
-                        <td class="col-grade">Grade {{ employee.grade }}</td>
-                        <td class="col-level">{{ employee.level }}</td>
-                        <td class="col-position">{{ employee.position }}</td>
-                        <td class="col-date">{{ formatDate(employee.hireDate) }}</td>
-                        <td class="col-status">
-                          <span [class]="'status-badge status--' + employee.status">
-                            {{ getStatusLabel(employee.status) }}
-                          </span>
-                        </td>
-                        <td class="col-actions">
-                          <div class="action-group">
-                            <button class="action-btn" title="員工詳情" type="button"
-                              (click)="selectEmployee(employee)">
-                              <i class="ri-user-line"></i>
-                            </button>
-                            @if (employee.userId) {
-                            <button class="action-btn action-btn--accent" title="帳號權限" type="button"
-                              (click)="openAccountModal(employee)">
-                              <i class="ri-shield-user-line"></i>
-                            </button>
-                            } @else {
-                            <button class="action-btn action-btn--create" title="建立帳號" type="button"
-                              (click)="createAccountForEmployee(employee); $event.stopPropagation()">
-                              <i class="ri-user-add-line"></i>
-                            </button>
-                            }
-                          </div>
-                        </td>
+              @if (listLoading() && !listResult()) {
+                <div class="loading-container">
+                  <i class="ri-loader-4-line spinner"></i>
+                  <span>載入員工資料中...</span>
+                </div>
+              } @else if (!listResult() || listResult()!.total === 0) {
+                <div class="empty-state">
+                  <i class="ri-user-search-line"></i>
+                  <h3>沒有找到符合條件的員工</h3>
+                  <p>請嘗試調整篩選條件</p>
+                </div>
+              } @else {
+                <div class="list-container">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th class="col-employee sortable" (click)="toggleListSort('name')">
+                          員工
+                          @if (listSort() === 'name') {
+                            <i [class]="'ri-arrow-' + (listOrder() === 'asc' ? 'up' : 'down') + '-s-line sort-active'"></i>
+                          } @else {
+                            <i class="ri-expand-up-down-line sort-idle"></i>
+                          }
+                        </th>
+                        <th class="col-no sortable" (click)="toggleListSort('employee_no')">
+                          工號
+                          @if (listSort() === 'employee_no') {
+                            <i [class]="'ri-arrow-' + (listOrder() === 'asc' ? 'up' : 'down') + '-s-line sort-active'"></i>
+                          } @else {
+                            <i class="ri-expand-up-down-line sort-idle"></i>
+                          }
+                        </th>
+                        <th class="col-company">子公司</th>
+                        <th class="col-department sortable" (click)="toggleListSort('department')">
+                          部門
+                          @if (listSort() === 'department') {
+                            <i [class]="'ri-arrow-' + (listOrder() === 'asc' ? 'up' : 'down') + '-s-line sort-active'"></i>
+                          } @else {
+                            <i class="ri-expand-up-down-line sort-idle"></i>
+                          }
+                        </th>
+                        <th class="col-grade">職等</th>
+                        <th class="col-level">職級</th>
+                        <th class="col-position">職位</th>
+                        <th class="col-date sortable" (click)="toggleListSort('hire_date')">
+                          到職日
+                          @if (listSort() === 'hire_date') {
+                            <i [class]="'ri-arrow-' + (listOrder() === 'asc' ? 'up' : 'down') + '-s-line sort-active'"></i>
+                          } @else {
+                            <i class="ri-expand-up-down-line sort-idle"></i>
+                          }
+                        </th>
+                        <th class="col-status">狀態</th>
+                        <th class="col-actions">操作</th>
                       </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      @for (employee of listResult()!.data; track employee.id) {
+                        <tr class="data-row">
+                          <td class="col-employee">
+                            <div class="employee-cell">
+                              <div class="employee-avatar employee-avatar--sm">
+                                {{ employee.name.charAt(0) }}
+                              </div>
+                              <div class="employee-info">
+                                <span class="employee-name">{{ employee.name }}</span>
+                                <span class="employee-email">{{ employee.email }}</span>
+                              </div>
+                            </div>
+                          </td>
+                          <td class="col-no">{{ employee.employeeNo }}</td>
+                          <td class="col-company">{{ (employee.positions.length > 0 && employee.positions[0].companyName) || '-' }}</td>
+                          <td class="col-department">{{ employee.department }}</td>
+                          <td class="col-grade">Grade {{ employee.grade }}</td>
+                          <td class="col-level">{{ employee.level }}</td>
+                          <td class="col-position">{{ employee.position }}</td>
+                          <td class="col-date">{{ formatDate(employee.hireDate) }}</td>
+                          <td class="col-status">
+                            <span [class]="'status-badge status--' + employee.status">
+                              {{ getStatusLabel(employee.status) }}
+                            </span>
+                          </td>
+                          <td class="col-actions">
+                            <div class="action-group">
+                              <button class="action-btn" title="員工詳情" type="button"
+                                (click)="selectEmployee(employee)">
+                                <i class="ri-user-line"></i>
+                              </button>
+                              @if (employee.userId) {
+                              <button class="action-btn action-btn--accent" title="帳號權限" type="button"
+                                (click)="openAccountModal(employee)">
+                                <i class="ri-shield-user-line"></i>
+                              </button>
+                              } @else {
+                              <button class="action-btn action-btn--create" title="建立帳號" type="button"
+                                (click)="createAccountForEmployee(employee); $event.stopPropagation()">
+                                <i class="ri-user-add-line"></i>
+                              </button>
+                              }
+                            </div>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- List paginator (server-side, D-13) -->
+                <section class="pagination-section">
+                  <div class="pagination-page-size">
+                    <label for="listPageSizeSelect">每頁</label>
+                    <select id="listPageSizeSelect"
+                            (change)="onListPageSizeChange(+$any($event.target).value)">
+                      @for (sz of listPageSizeOptions; track sz) {
+                        <option [value]="sz" [selected]="sz === listPageSize()">{{ sz }}</option>
+                      }
+                    </select>
+                  </div>
+                  @if (listResult()!.totalPages > 1) {
+                    <div class="pagination">
+                      <button
+                        class="pagination-btn"
+                        [disabled]="listPage() === 1"
+                        (click)="goToListPage(listPage() - 1)"
+                        type="button">
+                        <i class="ri-arrow-left-s-line"></i>
+                      </button>
+                      @for (p of getListPageNumbers(); track $index) {
+                        @if (p === -1) {
+                          <span class="pagination-ellipsis">...</span>
+                        } @else {
+                          <button
+                            class="pagination-btn"
+                            [class.active]="p === listPage()"
+                            (click)="goToListPage(p)"
+                            type="button">
+                            {{ p }}
+                          </button>
+                        }
+                      }
+                      <button
+                        class="pagination-btn"
+                        [disabled]="listPage() === listResult()!.totalPages"
+                        (click)="goToListPage(listPage() + 1)"
+                        type="button">
+                        <i class="ri-arrow-right-s-line"></i>
+                      </button>
+                    </div>
+                  }
+                  <div class="pagination-info">
+                    顯示 {{ (listResult()!.page - 1) * listResult()!.pageSize + 1 }} -
+                    {{ listResult()!.page * listResult()!.pageSize > listResult()!.total ? listResult()!.total : listResult()!.page * listResult()!.pageSize }} 筆，
+                    共 {{ listResult()!.total }} 筆
+                  </div>
+                </section>
+              }
             </section>
           }
 
-          <!-- Pagination -->
-          @if (totalPages() > 1) {
+          <!-- Card-view Pagination (client-side, legacy) -->
+          @if (viewMode() === 'card' && totalPages() > 1) {
             <section class="pagination-section">
               <div class="pagination">
                 <button

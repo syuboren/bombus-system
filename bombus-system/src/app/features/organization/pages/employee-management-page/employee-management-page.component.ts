@@ -9,7 +9,8 @@ import {
   OnDestroy
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { switchMap, forkJoin } from 'rxjs';
+import { switchMap, forkJoin, of, debounceTime, distinctUntilChanged } from 'rxjs';
+import type { EmployeeListResult } from '../../../employee/services/employee.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -179,9 +180,18 @@ export class EmployeeManagementPageComponent implements OnInit, OnDestroy {
   batchFileError = signal<string>('');
   private pollingInterval: ReturnType<typeof setInterval> | null = null;
 
-  // Pagination
+  // Pagination — card view (client-side, legacy)
   currentPage = signal(1);
   pageSize = signal(12);
+
+  // employee-list-pagination (D-13): list 視圖伺服端分頁
+  listPage = signal(1);
+  listPageSize = signal(20);
+  listSort = signal<'name' | 'hire_date' | 'employee_no' | 'department' | null>(null);
+  listOrder = signal<'asc' | 'desc'>('asc');
+  listResult = signal<EmployeeListResult | null>(null);
+  listLoading = signal(false);
+  readonly listPageSizeOptions = [20, 50, 100, 200] as const;
 
   // Filtered employees
   filteredEmployees = computed(() => {
@@ -280,6 +290,41 @@ export class EmployeeManagementPageComponent implements OnInit, OnDestroy {
       this.stats.set(stats);
       this.employees.set(employees);
       this.loading.set(false);
+    });
+
+    // employee-list-pagination (D-13): list 視圖伺服端分頁 — debounce 300ms 合併連續打字
+    toObservable(computed(() => ({
+      isListView: this.viewMode() === 'list',
+      page: this.listPage(),
+      pageSize: this.listPageSize(),
+      sort: this.listSort(),
+      order: this.listOrder(),
+      search: this.searchKeyword(),
+      dept: this.selectedDepartment(),
+      status: this.statusFilter(),
+      orgUnitId: this.selectedSubsidiaryId(),
+      _refresh: this.refreshTrigger()
+    }))).pipe(
+      debounceTime(300),
+      distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b)),
+      switchMap(state => {
+        if (!state.isListView) return of(null);
+        this.listLoading.set(true);
+        return this.employeeService.getEmployeesPaginated({
+          page: state.page,
+          pageSize: state.pageSize,
+          sort: state.sort ?? undefined,
+          order: state.order,
+          search: state.search || undefined,
+          dept: state.dept !== 'all' ? state.dept : undefined,
+          status: state.status !== 'all' ? state.status : undefined,
+          orgUnitId: state.orgUnitId || undefined
+        });
+      }),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(result => {
+      this.listResult.set(result);
+      this.listLoading.set(false);
     });
   }
 
@@ -686,19 +731,69 @@ export class EmployeeManagementPageComponent implements OnInit, OnDestroy {
   onSearch(keyword: string): void {
     this.searchKeyword.set(keyword);
     this.currentPage.set(1);
+    this.listPage.set(1);
     this.syncFiltersToUrl();
   }
 
   onDepartmentChange(dept: string): void {
     this.selectedDepartment.set(dept);
     this.currentPage.set(1);
+    this.listPage.set(1);
     this.syncFiltersToUrl();
   }
 
   onStatusChange(status: string): void {
     this.statusFilter.set(status);
     this.currentPage.set(1);
+    this.listPage.set(1);
     this.syncFiltersToUrl();
+  }
+
+  // employee-list-pagination (D-13): 排序欄頭點擊 toggle asc/desc
+  toggleListSort(column: 'name' | 'hire_date' | 'employee_no' | 'department'): void {
+    if (this.listSort() === column) {
+      this.listOrder.set(this.listOrder() === 'asc' ? 'desc' : 'asc');
+    } else {
+      this.listSort.set(column);
+      this.listOrder.set('asc');
+    }
+    this.listPage.set(1);
+  }
+
+  onListPageSizeChange(size: number): void {
+    this.listPageSize.set(size);
+    this.listPage.set(1);
+  }
+
+  goToListPage(page: number): void {
+    const total = this.listResult()?.totalPages ?? 0;
+    if (page >= 1 && page <= total) {
+      this.listPage.set(page);
+    }
+  }
+
+  getListPageNumbers(): number[] {
+    const total = this.listResult()?.totalPages ?? 0;
+    const current = this.listPage();
+    const pages: number[] = [];
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) pages.push(i);
+    } else if (current <= 4) {
+      for (let i = 1; i <= 5; i++) pages.push(i);
+      pages.push(-1);
+      pages.push(total);
+    } else if (current >= total - 3) {
+      pages.push(1);
+      pages.push(-1);
+      for (let i = total - 4; i <= total; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      pages.push(-1);
+      for (let i = current - 1; i <= current + 1; i++) pages.push(i);
+      pages.push(-1);
+      pages.push(total);
+    }
+    return pages;
   }
 
   toggleRoleFilter(roleId: string, checked: boolean): void {

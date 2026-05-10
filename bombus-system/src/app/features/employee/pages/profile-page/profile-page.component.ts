@@ -8,7 +8,8 @@ import {
   OnInit
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { switchMap, forkJoin } from 'rxjs';
+import { switchMap, forkJoin, of, debounceTime, distinctUntilChanged } from 'rxjs';
+import type { EmployeeListResult } from '../../services/employee.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
@@ -70,34 +71,17 @@ export class ProfilePageComponent implements OnInit {
   selectedEmployeeId = signal<string | null>(null);
   showDetailModal = signal(false);
 
-  // Computed
-  filteredEmployees = computed(() => {
-    let result = this.employees();
-    const query = this.searchQuery().toLowerCase();
-    const department = this.selectedDepartment();
-    const status = this.selectedStatus();
-
-    if (query) {
-      result = result.filter(e =>
-        e.name.toLowerCase().includes(query) ||
-        e.employeeNo.toLowerCase().includes(query) ||
-        e.position.toLowerCase().includes(query) ||
-        e.email.toLowerCase().includes(query)
-      );
-    }
-
-    if (department !== 'all') {
-      result = result.filter(e => e.department === department);
-    }
-
-    if (status !== 'all') {
-      result = result.filter(e => e.status === status);
-    }
-
-    return result;
-  });
+  // employee-list-pagination (D-13): 伺服端分頁/搜尋/排序
+  listPage = signal(1);
+  listPageSize = signal(20);
+  listSort = signal<'name' | 'hire_date' | 'employee_no' | 'department' | null>(null);
+  listOrder = signal<'asc' | 'desc'>('asc');
+  listResult = signal<EmployeeListResult | null>(null);
+  listLoading = signal(false);
+  readonly listPageSizeOptions = [20, 50, 100, 200] as const;
 
   constructor() {
+    // 既有 stats + employees full load（給側欄/dashboard 用）
     toObservable(this.selectedSubsidiaryId).pipe(
       switchMap(orgUnitId => {
         this.loading.set(true);
@@ -112,6 +96,38 @@ export class ProfilePageComponent implements OnInit {
       this.stats.set(stats);
       this.employees.set(employees);
       this.loading.set(false);
+    });
+
+    // employee-list-pagination (D-13): 員工列表伺服端分頁，debounce 300ms 合併連續打字
+    toObservable(computed(() => ({
+      page: this.listPage(),
+      pageSize: this.listPageSize(),
+      sort: this.listSort(),
+      order: this.listOrder(),
+      search: this.searchQuery(),
+      dept: this.selectedDepartment(),
+      status: this.selectedStatus(),
+      orgUnitId: this.selectedSubsidiaryId()
+    }))).pipe(
+      debounceTime(300),
+      distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b)),
+      switchMap(state => {
+        this.listLoading.set(true);
+        return this.employeeService.getEmployeesPaginated({
+          page: state.page,
+          pageSize: state.pageSize,
+          sort: state.sort ?? undefined,
+          order: state.order,
+          search: state.search || undefined,
+          dept: state.dept !== 'all' ? state.dept : undefined,
+          status: state.status !== 'all' ? state.status : undefined,
+          orgUnitId: state.orgUnitId || undefined
+        });
+      }),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(result => {
+      this.listResult.set(result);
+      this.listLoading.set(false);
     });
   }
 
@@ -140,6 +156,69 @@ export class ProfilePageComponent implements OnInit {
 
   onEmployeeUpdated(): void {
     this.selectedSubsidiaryId.set(this.selectedSubsidiaryId());
+  }
+
+  // ===== employee-list-pagination (D-13) =====
+
+  onSearchInput(value: string): void {
+    this.searchQuery.set(value);
+    this.listPage.set(1);
+  }
+
+  onDeptChange(value: string): void {
+    this.selectedDepartment.set(value);
+    this.listPage.set(1);
+  }
+
+  onStatusChange(value: string): void {
+    this.selectedStatus.set(value);
+    this.listPage.set(1);
+  }
+
+  toggleListSort(column: 'name' | 'hire_date' | 'employee_no' | 'department'): void {
+    if (this.listSort() === column) {
+      this.listOrder.set(this.listOrder() === 'asc' ? 'desc' : 'asc');
+    } else {
+      this.listSort.set(column);
+      this.listOrder.set('asc');
+    }
+    this.listPage.set(1);
+  }
+
+  onListPageSizeChange(size: number): void {
+    this.listPageSize.set(size);
+    this.listPage.set(1);
+  }
+
+  goToListPage(page: number): void {
+    const total = this.listResult()?.totalPages ?? 0;
+    if (page >= 1 && page <= total) {
+      this.listPage.set(page);
+    }
+  }
+
+  getListPageNumbers(): number[] {
+    const total = this.listResult()?.totalPages ?? 0;
+    const current = this.listPage();
+    const pages: number[] = [];
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) pages.push(i);
+    } else if (current <= 4) {
+      for (let i = 1; i <= 5; i++) pages.push(i);
+      pages.push(-1);
+      pages.push(total);
+    } else if (current >= total - 3) {
+      pages.push(1);
+      pages.push(-1);
+      for (let i = total - 4; i <= total; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      pages.push(-1);
+      for (let i = current - 1; i <= current + 1; i++) pages.push(i);
+      pages.push(-1);
+      pages.push(total);
+    }
+    return pages;
   }
 
   // ===== Helpers (for list view only) =====

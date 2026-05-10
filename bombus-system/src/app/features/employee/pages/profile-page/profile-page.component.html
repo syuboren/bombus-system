@@ -60,8 +60,8 @@
         <div class="filter-bar">
           <div class="filter-item filter-item--search">
             <i class="ri-search-line"></i>
-            <input type="text" placeholder="搜尋姓名、員工編號、職位…" [value]="searchQuery()"
-              (input)="searchQuery.set($any($event.target).value)">
+            <input type="text" placeholder="搜尋姓名、員工編號、Email…" [value]="searchQuery()"
+              (input)="onSearchInput($any($event.target).value)">
           </div>
           <div class="filter-divider"></div>
           @if (viewScope() !== 'self' && subsidiaries().length > 0) {
@@ -81,7 +81,7 @@
           @if (viewScope() !== 'self') {
           <div class="filter-item">
             <select class="filter-select" [value]="selectedDepartment()"
-              (change)="selectedDepartment.set($any($event.target).value)">
+              (change)="onDeptChange($any($event.target).value)">
               <option value="all">所有部門</option>
               @for (dept of filteredDepartments(); track dept.id) {
               <option [value]="dept.name">{{ dept.name }}</option>
@@ -90,7 +90,7 @@
           </div>
           <div class="filter-item">
             <select class="filter-select" [value]="selectedStatus()"
-              (change)="selectedStatus.set($any($event.target).value)">
+              (change)="onStatusChange($any($event.target).value)">
               <option value="all">所有狀態</option>
               <option value="active">在職</option>
               <option value="probation">試用期</option>
@@ -101,24 +101,45 @@
           }
         </div>
 
-        <!-- Employee Table -->
+        <!-- Employee Table — employee-list-pagination (D-13) 伺服端分頁/搜尋/排序 -->
         <section class="employee-table-section card">
           <div class="table-wrapper">
             <table class="data-table">
               <thead>
                 <tr>
-                  <th>員工</th>
-                  <th>部門</th>
+                  <th class="sortable" (click)="toggleListSort('name')">
+                    員工
+                    @if (listSort() === 'name') {
+                      <i [class]="'ri-arrow-' + (listOrder() === 'asc' ? 'up' : 'down') + '-s-line sort-active'"></i>
+                    } @else {
+                      <i class="ri-expand-up-down-line sort-idle"></i>
+                    }
+                  </th>
+                  <th class="sortable" (click)="toggleListSort('department')">
+                    部門
+                    @if (listSort() === 'department') {
+                      <i [class]="'ri-arrow-' + (listOrder() === 'asc' ? 'up' : 'down') + '-s-line sort-active'"></i>
+                    } @else {
+                      <i class="ri-expand-up-down-line sort-idle"></i>
+                    }
+                  </th>
                   <th>職等</th>
                   <th>職級</th>
                   <th>職位</th>
-                  <th>到職日</th>
+                  <th class="sortable" (click)="toggleListSort('hire_date')">
+                    到職日
+                    @if (listSort() === 'hire_date') {
+                      <i [class]="'ri-arrow-' + (listOrder() === 'asc' ? 'up' : 'down') + '-s-line sort-active'"></i>
+                    } @else {
+                      <i class="ri-expand-up-down-line sort-idle"></i>
+                    }
+                  </th>
                   <th>狀態</th>
                   <th>操作</th>
                 </tr>
               </thead>
               <tbody>
-                @for (employee of filteredEmployees(); track employee.id) {
+                @for (employee of (listResult()?.data || []); track employee.id) {
                 <tr [class.selected]="selectedEmployeeId() === employee.id" (click)="selectEmployee(employee)"
                   (keydown.enter)="selectEmployee(employee)" tabindex="0" role="button">
                   <td>
@@ -166,6 +187,49 @@
               </tbody>
             </table>
           </div>
+
+          <!-- Paginator (D-13 server-side) -->
+          @if (listResult() && listResult()!.total > 0) {
+            <div class="pagination-section">
+              <div class="pagination-page-size">
+                <label for="profilePageSizeSelect">每頁</label>
+                <select id="profilePageSizeSelect"
+                        (change)="onListPageSizeChange(+$any($event.target).value)">
+                  @for (sz of listPageSizeOptions; track sz) {
+                    <option [value]="sz" [selected]="sz === listPageSize()">{{ sz }}</option>
+                  }
+                </select>
+              </div>
+              @if (listResult()!.totalPages > 1) {
+                <div class="pagination">
+                  <button class="pagination-btn" type="button"
+                          [disabled]="listPage() === 1"
+                          (click)="goToListPage(listPage() - 1)">
+                    <i class="ri-arrow-left-s-line"></i>
+                  </button>
+                  @for (p of getListPageNumbers(); track $index) {
+                    @if (p === -1) {
+                      <span class="pagination-ellipsis">...</span>
+                    } @else {
+                      <button class="pagination-btn" type="button"
+                              [class.active]="p === listPage()"
+                              (click)="goToListPage(p)">{{ p }}</button>
+                    }
+                  }
+                  <button class="pagination-btn" type="button"
+                          [disabled]="listPage() === listResult()!.totalPages"
+                          (click)="goToListPage(listPage() + 1)">
+                    <i class="ri-arrow-right-s-line"></i>
+                  </button>
+                </div>
+              }
+              <div class="pagination-info">
+                顯示 {{ (listResult()!.page - 1) * listResult()!.pageSize + 1 }} -
+                {{ listResult()!.page * listResult()!.pageSize > listResult()!.total ? listResult()!.total : listResult()!.page * listResult()!.pageSize }} 筆，
+                共 {{ listResult()!.total }} 筆
+              </div>
+            </div>
+          }
         </section>
       </div>
 
