@@ -473,7 +473,66 @@ const EMPLOYEE_MIGRATIONS = [
   'ALTER TABLE employees ADD COLUMN emergency_contact_phone TEXT',
   'ALTER TABLE employees ADD COLUMN import_job_id TEXT',
   // employee-list-pagination (D-13): 覆蓋預設 ORDER BY (department, name) + status/org_unit_id 過濾路徑
-  'CREATE INDEX IF NOT EXISTS idx_employees_status_org_dept_name ON employees(status, org_unit_id, department, name)'
+  'CREATE INDEX IF NOT EXISTS idx_employees_status_org_dept_name ON employees(status, org_unit_id, department, name)',
+  // cross-company-employment-and-naming-rules (D-14): 跨公司專屬編號（HQ-xxx），永不釋放
+  'ALTER TABLE employees ADD COLUMN cross_company_code TEXT',
+  'CREATE UNIQUE INDEX IF NOT EXISTS uq_employees_cross_company_code ON employees(cross_company_code) WHERE cross_company_code IS NOT NULL'
+];
+
+// cross-company-employment-and-naming-rules (D-10 + D-15)
+// 跨公司任職表 + 代碼命名規則表 + backfill；雙清單共用（tenant-schema.initTenantSchema 與
+// tenant-db-manager._runMigrations）— CREATE TABLE IF NOT EXISTS 與 INSERT ... WHERE NOT IN 皆冪等
+const CROSS_COMPANY_NAMING_MIGRATIONS = [
+  // 1. employee_assignments 表：1:N 對 employees，記錄主任職與副任職
+  `CREATE TABLE IF NOT EXISTS employee_assignments (
+    id TEXT PRIMARY KEY,
+    employee_id TEXT NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+    org_unit_id TEXT NOT NULL REFERENCES org_units(id),
+    position TEXT,
+    grade TEXT,
+    level TEXT,
+    is_primary INTEGER NOT NULL DEFAULT 0,
+    start_date TEXT NOT NULL,
+    end_date TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT,
+    UNIQUE(employee_id, org_unit_id, start_date)
+  )`,
+  // 2. partial index：每員工最多一筆 is_primary=1（DB 層兜底，service 層為主要保證）
+  'CREATE UNIQUE INDEX IF NOT EXISTS uq_assignments_primary ON employee_assignments(employee_id) WHERE is_primary = 1',
+  // 3. 查詢 active assignments（end_date IS NULL）依 employee 與 org_unit 兩種路徑
+  'CREATE INDEX IF NOT EXISTS idx_assignments_employee_active ON employee_assignments(employee_id) WHERE end_date IS NULL',
+  'CREATE INDEX IF NOT EXISTS idx_assignments_org_active ON employee_assignments(org_unit_id) WHERE end_date IS NULL',
+  // 4. code_naming_rules 表：每 target 一條，super_admin 設定
+  `CREATE TABLE IF NOT EXISTS code_naming_rules (
+    target TEXT PRIMARY KEY,
+    prefix TEXT NOT NULL DEFAULT '',
+    padding INTEGER NOT NULL DEFAULT 4,
+    current_seq INTEGER NOT NULL DEFAULT 0,
+    enabled INTEGER NOT NULL DEFAULT 1,
+    updated_by TEXT REFERENCES employees(id),
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT
+  )`,
+  // 5. backfill：把既有 employees.org_unit_id 寫入對應的 is_primary=1 assignment（冪等：用 NOT EXISTS）
+  // 為避免 sql.js 不支援 RETURNING，採用 INSERT ... SELECT 模式
+  `INSERT INTO employee_assignments (id, employee_id, org_unit_id, position, grade, level, is_primary, start_date, created_at)
+   SELECT
+     'asgn-' || id,
+     id,
+     org_unit_id,
+     position,
+     grade,
+     level,
+     1,
+     COALESCE(hire_date, substr(created_at, 1, 10), date('now')),
+     datetime('now')
+   FROM employees
+   WHERE org_unit_id IS NOT NULL
+     AND NOT EXISTS (
+       SELECT 1 FROM employee_assignments
+       WHERE employee_assignments.employee_id = employees.id
+     )`
 ];
 
 const USER_MIGRATIONS = [
@@ -1967,6 +2026,12 @@ function initTenantSchema(adapter) {
   // 批次匯入表（import_jobs + import_results）
   db.exec(IMPORT_TABLES_SQL);
 
+  // cross-company-employment-and-naming-rules (D-10 + D-14 + D-15)
+  // 雙清單共用 array：tenant-db-manager._runMigrations 也會 iterate 同一陣列
+  for (const sql of CROSS_COMPANY_NAMING_MIGRATIONS) {
+    try { db.run(sql); } catch (e) { /* 表 / 索引已存在，或 backfill 為空時忽略 */ }
+  }
+
   // 內部推薦邀請索引
   try {
     db.run('CREATE INDEX IF NOT EXISTS idx_referral_invitations_job_status ON referral_invitations(job_id, status)');
@@ -2012,7 +2077,7 @@ module.exports = {
   initTenantSchema,
   RBAC_TABLES_SQL, BUSINESS_TABLES_SQL, FEATURE_TABLES_SQL, IMPORT_TABLES_SQL,
   EMPLOYEE_MIGRATIONS, USER_MIGRATIONS, INTERVIEW_MIGRATIONS,
-  ROLE_FEATURE_PERMS_MIGRATIONS,
+  ROLE_FEATURE_PERMS_MIGRATIONS, CROSS_COMPANY_NAMING_MIGRATIONS,
   FEATURE_SEED_DATA, DEFAULT_ROLE_FEATURE_PERMS,
   seedFeatureData, seedDefaultRoleFeaturePerms
 };

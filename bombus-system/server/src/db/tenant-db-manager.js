@@ -14,7 +14,7 @@ const path = require('path');
 const { SqliteAdapter } = require('./db-adapter');
 const {
   EMPLOYEE_MIGRATIONS, USER_MIGRATIONS, INTERVIEW_MIGRATIONS,
-  ROLE_FEATURE_PERMS_MIGRATIONS,
+  ROLE_FEATURE_PERMS_MIGRATIONS, CROSS_COMPANY_NAMING_MIGRATIONS,
   FEATURE_TABLES_SQL, IMPORT_TABLES_SQL, FEATURE_SEED_DATA, DEFAULT_ROLE_FEATURE_PERMS,
   seedFeatureData, seedDefaultRoleFeaturePerms
 } = require('./tenant-schema');
@@ -420,6 +420,12 @@ class TenantDBManager {
     // role_feature_perms 表擴 3 欄（rbac-row-level-and-interview-scope）
     for (const sql of ROLE_FEATURE_PERMS_MIGRATIONS) {
       try { db.run(sql); changed = true; } catch (e) { /* 欄位已存在則忽略 */ }
+    }
+
+    // cross-company-employment-and-naming-rules (D-10 + D-14 + D-15)
+    // 跨公司任職表 + 代碼命名規則表 + 既有員工 backfill；雙清單共用
+    for (const sql of CROSS_COMPANY_NAMING_MIGRATIONS) {
+      try { db.run(sql); changed = true; } catch (e) { /* 表 / 索引已存在，或 backfill 為空時忽略 */ }
     }
 
     // templates 表新增草稿欄位（has_draft, draft_pdf_base64, draft_mapping_config）
